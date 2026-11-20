@@ -34,6 +34,7 @@ import {
   customerPointsHrefOf,
   customerPreferencesHrefOf,
   customersHrefOf,
+  treatmentsOfCustomerHrefOf,
 } from '../navigation'
 import { NOT_FOUND, unreadMessageOf } from '../reading'
 import { dayAt } from '../salon-time'
@@ -221,7 +222,17 @@ const UsePart = ({ salon, customer }: PartProps) => {
   }
 
   return (
-    <Card title='このサロンでの利用'>
+    <Card
+      title='このサロンでの利用'
+      actions={
+        <ButtonLink
+          href={treatmentsOfCustomerHrefOf(salon.id, customer.id)}
+          variant='secondary'
+        >
+          施術記録を見る
+        </ButtonLink>
+      }
+    >
       <StatisticsPeriod period={period} errors={errors} onSubmit={count} />
       <p>{`${periodNameOf(period)}の集計`}</p>
       {match(read.data)

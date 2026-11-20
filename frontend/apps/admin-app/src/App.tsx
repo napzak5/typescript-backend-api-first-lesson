@@ -51,6 +51,10 @@ import { RefundScreen } from './sales/refund-screen'
 import { SaleChangeScreen } from './sales/sale-change-screen'
 import { SaleScreen } from './sales/sale-screen'
 import { SalesLedgerScreen } from './sales/sales-ledger-screen'
+import { TreatmentChangeScreen } from './treatments/treatment-change-screen'
+import { TreatmentEntryScreen } from './treatments/treatment-entry-screen'
+import { TreatmentScreen } from './treatments/treatment-screen'
+import { TreatmentsScreen } from './treatments/treatments-screen'
 
 /** Who this application is for: the people who work at a salon, and the operator of the platform */
 const ROLES: RequireSessionProps['roles'] = [
@@ -164,6 +168,10 @@ export const App = () => {
                 element={<CheckoutScreen />}
               />
               <Route
+                path='/salons/:salonId/bookings/:bookingId/treatment/new'
+                element={<TreatmentEntryScreen />}
+              />
+              <Route
                 path='/salons/:salonId/sales'
                 element={<SalesLedgerScreen />}
               />
@@ -254,6 +262,18 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/customers/charts'
                 element={<ChartSearchScreen />}
+              />
+              <Route
+                path='/salons/:salonId/treatments'
+                element={<TreatmentsScreen />}
+              />
+              <Route
+                path='/salons/:salonId/treatments/:treatmentId'
+                element={<TreatmentScreen />}
+              />
+              <Route
+                path='/salons/:salonId/treatments/:treatmentId/edit'
+                element={<TreatmentChangeScreen />}
               />
               <Route
                 path={SECURITY_PATH}

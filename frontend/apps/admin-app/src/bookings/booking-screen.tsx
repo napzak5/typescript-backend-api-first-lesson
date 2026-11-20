@@ -27,6 +27,8 @@ import {
   lineEntryHrefOf,
   lineHrefOf,
   saleHrefOf,
+  treatmentEntryHrefOf,
+  treatmentHrefOf,
 } from '../navigation'
 import { NOT_FOUND, unreadMessageOf, whyUnread } from '../reading'
 import { BookingSale } from '../sales/components/booking-sale/booking-sale'
@@ -39,6 +41,12 @@ import {
   staffProfilesKeyOf,
 } from '../salons/salons-api'
 import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
+import { BookingTreatment } from '../treatments/components/booking-treatment/booking-treatment'
+import { isTreated } from '../treatments/treatment-format'
+import {
+  findTreatmentOfBooking,
+  treatmentOfBookingKeyOf,
+} from '../treatments/treatments-api'
 import {
   actionsOf,
   afterChange,
@@ -134,6 +142,18 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
     queryFn: () => readSalesOfBooking(salon.id, booking.id),
     // A sale is entered at the counter: whether there is one is read whenever the page opens
     staleTime: 0,
+  })
+  const treatment = useQuery({
+    queryKey: treatmentOfBookingKeyOf(booking.id),
+    queryFn: () =>
+      findTreatmentOfBooking({
+        salonId: salon.id,
+        customerId: booking.customerId,
+        bookingId: booking.id,
+      }),
+    // A record is written beside the chair: whether there is one is read whenever the page opens
+    staleTime: 0,
+    enabled: isTreated(booking),
   })
   const [asking, setAsking] = useState<AskedAction>()
   const [said, setSaid] = useState<Said>()
@@ -309,6 +329,17 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
             checkoutHref={checkoutHrefOf(salon.id, booking.id)}
             onRetry={() => void sales.refetch()}
             retrying={sales.isFetching}
+          />
+          <BookingTreatment
+            booking={booking}
+            found={treatment.data}
+            timezone={salon.timezone}
+            treatmentHref={(treatmentId) =>
+              treatmentHrefOf(salon.id, treatmentId)
+            }
+            entryHref={treatmentEntryHrefOf(salon.id, booking.id)}
+            onRetry={() => void treatment.refetch()}
+            retrying={treatment.isFetching}
           />
           <BookingChanges
             moveHref={

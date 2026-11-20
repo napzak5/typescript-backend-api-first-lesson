@@ -19,12 +19,18 @@ import {
   saleChangeHrefOf,
   salesHrefOf,
   salonIdIn,
+  treatmentChangeHrefOf,
+  treatmentEntryHrefOf,
+  treatmentHrefOf,
+  treatmentsHrefOf,
+  treatmentsOfCustomerHrefOf,
 } from './navigation'
 
 const SALON_ID = '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01'
 const BOOKINGS = `/salons/${SALON_ID}/bookings`
 const SALES = `/salons/${SALON_ID}/sales`
 const CUSTOMERS = `/salons/${SALON_ID}/customers`
+const TREATMENTS = `/salons/${SALON_ID}/treatments`
 
 type Role = ModelsUserResponse['role']
 
@@ -53,12 +59,13 @@ describe('salonIdIn', () => {
 })
 
 describe('navigationFor', () => {
-  it('should lead an administrator to the choice of a salon, and to the bookings, the sales and the customers of the salon chosen', () => {
+  it('should lead an administrator to the choice of a salon, and to the bookings, the sales, the customers and the treatment records of the salon chosen', () => {
     expect(navigationFor('admin', `${BOOKINGS}/x`)).toEqual([
       { href: '/', label: 'サロンを選ぶ', current: false },
       { href: BOOKINGS, label: '予約', current: true },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: TREATMENTS, label: '施術記録', current: false },
     ])
   })
 
@@ -75,6 +82,7 @@ describe('navigationFor', () => {
         { href: BOOKINGS, label: '予約', current: true },
         { href: SALES, label: '売上', current: false },
         { href: CUSTOMERS, label: '顧客', current: false },
+        { href: TREATMENTS, label: '施術記録', current: false },
       ])
     },
   )
@@ -94,6 +102,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: TREATMENTS, label: '施術記録', current: false },
     ])
   })
 
@@ -107,6 +116,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: true },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: TREATMENTS, label: '施術記録', current: false },
     ])
   })
 
@@ -129,6 +139,50 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: true },
+      { href: TREATMENTS, label: '施術記録', current: false },
+    ])
+  })
+
+  it.each<[string, string]>([
+    ['the records', TREATMENTS],
+    ['the records of a customer', treatmentsOfCustomerHrefOf(SALON_ID, 'x')],
+    ['a record', treatmentHrefOf(SALON_ID, 'x')],
+    ['the change of a record', treatmentChangeHrefOf(SALON_ID, 'x')],
+  ])(
+    'should mark the treatment records as the screen of %s',
+    (_case, address) => {
+      const [pathname = ''] = address.split('?')
+      expect(navigationFor('staff', pathname)).toEqual([
+        { href: BOOKINGS, label: '予約', current: false },
+        { href: SALES, label: '売上', current: false },
+        { href: CUSTOMERS, label: '顧客', current: false },
+        { href: TREATMENTS, label: '施術記録', current: true },
+      ])
+    },
+  )
+
+  it('should write the treatment record of a booking below the booking, where the bookings are the screen', () => {
+    const pathname = treatmentEntryHrefOf(SALON_ID, 'booking')
+
+    expect(pathname).toBe(`${BOOKINGS}/booking/treatment/new`)
+    expect(navigationFor('owner', pathname)[0]).toEqual({
+      href: BOOKINGS,
+      label: '予約',
+      current: true,
+    })
+  })
+
+  it('should write the addresses of the treatment records', () => {
+    expect([
+      treatmentsHrefOf(SALON_ID),
+      treatmentsOfCustomerHrefOf(SALON_ID, 'customer'),
+      treatmentHrefOf(SALON_ID, 'record'),
+      treatmentChangeHrefOf(SALON_ID, 'record'),
+    ]).toEqual([
+      TREATMENTS,
+      `${TREATMENTS}?customer=customer`,
+      `${TREATMENTS}/record`,
+      `${TREATMENTS}/record/edit`,
     ])
   })
 
