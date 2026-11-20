@@ -15,7 +15,7 @@ import { NOT_RECORDED } from '../staff/staff-format'
  */
 
 /** What is said of a day the salon is not open on */
-export const CLOSED = '休業'
+const CLOSED = '休業'
 
 /** Hours from one time to another: 「10:00〜20:00」, several of them with 「、」. */
 const slotsNameOf = (slots: readonly ModelsTimeSlot[]): string =>
