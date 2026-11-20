@@ -153,6 +153,26 @@ export const salonChangeHrefOf = (salonId: string): string =>
 export const hoursChangeHrefOf = (salonId: string): string =>
   `${settingsHrefOf(salonId)}/hours`
 
+/** The payment methods of a salon. */
+export const paymentMethodsHrefOf = (salonId: string): string =>
+  `${settingsHrefOf(salonId)}/payment-methods`
+
+/** The screen that adds a payment method to a salon. */
+export const paymentMethodEntryHrefOf = (salonId: string): string =>
+  `${paymentMethodsHrefOf(salonId)}/new`
+
+/** A payment method of a salon. */
+export const paymentMethodHrefOf = (
+  salonId: string,
+  paymentMethodId: string,
+): string => `${paymentMethodsHrefOf(salonId)}/${paymentMethodId}`
+
+/** The screen that changes a payment method, and removes it. */
+export const paymentMethodChangeHrefOf = (
+  salonId: string,
+  paymentMethodId: string,
+): string => `${paymentMethodHrefOf(salonId, paymentMethodId)}/edit`
+
 /** The menu of a salon: its categories and their services. */
 export const menuHrefOf = (salonId: string): string => `/salons/${salonId}/menu`
 
