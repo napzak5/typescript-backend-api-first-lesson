@@ -15,6 +15,9 @@ export type Unread =
 /** The address names nothing: no record has this ID, or it was removed. */
 export type NotFound = { type: 'notFound' }
 
+/** The account may not see what was asked for: a member of another salon. */
+export type Forbidden = { type: 'forbidden' }
+
 /** One page of a list, and where the next one begins. */
 export type Page<Item> = {
   type: 'found'
@@ -95,7 +98,10 @@ const MOST_PAGES = 10
  * Reads a list to its end, a page at a time. What stops one page stops the
  * list: half a list of names is not shown as the list.
  */
-export const toTheEnd = async <Item, Stopped extends NotFound | Unread>(
+export const toTheEnd = async <
+  Item,
+  Stopped extends NotFound | Forbidden | Unread,
+>(
   readPage: (cursor: string | undefined) => Promise<Page<Item> | Stopped>,
   cursor: string | undefined = undefined,
   read: Item[] = [],

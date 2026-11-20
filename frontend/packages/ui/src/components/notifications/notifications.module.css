@@ -36,3 +36,10 @@
   --notification-surface: var(--color-danger-subtle);
   --notification-text: var(--color-danger-text);
 }
+
+/* What the application said is for the screen: a page that is printed has none of it */
+@media print {
+  .notification {
+    display: none;
+  }
+}

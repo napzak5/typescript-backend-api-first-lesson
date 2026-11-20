@@ -1,0 +1,46 @@
+/* A part of the form, under its name: further from the part before it than its controls are from each other */
+.part {
+  padding-block-start: var(--space-2);
+}
+
+/*
+ * A browser sets the legend of a fieldset apart from what the fieldset
+ * lays out, so the gap below the name is the name's own.
+ */
+.name {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+/* The controls of a part, one below the other */
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* The service to add and its button: the button below its label's line, beside the choice where there is room */
+.addition {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+}
+
+@media (min-width: 40rem) {
+  .addition {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+}
+
+.changed {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.changed:empty {
+  display: none;
+}
