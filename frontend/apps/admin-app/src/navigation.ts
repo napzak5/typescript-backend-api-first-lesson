@@ -141,6 +141,23 @@ export const scheduleChangeHrefOf = (
   staffId: string,
 ): string => `${scheduleHrefOf(salonId, staffId)}/edit`
 
+/** The menu of a salon: its categories and their services. */
+export const menuHrefOf = (salonId: string): string => `/salons/${salonId}/menu`
+
+/** A service of the menu, with everything the menu keeps of it. */
+export const serviceHrefOf = (salonId: string, serviceId: string): string =>
+  `${menuHrefOf(salonId)}/services/${serviceId}`
+
+/** The screen that adds a category to the menu. */
+export const categoryEntryHrefOf = (salonId: string): string =>
+  `${menuHrefOf(salonId)}/categories/new`
+
+/** The screen that changes a category of the menu, and removes it. */
+export const categoryChangeHrefOf = (
+  salonId: string,
+  categoryId: string,
+): string => `${menuHrefOf(salonId)}/categories/${categoryId}/edit`
+
 /** The ledger of the customers, from the screens of a salon. */
 export const customersHrefOf = (salonId: string): string =>
   `/salons/${salonId}/customers`
@@ -276,7 +293,7 @@ export const OWN_PROFILE_PATH = '/account/profile'
 
 /**
  * The links of the header: the bookings, the sales, the customers, the
- * treatment records and the shifts, from the salon of the address, and the
+ * treatment records, the shifts and the menu, from the salon of the address, and the
  * staff ledger for the roles that keep it. The screens of a salon are below its address;
  * an administrator chooses the salon at the start (`/`), and a member of
  * the staff is led from there to the salon they belong to. So a member who
@@ -309,6 +326,7 @@ export const navigationFor = (
     const customers = customersHrefOf(salonId)
     const treatments = treatmentsHrefOf(salonId)
     const shifts = shiftsHrefOf(salonId)
+    const menu = menuHrefOf(salonId)
     const staff = staffLedgerHrefOf(salonId)
 
     return [
@@ -334,6 +352,7 @@ export const navigationFor = (
         label: 'シフト',
         current: isAtOrBelow(pathname, shifts),
       },
+      { href: menu, label: 'メニュー', current: isAtOrBelow(pathname, menu) },
       ...(role !== undefined && mayKeepStaffLedger(role)
         ? [
             {

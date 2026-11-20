@@ -1786,6 +1786,29 @@ the staff ledger (`staff/introduction.ts`,
   beside the account: on a narrow screen the account has room for two
   buttons beside the title, and the links scroll.
 
+### A menu that some roles keep: what is below what, and what a removal leaves
+
+The menu is the example to read: `menu-screen.tsx`, `service-screen.tsx`,
+the screens of a category, `menu-api.ts`, `menu-format.ts` and
+`category-form.ts`.
+
+- **Two lists that make one screen are matched together**
+  (`menuOf`): a refusal of either is said as soon as it comes, that of
+  the categories first, and the menu waits until both are read. A row
+  whose group was not read is not dropped: it goes with the rows of no
+  group, last.
+- **A tree is named by its path** (`categoryPathOf`, guarded against a
+  loop), in the captions of the tables as in the choices of a form, and
+  a node is never offered below itself (`parentChoicesOf`).
+- **A refusal that names a choice reads the choices again**: when the API
+  refuses the parent, the error is said at the control and the list it
+  offers is fetched anew, so the next choice is among what there is now.
+- **The dialog of a removal says what becomes of what hung on the
+  record** (children to the top, services to none), and the removal drops
+  every list the record was in.
+- **A form compares against what it was opened with**: the record of a
+  form that changes it is not read again when the window comes back.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
