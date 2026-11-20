@@ -31,6 +31,10 @@ export {
   type EnvironmentBannerProps,
 } from './components/environment-banner/environment-banner'
 export {
+  FileField,
+  type FileFieldProps,
+} from './components/file-field/file-field'
+export {
   type FormErrors,
   useErrorFocus,
 } from './components/form/error-focus'

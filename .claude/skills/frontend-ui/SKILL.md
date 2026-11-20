@@ -195,8 +195,9 @@ nobody reads is removed.
 | `TextArea` | Several lines |
 | `Select` | One of a list. `placeholder` adds a first option without a value |
 | `RadioGroup` | One of a few choices that should all be in sight. `layout='columns'` for many short ones (the times of a day): as many columns as fit, and the arrow keys go through them in the order they are read. Choices with long labels (the payment methods with what they take) stay one below the other: a label does not fit a column at 390px |
-| `Checkbox` | One thing that is so or not so |
+| `Checkbox` | One thing that is so or not so. `labelHidden` keeps the label for a screen reader alone: the checkbox of a row of a table, whose row says what it is about (「山田 花子 様を選ぶ」) |
 | `CheckboxGroup` | Several of a few choices. The chosen values are sent under one name (`formData.getAll(name)`). `layout='columns'` for many short ones |
+| `FileField` | A file to choose (`accept` names its kinds). The screen reads the chosen file itself (`onChange`, `event.currentTarget.files`); it is not sent with the form. Its button looks like a secondary button |
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
 | `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it |
 
@@ -1260,7 +1261,9 @@ salon changes, `with-customer.tsx` for the customer of the address,
 `removed-customer.tsx` for one who left the ledger,
 `customer-history-screen.tsx` and `customer-version-screen.tsx` for the
 history and a version, `customer-points-screen.tsx` and
-`point-entry-screen.tsx` for the points and their recording).
+`point-entry-screen.tsx` for the points and their recording,
+`customer-import-screen.tsx` for the customers of a file, and the choice
+of `customer-ledger-screen.tsx` for customers written at once).
 
 - **A ledger that belongs to no salon is still shown below one.** The
   customers are one ledger for the platform, and every address of the
@@ -1406,6 +1409,47 @@ history and a version, `customer-points-screen.tsx` and
   count, with the balance), a balance above the largest, and a record that
   has its points already. Only what none of these explains is said as a
   failure.
+- **A file is read in the browser, by the rules of the form**
+  (`customer-file.ts`, `customer-import-screen.tsx`). Each row of a CSV
+  file goes through the reading of one customer typed in the form
+  (`readCustomerEntry`), so the file and the form never disagree on what is
+  right. Everything that is wrong is said at once, by row and by the word
+  of the item (「3 行目 メールアドレス: …」), in a danger `Alert` with a list,
+  and nothing is sent until a file without a fault is chosen. The columns
+  are the names of the API, as the export of the ledger writes them, so an
+  export comes back as it is, and what only the export has is passed over.
+  The text is UTF-8, or Shift_JIS when UTF-8 cannot read it (what a
+  spreadsheet in Japan saves). A file without a fault is shown as the
+  customers it holds before it is sent (`CustomerImportForm`): the control
+  and what is wrong stand in the column of a form, the table takes the
+  width of the page, which its columns need, and the button that sends
+  comes after the table, tied to the form with `form={id}`. The form is
+  built as `Form` builds its own (`useErrorFocus`).
+- **A write of many is one request, and its refusal is said at the row**
+  (`afterRegistration`). The API writes all or none: a value it refuses is
+  named by the place of the customer in the request (`items.<n>.<item>`),
+  which is a row of the file; a value another customer has is in the
+  `detail`, and is found among the values of the file as a whole word.
+- **Rows are chosen for a write in the table that lists them**
+  (`CustomerTable` with `choice`, `ChosenCustomers`). A `Checkbox` with a
+  hidden label in a first column, the name heading the row (`rowHeader`).
+  The part above the table says how many are chosen and holds the
+  buttons; before anybody is chosen it says what choosing is for, so the
+  table does not move when the first is chosen. A choice belongs to the
+  conditions it was made under: other conditions choose nobody, and
+  taking them back does not bring the choice back. More than the API
+  takes at once is said, and the buttons wait.
+- **A write of the chosen reads them first, and sends only what changes**
+  (`retagCustomers`). The tags of each are read anew and changed from
+  there, so a tag given meanwhile stays; who would not change is not
+  sent, and when nobody would, nothing is. Who left meanwhile (not read
+  anew, or after a 404 that names the first alone) is let go of and
+  nobody is written: the screen says who, and reads the ledger again.
+- **When the last of the chosen goes with what was pressed, the focus
+  goes to the heading of the part** (`ChosenCustomers`): the buttons went
+  with them, and the browser would leave the focus at the start of the
+  page. A choice let go of in the table keeps the focus there; a dialog
+  whose opener is still there gives the focus back to it (the browser).
 
 ## Screens that a mailed link opens
 
@@ -1446,7 +1490,7 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends |
 | `Rating` | A rating out of five: the stars, the number, and how many gave it |
 | `QrCode` | A QR code drawn from its text, as an image with a name: what an authenticator app reads. The text stays in the browser |
-| `Table` | A list of records |
+| `Table` | A list of records. Its first column heads each row, or the one `rowHeader` names: the name of a customer, when a column of checkboxes comes first |
 | `EmptyState` | What is shown where content would be, while there is none |
 | `LoadingIndicator` | What is shown where content will be, while it loads |
 | `UnreadNotice` | What is shown where content could not be read: the message the application words (`unreadMessageOf(what, reason)`), and the button that reads again |

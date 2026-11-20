@@ -74,6 +74,10 @@ export const customersHrefOf = (salonId: string): string =>
 export const customerEntryHrefOf = (salonId: string): string =>
   `${customersHrefOf(salonId)}/new`
 
+/** The screen that registers the customers of a CSV file at once. */
+export const customerImportHrefOf = (salonId: string): string =>
+  `${customersHrefOf(salonId)}/import`
+
 /** A customer of the ledger, from the screens of a salon. */
 export const customerHrefOf = (salonId: string, customerId: string): string =>
   `${customersHrefOf(salonId)}/${customerId}`

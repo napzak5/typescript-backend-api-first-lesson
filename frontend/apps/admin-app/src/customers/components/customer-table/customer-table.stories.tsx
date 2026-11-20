@@ -52,3 +52,13 @@ export const Ledger: Story = {}
 export const WithMore: Story = {
   args: { total: 128, more: 'available' },
 }
+
+/** The customers can be chosen: the first is */
+export const Choosing: Story = {
+  args: {
+    choice: {
+      chosen: new Set([ROWS[0]?.id ?? '']),
+      onChoose: fn(),
+    },
+  },
+}

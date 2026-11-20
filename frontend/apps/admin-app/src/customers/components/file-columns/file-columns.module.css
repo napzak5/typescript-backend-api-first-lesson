@@ -1,0 +1,5 @@
+/* The name of a column, as it is written in the file */
+.name {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-small);
+}

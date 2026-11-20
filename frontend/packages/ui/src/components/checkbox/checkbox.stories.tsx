@@ -22,6 +22,11 @@ export const Checked: Story = {
   args: { defaultChecked: true },
 }
 
+/** In the row of a table, which shows what is chosen */
+export const LabelHidden: Story = {
+  args: { label: '山田 花子 様を選ぶ', name: 'chosen', labelHidden: true },
+}
+
 export const WithDescription: Story = {
   args: { description: 'キャンペーンと、次回の予約のご案内をお送りします' },
 }

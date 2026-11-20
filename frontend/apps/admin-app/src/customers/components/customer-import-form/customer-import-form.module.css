@@ -1,0 +1,35 @@
+/* The form in its column, the customers of the file across the page, then the button */
+.import {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* The control and what is wrong with the file, as narrow as any form */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  max-inline-size: var(--size-form-column);
+}
+
+/* The button that registers and, beside it, what else can be done */
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: var(--space-3);
+}
+
+/* What to do, then each thing that is wrong */
+.problems {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-1);
+  padding-inline-start: var(--space-5);
+  list-style: disc;
+}
