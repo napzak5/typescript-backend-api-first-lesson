@@ -40,6 +40,10 @@ describe('SaleRecord', () => {
       'href',
       `/salons/${salon.id}/bookings/${aSale().bookingId}`,
     )
+    expect(screen.getByRole('link', { name: '売上を直す' })).toHaveAttribute(
+      'href',
+      `/salons/${salon.id}/sales/${aSale().id}/edit`,
+    )
     const lines = within(screen.getByRole('table', { name: '明細' }))
       .getAllByRole('row')
       .slice(1)
@@ -79,6 +83,7 @@ describe('SaleRecord', () => {
     await stories.Voided.run()
 
     // Assert
+    expect(screen.queryByRole('link', { name: '売上を直す' })).toBeNull()
     expect(describedIn('売上')).toEqual([
       ['売上番号', 'SL-2KQM-9F4H'],
       ['会計日時', '2026年11月20日（金） 11:02'],

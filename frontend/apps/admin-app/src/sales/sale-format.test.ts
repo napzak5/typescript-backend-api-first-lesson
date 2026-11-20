@@ -4,7 +4,9 @@ import {
   aPaidSale,
   aPayment,
   aSale,
+  moment,
   paymentMethods,
+  salon,
 } from './components/examples'
 import {
   cardNameOf,
@@ -12,6 +14,7 @@ import {
   owedOf,
   receivedOf,
   refundedOf,
+  refundNameOf,
   whyNoPayment,
   whyNoReceipt,
 } from './sale-format'
@@ -116,6 +119,29 @@ describe('methodNameOf', () => {
       'クレジットカード',
     )
     expect(methodNameOf('removed', paymentMethods)).toBe('一覧にない支払い方法')
+  })
+})
+
+describe('refundNameOf', () => {
+  it.each<[string, Parameters<typeof refundNameOf>[0], string | null]>([
+    [
+      'how much and when',
+      { refundAmount: 500, refundedAt: moment(90) },
+      '￥500、2026年11月20日（金） 11:30',
+    ],
+    [
+      'how much, of a refund whose time was not recorded',
+      { refundAmount: 3000, refundedAt: null },
+      '￥3,000',
+    ],
+    [
+      'nothing for a payment that was not given back',
+      { refundAmount: null, refundedAt: null },
+      null,
+    ],
+  ])('should say %s', (_case, payment, said) => {
+    // Act, Assert
+    expect(refundNameOf(payment, salon.timezone, salon.currency)).toBe(said)
   })
 })
 

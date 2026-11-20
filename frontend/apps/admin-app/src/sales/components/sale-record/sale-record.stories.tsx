@@ -28,8 +28,12 @@ export default meta
 
 type Story = StoryObj<typeof meta>
 
-/** A cut, nothing received yet */
-export const Unpaid: Story = {}
+/** A cut, nothing received yet; it can be changed */
+export const Unpaid: Story = {
+  args: {
+    changeHref: `/salons/${salon.id}/sales/${aSale().id}/edit`,
+  },
+}
 
 /** Paid in cash and by card */
 export const Paid: Story = {

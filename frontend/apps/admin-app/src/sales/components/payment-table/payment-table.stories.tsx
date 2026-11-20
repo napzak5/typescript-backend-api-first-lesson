@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { moment } from '../../../bookings/components/examples'
 import { aPaidSale, aPayment, paymentMethods, salon } from '../examples'
 
 import { PaymentTable } from './payment-table'
@@ -35,7 +36,26 @@ export const Refunded: Story = {
         cardBrand: 'JCB',
         status: 'partial_refund',
         refundAmount: 1000,
+        refundedAt: moment(90),
+        refundReason: 'お釣りの渡し忘れ',
       }),
     ],
+  },
+}
+
+/** Seen by an account that gives payments back: those that were received link to the screen that does */
+export const GivenBackByOwner: Story = {
+  args: {
+    payments: [
+      aPayment({
+        status: 'refunded',
+        refundAmount: 3000,
+        refundedAt: moment(90),
+        refundReason: null,
+      }),
+      ...aPaidSale().payments.slice(1),
+    ],
+    refundHrefOf: ({ id, status }) =>
+      status === 'completed' ? `/payments/${id}/refund` : undefined,
   },
 }

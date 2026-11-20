@@ -62,23 +62,31 @@ export const voidSale = (id: string): Promise<unknown> =>
     [id],
   )
 
-/** Lets a sale be paid in full in cash, as the counter would have done it meanwhile. */
-export const paySale = (id: string): Promise<unknown> =>
-  testApi().query(
-    `with paid as (
-       insert into payment_transactions ("saleId", "paymentMethodId", "transactionNumber",
-                                         amount, status, "processedAt")
-       select sales.id, payment_methods.id, 'PT-TEST-' || left(sales.id::text, 8),
-              sales."totalAmount", 'completed', now()
-       from sales
-       join payment_methods on payment_methods."salonId" = sales."salonId"
-                           and payment_methods.method = 'cash'
-       where sales.id = $1
-       returning "saleId"
-     )
-     update sales set "paymentStatus" = 'completed' from paid where sales.id = paid."saleId"`,
-    [id],
-  )
+/**
+ * Lets a sale be paid in full in cash, as the counter would have done it
+ * meanwhile, and answers the ID of the payment.
+ */
+export const paySale = async (id: string): Promise<string> =>
+  idsSchema.parse(
+    await testApi().query(
+      `with paid as (
+         insert into payment_transactions ("saleId", "paymentMethodId", "transactionNumber",
+                                           amount, status, "processedAt")
+         select sales.id, payment_methods.id, 'PT-TEST-' || left(sales.id::text, 8),
+                sales."totalAmount", 'completed', now()
+         from sales
+         join payment_methods on payment_methods."salonId" = sales."salonId"
+                             and payment_methods.method = 'cash'
+         where sales.id = $1
+         returning id, "saleId"
+       ), stated as (
+         update sales set "paymentStatus" = 'completed', "updatedAt" = now()
+         from paid where sales.id = paid."saleId"
+       )
+       select id::text from paid`,
+      [id],
+    ),
+  )[0].id
 
 const storedSaleSchema = z.tuple([
   z.object({
@@ -153,6 +161,77 @@ export const storedPaymentsOf = async (saleId: string) =>
        join payment_methods on payment_methods.id = payment_transactions."paymentMethodId"
        where payment_transactions."saleId" = $1
        order by payment_transactions."createdAt", payment_transactions.id`,
+      [saleId],
+    ),
+  )
+
+/** Lets every payment of a sale be given back whole, as the owner would have done it meanwhile. */
+export const refundSale = (id: string): Promise<unknown> =>
+  testApi().query(
+    `with given as (
+       update payment_transactions
+       set status = 'refunded', "refundAmount" = amount, "refundedAt" = now(),
+           "refundReason" = '返金済み'
+       where "saleId" = $1
+       returning "saleId"
+     )
+     update sales set "paymentStatus" = 'refunded'
+     where id = $1 and exists (select from given)`,
+    [id],
+  )
+
+const storedChangeSchema = z.tuple([
+  z.object({
+    staffCode: z.string().nullable(),
+    saleTime: z.string(),
+    saleDate: z.string(),
+    notes: z.string().nullable(),
+    paymentStatus: z.string(),
+    isVoid: z.boolean(),
+    voidReason: z.string().nullable(),
+    voided: z.boolean(),
+  }),
+])
+
+/**
+ * What a sale records beside what it bills, as it is stored: the member,
+ * the time on the clock in Tokyo, the day, the note, the state of its
+ * payment, and its voiding.
+ */
+export const storedRecordOf = async (id: string) =>
+  storedChangeSchema.parse(
+    await testApi().query(
+      `select staff."staffCode",
+              to_char(sales."saleTime" at time zone 'Asia/Tokyo', 'YYYY-MM-DD HH24:MI') as "saleTime",
+              to_char(sales."saleDate", 'YYYY-MM-DD') as "saleDate", sales.notes,
+              sales."paymentStatus"::text, sales."isVoid", sales."voidReason",
+              sales."voidedAt" is not null as voided
+       from sales
+       left join staff on staff.id = sales."staffId"
+       where sales.id = $1`,
+      [id],
+    ),
+  )[0]
+
+const storedRefundsSchema = z.array(
+  z.object({
+    amount: z.number(),
+    status: z.string(),
+    refundAmount: z.number().nullable(),
+    refundReason: z.string().nullable(),
+    refunded: z.boolean(),
+  }),
+)
+
+/** What was given back of the payments of a sale, as it is stored, in the order they were recorded. */
+export const storedRefundsOf = async (saleId: string) =>
+  storedRefundsSchema.parse(
+    await testApi().query(
+      `select amount, status::text, "refundAmount", "refundReason",
+              "refundedAt" is not null as refunded
+       from payment_transactions
+       where "saleId" = $1
+       order by "createdAt", id`,
       [saleId],
     ),
   )
