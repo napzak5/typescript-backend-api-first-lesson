@@ -16,7 +16,7 @@ export type CardProps = {
    * focus to its heading, and the keyboard goes on from the top of the card
    */
   headingRef?: Ref<HTMLHeadingElement> | undefined
-  /** What can be done with what the card holds: 「編集」 */
+  /** What can be done with what the card holds: 「編集」, beside the heading where there is room and below it where there is not */
   actions?: ReactNode
   children: ReactNode
   className?: string | undefined

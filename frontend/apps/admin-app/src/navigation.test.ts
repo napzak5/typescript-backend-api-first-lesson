@@ -19,6 +19,10 @@ import {
   saleChangeHrefOf,
   salesHrefOf,
   salonIdIn,
+  staffChangeHrefOf,
+  staffEntryHrefOf,
+  staffLedgerHrefOf,
+  staffMemberHrefOf,
   treatmentChangeHrefOf,
   treatmentEntryHrefOf,
   treatmentHrefOf,
@@ -33,10 +37,12 @@ const BOOKINGS = `/salons/${SALON_ID}/bookings`
 const SALES = `/salons/${SALON_ID}/sales`
 const CUSTOMERS = `/salons/${SALON_ID}/customers`
 const TREATMENTS = `/salons/${SALON_ID}/treatments`
+const STAFF = `/salons/${SALON_ID}/staff`
 
 type Role = ModelsUserResponse['role']
 
-const MEMBERS: Role[] = ['owner', 'manager', 'staff']
+/** The roles of a salon that do not keep its staff ledger */
+const SHIFT_ROLES: Role[] = ['manager', 'staff']
 
 const NO_LINKS: [string, Role | undefined][] = [
   ['nobody is signed in', undefined],
@@ -61,13 +67,14 @@ describe('salonIdIn', () => {
 })
 
 describe('navigationFor', () => {
-  it('should lead an administrator to the choice of a salon, and to the bookings, the sales, the customers and the treatment records of the salon chosen', () => {
+  it('should lead an administrator to the choice of a salon, and to the bookings, the sales, the customers, the treatment records and the staff of the salon chosen', () => {
     expect(navigationFor('admin', `${BOOKINGS}/x`)).toEqual([
       { href: '/', label: 'サロンを選ぶ', current: false },
       { href: BOOKINGS, label: '予約', current: true },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
+      { href: STAFF, label: 'スタッフ', current: false },
     ])
   })
 
@@ -77,14 +84,32 @@ describe('navigationFor', () => {
     ])
   })
 
-  it.each(MEMBERS)(
-    'should lead a member of the staff (%s) to the bookings of the salon of the address',
+  it.each(SHIFT_ROLES)(
+    'should lead a member of the staff (%s) to the bookings of the salon of the address, and not to the staff ledger',
     (role) => {
       expect(navigationFor(role, BOOKINGS)).toEqual([
         { href: BOOKINGS, label: '予約', current: true },
         { href: SALES, label: '売上', current: false },
         { href: CUSTOMERS, label: '顧客', current: false },
         { href: TREATMENTS, label: '施術記録', current: false },
+      ])
+    },
+  )
+
+  it.each<[string, string]>([
+    ['the ledger', STAFF],
+    ['the registration of a member', staffEntryHrefOf(SALON_ID)],
+    ['a member', staffMemberHrefOf(SALON_ID, 'x')],
+    ['the change of a member', staffChangeHrefOf(SALON_ID, 'x')],
+  ])(
+    'should lead the owner to the staff ledger as well, and mark it as the screen of %s',
+    (_case, pathname) => {
+      expect(navigationFor('owner', pathname)).toEqual([
+        { href: BOOKINGS, label: '予約', current: false },
+        { href: SALES, label: '売上', current: false },
+        { href: CUSTOMERS, label: '顧客', current: false },
+        { href: TREATMENTS, label: '施術記録', current: false },
+        { href: STAFF, label: 'スタッフ', current: true },
       ])
     },
   )
@@ -105,6 +130,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
+      { href: STAFF, label: 'スタッフ', current: false },
     ])
   })
 
@@ -191,6 +217,20 @@ describe('navigationFor', () => {
       `${TREATMENTS}/record/edit`,
       `${TREATMENTS}/record/photos/new`,
       `${TREATMENTS}/statistics`,
+    ])
+  })
+
+  it('should write the addresses of the staff ledger', () => {
+    expect([
+      staffLedgerHrefOf(SALON_ID),
+      staffEntryHrefOf(SALON_ID),
+      staffMemberHrefOf(SALON_ID, 'member'),
+      staffChangeHrefOf(SALON_ID, 'member'),
+    ]).toEqual([
+      STAFF,
+      `${STAFF}/new`,
+      `${STAFF}/member`,
+      `${STAFF}/member/edit`,
     ])
   })
 

@@ -51,6 +51,10 @@ import { RefundScreen } from './sales/refund-screen'
 import { SaleChangeScreen } from './sales/sale-change-screen'
 import { SaleScreen } from './sales/sale-screen'
 import { SalesLedgerScreen } from './sales/sales-ledger-screen'
+import { StaffChangeScreen } from './staff/staff-change-screen'
+import { StaffEntryScreen } from './staff/staff-entry-screen'
+import { StaffLedgerScreen } from './staff/staff-ledger-screen'
+import { StaffMemberScreen } from './staff/staff-member-screen'
 import { TreatmentChangeScreen } from './treatments/treatment-change-screen'
 import { TreatmentEntryScreen } from './treatments/treatment-entry-screen'
 import { TreatmentPhotosScreen } from './treatments/treatment-photos-screen'
@@ -284,6 +288,22 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/treatments/:treatmentId/photos/new'
                 element={<TreatmentPhotosScreen />}
+              />
+              <Route
+                path='/salons/:salonId/staff'
+                element={<StaffLedgerScreen />}
+              />
+              <Route
+                path='/salons/:salonId/staff/new'
+                element={<StaffEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/staff/:staffId'
+                element={<StaffMemberScreen />}
+              />
+              <Route
+                path='/salons/:salonId/staff/:staffId/edit'
+                element={<StaffChangeScreen />}
               />
               <Route
                 path={SECURITY_PATH}
