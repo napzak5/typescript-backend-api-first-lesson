@@ -14,7 +14,9 @@ export default defineConfig({
     },
   },
   test: {
-    // The package runs in a browser: it keeps the session in `localStorage`
+    // The package runs in a browser: it keeps the session in `localStorage`,
+    // and saves the files a page made
     environment: 'jsdom',
+    setupFiles: ['@beauty-salon-frontend/testing/setup'],
   },
 })
