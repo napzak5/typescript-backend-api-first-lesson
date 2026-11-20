@@ -1,17 +1,24 @@
 import {
   type ModelsCustomerResponse,
+  type ModelsTreatmentPhotoBulkCreateRequest,
+  type ModelsTreatmentPhotoResponse,
   type ModelsTreatmentRecordCreateRequest,
   type ModelsTreatmentRecordResponse,
   type ModelsTreatmentRecordUpdateRequest,
+  type ModelsTreatmentStatisticsResponse,
   type TreatmentRecordCrudListParams,
+  treatmentRecordCrudAddPhotos,
   treatmentRecordCrudCreate,
   treatmentRecordCrudDelete,
   treatmentRecordCrudGet,
+  treatmentRecordCrudGetStatistics,
   treatmentRecordCrudList,
+  treatmentRecordCrudRemovePhoto,
   treatmentRecordCrudUpdate,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod'
+import type { Period } from '../customers/customer-statistics'
 import { readCustomers } from '../customers/customers-api'
 import { outsideTheContract } from '../outside-the-contract'
 import {
@@ -321,4 +328,124 @@ export const removeTreatment = async (
     .with({ status: 403 }, () => FORBIDDEN)
     .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
     .exhaustive(outsideTheContract)
+}
+
+/** What came of photos that were to be added to a record. */
+export type PhotosAdding =
+  | { type: 'added'; photos: ModelsTreatmentPhotoResponse[] }
+  | { type: 'invalid'; values: RefusedValue[] }
+  /**
+   * The record holds a photo at an address of the request, or has no room
+   * for them: it was read again, as it is now
+   */
+  | { type: 'held'; record: ModelsTreatmentRecordResponse }
+  /** The record was removed meanwhile */
+  | NotFound
+  | Forbidden
+  | Unread
+
+/**
+ * Adds photos to a record, all of them or none (`POST /treatments/{id}/photos`).
+ * The API answers 409 both for an address the record holds and for more
+ * photos than it has room for: the record is read again, to tell which.
+ */
+export const addTreatmentPhotos = async (
+  id: string,
+  request: ModelsTreatmentPhotoBulkCreateRequest,
+): Promise<PhotosAdding> => {
+  const answer = await treatmentRecordCrudAddPhotos(id, request).catch(
+    () => null,
+  )
+  if (answer?.status === 409) {
+    const read = await readTreatment(id)
+
+    return read.type === 'found' ? { type: 'held', record: read.record } : read
+  }
+
+  return match(answer)
+    .returnType<PhotosAdding>()
+    .with({ status: 201 }, ({ data }) => ({
+      type: 'added',
+      photos: data.data.created,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** What came of a photo that was to be taken away from a record. */
+export type PhotoRemoval =
+  | { type: 'removed' }
+  /** The photo, or the record, was taken away meanwhile */
+  | NotFound
+  | Forbidden
+  | Unread
+
+/** Takes a photo away from a record (`DELETE /treatments/{id}/photos/{photoId}`). */
+export const removeTreatmentPhoto = async (
+  id: string,
+  photoId: string,
+): Promise<PhotoRemoval> => {
+  const answer = await treatmentRecordCrudRemovePhoto(id, photoId).catch(
+    () => null,
+  )
+
+  return match(answer)
+    .returnType<PhotoRemoval>()
+    .with({ status: 204 }, () => ({ type: 'removed' }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** The key of the statistics of a period: below the lists, which a write takes away */
+export const treatmentStatisticsKeyOf = (
+  salonId: string,
+  { from, to }: Period,
+): string[] => [...TREATMENT_LISTS, 'statistics', salonId, from, to]
+
+export type TreatmentStatisticsRead =
+  | { type: 'found'; statistics: ModelsTreatmentStatisticsResponse }
+  | Unread
+
+/**
+ * The records a salon wrote over a period, counted
+ * (`GET /treatments/statistics`): the days at the salon, as the list
+ * takes them.
+ */
+export const readTreatmentStatistics = async (
+  salonId: string,
+  period: Period,
+  timezone: string,
+): Promise<TreatmentStatisticsRead> => {
+  const { startDate, endDate } = treatmentListParamsOf(
+    salonId,
+    period,
+    timezone,
+  )
+  const answer = await treatmentRecordCrudGetStatistics({
+    salonId,
+    ...(startDate === undefined ? {} : { startDate }),
+    ...(endDate === undefined ? {} : { endDate }),
+  }).catch(() => null)
+
+  return (
+    match(answer)
+      .returnType<TreatmentStatisticsRead>()
+      .with({ status: 200 }, ({ data }) => ({
+        type: 'found',
+        statistics: data.data,
+      }))
+      // The screens of a salon are behind the same permission as its records
+      .with({ status: 403 }, () => FAILED)
+      .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+      .exhaustive(outsideTheContract)
+  )
 }

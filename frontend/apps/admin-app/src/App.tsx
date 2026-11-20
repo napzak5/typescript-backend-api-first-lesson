@@ -53,7 +53,9 @@ import { SaleScreen } from './sales/sale-screen'
 import { SalesLedgerScreen } from './sales/sales-ledger-screen'
 import { TreatmentChangeScreen } from './treatments/treatment-change-screen'
 import { TreatmentEntryScreen } from './treatments/treatment-entry-screen'
+import { TreatmentPhotosScreen } from './treatments/treatment-photos-screen'
 import { TreatmentScreen } from './treatments/treatment-screen'
+import { TreatmentStatisticsScreen } from './treatments/treatment-statistics-screen'
 import { TreatmentsScreen } from './treatments/treatments-screen'
 
 /** Who this application is for: the people who work at a salon, and the operator of the platform */
@@ -268,12 +270,20 @@ export const App = () => {
                 element={<TreatmentsScreen />}
               />
               <Route
+                path='/salons/:salonId/treatments/statistics'
+                element={<TreatmentStatisticsScreen />}
+              />
+              <Route
                 path='/salons/:salonId/treatments/:treatmentId'
                 element={<TreatmentScreen />}
               />
               <Route
                 path='/salons/:salonId/treatments/:treatmentId/edit'
                 element={<TreatmentChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/treatments/:treatmentId/photos/new'
+                element={<TreatmentPhotosScreen />}
               />
               <Route
                 path={SECURITY_PATH}

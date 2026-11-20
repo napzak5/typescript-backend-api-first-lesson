@@ -7,6 +7,7 @@ const meta: Meta<typeof StatisticsPeriod> = {
   component: StatisticsPeriod,
   args: {
     period: { from: '2025-11-20', to: '2026-11-20' },
+    description: '366 日まで集計できます。',
     onSubmit: fn(),
   },
 }

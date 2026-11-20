@@ -37,8 +37,8 @@ export const periodIn = (query: URLSearchParams, today: string): Period => {
 
 const DAY_ERROR = '日付を入力してください。'
 
-/** The period that was filled in: both days, the end not before the start, no longer than the API counts over. */
-export const readPeriod = (values: FormData): Read<Period> => {
+/** The days that were filled in: both of them, the end not before the start. */
+export const readDays = (values: FormData): Read<Period> => {
   const from = textOf(values, 'from').trim()
   const to = textOf(values, 'to').trim()
   const errors = {
@@ -57,12 +57,19 @@ export const readPeriod = (values: FormData): Read<Period> => {
     }
   }
 
-  return daysOf({ from, to }) > MOST_DAYS
+  return { type: 'valid', request: { from, to } }
+}
+
+/** The period that was filled in: the days, no more of them than the API counts over. */
+export const readPeriod = (values: FormData): Read<Period> => {
+  const days = readDays(values)
+
+  return days.type === 'valid' && daysOf(days.request) > MOST_DAYS
     ? {
         type: 'invalid',
         errors: { to: `期間は ${MOST_DAYS} 日までにしてください。` },
       }
-    : { type: 'valid', request: { from, to } }
+    : days
 }
 
 /** The query that keeps a period in an address. */

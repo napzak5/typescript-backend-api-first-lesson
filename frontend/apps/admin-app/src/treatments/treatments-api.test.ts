@@ -1,13 +1,17 @@
+import type { ModelsTreatmentPhotoCreateRequest } from '@beauty-salon-frontend/api-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { salon } from '../bookings/components/examples'
-import { aTreatment } from './components/examples'
+import { aPhoto, aTreatment } from './components/examples'
 import {
+  addTreatmentPhotos,
   createTreatment,
   findTreatmentOfBooking,
   readTreatment,
   readTreatmentPage,
+  readTreatmentStatistics,
   removeTreatment,
+  removeTreatmentPhoto,
   treatmentListParamsOf,
   updateTreatment,
 } from './treatments-api'
@@ -314,5 +318,172 @@ describe('removeTreatment', () => {
 
     // Assert
     expect(outcome).toEqual({ type })
+  })
+})
+
+const photo: ModelsTreatmentPhotoCreateRequest = {
+  photoType: 'after',
+  photoUrl: 'https://photos.example.com/a.jpg',
+  thumbnailUrl: null,
+  angle: null,
+  description: null,
+  isPublic: false,
+  customerConsent: true,
+  sortOrder: 0,
+}
+
+describe('addTreatmentPhotos', () => {
+  it.each<[string, () => Response, string]>([
+    ['403', () => problem(403), 'forbidden'],
+    ['413', () => problem(413), 'failed'],
+    ['415', () => problem(415), 'failed'],
+  ])('should take %s as %s', async (_, answer, type) => {
+    // Arrange
+    answering(answer)
+
+    // Act
+    const outcome = await addTreatmentPhotos(record.id, { photos: [photo] })
+
+    // Assert
+    expect(outcome).toEqual({ type })
+  })
+
+  it.each(UNREAD)('should add nothing after %s', async (_, answer, type) => {
+    // Arrange
+    answering(answer)
+
+    // Act
+    const outcome = await addTreatmentPhotos(record.id, { photos: [photo] })
+
+    // Assert
+    expect(outcome).toEqual({ type })
+  })
+
+  it.each<[string, () => Response, string]>([
+    ['removed', () => problem(404), 'notFound'],
+    ['unread', () => problem(429), 'tooManyRequests'],
+  ])(
+    'should take a record %s after a 409 as it was read',
+    async (_, answer, type) => {
+      // Arrange
+      answering((request) =>
+        request.method === 'POST' ? problem(409) : answer(),
+      )
+
+      // Act
+      const outcome = await addTreatmentPhotos(record.id, { photos: [photo] })
+
+      // Assert
+      expect(outcome).toEqual({ type })
+    },
+  )
+})
+
+describe('removeTreatmentPhoto', () => {
+  it.each<[string, () => Response, string]>([
+    ['403', () => problem(403), 'forbidden'],
+    ['400', () => problem(400), 'failed'],
+  ])('should take %s as %s', async (_, answer, type) => {
+    // Arrange
+    answering(answer)
+
+    // Act
+    const outcome = await removeTreatmentPhoto(record.id, aPhoto().id)
+
+    // Assert
+    expect(outcome).toEqual({ type })
+  })
+
+  it.each(UNREAD)(
+    'should take nothing away after %s',
+    async (_, answer, type) => {
+      // Arrange
+      answering(answer)
+
+      // Act
+      const outcome = await removeTreatmentPhoto(record.id, aPhoto().id)
+
+      // Assert
+      expect(outcome).toEqual({ type })
+    },
+  )
+})
+
+describe('readTreatmentStatistics', () => {
+  it('should count the records of the salon from the start of the first day to the end of the last, at the salon', async () => {
+    // Arrange
+    const fetched = answering(() =>
+      json(200, {
+        data: {
+          totalTreatments: 0,
+          treatmentsByCategory: [],
+          averageProcessingTime: null,
+          topServices: [],
+        },
+        links: { self: '/' },
+      }),
+    )
+
+    // Act
+    const read = await readTreatmentStatistics(
+      salon.id,
+      { from: '2026-11-01', to: '2026-11-20' },
+      'Asia/Tokyo',
+    )
+
+    // Assert
+    expect(read).toEqual({
+      type: 'found',
+      statistics: {
+        totalTreatments: 0,
+        treatmentsByCategory: [],
+        averageProcessingTime: null,
+        topServices: [],
+      },
+    })
+    expect(
+      fetched.mock.calls.map(([asked]) =>
+        Object.fromEntries(new URL(new Request(asked).url).searchParams),
+      ),
+    ).toEqual([
+      {
+        salonId: salon.id,
+        startDate: '2026-10-31T15:00:00.000Z',
+        endDate: '2026-11-20T14:59:59.999Z',
+      },
+    ])
+  })
+
+  it.each<[string, () => Response]>([
+    ['403', () => problem(403)],
+    ['400', () => problem(400)],
+  ])('should read nothing after %s', async (_, answer) => {
+    // Arrange
+    answering(answer)
+
+    // Act
+    const read = await readTreatmentStatistics(
+      salon.id,
+      { from: '2026-11-01', to: '2026-11-20' },
+      'Asia/Tokyo',
+    )
+
+    // Assert
+    expect(read).toEqual({ type: 'failed' })
+  })
+
+  it.each(UNREAD)('should read nothing after %s', async (_, answer, type) => {
+    // Arrange
+    answering(answer)
+
+    // Act
+    const read = await readTreatmentStatistics(
+      salon.id,
+      { from: '2026-11-01', to: '2026-11-20' },
+      'Asia/Tokyo',
+    )
+
+    // Assert
+    expect(read).toEqual({ type })
   })
 })

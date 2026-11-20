@@ -22,6 +22,8 @@ import {
   treatmentChangeHrefOf,
   treatmentEntryHrefOf,
   treatmentHrefOf,
+  treatmentPhotosHrefOf,
+  treatmentStatisticsHrefOf,
   treatmentsHrefOf,
   treatmentsOfCustomerHrefOf,
 } from './navigation'
@@ -148,6 +150,8 @@ describe('navigationFor', () => {
     ['the records of a customer', treatmentsOfCustomerHrefOf(SALON_ID, 'x')],
     ['a record', treatmentHrefOf(SALON_ID, 'x')],
     ['the change of a record', treatmentChangeHrefOf(SALON_ID, 'x')],
+    ['the photos added to a record', treatmentPhotosHrefOf(SALON_ID, 'x')],
+    ['the statistics', treatmentStatisticsHrefOf(SALON_ID)],
   ])(
     'should mark the treatment records as the screen of %s',
     (_case, address) => {
@@ -178,11 +182,15 @@ describe('navigationFor', () => {
       treatmentsOfCustomerHrefOf(SALON_ID, 'customer'),
       treatmentHrefOf(SALON_ID, 'record'),
       treatmentChangeHrefOf(SALON_ID, 'record'),
+      treatmentPhotosHrefOf(SALON_ID, 'record'),
+      treatmentStatisticsHrefOf(SALON_ID),
     ]).toEqual([
       TREATMENTS,
       `${TREATMENTS}?customer=customer`,
       `${TREATMENTS}/record`,
       `${TREATMENTS}/record/edit`,
+      `${TREATMENTS}/record/photos/new`,
+      `${TREATMENTS}/statistics`,
     ])
   })
 

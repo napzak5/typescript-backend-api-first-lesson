@@ -5,6 +5,7 @@ import {
   periodIn,
   periodNameOf,
   periodQueryOf,
+  readDays,
   readPeriod,
 } from './customer-statistics'
 
@@ -92,6 +93,26 @@ describe('readPeriod', () => {
   ])('should say what is wrong with %s', (_case, from, to, errors) => {
     // Act, Assert
     expect(readPeriod(formOf(from, to))).toEqual({ type: 'invalid', errors })
+  })
+})
+
+describe('readDays', () => {
+  it('should read days as many as they are', () => {
+    // Act, Assert
+    expect(readDays(formOf('2020-01-01', '2026-11-20'))).toEqual({
+      type: 'valid',
+      request: { from: '2020-01-01', to: '2026-11-20' },
+    })
+  })
+
+  it('should say what is wrong with an end before the start', () => {
+    // Act, Assert
+    expect(readDays(formOf('2026-11-20', '2026-11-19'))).toEqual({
+      type: 'invalid',
+      errors: {
+        to: '終わりの日は、始まりの日と同じか、その後にしてください。',
+      },
+    })
   })
 })
 

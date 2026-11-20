@@ -17,7 +17,12 @@ import { useParams, useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { WithStaffAndServices } from '../bookings/with-booking'
 import { customerKeyOf, readCustomer } from '../customers/customers-api'
-import { bookingsHrefOf, customerHrefOf, treatmentHrefOf } from '../navigation'
+import {
+  bookingsHrefOf,
+  customerHrefOf,
+  treatmentHrefOf,
+  treatmentStatisticsHrefOf,
+} from '../navigation'
 import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
 import { unreadMessageOf } from '../reading'
 import { WithSalon } from '../salons/with-salon'
@@ -176,7 +181,18 @@ export const TreatmentsScreen = () => {
     <WithSalon salonId={salonId} title={TITLE}>
       {(salon) => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
+          <PageHeader
+            title={TITLE}
+            description={salon.name}
+            actions={
+              <ButtonLink
+                href={treatmentStatisticsHrefOf(salon.id)}
+                variant='secondary'
+              >
+                施術の統計
+              </ButtonLink>
+            }
+          />
           <WithStaffAndServices salonId={salon.id} label='スタッフとメニュー'>
             {(staff, services) => (
               <TreatmentList
