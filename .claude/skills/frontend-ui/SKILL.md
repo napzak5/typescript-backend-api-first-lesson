@@ -1789,8 +1789,8 @@ the staff ledger (`staff/introduction.ts`,
 ### A menu that some roles keep: what is below what, and what a removal leaves
 
 The menu is the example to read: `menu-screen.tsx`, `service-screen.tsx`,
-the screens of a category, `menu-api.ts`, `menu-format.ts` and
-`category-form.ts`.
+the screens of a service and of a category, `menu-api.ts`,
+`menu-format.ts`, `service-form.ts` and `category-form.ts`.
 
 - **Two lists that make one screen are matched together**
   (`menuOf`): a refusal of either is said as soon as it comes, that of
@@ -1808,6 +1808,15 @@ the screens of a category, `menu-api.ts`, `menu-format.ts` and
   every list the record was in.
 - **A form compares against what it was opened with**: the record of a
   form that changes it is not read again when the window comes back.
+- **A box that makes a record of other records opens their rows**
+  (`ServiceForm`): checking it adds as many empty rows as the fewest the
+  API takes, and the rows are read only while it is checked. Clearing it
+  sends the empty list with it, so the API is asked for what is undone in
+  one request. A record that cannot be one (a service in a package) is
+  offered a sentence that says why, not a box.
+- **A removal refused for what holds the record (409) names it**: the
+  lists are read again and the refusal is said above the form with what
+  holds the record now and what to do first (`inUseMessageOf`).
 
 ## Screens that a mailed link opens
 

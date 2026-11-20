@@ -173,6 +173,9 @@ describe('the menu, against the API', () => {
       screen.queryByRole('link', { name: 'カテゴリーを足す' }),
     ).not.toBeInTheDocument()
     expect(
+      screen.queryByRole('link', { name: 'サービスを足す' }),
+    ).not.toBeInTheDocument()
+    expect(
       within(
         screen.getByRole('navigation', { name: 'メインメニュー' }),
       ).getByRole('link', { name: 'メニュー' }),
@@ -590,7 +593,7 @@ describe('the menu, against the API', () => {
     // Assert
     expect(
       await screen.findByText(
-        'メニューのカテゴリーは、変えられません。メニューを変えられるのは、サロンのオーナーとマネージャーと、管理者です。',
+        'このアカウントでは、メニューを変えられません。メニューを変えられるのは、サロンのオーナーとマネージャーと、管理者です。',
       ),
     ).toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()

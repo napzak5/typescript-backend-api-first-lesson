@@ -1,0 +1,65 @@
+/* A part of the form, under its name: further from the part before it than its controls are from each other */
+.part {
+  padding-block-start: var(--space-2);
+}
+
+/*
+ * A browser sets the legend of a fieldset apart from what the fieldset
+ * lays out, so the gap below the name is the name's own.
+ */
+.name {
+  margin-block-end: var(--space-3);
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+/* The controls of a part, one below the other */
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* An option, or a service of the package: a framed group of its own */
+.row {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+}
+
+.rowName {
+  padding-inline: var(--space-2);
+  font-weight: var(--font-weight-bold);
+}
+
+.rowControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* Two values that are read together: one below the other, side by side where there is room */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+/* The buttons are as wide as their words */
+.remove,
+.add {
+  justify-self: start;
+}
+
+@media (min-width: 40rem) {
+  .pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

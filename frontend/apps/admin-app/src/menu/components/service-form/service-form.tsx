@@ -1,0 +1,565 @@
+import type {
+  ModelsServiceCategoryResponse,
+  ModelsServiceOption,
+  ModelsServiceResponse,
+} from '@beauty-salon-frontend/api-client'
+import {
+  Button,
+  Checkbox,
+  CheckboxGroup,
+  Form,
+  type FormErrors,
+  type FormProps,
+  Select,
+  TextArea,
+  TextField,
+} from '@beauty-salon-frontend/ui'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { tagsTextOf } from '../../../customers/customer-ledger'
+import { LEVELS, levelNameOf } from '../../../staff/staff-format'
+import {
+  AVAILABILITY_OPTIONS,
+  categoriesById,
+  categoryPathOf,
+  OPTION_TYPE_OPTIONS,
+  PRICING_OPTIONS,
+  packagedChoicesOf,
+  packagesOf,
+  REQUIREMENT_OPTIONS,
+  SERVICE_STATUS_OPTIONS,
+} from '../../menu-format'
+import {
+  FEWEST_PACKAGED,
+  MOST_PACKAGED,
+  optionControlOf,
+  packagedControlOf,
+} from '../../service-form'
+import styles from './service-form.module.css'
+
+export type ServiceFormProps = Pick<
+  FormProps,
+  'submitLabel' | 'message' | 'pending' | 'actions' | 'onSubmit'
+> & {
+  /**
+   * The service the form opens with. `null` for a new one: the form then
+   * opens with a service of no category that is switched on, given every
+   * day, booked online, and last in the menu
+   */
+  service: ModelsServiceResponse | null
+  /** The categories of the salon, in the order of the menu */
+  categories: readonly ModelsServiceCategoryResponse[]
+  /** The services of the salon, in the order of the menu: what a package is made of */
+  services: readonly ModelsServiceResponse[]
+  /** Where a new service goes in the order of the menu */
+  sortOrder: number
+  /**
+   * What is wrong with the values, under the names of the controls; a
+   * row's under `options.<n>.<name>` or `packageServiceIds.<n>`. A new
+   * object is the answer to another attempt
+   */
+  errors?: FormErrors | undefined
+}
+
+/** A row of the form: what it opened with, if anything */
+type Row<Shown> = { key: number; shown: Shown | undefined }
+
+/** Where the focus goes after a row was added or taken away */
+type Focus =
+  | { type: 'row'; key: number }
+  | { type: 'addOption' }
+  | { type: 'addPackaged' }
+  | undefined
+
+const NO_ERRORS: FormErrors = {}
+
+const LEVEL_CHOICES = LEVELS.map((level) => ({
+  value: level,
+  label: `${levelNameOf(level)}以上`,
+}))
+
+const rowsOf = <Shown,>(shown: readonly Shown[], from = 0): Row<Shown>[] =>
+  shown.map((one, index) => ({ key: from + index, shown: one }))
+
+/**
+ * Everything the menu keeps of a service, in parts: the service, its time
+ * and price, when it is given, how it is booked, its pictures, the
+ * services of a package, and its options. The options and the services of
+ * a package are rows that are added at the end, where the first control of
+ * a new row takes the focus, and taken away, when the button that adds one
+ * takes it. The browser keeps the values of a row, so the rows that stay
+ * keep what was written in them.
+ *
+ * The services of a package are offered once the box that makes it is
+ * checked, with two rows to choose in; a service that is one of the
+ * services of a package is offered no box, for the API makes no package of
+ * it. An error names a row by its number, and taking a row away renumbers
+ * the rows after it: the errors of the rows are shown until a row is taken
+ * away, and again after the next attempt.
+ */
+export const ServiceForm = ({
+  service,
+  categories,
+  services,
+  sortOrder,
+  errors = NO_ERRORS,
+  ...form
+}: ServiceFormProps) => {
+  const byId = categoriesById(categories)
+  const choices = packagedChoicesOf(services, service?.id ?? null).map(
+    (choice) => ({ value: choice.id, label: choice.name }),
+  )
+  const containers =
+    service === null || service.isPackage
+      ? []
+      : packagesOf(services, service.id)
+  const [options, setOptions] = useState<Row<ModelsServiceOption>[]>(() =>
+    rowsOf(service?.options ?? []),
+  )
+  const [packaged, setPackaged] = useState<Row<string>[]>(() =>
+    rowsOf(service?.packageServiceIds ?? [], options.length),
+  )
+  const [isPackage, setIsPackage] = useState(service?.isPackage ?? false)
+  const [nextKey, setNextKey] = useState(options.length + packaged.length)
+  const [focus, setFocus] = useState<Focus>()
+  const [outdated, setOutdated] = useState<FormErrors | undefined>(undefined)
+  const said = errors === outdated ? NO_ERRORS : errors
+  const groups = useRef(new Map<number, HTMLFieldSetElement>())
+  const addOption = useRef<HTMLButtonElement>(null)
+  const addPackaged = useRef<HTMLButtonElement>(null)
+
+  useLayoutEffect(() => {
+    if (focus?.type === 'row') {
+      groups.current
+        .get(focus.key)
+        ?.querySelector<HTMLElement>('input, select')
+        ?.focus()
+    }
+    if (focus?.type === 'addOption') {
+      addOption.current?.focus()
+    }
+    if (focus?.type === 'addPackaged') {
+      addPackaged.current?.focus()
+    }
+  }, [focus])
+
+  const groupRef =
+    (key: number) =>
+    (group: HTMLFieldSetElement | null): void => {
+      if (group === null) {
+        groups.current.delete(key)
+      } else {
+        groups.current.set(key, group)
+      }
+    }
+
+  const takeAway = (key: number, next: Focus): void => {
+    setOptions(options.filter((row) => row.key !== key))
+    setPackaged(packaged.filter((row) => row.key !== key))
+    setOutdated(errors)
+    setFocus(next)
+  }
+
+  const add = (to: 'options' | 'packaged'): void => {
+    if (to === 'options') {
+      setOptions([...options, { key: nextKey, shown: undefined }])
+    } else {
+      setPackaged([...packaged, { key: nextKey, shown: undefined }])
+    }
+    setNextKey(nextKey + 1)
+    setFocus({ type: 'row', key: nextKey })
+  }
+
+  const makePackage = (checked: boolean): void => {
+    setIsPackage(checked)
+    if (checked && packaged.length === 0) {
+      setPackaged(
+        Array.from({ length: FEWEST_PACKAGED }, (_, index) => ({
+          key: nextKey + index,
+          shown: undefined,
+        })),
+      )
+      setNextKey(nextKey + FEWEST_PACKAGED)
+    }
+  }
+
+  return (
+    <Form {...form} errors={errors}>
+      <fieldset className={styles['part']}>
+        <legend className={styles['name']}>サービス</legend>
+        <div className={styles['controls']}>
+          <TextField
+            label='名前'
+            name='name'
+            autoComplete='off'
+            required
+            description='255 文字まで。お客様のメニューに出ます。'
+            defaultValue={service?.name}
+            error={errors['name']}
+          />
+          <Select
+            label='カテゴリー'
+            name='categoryId'
+            placeholder='未分類'
+            options={categories.map((category) => ({
+              value: category.id,
+              label: categoryPathOf(category, byId),
+            }))}
+            defaultValue={service?.categoryId ?? ''}
+            error={errors['categoryId']}
+          />
+          <TextArea
+            label='短い紹介'
+            name='shortDescription'
+            rows={2}
+            description='500 文字まで。メニューの一覧に出ます。'
+            defaultValue={service?.shortDescription ?? undefined}
+            error={errors['shortDescription']}
+          />
+          <TextArea
+            label='説明'
+            name='description'
+            rows={4}
+            defaultValue={service?.description ?? undefined}
+            error={errors['description']}
+          />
+          <div className={styles['pair']}>
+            <TextField
+              label='タグ'
+              name='tags'
+              autoComplete='off'
+              description='「、」か「,」で区切って書きます。'
+              defaultValue={tagsTextOf(service?.tags ?? [])}
+              error={errors['tags']}
+            />
+            <TextField
+              label='表示順'
+              name='sortOrder'
+              inputMode='numeric'
+              autoComplete='off'
+              required
+              description='0 以上の整数。小さいものから並びます。'
+              defaultValue={String(service?.sortOrder ?? sortOrder)}
+              error={errors['sortOrder']}
+            />
+          </div>
+        </div>
+      </fieldset>
+      <fieldset className={styles['part']}>
+        <legend className={styles['name']}>時間と料金</legend>
+        <div className={styles['controls']}>
+          <div className={styles['pair']}>
+            <TextField
+              label='所要時間（分）'
+              name='duration'
+              inputMode='numeric'
+              autoComplete='off'
+              required
+              description='1 から 1440 までの整数。'
+              defaultValue={service === null ? '' : String(service.duration)}
+              error={errors['duration']}
+            />
+            <Select
+              label='価格の決め方'
+              name='pricingStrategy'
+              required
+              options={PRICING_OPTIONS}
+              defaultValue={service?.pricingStrategy ?? 'fixed'}
+              error={errors['pricingStrategy']}
+            />
+          </div>
+          <div className={styles['pair']}>
+            <TextField
+              label='料金'
+              name='price'
+              inputMode='numeric'
+              autoComplete='off'
+              required
+              description='0 以上の整数。'
+              defaultValue={service === null ? '' : String(service.price)}
+              error={errors['price']}
+            />
+            <TextField
+              label='割引後の料金'
+              name='discountPrice'
+              inputMode='numeric'
+              autoComplete='off'
+              description='料金以下の整数。割引がなければ、空のままにします。'
+              defaultValue={
+                service?.discountPrice === null ||
+                service?.discountPrice === undefined
+                  ? ''
+                  : String(service.discountPrice)
+              }
+              error={errors['discountPrice']}
+            />
+          </div>
+          <Checkbox
+            label='税込'
+            name='taxIncluded'
+            description='外すと、料金は税別です。'
+            defaultChecked={service?.taxIncluded ?? true}
+          />
+        </div>
+      </fieldset>
+      <fieldset className={styles['part']}>
+        <legend className={styles['name']}>提供</legend>
+        <div className={styles['controls']}>
+          <Checkbox
+            label='有効'
+            name='isActive'
+            description='外すと、お客様のメニューに出なくなり、予約できなくなります。'
+            defaultChecked={service?.isActive ?? true}
+          />
+          <div className={styles['pair']}>
+            <Select
+              label='提供の状態'
+              name='serviceStatus'
+              required
+              options={SERVICE_STATUS_OPTIONS}
+              description='お客様が予約できるのは、「有効」のサービスです。'
+              defaultValue={service?.serviceStatus ?? 'active'}
+              error={errors['serviceStatus']}
+            />
+            <Select
+              label='提供日'
+              name='availability'
+              required
+              options={AVAILABILITY_OPTIONS}
+              defaultValue={service?.availability ?? 'always'}
+              error={errors['availability']}
+            />
+          </div>
+        </div>
+      </fieldset>
+      <fieldset className={styles['part']}>
+        <legend className={styles['name']}>予約</legend>
+        <div className={styles['controls']}>
+          <Checkbox
+            label='オンライン予約を受ける'
+            name='allowOnlineBooking'
+            description='外すと、お客様が自分で予約できなくなります。サロンが入れる予約には使えます。'
+            defaultChecked={service?.allowOnlineBooking ?? true}
+          />
+          <Checkbox
+            label='カウンセリングが要る'
+            name='requiresConsultation'
+            defaultChecked={service?.requiresConsultation ?? false}
+          />
+          <div className={styles['pair']}>
+            <Select
+              label='担当できるスタッフ'
+              name='requiredStaffLevel'
+              placeholder='すべてのスタッフ'
+              options={LEVEL_CHOICES}
+              defaultValue={service?.requiredStaffLevel ?? ''}
+              error={errors['requiredStaffLevel']}
+            />
+            <TextField
+              label='1 日の予約の上限'
+              name='maxBookingsPerDay'
+              inputMode='numeric'
+              autoComplete='off'
+              description='1 以上の整数。上限がなければ、空のままにします。'
+              defaultValue={
+                service?.maxBookingsPerDay === null ||
+                service?.maxBookingsPerDay === undefined
+                  ? ''
+                  : String(service.maxBookingsPerDay)
+              }
+              error={errors['maxBookingsPerDay']}
+            />
+          </div>
+          <CheckboxGroup
+            label='予約の条件'
+            name='bookingRequirements'
+            layout='columns'
+            options={REQUIREMENT_OPTIONS}
+            defaultValue={service?.bookingRequirements ?? []}
+            error={errors['bookingRequirements']}
+          />
+        </div>
+      </fieldset>
+      <fieldset className={styles['part']}>
+        <legend className={styles['name']}>写真</legend>
+        <div className={styles['controls']}>
+          <TextField
+            label='写真の URL'
+            name='imageUrl'
+            type='url'
+            autoComplete='off'
+            description='http:// か https:// で始まる、500 文字までの URL。'
+            defaultValue={service?.imageUrl ?? undefined}
+            error={errors['imageUrl']}
+          />
+          <TextArea
+            label='ほかの写真の URL'
+            name='imageUrls'
+            rows={3}
+            description='1 行に 1 つ。http:// か https:// で始まる URL。'
+            defaultValue={(service?.imageUrls ?? []).join('\n')}
+            error={errors['imageUrls']}
+          />
+        </div>
+      </fieldset>
+      <fieldset className={styles['part']}>
+        <legend className={styles['name']}>パッケージ</legend>
+        <div className={styles['controls']}>
+          {containers.length > 0 ? (
+            <p className={styles['note']}>
+              {`このサービスは、パッケージ${containers.map(({ name }) => `「${name}」`).join('')}に入っているので、パッケージにできません。`}
+            </p>
+          ) : (
+            <Checkbox
+              label='パッケージにする'
+              name='isPackage'
+              description={`ほかのサービスを ${FEWEST_PACKAGED} 件から ${MOST_PACKAGED} 件まとめて、1 つのサービスにします。パッケージに入れられるのは、パッケージでないサービスです。`}
+              checked={isPackage}
+              onChange={(event) => makePackage(event.currentTarget.checked)}
+              error={errors['isPackage']}
+            />
+          )}
+          {isPackage &&
+            packaged.map((row, index) => (
+              <fieldset
+                key={row.key}
+                className={styles['row']}
+                ref={groupRef(row.key)}
+              >
+                <legend className={styles['rowName']}>
+                  {`構成サービス ${index + 1}`}
+                </legend>
+                <div className={styles['rowControls']}>
+                  <Select
+                    label='サービス'
+                    name={packagedControlOf(index)}
+                    placeholder='選んでください'
+                    required
+                    options={choices}
+                    defaultValue={row.shown ?? ''}
+                    error={said[packagedControlOf(index)]}
+                  />
+                  <Button
+                    className={styles['remove']}
+                    size='small'
+                    aria-label={`構成サービス ${index + 1} を外す`}
+                    onClick={() => takeAway(row.key, { type: 'addPackaged' })}
+                  >
+                    外す
+                  </Button>
+                </div>
+              </fieldset>
+            ))}
+          {isPackage && packaged.length < MOST_PACKAGED && (
+            <Button
+              className={styles['add']}
+              ref={addPackaged}
+              onClick={() => add('packaged')}
+            >
+              構成サービスを足す
+            </Button>
+          )}
+        </div>
+      </fieldset>
+      <fieldset className={styles['part']}>
+        <legend className={styles['name']}>オプション</legend>
+        <div className={styles['controls']}>
+          <p className={styles['note']}>
+            お客様が予約のときに足せるものです。並びの順に、お客様に出ます。
+          </p>
+          {options.map((row, index) => (
+            <fieldset
+              key={row.key}
+              className={styles['row']}
+              ref={groupRef(row.key)}
+            >
+              <legend className={styles['rowName']}>
+                {`オプション ${index + 1}`}
+              </legend>
+              <div className={styles['rowControls']}>
+                <TextField
+                  label='名前'
+                  name={optionControlOf(index, 'name')}
+                  autoComplete='off'
+                  required
+                  defaultValue={row.shown?.name}
+                  error={said[optionControlOf(index, 'name')]}
+                />
+                <div className={styles['pair']}>
+                  <Select
+                    label='種類'
+                    name={optionControlOf(index, 'optionType')}
+                    required
+                    options={OPTION_TYPE_OPTIONS}
+                    defaultValue={row.shown?.optionType ?? 'addon'}
+                    error={said[optionControlOf(index, 'optionType')]}
+                  />
+                  <TextField
+                    label='選べる数'
+                    name={optionControlOf(index, 'maxQuantity')}
+                    inputMode='numeric'
+                    autoComplete='off'
+                    required
+                    defaultValue={String(row.shown?.maxQuantity ?? 1)}
+                    error={said[optionControlOf(index, 'maxQuantity')]}
+                  />
+                </div>
+                <div className={styles['pair']}>
+                  <TextField
+                    label='追加の時間（分）'
+                    name={optionControlOf(index, 'additionalTime')}
+                    inputMode='numeric'
+                    autoComplete='off'
+                    required
+                    defaultValue={String(row.shown?.additionalTime ?? 0)}
+                    error={said[optionControlOf(index, 'additionalTime')]}
+                  />
+                  <TextField
+                    label='追加の料金'
+                    name={optionControlOf(index, 'additionalPrice')}
+                    inputMode='numeric'
+                    autoComplete='off'
+                    required
+                    defaultValue={String(row.shown?.additionalPrice ?? 0)}
+                    error={said[optionControlOf(index, 'additionalPrice')]}
+                  />
+                </div>
+                <TextArea
+                  label='説明'
+                  name={optionControlOf(index, 'description')}
+                  rows={2}
+                  defaultValue={row.shown?.description ?? undefined}
+                />
+                <Checkbox
+                  label='必須'
+                  name={optionControlOf(index, 'isRequired')}
+                  description='予約のときに、かならず付きます。'
+                  defaultChecked={row.shown?.isRequired ?? false}
+                />
+                <Checkbox
+                  label='有効'
+                  name={optionControlOf(index, 'isActive')}
+                  defaultChecked={row.shown?.isActive ?? true}
+                />
+                <Button
+                  className={styles['remove']}
+                  size='small'
+                  aria-label={`オプション ${index + 1} を外す`}
+                  onClick={() => takeAway(row.key, { type: 'addOption' })}
+                >
+                  外す
+                </Button>
+              </div>
+            </fieldset>
+          ))}
+          <Button
+            className={styles['add']}
+            ref={addOption}
+            onClick={() => add('options')}
+          >
+            オプションを足す
+          </Button>
+        </div>
+      </fieldset>
+    </Form>
+  )
+}

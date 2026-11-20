@@ -8,11 +8,12 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { menuHrefOf, serviceHrefOf } from '../navigation'
+import { menuHrefOf, serviceChangeHrefOf, serviceHrefOf } from '../navigation'
 import { unreadMessageOf } from '../reading'
 import { readServices, servicesKeyOf } from '../salons/salons-api'
 import { WithSalon } from '../salons/with-salon'
 import { ServiceRecord } from './components/service-record/service-record'
+import { useKeepsMenu } from './keeps-menu'
 import {
   categoriesKeyOf,
   menuOf,
@@ -26,7 +27,7 @@ const TITLE = 'サービスの内容'
 type ServicePartProps = { salon: ModelsSalonResponse; serviceId: string }
 
 /** What a screen of a service says when there is none to show. */
-const ServiceNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
+export const ServiceNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
   <>
     <PageHeader
       title='サービスが見つかりません'
@@ -42,9 +43,11 @@ const ServiceNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
 
 /**
  * A service of the menu, read whenever the screen opens, with the menu it
- * is named in: the categories, and the services a package is made of.
+ * is named in: the categories, and the services a package is made of. An
+ * account that changes the menu is offered to change the service.
  */
 const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
+  const keeps = useKeepsMenu()
   const service = useQuery({
     queryKey: serviceKeyOf(serviceId),
     queryFn: () => readService(salon.id, serviceId),
@@ -100,7 +103,20 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
     ))
     .with([{ type: 'found' }, { type: 'found' }], ([found, menu]) => (
       <>
-        {header}
+        <PageHeader
+          title={TITLE}
+          description={salon.name}
+          actions={
+            keeps ? (
+              <ButtonLink
+                href={serviceChangeHrefOf(salon.id, found.service.id)}
+                variant='primary'
+              >
+                サービスを直す
+              </ButtonLink>
+            ) : undefined
+          }
+        />
         <ServiceRecord
           service={found.service}
           categories={menu.categories}
