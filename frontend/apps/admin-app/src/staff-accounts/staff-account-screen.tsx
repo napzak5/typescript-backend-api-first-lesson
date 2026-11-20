@@ -46,6 +46,7 @@ import {
 } from './account-form'
 import {
   isOwnAccount,
+  type LoginShown,
   loginOf,
   roleDescriptionFor,
   rolesGivenBy,
@@ -488,6 +489,17 @@ type LoginPartProps = {
 }
 
 /**
+ * Which part of the screen is shown, as far as the heading that takes the
+ * focus goes: what the member has to sign in with, and whether they may be
+ * invited.
+ */
+const partOf = (shown: LoginShown, member: ModelsStaffResponse): string =>
+  `${shown.type}:${member.isActive ? 'active' : 'inactive'}`
+
+/** A write that changed what is shown: the part it left to be shown, and how many writes did so far */
+type Moved = { count: number; part: string }
+
+/**
  * What a member has to sign in with: the account linked to them, else the
  * invitation they were mailed, else nothing yet. Both are read whenever the
  * screen opens, side by side: an invitation is taken outside the screen,
@@ -506,17 +518,28 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
     queryFn: () => readInvitation(salon.id, member.id),
     staleTime: 0,
   })
+  const queryClient = useQueryClient()
+  const shown = loginOf(account.data, invitation.data)
+  const part = partOf(shown, member)
   const heading = useRef<HTMLHeadingElement>(null)
-  /** How many times a write changed what is shown: the heading of the first card takes the focus each time */
-  const [moves, setMoves] = useState(0)
+  /**
+   * The last write that changed what is shown. The heading of the first
+   * card takes the focus once the part the write left is shown: what was
+   * read anew reaches the screen after the write is done, and a heading
+   * that is taken away with its part loses the focus.
+   */
+  const [moved, setMoved] = useState<Moved>({ count: 0, part })
+  /** How many writes had the focus moved */
+  const focused = useRef(0)
   /** What happened meanwhile, which the API told when the screen wrote: said above the cards */
   const [said, setSaid] = useState<string>()
 
   useLayoutEffect(() => {
-    if (moves > 0) {
+    if (moved.count > focused.current && moved.part === part) {
+      focused.current = moved.count
       heading.current?.focus()
     }
-  }, [moves])
+  }, [moved, part])
 
   const props: PartProps = {
     salon,
@@ -526,14 +549,22 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
     headingRef: heading,
     onMoved: (meanwhile) => {
       setSaid(meanwhile)
-      setMoves((count) => count + 1)
+      const now = queryClient.getQueryData<StaffRead>(staffKeyOf(member.id))
+      const left = partOf(
+        loginOf(
+          queryClient.getQueryData<AccountRead>(accountKeyOf(member.id)),
+          queryClient.getQueryData<InvitationRead>(invitationKeyOf(member.id)),
+        ),
+        now?.type === 'found' ? now.member : member,
+      )
+      setMoved(({ count }) => ({ count: count + 1, part: left }))
     },
   }
 
   return (
     <>
       {said !== undefined && <Alert tone='warning'>{said}</Alert>}
-      {match(loginOf(account.data, invitation.data))
+      {match(shown)
         .with({ type: 'loading' }, () => (
           <LoadingIndicator label='ログインアカウントを読み込んでいます' />
         ))
