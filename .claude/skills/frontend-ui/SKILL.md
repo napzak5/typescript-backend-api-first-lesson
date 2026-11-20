@@ -1885,6 +1885,22 @@ header:
   takes away the pages, the choices of the ledger and the materials of
   a treatment record with one `removeQueries`.
 
+The stock of a salon (`src/inventory/`) is seen in views and kept from
+the header:
+
+- **Views of one list are links**: every row, the low stock and the
+  rows that expire soon are addresses of the same screen (`view` in the
+  query), offered by the `Navigation` of `ui`, so a view is kept over a
+  reload and the current one carries `aria-current`.
+- **A row that names its parent by ID waits for the parent**: a stock
+  row has the ID of its product alone, so the products of the salon are
+  read beside the rows, and the rows are shown once their names are
+  there; a product that is not among them is named as removed.
+- **A control follows what is chosen**: the lot of a new row is asked
+  for only when the product chosen is kept by lots. When the API says
+  that the product was marked otherwise meanwhile, the products are
+  read anew and the form follows them.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,

@@ -43,6 +43,10 @@ import { CustomerScreen } from './customers/customer-screen'
 import { CustomerVersionScreen } from './customers/customer-version-screen'
 import { PointEntryScreen } from './customers/point-entry-screen'
 import { HomeScreen } from './home-screen'
+import { InventoryScreen } from './inventory/inventory-screen'
+import { StockChangeScreen } from './inventory/stock-change-screen'
+import { StockEntryScreen } from './inventory/stock-entry-screen'
+import { StockRowScreen } from './inventory/stock-row-screen'
 import { CategoryChangeScreen } from './menu/category-change-screen'
 import { CategoryEntryScreen } from './menu/category-entry-screen'
 import { MenuScreen } from './menu/menu-screen'
@@ -384,6 +388,22 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/products/:productId/edit'
                 element={<ProductChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/inventory'
+                element={<InventoryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/inventory/new'
+                element={<StockEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/inventory/:inventoryId'
+                element={<StockRowScreen />}
+              />
+              <Route
+                path='/salons/:salonId/inventory/:inventoryId/edit'
+                element={<StockChangeScreen />}
               />
               <Route
                 path='/salons/:salonId/settings'

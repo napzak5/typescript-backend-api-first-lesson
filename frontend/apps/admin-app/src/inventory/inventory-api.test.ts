@@ -1,0 +1,221 @@
+import type { ModelsInventoryResponse } from '@beauty-salon-frontend/api-client'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
+import { salon } from '../bookings/components/examples'
+import { colour } from '../products/components/examples'
+import { colourLot } from './components/examples'
+import {
+  addStockRow,
+  changeStockRow,
+  mayKeepStock,
+  readStockPage,
+  readStockRow,
+  removeStockRow,
+} from './inventory-api'
+import type { StockView } from './stock-view'
+
+/*
+ * What the API answers to the stock is met with the real API
+ * (`inventory.integration.test.tsx`). Here are the answers a test cannot
+ * bring about there.
+ */
+
+/** A page of the stock, as the API answers with it. */
+const page = (
+  items: ModelsInventoryResponse[],
+  nextCursor: string | null,
+): Response =>
+  json(200, {
+    data: items,
+    meta: {
+      total: items.length,
+      limit: 20,
+      cursor: null,
+      nextCursor,
+      prevCursor: null,
+      hasMore: nextCursor !== null,
+      correlationId: null,
+    },
+    links: { self: '/', next: null, prev: null },
+  })
+
+type Answer = () => Response | Promise<Response>
+
+const NOT_SENT: [string, Answer, string][] = [
+  ['a body that is too large', () => problem(413), 'failed'],
+  ['a body of another type', () => problem(415), 'failed'],
+  ...UNREAD,
+]
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('mayKeepStock', () => {
+  it.each<[string, boolean]>([
+    ['owner', true],
+    ['manager', true],
+    ['admin', true],
+    ['staff', false],
+    ['customer', false],
+  ])('should let %s keep the stock: %s', (role, keeps) => {
+    expect(mayKeepStock(role)).toBe(keeps)
+  })
+})
+
+describe('readStockPage', () => {
+  it.each<[string, StockView, string, Record<string, string>]>([
+    [
+      'every row of a lot of a product',
+      { type: 'all', productId: colour.id, lotNumber: 'LOT-2026-041' },
+      '/api/v1/inventory',
+      {
+        salonId: salon.id,
+        productId: colour.id,
+        lotNumber: 'LOT-2026-041',
+        cursor: 'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
+        limit: '20',
+      },
+    ],
+    [
+      'the rows of the products whose stock is low',
+      { type: 'lowStock' },
+      '/api/v1/inventory/low-stock',
+      {
+        salonId: salon.id,
+        cursor: 'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
+        limit: '20',
+      },
+    ],
+    [
+      'the rows that expire within a week',
+      { type: 'expiring', days: 7 },
+      '/api/v1/inventory/expiring',
+      {
+        salonId: salon.id,
+        days: '7',
+        cursor: 'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
+        limit: '20',
+      },
+    ],
+  ])(
+    'should ask for a page of %s, after the cursor',
+    async (_, view, path, query) => {
+      // Arrange
+      const fetched = answering(() => page([colourLot], null))
+
+      // Act
+      const read = await readStockPage(
+        salon.id,
+        view,
+        'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
+      )
+
+      // Assert
+      expect(read).toEqual({
+        type: 'found',
+        items: [colourLot],
+        total: 1,
+        nextCursor: null,
+      })
+      expect(
+        fetched.mock.calls.map(([asked]) => {
+          const url = new URL(new Request(asked).url)
+
+          return [url.pathname, Object.fromEntries(url.searchParams)]
+        }),
+      ).toEqual([[path, query]])
+    },
+  )
+
+  it.each<[string, Answer, string]>([
+    [
+      'a cursor that names a row removed meanwhile',
+      () => problem(400),
+      'failed',
+    ],
+    ...UNREAD,
+  ])('should read no page after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const read = await readStockPage(salon.id, { type: 'all' }, undefined)
+
+    // Assert
+    expect(read).toEqual({ type })
+  })
+})
+
+describe('readStockRow', () => {
+  it.each<[string, Answer, string]>([
+    ['an address that names no row', () => problem(400), 'notFound'],
+    ...UNREAD,
+  ])('should read no row after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const read = await readStockRow('x')
+
+    // Assert
+    expect(read).toEqual({ type })
+  })
+})
+
+describe('addStockRow', () => {
+  it.each<[string, Answer, string]>([
+    [
+      'the salon removed meanwhile',
+      () => problem(400, [{ field: 'salonId', rule: 'not_found' }]),
+      'notFound',
+    ],
+    ...NOT_SENT,
+  ])('should add no row after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const written = await addStockRow({
+      salonId: salon.id,
+      productId: colour.id,
+      lotNumber: 'LOT-2026-050',
+      expiryDate: null,
+      location: null,
+      shelf: null,
+      notes: null,
+    })
+
+    // Assert
+    expect(written).toEqual({ type })
+  })
+})
+
+describe('changeStockRow', () => {
+  it.each(NOT_SENT)('should change no row after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const written = await changeStockRow(colourLot.id, { shelf: 'B-3' })
+
+    // Assert
+    expect(written).toEqual({ type })
+  })
+})
+
+describe('removeStockRow', () => {
+  it.each<[string, Answer, string]>([
+    ['an address that names no row', () => problem(400), 'notFound'],
+    ...UNREAD,
+  ])('should remove no row after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const removed = await removeStockRow('x')
+
+    // Assert
+    expect(removed).toEqual({ type })
+  })
+})
