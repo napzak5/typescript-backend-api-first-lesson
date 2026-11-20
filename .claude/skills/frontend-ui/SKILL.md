@@ -1918,6 +1918,23 @@ by everybody who works at the salon:
   the key of the row, so that dropping the row once a movement is
   recorded drops its history as well.
 
+The count of the stock and its value (`src/inventory/`) are for the
+owner, a manager and an administrator:
+
+- **A count is what was entered**: every row of the salon has a field,
+  named by its product and its lot and described by what the books say,
+  and only the rows that were filled in are counted. A salon counts
+  shelf by shelf, in as many counts as it likes.
+- **The result on the same screen**: once a count is recorded, the rows
+  that differed from the books take the place of the form, which comes
+  back, read anew and empty, to go on counting.
+- **Refused as a whole**: a count records all its rows or none. When a
+  row was removed meanwhile (400) or reserved below its count (409), the
+  rows are read anew and the counts entered stay in their fields.
+- **The value below the stock**: the value of the stock is read under
+  the key of the stock, so that a movement or a count drops it with the
+  rest.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
