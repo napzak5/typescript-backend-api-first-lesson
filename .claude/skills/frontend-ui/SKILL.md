@@ -1695,6 +1695,45 @@ share, `staff-api.ts`, `staff-form.ts` and `staff-format.ts`.
   removal says what stays (the bookings and the records of the member,
   the code) and what to do instead for a member on leave.
 
+### A plan that is replaced whole: the shifts of a week, the schedule of a member
+
+The shifts are the example to read: `shifts-screen.tsx`,
+`schedule-screen.tsx` and `schedule-change-screen.tsx`, `with-schedule.tsx`
+for the frame the two screens of a member share, `schedules-api.ts`,
+`shift-week.ts` and `schedule-form.ts`.
+
+- **A week is in the address** (`week`, a day of it, shown from its
+  Monday), so that the way back leads to the week seen before; without
+  one it is the week of today at the salon. The links to the weeks next
+  to it are a `nav` of their own, as the days of the bookings are.
+- **What applies on a day is worked out once a week, not asked seven
+  times**: the schedule of every member is read once, and the row of a
+  date wins over the row of its day of the week, as the API decides. A
+  role that sees only its own row (a member of the staff) is given the
+  row of the session's member; the API refuses the others.
+- **A cell of several lines may break between its words.** A table
+  keeps its cells on one line; a cell that already has several lines
+  lets its words wrap (`white-space: normal` on its own element) and
+  keeps a time and a mark whole, so that a week fits a wide screen.
+- **A write that replaces the whole is sent against what was opened**:
+  the schedule is read again first, and one that another account changed
+  meanwhile is not replaced; the form says so above its controls, keeps
+  what was written, and the next press replaces what is there then. A
+  form sent as it was opened asks for nothing.
+- **What the form does not show is still sent**: the rows of the days
+  before today are kept as they were, and only a checkbox that names how
+  many there are lets them go. A refusal of a row the form does not show
+  is said above the form.
+- **A row that means nothing is not sent**: a day of the week without
+  work and without a note is no row, as the API takes a day off and no
+  row alike; a day off with a note is kept, for its note.
+- **Two choices are stacked**: `layout='columns'` of `RadioGroup` is for
+  many short options, and breaks a word of two choices on a phone.
+- **A name that some roles read in the ledger**: an owner and an
+  administrator read the member in the staff ledger (an inactive member
+  as well, whose schedule is planned before they come back); the other
+  roles read the profile the customers see.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
