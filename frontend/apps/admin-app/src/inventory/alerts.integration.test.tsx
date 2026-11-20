@@ -599,7 +599,10 @@ describe('the screen of the alerts of the stock', () => {
 
     // Assert
     expect(await screen.findByText('在庫のアラートはありません')).toBeVisible()
-    expect(screen.getByText('今出ているアラートはありません。')).toBeVisible()
+    // How many there are is read apart from the list, and may come after it
+    expect(
+      await screen.findByText('今出ているアラートはありません。'),
+    ).toBeVisible()
     expect(screen.queryByRole('term')).toBeNull()
   })
 
