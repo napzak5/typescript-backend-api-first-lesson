@@ -37,7 +37,7 @@ export const withoutGone = (chosen: Chosen, gone: readonly string[]): Chosen =>
   new Map([...chosen].filter(([id]) => !gone.includes(id)))
 
 /** Whether a tag is given to the chosen customers or taken from them */
-export type TagWay = 'add' | 'remove'
+type TagWay = 'add' | 'remove'
 
 export type TagChange = { way: TagWay; tag: string }
 

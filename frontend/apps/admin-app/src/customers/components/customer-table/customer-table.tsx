@@ -31,7 +31,7 @@ export type CustomerTableProps = {
 }
 
 /** Which customers are chosen, and what is told when one is chosen or no longer */
-export type CustomerChoice = {
+type CustomerChoice = {
   chosen: ReadonlySet<string>
   onChoose: (customer: ModelsCustomerResponse, chosen: boolean) => void
 }
