@@ -12,8 +12,8 @@ import {
   yenOf,
 } from '../bookings/booking-entry'
 import { amountOf } from '../bookings/booking-format'
+import type { RefusedValue } from '../reading'
 import { whyNoVoid } from './sale-changes'
-import type { RefusedValue } from './sales-api'
 
 /*
  * Giving a payment back: which payments are, what the form sends, and what

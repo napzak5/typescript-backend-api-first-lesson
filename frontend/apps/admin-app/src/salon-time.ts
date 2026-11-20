@@ -129,3 +129,27 @@ export const momentOf = (
 
   return shown === local ? new Date(moment).toISOString() : undefined
 }
+
+/** The times of a day, a quarter of an hour apart: 「00:00」, 「00:15」… */
+const QUARTERS = Array.from(
+  { length: 24 * 4 },
+  (_, quarter) =>
+    `${String(Math.floor(quarter / 4)).padStart(2, '0')}:${String((quarter % 4) * 15).padStart(2, '0')}`,
+)
+
+/**
+ * The moment, in UTC, a day begins at a salon: midnight on its clock, or
+ * the first quarter of an hour the clock shows on a day it skips midnight
+ * (where clocks are put forward at midnight). `undefined` for what is no
+ * day.
+ */
+export const startOfDayAt = (
+  day: string,
+  timezone: string,
+): string | undefined => {
+  const first = QUARTERS.find(
+    (time) => momentOf(`${day}T${time}`, timezone) !== undefined,
+  )
+
+  return first === undefined ? undefined : momentOf(`${day}T${first}`, timezone)
+}

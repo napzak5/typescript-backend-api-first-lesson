@@ -2,7 +2,6 @@ import {
   type ModelsPaymentMethodResponse,
   type ModelsPaymentRefundRequest,
   type ModelsPaymentResponse,
-  type ModelsProblemDetails,
   type ModelsSaleCalculateRequest,
   type ModelsSaleCalculateResponse,
   type ModelsSaleCreateRequest,
@@ -34,6 +33,8 @@ import {
   type NotFound,
   type Page,
   pageOf,
+  type RefusedValue,
+  refusedValuesOf,
   toTheEnd,
   type Unread,
   unreadOf,
@@ -43,9 +44,6 @@ import type { PaymentAttempt } from './payments'
 import type { RefundAttempt } from './refunds'
 import type { SaleChangeAttempt, VoidAttempt } from './sale-changes'
 import type { LedgerConditions } from './sales-ledger'
-
-/** A value the API refused, with the rule it broke. */
-export type RefusedValue = { field: string; rule: string }
 
 export type SalePage = Page<ModelsSaleResponse> | Forbidden | Unread
 
@@ -159,11 +157,6 @@ const UNANSWERED = P.union(
   { status: 429 },
   { status: 500 },
 )
-
-const refusedValuesOf = ({
-  errors,
-}: Pick<ModelsProblemDetails, 'errors'>): RefusedValue[] =>
-  (errors ?? []).map(({ field, rule }) => ({ field, rule }))
 
 /** How many sales a page of the ledger has. */
 const SALES_PER_PAGE = 50

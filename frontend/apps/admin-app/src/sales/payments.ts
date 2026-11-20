@@ -7,8 +7,8 @@ import { match, P } from 'ts-pattern'
 import { type Read, textOf } from '../bookings/booking-actions'
 import { nullIfBlank, yenOf } from '../bookings/booking-entry'
 import { amountOf } from '../bookings/booking-format'
+import type { RefusedValue } from '../reading'
 import { CARD_METHODS, whyNoPayment } from './sale-format'
-import type { RefusedValue } from './sales-api'
 
 /*
  * Recording a payment of a sale: the methods offered, what the form sends,

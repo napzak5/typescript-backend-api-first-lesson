@@ -66,6 +66,31 @@ export const refundHrefOf = (
   paymentId: string,
 ): string => `${saleHrefOf(salonId, saleId)}/payments/${paymentId}/refund`
 
+/** The ledger of the customers, from the screens of a salon. */
+export const customersHrefOf = (salonId: string): string =>
+  `/salons/${salonId}/customers`
+
+/** The screen that registers a customer in the ledger. */
+export const customerEntryHrefOf = (salonId: string): string =>
+  `${customersHrefOf(salonId)}/new`
+
+/** A customer of the ledger, from the screens of a salon. */
+export const customerHrefOf = (salonId: string, customerId: string): string =>
+  `${customersHrefOf(salonId)}/${customerId}`
+
+/** The screen that changes what the ledger holds of a customer. */
+export const customerChangeHrefOf = (
+  salonId: string,
+  customerId: string,
+): string => `${customerHrefOf(salonId, customerId)}/edit`
+
+/** The screen that puts a booking into the ledger of a salon for a customer, opened on a day. */
+export const bookingOfCustomerHrefOf = (
+  salonId: string,
+  date: string,
+  customerId: string,
+): string => `${bookingEntryHrefOf(salonId, date)}&customerId=${customerId}`
+
 /** Whether an address is that of a screen, or of one below it. */
 const isAtOrBelow = (pathname: string, screen: string): boolean =>
   pathname === screen || pathname.startsWith(`${screen}/`)
@@ -73,8 +98,8 @@ const isAtOrBelow = (pathname: string, screen: string): boolean =>
 const SALON_ROLES: readonly string[] = ['owner', 'manager', 'staff']
 
 /**
- * The links of the header: the bookings and the sales of the salon of the
- * address. The screens of a salon are below its address;
+ * The links of the header: the bookings, the sales and the customers, from
+ * the salon of the address. The screens of a salon are below its address;
  * an administrator chooses the salon at the start (`/`), and a member of
  * the staff is led from there to the salon they belong to. So a member who
  * is elsewhere (the security of the account) goes back to the bookings
@@ -92,6 +117,7 @@ export const navigationFor = (
   if (salonId !== undefined) {
     const bookings = bookingsHrefOf(salonId)
     const sales = salesHrefOf(salonId)
+    const customers = customersHrefOf(salonId)
 
     return [
       ...choice,
@@ -101,6 +127,11 @@ export const navigationFor = (
         current: isAtOrBelow(pathname, bookings),
       },
       { href: sales, label: '売上', current: isAtOrBelow(pathname, sales) },
+      {
+        href: customers,
+        label: '顧客',
+        current: isAtOrBelow(pathname, customers),
+      },
     ]
   }
 

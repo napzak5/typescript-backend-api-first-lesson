@@ -12,7 +12,7 @@ import {
 import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { readCustomers } from '../customers/customers-api'
+import { CUSTOMER_LISTS, readCustomers } from '../customers/customers-api'
 import { bookingEntryHrefOf, bookingHrefOf } from '../navigation'
 import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
 import { FAILED, unreadMessageOf, whyUnread } from '../reading'
@@ -89,7 +89,7 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
       const ids = customerIdsOf(bookings)
 
       return {
-        queryKey: ['customers', 'of', ...ids],
+        queryKey: [...CUSTOMER_LISTS, 'of', ...ids],
         queryFn: () => readCustomers(ids),
       }
     }),

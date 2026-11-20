@@ -6,6 +6,7 @@ import type {
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
 import { match } from 'ts-pattern'
+import type { RefusedValue } from '../reading'
 import { isDay, momentOf } from '../salon-time'
 import { type Read, textOf } from './booking-actions'
 import {
@@ -17,7 +18,7 @@ import {
   TOO_MANY_REQUESTS,
 } from './booking-entry'
 import { statusNameOf } from './booking-format'
-import type { LineCheck, RefusedValue } from './bookings-api'
+import type { LineCheck } from './bookings-api'
 
 /*
  * Moving a booking to another time or another member of the staff, and
