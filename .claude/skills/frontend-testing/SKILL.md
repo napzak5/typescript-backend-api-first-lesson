@@ -926,6 +926,18 @@ adds:
   the opening of the form and the send, a balance too small), and a value
   the form refuses is asserted unsent by the requests of the `fetch` that
   was spied on.
+- **A file is written by the test, as a spreadsheet saves it** (the mark
+  of the byte order, CRLF: `fileOf` of `customer-bulk.integration.test.tsx`)
+  and chosen with `user.upload` in jsdom, `setInputFiles` with a buffer in a
+  browser. A file read in the browser is waited for until the screen stops
+  saying it reads it; a file that is refused is asserted unsent by the
+  number of rows of the table (`storedCustomerCount`).
+- **A write of many is asserted on those it left alone too**: their row
+  equals the row read before the test acted, `updatedAt` included
+  (`storedCustomerOf`), which shows they were not sent.
+- **The text of a row holds the hidden label of its checkbox.** A row of
+  a table read by `textContent` (`rowsOf`) has 「山田 花子 様を選ぶ」 in the
+  cell of the choice: write it out in the expected row.
 
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
