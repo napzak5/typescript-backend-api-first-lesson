@@ -37,7 +37,7 @@ this one: a component is not done without its stories and its test.
 | The screens of a salon in the admin application: the choice of a salon, and the salon of an address around the screens below it | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
-| The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences | `frontend/apps/admin-app/src/customers/` |
+| The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions | `frontend/apps/admin-app/src/customers/` |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
@@ -1247,14 +1247,17 @@ booking (`components/booking-sale/`).
   a `DescriptionList` by the number of the payment, and the cell says how
   much and when.
 
-### A ledger of the platform: found, registered, shown and changed
+### A ledger of the platform: found, registered, shown, changed and removed
 
 The customers of the admin application are the example to read:
 `frontend/apps/admin-app/src/customers/` (`customer-ledger-screen.tsx` for
 the ledger, `customer-entry-screen.tsx` for a customer registered,
 `customer-screen.tsx` for the page of a customer, `customer-change-screen.tsx`
 for the change, `customer-preferences-screen.tsx` for the preferences a
-salon changes, `with-customer.tsx` for the customer of the address).
+salon changes, `with-customer.tsx` for the customer of the address,
+`removed-customer.tsx` for one who left the ledger,
+`customer-history-screen.tsx` and `customer-version-screen.tsx` for the
+history and a version).
 
 - **A ledger that belongs to no salon is still shown below one.** The
   customers are one ledger for the platform, and every address of the
@@ -1332,6 +1335,45 @@ salon changes, `with-customer.tsx` for the customer of the address).
   theirs (`/bookings/new?customerId=`, the step after the choice); a
   booking search that found nobody leads to the registration, whose
   customer is booked from their page.
+- **A record that leaves the ledger stays at its address** (the removal
+  of a customer: `components/customer-keeping/`, `removed-customer.tsx`,
+  `components/removed-record/`). A `Dialog` asks first and says what
+  follows, the way back too. The API answers 404 alike for a removed
+  customer and for none, and keeps the history of both: the screen of a
+  keeper of the ledger reads the latest version (`readRemoved`), and its
+  operation tells a removal that can be undone (`delete`) from one that
+  cannot (`merge`, `erase`), which is said instead of the button. Who may
+  not read the history is told that nobody is there, as before. A removal
+  or a way back keeps the address and swaps what it shows: the query of
+  the record is set to what the API answered (404, or the customer that
+  came back), and the lists and the queries below the record are removed
+  (`forgetCustomer` of `customer-screen.tsx`). The query of the record
+  itself is set, not removed: the screen observes it, and a query removed
+  under an observer leaves the screen on what it showed. The button went
+  with what it did, so the heading takes the focus in the commit that
+  shows the other side: a ref flag set by the mutation, read by a
+  component on either side (`HeadingAfterMove`). A removal by another
+  account meanwhile (404) shows the same side without the notification.
+- **A way back that changes little needs no dialog** (台帳に戻す: another
+  removal undoes it). A refusal that is about another record leads to it:
+  an address of mail taken meanwhile is said with a link to the ledger
+  searched by that address. A refusal because the record changed
+  meanwhile reads it again.
+- **Who changed a record is named as the screen can tell.** The API names
+  an account by its ID, and a salon cannot read names of accounts: the
+  account signed in is 「あなた」, the account of the customer 「お客様ご本人」,
+  any other 「ほかのアカウント」, and the values the history began with have
+  nobody (`changerNameOf` of `customer-history.ts`).
+- **A version is shown as the record is, beside the one before it.** The
+  items of the record (their words, their order, how each writes its
+  values) are one list that the page of a customer, a removed customer and
+  a version share (`components/customer-record/ledger-items.tsx`). What a
+  version changed is the items that show something else than in the
+  version before (`changedItemsOf`, each item compared by what it shows,
+  so one value shown in two items is two comparisons), in a `Table` of the
+  item, the version before and this one; the history names the items the
+  API says were changed (`changedTermsOf`), and a value no item shows by
+  the name the API gives it.
 
 ## Screens that a mailed link opens
 

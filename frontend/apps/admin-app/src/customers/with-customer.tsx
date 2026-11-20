@@ -34,10 +34,49 @@ export type WithCustomerProps = {
   fresh: boolean
   /** The screen, below its heading, for the customer of the address that was read */
   children: (customer: ModelsCustomerResponse) => ReactNode
+  /**
+   * The screen for a customer the ledger does not show: one who was
+   * removed may still be shown from their history. `undefined` for a
+   * screen that shows them as not found
+   */
+  removed?: ((customerId: string) => ReactNode) | undefined
 }
 
+type CustomerNotFoundProps = {
+  salon: ModelsSalonResponse
+  /** The account is shown the customers who were removed: none was, with the ID */
+  removedShown?: boolean | undefined
+}
+
+/** What a screen of a customer says when there is none to show. */
+export const CustomerNotFound = ({
+  salon,
+  removedShown = false,
+}: CustomerNotFoundProps) => (
+  <>
+    <PageHeader
+      title='お客様が見つかりません'
+      description={
+        removedShown
+          ? 'アドレスが正しいか、お確かめください。'
+          : 'アドレスが正しいか、お確かめください。台帳から削除されたお客様は、表示できません。'
+      }
+    />
+    <p>
+      <ButtonLink href={customersHrefOf(salon.id)} variant='secondary'>
+        顧客台帳へ
+      </ButtonLink>
+    </p>
+  </>
+)
+
 /** The name of a customer, with its kana when there is one: 「山田 花子（ヤマダ ハナコ）」. */
-const fullNameOf = (customer: ModelsCustomerResponse): string => {
+export const fullNameOf = (
+  customer: Pick<
+    ModelsCustomerResponse,
+    'firstName' | 'lastName' | 'firstNameKana' | 'lastNameKana'
+  >,
+): string => {
   const kana = customerKanaOf(customer)
 
   return kana === ''
@@ -48,7 +87,8 @@ const fullNameOf = (customer: ModelsCustomerResponse): string => {
 /**
  * A screen of a customer of the ledger, below the salon of the address.
  * The customer is read whenever the screen opens. A customer who was
- * removed from the ledger is not found, as one who never was.
+ * removed from the ledger is not found, as one who never was, unless the
+ * screen shows such a customer otherwise (`removed`).
  *
  * Below the heading, the customer is named as soon as they are read.
  */
@@ -57,6 +97,7 @@ export const WithCustomer = ({
   title,
   fresh,
   children,
+  removed,
 }: WithCustomerProps) => {
   const { customerId = '' } = useParams()
   const read = useQuery({
@@ -82,19 +123,13 @@ export const WithCustomer = ({
         {children(customer)}
       </>
     ))
-    .with({ type: 'notFound' }, () => (
-      <>
-        <PageHeader
-          title='お客様が見つかりません'
-          description='アドレスが正しいか、お確かめください。台帳から削除されたお客様は、表示できません。'
-        />
-        <p>
-          <ButtonLink href={customersHrefOf(salon.id)} variant='secondary'>
-            顧客台帳へ
-          </ButtonLink>
-        </p>
-      </>
-    ))
+    .with({ type: 'notFound' }, () =>
+      removed === undefined ? (
+        <CustomerNotFound salon={salon} />
+      ) : (
+        removed(customerId)
+      ),
+    )
     .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
       <>
         <PageHeader title={title} description={salon.name} />
