@@ -1,0 +1,25 @@
+/* The cards one below the other. */
+.record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+/* What was written in several lines keeps its line breaks */
+.written {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/*
+ * The notes of a material break their lines, unlike the other cells, and
+ * are never narrower than a few words: a column as narrow as a character
+ * would make a row as tall as the notes are long. On a narrow screen the
+ * table scrolls sideways.
+ */
+.notes {
+  display: block;
+  min-inline-size: 12rem;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
