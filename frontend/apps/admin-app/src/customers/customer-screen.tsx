@@ -27,6 +27,7 @@ import {
   customerChangeHrefOf,
   customerHistoryHrefOf,
   customerHrefOf,
+  customerPointsHrefOf,
   customerPreferencesHrefOf,
   customersHrefOf,
 } from '../navigation'
@@ -448,6 +449,7 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
               dayAt(new Date(), salon.timezone),
               customer.id,
             )}
+            pointsHref={customerPointsHrefOf(salon.id, customer.id)}
             customerHref={(customerId) => customerHrefOf(salon.id, customerId)}
           />
           {/* Another customer (the one who referred this one) is another part */}

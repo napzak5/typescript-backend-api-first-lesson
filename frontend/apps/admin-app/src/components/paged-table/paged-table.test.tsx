@@ -133,6 +133,26 @@ describe('PagedTable', () => {
     ).toEqual(['山田 花子', '鈴木 一郎', '佐藤 次郎', '高橋 三郎'])
   })
 
+  it('should move the focus to the header of the first row it added when the rows have no link', async () => {
+    // Arrange
+    const Growing = composeStory(
+      {
+        ...pagedTableStories.WithoutLinks,
+        render: (args) => <GrowingTable {...args} seen={() => undefined} />,
+      },
+      pagedTableStories.default,
+    )
+    await Growing.run()
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: 'さらに表示' }))
+
+    // Assert
+    const added = screen.getByRole('rowheader', { name: '13:00' })
+    expect(added).toHaveFocus()
+    expect(added).toHaveAttribute('tabindex', '-1')
+  })
+
   it('should leave the focus where it is when rows come that no press asked for: the list was read again', async () => {
     // Arrange
     const Growing = composeStory(

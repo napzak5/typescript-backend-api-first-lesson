@@ -103,6 +103,27 @@ export const customerVersionHrefOf = (
   version: number,
 ): string => `${customerHistoryHrefOf(salonId, customerId)}/${version}`
 
+/** The points of a customer: the balance, the points that expire soon and the history. */
+export const customerPointsHrefOf = (
+  salonId: string,
+  customerId: string,
+): string => `${customerHrefOf(salonId, customerId)}/points`
+
+/** The sale points are recorded for, and what is recorded at first. */
+export type PointsOfSale = { saleId: string; kind: 'earned' | 'used' }
+
+/** The screen that records points of a customer: for a sale, when the page of the sale leads to it. */
+export const pointEntryHrefOf = (
+  salonId: string,
+  customerId: string,
+  ofSale?: PointsOfSale,
+): string =>
+  `${customerPointsHrefOf(salonId, customerId)}/new${
+    ofSale === undefined
+      ? ''
+      : `?${new URLSearchParams({ saleId: ofSale.saleId, kind: ofSale.kind })}`
+  }`
+
 /** The screen that puts a booking into the ledger of a salon for a customer, opened on a day. */
 export const bookingOfCustomerHrefOf = (
   salonId: string,
