@@ -122,6 +122,7 @@ describe('the bookings of a salon, against the API', () => {
         expect(address).toBe(`/salons/${salonId}/bookings`)
         expect(navigationItems()).toEqual([
           ['予約', `/salons/${salonId}/bookings`, 'page'],
+          ['売上', `/salons/${salonId}/sales`, null],
         ])
       },
     )
@@ -167,6 +168,7 @@ describe('the bookings of a salon, against the API', () => {
       expect(navigationItems()).toEqual([
         ['サロンを選ぶ', '/', null],
         ['予約', `/salons/${osaka}/bookings`, 'page'],
+        ['売上', `/salons/${osaka}/sales`, null],
       ])
     })
 

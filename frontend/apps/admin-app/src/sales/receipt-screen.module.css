@@ -1,0 +1,11 @@
+/* The heading and the ways on are for the screen: on paper there is the receipt alone */
+.onScreen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media print {
+  .onScreen {
+    display: none;
+  }
+}

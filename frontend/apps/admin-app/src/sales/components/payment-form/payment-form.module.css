@@ -1,0 +1,13 @@
+/* What is recorded of the card: one below the other, side by side where there is room */
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+@media (min-width: 40rem) {
+  .card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

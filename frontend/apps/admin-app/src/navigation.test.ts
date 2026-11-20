@@ -1,9 +1,16 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import { describe, expect, it } from 'vitest'
-import { bookingsHrefOf, navigationFor, salonIdIn } from './navigation'
+import {
+  bookingsHrefOf,
+  navigationFor,
+  receiptHrefOf,
+  salesHrefOf,
+  salonIdIn,
+} from './navigation'
 
 const SALON_ID = '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01'
 const BOOKINGS = `/salons/${SALON_ID}/bookings`
+const SALES = `/salons/${SALON_ID}/sales`
 
 type Role = ModelsUserResponse['role']
 
@@ -32,10 +39,11 @@ describe('salonIdIn', () => {
 })
 
 describe('navigationFor', () => {
-  it('should lead an administrator to the choice of a salon, and to the bookings of the salon chosen', () => {
+  it('should lead an administrator to the choice of a salon, and to the bookings and the sales of the salon chosen', () => {
     expect(navigationFor('admin', `${BOOKINGS}/x`)).toEqual([
       { href: '/', label: 'サロンを選ぶ', current: false },
       { href: BOOKINGS, label: '予約', current: true },
+      { href: SALES, label: '売上', current: false },
     ])
   })
 
@@ -50,6 +58,7 @@ describe('navigationFor', () => {
     (role) => {
       expect(navigationFor(role, BOOKINGS)).toEqual([
         { href: BOOKINGS, label: '予約', current: true },
+        { href: SALES, label: '売上', current: false },
       ])
     },
   )
@@ -67,10 +76,25 @@ describe('navigationFor', () => {
   it('should leave the link of a salon not current on a screen of another kind below it', () => {
     expect(navigationFor('owner', `/salons/${SALON_ID}`)).toEqual([
       { href: BOOKINGS, label: '予約', current: false },
+      { href: SALES, label: '売上', current: false },
+    ])
+  })
+
+  it.each([
+    ['the ledger', SALES],
+    ['the receipt of a sale', receiptHrefOf(SALON_ID, 'x')],
+  ])('should mark the sales as the screen of %s', (_case, pathname) => {
+    expect(navigationFor('manager', pathname)).toEqual([
+      { href: BOOKINGS, label: '予約', current: false },
+      { href: SALES, label: '売上', current: true },
     ])
   })
 
   it('should write the address of the bookings of a salon', () => {
     expect(bookingsHrefOf(SALON_ID)).toBe(BOOKINGS)
+  })
+
+  it('should write the address of the sales of a salon', () => {
+    expect(salesHrefOf(SALON_ID)).toBe(SALES)
   })
 })

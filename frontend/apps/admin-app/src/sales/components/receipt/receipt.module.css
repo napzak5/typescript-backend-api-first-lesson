@@ -1,0 +1,43 @@
+/* A slip, narrower than the page: the salon, the sale, the lines, the amounts */
+.receipt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  max-inline-size: 40rem;
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background-color: var(--color-surface);
+}
+
+.issuer {
+  display: grid;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.salon {
+  margin: 0;
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+.amounts {
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.thanks {
+  margin: 0;
+  text-align: center;
+}
+
+/* On paper the slip is the page: no frame around it */
+@media print {
+  .receipt {
+    max-inline-size: none;
+    padding: 0;
+    border: 0;
+  }
+}
