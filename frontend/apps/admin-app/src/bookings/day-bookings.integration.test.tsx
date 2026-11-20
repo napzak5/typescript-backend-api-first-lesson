@@ -131,6 +131,7 @@ describe('the bookings of a salon, against the API', () => {
           ...(keepsStaffLedger
             ? [['スタッフ', `/salons/${salonId}/staff`, null]]
             : []),
+          ['設定', `/salons/${salonId}/settings`, null],
           ['プロフィール', '/account/profile', null],
         ])
       },
@@ -183,6 +184,7 @@ describe('the bookings of a salon, against the API', () => {
         ['シフト', `/salons/${osaka}/shifts`, null],
         ['メニュー', `/salons/${osaka}/menu`, null],
         ['スタッフ', `/salons/${osaka}/staff`, null],
+        ['設定', `/salons/${osaka}/settings`, null],
       ])
     })
 
