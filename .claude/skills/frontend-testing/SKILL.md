@@ -596,6 +596,15 @@ tested for what it must leave alone as well:
   commit that showed that address (`firstSight`), and the test asserts on
   it:
   `expect(firstSight).toEqual(['/mypage', expect.stringContaining('お名前Sato Yuki')])`.
+- **A reading the first sight races is held.** When a screen shows what
+  it kept while it reads the record again, the answer comes before or
+  after the next screen opens, as the machine is loaded. The test holds
+  that reading until it has asserted the first sight
+  (`holdReadingsOf` in `customer-points.integration.test.tsx`: `fetch`
+  keeps the request to the record waiting, and sends it to the real API
+  when the test releases it). The API still answers everything; only
+  when is fixed, so the test fails every time the screen shows the old
+  value, not once in a while.
 - **A record that is gone is made gone as the API does it.** The
   statements are those of the repository (a customer who was removed from
   the ledger has `deletedAt`, and the account no longer names it:
