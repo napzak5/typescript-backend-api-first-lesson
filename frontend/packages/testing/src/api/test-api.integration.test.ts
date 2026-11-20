@@ -78,9 +78,17 @@ const preflight = (api: string, origin: string): Promise<Response> =>
     },
   })
 
+/**
+ * How many databases the test server has: its template and the copies,
+ * whose names begin as the name of the database of this file does. Other
+ * test servers on the same instance make and drop theirs meanwhile.
+ */
 const databaseCount = async (): Promise<number> =>
   countSchema.parse(
-    await testApi().query('select count(*)::int as count from pg_database'),
+    await testApi().query(
+      `select count(*)::int as count from pg_database
+       where starts_with(datname, regexp_replace(current_database(), '[^_]+$', ''))`,
+    ),
   )[0].count
 
 describe('the API of a test file', () => {

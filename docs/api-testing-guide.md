@@ -201,17 +201,21 @@ beforeAll(async () => {
 ```
 
 `openTestDatabases` (`test-databases.ts`) creates a database named
-`api_test_template_<uuid>`, applies `backend/packages/database/sql/setup.sql`
+`api_test_<mark>_template`, applies `backend/packages/database/sql/setup.sql`
 to it as it is, and closes the connection. Its tables are empty: a caller
 that wants every copy to start with rows passes a function that inserts them
 into the template, which only the test server does. Around each test, the
 setup gives the test a database of its own:
 
-1. Before the test it creates a database named `api_test_<uuid>` as a copy of
-   the template (`CREATE DATABASE … TEMPLATE …`) and opens a connection to it.
+1. Before the test it creates a database named `api_test_<mark>_<uuid>` as a
+   copy of the template (`CREATE DATABASE … TEMPLATE …`) and opens a connection to it.
 2. After the test it closes the connection and drops the database.
 
-The template is dropped when the file is done.
+The template is dropped when the file is done. The mark (12 hexadecimal
+digits) is chosen once per call of `openTestDatabases`, so the databases of
+one file, or of one test server, are told from those that other files and
+servers make and drop on the same instance meanwhile (the job of CI with an
+external database runs the tests of every package on one PostgreSQL).
 
 PostgreSQL copies a database much faster than it applies the schema again
 (about 250 statements), which is why the schema is applied once per file and
