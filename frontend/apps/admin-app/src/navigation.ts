@@ -119,6 +119,10 @@ export const staffMemberHrefOf = (salonId: string, staffId: string): string =>
 export const staffChangeHrefOf = (salonId: string, staffId: string): string =>
   `${staffMemberHrefOf(salonId, staffId)}/edit`
 
+/** The account a member of the staff signs in with, and the invitation that makes it. */
+export const staffAccountHrefOf = (salonId: string, staffId: string): string =>
+  `${staffMemberHrefOf(salonId, staffId)}/account`
+
 /** The shifts of a salon: the week of today at the salon. */
 export const shiftsHrefOf = (salonId: string): string =>
   `/salons/${salonId}/shifts`
