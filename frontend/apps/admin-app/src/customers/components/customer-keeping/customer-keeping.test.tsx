@@ -22,6 +22,9 @@ describe('CustomerKeeping', () => {
       'href',
       stories.Keepable.args.historyHref,
     )
+    expect(
+      screen.getByRole('link', { name: 'ほかのお客様とまとめる' }),
+    ).toHaveAttribute('href', stories.Keepable.args.mergeHref)
     expect(screen.queryByRole('dialog')).toBeNull()
 
     // Act
@@ -40,7 +43,7 @@ describe('CustomerKeeping', () => {
     // Assert
     expect(
       screen.getByText(
-        '台帳からの削除と変更履歴は、オーナーとマネージャーができます。',
+        '台帳からの削除と統合、変更履歴は、オーナーとマネージャーができます。',
       ),
     ).toBeVisible()
     expect(screen.queryByRole('link')).toBeNull()

@@ -27,6 +27,7 @@ import {
   customerChangeHrefOf,
   customerHistoryHrefOf,
   customerHrefOf,
+  customerMergeHrefOf,
   customerPointsHrefOf,
   customerPreferencesHrefOf,
   customersHrefOf,
@@ -317,6 +318,7 @@ const KeepingPart = ({ salon, customer, moved }: KeepingPartProps) => {
       }
       name={name}
       historyHref={customerHistoryHrefOf(salon.id, customer.id)}
+      mergeHref={customerMergeHrefOf(salon.id, customer.id)}
       open={open}
       onOpen={() => {
         setMessage(undefined)

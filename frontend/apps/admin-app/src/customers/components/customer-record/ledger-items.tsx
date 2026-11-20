@@ -255,3 +255,32 @@ export const changedItemsOf = (
       after: describe(after, referrerOf(after)),
     }),
   )
+
+/** An item of the ledger that two customers show differently, and what a merge of them shows. */
+export type ComparedItem = {
+  term: string
+  primary: ReactNode
+  secondary: ReactNode
+  merged: ReactNode
+}
+
+/**
+ * The items of the ledger that two customers show differently, with what
+ * each shows and what the customer made of both shows, in the order of
+ * the page of a customer. An item that shows the same for both is left
+ * out: a merge keeps it.
+ */
+export const comparedItemsOf = (
+  primary: LedgerValues,
+  secondary: LedgerValues,
+  merged: LedgerValues,
+  referrerOf: (values: LedgerValues) => ReactNode,
+): ComparedItem[] =>
+  ITEMS.filter(
+    (item) => shownBy(item, primary) !== shownBy(item, secondary),
+  ).map(({ term, describe }) => ({
+    term,
+    primary: describe(primary, referrerOf(primary)),
+    secondary: describe(secondary, referrerOf(secondary)),
+    merged: describe(merged, referrerOf(merged)),
+  }))

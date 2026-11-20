@@ -136,6 +136,7 @@ const CustomerResults = ({
         choose={{
           type: 'link',
           hrefOf: ({ id }) => hrefOf({ ...choice, customerId: id }),
+          excluded: undefined,
         }}
       />
     ))

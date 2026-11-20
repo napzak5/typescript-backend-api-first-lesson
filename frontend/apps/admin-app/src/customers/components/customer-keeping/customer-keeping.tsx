@@ -9,12 +9,14 @@ import { KEPT_BY_OTHERS } from '../../customer-history'
 import styles from './customer-keeping.module.css'
 
 export type CustomerKeepingProps = {
-  /** The account may read the history and remove the customer: the owner, a manager, the operator of the platform */
+  /** The account may read the history, merge the customer and remove them: the owner, a manager, the operator of the platform */
   keepable: boolean
   /** The name of the customer, as the dialog names them: 「山田 花子」 */
   name: string
   /** The address of the history of the customer */
   historyHref: string
+  /** The address of the screen that merges the customer with another record of them */
+  mergeHref: string
   /** The dialog that asks before the customer is removed is open */
   open: boolean
   /** The button that removes was pressed: the dialog is to be opened */
@@ -36,7 +38,8 @@ export type CustomerKeepingProps = {
 
 /**
  * What is done with the record of the customer itself: its history is
- * read, and the customer is taken out of the ledger. A dialog asks first,
+ * read, another record of the same person is merged into it, and the
+ * customer is taken out of the ledger. A dialog asks before the removal,
  * and says what follows; a removed customer can be brought back. A member
  * of the staff is told who does it.
  */
@@ -44,6 +47,7 @@ export const CustomerKeeping = ({
   keepable,
   name,
   historyHref,
+  mergeHref,
   open,
   onOpen,
   onClose,
@@ -52,16 +56,20 @@ export const CustomerKeeping = ({
   pending = false,
   onRemove,
 }: CustomerKeepingProps) => (
-  <Card title='変更履歴と削除'>
+  <Card title='台帳の管理'>
     {keepable ? (
       <div className={styles['keeping']}>
         <p>
-          台帳をだれがいつ変えたかを確かめ、来なくなったお客様を台帳から削除します。
+          台帳をだれがいつ変えたかを確かめ、同じお客様の 2 つの記録を 1
+          つにまとめ、来なくなったお客様を台帳から削除します。
         </p>
         {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
         <div className={styles['actions']}>
           <ButtonLink href={historyHref} variant='secondary'>
             変更履歴
+          </ButtonLink>
+          <ButtonLink href={mergeHref} variant='secondary'>
+            ほかのお客様とまとめる
           </ButtonLink>
           <Button variant='danger' onClick={onOpen}>
             台帳から削除する

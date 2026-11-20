@@ -22,7 +22,11 @@ const meta: Meta<typeof CustomerChoices> = {
     total: 3,
     more: 'none',
     onMore: fn(),
-    choose: { type: 'link', hrefOf: ({ id }) => `?customerId=${id}` },
+    choose: {
+      type: 'link',
+      hrefOf: ({ id }) => `?customerId=${id}`,
+      excluded: undefined,
+    },
   },
 }
 
@@ -44,6 +48,17 @@ export const WithTheCustomerThemselves: Story = {
     choose: {
       type: 'button',
       onChoose: fn(),
+      excluded: 'f4c27a8d-9b1e-4d3f-8a6c-2e5b7d9f1a03',
+    },
+  },
+}
+
+/** Each customer leads on by a link, but the one the screen is about */
+export const ByLinkWithTheCustomerThemselves: Story = {
+  args: {
+    choose: {
+      type: 'link',
+      hrefOf: ({ id }) => `?with=${id}`,
       excluded: 'f4c27a8d-9b1e-4d3f-8a6c-2e5b7d9f1a03',
     },
   },
