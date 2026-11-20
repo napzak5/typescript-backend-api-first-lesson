@@ -1,6 +1,17 @@
-/* The sentence, why no file was saved, and the button, one below the other */
+/* The export, then the erasure */
 .requests {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* The sentence, why no file was saved, and the button, one below the other */
+.export {
   display: grid;
   justify-items: start;
   gap: var(--space-4);
+}
+
+.export > p {
+  margin: 0;
 }

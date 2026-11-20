@@ -11,9 +11,9 @@ import type { DataExport, LedgerExport } from './customer-export-api'
 /** The largest number of customers the API writes into one file */
 const MOST_EXPORTED = 10_000
 
-/** What a member of the staff is told where the data of a customer would be exported */
-export const EXPORTED_BY_OTHERS =
-  'ご本人からのデータの開示の請求には、オーナーとマネージャーが応えます。'
+/** What a member of the staff is told where the requests of a customer would be answered */
+export const ANSWERED_BY_OTHERS =
+  'ご本人からのデータの開示と消去の請求には、オーナーとマネージャーが応えます。'
 
 export type ExportSays =
   /** The file is saved, and the notification says what it holds */
@@ -81,7 +81,7 @@ export const afterDataExport = (
     .with({ type: 'forbidden' }, () => ({
       type: 'said',
       tone: 'danger',
-      message: `このアカウントでは、お客様のデータを出力できません。${EXPORTED_BY_OTHERS}`,
+      message: `このアカウントでは、お客様のデータを出力できません。${ANSWERED_BY_OTHERS}`,
     }))
     .with({ type: 'tooManyRequests' }, (reason) => ({
       type: 'said',

@@ -37,7 +37,7 @@ this one: a component is not done without its stories and its test.
 | The screens of a salon in the admin application: the choice of a salon, and the salon of an address around the screens below it | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
-| The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording, the customers of a file, the merge, the exports | `frontend/apps/admin-app/src/customers/` |
+| The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording, the customers of a file, the merge, the exports, the requests to have the data erased | `frontend/apps/admin-app/src/customers/` |
 | A file the API answers with, saved by the browser: its name, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `saveFile`) |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
@@ -1490,7 +1490,18 @@ and `customer-export.ts` for the ledger and a customer saved as files).
 - **What the salon answers when a customer asks for their data is a
   part of its own** (「ご本人からの請求」, `CustomerRequests`), before the part
   that keeps the ledger: it says what the file is for and that the salon
-  makes sure who asks. A member of the staff is told who answers.
+  makes sure who asks. A member of the staff is told who answers. It
+  holds a card of its own for each request (`headingLevel={3}`): the
+  data handed over, and the data erased (`CustomerErasure`). The latter
+  shows the latest request of the customer and what became of it, the
+  moments at the salon; a new request is taken in a dialog that asks
+  for its reason, and a pending one is called off after a dialog asks.
+  What was done, and what the API refused or changed meanwhile, closes
+  the dialog and the heading of the card takes the focus; the refusal
+  is said under it, and the customer is read again (an erasure that
+  was run meanwhile shows them as removed). The page of a removed
+  customer shows the request too, and calls a pending one off; it takes
+  none, as the API takes a request of a customer in the ledger only.
 - **A refusal that closes the dialog reads again and takes the focus
   to the heading of the part** (`MergeWith`). The 409 of a merge closes
   the dialog, says that the two were read again, and the reasons come

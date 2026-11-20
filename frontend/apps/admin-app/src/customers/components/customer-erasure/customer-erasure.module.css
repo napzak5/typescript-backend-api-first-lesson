@@ -1,0 +1,23 @@
+/* What became of the request, what erasing does, and the button, one below the other */
+.erasure {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: var(--space-4);
+}
+
+.erasure > p {
+  margin: 0;
+}
+
+/* The moments and the reason of a pending request take the width of the part */
+.details {
+  justify-self: stretch;
+}
+
+/* What went wrong, and the reason */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
