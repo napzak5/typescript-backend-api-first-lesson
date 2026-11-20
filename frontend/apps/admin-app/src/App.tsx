@@ -43,6 +43,10 @@ import { CustomerScreen } from './customers/customer-screen'
 import { CustomerVersionScreen } from './customers/customer-version-screen'
 import { PointEntryScreen } from './customers/point-entry-screen'
 import { HomeScreen } from './home-screen'
+import { CategoryChangeScreen } from './menu/category-change-screen'
+import { CategoryEntryScreen } from './menu/category-entry-screen'
+import { MenuScreen } from './menu/menu-screen'
+import { ServiceScreen } from './menu/service-screen'
 import { navigationFor, OWN_PROFILE_PATH } from './navigation'
 import { OwnProfileScreen } from './own-profile/own-profile-screen'
 import { CheckoutScreen } from './sales/checkout-screen'
@@ -325,6 +329,19 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/shifts/:staffId/edit'
                 element={<ScheduleChangeScreen />}
+              />
+              <Route path='/salons/:salonId/menu' element={<MenuScreen />} />
+              <Route
+                path='/salons/:salonId/menu/services/:serviceId'
+                element={<ServiceScreen />}
+              />
+              <Route
+                path='/salons/:salonId/menu/categories/new'
+                element={<CategoryEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/menu/categories/:categoryId/edit'
+                element={<CategoryChangeScreen />}
               />
               <Route path={OWN_PROFILE_PATH} element={<OwnProfileScreen />} />
               <Route

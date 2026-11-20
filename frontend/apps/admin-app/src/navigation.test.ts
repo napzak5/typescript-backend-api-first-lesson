@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   bookingOfCustomerHrefOf,
   bookingsHrefOf,
+  categoryChangeHrefOf,
+  categoryEntryHrefOf,
   customerChangeHrefOf,
   customerEntryHrefOf,
   customerHistoryHrefOf,
@@ -12,6 +14,7 @@ import {
   customerPreferencesHrefOf,
   customersHrefOf,
   customerVersionHrefOf,
+  menuHrefOf,
   navigationFor,
   pointEntryHrefOf,
   receiptHrefOf,
@@ -21,6 +24,7 @@ import {
   salonIdIn,
   scheduleChangeHrefOf,
   scheduleHrefOf,
+  serviceHrefOf,
   shiftsHrefOf,
   shiftWeekHrefOf,
   staffAccountHrefOf,
@@ -44,6 +48,7 @@ const CUSTOMERS = `/salons/${SALON_ID}/customers`
 const TREATMENTS = `/salons/${SALON_ID}/treatments`
 const SHIFTS = `/salons/${SALON_ID}/shifts`
 const STAFF = `/salons/${SALON_ID}/staff`
+const MENU = `/salons/${SALON_ID}/menu`
 
 type Role = ModelsUserResponse['role']
 
@@ -88,6 +93,7 @@ describe('navigationFor', () => {
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
+      { href: MENU, label: 'メニュー', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
     ])
   })
@@ -107,6 +113,7 @@ describe('navigationFor', () => {
         { href: CUSTOMERS, label: '顧客', current: false },
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
+        { href: MENU, label: 'メニュー', current: false },
         PROFILE,
       ])
     },
@@ -126,6 +133,7 @@ describe('navigationFor', () => {
         { href: CUSTOMERS, label: '顧客', current: false },
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
+        { href: MENU, label: 'メニュー', current: false },
         { href: STAFF, label: 'スタッフ', current: true },
         PROFILE,
       ])
@@ -166,6 +174,7 @@ describe('navigationFor', () => {
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
+      { href: MENU, label: 'メニュー', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
       PROFILE,
     ])
@@ -183,6 +192,7 @@ describe('navigationFor', () => {
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
+      { href: MENU, label: 'メニュー', current: false },
       PROFILE,
     ])
   })
@@ -208,6 +218,7 @@ describe('navigationFor', () => {
       { href: CUSTOMERS, label: '顧客', current: true },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
+      { href: MENU, label: 'メニュー', current: false },
       PROFILE,
     ])
   })
@@ -229,6 +240,7 @@ describe('navigationFor', () => {
         { href: CUSTOMERS, label: '顧客', current: false },
         { href: TREATMENTS, label: '施術記録', current: true },
         { href: SHIFTS, label: 'シフト', current: false },
+        { href: MENU, label: 'メニュー', current: false },
         PROFILE,
       ])
     },
@@ -245,6 +257,7 @@ describe('navigationFor', () => {
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
+      { href: MENU, label: 'メニュー', current: false },
       PROFILE,
     ])
   })
@@ -256,6 +269,7 @@ describe('navigationFor', () => {
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
+      { href: MENU, label: 'メニュー', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
       PROFILE,
     ])
@@ -313,8 +327,40 @@ describe('navigationFor', () => {
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
+      { href: MENU, label: 'メニュー', current: false },
       { href: STAFF, label: 'スタッフ', current: true },
       PROFILE,
+    ])
+  })
+
+  it.each<[string, string]>([
+    ['the menu', MENU],
+    ['a service', serviceHrefOf(SALON_ID, 'x')],
+    ['a new category', categoryEntryHrefOf(SALON_ID)],
+    ['the change of a category', categoryChangeHrefOf(SALON_ID, 'x')],
+  ])('should mark the menu as the screen of %s', (_case, pathname) => {
+    expect(navigationFor('staff', pathname)).toEqual([
+      { href: BOOKINGS, label: '予約', current: false },
+      { href: SALES, label: '売上', current: false },
+      { href: CUSTOMERS, label: '顧客', current: false },
+      { href: TREATMENTS, label: '施術記録', current: false },
+      { href: SHIFTS, label: 'シフト', current: false },
+      { href: MENU, label: 'メニュー', current: true },
+      PROFILE,
+    ])
+  })
+
+  it('should write the addresses of the menu', () => {
+    expect([
+      menuHrefOf(SALON_ID),
+      serviceHrefOf(SALON_ID, 'service'),
+      categoryEntryHrefOf(SALON_ID),
+      categoryChangeHrefOf(SALON_ID, 'category'),
+    ]).toEqual([
+      MENU,
+      `${MENU}/services/service`,
+      `${MENU}/categories/new`,
+      `${MENU}/categories/category/edit`,
     ])
   })
 
