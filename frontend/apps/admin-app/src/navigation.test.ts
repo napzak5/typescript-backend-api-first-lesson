@@ -50,6 +50,13 @@ type Role = ModelsUserResponse['role']
 /** The roles of a salon that do not keep its staff ledger */
 const NO_LEDGER_ROLES: Role[] = ['manager', 'staff']
 
+/** The last link of a member of a salon: their own profile, not the screen they are on */
+const PROFILE = {
+  href: '/account/profile',
+  label: 'プロフィール',
+  current: false,
+}
+
 const NO_LINKS: [string, Role | undefined][] = [
   ['nobody is signed in', undefined],
   ['the account is of a customer', 'customer'],
@@ -100,6 +107,7 @@ describe('navigationFor', () => {
         { href: CUSTOMERS, label: '顧客', current: false },
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
+        PROFILE,
       ])
     },
   )
@@ -119,6 +127,7 @@ describe('navigationFor', () => {
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: STAFF, label: 'スタッフ', current: true },
+        PROFILE,
       ])
     },
   )
@@ -126,7 +135,24 @@ describe('navigationFor', () => {
   it('should lead a member of the staff who is elsewhere to the bookings through the start', () => {
     expect(navigationFor('staff', '/account/security')).toEqual([
       { href: '/', label: '予約', current: false },
+      PROFILE,
     ])
+  })
+
+  it.each<Role>(['owner', 'manager', 'staff'])(
+    'should mark the profile as the screen a member (%s) is on there, after the way back to the bookings',
+    (role) => {
+      expect(navigationFor(role, '/account/profile')).toEqual([
+        { href: '/', label: '予約', current: false },
+        { ...PROFILE, current: true },
+      ])
+    },
+  )
+
+  it('should lead an administrator to no profile, as no salon has them as a member', () => {
+    expect(
+      navigationFor('admin', '/account/profile').map(({ label }) => label),
+    ).toEqual(['サロンを選ぶ'])
   })
 
   it.each(NO_LINKS)('should offer no link when %s', (_case, role) => {
@@ -141,6 +167,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
+      PROFILE,
     ])
   })
 
@@ -156,6 +183,7 @@ describe('navigationFor', () => {
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
+      PROFILE,
     ])
   })
 
@@ -180,6 +208,7 @@ describe('navigationFor', () => {
       { href: CUSTOMERS, label: '顧客', current: true },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
+      PROFILE,
     ])
   })
 
@@ -200,6 +229,7 @@ describe('navigationFor', () => {
         { href: CUSTOMERS, label: '顧客', current: false },
         { href: TREATMENTS, label: '施術記録', current: true },
         { href: SHIFTS, label: 'シフト', current: false },
+        PROFILE,
       ])
     },
   )
@@ -215,6 +245,7 @@ describe('navigationFor', () => {
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
+      PROFILE,
     ])
   })
 
@@ -226,6 +257,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
       { href: STAFF, label: 'スタッフ', current: false },
+      PROFILE,
     ])
   })
 
@@ -282,6 +314,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: STAFF, label: 'スタッフ', current: true },
+      PROFILE,
     ])
   })
 

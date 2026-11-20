@@ -43,7 +43,8 @@ import { CustomerScreen } from './customers/customer-screen'
 import { CustomerVersionScreen } from './customers/customer-version-screen'
 import { PointEntryScreen } from './customers/point-entry-screen'
 import { HomeScreen } from './home-screen'
-import { navigationFor } from './navigation'
+import { navigationFor, OWN_PROFILE_PATH } from './navigation'
+import { OwnProfileScreen } from './own-profile/own-profile-screen'
 import { CheckoutScreen } from './sales/checkout-screen'
 import { PaymentEntryScreen } from './sales/payment-entry-screen'
 import { ReceiptScreen } from './sales/receipt-screen'
@@ -325,6 +326,7 @@ export const App = () => {
                 path='/salons/:salonId/shifts/:staffId/edit'
                 element={<ScheduleChangeScreen />}
               />
+              <Route path={OWN_PROFILE_PATH} element={<OwnProfileScreen />} />
               <Route
                 path={SECURITY_PATH}
                 element={
