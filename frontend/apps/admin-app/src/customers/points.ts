@@ -19,6 +19,7 @@ import type { Forbidden, RefusedValue, Unread } from '../reading'
 import type { SaleRead } from '../sales/sales-api'
 import { isDay, LATEST_DAY, momentNameAt } from '../salon-time'
 import { countNameOf } from './customer-format'
+import type { CustomerRead } from './customers-api'
 
 /*
  * The points of a customer: what a form records, what is said about the
@@ -311,7 +312,12 @@ export type PointAttempt =
 /** What the screen does after an attempt. */
 export type PointSays =
   /** The points were recorded: the notification says what, and the balance */
-  | { type: 'done'; message: string }
+  | {
+      type: 'done'
+      message: string
+      /** What the points left the customer with */
+      balance: number
+    }
   | { type: 'again'; message: string | undefined; errors: FormSays['errors'] }
   /** The customer is not in the ledger any more */
   | { type: 'gone' }
@@ -392,6 +398,7 @@ export const afterRecording = (outcome: PointAttempt): PointSays =>
     .with({ type: 'recorded' }, ({ transaction }) => ({
       type: 'done',
       message: recordedMessageOf(transaction),
+      balance: transaction.balance,
     }))
     .with({ type: 'invalid' }, ({ values }) => {
       if (values.some(({ field }) => field === 'customerId')) {
@@ -439,3 +446,16 @@ export const afterRecording = (outcome: PointAttempt): PointSays =>
       errors: {},
     }))
     .exhaustive()
+
+/**
+ * The record of a customer that was read, with the balance points left
+ * them: a screen that shows it before it is read anew shows the balance
+ * after the points.
+ */
+export const withBalance = (
+  read: CustomerRead,
+  balance: number,
+): CustomerRead =>
+  read.type === 'found'
+    ? { ...read, customer: { ...read.customer, loyaltyPoints: balance } }
+    : read
