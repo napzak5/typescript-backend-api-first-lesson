@@ -1,7 +1,7 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -66,6 +66,17 @@ const openAccountOf = async (staffCode: string, as = OWNER): Promise<void> => {
 
 const cardHeading = (name: string) =>
   screen.findByRole('heading', { level: 2, name })
+
+/**
+ * Waits until the heading of a card has the focus. It takes the focus once
+ * the part a write left is shown, which can be a moment after the heading
+ * itself: what was read anew reaches the screen after the write is done.
+ */
+const expectFocusOn = async (name: string): Promise<void> => {
+  await waitFor(() => {
+    expect(screen.getByRole('heading', { level: 2, name })).toHaveFocus()
+  })
+}
 
 /** What the application says in its notifications, and above the cards. */
 const notifications = (): string[] =>
@@ -138,7 +149,7 @@ describe('the accounts of the staff, against the API', () => {
       await user.click(screen.getByRole('button', { name: '招待メールを送る' }))
 
       // Assert
-      expect(await cardHeading('招待')).toHaveFocus()
+      await expectFocusOn('招待')
       expect(notifications()).toContain(
         'Yui Watanabe さんに、招待メールを送りました。',
       )
@@ -198,7 +209,7 @@ describe('the accounts of the staff, against the API', () => {
       await user.click(screen.getByRole('button', { name: '招待メールを送る' }))
 
       // Assert
-      expect(await cardHeading('招待')).toHaveFocus()
+      await expectFocusOn('招待')
       expect(await storedInvitationOf(WATANABE.code)).toEqual([
         expect.objectContaining({ role: 'owner' }),
       ])
@@ -231,7 +242,7 @@ describe('the accounts of the staff, against the API', () => {
           'Yui Watanabe さんに、招待メールを送り直しました。前に送ったメールのリンクは、使えなくなりました。',
         ),
       ).toBeVisible()
-      expect(await cardHeading('招待')).toHaveFocus()
+      await expectFocusOn('招待')
       expect(termsOf('招待')[0]).toEqual(['状態', '受け入れ待ち'])
       expect(await storedInvitationOf(WATANABE.code)).toEqual([
         { email: WATANABE.email, role: 'manager', hoursLasting: 7 * 24 },
@@ -301,7 +312,7 @@ describe('the accounts of the staff, against the API', () => {
       await user.click(within(dialog).getByRole('button', { name: '取り消す' }))
 
       // Assert
-      expect(await cardHeading('招待する')).toHaveFocus()
+      await expectFocusOn('招待する')
       expect(notifications()).toContain(
         'Yui Watanabe さんへの招待を取り消しました。',
       )
@@ -326,7 +337,7 @@ describe('the accounts of the staff, against the API', () => {
       )
 
       // Assert
-      expect(await cardHeading('ログインアカウント')).toHaveFocus()
+      await expectFocusOn('ログインアカウント')
       expect(notifications()).toContain(
         'その間に、Yui Watanabe さんが招待を受け入れて、ログインアカウントができていました。招待メールは、送っていません。',
       )
@@ -481,7 +492,7 @@ describe('the accounts of the staff, against the API', () => {
       await user.click(within(dialog).getByRole('button', { name: '解除する' }))
 
       // Assert
-      expect(await cardHeading('招待する')).toHaveFocus()
+      await expectFocusOn('招待する')
       expect(notifications()).toContain(
         'Hiroshi Tanaka さんのログインアカウントの紐づけを解除しました。',
       )
@@ -506,7 +517,7 @@ describe('the accounts of the staff, against the API', () => {
       await user.click(screen.getByRole('button', { name: 'ロールを変える' }))
 
       // Assert
-      expect(await cardHeading('招待する')).toHaveFocus()
+      await expectFocusOn('招待する')
       expect(notifications()).toContain(
         'その間に、Hiroshi Tanaka さんのログインアカウントか招待が、変わっていました（招待が受け入れられたか、取り消されたか、紐づけが解除されていました）。いまの状態を出しています。',
       )
