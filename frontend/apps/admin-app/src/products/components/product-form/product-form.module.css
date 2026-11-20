@@ -1,0 +1,62 @@
+/* A part of the form, under its name: further from the part before it than its controls are from each other */
+.part {
+  padding-block-start: var(--space-2);
+}
+
+/*
+ * A browser sets the legend of a fieldset apart from what the fieldset
+ * lays out, so the gap below the name is the name's own.
+ */
+.name {
+  margin-block-end: var(--space-3);
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+/* The controls of a part, one below the other */
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* What a part says of all its controls */
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* Two values that are read together: one below the other, side by side where there is room */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+/* Three amounts that are compared: one below the other, side by side where there is room */
+.prices {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+/* The control of a short value is as wide as its values */
+.short {
+  justify-self: start;
+  min-inline-size: 12rem;
+}
+
+@media (min-width: 40rem) {
+  .pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 48rem) {
+  .prices {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
