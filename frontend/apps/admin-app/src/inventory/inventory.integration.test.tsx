@@ -1,6 +1,6 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useLayoutEffect } from 'react'
 import { MemoryRouter, useLocation } from 'react-router'
@@ -787,6 +787,7 @@ describe('the stock screens', () => {
       ),
     ).toBeInTheDocument()
     // The rows read before the removal are not shown again, they are read anew
+    await waitFor(() => expect(firstSight[0]).toBe(inventoryHrefOf(salonId)))
     expect(firstSight).toEqual([
       inventoryHrefOf(salonId),
       expect.not.stringContaining('7 行'),
