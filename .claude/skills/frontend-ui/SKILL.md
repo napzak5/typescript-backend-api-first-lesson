@@ -39,6 +39,7 @@ this one: a component is not done without its stories and its test.
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
 | The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording, the customers of a file, the merge, the exports, the requests to have the data erased | `frontend/apps/admin-app/src/customers/` |
 | The charts of the customers in the admin application: the chart, the form with the rows of the treatments had before, the search of the charts, the allergies of a customer with their form and their removal | `frontend/apps/admin-app/src/charts/` |
+| The treatment records in the admin application: the list, a record with its removal, the form with the rows of the products used, the part of the page of a booking; the products of a salon, read to the end | `frontend/apps/admin-app/src/treatments/`, `src/products/products-api.ts` |
 | A file the API answers with, saved by the browser: its name, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `saveFile`) |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
@@ -1569,6 +1570,57 @@ The charts of the admin application are the example to read:
 - **A state that a colour sets apart is said in a word first**
   (`severityToneOf`): the two heaviest severities are a badge of a tone
   of their own, every severity is its word.
+
+### A record of a visit: written from its booking, found, changed, removed
+
+The treatment records of the admin application are the example to read:
+`frontend/apps/admin-app/src/treatments/` (`treatments-screen.tsx` for
+the list, `treatment-screen.tsx` for a record and its removal,
+`treatment-entry-screen.tsx` and `treatment-change-screen.tsx` for the
+form, `with-treatment.tsx` for the record of the address with what it
+names, `components/booking-treatment/` for the part of the page of a
+booking).
+
+- **A record a booking has once is written from the booking**
+  (`/bookings/:bookingId/treatment/new`) and has an address of its own
+  (`/treatments/:treatmentId`), as the API reads it by its ID. The page
+  of the booking has a part that says, by the state of the booking,
+  whether its record is written, can be written, or is not written of
+  (`BookingTreatment`, a match on the state): the operations a state
+  allows are offered by the state, as the operations of a booking are.
+- **The salon of a record is that of its booking**: the API serves the
+  records at addresses that are not below a salon. The screen reads the
+  booking, and a record whose booking is of another salon is not found,
+  as a booking of another salon is not.
+- **What a record names is read once the record was, in the component
+  that reads the record** (`skipToken` of TanStack Query in
+  `with-treatment.tsx`), and every state of the reads renders the heading
+  in the same place. A heading rendered by another component once a read
+  ended is another element: the focus the frame gave the heading of the
+  screen is lost, and the keyboard goes on from the top of the document.
+  Two screens one leads to have two titles (「施術記録」 for the list,
+  「施術記録の内容」 for a record): the frame gives the heading the focus
+  when the title changes.
+- **Choices offered as checkboxes are read in the order they are
+  offered**, which is the order of the menu, not of the record: a change
+  compares them as sets (`sameServices` of `treatment-form.ts`), and a
+  form opened and sent as it was asks the API for nothing.
+- **A row of a product writes what the product decides**: choosing the
+  product writes its unit into the row, and the control of the lot
+  number is there only for a product kept by lots, as the API requires
+  the lot of one and refuses it of another. The products offered are
+  those the salon uses in treatments and still sells, and the one the
+  row holds; a product that was removed is named as removed. The
+  products are read to the end of their list once (`readProducts`), as
+  the API has no search by name.
+- **A 409 that may mean two things is read again, not guessed**: the
+  API refuses to write a record both for a booking that has one and for
+  one whose treatment has not begun. The screen reads the record of the
+  booking again and says which it is: the record that is there, with a
+  link to it, or the state of the booking, which is read again.
+- **What a form records but does not do is said where it is recorded**:
+  the products used move no stock, and the part of the form says that
+  the stock is moved on the screens of the stock.
 
 ## Screens that a mailed link opens
 

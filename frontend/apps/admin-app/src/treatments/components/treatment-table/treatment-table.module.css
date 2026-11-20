@@ -1,0 +1,11 @@
+/*
+ * The services break their lines, unlike the other cells: a record may
+ * hold many. They are never narrower than a few names; on a narrow screen
+ * the table scrolls sideways.
+ */
+.text {
+  display: block;
+  min-inline-size: 10rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
