@@ -6,7 +6,7 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
-import { salonChangeHrefOf } from '../navigation'
+import { hoursChangeHrefOf, salonChangeHrefOf } from '../navigation'
 import { dayAt } from '../salon-time'
 import { readSalon, salonKeyOf } from '../salons/salons-api'
 import { WithSalon } from '../salons/with-salon'
@@ -20,7 +20,8 @@ type SettingsPartProps = { salon: ModelsSalonResponse }
 /**
  * The settings of the salon, read anew whenever the screen opens: the
  * salon that was read before may have been changed since. An account that
- * changes the settings is offered to change the information of the salon.
+ * changes the settings is offered to change the information of the salon
+ * and its hours.
  */
 const SettingsPart = ({ salon }: SettingsPartProps) => {
   const keeps = useKeepsSalon()
@@ -37,9 +38,17 @@ const SettingsPart = ({ salon }: SettingsPartProps) => {
         description={salon.name}
         actions={
           keeps ? (
-            <ButtonLink href={salonChangeHrefOf(salon.id)} variant='primary'>
-              サロンの情報を直す
-            </ButtonLink>
+            <>
+              <ButtonLink href={salonChangeHrefOf(salon.id)} variant='primary'>
+                サロンの情報を直す
+              </ButtonLink>
+              <ButtonLink
+                href={hoursChangeHrefOf(salon.id)}
+                variant='secondary'
+              >
+                営業時間を直す
+              </ButtonLink>
+            </>
           ) : undefined
         }
       />

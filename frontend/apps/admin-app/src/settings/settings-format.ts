@@ -1,5 +1,6 @@
 import type {
   ModelsBusinessHours,
+  ModelsDateRange,
   ModelsDayOfWeekType,
   ModelsOpeningHours,
   ModelsTimeSlot,
@@ -32,6 +33,13 @@ const dateNameOf = (day: string): string =>
     dateStyle: 'long',
     timeZone: 'UTC',
   }).format(new Date(`${day}T00:00:00Z`))
+
+/** The days hours are kept in, at the clock of the salon: 「2026年4月1日から2026年9月30日まで」. */
+export const periodNameOf = (
+  { startDate, endDate }: ModelsDateRange,
+  timezone: string,
+): string =>
+  `${dateNameOf(dayAt(new Date(startDate), timezone))}から${dateNameOf(dayAt(new Date(endDate), timezone))}まで`
 
 /** The hours of a day of the week, as a row of the regular week. */
 export type WeekdayHours = {
@@ -66,7 +74,7 @@ export const weekHoursOf = (
     const period =
       entry.effectivePeriod === null
         ? ''
-        : `・${dateNameOf(dayAt(new Date(entry.effectivePeriod.startDate), timezone))}から${dateNameOf(dayAt(new Date(entry.effectivePeriod.endDate), timezone))}まで`
+        : `・${periodNameOf(entry.effectivePeriod, timezone)}`
 
     return {
       weekday,
