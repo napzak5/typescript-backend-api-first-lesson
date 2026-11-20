@@ -65,6 +65,16 @@ export const treatmentChangeHrefOf = (
   treatmentId: string,
 ): string => `${treatmentHrefOf(salonId, treatmentId)}/edit`
 
+/** The screen that adds photos to a treatment record. */
+export const treatmentPhotosHrefOf = (
+  salonId: string,
+  treatmentId: string,
+): string => `${treatmentHrefOf(salonId, treatmentId)}/photos/new`
+
+/** The treatment records of a salon, counted. */
+export const treatmentStatisticsHrefOf = (salonId: string): string =>
+  `${treatmentsHrefOf(salonId)}/statistics`
+
 /** The ledger of the sales of a salon. */
 export const salesHrefOf = (salonId: string): string =>
   `/salons/${salonId}/sales`

@@ -193,3 +193,48 @@ export const storedTreatmentCount = async (): Promise<number> =>
   countSchema.parse(
     await testApi().query('select count(*) as count from treatment_records'),
   )[0].count
+
+const photosSchema = z.array(
+  z.object({
+    photoType: z.string(),
+    photoUrl: z.string(),
+    thumbnailUrl: z.string().nullable(),
+    angle: z.string().nullable(),
+    description: z.string().nullable(),
+    isPublic: z.boolean(),
+    customerConsent: z.boolean(),
+    sortOrder: z.number(),
+  }),
+)
+
+/** The photos of a record as they are stored, in their order. */
+export const storedPhotosOf = async (treatmentId: string) =>
+  photosSchema.parse(
+    await testApi().query(
+      `select "photoType"::text as "photoType", "photoUrl", "thumbnailUrl", angle, description,
+              "isPublic", "customerConsent", "sortOrder"
+       from treatment_photos where "treatmentRecordId" = $1
+       order by "sortOrder", "createdAt", id`,
+      [treatmentId],
+    ),
+  )
+
+/** Lets another account have added photos to a record meanwhile, at the addresses given, after its photos. */
+export const photosAddedMeanwhile = (
+  treatmentId: string,
+  addresses: readonly string[],
+): Promise<unknown> =>
+  testApi().query(
+    `insert into treatment_photos ("treatmentRecordId", "photoType", "photoUrl", "isPublic",
+                                   "customerConsent", "sortOrder")
+     select $1, 'other', address, false, false,
+            100 + place::int
+     from jsonb_array_elements_text($2::jsonb) with ordinality as added(address, place)`,
+    [treatmentId, JSON.stringify(addresses)],
+  )
+
+/** Lets another account have taken a photo of a record away meanwhile, by its address. */
+export const photoRemovedMeanwhile = (photoUrl: string): Promise<unknown> =>
+  testApi().query('delete from treatment_photos where "photoUrl" = $1', [
+    photoUrl,
+  ])

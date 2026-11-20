@@ -1,0 +1,79 @@
+/* What the card holds, one below the other */
+.part {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* The photos side by side: two on a phone, and as many as there is room for, of 12rem at least, on a wider screen */
+.photos {
+  display: grid;
+  grid-template-columns: repeat(
+      auto-fill,
+      minmax(min(calc(50% - var(--space-2)), 12rem), 1fr)
+    );
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A photo, with its caption and what can be done with it below */
+.photo {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-2);
+}
+
+.figure {
+  display: grid;
+  grid-row: span 2;
+  grid-template-rows: subgrid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+/* The images in frames of one shape: what does not load leaves an empty frame and the caption says what it was */
+.image {
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  background-color: var(--color-surface-sunken);
+}
+
+.caption {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+}
+
+.name {
+  font-weight: var(--font-weight-bold);
+}
+
+/* What was written of a photo keeps its line breaks */
+.description {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.use {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
