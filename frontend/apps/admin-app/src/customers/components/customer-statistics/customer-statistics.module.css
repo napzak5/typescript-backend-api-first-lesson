@@ -1,0 +1,6 @@
+/* The figures, then the two tables: one below the other. */
+.statistics {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}

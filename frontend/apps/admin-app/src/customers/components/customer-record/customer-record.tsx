@@ -1,0 +1,200 @@
+import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
+import {
+  Badge,
+  ButtonLink,
+  Card,
+  DescriptionList,
+  Link,
+  TagList,
+} from '@beauty-salon-frontend/ui'
+import { dayNameOf, momentNameAt } from '../../../salon-time'
+import {
+  addressNameOf,
+  categoriesNameOf,
+  contactsNameOf,
+  countNameOf,
+  customerStatusNameOf,
+  customerStatusToneOf,
+  genderNameOf,
+  hairNameOf,
+  tierNameOf,
+  UNRECORDED,
+} from '../../customer-format'
+import { customerKanaOf, customerNameOf } from '../../customers-api'
+import styles from './customer-record.module.css'
+
+export type CustomerRecordProps = {
+  customer: ModelsCustomerResponse
+  /** The time zone of the salon: the times are those of its clock */
+  timezone: string
+  /** The address of the screen that changes the customer */
+  changeHref: string
+  /** The address of the screen that enters a booking of the customer at the salon */
+  bookingHref: string
+  /** The address of the page of another customer: the one who referred this one */
+  customerHref: (customerId: string) => string
+}
+
+const NONE = 'なし'
+
+/** A text that was written in several lines, with its line breaks. */
+const written = (text: string | null) =>
+  text === null ? UNRECORDED : <p className={styles['written']}>{text}</p>
+
+/** A day the ledger keeps, or that there is none. */
+const dayOrNone = (day: string | null, none: string): string =>
+  day === null ? none : dayNameOf(day)
+
+/**
+ * What the ledger keeps of a customer: who they are and how to reach them,
+ * their hair and what they like, how the salon treats them, and the notes;
+ * then their visits and points, which the bookings and the sales keep up.
+ * What was not given is said to be missing.
+ */
+export const CustomerRecord = ({
+  customer,
+  timezone,
+  changeHref,
+  bookingHref,
+  customerHref,
+}: CustomerRecordProps) => {
+  const kana = customerKanaOf(customer)
+
+  return (
+    <div className={styles['record']}>
+      <Card
+        title='台帳'
+        actions={
+          <>
+            <ButtonLink href={bookingHref} variant='primary'>
+              予約を入れる
+            </ButtonLink>
+            <ButtonLink href={changeHref} variant='secondary'>
+              台帳を直す
+            </ButtonLink>
+          </>
+        }
+      >
+        <DescriptionList
+          items={[
+            { term: 'お名前', description: customerNameOf(customer) },
+            { term: 'フリガナ', description: kana === '' ? UNRECORDED : kana },
+            { term: 'メールアドレス', description: customer.email },
+            { term: '電話番号', description: customer.phoneNumber },
+            {
+              term: '予備の電話番号',
+              description: customer.alternativePhone ?? UNRECORDED,
+            },
+            { term: '住所', description: addressNameOf(customer) },
+            {
+              term: '生年月日',
+              description: dayOrNone(customer.birthDate, UNRECORDED),
+            },
+            { term: '性別', description: genderNameOf(customer.gender) },
+            {
+              term: '職業',
+              description: customer.occupation ?? UNRECORDED,
+            },
+            { term: '髪と頭皮', description: hairNameOf(customer) },
+            {
+              term: '好みのメニュー',
+              description: categoriesNameOf(
+                customer.preferences?.preferredServices ?? [],
+              ),
+            },
+            {
+              term: '好みについてのメモ',
+              description: written(customer.preferences?.notes ?? null),
+            },
+            {
+              term: '会員ランク',
+              description: tierNameOf(customer.membershipTier),
+            },
+            {
+              term: 'ステータス',
+              description: (
+                <Badge tone={customerStatusToneOf(customer.customerStatus)}>
+                  {customerStatusNameOf(customer.customerStatus)}
+                </Badge>
+              ),
+            },
+            {
+              term: '有効',
+              description: customer.isActive
+                ? '有効'
+                : '無効（ご自分では予約を入れられません）',
+            },
+            {
+              term: 'タグ',
+              description:
+                customer.tags.length === 0 ? (
+                  NONE
+                ) : (
+                  <TagList label='タグ' items={customer.tags} />
+                ),
+            },
+            {
+              term: '紹介コード',
+              description: customer.referralCode ?? '未発行',
+            },
+            {
+              term: '紹介元',
+              description:
+                customer.referredBy === null ? (
+                  NONE
+                ) : (
+                  <Link href={customerHref(customer.referredBy)}>
+                    紹介したお客様
+                  </Link>
+                ),
+            },
+            { term: '送ってよい連絡', description: contactsNameOf(customer) },
+            { term: '備考', description: written(customer.notes) },
+            {
+              term: 'スタッフ間の申し送り',
+              description: written(customer.internalNotes),
+            },
+            {
+              term: '登録日時',
+              description: momentNameAt(customer.createdAt, timezone),
+            },
+            {
+              term: '最後に直した日時',
+              description: momentNameAt(customer.updatedAt, timezone),
+            },
+          ]}
+        />
+      </Card>
+      <Card title='来店とポイント'>
+        <DescriptionList
+          items={[
+            {
+              term: '初回来店日',
+              description: dayOrNone(customer.firstVisitDate, '来店なし'),
+            },
+            {
+              term: '最終来店日',
+              description: dayOrNone(customer.lastVisitDate, '来店なし'),
+            },
+            {
+              term: '来店回数',
+              description: countNameOf(customer.visitCount, '回'),
+            },
+            {
+              term: '無断キャンセル',
+              description: countNameOf(customer.noShowCount, '回'),
+            },
+            {
+              term: 'キャンセル',
+              description: countNameOf(customer.cancellationCount, '回'),
+            },
+            {
+              term: 'ポイント',
+              description: countNameOf(customer.loyaltyPoints, 'ポイント'),
+            },
+          ]}
+        />
+      </Card>
+    </div>
+  )
+}
