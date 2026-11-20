@@ -521,7 +521,10 @@ describe('the screens of the purchase orders', () => {
         kept: true,
       },
     ])
-    expect(termsOf('発注')[3]?.[1]).toMatch(new RegExp(`（${stylist}）$`))
+    // The staff are read apart from the order, and may come after it
+    await waitFor(() =>
+      expect(termsOf('発注')[3]?.[1]).toMatch(new RegExp(`（${stylist}）$`)),
+    )
     expect(termsOf('発注')[4]).toEqual(['納品予定日', dayNameOf(delivery)])
     expect(rowsOf('明細').map((row) => row.slice(0, 5))).toEqual([
       ['COLOR001', COLOUR, '2.5 tube', '￥800', '￥2,000'],
