@@ -1,0 +1,24 @@
+/* Two values that are read together: one below the other, side by side where there is room */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+/* The control of a short value is as wide as its values */
+.short {
+  justify-self: start;
+  min-inline-size: 12rem;
+}
+
+@media (min-width: 40rem) {
+  .pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* The kind of a method that is changed: shown, since it is not changed */
+.kept {
+  margin: 0;
+}
