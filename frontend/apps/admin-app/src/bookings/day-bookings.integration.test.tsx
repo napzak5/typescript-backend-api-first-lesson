@@ -101,14 +101,14 @@ describe('the bookings of a salon, against the API', () => {
   })
 
   describe('the start', () => {
-    it.each([
-      ['the owner', OWNER, TOKYO],
-      ['a manager', MANAGER, TOKYO],
-      ['a stylist', STYLIST, TOKYO],
-      ['a therapist of the other salon', THERAPIST, OSAKA],
+    it.each<[string, string, string, boolean]>([
+      ['the owner', OWNER, TOKYO, true],
+      ['a manager', MANAGER, TOKYO, false],
+      ['a stylist', STYLIST, TOKYO, false],
+      ['a therapist of the other salon', THERAPIST, OSAKA, false],
     ])(
       'should lead %s on to the bookings of their salon',
-      async (_case, email, salon) => {
+      async (_case, email, salon, keepsStaffLedger) => {
         // Arrange
         const salonId = await salonIdOf(salon)
         renderAt('/')
@@ -125,6 +125,10 @@ describe('the bookings of a salon, against the API', () => {
           ['売上', `/salons/${salonId}/sales`, null],
           ['顧客', `/salons/${salonId}/customers`, null],
           ['施術記録', `/salons/${salonId}/treatments`, null],
+          // The staff ledger is kept by the owner of the salon alone
+          ...(keepsStaffLedger
+            ? [['スタッフ', `/salons/${salonId}/staff`, null]]
+            : []),
         ])
       },
     )
@@ -173,6 +177,7 @@ describe('the bookings of a salon, against the API', () => {
         ['売上', `/salons/${osaka}/sales`, null],
         ['顧客', `/salons/${osaka}/customers`, null],
         ['施術記録', `/salons/${osaka}/treatments`, null],
+        ['スタッフ', `/salons/${osaka}/staff`, null],
       ])
     })
 

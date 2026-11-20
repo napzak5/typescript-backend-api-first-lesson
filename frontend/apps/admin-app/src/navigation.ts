@@ -1,5 +1,6 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import type { NavigationItem } from '@beauty-salon-frontend/ui'
+import { mayKeepStaffLedger } from './staff/staff-format'
 
 /** The start of the addresses of the screens of one salon. */
 const SALON_PATH = /^\/salons\/([^/]+)(?:\/|$)/
@@ -101,6 +102,22 @@ export const refundHrefOf = (
   saleId: string,
   paymentId: string,
 ): string => `${saleHrefOf(salonId, saleId)}/payments/${paymentId}/refund`
+
+/** The staff ledger of a salon. */
+export const staffLedgerHrefOf = (salonId: string): string =>
+  `/salons/${salonId}/staff`
+
+/** The screen that registers a member in the staff ledger. */
+export const staffEntryHrefOf = (salonId: string): string =>
+  `${staffLedgerHrefOf(salonId)}/new`
+
+/** A member of the staff ledger. */
+export const staffMemberHrefOf = (salonId: string, staffId: string): string =>
+  `${staffLedgerHrefOf(salonId)}/${staffId}`
+
+/** The screen that changes what the ledger holds of a member. */
+export const staffChangeHrefOf = (salonId: string, staffId: string): string =>
+  `${staffMemberHrefOf(salonId, staffId)}/edit`
 
 /** The ledger of the customers, from the screens of a salon. */
 export const customersHrefOf = (salonId: string): string =>
@@ -234,7 +251,8 @@ const SALON_ROLES: readonly string[] = ['owner', 'manager', 'staff']
 
 /**
  * The links of the header: the bookings, the sales, the customers and the
- * treatment records, from the salon of the address. The screens of a salon are below its address;
+ * treatment records, from the salon of the address, and the staff ledger
+ * for the roles that keep it. The screens of a salon are below its address;
  * an administrator chooses the salon at the start (`/`), and a member of
  * the staff is led from there to the salon they belong to. So a member who
  * is elsewhere (the security of the account) goes back to the bookings
@@ -254,6 +272,7 @@ export const navigationFor = (
     const sales = salesHrefOf(salonId)
     const customers = customersHrefOf(salonId)
     const treatments = treatmentsHrefOf(salonId)
+    const staff = staffLedgerHrefOf(salonId)
 
     return [
       ...choice,
@@ -273,6 +292,15 @@ export const navigationFor = (
         label: '施術記録',
         current: isAtOrBelow(pathname, treatments),
       },
+      ...(role !== undefined && mayKeepStaffLedger(role)
+        ? [
+            {
+              href: staff,
+              label: 'スタッフ',
+              current: isAtOrBelow(pathname, staff),
+            },
+          ]
+        : []),
     ]
   }
 
