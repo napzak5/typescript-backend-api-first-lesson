@@ -1250,7 +1250,7 @@ booking (`components/booking-sale/`).
   a `DescriptionList` by the number of the payment, and the cell says how
   much and when.
 
-### A ledger of the platform: found, registered, shown, changed, removed, and its points
+### A ledger of the platform: found, registered, shown, changed, removed, merged, and its points
 
 The customers of the admin application are the example to read:
 `frontend/apps/admin-app/src/customers/` (`customer-ledger-screen.tsx` for
@@ -1262,8 +1262,9 @@ salon changes, `with-customer.tsx` for the customer of the address,
 `customer-history-screen.tsx` and `customer-version-screen.tsx` for the
 history and a version, `customer-points-screen.tsx` and
 `point-entry-screen.tsx` for the points and their recording,
-`customer-import-screen.tsx` for the customers of a file, and the choice
-of `customer-ledger-screen.tsx` for customers written at once).
+`customer-import-screen.tsx` for the customers of a file, the choice
+of `customer-ledger-screen.tsx` for customers written at once, and
+`customer-merge-screen.tsx` for two records of one customer made one).
 
 - **A ledger that belongs to no salon is still shown below one.** The
   customers are one ledger for the platform, and every address of the
@@ -1300,8 +1301,9 @@ of `customer-ledger-screen.tsx` for customers written at once).
   the API and takes the focus as every control does, and sends the ID in
   a hidden control. 「紹介元を選ぶ」 opens a `Dialog` that searches the
   ledger by a keyword with a form of its own, and a name pressed there is
-  chosen (`CustomerChoices` with `choose: { type: 'button' }`, the table
-  the booking search shows with links). The dialog is `wide`, so that the
+  chosen (`FoundCustomers` of `found-customers.tsx`: `CustomerChoices`
+  with `choose: { type: 'button' }`, the table the booking search and the
+  merge show with links). The dialog is `wide`, so that the
   columns that tell two customers of one name apart are seen on a wide
   screen without scrolling, and the names are bordered buttons, as a
   button in a row of a table is; 「紹介元を外す」 takes it away
@@ -1450,6 +1452,28 @@ of `customer-ledger-screen.tsx` for customers written at once).
   with them, and the browser would leave the focus at the start of the
   page. A choice let go of in the table keeps the focus there; a dialog
   whose opener is still there gives the focus back to it (the browser).
+- **What cannot be undone shows what it makes before it is asked for**
+  (`customer-merge.ts`, `CustomerMerge`, `customer-merge-screen.tsx`).
+  The other record is found by a search in the page, and the keyword
+  and the one chosen are the query of the address (`keyword`, `with`),
+  so a page opened again shows the same two. The items the two differ in
+  are a table of the item, both values and the value after the merge,
+  which the screen works out by the rules of the API (`mergedLedgerOf`),
+  and the items of the ledger share their words with the page of the
+  customer (`comparedItemsOf` of `ledger-items.tsx`). Unlike the cells
+  of other tables, its values break their lines, each at least 10rem
+  wide (a block of the module in the cell): notes and addresses are
+  long, and the value after the merge is the column to be seen. What the API
+  refuses a merge for is read with the other (a pending request of
+  erasure, the charts) and said in full instead of the button. Two
+  customers of one name are told apart by their address of mail
+  (`whoIs`) wherever the screen names one of the two.
+- **A refusal that closes the dialog reads again and takes the focus
+  to the heading of the part** (`MergeWith`). The 409 of a merge closes
+  the dialog, says that the two were read again, and the reasons come
+  from what was read, not from the `detail`. The dialog and maybe its
+  opener are gone: a layout effect on the refusal moves the focus to
+  the heading, after the dialog closed in its own layout effect.
 
 ## Screens that a mailed link opens
 

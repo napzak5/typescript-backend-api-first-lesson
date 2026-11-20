@@ -10,18 +10,17 @@ import { customerKanaOf, customerNameOf } from '../../customers-api'
 
 /**
  * How a customer is chosen by their name: a link that leads on (to the
- * next step of a booking), or a button that hands the customer over (to a
- * form that stays open). The customer the form is about is found too, and
- * cannot be chosen: they are named as such.
+ * next step of a booking, to the merge with them), or a button that hands
+ * the customer over (to a form that stays open). The customer the screen
+ * is about is found too, and cannot be chosen: they are named as such.
  */
-type ChooseCustomer =
+export type ChooseCustomer = (
   | { type: 'link'; hrefOf: (customer: ModelsCustomerResponse) => string }
-  | {
-      type: 'button'
-      onChoose: (customer: ModelsCustomerResponse) => void
-      /** The ID of the customer who cannot be chosen; `undefined` for none */
-      excluded: string | undefined
-    }
+  | { type: 'button'; onChoose: (customer: ModelsCustomerResponse) => void }
+) & {
+  /** The ID of the customer who cannot be chosen; `undefined` for none */
+  excluded: string | undefined
+}
 
 export type CustomerChoicesProps = {
   /** The customers that were read so far, in the order of the API; at least one */
@@ -55,14 +54,13 @@ export const CustomerChoices = ({
         header: 'お名前',
         cell: (customer) =>
           match(choose)
-            .with({ type: 'link' }, ({ hrefOf }) => (
-              <Link href={hrefOf(customer)}>{customerNameOf(customer)}</Link>
-            ))
-            .with(
-              { type: 'button' },
+            .when(
               ({ excluded }) => customer.id === excluded,
               () => `${customerNameOf(customer)}（このお客様）`,
             )
+            .with({ type: 'link' }, ({ hrefOf }) => (
+              <Link href={hrefOf(customer)}>{customerNameOf(customer)}</Link>
+            ))
             .with({ type: 'button' }, ({ onChoose }) => (
               <Button size='small' onClick={() => onChoose(customer)}>
                 {customerNameOf(customer)}

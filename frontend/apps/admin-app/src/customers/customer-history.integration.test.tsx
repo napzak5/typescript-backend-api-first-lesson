@@ -47,7 +47,8 @@ import {
 const TITLE = 'Beauty Salon Admin'
 
 /** What a member of the staff is told where the ledger is kept */
-const KEPT = '台帳からの削除と変更履歴は、オーナーとマネージャーができます。'
+const KEPT =
+  '台帳からの削除と統合、変更履歴は、オーナーとマネージャーができます。'
 
 /** The address the application is at, as the router knows it */
 let address = ''
@@ -137,7 +138,7 @@ const openAt = async (path: (tokyo: string) => string, email = OWNER) => {
 const theCustomer = async (): Promise<void> => {
   await heading('お客様の台帳')
   await screen.findByRole('region', { name: '台帳' })
-  await screen.findByRole('region', { name: '変更履歴と削除' })
+  await screen.findByRole('region', { name: '台帳の管理' })
 }
 
 /** Waits for the page of a customer who left the ledger. */
@@ -152,7 +153,7 @@ const askToRemove = async (
   name = KENJI.name,
 ): Promise<HTMLElement> => {
   await user.click(
-    within(part('変更履歴と削除')).getByRole('button', {
+    within(part('台帳の管理')).getByRole('button', {
       name: '台帳から削除する',
     }),
   )
@@ -253,7 +254,7 @@ describe('removing customers, bringing them back, and their history, against the
 
       // Assert
       expect(
-        await within(part('変更履歴と削除')).findByRole('alert'),
+        await within(part('台帳の管理')).findByRole('alert'),
       ).toHaveTextContent(
         '終わっていない予約があるため、削除できませんでした。予約を完了、キャンセル、または削除してから、もう一度お試しください。',
       )
@@ -418,7 +419,7 @@ describe('removing customers, bringing them back, and their history, against the
 
       // Act
       await user.click(
-        within(part('変更履歴と削除')).getByRole('link', { name: '変更履歴' }),
+        within(part('台帳の管理')).getByRole('link', { name: '変更履歴' }),
       )
 
       // Assert
@@ -539,9 +540,9 @@ describe('removing customers, bringing them back, and their history, against the
       await theCustomer()
 
       // Assert
-      expect(within(part('変更履歴と削除')).getByText(KEPT)).toBeVisible()
-      expect(within(part('変更履歴と削除')).queryByRole('button')).toBeNull()
-      expect(within(part('変更履歴と削除')).queryByRole('link')).toBeNull()
+      expect(within(part('台帳の管理')).getByText(KEPT)).toBeVisible()
+      expect(within(part('台帳の管理')).queryByRole('button')).toBeNull()
+      expect(within(part('台帳の管理')).queryByRole('link')).toBeNull()
     })
 
     it('should be told at the address of the history, as somebody passed it on, who reads it', async () => {

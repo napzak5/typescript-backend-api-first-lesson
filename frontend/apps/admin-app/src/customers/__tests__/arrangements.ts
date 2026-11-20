@@ -562,3 +562,69 @@ export const storedBalanceOf = async (email: string): Promise<number> =>
       [email],
     ),
   )[0].loyaltyPoints
+
+/**
+ * Lets an account have taken the request of a customer to have their data
+ * erased, as the API would have taken it: pending, for 14 days.
+ */
+export const askedForErasure = (email: string, by: string): Promise<unknown> =>
+  testApi().query(
+    `insert into customer_deletion_requests ("customerId", reason, "requestedBy", "requestedAt", "scheduledAt")
+     select customers.id, 'ご本人からのお申し出', users.id, now(), now() + interval '14 days'
+     from customers cross join users
+     where customers.email = $1 and customers."deletedAt" is null and users.email = $2`,
+    [email, by],
+  )
+
+/** Lets a customer have a chart that names so many products they prefer: 「製品 <first>」 and the ones after. */
+export const arrangeChart = (
+  email: string,
+  first: number,
+  count: number,
+): Promise<unknown> =>
+  testApi().query(
+    `insert into medical_charts ("customerId", "previousTreatments", "preferredProducts", "avoidProducts")
+     select id, '[]'::jsonb,
+            array(select '製品 ' || n from generate_series($2::int, $2::int + $3::int - 1) as n),
+            '{}'
+     from customers where email = $1 and "deletedAt" is null`,
+    [email, first, count],
+  )
+
+/** Lets the ledger keep so many points for a customer. */
+export const keepBalance = (email: string, points: number): Promise<unknown> =>
+  testApi().query(
+    'update customers set "loyaltyPoints" = $2 where email = $1 and "deletedAt" is null',
+    [email, points],
+  )
+
+const mergedSchema = z.tuple([
+  z.object({
+    removed: z.boolean(),
+    email: z.string(),
+    operation: z.string().nullable(),
+  }),
+])
+
+/** A customer as a merge leaves them: whether they left the ledger, their address of mail, and what made their latest version. */
+export const storedMergeOf = async (customerId: string) =>
+  mergedSchema.parse(
+    await testApi().query(
+      `select "deletedAt" is not null as removed, email,
+              (select operation::text from customer_versions
+               where "customerId" = customers.id order by version desc limit 1) as operation
+       from customers where id = $1`,
+      [customerId],
+    ),
+  )[0]
+
+/** How many bookings a customer has, as they are stored. */
+export const storedBookingCountOf = async (
+  customerId: string,
+): Promise<number> =>
+  countSchema.parse(
+    await testApi().query(
+      'select count(*) as count from bookings where "customerId" = $1',
+      [customerId],
+    ),
+  )[0].count

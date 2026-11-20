@@ -113,6 +113,30 @@ export const customerPointsHrefOf = (
   customerId: string,
 ): string => `${customerHrefOf(salonId, customerId)}/points`
 
+/** What the screen that merges two customers searched the ledger for, and the customer chosen to merge with. */
+export type MergeChoice = {
+  keyword: string | undefined
+  otherId: string | undefined
+}
+
+/** The screen that merges a customer with another record of the same person. */
+export const customerMergeHrefOf = (
+  salonId: string,
+  customerId: string,
+  { keyword, otherId }: MergeChoice = {
+    keyword: undefined,
+    otherId: undefined,
+  },
+): string => {
+  const query = new URLSearchParams([
+    ...(keyword === undefined ? [] : [['keyword', keyword]]),
+    ...(otherId === undefined ? [] : [['with', otherId]]),
+  ])
+  const search = query.toString()
+
+  return `${customerHrefOf(salonId, customerId)}/merge${search === '' ? '' : `?${search}`}`
+}
+
 /** The sale points are recorded for, and what is recorded at first. */
 export type PointsOfSale = { saleId: string; kind: 'earned' | 'used' }
 

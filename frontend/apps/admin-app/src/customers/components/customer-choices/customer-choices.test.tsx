@@ -72,6 +72,20 @@ describe('CustomerChoices', () => {
     expect(screen.getByText('山田 花子（このお客様）')).toBeVisible()
   })
 
+  it('should lead on from every customer but the one the screen is about', async () => {
+    // Act
+    await stories.ByLinkWithTheCustomerThemselves.run()
+
+    // Assert
+    expect(
+      screen.getAllByRole('link').map((link) => link.getAttribute('href')),
+    ).toEqual([
+      expect.stringMatching(/^\?with=/),
+      expect.stringMatching(/^\?with=/),
+    ])
+    expect(screen.getByText('山田 花子（このお客様）')).toBeVisible()
+  })
+
   it('should say how many of the customers are shown', async () => {
     // Act
     await stories.WithMore.run()
