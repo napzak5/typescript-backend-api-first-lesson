@@ -8,6 +8,11 @@
   color: var(--color-text);
 }
 
+/* A table to choose from: its columns fit beside each other on a wide screen */
+.wide {
+  inline-size: min(100% - var(--space-8), var(--size-dialog-wide));
+}
+
 .dialog::backdrop {
   background-color: var(--color-overlay);
 }

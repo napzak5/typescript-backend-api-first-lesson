@@ -108,6 +108,28 @@ describe('CustomerRecord', () => {
     ])
   })
 
+  it('should name the customer who referred this one once they were read, and lead to their page', async () => {
+    // Act
+    await stories.ReferrerNamed.run()
+
+    // Assert
+    expect(screen.getByRole('link', { name: '鈴木 一郎 様' })).toHaveAttribute(
+      'href',
+      `${CUSTOMER}/c19f4d7a-6e8c-4adf-8dbe-ac7e3f6a8bc5`,
+    )
+  })
+
+  it('should say that the customer who referred this one is not in the ledger, without a link', async () => {
+    // Act
+    await stories.ReferrerGone.run()
+
+    // Assert
+    expect(screen.getByText('台帳にいないお客様')).toBeVisible()
+    expect(
+      screen.getByText('台帳にいないお客様').closest('a'),
+    ).not.toBeInTheDocument()
+  })
+
   it('should lead to the customer who referred this one, to a booking of the customer and to the change of the ledger', async () => {
     // Act
     await stories.Recorded.run()

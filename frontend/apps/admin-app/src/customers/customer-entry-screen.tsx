@@ -16,7 +16,11 @@ import { customerHrefOf, customersHrefOf } from '../navigation'
 import { dayAt } from '../salon-time'
 import { WithSalon } from '../salons/with-salon'
 import { CustomerForm } from './components/customer-form/customer-form'
-import { afterCustomerWrite, readCustomerEntry } from './customer-form'
+import {
+  afterCustomerWrite,
+  NO_REFERRER,
+  readCustomerEntry,
+} from './customer-form'
 import {
   attemptCustomerEntry,
   CUSTOMER_LISTS,
@@ -24,6 +28,7 @@ import {
   customerKeyOf,
   customerNameOf,
 } from './customers-api'
+import { ReferrerChoice } from './referrer-choice'
 
 const TITLE = 'お客様を登録する'
 
@@ -88,6 +93,10 @@ const CustomerEntry = ({ salon }: CustomerEntryProps) => {
     <CustomerForm
       customer={null}
       today={dayAt(new Date(), salon.timezone)}
+      referrer={NO_REFERRER}
+      chooseReferrer={(choice) => (
+        <ReferrerChoice {...choice} excluded={undefined} />
+      )}
       submitLabel='登録する'
       message={said.message}
       errors={said.errors}
@@ -104,7 +113,7 @@ const CustomerEntry = ({ salon }: CustomerEntryProps) => {
 
 /**
  * Registers a customer in the ledger: one who booked by phone, or who came
- * in without a booking. Who referred them is not asked for here.
+ * in without a booking, and who referred them when somebody did.
  */
 export const CustomerEntryScreen = () => {
   const { salonId = '' } = useParams()

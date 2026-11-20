@@ -6,14 +6,23 @@ import {
   customerCrudGetStatistics,
   customerCrudList,
   customerCrudUpdate,
+  customerCrudUpdatePreferences,
   type ModelsCustomerCreateRequest,
   type ModelsCustomerPreferencesResponse,
+  type ModelsCustomerPreferencesUpdateRequest,
   type ModelsCustomerResponse,
   type ModelsCustomerStatisticsResponse,
   type ModelsCustomerUpdateRequest,
+  type ModelsSalonResponse,
   type ModelsStaffProfileResponse,
   staffProfileGet,
 } from '@beauty-salon-frontend/api-client'
+import {
+  type PreferencesRefusal,
+  type StaffChoice,
+  staffChoicesOf,
+  staffIdsOf,
+} from '@beauty-salon-frontend/preferences'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import { outsideTheContract } from '../outside-the-contract'
@@ -31,6 +40,7 @@ import {
   unreadOf,
   whyUnread,
 } from '../reading'
+import { readSalon, readStaffProfiles } from '../salons/salons-api'
 import type {
   CustomerEntryAttempt,
   CustomerWriteAttempt,
@@ -97,6 +107,16 @@ export const preferencesKeyOf = (customerId: string): string[] => [
   ...customerKeyOf(customerId),
   'preferences',
 ]
+
+/**
+ * The key of the preferences of a customer as the form of a salon opens
+ * with them, and the staff it offers. It begins with the key of the
+ * preferences: what drops those drops it too.
+ */
+export const preferencesToChangeKeyOf = (
+  customerId: string,
+  salonId: string,
+): string[] => [...preferencesKeyOf(customerId), 'to-change', salonId]
 
 /** The key of what a customer did at a salon over a period. */
 export const statisticsKeyOf = (
@@ -409,6 +429,31 @@ const readStaffMember = async (id: string): Promise<StaffMemberRead> => {
     .exhaustive(outsideTheContract)
 }
 
+type StoredPreferencesRead =
+  | { type: 'found'; preferences: ModelsCustomerPreferencesResponse }
+  | NotFound
+  | Unread
+
+/** The preferences of a customer as they are stored: empty for one who set none. */
+const readStoredPreferences = async (
+  customerId: string,
+): Promise<StoredPreferencesRead> => {
+  const answer = await customerCrudGetPreferences(customerId).catch(() => null)
+
+  return match(answer)
+    .returnType<StoredPreferencesRead>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'found',
+      preferences: data.data,
+    }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with(UNREAD, unreadOfAnswer)
+    .exhaustive(outsideTheContract)
+}
+
+const isUnread = (read: { type: string }): boolean =>
+  read.type === 'tooManyRequests' || read.type === 'failed'
+
 /**
  * The preferences of a customer (empty for one who set none), and the
  * profiles of the members of the staff they name. A member the API keeps
@@ -418,36 +463,14 @@ const readStaffMember = async (id: string): Promise<StaffMemberRead> => {
 export const readPreferences = async (
   customerId: string,
 ): Promise<PreferencesRead> => {
-  const answer = await customerCrudGetPreferences(customerId).catch(() => null)
-  const read = match(answer)
-    .returnType<
-      | { type: 'found'; preferences: ModelsCustomerPreferencesResponse }
-      | NotFound
-      | Unread
-    >()
-    .with({ status: 200 }, ({ data }) => ({
-      type: 'found',
-      preferences: data.data,
-    }))
-    .with({ status: 404 }, () => NOT_FOUND)
-    .with(UNREAD, unreadOfAnswer)
-    .exhaustive(outsideTheContract)
+  const read = await readStoredPreferences(customerId)
   if (read.type !== 'found') {
     return read
   }
-  const { preferredStaffId, avoidStaffIds } = read.preferences
-  const ids = [
-    ...new Set([
-      ...(preferredStaffId === null ? [] : [preferredStaffId]),
-      ...avoidStaffIds,
-    ]),
-  ]
-  const members = await Promise.all(ids.map(readStaffMember))
-  if (
-    members.some(
-      (member) => member.type === 'tooManyRequests' || member.type === 'failed',
-    )
-  ) {
+  const members = await Promise.all(
+    staffIdsOf(read.preferences).map(readStaffMember),
+  )
+  if (members.some(isUnread)) {
     return whyUnread(members)
   }
 
@@ -460,6 +483,110 @@ export const readPreferences = async (
       ),
     ),
   }
+}
+
+/** The preferences of a customer as the form opens with them, and the members of the staff it offers. */
+export type PreferencesToChangeRead =
+  | {
+      type: 'found'
+      preferences: ModelsCustomerPreferencesResponse
+      staff: StaffChoice[]
+    }
+  | NotFound
+  | Unread
+
+/**
+ * The preferences of a customer and what the form of a salon offers for
+ * them, as one answer: the staff the salon shows, and the members of other
+ * salons the preferences name, whom the salon could not choose again once
+ * they were taken away. Each member is named with their salon. A member
+ * whose profile or salon is not found is not offered: they left. One of
+ * them unread is the whole unread, so the form never opens with half of
+ * its choices.
+ */
+export const readPreferencesToChange = async (
+  customerId: string,
+  salon: Pick<ModelsSalonResponse, 'id' | 'name'>,
+): Promise<PreferencesToChangeRead> => {
+  const [stored, ofTheSalon] = await Promise.all([
+    readStoredPreferences(customerId),
+    readStaffProfiles(salon.id),
+  ])
+  if (stored.type !== 'found') {
+    return stored
+  }
+  if (ofTheSalon.type !== 'found') {
+    return ofTheSalon
+  }
+  const shown = new Set(ofTheSalon.items.map(({ id }) => id))
+  const members = await Promise.all(
+    staffIdsOf(stored.preferences)
+      .filter((id) => !shown.has(id))
+      .map(readStaffMember),
+  )
+  if (members.some(isUnread)) {
+    return whyUnread(members)
+  }
+  const others = members.flatMap((member) =>
+    member.type === 'found' ? [member.profile] : [],
+  )
+  const salons = await Promise.all(
+    [...new Set(others.map(({ salonId }) => salonId))]
+      .filter((id) => id !== salon.id)
+      .map(readSalon),
+  )
+  if (salons.some(isUnread)) {
+    return whyUnread(salons)
+  }
+
+  return {
+    type: 'found',
+    preferences: stored.preferences,
+    staff: staffChoicesOf(
+      [...ofTheSalon.items, ...others],
+      [
+        salon,
+        ...salons.flatMap((read) =>
+          read.type === 'found' ? [read.salon] : [],
+        ),
+      ],
+    ),
+  }
+}
+
+/** What came of a change of the preferences of a customer. */
+export type PreferencesUpdate =
+  | { type: 'updated'; preferences: ModelsCustomerPreferencesResponse }
+  /** The customer was removed from the ledger meanwhile */
+  | NotFound
+  /** The account may not handle the ledger: it no longer belongs to a salon */
+  | Forbidden
+  | PreferencesRefusal
+
+/** Changes the preferences of a customer that the request names. */
+export const updatePreferences = async (
+  customerId: string,
+  request: ModelsCustomerPreferencesUpdateRequest,
+): Promise<PreferencesUpdate> => {
+  const answer = await customerCrudUpdatePreferences(customerId, request).catch(
+    () => null,
+  )
+
+  return match(answer)
+    .returnType<PreferencesUpdate>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'updated',
+      preferences: data.data,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
 }
 
 export type StatisticsRead =

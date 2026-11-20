@@ -3,24 +3,37 @@ import type {
   ModelsCustomerUpdateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  ButtonLink,
+  LoadingIndicator,
+  UnreadNotice,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { customerHrefOf } from '../navigation'
-import { NOT_FOUND } from '../reading'
+import { NOT_FOUND, unreadMessageOf } from '../reading'
 import { dayAt } from '../salon-time'
 import { WithSalon } from '../salons/with-salon'
 import { CustomerForm } from './components/customer-form/customer-form'
-import { afterCustomerWrite, readCustomerChange } from './customer-form'
+import {
+  afterCustomerWrite,
+  NO_REFERRER,
+  type Referrer,
+  readCustomerChange,
+  referrerOf,
+} from './customer-form'
 import {
   attemptCustomerChange,
   CUSTOMER_LISTS,
   type CustomerRead,
   customerKeyOf,
+  readCustomer,
 } from './customers-api'
+import { ReferrerChoice } from './referrer-choice'
 import { WithCustomer } from './with-customer'
 
 const TITLE = '台帳を直す'
@@ -30,6 +43,8 @@ const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 type CustomerChangeProps = {
   salon: ModelsSalonResponse
   customer: ModelsCustomerResponse
+  /** Who referred the customer, as the form opens with them */
+  referrer: Referrer
 }
 
 /**
@@ -40,7 +55,7 @@ type CustomerChangeProps = {
  * answers with is what their page shows at once; the lists that were read
  * are dropped, since the customer may now meet other conditions.
  */
-const CustomerChange = ({ salon, customer }: CustomerChangeProps) => {
+const CustomerChange = ({ salon, customer, referrer }: CustomerChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
@@ -98,6 +113,10 @@ const CustomerChange = ({ salon, customer }: CustomerChangeProps) => {
     <CustomerForm
       customer={customer}
       today={today}
+      referrer={referrer}
+      chooseReferrer={(choice) => (
+        <ReferrerChoice {...choice} excluded={customer.id} />
+      )}
       submitLabel='変更を保存する'
       message={said.message}
       errors={said.errors}
@@ -112,6 +131,49 @@ const CustomerChange = ({ salon, customer }: CustomerChangeProps) => {
   )
 }
 
+type CustomerToChangeProps = {
+  salon: ModelsSalonResponse
+  customer: ModelsCustomerResponse
+}
+
+/**
+ * The form opens once the customer who referred this one was read anew,
+ * to be named: one who was removed from the ledger since is said to be
+ * missing, and stays the referrer unless another is chosen.
+ */
+const CustomerToChange = ({ salon, customer }: CustomerToChangeProps) => {
+  const { referredBy } = customer
+  const read = useQuery({
+    queryKey: customerKeyOf(referredBy ?? ''),
+    queryFn: () => readCustomer(referredBy ?? ''),
+    enabled: referredBy !== null,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })
+  const opened = (referrer: Referrer) => (
+    <CustomerChange salon={salon} customer={customer} referrer={referrer} />
+  )
+  if (referredBy === null) {
+    return opened(NO_REFERRER)
+  }
+
+  return match(read.isFetchedAfterMount ? read.data : undefined)
+    .with(undefined, () => (
+      <LoadingIndicator label='紹介元を読み込んでいます' />
+    ))
+    .with({ type: 'found' }, ({ customer: found }) => opened(referrerOf(found)))
+    .with({ type: 'notFound' }, () => opened({ type: 'gone', id: referredBy }))
+    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+      <UnreadNotice
+        message={unreadMessageOf('紹介元', reason)}
+        onRetry={() => void read.refetch()}
+        retrying={read.isFetching}
+      />
+    ))
+    .exhaustive()
+}
+
 /** Changes what the ledger keeps of a customer, below the salon of the address. */
 export const CustomerChangeScreen = () => {
   const { salonId = '' } = useParams()
@@ -120,7 +182,13 @@ export const CustomerChangeScreen = () => {
     <WithSalon salonId={salonId} title={TITLE}>
       {(salon) => (
         <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh>
-          {(customer) => <CustomerChange salon={salon} customer={customer} />}
+          {(customer) => (
+            <CustomerToChange
+              key={customer.id}
+              salon={salon}
+              customer={customer}
+            />
+          )}
         </WithCustomer>
       )}
     </WithSalon>

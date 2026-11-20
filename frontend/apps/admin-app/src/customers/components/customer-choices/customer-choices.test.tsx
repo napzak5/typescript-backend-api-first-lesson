@@ -1,7 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { screen, userEvent, within } from 'storybook/test'
+import { describe, expect, it, vi } from 'vitest'
 import * as customerChoicesStories from './customer-choices.stories'
 
 const stories = composeStories(customerChoicesStories)
@@ -36,6 +36,40 @@ describe('CustomerChoices', () => {
       '?customerId=f4c27a8d-9b1e-4d3f-8a6c-2e5b7d9f1a03',
     )
     expect(screen.getByRole('status').textContent).toBe('3 人')
+  })
+
+  it('should hand the customer whose name was pressed over, when a button chooses', async () => {
+    // Arrange
+    const onChoose = vi.fn()
+    await stories.ByButton.run({
+      args: {
+        ...stories.ByButton.args,
+        choose: { type: 'button', onChoose, excluded: undefined },
+      },
+    })
+
+    // Act
+    await userEvent.click(
+      screen.getAllByRole('button', { name: '山田 花子' })[1] ?? document.body,
+    )
+
+    // Assert
+    expect(screen.queryAllByRole('link')).toEqual([])
+    expect(onChoose).toHaveBeenCalledOnce()
+    expect(onChoose).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'f4c27a8d-9b1e-4d3f-8a6c-2e5b7d9f1a03' }),
+    )
+  })
+
+  it('should name the customer the form is about without a button', async () => {
+    // Act
+    await stories.WithTheCustomerThemselves.run()
+
+    // Assert
+    expect(
+      screen.getAllByRole('button').map((button) => button.textContent),
+    ).toEqual(['山田 花子', '鈴木 一郎'])
+    expect(screen.getByText('山田 花子（このお客様）')).toBeVisible()
   })
 
   it('should say how many of the customers are shown', async () => {
