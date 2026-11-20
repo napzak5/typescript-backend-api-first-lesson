@@ -22,6 +22,10 @@ import {
   paymentMethodHrefOf,
   paymentMethodsHrefOf,
   pointEntryHrefOf,
+  productChangeHrefOf,
+  productEntryHrefOf,
+  productHrefOf,
+  productsHrefOf,
   receiptHrefOf,
   refundHrefOf,
   saleChangeHrefOf,
@@ -59,6 +63,7 @@ const TREATMENTS = `/salons/${SALON_ID}/treatments`
 const SHIFTS = `/salons/${SALON_ID}/shifts`
 const STAFF = `/salons/${SALON_ID}/staff`
 const MENU = `/salons/${SALON_ID}/menu`
+const PRODUCTS = `/salons/${SALON_ID}/products`
 const SETTINGS = `/salons/${SALON_ID}/settings`
 const SETTINGS_LINK = { href: SETTINGS, label: '設定', current: false }
 
@@ -106,6 +111,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
+      { href: PRODUCTS, label: '商品', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
       SETTINGS_LINK,
     ])
@@ -127,6 +133,7 @@ describe('navigationFor', () => {
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
+        { href: PRODUCTS, label: '商品', current: false },
         SETTINGS_LINK,
         PROFILE,
       ])
@@ -148,6 +155,7 @@ describe('navigationFor', () => {
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
+        { href: PRODUCTS, label: '商品', current: false },
         { href: STAFF, label: 'スタッフ', current: true },
         SETTINGS_LINK,
         PROFILE,
@@ -190,6 +198,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
+      { href: PRODUCTS, label: '商品', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
       SETTINGS_LINK,
       PROFILE,
@@ -209,6 +218,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
+      { href: PRODUCTS, label: '商品', current: false },
       SETTINGS_LINK,
       PROFILE,
     ])
@@ -236,6 +246,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
+      { href: PRODUCTS, label: '商品', current: false },
       SETTINGS_LINK,
       PROFILE,
     ])
@@ -259,6 +270,7 @@ describe('navigationFor', () => {
         { href: TREATMENTS, label: '施術記録', current: true },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
+        { href: PRODUCTS, label: '商品', current: false },
         SETTINGS_LINK,
         PROFILE,
       ])
@@ -277,6 +289,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
       { href: MENU, label: 'メニュー', current: false },
+      { href: PRODUCTS, label: '商品', current: false },
       SETTINGS_LINK,
       PROFILE,
     ])
@@ -290,6 +303,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
       { href: MENU, label: 'メニュー', current: false },
+      { href: PRODUCTS, label: '商品', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
       SETTINGS_LINK,
       PROFILE,
@@ -349,6 +363,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
+      { href: PRODUCTS, label: '商品', current: false },
       { href: STAFF, label: 'スタッフ', current: true },
       SETTINGS_LINK,
       PROFILE,
@@ -371,8 +386,42 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: true },
+      { href: PRODUCTS, label: '商品', current: false },
       SETTINGS_LINK,
       PROFILE,
+    ])
+  })
+
+  it.each<[string, string]>([
+    ['the product ledger', PRODUCTS],
+    ['a product', productHrefOf(SALON_ID, 'x')],
+    ['a new product', productEntryHrefOf(SALON_ID)],
+    ['the change of a product', productChangeHrefOf(SALON_ID, 'x')],
+  ])('should mark the products as the screen of %s', (_case, pathname) => {
+    expect(navigationFor('staff', pathname)).toEqual([
+      { href: BOOKINGS, label: '予約', current: false },
+      { href: SALES, label: '売上', current: false },
+      { href: CUSTOMERS, label: '顧客', current: false },
+      { href: TREATMENTS, label: '施術記録', current: false },
+      { href: SHIFTS, label: 'シフト', current: false },
+      { href: MENU, label: 'メニュー', current: false },
+      { href: PRODUCTS, label: '商品', current: true },
+      SETTINGS_LINK,
+      PROFILE,
+    ])
+  })
+
+  it('should write the addresses of the products', () => {
+    expect([
+      productsHrefOf(SALON_ID),
+      productEntryHrefOf(SALON_ID),
+      productHrefOf(SALON_ID, 'product'),
+      productChangeHrefOf(SALON_ID, 'product'),
+    ]).toEqual([
+      PRODUCTS,
+      `${PRODUCTS}/new`,
+      `${PRODUCTS}/product`,
+      `${PRODUCTS}/product/edit`,
     ])
   })
 

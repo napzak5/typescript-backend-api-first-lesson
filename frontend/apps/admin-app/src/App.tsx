@@ -56,6 +56,10 @@ import { PaymentMethodChangeScreen } from './payment-methods/payment-method-chan
 import { PaymentMethodEntryScreen } from './payment-methods/payment-method-entry-screen'
 import { PaymentMethodScreen } from './payment-methods/payment-method-screen'
 import { PaymentMethodsScreen } from './payment-methods/payment-methods-screen'
+import { ProductChangeScreen } from './products/product-change-screen'
+import { ProductEntryScreen } from './products/product-entry-screen'
+import { ProductScreen } from './products/product-screen'
+import { ProductsScreen } from './products/products-screen'
 import { CheckoutScreen } from './sales/checkout-screen'
 import { PaymentEntryScreen } from './sales/payment-entry-screen'
 import { ReceiptScreen } from './sales/receipt-screen'
@@ -364,6 +368,22 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/menu/categories/:categoryId/edit'
                 element={<CategoryChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/products'
+                element={<ProductsScreen />}
+              />
+              <Route
+                path='/salons/:salonId/products/new'
+                element={<ProductEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/products/:productId'
+                element={<ProductScreen />}
+              />
+              <Route
+                path='/salons/:salonId/products/:productId/edit'
+                element={<ProductChangeScreen />}
               />
               <Route
                 path='/salons/:salonId/settings'
