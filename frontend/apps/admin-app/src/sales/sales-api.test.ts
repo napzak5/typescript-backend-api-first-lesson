@@ -1,10 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
-import { aBooking, aSale, paymentMethods, salon } from './components/examples'
+import {
+  aBooking,
+  aPaidSale,
+  aPayment,
+  aSale,
+  paymentMethods,
+  salon,
+} from './components/examples'
 import {
   attemptPayment,
   attemptReceipt,
+  attemptRefund,
   attemptSale,
+  attemptSaleChange,
+  attemptVoid,
   calculateSale,
   createSale,
   readPaymentMethods,
@@ -13,6 +23,9 @@ import {
   readSales,
   readSalesOfBooking,
   recordPayment,
+  refundPayment,
+  updateSale,
+  voidSale,
 } from './sales-api'
 
 /*
@@ -47,11 +60,22 @@ const PAYMENT = {
 
 const CALCULATION = { salonId: salon.id, bookingId: booking.id, services: [] }
 
+const CHANGE = { saleTime: '2026-11-20T01:30:00.000Z' }
+
+const VOIDING = { voidReason: '取り違え' }
+
+const REFUND = { refundAmount: 3000, refundReason: '施術のやり直し' }
+
+const payment = aPayment()
+
 /** The calls that send a body, and name the values the API refused */
 const WRITES: [string, () => Promise<{ type: string }>][] = [
   ['calculateSale', () => calculateSale(CALCULATION)],
   ['createSale', () => createSale(SALE_REQUEST)],
   ['recordPayment', () => recordPayment(sale.id, PAYMENT)],
+  ['updateSale', () => updateSale(sale.id, CHANGE)],
+  ['voidSale', () => voidSale(sale.id, VOIDING)],
+  ['refundPayment', () => refundPayment(payment.id, REFUND)],
 ]
 
 const READS: [string, () => Promise<{ type: string }>][] = [
@@ -174,6 +198,42 @@ describe('the functions that call the API', () => {
     expect(String(input)).toMatch(new RegExp(`/sales/${sale.id}/process$`))
     expect(init?.method).toBe('POST')
     expect(JSON.parse(String(init?.body))).toEqual(PAYMENT)
+  })
+
+  it.each<[string, () => Promise<unknown>, string, string, unknown]>([
+    [
+      'a change of a sale',
+      () => updateSale(sale.id, CHANGE),
+      `/sales/${sale.id}`,
+      'PATCH',
+      CHANGE,
+    ],
+    [
+      'the voiding of a sale',
+      () => voidSale(sale.id, VOIDING),
+      `/sales/${sale.id}/void`,
+      'POST',
+      VOIDING,
+    ],
+    [
+      'a refund',
+      () => refundPayment(payment.id, REFUND),
+      `/payments/${payment.id}/refund`,
+      'POST',
+      REFUND,
+    ],
+  ])('should send %s', async (_what, call, path, method, body) => {
+    // Arrange
+    const fetched = answering(() => problem(500))
+
+    // Act
+    await call()
+
+    // Assert
+    const [input, init] = fetched.mock.calls[0] ?? []
+    expect(String(input)).toMatch(new RegExp(`${path}$`))
+    expect(init?.method).toBe(method)
+    expect(JSON.parse(String(init?.body))).toEqual(body)
   })
 
   it.each<[string, () => Promise<{ type: string }>]>([
@@ -303,5 +363,105 @@ describe('the attempts that find out why the API refused', () => {
 
     // Act, Assert
     expect(await attemptReceipt(sale.id)).toEqual({ type: 'unissued', sale })
+  })
+
+  it('should show a sale voided meanwhile as it is now, when it is not changed', async () => {
+    // Arrange
+    const voided = aSale({ isVoid: true })
+    answering(
+      answerOf({
+        [`PATCH ${SALES}/${sale.id}`]: () => problem(409),
+        [`GET ${SALES}/${sale.id}`]: () =>
+          json(200, { data: voided, meta: {}, links: { self: '' } }),
+      }),
+    )
+
+    // Act, Assert
+    expect(await attemptSaleChange(sale.id, CHANGE)).toEqual({
+      type: 'refused',
+      sale: voided,
+    })
+  })
+
+  it('should say a sale that is not void is not changed for the time zone of the salon', async () => {
+    // Arrange
+    answering(
+      answerOf({
+        [`PATCH ${SALES}/${sale.id}`]: () => problem(409),
+        [`GET ${SALES}/${sale.id}`]: () =>
+          json(200, { data: sale, meta: {}, links: { self: '' } }),
+      }),
+    )
+
+    // Act, Assert
+    expect(await attemptSaleChange(sale.id, CHANGE)).toEqual({
+      type: 'undated',
+    })
+  })
+
+  it('should say why nothing came of reading a sale again that was not changed', async () => {
+    // Arrange
+    answering(
+      answerOf({
+        [`PATCH ${SALES}/${sale.id}`]: () => problem(409),
+        [`GET ${SALES}/${sale.id}`]: () => problem(500),
+      }),
+    )
+
+    // Act, Assert
+    expect(await attemptSaleChange(sale.id, CHANGE)).toEqual({
+      type: 'failed',
+    })
+  })
+
+  it('should show a sale paid meanwhile as it is now, when it is not voided', async () => {
+    // Arrange
+    const paid = aPaidSale()
+    answering(
+      answerOf({
+        [`POST ${SALES}/${sale.id}/void`]: () => problem(409),
+        [`GET ${SALES}/${sale.id}`]: () =>
+          json(200, { data: paid, meta: {}, links: { self: '' } }),
+      }),
+    )
+
+    // Act, Assert
+    expect(await attemptVoid(sale.id, VOIDING)).toEqual({
+      type: 'refused',
+      sale: paid,
+    })
+  })
+
+  it('should show the sale as it is now when its payment is not given back', async () => {
+    // Arrange
+    const given = aSale({
+      payments: [aPayment({ status: 'refunded', refundAmount: 3000 })],
+    })
+    answering(
+      answerOf({
+        [`POST /api/v1/payments/${payment.id}/refund`]: () => problem(409),
+        [`GET ${SALES}/${sale.id}`]: () =>
+          json(200, { data: given, meta: {}, links: { self: '' } }),
+      }),
+    )
+
+    // Act, Assert
+    expect(await attemptRefund(sale.id, payment.id, REFUND)).toEqual({
+      type: 'refused',
+      sale: given,
+    })
+  })
+
+  it('should not read again what was given back', async () => {
+    // Arrange
+    const fetched = answering(() =>
+      json(200, { data: payment, meta: {}, links: { self: '' } }),
+    )
+
+    // Act, Assert
+    expect(await attemptRefund(sale.id, payment.id, REFUND)).toEqual({
+      type: 'refunded',
+    })
+    expect(fetched).toHaveBeenCalledOnce()
   })
 })

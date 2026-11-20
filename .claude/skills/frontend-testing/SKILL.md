@@ -841,6 +841,24 @@ ledger) add:
   `vi.spyOn(window, 'print').mockImplementation(() => {})`: jsdom prints
   nothing. What paper shows is a browser test.
 
+The change, the refund and the voiding of a sale
+(`frontend/apps/admin-app/src/sales/sale-changes.integration.test.tsx`)
+add:
+
+- **A payment given back meanwhile is a statement** (`refundSale`: the
+  payments and the state of the sale in one statement, since a check of
+  the table ties the state of a payment to the amount given back), and
+  `paySale` answers the ID of the payment it made, for the address of its
+  refund.
+- **What only a role is refused is asserted at the address as well**: the
+  address of a refund, opened by a member of the staff, says who may.
+- **The focus after a voiding is asserted on the heading of the part that
+  stays**: 「売上」 when the sale was voided, 「取り消し」 when the voiding
+  was refused because it was paid meanwhile.
+- **A record and what was given back are read by the sale**
+  (`storedRecordOf`: the member, the time on the clock of the salon, the
+  day, the note, the voiding; `storedRefundsOf`).
+
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
@@ -1064,6 +1082,10 @@ test.describe('the admin application', () => {
   (`src/admin-checkout.e2e.test.ts`). A heading that took the focus while
   the document was read keeps it once the document is shown: asserted
   with `toBeFocused()` after the document is there.
+- **A way of several steps is walked in one test, in order**
+  (`src/admin-sale-changes.e2e.test.ts`): the payment given back whole,
+  the sale voided, the booking billed again, each asserted on the screen
+  it leads to, and the database read once at the end.
 - **A radio button is chosen with the keyboard**: the focus on it and
   Space, as a person does who goes through the group with Tab.
 - The modules of `frontend/e2e/src` that are no test files are under the

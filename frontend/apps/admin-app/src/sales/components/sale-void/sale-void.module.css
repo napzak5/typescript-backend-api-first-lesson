@@ -1,0 +1,22 @@
+/* What a voiding is for, and the button that starts it */
+.void {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+.void > p {
+  margin: 0;
+}
+
+.why {
+  margin: 0;
+}
+
+/* What went wrong, and the reason */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}

@@ -4,11 +4,13 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   Badge,
+  ButtonLink,
   Card,
   DescriptionList,
   Link,
   Table,
 } from '@beauty-salon-frontend/ui'
+import type { Ref } from 'react'
 import { NO_RECORD } from '../../../bookings/booking-entry'
 import { amountOf, GONE_CUSTOMER } from '../../../bookings/booking-format'
 import { memberNameOf, type Names } from '../../../bookings/day-bookings'
@@ -34,6 +36,10 @@ export type SaleRecordProps = {
   currency: string
   /** The address of the page of the booking the sale bills */
   bookingHref?: string | undefined
+  /** The address of the screen that changes the sale; `undefined` for a sale that is not changed */
+  changeHref?: string | undefined
+  /** The heading of the sale: the focus goes there after it was voided */
+  headingRef?: Ref<HTMLHeadingElement> | undefined
 }
 
 const NONE = 'なし'
@@ -51,12 +57,24 @@ export const SaleRecord = ({
   timezone,
   currency,
   bookingHref,
+  changeHref,
+  headingRef,
 }: SaleRecordProps) => {
   const refunded = refundedOf(sale)
 
   return (
     <div className={styles['record']}>
-      <Card title='売上'>
+      <Card
+        title='売上'
+        headingRef={headingRef}
+        actions={
+          changeHref !== undefined && (
+            <ButtonLink href={changeHref} variant='secondary'>
+              売上を直す
+            </ButtonLink>
+          )
+        }
+      >
         <DescriptionList
           items={[
             { term: '売上番号', description: sale.saleNumber },

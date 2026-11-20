@@ -6,6 +6,8 @@ import type {
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
 import type { BadgeProps } from '@beauty-salon-frontend/ui'
+import { amountOf } from '../bookings/booking-format'
+import { momentNameAt } from '../salon-time'
 
 /*
  * A sale and its payments in the words of the salon, and what follows from
@@ -104,6 +106,26 @@ export const cardNameOf = ({
 
   return parts.length === 0 ? null : parts.join(' ')
 }
+
+/**
+ * What was given back of a payment, and when, as far as it was recorded
+ * (「￥500、2026年11月20日（金） 11:30」); null when nothing was. Why is
+ * said apart: it is a sentence, and a cell of a table keeps to one line.
+ */
+export const refundNameOf = (
+  {
+    refundAmount,
+    refundedAt,
+  }: Pick<ModelsPaymentResponse, 'refundAmount' | 'refundedAt'>,
+  timezone: string,
+  currency: string,
+): string | null =>
+  refundAmount === null
+    ? null
+    : [
+        amountOf(refundAmount, currency),
+        ...(refundedAt === null ? [] : [momentNameAt(refundedAt, timezone)]),
+      ].join('、')
 
 /** The states of a payment whose amount was received: a refund does not take it back. */
 const RECEIVED: readonly ModelsPaymentStatusType[] = [

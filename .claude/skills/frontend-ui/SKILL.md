@@ -35,7 +35,7 @@ this one: a component is not done without its stories and its test.
 | The salon of who is signed in (`useOwnSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/salon/`, `src/components/no-salon-notice/` |
 | The screens of a salon in the admin application: the choice of a salon, and the salon of an address around the screens below it | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
-| The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, and the receipt to print | `frontend/apps/admin-app/src/sales/` |
+| The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
@@ -1157,8 +1157,10 @@ The sales of the admin application are the example to read:
 `frontend/apps/admin-app/src/sales/` (`checkout-screen.tsx` for the sale of
 a booking, `sales-ledger-screen.tsx` for the ledger, `sale-screen.tsx` for
 a sale, `payment-entry-screen.tsx` for a payment, `receipt-screen.tsx` for
-the receipt), and the part 「会計」 of the page of a booking
-(`components/booking-sale/`).
+the receipt, `sale-change-screen.tsx` for the change of a sale,
+`refund-screen.tsx` for a refund, and the part 「取り消し」 of
+`sale-screen.tsx` for the voiding), and the part 「会計」 of the page of a
+booking (`components/booking-sale/`).
 
 - **What belongs to a record is found from the record.** A booking has at
   most one sale that is not voided; the part 「会計」 of its page reads the
@@ -1203,6 +1205,27 @@ the receipt), and the part 「会計」 of the page of a booking
   wrapper that `@media print` hides (`OnScreen` of `receipt-screen.tsx`).
   The `PageHeader` is inside that wrapper in every state of the screen, so
   that it stays one element and keeps the focus it took.
+- **What a record bills is not changed in place.** The change of a sale
+  sends what it records beside the bill (who took it, when, the note),
+  and the screen says how a wrong bill is put right: every payment given
+  back whole, the sale voided, the booking billed again.
+- **An operation that is not for every role** is offered by the role
+  (`mayUndoSales` of `sale-changes.ts`), and where it would be, the
+  screen says who may (`UNDONE_BY_OTHERS`). Its address, opened by
+  another role, says the same before it reads anything more.
+- **A way of several steps says the next one after each.** The refund
+  that gives back the last payment whole says that the sale can be
+  voided now (`voidableAfter` of `refunds.ts`); the voiding of the sale of
+  a booking says that the booking can be billed again.
+- **When the part that was used is gone**, the focus goes to the heading
+  of the part that stays: after a voiding, to 「売上」 (`headingRef` of
+  `SaleRecord`). It moves in the commit that shows the sale the API
+  answered: a ref keeps the sale the screen showed, and a layout effect
+  on the sale moves the focus once it is another object.
+- **A sentence is not put in a cell.** The cells of a table keep to one
+  line, so the reasons the payments were given back follow the table, in
+  a `DescriptionList` by the number of the payment, and the cell says how
+  much and when.
 
 ## Screens that a mailed link opens
 
