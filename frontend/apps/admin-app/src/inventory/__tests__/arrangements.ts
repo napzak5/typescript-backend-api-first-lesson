@@ -307,3 +307,114 @@ export const countsOf = async (salon: string) =>
       [salon],
     ),
   )
+
+/** Lets a product be kept at a maximum stock, which the stock of the seed is above. */
+export const maximumOf = async (
+  salon: string,
+  productCode: string,
+  maximum: number,
+): Promise<void> => {
+  await testApi().query(
+    `update products p set "maximumStock" = $3, "updatedAt" = now()
+     from salons s
+     where s.id = p."salonId" and s.name = $1 and p."productCode" = $2`,
+    [salon, productCode, maximum],
+  )
+}
+
+/**
+ * Lets the salon have more alerts than a page holds: a product of the
+ * codes 「PAD01」 on, as many as `count`, each with a row of a pack that
+ * expired on 30 June 2025.
+ */
+export const padAlertsOf = async (
+  salon: string,
+  count: number,
+): Promise<void> => {
+  await testApi().query(
+    `with added as (
+       insert into products ("salonId", "productCode", name, unit, "isForSale", "isForTreatment")
+       select s.id, 'PAD' || lpad(n::text, 2, '0'), 'Cotton Pad ' || n, 'pack', false, true
+       from salons s, generate_series(1, $2::int) n
+       where s.name = $1
+       returning id, "salonId"
+     )
+     insert into inventory ("salonId", "productId", "currentStock", "availableStock", "expiryDate")
+     select "salonId", id, 1, 1, date '2025-06-30' from added`,
+    [salon, count],
+  )
+}
+
+/** Lets somebody else have used up the stock of a row meanwhile, as the API records it. */
+export const usedUpMeanwhile = async (inventoryId: string): Promise<void> => {
+  await testApi().query(
+    `with used as (
+       update inventory i
+       set "currentStock" = 0, "availableStock" = 0, "updatedAt" = now()
+       from inventory was
+       where i.id = $1 and was.id = i.id
+       returning i.id, i."salonId", i."productId", was."currentStock" as stock,
+                 i."lotNumber", i."expiryDate"
+     )
+     insert into inventory_transactions
+       ("salonId", "productId", "inventoryId", "transactionType", quantity,
+        "balanceBefore", "balanceAfter", "lotNumber", "expiryDate")
+     select "salonId", "productId", id, 'use', -stock, stock, 0,
+            "lotNumber", "expiryDate"
+     from used`,
+    [inventoryId],
+  )
+}
+
+/**
+ * Lets a member of the staff, by their name, or an administrator, for
+ * `null`, have seen to the expiry of a row meanwhile, as the API records it.
+ */
+export const acknowledgedMeanwhile = async (
+  inventoryId: string,
+  member: string | null,
+  notes: string,
+): Promise<void> => {
+  await testApi().query(
+    `insert into inventory_alert_acknowledgements
+       ("salonId", "productId", "inventoryId", alert, severity, "expiryDate",
+        notes, "acknowledgedBy")
+     select i."salonId", i."productId", i.id, 'expired', 'critical', i."expiryDate",
+            $3, (select id from staff where "displayName" = $2)
+     from inventory i where i.id = $1`,
+    [inventoryId, member, notes],
+  )
+}
+
+const acknowledgementsSchema = z.array(
+  z.object({
+    productCode: z.string(),
+    alert: z.string(),
+    severity: z.string(),
+    threshold: z.string().nullable(),
+    expiryDate: z.string().nullable(),
+    notes: z.string().nullable(),
+    acknowledgedBy: z.string().nullable(),
+  }),
+)
+
+/**
+ * The acknowledgements of the alerts of a salon as the database keeps
+ * them, in the order they were written, with the name of the member of the
+ * staff who wrote each.
+ */
+export const acknowledgementsOf = async (salon: string) =>
+  acknowledgementsSchema.parse(
+    await testApi().query(
+      `select p."productCode", a.alert::text, a.severity::text,
+              a.threshold::text, a."expiryDate"::text, a.notes,
+              st."displayName" as "acknowledgedBy"
+       from inventory_alert_acknowledgements a
+         join products p on p.id = a."productId"
+         join salons s on s.id = a."salonId"
+         left join staff st on st.id = a."acknowledgedBy"
+       where s.name = $1
+       order by a."acknowledgedAt", a.id`,
+      [salon],
+    ),
+  )
