@@ -311,6 +311,16 @@ describe('cross-origin requests', () => {
     expect(response.headers['access-control-allow-credentials']).toBe('true')
   })
 
+  it('should let a page of a configured origin read the name of a file', async () => {
+    const response = await request(createTestApp())
+      .get(SALONS)
+      .set('Origin', ALLOWED_ORIGIN)
+
+    expect(response.headers['access-control-expose-headers']).toBe(
+      'Content-Disposition',
+    )
+  })
+
   it('should not let a page of another origin read the response', async () => {
     const response = await request(createTestApp())
       .get(SALONS)

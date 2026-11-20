@@ -731,6 +731,7 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
       origin: settings.cors.origins,
       credentials: settings.cors.credentials,
       maxAge: settings.cors.maxAgeSeconds,
+      exposedHeaders: ['Content-Disposition'],
     }),
   )
 
