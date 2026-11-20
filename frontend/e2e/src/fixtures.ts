@@ -40,14 +40,23 @@ export type TestApi = {
   mailedLink: (to: string) => Promise<string>
 }
 
+/** Every address but those of the applications and the API under test, which listen on this machine */
+const ELSEWHERE = /^https?:\/\/(?!127\.0\.0\.1[:/])/
+
 /**
  * `test` of the browser tests: import it from here, not from
  * `@playwright/test`. Every test starts on the seeded database, whether it
  * names `api` or not: after each test the API is given a fresh copy, and the
  * browser of the next test knows nothing of the one before (Playwright
- * gives every test a context of its own).
+ * gives every test a context of its own). The browser reaches nothing
+ * outside this machine: the seed data keeps the photos of the treatment
+ * records at addresses of example.com, which a page under test shows.
  */
 export const test = base.extend<{ api: TestApi }>({
+  context: async ({ context }, use) => {
+    await context.route(ELSEWHERE, (route) => route.abort('blockedbyclient'))
+    await use(context)
+  },
   api: [
     // biome-ignore lint/correctness/noEmptyPattern: Playwright reads the fixtures a fixture needs from this pattern, and this one needs none
     async ({}, use) => {
