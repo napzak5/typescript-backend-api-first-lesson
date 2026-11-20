@@ -1,0 +1,5 @@
+/* The control of a short value is as wide as its values */
+.short {
+  justify-self: start;
+  min-inline-size: 12rem;
+}

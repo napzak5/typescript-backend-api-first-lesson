@@ -130,6 +130,7 @@ describe('the bookings of a salon, against the API', () => {
           ...(keepsStaffLedger
             ? [['スタッフ', `/salons/${salonId}/staff`, null]]
             : []),
+          ['プロフィール', '/account/profile', null],
         ])
       },
     )

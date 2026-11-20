@@ -271,14 +271,18 @@ const isAtOrBelow = (pathname: string, screen: string): boolean =>
 
 const SALON_ROLES: readonly string[] = ['owner', 'manager', 'staff']
 
+/** Where a member of the staff sees and changes how they are introduced to the customers */
+export const OWN_PROFILE_PATH = '/account/profile'
+
 /**
  * The links of the header: the bookings, the sales, the customers, the
  * treatment records and the shifts, from the salon of the address, and the
  * staff ledger for the roles that keep it. The screens of a salon are below its address;
  * an administrator chooses the salon at the start (`/`), and a member of
  * the staff is led from there to the salon they belong to. So a member who
- * is elsewhere (the security of the account) goes back to the bookings
- * through the start.
+ * is elsewhere (the security of the account, the profile) goes back to the
+ * bookings through the start. A member of a salon is led to their own
+ * profile last, wherever they are; an administrator is a member of none.
  */
 export const navigationFor = (
   role: ModelsUserResponse['role'] | undefined,
@@ -289,6 +293,16 @@ export const navigationFor = (
     role === 'admin'
       ? [{ href: '/', label: 'サロンを選ぶ', current: pathname === '/' }]
       : []
+  const member = role !== undefined && SALON_ROLES.includes(role)
+  const profile: NavigationItem[] = member
+    ? [
+        {
+          href: OWN_PROFILE_PATH,
+          label: 'プロフィール',
+          current: pathname === OWN_PROFILE_PATH,
+        },
+      ]
+    : []
   if (salonId !== undefined) {
     const bookings = bookingsHrefOf(salonId)
     const sales = salesHrefOf(salonId)
@@ -329,10 +343,11 @@ export const navigationFor = (
             },
           ]
         : []),
+      ...profile,
     ]
   }
 
-  return role !== undefined && SALON_ROLES.includes(role)
-    ? [...choice, { href: '/', label: '予約', current: false }]
+  return member
+    ? [...choice, { href: '/', label: '予約', current: false }, ...profile]
     : choice
 }
