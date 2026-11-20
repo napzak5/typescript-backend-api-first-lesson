@@ -1826,6 +1826,25 @@ the screens of a service and of a category, `menu-api.ts`,
   none: when one was removed meanwhile, the lists are read again, and
   the boxes of the records still there stay checked.
 
+### The settings of a salon: what is shown and what is changed
+
+The settings are the example to read: `settings-screen.tsx`,
+`salon-change-screen.tsx`, `settings-format.ts` and `salon-form.ts`.
+
+- **A value that would change how everything else is read is shown,
+  not offered** (the time zone and the currency): the form says why it
+  cannot be changed, beside what it can.
+- **A record of many values is compared value by value as the form
+  reads it** (`readSalonChange`): blanks, an empty control and `null`,
+  and the separators of a list are no change, so only what was changed
+  is sent, and what somebody else changed meanwhile stays.
+- **A number is put into a control as it is typed**: digits, never an
+  exponent (`coordinateTextOf`), so that a form sent as it was opened
+  reads back the same.
+- **Dates of a calendar are shown from today at the salon on**
+  (`calendarFrom`): the past ones are history, and a table with none
+  says which hours apply instead.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,

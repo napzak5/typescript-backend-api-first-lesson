@@ -21,6 +21,7 @@ import {
   refundHrefOf,
   saleChangeHrefOf,
   salesHrefOf,
+  salonChangeHrefOf,
   salonIdIn,
   scheduleChangeHrefOf,
   scheduleHrefOf,
@@ -28,6 +29,7 @@ import {
   serviceEntryHrefOf,
   serviceHrefOf,
   servicesChangeHrefOf,
+  settingsHrefOf,
   shiftsHrefOf,
   shiftWeekHrefOf,
   staffAccountHrefOf,
@@ -52,6 +54,8 @@ const TREATMENTS = `/salons/${SALON_ID}/treatments`
 const SHIFTS = `/salons/${SALON_ID}/shifts`
 const STAFF = `/salons/${SALON_ID}/staff`
 const MENU = `/salons/${SALON_ID}/menu`
+const SETTINGS = `/salons/${SALON_ID}/settings`
+const SETTINGS_LINK = { href: SETTINGS, label: '設定', current: false }
 
 type Role = ModelsUserResponse['role']
 
@@ -98,6 +102,7 @@ describe('navigationFor', () => {
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
+      SETTINGS_LINK,
     ])
   })
 
@@ -117,6 +122,7 @@ describe('navigationFor', () => {
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
+        SETTINGS_LINK,
         PROFILE,
       ])
     },
@@ -138,6 +144,7 @@ describe('navigationFor', () => {
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
         { href: STAFF, label: 'スタッフ', current: true },
+        SETTINGS_LINK,
         PROFILE,
       ])
     },
@@ -179,6 +186,7 @@ describe('navigationFor', () => {
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
+      SETTINGS_LINK,
       PROFILE,
     ])
   })
@@ -196,6 +204,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
+      SETTINGS_LINK,
       PROFILE,
     ])
   })
@@ -222,6 +231,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
+      SETTINGS_LINK,
       PROFILE,
     ])
   })
@@ -244,6 +254,7 @@ describe('navigationFor', () => {
         { href: TREATMENTS, label: '施術記録', current: true },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
+        SETTINGS_LINK,
         PROFILE,
       ])
     },
@@ -261,6 +272,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
       { href: MENU, label: 'メニュー', current: false },
+      SETTINGS_LINK,
       PROFILE,
     ])
   })
@@ -274,6 +286,7 @@ describe('navigationFor', () => {
       { href: SHIFTS, label: 'シフト', current: true },
       { href: MENU, label: 'メニュー', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
+      SETTINGS_LINK,
       PROFILE,
     ])
   })
@@ -332,6 +345,7 @@ describe('navigationFor', () => {
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
       { href: STAFF, label: 'スタッフ', current: true },
+      SETTINGS_LINK,
       PROFILE,
     ])
   })
@@ -352,6 +366,7 @@ describe('navigationFor', () => {
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: true },
+      SETTINGS_LINK,
       PROFILE,
     ])
   })
@@ -373,6 +388,27 @@ describe('navigationFor', () => {
       `${MENU}/services/bulk`,
       `${MENU}/categories/new`,
       `${MENU}/categories/category/edit`,
+    ])
+  })
+
+  it.each<[string, Role, string]>([
+    ['the settings', 'staff', SETTINGS],
+    ['the change of the information', 'manager', `${SETTINGS}/edit`],
+  ])(
+    'should mark the settings as the screen of %s for a member (%s)',
+    (_case, role, pathname) => {
+      expect(
+        navigationFor(role, pathname)
+          .filter(({ current }) => current)
+          .map(({ label }) => label),
+      ).toEqual(['設定'])
+    },
+  )
+
+  it('should write the addresses of the settings', () => {
+    expect([settingsHrefOf(SALON_ID), salonChangeHrefOf(SALON_ID)]).toEqual([
+      SETTINGS,
+      `${SETTINGS}/edit`,
     ])
   })
 

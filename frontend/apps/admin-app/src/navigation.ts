@@ -141,6 +141,14 @@ export const scheduleChangeHrefOf = (
   staffId: string,
 ): string => `${scheduleHrefOf(salonId, staffId)}/edit`
 
+/** The settings of a salon: its information, its hours and its calendar. */
+export const settingsHrefOf = (salonId: string): string =>
+  `/salons/${salonId}/settings`
+
+/** The screen that changes the information of a salon. */
+export const salonChangeHrefOf = (salonId: string): string =>
+  `${settingsHrefOf(salonId)}/edit`
+
 /** The menu of a salon: its categories and their services. */
 export const menuHrefOf = (salonId: string): string => `/salons/${salonId}/menu`
 
@@ -342,6 +350,7 @@ export const navigationFor = (
     const shifts = shiftsHrefOf(salonId)
     const menu = menuHrefOf(salonId)
     const staff = staffLedgerHrefOf(salonId)
+    const settings = settingsHrefOf(salonId)
 
     return [
       ...choice,
@@ -376,6 +385,11 @@ export const navigationFor = (
             },
           ]
         : []),
+      {
+        href: settings,
+        label: '設定',
+        current: isAtOrBelow(pathname, settings),
+      },
       ...profile,
     ]
   }
