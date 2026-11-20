@@ -65,6 +65,7 @@ describe('CustomerForm', () => {
       '好み',
       '好みのメニュー',
       'サロンでの扱い',
+      '紹介',
       '送ってよい連絡',
       'メモ',
     ])
@@ -77,14 +78,22 @@ describe('CustomerForm', () => {
     await stories.Entry.run()
 
     // Assert
-    for (const control of screen.getAllByRole('textbox')) {
+    for (const control of screen
+      .getAllByRole('textbox')
+      .filter((textbox) => !textbox.hasAttribute('readonly'))) {
       expect(control).toHaveValue('')
     }
-    // The browser fills in no value of the user: a text area it fills in none
+    expect(text('紹介元')).toHaveValue('なし')
+    // The browser fills in no value of the user: a text area it fills in none,
+    // and nobody writes in the name of the referrer
     expect(
-      [...document.querySelectorAll('input:not([type="checkbox"])')].map(
-        (input) => input.getAttribute('autocomplete'),
-      ),
+      [
+        ...(text('姓')
+          .closest('form')
+          ?.querySelectorAll(
+            'input:not([type="checkbox"]):not([type="hidden"]):not([readonly])',
+          ) ?? []),
+      ].map((input) => input.getAttribute('autocomplete')),
     ).toEqual(Array(16).fill('off'))
     expect(screen.getByLabelText('生年月日')).toHaveValue('')
     expect(choice('性別')).toHaveValue('')
@@ -131,6 +140,7 @@ describe('CustomerForm', () => {
     expect(choice('ステータス')).toHaveValue('vip')
     expect(text('タグ')).toHaveValue('VIP、常連')
     expect(text('紹介コード')).toHaveValue('HANAKO-2026')
+    expect(text('紹介元')).toHaveValue('鈴木 一郎 様')
     expect(box('メールでの連絡')).toBeChecked()
     expect(box('SMS での連絡')).toBeChecked()
     expect(box('キャンペーンなどのお知らせ')).not.toBeChecked()
@@ -308,6 +318,83 @@ describe('CustomerForm', () => {
       'この値は受け付けられませんでした。入力を確かめてください。',
     )
     expect(text('姓')).not.toHaveAttribute('aria-invalid')
+  })
+
+  it('should choose the referrer from the ledger and hand them over', async () => {
+    // Arrange
+    const received: FormData[] = []
+    await stories.Entry.run({
+      args: {
+        ...stories.Entry.args,
+        onSubmit: vi.fn((values: FormData) => {
+          received.push(values)
+        }),
+      },
+    })
+    await userEvent.click(screen.getByRole('button', { name: '紹介元を選ぶ' }))
+    const dialog = screen.getByRole('dialog', { name: '紹介元を選ぶ' })
+
+    // Act
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: '鈴木 一郎' }),
+    )
+
+    // Assert
+    expect(dialog).not.toBeVisible()
+    expect(text('紹介元')).toHaveValue('鈴木 一郎 様')
+    await userEvent.click(screen.getByRole('button', { name: '登録する' }))
+    expect(received[0]?.get('referredBy')).toBe(
+      'c19f4d7a-6e8c-4adf-8dbe-ac7e3f6a8bc5',
+    )
+  })
+
+  it('should keep the referrer when the choice is given up', async () => {
+    // Arrange
+    await stories.Change.run()
+    await userEvent.click(screen.getByRole('button', { name: '紹介元を選ぶ' }))
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: 'やめる' }))
+
+    // Assert
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(text('紹介元')).toHaveValue('鈴木 一郎 様')
+  })
+
+  it('should hand over no referrer once the one the customer had was taken away', async () => {
+    // Arrange
+    const received: FormData[] = []
+    await stories.Change.run({
+      args: {
+        ...stories.Change.args,
+        onSubmit: vi.fn((values: FormData) => {
+          received.push(values)
+        }),
+      },
+    })
+    await userEvent.click(screen.getByRole('button', { name: '紹介元を外す' }))
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('button', { name: '変更を保存する' }),
+    )
+
+    // Assert
+    const [values] = received
+    expect(
+      values === undefined
+        ? undefined
+        : readCustomerChange(values, customerFormStories.RECORDED, TODAY),
+    ).toEqual({ type: 'valid', request: { referredBy: null } })
+  })
+
+  it('should say what is wrong with the referrer at its field, and put the focus there', async () => {
+    // Act
+    await stories.ReferrerRefused.run()
+
+    // Assert
+    expect(text('紹介元')).toHaveFocus()
+    expect(text('紹介元')).toHaveAttribute('aria-invalid', 'true')
   })
 
   it('should be busy, and hand over nothing more, while an attempt is on its way', async () => {

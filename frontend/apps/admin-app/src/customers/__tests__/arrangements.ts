@@ -84,6 +84,106 @@ export const arrangePreferences = async (email: string): Promise<void> => {
   )
 }
 
+/** Lets a customer have been referred by another, as another salon would have recorded it. */
+export const referredMeanwhile = (
+  email: string,
+  referrerEmail: string,
+): Promise<unknown> =>
+  testApi().query(
+    `update customers
+     set "referredBy" = (select id from customers where email = $2), "updatedAt" = now()
+     where email = $1`,
+    [email, referrerEmail],
+  )
+
+/**
+ * Lets a customer have said in the portal what they wish for: Takeshi Ito,
+ * who works at the salon in Osaka, and not Mika Suzuki, from ten to noon,
+ * and quietly.
+ */
+export const arrangeWishes = (email: string): Promise<unknown> =>
+  testApi().query(
+    `insert into customer_preferences ("customerId", "preferredStaffId", "preferredTimeSlots",
+                                       "avoidStaffIds", "communicationStyle")
+     select customers.id,
+            (select id from staff where "staffCode" = 'STF003'),
+            '[{"startTime": "10:00", "endTime": "12:00"}]'::jsonb,
+            array[(select id from staff where "staffCode" = 'STF002')],
+            '静かに過ごしたい'
+     from customers where email = $1`,
+    [email],
+  )
+
+/** Lets a customer write a request in the portal meanwhile. */
+export const requestMeanwhile = (
+  email: string,
+  specialRequests: string,
+): Promise<unknown> =>
+  testApi().query(
+    `update customer_preferences
+     set "specialRequests" = $2, "updatedAt" = now()
+     where "customerId" = (select id from customers where email = $1)`,
+    [email, specialRequests],
+  )
+
+/** Lets a salon remove a member of its staff meanwhile. */
+export const staffRemovedMeanwhile = (displayName: string): Promise<unknown> =>
+  testApi().query(
+    'update staff set "deletedAt" = now() where "displayName" = $1',
+    [displayName],
+  )
+
+/** The ID of a member of the staff, by their name. */
+export const staffIdOf = async (displayName: string): Promise<string> =>
+  idsSchema.parse(
+    await testApi().query(
+      'select id::text from staff where "displayName" = $1',
+      [displayName],
+    ),
+  )[0].id
+
+const namesSchema = z.array(z.object({ displayName: z.string() }))
+
+/** The names of the staff a salon shows, in the order of its list. */
+export const staffShownAt = async (salon: string): Promise<string[]> =>
+  namesSchema
+    .parse(
+      await testApi().query(
+        `select staff."displayName"
+         from staff join salons on salons.id = staff."salonId"
+         where salons.name = $1 and staff."isActive" and staff."deletedAt" is null
+         order by staff."createdAt", staff.id`,
+        [salon],
+      ),
+    )
+    .map(({ displayName }) => displayName)
+
+const storedPreferencesSchema = z
+  .array(
+    z.object({
+      preferredStaffId: z.string().nullable(),
+      avoidStaffIds: z.array(z.string()),
+      preferredTimeSlots: z.unknown(),
+      communicationStyle: z.string().nullable(),
+      specialRequests: z.string().nullable(),
+      updatedAt: z.string(),
+    }),
+  )
+  .max(1)
+
+/** The preferences of a customer as they are stored; `null` when none were ever written. */
+export const storedPreferencesOf = async (email: string) =>
+  storedPreferencesSchema.parse(
+    await testApi().query(
+      `select stored."preferredStaffId"::text, stored."avoidStaffIds"::text[],
+              stored."preferredTimeSlots", stored."communicationStyle",
+              stored."specialRequests", stored."updatedAt"::text
+       from customer_preferences stored join customers on customers.id = stored."customerId"
+       where customers.email = $1`,
+      [email],
+    ),
+  )[0] ?? null
+
 const storedSchema = z.tuple([
   z.object({
     lastName: z.string(),

@@ -3,6 +3,7 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  ButtonLink,
   Card,
   type FormErrors,
   LoadingIndicator,
@@ -16,14 +17,19 @@ import {
   bookingOfCustomerHrefOf,
   customerChangeHrefOf,
   customerHrefOf,
+  customerPreferencesHrefOf,
 } from '../navigation'
 import { unreadMessageOf } from '../reading'
 import { dayAt } from '../salon-time'
 import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { CustomerPreferences } from './components/customer-preferences/customer-preferences'
-import { CustomerRecord } from './components/customer-record/customer-record'
+import {
+  CustomerRecord,
+  type CustomerRecordProps,
+} from './components/customer-record/customer-record'
 import { CustomerStatistics } from './components/customer-statistics/customer-statistics'
 import { StatisticsPeriod } from './components/statistics-period/statistics-period'
+import { type Referrer, referrerOf } from './customer-form'
 import {
   type Period,
   periodIn,
@@ -32,7 +38,9 @@ import {
   readPeriod,
 } from './customer-statistics'
 import {
+  customerKeyOf,
   preferencesKeyOf,
+  readCustomer,
   readPreferences,
   readStatistics,
   statisticsKeyOf,
@@ -47,15 +55,45 @@ const UNREAD = P.union('tooManyRequests', 'failed')
 const GONE = 'このお客様は、台帳から削除されました。'
 
 type PartProps = {
+  salon: ModelsSalonResponse
   customer: ModelsCustomerResponse
+}
+
+/**
+ * What the ledger keeps of the customer, with the customer who referred
+ * them named once they were read. Until then, and when they could not be
+ * read, the page of the referrer is led to all the same: the record does
+ * not wait for them.
+ */
+const RecordPart = ({
+  customer,
+  ...record
+}: Omit<CustomerRecordProps, 'referrer'>) => {
+  const { referredBy } = customer
+  const read = useQuery({
+    queryKey: customerKeyOf(referredBy ?? ''),
+    queryFn: () => readCustomer(referredBy ?? ''),
+    enabled: referredBy !== null,
+    staleTime: 0,
+  })
+  const referrer = match(read.data)
+    .returnType<Referrer | undefined>()
+    .with({ type: 'found' }, ({ customer: found }) => referrerOf(found))
+    .with({ type: 'notFound' }, () =>
+      referredBy === null ? undefined : { type: 'gone', id: referredBy },
+    )
+    .with(undefined, { type: UNREAD }, () => undefined)
+    .exhaustive()
+
+  return <CustomerRecord {...record} customer={customer} referrer={referrer} />
 }
 
 /**
  * What the customer wants the salons to keep in mind, with the members of
  * the staff named. It is read with the page; the customer may change it
- * from the portal at any time.
+ * from the portal at any time, and the salon from here.
  */
-const PreferencesPart = ({ customer }: PartProps) => {
+const PreferencesPart = ({ salon, customer }: PartProps) => {
   const read = useQuery({
     queryKey: preferencesKeyOf(customer.id),
     queryFn: () => readPreferences(customer.id),
@@ -63,7 +101,17 @@ const PreferencesPart = ({ customer }: PartProps) => {
   })
 
   return (
-    <Card title='好み設定'>
+    <Card
+      title='好み設定'
+      actions={
+        <ButtonLink
+          href={customerPreferencesHrefOf(salon.id, customer.id)}
+          variant='secondary'
+        >
+          好み設定を直す
+        </ButtonLink>
+      }
+    >
       {match(read.data)
         .with(undefined, () => (
           <LoadingIndicator label='好み設定を読み込んでいます' />
@@ -84,16 +132,12 @@ const PreferencesPart = ({ customer }: PartProps) => {
   )
 }
 
-type UsePartProps = PartProps & {
-  salon: ModelsSalonResponse
-}
-
 /**
  * What the customer did at the salon over a period: the year up to today
  * at the salon, or the days in the query of the address. Another period is
  * another address, so the way back shows the period that was shown.
  */
-const UsePart = ({ salon, customer }: UsePartProps) => {
+const UsePart = ({ salon, customer }: PartProps) => {
   const [query, setQuery] = useSearchParams()
   const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
   const period = periodIn(query, dayAt(new Date(), salon.timezone))
@@ -164,7 +208,8 @@ export const CustomerScreen = () => {
         <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh={false}>
           {(customer) => (
             <>
-              <CustomerRecord
+              <RecordPart
+                key={`record-${customer.id}`}
                 customer={customer}
                 timezone={salon.timezone}
                 changeHref={customerChangeHrefOf(salon.id, customer.id)}
@@ -180,6 +225,7 @@ export const CustomerScreen = () => {
               {/* Another customer (the one who referred this one) is another part */}
               <PreferencesPart
                 key={`preferences-${customer.id}`}
+                salon={salon}
                 customer={customer}
               />
               <UsePart

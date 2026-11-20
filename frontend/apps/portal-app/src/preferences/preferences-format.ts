@@ -1,5 +1,8 @@
 import type { ModelsTimeSlot } from '@beauty-salon-frontend/api-client'
-import { type StaffChoice, staffLabelOf } from './staff-choices'
+import {
+  type StaffChoice,
+  staffLabelOf,
+} from '@beauty-salon-frontend/preferences'
 
 /** What stands where a preference would, when the customer has none */
 export const UNSET = '指定なし'

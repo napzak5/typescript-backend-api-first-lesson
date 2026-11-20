@@ -1,4 +1,5 @@
 import { type ReactNode, useId, useLayoutEffect, useRef } from 'react'
+import { classNames } from '../../class-names'
 import styles from './dialog.module.css'
 
 export type DialogProps = {
@@ -20,6 +21,19 @@ export type DialogProps = {
    * 「キャンセル」, then 「削除する」. A form gets the focus at its first control
    */
   actions: ReactNode
+  /**
+   * How wide it may grow: `medium` for a question or a small form, `wide`
+   * for a table to choose from. Never wider than the screen
+   */
+  size?: 'medium' | 'wide' | undefined
+}
+
+const sizeClass: Record<
+  NonNullable<DialogProps['size']>,
+  string | undefined
+> = {
+  medium: undefined,
+  wide: styles['wide'],
 }
 
 /**
@@ -41,6 +55,7 @@ export const Dialog = ({
   description,
   children,
   actions,
+  size = 'medium',
 }: DialogProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null)
   /** Whether the caller was told that the dialog closed, since it last opened */
@@ -75,7 +90,7 @@ export const Dialog = ({
   return (
     <dialog
       ref={dialogRef}
-      className={styles['dialog']}
+      className={classNames(styles['dialog'], sizeClass[size])}
       aria-labelledby={titleId}
       aria-describedby={description === undefined ? undefined : descriptionId}
       onCancel={tell}

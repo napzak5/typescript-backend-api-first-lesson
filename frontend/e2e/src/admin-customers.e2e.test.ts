@@ -17,8 +17,9 @@ const EMAIL = 'hanako.yamada@example.com'
 
 const NAME = '山田 花子'
 
-/** A customer of the seed data */
+/** Customers of the seed data */
 const SAKURA = 'customer3@example.com'
+const YUKI = { email: 'customer1@example.com', name: 'Tanaka Yuki' }
 
 const storedSchema = z.array(
   z.object({
@@ -161,6 +162,136 @@ test.describe('the ledger of the customers, in a browser', () => {
   })
 })
 
+const customerIdSchema = z.tuple([z.object({ id: z.uuid() })])
+
+/** The ID of a customer of the seed data, by their address of mail. */
+const customerIdOf = async (api: TestApi, email: string): Promise<string> =>
+  customerIdSchema.parse(
+    await api.query('select id::text from customers where email = $1', [email]),
+  )[0].id
+
+const referrerSchema = z.array(
+  z.object({
+    referredBy: z.string().nullable(),
+    preferredStaff: z.string().nullable(),
+    communicationStyle: z.string().nullable(),
+  }),
+)
+
+/** Who referred a customer, and what they wish for, as the database of the API has it. */
+const storedReferrerAndWishes = async (api: TestApi, email: string) =>
+  referrerSchema.parse(
+    await api.query(
+      `select customers."referredBy"::text, staff."displayName" as "preferredStaff",
+              stored."communicationStyle"
+       from customers
+         left join customer_preferences stored on stored."customerId" = customers.id
+         left join staff on staff.id = stored."preferredStaffId"
+       where customers.email = $1`,
+      [email],
+    ),
+  )
+
+test.describe('the referrer and the preferences of a customer, in a browser', () => {
+  test('should choose the customer who referred another in a dialog that keeps the focus and gives it back, and change what the customer wishes for, with the keyboard', async ({
+    page,
+    api,
+  }) => {
+    // Arrange
+    const tokyo = await salonId(api)
+    const [sakura, yuki] = await Promise.all([
+      customerIdOf(api, SAKURA),
+      customerIdOf(api, YUKI.email),
+    ])
+    await page.goto(`${ADMIN.origin}/salons/${tokyo}/customers/${sakura}`)
+    await enterCredentials(page, STAFF, api.seedPassword)
+    await expect(heading(page, 'お客様の台帳')).toBeFocused()
+    await pressWithTheKeyboard(page.getByRole('link', { name: '台帳を直す' }))
+    await expect(heading(page, '台帳を直す')).toBeFocused()
+    await expect(textbox(page, '紹介元')).toHaveValue('なし')
+    const choose = page.getByRole('button', { name: '紹介元を選ぶ' })
+    const dialog = page.getByRole('dialog', { name: '紹介元を選ぶ' })
+
+    // Act: the choice opened, and given up with the Escape key
+    await pressWithTheKeyboard(choose)
+
+    // Assert: the focus is on the keyword, and comes back to the button
+    await expect(dialog).toBeVisible()
+    await expect(
+      dialog.getByRole('searchbox', { name: 'キーワード' }),
+    ).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+    await expect(choose).toBeFocused()
+    await expect(textbox(page, '紹介元')).toHaveValue('なし')
+
+    // Act: the ledger searched in the dialog, and a customer chosen
+    await page.keyboard.press('Enter')
+    await expect(dialog).toBeVisible()
+    await page.keyboard.type('tanaka')
+    await page.keyboard.press('Enter')
+    const found = dialog.getByRole('button', { name: YUKI.name })
+    await expect(found).toBeVisible()
+    await expect(
+      dialog.getByRole('search', { name: '紹介元を探す' }),
+    ).toBeVisible()
+    await expectSoundPage(page)
+    // A wide screen shows every column of what was found, with nothing to scroll
+    expect(
+      await dialog
+        .getByRole('region', { name: '見つかったお客様' })
+        .evaluate((frame) => frame.scrollWidth - frame.clientWidth),
+    ).toBeLessThanOrEqual(1)
+    await pressWithTheKeyboard(found)
+
+    // Assert
+    await expect(dialog).toBeHidden()
+    await expect(choose).toBeFocused()
+    await expect(textbox(page, '紹介元')).toHaveValue(`${YUKI.name} 様`)
+
+    // Act
+    await pressWithTheKeyboard(
+      page.getByRole('button', { name: '変更を保存する' }),
+    )
+
+    // Assert: the page names the referrer and leads to their page
+    await expect(heading(page, 'お客様の台帳')).toBeFocused()
+    await expect(
+      recorded(page, '紹介元').getByRole('link', { name: `${YUKI.name} 様` }),
+    ).toHaveAttribute('href', `/salons/${tokyo}/customers/${yuki}`)
+
+    // Act: the preferences, from the page
+    await pressWithTheKeyboard(
+      page.getByRole('link', { name: '好み設定を直す' }),
+    )
+    await expect(heading(page, '好み設定を直す')).toBeFocused()
+    await page
+      .getByRole('combobox', { name: '指名したいスタッフ' })
+      .selectOption({ label: 'Mika Suzuki（Beauty Studio Tokyo）' })
+    await textbox(page, '接客の好み').fill('静かに過ごしたい')
+    await expectSoundPage(page)
+    await pressWithTheKeyboard(
+      page.getByRole('button', { name: '変更を保存する' }),
+    )
+
+    // Assert
+    await expect(heading(page, 'お客様の台帳')).toBeFocused()
+    await expect(page.getByText('好み設定を直しました。')).toBeVisible()
+    await expect(
+      page
+        .getByRole('region', { name: '好み設定' })
+        .getByText('静かに過ごしたい'),
+    ).toBeVisible()
+    expect(await storedReferrerAndWishes(api, SAKURA)).toEqual([
+      {
+        referredBy: yuki,
+        preferredStaff: 'Mika Suzuki',
+        communicationStyle: '静かに過ごしたい',
+      },
+    ])
+  })
+})
+
 /** A text that has nowhere to break: an address, as somebody pastes it */
 const UNBROKEN = `https://example.com/${'a'.repeat(120)}`
 
@@ -195,7 +326,7 @@ const arrangeLongValues = async (api: TestApi): Promise<string> => {
 test.describe('the ledger of the customers, on a screen as narrow as a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  test('should fit the ledger, the form with what is wrong in it, and the page of a customer with long values into the width', async ({
+  test('should fit the ledger, the form with what is wrong in it, the choice of a referrer, the page of a customer with long values and the form of the preferences into the width', async ({
     page,
     api,
   }) => {
@@ -225,6 +356,18 @@ test.describe('the ledger of the customers, on a screen as narrow as a phone', (
     )
     await expectSoundPage(page)
 
+    // Act, Assert: the choice of a referrer, with what it found
+    await page.getByRole('button', { name: '紹介元を選ぶ' }).click()
+    const dialog = page.getByRole('dialog', { name: '紹介元を選ぶ' })
+    await dialog.getByRole('searchbox', { name: 'キーワード' }).fill('example')
+    await dialog.getByRole('button', { name: '検索する' }).click()
+    await expect(
+      dialog.getByRole('table', { name: '見つかったお客様' }).getByRole('row'),
+    ).toHaveCount(5)
+    await expectSoundPage(page)
+    await dialog.getByRole('button', { name: 'やめる' }).click()
+    await expect(dialog).toBeHidden()
+
     // Act, Assert: the page of a customer
     await page.goto(`${ADMIN.origin}/salons/${tokyo}/customers/${sakura}`)
     await expect(heading(page, 'お客様の台帳')).toBeVisible()
@@ -238,6 +381,12 @@ test.describe('the ledger of the customers, on a screen as narrow as a phone', (
     await expect(
       page.getByRole('table', { name: 'よく受けたメニュー' }),
     ).toBeVisible()
+    await expectSoundPage(page)
+
+    // Act, Assert: the form of the preferences, with the long values
+    await page.getByRole('link', { name: '好み設定を直す' }).click()
+    await expect(heading(page, '好み設定を直す')).toBeFocused()
+    await expect(textbox(page, '特別な要望')).toHaveValue(UNBROKEN)
     await expectSoundPage(page)
   })
 })

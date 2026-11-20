@@ -7,7 +7,9 @@ import {
   Link,
   TagList,
 } from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
 import { dayNameOf, momentNameAt } from '../../../salon-time'
+import { type Referrer, referrerNameOf } from '../../customer-form'
 import {
   addressNameOf,
   categoriesNameOf,
@@ -33,6 +35,11 @@ export type CustomerRecordProps = {
   bookingHref: string
   /** The address of the page of another customer: the one who referred this one */
   customerHref: (customerId: string) => string
+  /**
+   * The customer who referred this one, as they were read to be named;
+   * `undefined` while they are read, or when they could not be
+   */
+  referrer: Referrer | undefined
 }
 
 const NONE = 'なし'
@@ -40,6 +47,28 @@ const NONE = 'なし'
 /** A text that was written in several lines, with its line breaks. */
 const written = (text: string | null) =>
   text === null ? UNRECORDED : <p className={styles['written']}>{text}</p>
+
+/**
+ * The customer who referred another: their name, which leads to their
+ * page, once they were read; until then the page is led to all the same.
+ * One who was removed from the ledger has no page to lead to.
+ */
+const referrerShownOf = (
+  referredBy: string | null,
+  referrer: Referrer | undefined,
+  customerHref: (customerId: string) => string,
+) =>
+  referredBy === null
+    ? NONE
+    : match(referrer)
+        .with({ type: 'customer' }, (named) => (
+          <Link href={customerHref(named.id)}>{referrerNameOf(named)}</Link>
+        ))
+        .with({ type: 'gone' }, (gone) => referrerNameOf(gone))
+        .with(undefined, { type: 'none' }, () => (
+          <Link href={customerHref(referredBy)}>紹介したお客様</Link>
+        ))
+        .exhaustive()
 
 /** A day the ledger keeps, or that there is none. */
 const dayOrNone = (day: string | null, none: string): string =>
@@ -57,6 +86,7 @@ export const CustomerRecord = ({
   changeHref,
   bookingHref,
   customerHref,
+  referrer,
 }: CustomerRecordProps) => {
   const kana = customerKanaOf(customer)
 
@@ -139,14 +169,11 @@ export const CustomerRecord = ({
             },
             {
               term: '紹介元',
-              description:
-                customer.referredBy === null ? (
-                  NONE
-                ) : (
-                  <Link href={customerHref(customer.referredBy)}>
-                    紹介したお客様
-                  </Link>
-                ),
+              description: referrerShownOf(
+                customer.referredBy,
+                referrer,
+                customerHref,
+              ),
             },
             { term: '送ってよい連絡', description: contactsNameOf(customer) },
             { term: '備考', description: written(customer.notes) },

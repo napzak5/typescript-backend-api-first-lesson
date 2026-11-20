@@ -26,6 +26,22 @@ describe('Dialog', () => {
     ).toBeVisible()
   })
 
+  it.each([
+    { story: stories.Confirmation, size: 'medium', classes: ['dialog'] },
+    { story: stories.Wide, size: 'wide', classes: ['dialog', 'wide'] },
+  ])(
+    'should be as wide as its $size size allows',
+    async ({ story, classes }) => {
+      // Act
+      await story.run()
+
+      // Assert
+      expect(screen.getByRole('dialog')).toHaveClass(classes.join(' '), {
+        exact: true,
+      })
+    },
+  )
+
   it('should have no description when it is given none', async () => {
     // Act
     await stories.TitleOnly.run()

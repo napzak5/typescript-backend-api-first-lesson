@@ -6,10 +6,8 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { RefusedValue } from '../behind-the-session'
-import type { FormSays, Read } from '../forms'
-import { linesOf, pictureAddressesError } from '../lines'
-import type { PreferencesUpdate } from './preferences-api'
+import type { FormSays, Read, RefusedValue } from './forms'
+import { linesOf, pictureAddressesError } from './lines'
 import type { StaffChoice } from './staff-choices'
 
 /*
@@ -432,13 +430,17 @@ const NOT_SENT: FormSays = {
 }
 
 /**
- * What the form says after the API did not change the preferences. A
- * profile that is gone is not said here: the screen then has no form to
- * show.
+ * Why the API did not change the preferences, as the form can say it: the
+ * values it did not take, too many requests, or no answer. A customer who
+ * is gone is not among them: the screen then has no form to show.
  */
-export const afterPreferencesChange = (
-  outcome: Exclude<PreferencesUpdate, { type: 'updated' } | { type: 'none' }>,
-): FormSays =>
+export type PreferencesRefusal =
+  | { type: 'invalid'; values: readonly RefusedValue[] }
+  | { type: 'tooManyRequests' }
+  | { type: 'failed' }
+
+/** What the form says after the API did not change the preferences. */
+export const afterPreferencesChange = (outcome: PreferencesRefusal): FormSays =>
   match(outcome)
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))

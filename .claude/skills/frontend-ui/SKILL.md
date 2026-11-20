@@ -28,7 +28,8 @@ this one: a component is not done without its stories and its test.
 | The screens of the salons in the portal: the search and the page of a salon, and the components they show | `frontend/apps/portal-app/src/salons/` |
 | The screens of a booking in the portal: choosing the member of the staff, the day and the time, the page of a booking, the bookings of a customer, and cancelling and moving one | `frontend/apps/portal-app/src/bookings/` |
 | The page of a customer in the portal, and the form of their profile | `frontend/apps/portal-app/src/profile/` |
-| What a customer wishes for in the portal: the part of their page, and the form with the rows of time slots | `frontend/apps/portal-app/src/preferences/` |
+| What a customer wishes for in the portal: the part of their page, and the screen of the form | `frontend/apps/portal-app/src/preferences/` |
+| The form of what a customer wishes for, which the portal and the admin application share: the form with the rows of time slots, how it is read and what a refusal says, the staff it offers, a list written a line each | `frontend/packages/preferences/src/` |
 | The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one; what a reader of the page of a salon does with the reviews of others (`reader-flow.ts`, the dialog that reports one) | `frontend/apps/portal-app/src/reviews/` |
 | Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
@@ -36,6 +37,7 @@ this one: a component is not done without its stories and its test.
 | The screens of a salon in the admin application: the choice of a salon, and the salon of an address around the screens below it | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
+| The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences | `frontend/apps/admin-app/src/customers/` |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
@@ -634,13 +636,28 @@ none).
 
 ### A form with rows, with lists, and with choices that are read
 
-What a customer wishes for is the example to read
-(`frontend/apps/portal-app/src/preferences/`: `own-preferences.tsx` is the
-part of the page, `preferences-screen.tsx` the form). It is changed as the
-profile is, above, and adds what the profile does not have.
+What a customer wishes for is the example to read: the form is the
+package `frontend/packages/preferences/`, and in the portal
+(`frontend/apps/portal-app/src/preferences/`) `own-preferences.tsx` is the
+part of the page and `preferences-screen.tsx` the screen of the form. It
+is changed as the profile is, above, and adds what the profile does not
+have.
+
+- **A form that two applications write with is a package**
+  (`@beauty-salon-frontend/preferences`): the customer writes the same
+  record in the portal as the salon does in its ledger, under the same
+  rules. The package has the component, how the form is read
+  (`readPreferencesChange`), what a refusal says
+  (`afterPreferencesChange`) and the choices it offers
+  (`staffChoicesOf`). What an application reads, and the part of a page
+  that shows the record, stay in the application: their readers differ
+  (the customer is not shown a member nobody can read; the salon is told
+  「一覧にないスタッフ」). The package is built as `ui` is (rslib, the
+  condition `@beauty-salon-frontend/source`), its stories are listed in
+  the catalogue of `ui`, and `Dockerfile.frontend` copies its manifest.
 
 - **Rows that are added and taken away** are a component that keeps which
-  rows there are (`components/time-slot-fields/`); the browser keeps what
+  rows there are (`components/time-slot-fields/` of the package); the browser keeps what
   was typed, as in every control. A row has a `key` that stays with it (a
   counter, never its index), so a row that is taken away takes its values
   with it and the others keep theirs. The controls are named by the number
@@ -658,8 +675,8 @@ profile is, above, and adds what the profile does not have.
   not the rows of the form, so what the API says of a row all the same is
   said about the attempt, not at a control.
 - **A list is written a line each** in a `TextArea` whose description says
-  so. A pure function reads it (`linesOf` in `src/lines.ts`, which the
-  forms of two areas share): without the spaces around a line, without the
+  so. A pure function reads it (`linesOf` of the package, which the
+  forms of the preferences and of the reviews share): without the spaces around a line, without the
   empty lines, each value once. An error names the line as the control
   shows it (「2 行目を確かめてください。…」, `pictureAddressesError` for
   a list of addresses).
@@ -667,7 +684,10 @@ profile is, above, and adds what the profile does not have.
   query of the form has one function (`readOwnPreferencesToChange`): the
   record, then what its choices come from (the salons the customer has a
   booking at, the staff each of them shows, a stored member that is not
-  among them, the names of the salons). One of them unread is the form
+  among them, the names of the salons). The salon's screen reads the
+  same way what it offers (`readPreferencesToChange` of
+  `admin-app/src/customers/customers-api.ts`): the staff of the salon of
+  the address, and the members of other salons the record names. One of them unread is the form
   unread: it never opens with half of its choices, and a choice that came
   later would not be compared with what the form opened with.
 - **A choice that belongs to something is offered with its name**
@@ -1233,7 +1253,8 @@ The customers of the admin application are the example to read:
 `frontend/apps/admin-app/src/customers/` (`customer-ledger-screen.tsx` for
 the ledger, `customer-entry-screen.tsx` for a customer registered,
 `customer-screen.tsx` for the page of a customer, `customer-change-screen.tsx`
-for the change, `with-customer.tsx` for the customer of the address).
+for the change, `customer-preferences-screen.tsx` for the preferences a
+salon changes, `with-customer.tsx` for the customer of the address).
 
 - **A ledger that belongs to no salon is still shown below one.** The
   customers are one ledger for the platform, and every address of the
@@ -1262,8 +1283,25 @@ for the change, `with-customer.tsx` for the customer of the address).
   `autoComplete="off"`: the person who fills it in is the salon, not the
   customer, and the browser would offer the salon's own address. A new
   record starts at the values a new one has in the ledger (the rank, the
-  state, active). What is not asked here (who referred the customer) is
-  sent as `null`.
+  state, active).
+- **A value that names another record is chosen, not typed** (who
+  referred the customer: `components/referrer-field/`,
+  `components/referrer-dialog/`, `referrer-choice.tsx`). The form shows
+  the name in a `TextField` that is `readOnly`, which says a refusal of
+  the API and takes the focus as every control does, and sends the ID in
+  a hidden control. 「紹介元を選ぶ」 opens a `Dialog` that searches the
+  ledger by a keyword with a form of its own, and a name pressed there is
+  chosen (`CustomerChoices` with `choose: { type: 'button' }`, the table
+  the booking search shows with links). The dialog is `wide`, so that the
+  columns that tell two customers of one name apart are seen on a wide
+  screen without scrolling, and the names are bordered buttons, as a
+  button in a row of a table is; 「紹介元を外す」 takes it away
+  and puts the focus on the button that chooses. The dialog is rendered
+  after the form, through a render prop (`chooseReferrer`): a form inside
+  a form is no HTML. The record the form is about is found too, named
+  「（このお客様）」 without a button, as the API refuses it. The name of
+  the stored value is read before the form opens; one that is gone is
+  named as such (「台帳にいないお客様」) and is not sent unless changed.
 - **A conflict that does not say which value is found out.** The API
   answers 409 for an address of mail or a referral code that another
   customer has, and does not say which. A request that named one says it
@@ -1275,7 +1313,9 @@ for the change, `with-customer.tsx` for the customer of the address).
 - **The page of a record is a record and parts that read on their own.**
   The record shows what was read before and what is read anew when it
   comes (`WithCustomer` with `fresh={false}`); the form that writes it
-  waits for the read anew (`fresh`). Each part (好み設定, このサロンでの利用)
+  waits for the read anew (`fresh`). The record names another record it
+  points to once it was read, and leads to it all the same until then
+  (the referrer: 「紹介したお客様」). Each part (好み設定, このサロンでの利用)
   is a query of its own, `staleTime: 0`, keyed by the customer, and says
   its own loading, failure and refusal in its `Card`, so one part that
   fails leaves the rest of the page.
@@ -1336,7 +1376,7 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
 | `EmptyState` | What is shown where content would be, while there is none |
 | `LoadingIndicator` | What is shown where content will be, while it loads |
 | `UnreadNotice` | What is shown where content could not be read: the message the application words (`unreadMessageOf(what, reason)`), and the button that reads again |
-| `Dialog` | A question or a small form that has to be dealt with first |
+| `Dialog` | A question or a small form that has to be dealt with first; `size='wide'` for a table to choose from |
 | `NotificationProvider`, `useNotifications` | The result of what the user just did |
 
 - **A screen** is a `PageHeader`, then its content; the frame gives them their

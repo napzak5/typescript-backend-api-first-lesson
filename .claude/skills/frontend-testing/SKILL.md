@@ -162,7 +162,10 @@ describe('Button', () => {
   event (`fireEvent(dialog, new Event('cancel'))`): the browser fires it,
   closes the dialog, and fires `close` a task later. A `close` fired at a
   dialog that is still open is one the browser never sends, and `Dialog`
-  takes it for a late one.
+  takes it for a late one. A closed dialog is still in the document with
+  its controls: what a test counts with `querySelectorAll` is counted
+  inside the element it is about (`closest('form')`), not in the
+  document.
 - A component that is generic in its data gets a wrapper with the type filled
   in, and the stories are those of the wrapper (`BookingTable` in
   `table.stories.tsx`).
@@ -887,6 +890,15 @@ adds:
   no-show), and another period from the address.
 - **A page of parts that read on their own is waited for part by part**
   (`theCustomer`: the heading, the record, then a term of each part).
+- **A list the API orders by a moment the seed data gave several rows**
+  is in the order of their IDs, which differ from one seeding to the
+  next: the order a test expects is read from the database as the API
+  orders it (`staffShownAt`: the staff of a salon, by `createdAt` and
+  `id`), never written out.
+- **A choice made in a dialog is searched and pressed inside the dialog**
+  (`chooseReferrer` of `customers.integration.test.tsx`), and what the
+  API refuses of it is made between the choice and the send
+  (`removeMeanwhile` of the customer who was chosen).
 
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who

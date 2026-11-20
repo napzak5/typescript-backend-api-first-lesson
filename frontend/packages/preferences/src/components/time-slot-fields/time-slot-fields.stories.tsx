@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { TimeSlotFields, type TimeSlotFieldsProps } from './time-slot-fields'
 
 const meta: Meta<typeof TimeSlotFields> = {
-  title: 'Portal/Preferences/TimeSlotFields',
+  title: 'Preferences/TimeSlotFields',
   component: TimeSlotFields,
   args: {
     name: 'preferredTimeSlots',

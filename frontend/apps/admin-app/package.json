@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@beauty-salon-frontend/api-client": "workspace:*",
+    "@beauty-salon-frontend/preferences": "workspace:*",
     "@beauty-salon-frontend/session": "workspace:*",
     "@beauty-salon-frontend/theme": "workspace:*",
     "@beauty-salon-frontend/ui": "workspace:*",

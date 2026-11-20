@@ -1,4 +1,10 @@
 import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/api-client'
+import {
+  afterPreferencesChange,
+  PreferencesForm,
+  readPreferencesChange,
+  type StaffChoice,
+} from '@beauty-salon-frontend/preferences'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
@@ -19,7 +25,6 @@ import { OWN_PROFILE, type ProfileRead } from '../profile/profile-api'
 import { CUSTOMERS } from '../roles'
 import { unreadMessageOf } from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
-import { PreferencesForm } from './components/preferences-form/preferences-form'
 import {
   OWN_PREFERENCES,
   OWN_PREFERENCES_TO_CHANGE,
@@ -27,11 +32,6 @@ import {
   readOwnPreferencesToChange,
   updateOwnPreferences,
 } from './preferences-api'
-import {
-  afterPreferencesChange,
-  readPreferencesChange,
-} from './preferences-flow'
-import type { StaffChoice } from './staff-choices'
 
 const TITLE = '好みの設定'
 

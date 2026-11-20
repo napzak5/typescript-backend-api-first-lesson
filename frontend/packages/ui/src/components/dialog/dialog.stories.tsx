@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { fn } from 'storybook/test'
 import { Button } from '../button/button'
+import { Table } from '../table/table'
 import { Dialog } from './dialog'
 
 const meta: Meta<typeof Dialog> = {
@@ -51,6 +52,47 @@ export const WithContent: Story = {
     description: undefined,
     children: <p>カット、カラー（2 時間）／担当: 佐藤 美咲</p>,
     actions: <Button variant='primary'>閉じる</Button>,
+  },
+}
+
+/** A table to choose from, as wide as its columns on a wide screen. */
+export const Wide: Story = {
+  args: {
+    title: '紹介元を選ぶ',
+    description: 'このお客様を紹介したお客様を、台帳から探して選びます。',
+    size: 'wide',
+    children: (
+      <Table
+        caption='見つかったお客様'
+        columns={[
+          { key: 'name', header: 'お名前', cell: ({ name }) => name },
+          { key: 'kana', header: 'フリガナ', cell: ({ kana }) => kana },
+          { key: 'phone', header: '電話番号', cell: ({ phone }) => phone },
+          {
+            key: 'email',
+            header: 'メールアドレス',
+            cell: ({ email }) => email,
+          },
+        ]}
+        rows={[
+          {
+            name: '山田 花子',
+            kana: 'ヤマダ ハナコ',
+            phone: '090-1234-5678',
+            email: 'hanako.yamada@example.com',
+          },
+          {
+            name: '山田 花子',
+            kana: 'ヤマダ ハナコ',
+            phone: '080-8765-4321',
+            email: 'h.yamada@example.jp',
+          },
+        ]}
+        rowKey={({ phone }) => phone}
+        emptyMessage='お客様はいません'
+      />
+    ),
+    actions: <Button>やめる</Button>,
   },
 }
 

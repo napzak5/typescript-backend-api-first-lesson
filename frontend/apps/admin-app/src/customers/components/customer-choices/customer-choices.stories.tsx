@@ -22,7 +22,7 @@ const meta: Meta<typeof CustomerChoices> = {
     total: 3,
     more: 'none',
     onMore: fn(),
-    customerHref: ({ id }) => `?customerId=${id}`,
+    choose: { type: 'link', hrefOf: ({ id }) => `?customerId=${id}` },
   },
 }
 
@@ -32,6 +32,22 @@ type Story = StoryObj<typeof meta>
 
 /** The customers a keyword found: two of one name, one of them without kana */
 export const Customers: Story = {}
+
+/** Each customer is chosen by a button, in a form that stays open */
+export const ByButton: Story = {
+  args: { choose: { type: 'button', onChoose: fn(), excluded: undefined } },
+}
+
+/** The customer the form is about is found too, and cannot be chosen */
+export const WithTheCustomerThemselves: Story = {
+  args: {
+    choose: {
+      type: 'button',
+      onChoose: fn(),
+      excluded: 'f4c27a8d-9b1e-4d3f-8a6c-2e5b7d9f1a03',
+    },
+  },
+}
 
 /** More customers can be asked for */
 export const WithMore: Story = {
