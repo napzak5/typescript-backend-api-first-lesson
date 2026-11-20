@@ -173,6 +173,24 @@ export const paymentMethodChangeHrefOf = (
   paymentMethodId: string,
 ): string => `${paymentMethodHrefOf(salonId, paymentMethodId)}/edit`
 
+/** The product ledger of a salon: what it sells and what its treatments use. */
+export const productsHrefOf = (salonId: string): string =>
+  `/salons/${salonId}/products`
+
+/** The screen that adds a product to the ledger. */
+export const productEntryHrefOf = (salonId: string): string =>
+  `${productsHrefOf(salonId)}/new`
+
+/** A product of the ledger. */
+export const productHrefOf = (salonId: string, productId: string): string =>
+  `${productsHrefOf(salonId)}/${productId}`
+
+/** The screen that changes a product, and removes it. */
+export const productChangeHrefOf = (
+  salonId: string,
+  productId: string,
+): string => `${productHrefOf(salonId, productId)}/edit`
+
 /** The menu of a salon: its categories and their services. */
 export const menuHrefOf = (salonId: string): string => `/salons/${salonId}/menu`
 
@@ -339,7 +357,7 @@ export const OWN_PROFILE_PATH = '/account/profile'
 
 /**
  * The links of the header: the bookings, the sales, the customers, the
- * treatment records, the shifts and the menu, from the salon of the address, and the
+ * treatment records, the shifts, the menu and the products, from the salon of the address, and the
  * staff ledger for the roles that keep it. The screens of a salon are below its address;
  * an administrator chooses the salon at the start (`/`), and a member of
  * the staff is led from there to the salon they belong to. So a member who
@@ -373,6 +391,7 @@ export const navigationFor = (
     const treatments = treatmentsHrefOf(salonId)
     const shifts = shiftsHrefOf(salonId)
     const menu = menuHrefOf(salonId)
+    const products = productsHrefOf(salonId)
     const staff = staffLedgerHrefOf(salonId)
     const settings = settingsHrefOf(salonId)
 
@@ -400,6 +419,11 @@ export const navigationFor = (
         current: isAtOrBelow(pathname, shifts),
       },
       { href: menu, label: 'メニュー', current: isAtOrBelow(pathname, menu) },
+      {
+        href: products,
+        label: '商品',
+        current: isAtOrBelow(pathname, products),
+      },
       ...(role !== undefined && mayKeepStaffLedger(role)
         ? [
             {

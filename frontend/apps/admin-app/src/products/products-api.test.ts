@@ -2,12 +2,21 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { salon } from '../bookings/components/examples'
 import { aProduct } from '../treatments/components/examples'
-import { readProducts } from './products-api'
+import { shampoo } from './components/examples'
+import {
+  addProduct,
+  changeProduct,
+  mayKeepProducts,
+  readProduct,
+  readProductPage,
+  readProducts,
+  removeProduct,
+} from './products-api'
 
 /*
  * What the API answers to the products is met with the real API
- * (`treatments.integration.test.tsx`). Here are the answers a test cannot
- * bring about there.
+ * (`products.integration.test.tsx`, `treatments.integration.test.tsx`).
+ * Here are the answers a test cannot bring about there.
  */
 
 /** A page of the products, as the API answers with it. */
@@ -79,5 +88,170 @@ describe('readProducts', () => {
 
     // Assert
     expect(read).toEqual({ type })
+  })
+})
+
+type Answer = () => Response | Promise<Response>
+
+const NOT_SENT: [string, Answer, string][] = [
+  ['a body that is too large', () => problem(413), 'failed'],
+  ['a body of another type', () => problem(415), 'failed'],
+  ...UNREAD,
+]
+
+describe('mayKeepProducts', () => {
+  it.each<[string, boolean]>([
+    ['owner', true],
+    ['manager', true],
+    ['admin', true],
+    ['staff', false],
+    ['customer', false],
+  ])('should let %s keep the products: %s', (role, keeps) => {
+    expect(mayKeepProducts(role)).toBe(keeps)
+  })
+})
+
+describe('readProductPage', () => {
+  it('should ask for a page of the ledger under the conditions, after the cursor', async () => {
+    // Arrange
+    const fetched = answering(() => page([shampoo], null))
+
+    // Act
+    const read = await readProductPage(
+      salon.id,
+      { keyword: 'シャンプー', carried: 'carried', use: 'sale' },
+      'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
+    )
+
+    // Assert
+    expect(read).toEqual({
+      type: 'found',
+      items: [shampoo],
+      total: 1,
+      nextCursor: null,
+    })
+    expect(
+      fetched.mock.calls.map(([asked]) =>
+        Object.fromEntries(new URL(new Request(asked).url).searchParams),
+      ),
+    ).toEqual([
+      {
+        keyword: 'シャンプー',
+        isActive: 'true',
+        isForSale: 'true',
+        cursor: 'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
+        limit: '20',
+      },
+    ])
+  })
+
+  it.each<[string, Answer, string]>([
+    [
+      'a cursor that names a product removed meanwhile',
+      () => problem(400),
+      'failed',
+    ],
+    ['a salon removed after it was read', () => problem(404), 'failed'],
+    ...UNREAD,
+  ])('should read no page after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const read = await readProductPage(salon.id, {}, undefined)
+
+    // Assert
+    expect(read).toEqual({ type })
+  })
+})
+
+describe('readProduct', () => {
+  it.each<[string, Answer, string]>([
+    ['an address that names no product', () => problem(400), 'notFound'],
+    ...UNREAD,
+  ])('should read no product after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const read = await readProduct(salon.id, 'x')
+
+    // Assert
+    expect(read).toEqual({ type })
+  })
+})
+
+describe('addProduct', () => {
+  it.each(NOT_SENT)(
+    'should add no product after %s',
+    async (_, given, type) => {
+      // Arrange
+      answering(given)
+
+      // Act
+      const written = await addProduct(salon.id, {
+        productCode: 'OIL001',
+        name: 'ヘアオイル',
+        description: null,
+        category: null,
+        brand: null,
+        purchasePrice: null,
+        retailPrice: null,
+        salonPrice: null,
+        unit: '本',
+        minimumStock: 0,
+        maximumStock: null,
+        reorderPoint: null,
+        supplier: null,
+        supplierProductCode: null,
+        leadTimeDays: null,
+        imageUrl: null,
+        barcode: null,
+        isForSale: true,
+        isForTreatment: false,
+        requiresLotTracking: false,
+        expiryMonths: null,
+        storageConditions: null,
+        safetyDataSheet: null,
+        isActive: true,
+      })
+
+      // Assert
+      expect(written).toEqual({ type })
+    },
+  )
+})
+
+describe('changeProduct', () => {
+  it.each(NOT_SENT)(
+    'should change no product after %s',
+    async (_, given, type) => {
+      // Arrange
+      answering(given)
+
+      // Act
+      const written = await changeProduct(salon.id, shampoo.id, {
+        salonPrice: 3200,
+      })
+
+      // Assert
+      expect(written).toEqual({ type })
+    },
+  )
+})
+
+describe('removeProduct', () => {
+  it.each<[string, Answer, string]>([
+    ['an address that names no product', () => problem(400), 'notFound'],
+    ...UNREAD,
+  ])('should remove no product after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const removed = await removeProduct(salon.id, 'x')
+
+    // Assert
+    expect(removed).toEqual({ type })
   })
 })

@@ -1869,6 +1869,22 @@ The payment methods (`src/payment-methods/`) are kept from the settings:
   method a payment was received by (409). The dialog closes, and the
   form says to clear 「この支払い方法を使う」 instead.
 
+The product ledger (`src/products/`) is searched and kept from the
+header:
+
+- **A choice is offered from what the salon holds**: the categories of
+  the ledger are those of all the products of the salon, read to the
+  end apart from the pages, and the category chosen stays among them
+  when no product has it any more.
+- **A new row opens as the API would store it without the values**:
+  the form of a new product starts from the defaults of the columns
+  (used in treatments, carried, a minimum stock of 0), so a product
+  added without touching them is the one the API would have made.
+- **The pages of a ledger are read below the list they come from**:
+  the pages are kept under the key of all the products, so a write
+  takes away the pages, the choices of the ledger and the materials of
+  a treatment record with one `removeQueries`.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
