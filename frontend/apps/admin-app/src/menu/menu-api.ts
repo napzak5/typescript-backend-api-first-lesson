@@ -1,4 +1,5 @@
 import {
+  type ModelsServiceBulkUpdateRequest,
   type ModelsServiceCategoryCreateRequest,
   type ModelsServiceCategoryResponse,
   type ModelsServiceCategoryUpdateRequest,
@@ -10,6 +11,7 @@ import {
   serviceCategoryCrudGet,
   serviceCategoryCrudList,
   serviceCategoryCrudUpdate,
+  serviceCrudBulkUpdate,
   serviceCrudCreate,
   serviceCrudDelete,
   serviceCrudGet,
@@ -370,6 +372,42 @@ export const removeService = async (
     .with({ status: 409 }, () => ({ type: 'inUse' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** What came of a change of several services at once. */
+export type ServicesChange =
+  | { type: 'changed'; updated: readonly string[] }
+  | { type: 'invalid'; values: RefusedValue[] }
+  | { type: 'servicesGone' }
+  | Forbidden
+  | Unread
+
+/**
+ * Gives every service the request names the same values: all of them, or
+ * none. When one of them is not in the menu any more (or the salon is
+ * not), none is changed.
+ */
+export const changeServices = async (
+  salonId: string,
+  request: ModelsServiceBulkUpdateRequest,
+): Promise<ServicesChange> => {
+  const answer = await serviceCrudBulkUpdate(salonId, request).catch(() => null)
+
+  return match(answer)
+    .returnType<ServicesChange>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'changed',
+      updated: data.data.updated,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 404 }, () => ({ type: 'servicesGone' }))
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
     .with(UNANSWERED, unreadOf)
     .exhaustive(outsideTheContract)
 }

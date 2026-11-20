@@ -1790,7 +1790,8 @@ the staff ledger (`staff/introduction.ts`,
 
 The menu is the example to read: `menu-screen.tsx`, `service-screen.tsx`,
 the screens of a service and of a category, `menu-api.ts`,
-`menu-format.ts`, `service-form.ts` and `category-form.ts`.
+`menu-format.ts`, `service-form.ts`, `category-form.ts` and
+`services-change.ts`.
 
 - **Two lists that make one screen are matched together**
   (`menuOf`): a refusal of either is said as soon as it comes, that of
@@ -1817,6 +1818,13 @@ the screens of a service and of a category, `menu-api.ts`,
 - **A removal refused for what holds the record (409) names it**: the
   lists are read again and the refusal is said above the form with what
   holds the record now and what to do first (`inUseMessageOf`).
+- **A change of several records at once opens at 「変えない」**
+  (`ServicesChangeForm`): every value is a select whose first choice
+  keeps it, only what was chosen is sent, and a form that keeps
+  everything is refused before the API is called. The records are
+  checkboxes named with their group. The API changes all of them or
+  none: when one was removed meanwhile, the lists are read again, and
+  the boxes of the records still there stay checked.
 
 ## Screens that a mailed link opens
 

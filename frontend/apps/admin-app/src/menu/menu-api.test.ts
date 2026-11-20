@@ -9,6 +9,7 @@ import {
   type CategoriesRead,
   changeCategory,
   changeService,
+  changeServices,
   mayKeepMenu,
   menuOf,
   readCategories,
@@ -305,5 +306,49 @@ describe('removeService', () => {
 
     // Assert
     expect(removed).toEqual({ type })
+  })
+})
+
+describe('changeServices', () => {
+  it('should send the services and the values, and give the services the API changed', async () => {
+    // Arrange
+    const sent: unknown[] = []
+    answering(async (asked) => {
+      sent.push(await asked.json())
+      return json(200, {
+        data: { updated: ['b', 'a'] },
+        meta: null,
+        links: { list: '/' },
+      })
+    })
+
+    // Act
+    const changed = await changeServices(salon.id, {
+      serviceIds: ['b', 'a'],
+      updates: { allowOnlineBooking: false },
+    })
+
+    // Assert
+    expect(changed).toEqual({ type: 'changed', updated: ['b', 'a'] })
+    expect(sent).toEqual([
+      { serviceIds: ['b', 'a'], updates: { allowOnlineBooking: false } },
+    ])
+  })
+
+  it.each<[string, Answer, string]>([
+    ['a service removed meanwhile', () => problem(404), 'servicesGone'],
+    ...NOT_SENT,
+  ])('should change no service after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const changed = await changeServices(salon.id, {
+      serviceIds: ['a'],
+      updates: { isActive: false },
+    })
+
+    // Assert
+    expect(changed).toEqual({ type })
   })
 })

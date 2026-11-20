@@ -27,6 +27,7 @@ import {
   serviceChangeHrefOf,
   serviceEntryHrefOf,
   serviceHrefOf,
+  servicesChangeHrefOf,
   shiftsHrefOf,
   shiftWeekHrefOf,
   staffAccountHrefOf,
@@ -340,6 +341,7 @@ describe('navigationFor', () => {
     ['a service', serviceHrefOf(SALON_ID, 'x')],
     ['a new service', serviceEntryHrefOf(SALON_ID)],
     ['the change of a service', serviceChangeHrefOf(SALON_ID, 'x')],
+    ['the change of several services', servicesChangeHrefOf(SALON_ID)],
     ['a new category', categoryEntryHrefOf(SALON_ID)],
     ['the change of a category', categoryChangeHrefOf(SALON_ID, 'x')],
   ])('should mark the menu as the screen of %s', (_case, pathname) => {
@@ -360,6 +362,7 @@ describe('navigationFor', () => {
       serviceHrefOf(SALON_ID, 'service'),
       serviceEntryHrefOf(SALON_ID),
       serviceChangeHrefOf(SALON_ID, 'service'),
+      servicesChangeHrefOf(SALON_ID),
       categoryEntryHrefOf(SALON_ID),
       categoryChangeHrefOf(SALON_ID, 'category'),
     ]).toEqual([
@@ -367,6 +370,7 @@ describe('navigationFor', () => {
       `${MENU}/services/service`,
       `${MENU}/services/new`,
       `${MENU}/services/service/edit`,
+      `${MENU}/services/bulk`,
       `${MENU}/categories/new`,
       `${MENU}/categories/category/edit`,
     ])

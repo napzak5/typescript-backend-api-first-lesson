@@ -49,6 +49,7 @@ import { MenuScreen } from './menu/menu-screen'
 import { ServiceChangeScreen } from './menu/service-change-screen'
 import { ServiceEntryScreen } from './menu/service-entry-screen'
 import { ServiceScreen } from './menu/service-screen'
+import { ServicesChangeScreen } from './menu/services-change-screen'
 import { navigationFor, OWN_PROFILE_PATH } from './navigation'
 import { OwnProfileScreen } from './own-profile/own-profile-screen'
 import { CheckoutScreen } from './sales/checkout-screen'
@@ -336,6 +337,10 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/menu/services/new'
                 element={<ServiceEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/menu/services/bulk'
+                element={<ServicesChangeScreen />}
               />
               <Route
                 path='/salons/:salonId/menu/services/:serviceId'
