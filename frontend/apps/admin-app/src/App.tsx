@@ -25,6 +25,8 @@ import { BookingMoveScreen } from './bookings/booking-move-screen'
 import { BookingNotesScreen } from './bookings/booking-notes-screen'
 import { BookingScreen } from './bookings/booking-screen'
 import { DayBookingsScreen } from './bookings/day-bookings-screen'
+import { AllergyChangeScreen } from './charts/allergy-change-screen'
+import { AllergyEntryScreen } from './charts/allergy-entry-screen'
 import { ChartChangeScreen } from './charts/chart-change-screen'
 import { ChartEntryScreen } from './charts/chart-entry-screen'
 import { ChartScreen } from './charts/chart-screen'
@@ -240,6 +242,14 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/customers/:customerId/chart/edit'
                 element={<ChartChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId/chart/allergies/new'
+                element={<AllergyEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId/chart/allergies/:allergyId/edit'
+                element={<AllergyChangeScreen />}
               />
               <Route
                 path='/salons/:salonId/customers/charts'
