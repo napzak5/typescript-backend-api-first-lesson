@@ -5,14 +5,17 @@ import type { ServicesRead } from '../salons/salons-api'
 import { aCategory, aService } from './components/examples'
 import {
   addCategory,
+  addService,
   type CategoriesRead,
   changeCategory,
+  changeService,
   mayKeepMenu,
   menuOf,
   readCategories,
   readCategory,
   readService,
   removeCategory,
+  removeService,
 } from './menu-api'
 
 /*
@@ -223,6 +226,82 @@ describe('removeCategory', () => {
 
     // Act
     const removed = await removeCategory(salon.id, 'x')
+
+    // Assert
+    expect(removed).toEqual({ type })
+  })
+})
+
+describe('addService', () => {
+  it.each<[string, Answer, string]>([
+    ['a salon removed meanwhile', () => problem(404), 'notFound'],
+    ...NOT_SENT,
+  ])('should add no service after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+    const {
+      id: _id,
+      salonId: _salonId,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      ...request
+    } = aService()
+
+    // Act
+    const written = await addService(salon.id, request)
+
+    // Assert
+    expect(written).toEqual({ type })
+  })
+})
+
+describe('changeService', () => {
+  it('should send only what it is given, and give the service the API wrote', async () => {
+    // Arrange
+    const sent: unknown[] = []
+    answering(async (asked) => {
+      sent.push(await asked.json())
+      return json(200, { data: aService(), meta: null, links: { self: '/' } })
+    })
+
+    // Act
+    const written = await changeService(salon.id, aService().id, {
+      discountPrice: null,
+    })
+
+    // Assert
+    expect(written).toEqual({ type: 'written', service: aService() })
+    expect(sent).toEqual([{ discountPrice: null }])
+  })
+
+  it.each(NOT_SENT)(
+    'should change no service after %s',
+    async (_, given, type) => {
+      // Arrange
+      answering(given)
+
+      // Act
+      const written = await changeService(salon.id, aService().id, {
+        price: 6000,
+      })
+
+      // Assert
+      expect(written).toEqual({ type })
+    },
+  )
+})
+
+describe('removeService', () => {
+  it.each<[string, Answer, string]>([
+    ['an address that names no service', () => problem(400), 'notFound'],
+    ['a refusal of a service in use', () => problem(409), 'inUse'],
+    ...UNREAD,
+  ])('should remove no service after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const removed = await removeService(salon.id, 'x')
 
     // Assert
     expect(removed).toEqual({ type })

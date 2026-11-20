@@ -13,6 +13,7 @@ import { match, P } from 'ts-pattern'
 import {
   categoryChangeHrefOf,
   categoryEntryHrefOf,
+  serviceEntryHrefOf,
   serviceHrefOf,
 } from '../navigation'
 import { unreadMessageOf } from '../reading'
@@ -31,7 +32,8 @@ type MenuPartProps = { salon: ModelsSalonResponse }
 /**
  * The menu of the salon as it is kept, read whenever the screen opens: the
  * services by category, and the categories. An account that changes the
- * menu is offered to add a category and to change each of them.
+ * menu is offered to add a service and a category, and to change each
+ * category; a service is changed from its page.
  */
 const MenuPart = ({ salon }: MenuPartProps) => {
   const keeps = useKeepsMenu()
@@ -54,9 +56,17 @@ const MenuPart = ({ salon }: MenuPartProps) => {
         description={salon.name}
         actions={
           keeps ? (
-            <ButtonLink href={categoryEntryHrefOf(salon.id)} variant='primary'>
-              カテゴリーを足す
-            </ButtonLink>
+            <>
+              <ButtonLink href={serviceEntryHrefOf(salon.id)} variant='primary'>
+                サービスを足す
+              </ButtonLink>
+              <ButtonLink
+                href={categoryEntryHrefOf(salon.id)}
+                variant='secondary'
+              >
+                カテゴリーを足す
+              </ButtonLink>
+            </>
           ) : undefined
         }
       />

@@ -119,3 +119,74 @@ export const storedServicesOf = async (salon: string) =>
       [salon],
     ),
   )
+
+/** Lets somebody else have described a service meanwhile. */
+export const serviceDescribedMeanwhile = (
+  id: string,
+  description: string,
+): Promise<unknown> =>
+  testApi().query(
+    `update services set description = $2,
+       "updatedAt" = greatest(now(), "updatedAt" + interval '1 millisecond')
+     where id = $1`,
+    [id, description],
+  )
+
+/** Lets somebody else have removed a service from the menu meanwhile. */
+export const serviceRemovedMeanwhile = (id: string): Promise<unknown> =>
+  testApi().query(
+    `update services set "deletedAt" = now(),
+       "updatedAt" = greatest(now(), "updatedAt" + interval '1 millisecond')
+     where id = $1`,
+    [id],
+  )
+
+const serviceStoredSchema = z.array(
+  z.object({
+    name: z.string(),
+    category: z.string().nullable(),
+    description: z.string().nullable(),
+    duration: z.number(),
+    price: z.number(),
+    discountPrice: z.number().nullable(),
+    taxIncluded: z.boolean(),
+    requiredStaffLevel: z.string().nullable(),
+    bookingRequirements: z.array(z.string()),
+    tags: z.array(z.string()),
+    isPackage: z.boolean(),
+    packaged: z.array(z.string()),
+    options: z.array(
+      z.object({
+        name: z.string(),
+        additionalPrice: z.number(),
+        sortOrder: z.number(),
+      }),
+    ),
+    removed: z.boolean(),
+  }),
+)
+
+/**
+ * The services of a salon of a name as the database has them, removed or
+ * not: the names of their category and of the services of a package, and
+ * their options in their order.
+ */
+export const storedServicesNamed = async (salon: string, name: string) =>
+  serviceStoredSchema.parse(
+    await testApi().query(
+      `select v.name, c.name as category, v.description, v.duration, v.price, v."discountPrice",
+         v."taxIncluded", v."requiredStaffLevel"::text as "requiredStaffLevel",
+         v."bookingRequirements"::text[] as "bookingRequirements", v.tags, v."isPackage",
+         coalesce((select array_agg(p.name order by array_position(v."packageServiceIds", p.id))
+           from services p where p.id = any(v."packageServiceIds")), '{}') as packaged,
+         coalesce((select json_agg(json_build_object('name', o.name, 'additionalPrice', o."additionalPrice", 'sortOrder', o."sortOrder")
+           order by o."sortOrder", o.id) from service_options o where o."serviceId" = v.id), '[]') as options,
+         v."deletedAt" is not null as removed
+       from services v
+       join salons s on s.id = v."salonId"
+       left join service_categories c on c.id = v."categoryId"
+       where s.name = $1 and v.name = $2
+       order by v."createdAt"`,
+      [salon, name],
+    ),
+  )
