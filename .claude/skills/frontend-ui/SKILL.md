@@ -37,7 +37,8 @@ this one: a component is not done without its stories and its test.
 | The screens of a salon in the admin application: the choice of a salon, and the salon of an address around the screens below it | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
-| The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording | `frontend/apps/admin-app/src/customers/` |
+| The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording, the customers of a file, the merge, the exports | `frontend/apps/admin-app/src/customers/` |
+| A file the API answers with, saved by the browser: its name, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `saveFile`) |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
@@ -1264,7 +1265,8 @@ history and a version, `customer-points-screen.tsx` and
 `point-entry-screen.tsx` for the points and their recording,
 `customer-import-screen.tsx` for the customers of a file, the choice
 of `customer-ledger-screen.tsx` for customers written at once, and
-`customer-merge-screen.tsx` for two records of one customer made one).
+`customer-merge-screen.tsx` for two records of one customer made one,
+and `customer-export.ts` for the ledger and a customer saved as files).
 
 - **A ledger that belongs to no salon is still shown below one.** The
   customers are one ledger for the platform, and every address of the
@@ -1468,6 +1470,27 @@ of `customer-ledger-screen.tsx` for customers written at once, and
   erasure, the charts) and said in full instead of the button. Two
   customers of one name are told apart by their address of mail
   (`whoIs`) wherever the screen names one of the two.
+- **A file the API makes is saved by the browser, under the name the
+  API gives** (`customer-export-api.ts`, `customer-export.ts`; `saveFile`
+  and `fileNameOf` of `io`). The API answers with the file as its body
+  and keeps nothing: the screen reads the name from
+  `Content-Disposition` (which the API exposes to the pages of the
+  applications through CORS) and presses a link to the file in memory.
+  The rules of the name are not copied into the screen; an answer
+  without one saves nothing. What the fetch function changed is undone:
+  a CSV file gets its mark of the byte order back, a JSON file is
+  written as the API indents it. The button that exports stays where it
+  was and keeps the focus; what was saved is a notification, with the
+  name of the file and what it holds (「2 人のお客様を、…csv に出力しました。」),
+  and why nothing was saved is an `Alert` beside the button, as the
+  conditions it was asked under have it: other conditions are another
+  export. A file that would hold nothing (the names of the columns
+  alone) is not saved, and that is said. The ledger is exported under
+  the conditions of the address, which are those of the table shown.
+- **What the salon answers when a customer asks for their data is a
+  part of its own** (「ご本人からの請求」, `CustomerRequests`), before the part
+  that keeps the ledger: it says what the file is for and that the salon
+  makes sure who asks. A member of the staff is told who answers.
 - **A refusal that closes the dialog reads again and takes the focus
   to the heading of the part** (`MergeWith`). The 409 of a merge closes
   the dialog, says that the two were read again, and the reasons come
@@ -1507,7 +1530,7 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
 | `AppShell` | The frame of an application: the link that skips to the content, the header (title, `account`), the `navigation` (under the header, or beside the content with `navigationPlacement='side'`), the main content with the notification at its top |
 | `Navigation` | The links to the screens. The application says which one is `current` |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
-| `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen |
+| `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (one below the other on a narrow screen, side by side from 40rem) |
 | `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading at every width, so they hold one short button; two go in the body, below its text (`SalePoints`) |
 | `DescriptionList` | The names and values of one record |
 | `Badge` | The state of a record, in a word |
