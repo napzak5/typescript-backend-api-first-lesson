@@ -1,8 +1,11 @@
 import type {
+  ModelsInventoryAlertResponse,
+  ModelsInventoryAlertSummaryResponse,
   ModelsInventoryResponse,
   ModelsInventoryStockCountResponse,
   ModelsInventoryTransactionResponse,
   ModelsInventoryValueReportResponse,
+  ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
 import { salon, staff } from '../../bookings/components/examples'
 import { colour, gloves, shampoo } from '../../products/components/examples'
@@ -222,3 +225,117 @@ export const VALUE_OF_THE_SALON: ModelsInventoryValueReportResponse = {
     { category: 'ヘアカラー', itemCount: 1, value: 11_600 },
   ],
 }
+
+const anAlert = (
+  alert: Pick<
+    ModelsInventoryAlertResponse,
+    'alert' | 'severity' | 'productId' | 'currentStock'
+  > &
+    Partial<ModelsInventoryAlertResponse>,
+  product: Pick<ModelsProductResponse, 'productCode' | 'name' | 'unit'>,
+): ModelsInventoryAlertResponse => ({
+  salonId: salon.id,
+  productCode: product.productCode,
+  productName: product.name,
+  unit: product.unit,
+  inventoryId: null,
+  lotNumber: null,
+  expiryDate: null,
+  threshold: null,
+  acknowledgement: null,
+  ...alert,
+})
+
+/** The lot of the colour past its expiry, which a member of the staff saw to on the morning of the day. */
+export const expiredColourAlert: ModelsInventoryAlertResponse = anAlert(
+  {
+    alert: 'expired',
+    severity: 'critical',
+    productId: colour.id,
+    inventoryId: expiredColour.id,
+    lotNumber: expiredColour.lotNumber,
+    expiryDate: expiredColour.expiryDate,
+    currentStock: expiredColour.currentStock,
+    acknowledgement: {
+      id: '0c1d2e3f-4a5b-4c6d-8e7f-8a9b0c1d2e3f',
+      salonId: salon.id,
+      productId: colour.id,
+      inventoryId: expiredColour.id,
+      alert: 'expired',
+      severity: 'critical',
+      threshold: null,
+      expiryDate: expiredColour.expiryDate,
+      notes: '廃棄の前に、メーカーに返品できるか問い合わせる。',
+      acknowledgedBy: staff[1]?.id ?? null,
+      acknowledgedAt: '2026-11-20T00:30:00.000Z',
+    },
+  },
+  colour,
+)
+
+/** The gloves, of which none is left: nobody saw to it yet. */
+export const outOfGlovesAlert: ModelsInventoryAlertResponse = anAlert(
+  {
+    alert: 'low_stock',
+    severity: 'critical',
+    productId: gloves.id,
+    currentStock: glovesRow.currentStock,
+    threshold: gloves.minimumStock,
+  },
+  gloves,
+)
+
+/** The alerts of the salon of the stories, in the order of the codes of their products */
+export const ALERTS_OF_THE_SALON: ModelsInventoryAlertResponse[] = [
+  expiredColourAlert,
+  outOfGlovesAlert,
+]
+
+/** How many alerts the salon of the stories has */
+export const SUMMARY_OF_THE_SALON: ModelsInventoryAlertSummaryResponse = {
+  totalAlerts: 2,
+  criticalAlerts: 2,
+  warningAlerts: 0,
+  infoAlerts: 0,
+  unacknowledged: 1,
+}
+
+/**
+ * An alert of each of the other kinds, as the salon sees them on other
+ * days: the shampoo short of its minimum, then above its maximum, and a
+ * lot of the colour that expires within 30 days.
+ */
+export const ALERTS_OF_OTHER_DAYS: ModelsInventoryAlertResponse[] = [
+  anAlert(
+    {
+      alert: 'expiring',
+      severity: 'warning',
+      productId: colour.id,
+      inventoryId: '1d2e3f4a-5b6c-4d7e-9f8a-9b0c1d2e3f4a',
+      lotNumber: 'LOT-2026-077',
+      expiryDate: '2026-12-10',
+      currentStock: 6,
+    },
+    colour,
+  ),
+  anAlert(
+    {
+      alert: 'low_stock',
+      severity: 'warning',
+      productId: shampoo.id,
+      currentStock: 4,
+      threshold: shampoo.minimumStock,
+    },
+    shampoo,
+  ),
+  anAlert(
+    {
+      alert: 'overstock',
+      severity: 'info',
+      productId: shampoo.id,
+      currentStock: 60,
+      threshold: shampoo.maximumStock,
+    },
+    shampoo,
+  ),
+]
