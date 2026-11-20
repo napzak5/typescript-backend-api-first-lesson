@@ -191,6 +191,24 @@ export const productChangeHrefOf = (
   productId: string,
 ): string => `${productHrefOf(salonId, productId)}/edit`
 
+/** The stock of a salon: a row for each lot of each product it keeps. */
+export const inventoryHrefOf = (salonId: string): string =>
+  `/salons/${salonId}/inventory`
+
+/** The screen that adds a stock row. */
+export const stockEntryHrefOf = (salonId: string): string =>
+  `${inventoryHrefOf(salonId)}/new`
+
+/** A stock row of a salon. */
+export const stockRowHrefOf = (salonId: string, inventoryId: string): string =>
+  `${inventoryHrefOf(salonId)}/${inventoryId}`
+
+/** The screen that changes a stock row, and removes it. */
+export const stockRowChangeHrefOf = (
+  salonId: string,
+  inventoryId: string,
+): string => `${stockRowHrefOf(salonId, inventoryId)}/edit`
+
 /** The menu of a salon: its categories and their services. */
 export const menuHrefOf = (salonId: string): string => `/salons/${salonId}/menu`
 
@@ -357,7 +375,7 @@ export const OWN_PROFILE_PATH = '/account/profile'
 
 /**
  * The links of the header: the bookings, the sales, the customers, the
- * treatment records, the shifts, the menu and the products, from the salon of the address, and the
+ * treatment records, the shifts, the menu, the products and the stock, from the salon of the address, and the
  * staff ledger for the roles that keep it. The screens of a salon are below its address;
  * an administrator chooses the salon at the start (`/`), and a member of
  * the staff is led from there to the salon they belong to. So a member who
@@ -392,6 +410,7 @@ export const navigationFor = (
     const shifts = shiftsHrefOf(salonId)
     const menu = menuHrefOf(salonId)
     const products = productsHrefOf(salonId)
+    const inventory = inventoryHrefOf(salonId)
     const staff = staffLedgerHrefOf(salonId)
     const settings = settingsHrefOf(salonId)
 
@@ -423,6 +442,11 @@ export const navigationFor = (
         href: products,
         label: '商品',
         current: isAtOrBelow(pathname, products),
+      },
+      {
+        href: inventory,
+        label: '在庫',
+        current: isAtOrBelow(pathname, inventory),
       },
       ...(role !== undefined && mayKeepStaffLedger(role)
         ? [

@@ -38,7 +38,7 @@ export const shampoo: ModelsProductResponse = aProduct({
 })
 
 /** A colour used in treatments, kept by lots. */
-const colour: ModelsProductResponse = aProduct({
+export const colour: ModelsProductResponse = aProduct({
   id: '2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e',
   productCode: 'COLOR001',
   name: 'ヘアカラー ナチュラルブラウン',

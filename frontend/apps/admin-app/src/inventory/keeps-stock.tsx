@@ -1,0 +1,47 @@
+import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import { useSession } from '@beauty-salon-frontend/session'
+import { ButtonLink, PageHeader } from '@beauty-salon-frontend/ui'
+import { inventoryHrefOf } from '../navigation'
+import { mayKeepStock } from './inventory-api'
+
+/** Whether the signed-in account has a role that keeps the stock rows: the owner, a manager and an administrator. */
+export const useKeepsStock = (): boolean => {
+  const session = useSession()
+
+  return session.type === 'signedIn' && mayKeepStock(session.user.role)
+}
+
+type StockForbiddenProps = {
+  salon: ModelsSalonResponse
+  title: string
+}
+
+/** What a screen that changes the stock rows says to an account whose role does not change them. */
+export const StockForbidden = ({ salon, title }: StockForbiddenProps) => (
+  <>
+    <PageHeader title={title} description={salon.name} />
+    <p>
+      このアカウントでは、在庫の行を変えられません。在庫の行を変えられるのは、サロンのオーナーとマネージャーと、管理者です。
+    </p>
+    <p>
+      <ButtonLink href={inventoryHrefOf(salon.id)} variant='secondary'>
+        在庫へ戻る
+      </ButtonLink>
+    </p>
+  </>
+)
+
+/** What a screen of a stock row says when there is none to show. */
+export const StockRowNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
+  <>
+    <PageHeader
+      title='在庫の行が見つかりません'
+      description='アドレスが正しいか、お確かめください。削除した在庫の行は、表示できません。'
+    />
+    <p>
+      <ButtonLink href={inventoryHrefOf(salon.id)} variant='secondary'>
+        在庫へ
+      </ButtonLink>
+    </p>
+  </>
+)

@@ -1,0 +1,6 @@
+/* An expiry that is past, its mark below it: the cells of a table do not break, so the column is no wider than the day */
+.expired {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+}
