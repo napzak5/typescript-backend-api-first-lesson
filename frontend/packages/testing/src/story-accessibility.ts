@@ -1,6 +1,14 @@
 import { expect, it } from 'vitest'
 import { findAccessibilityViolations } from './accessibility'
 
+/**
+ * How long the check of one story may take. axe walks every node of the
+ * story: a form of fifty rows takes a third of a second alone, and many
+ * times as long on a runner whose cores the tests of every package share,
+ * longer than the five seconds Vitest gives a test.
+ */
+const STORY_CHECK_TIMEOUT_MS = 30_000
+
 /** What `composeStories` returns for one story, as far as this file needs it. */
 type ComposedStory = {
   run: () => Promise<void>
@@ -33,5 +41,6 @@ export const itShouldBeAccessibleInEveryStory = (
       // Assert
       expect(violations).toEqual([])
     },
+    STORY_CHECK_TIMEOUT_MS,
   )
 }
