@@ -220,13 +220,16 @@ describe('HoursForm', () => {
   it('should hide the errors of the rows of dates once one was taken away, and keep those of the week', async () => {
     // Arrange
     await stories.WithErrors.run()
+    await userEvent.click(
+      screen.getByRole('button', { name: '日付の行を足す' }),
+    )
 
-    // Act
+    // Act: the row that was added is the second now, whose date was said to be wrong
     await userEvent.click(screen.getByRole('button', { name: '1 行目を外す' }))
 
     // Assert
     expect(
-      within(group('1 行目')).getByLabelText('日付'),
+      within(group('2 行目')).getByLabelText('日付'),
     ).not.toHaveAccessibleDescription(
       expect.stringContaining('1 行目と同じです'),
     )

@@ -338,6 +338,17 @@ describe('readHoursChange', () => {
       expect(read).toEqual({ type: 'unchanged' })
     })
 
+    it('should ask for nothing of a calendar the API listed in another order than that of its dates', () => {
+      // Arrange
+      const hours: Hours = { ...HOURS, openingHours: [NEW_YEAR, PAST, HOLIDAY] }
+
+      // Act
+      const read = readHoursChange(formOf(), hours, TODAY)
+
+      // Assert
+      expect(read).toEqual({ type: 'unchanged' })
+    })
+
     it('should not send a day with more hours than the form holds while the week is not changed', () => {
       // Arrange
       const hours: Hours = {
