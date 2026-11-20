@@ -75,6 +75,33 @@ test.describe('the settings of a salon, in a browser', () => {
   })
 })
 
+test.describe('the settings of a salon, opened again', () => {
+  test('should show what somebody else changed since they were last opened', async ({
+    page,
+    api,
+  }) => {
+    // Arrange
+    await page.goto(`${ADMIN.origin}/salons/${await salonId(api)}/settings`)
+    await enterCredentials(page, OWNER, api.seedPassword)
+    await expect(page.getByRole('region', { name: '会計' })).toContainText(
+      '10%',
+    )
+    await page.getByRole('link', { name: '予約', exact: true }).click()
+    await expect(heading(page, '予約台帳')).toBeVisible()
+    await api.query(
+      `update salons set "taxRate" = 8,
+         "updatedAt" = greatest(now(), "updatedAt" + interval '1 millisecond')
+       where name = 'Beauty Studio Tokyo'`,
+    )
+
+    // Act
+    await page.getByRole('link', { name: '設定', exact: true }).click()
+
+    // Assert
+    await expect(page.getByRole('region', { name: '会計' })).toContainText('8%')
+  })
+})
+
 test.describe('the settings of a salon, on a screen as narrow as a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 

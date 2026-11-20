@@ -54,7 +54,7 @@ describe('weekHoursOf', () => {
             { startTime: '15:00', endTime: '20:00' },
           ],
         }),
-        open('wednesday', { isClosed: true, operatingSlots: [] }),
+        open('wednesday', { isClosed: true }),
         open('thursday', { operatingSlots: [] }),
         open('friday', { breakSlots: [] }),
       ],
