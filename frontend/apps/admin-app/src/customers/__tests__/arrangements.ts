@@ -313,7 +313,7 @@ const LEDGER_COLUMNS = [
  */
 const recordVersion = (
   customerId: string,
-  operation: 'update' | 'delete' | 'restore' | 'merge',
+  operation: 'update' | 'delete' | 'restore' | 'merge' | 'erase',
   by: string,
 ): Promise<unknown> =>
   testApi().query(
@@ -587,6 +587,80 @@ export const askedForErasure = (email: string, by: string): Promise<unknown> =>
      from customers cross join users
      where customers.email = $1 and customers."deletedAt" is null and users.email = $2`,
     [email, by],
+  )
+
+/** Lets an account have called off the pending request of a customer meanwhile, as the API would have. */
+export const cancelledMeanwhile = (
+  customerId: string,
+  by: string,
+): Promise<unknown> =>
+  testApi().query(
+    `update customer_deletion_requests
+     set status = 'cancelled', "cancelledAt" = now(),
+         "cancelledBy" = (select id from users where email = $2)
+     where "customerId" = $1 and status = 'pending'`,
+    [customerId, by],
+  )
+
+/**
+ * Lets the operator of the platform have run the pending request of a
+ * customer meanwhile: the request is done, and the customer left the
+ * ledger with a version of the erasure, the only one left. The values of
+ * the ledger are not made anonymous, which the screens do not look at.
+ */
+export const erasedMeanwhile = async (
+  customerId: string,
+  by: string,
+): Promise<void> => {
+  await testApi().query(
+    `update customer_deletion_requests
+     set status = 'completed', "completedAt" = now(),
+         "completedBy" = (select id from users where email = $2)
+     where "customerId" = $1 and status = 'pending'`,
+    [customerId, by],
+  )
+  await testApi().query(
+    `update customers set "deletedAt" = now(), "userId" = null,
+       "updatedAt" = greatest(now(), "updatedAt" + interval '1 millisecond')
+     where id = $1`,
+    [customerId],
+  )
+  await testApi().query(
+    'delete from customer_versions where "customerId" = $1',
+    [customerId],
+  )
+  await recordVersion(customerId, 'erase', by)
+}
+
+const storedRequestsSchema = z.array(
+  z.object({
+    status: z.string(),
+    reason: z.string(),
+    requestedBy: z.string(),
+    cancelledBy: z.string().nullable(),
+    hours: z.coerce.number(),
+  }),
+)
+
+/**
+ * The requests of a customer to have their data erased, as the database
+ * holds them, oldest first: who took and who called off each (by the
+ * address of mail of the account), and how many hours after it was taken
+ * the data is to be erased.
+ */
+export const storedErasureRequestsOf = async (customerId: string) =>
+  storedRequestsSchema.parse(
+    await testApi().query(
+      `select requests.status, requests.reason,
+              taker.email as "requestedBy", canceller.email as "cancelledBy",
+              extract(epoch from requests."scheduledAt" - requests."requestedAt") / 3600 as hours
+       from customer_deletion_requests requests
+       join users taker on taker.id = requests."requestedBy"
+       left join users canceller on canceller.id = requests."cancelledBy"
+       where requests."customerId" = $1
+       order by requests."requestedAt"`,
+      [customerId],
+    ),
   )
 
 /** Lets a customer have a chart that names so many products they prefer: 「製品 <first>」 and the ones after. */

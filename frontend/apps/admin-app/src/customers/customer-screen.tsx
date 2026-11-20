@@ -1,4 +1,5 @@
 import type {
+  ModelsCustomerDeletionRequestCreateRequest,
   ModelsCustomerResponse,
   ModelsCustomerVersionResponse,
   ModelsSalonResponse,
@@ -36,6 +37,11 @@ import {
 import { NOT_FOUND, unreadMessageOf } from '../reading'
 import { dayAt } from '../salon-time'
 import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
+import {
+  CustomerErasure,
+  type ErasureDialog,
+  type ErasureShown,
+} from './components/customer-erasure/customer-erasure'
 import { CustomerKeeping } from './components/customer-keeping/customer-keeping'
 import { CustomerPreferences } from './components/customer-preferences/customer-preferences'
 import {
@@ -49,7 +55,19 @@ import {
   type RemovedRecordProps,
 } from './components/removed-record/removed-record'
 import { StatisticsPeriod } from './components/statistics-period/statistics-period'
-import { afterDataExport } from './customer-export'
+import {
+  afterErasureAsk,
+  afterErasureCancel,
+  type ErasureSays,
+  readErasureAsk,
+} from './customer-erasure'
+import {
+  askForErasure,
+  cancelErasureRequest,
+  erasureKeyOf,
+  readErasureRequest,
+} from './customer-erasure-api'
+import { ANSWERED_BY_OTHERS, afterDataExport } from './customer-export'
 import { exportCustomerData } from './customer-export-api'
 import { type Referrer, referrerOf } from './customer-form'
 import {
@@ -348,14 +366,156 @@ const KeepingPart = ({ salon, customer, moved }: KeepingPartProps) => {
   )
 }
 
-type RequestsPartProps = Omit<PartProps, 'salon'> & HeadingAfterMoveProps
+type ErasurePartProps = {
+  customerId: string
+  /** The name of the customer, as the dialogs and the notifications say it */
+  name: string
+  timezone: string
+  /**
+   * Given for a customer in the ledger, whose new request is taken: called
+   * when they turn out to have left it meanwhile
+   */
+  onLeft?: (() => void) | undefined
+}
 
 /**
- * What the salon answers when the customer asks for the data held of them:
- * the data is saved as a file. A customer who left the ledger meanwhile
- * is shown as removed, as after a removal by another account.
+ * The latest request of the customer to have their data erased, a new
+ * one taken and a pending one called off. What the API refused, or what
+ * changed meanwhile, closes the dialog: the customer is read again, the
+ * part says why under its heading, and its heading takes the focus. So
+ * does what was done, whose button went with it.
  */
-const RequestsPart = ({ customer, moved }: RequestsPartProps) => {
+const ErasurePart = ({
+  customerId,
+  name,
+  timezone,
+  onLeft,
+}: ErasurePartProps) => {
+  const queryClient = useQueryClient()
+  const { notify } = useNotifications()
+  const heading = useRef<HTMLHeadingElement>(null)
+  const read = useQuery({
+    queryKey: erasureKeyOf(customerId),
+    queryFn: () => readErasureRequest(customerId),
+    staleTime: 0,
+  })
+  const [dialog, setDialog] = useState<ErasureDialog>('none')
+  /** What went wrong with an attempt that can be made again: said in the dialog */
+  const [message, setMessage] = useState<string>()
+  const [errors, setErrors] = useState<FormErrors>()
+  /** What the API refused, or what changed meanwhile: said under the heading */
+  const [refusal, setRefusal] = useState<string>()
+  /** How many times a dialog closed on what it changed: the heading takes the focus each time */
+  const [moves, setMoves] = useState(0)
+
+  useLayoutEffect(() => {
+    if (moves > 0) {
+      heading.current?.focus()
+    }
+  }, [moves])
+
+  const follow = (says: ErasureSays): void =>
+    match(says)
+      .with({ type: 'done' }, ({ request, message: said }) => {
+        queryClient.setQueryData(erasureKeyOf(customerId), {
+          type: 'read',
+          request,
+        })
+        setDialog('none')
+        setRefusal(undefined)
+        setMoves((count) => count + 1)
+        notify({ tone: 'success', message: said })
+      })
+      .with({ type: 'again' }, ({ message: said, errors: wrong }) => {
+        setMessage(said)
+        setErrors(wrong)
+      })
+      .with({ type: 'refused' }, ({ message: said }) => {
+        setDialog('none')
+        setRefusal(said)
+        setMoves((count) => count + 1)
+        // The request, and the customer, whom an erasure takes out of the ledger
+        void queryClient.invalidateQueries({
+          queryKey: customerKeyOf(customerId),
+        })
+      })
+      .with({ type: 'gone' }, () => onLeft?.())
+      .exhaustive()
+
+  const asking = useMutation({
+    mutationFn: (request: ModelsCustomerDeletionRequestCreateRequest) =>
+      askForErasure(customerId, request),
+    onMutate: () => setMessage(undefined),
+    onSuccess: (outcome) => follow(afterErasureAsk(outcome, name, timezone)),
+  })
+
+  const cancelling = useMutation({
+    mutationFn: () => cancelErasureRequest(customerId),
+    onMutate: () => setMessage(undefined),
+    onSuccess: (outcome) => follow(afterErasureCancel(outcome, name)),
+  })
+
+  const ask = (values: FormData): void => {
+    const filled = readErasureAsk(values)
+    if (filled.type === 'invalid') {
+      setErrors(filled.errors)
+      return
+    }
+    setErrors(undefined)
+    asking.mutate(filled.request)
+  }
+
+  const shown = match(read.data)
+    .returnType<ErasureShown>()
+    .with(undefined, () => ({ type: 'reading' }))
+    .with({ type: 'read' }, ({ request }) => ({ type: 'read', request }))
+    // The role of the account changed meanwhile
+    .with({ type: 'forbidden' }, () => ({
+      type: 'unread',
+      message: `このアカウントでは、消去の依頼を読み込めません。${ANSWERED_BY_OTHERS}`,
+      retrying: read.isFetching,
+    }))
+    .with({ type: UNREAD }, (reason) => ({
+      type: 'unread',
+      message: unreadMessageOf('消去の依頼', reason),
+      retrying: read.isFetching,
+    }))
+    .exhaustive()
+
+  return (
+    <CustomerErasure
+      name={name}
+      timezone={timezone}
+      shown={shown}
+      onRetry={() => void read.refetch()}
+      requestable={onLeft !== undefined}
+      refusal={refusal}
+      headingRef={heading}
+      dialog={dialog}
+      onOpen={(opened) => {
+        setMessage(undefined)
+        setErrors(undefined)
+        setDialog(opened)
+      }}
+      onClose={() => setDialog('none')}
+      message={message}
+      errors={errors}
+      pending={asking.isPending || cancelling.isPending}
+      onAsk={ask}
+      onCancel={() => cancelling.mutate()}
+    />
+  )
+}
+
+type RequestsPartProps = PartProps & HeadingAfterMoveProps
+
+/**
+ * What the salon answers when the customer asks about the data held of
+ * them: the data is saved as a file, and their request to have it erased
+ * is taken. A customer who left the ledger meanwhile is shown as removed,
+ * as after a removal by another account.
+ */
+const RequestsPart = ({ salon, customer, moved }: RequestsPartProps) => {
   const session = useSession()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
@@ -384,10 +544,19 @@ const RequestsPart = ({ customer, moved }: RequestsPartProps) => {
       answerable={
         session.type === 'signedIn' && mayKeepCustomers(session.user.role)
       }
-      exporting={exporting.isPending}
-      message={message}
-      onExport={() => exporting.mutate()}
-    />
+      dataExport={{
+        exporting: exporting.isPending,
+        message,
+        onExport: () => exporting.mutate(),
+      }}
+    >
+      <ErasurePart
+        customerId={customer.id}
+        name={name}
+        timezone={salon.timezone}
+        onLeft={() => showRemoved(queryClient, customer.id, moved)}
+      />
+    </CustomerRequests>
   )
 }
 
@@ -483,13 +652,24 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
         <>
           <RemovedCustomer salon={salon} customerId={customerId} title={TITLE}>
             {({ version, removal }) => (
-              <RemovedPart
-                key={`removed-${customerId}`}
-                salon={salon}
-                version={version}
-                removal={removal}
-                moved={moved}
-              />
+              <>
+                <RemovedPart
+                  key={`removed-${customerId}`}
+                  salon={salon}
+                  version={version}
+                  removal={removal}
+                  moved={moved}
+                />
+                {/* The request of one who left is called off, never taken */}
+                <CustomerRequests answerable>
+                  <ErasurePart
+                    key={`erasure-${customerId}`}
+                    customerId={customerId}
+                    name={customerNameOf(version)}
+                    timezone={salon.timezone}
+                  />
+                </CustomerRequests>
+              </>
             )}
           </RemovedCustomer>
           <HeadingAfterMove moved={moved} />
@@ -524,6 +704,7 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
           />
           <RequestsPart
             key={`requests-${customer.id}`}
+            salon={salon}
             customer={customer}
             moved={moved}
           />
@@ -545,11 +726,13 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
  * the salons to keep in mind, and what they did at the salon of the
  * address. From here a booking of the customer is entered, and the ledger
  * is changed; an owner or a manager exports the data of the customer when
- * they ask for it, reads the history of the ledger, and removes the
- * customer from it.
+ * they ask for it, takes their request to have it erased and calls it off,
+ * reads the history of the ledger, and removes the customer from it.
  *
  * A customer who was removed stays at the address for an owner or a
- * manager, as the ledger kept them, and can be brought back from there.
+ * manager, as the ledger kept them, and can be brought back from there;
+ * their request to have their data erased is shown, and called off while
+ * it is pending.
  */
 export const CustomerScreen = () => {
   const { salonId = '' } = useParams()

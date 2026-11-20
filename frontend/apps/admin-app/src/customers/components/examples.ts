@@ -1,4 +1,5 @@
 import type {
+  ModelsCustomerDeletionRequestResponse,
   ModelsCustomerHistoryEntryResponse,
   ModelsCustomerVersionResponse,
   ModelsPointExpiringResponse,
@@ -211,3 +212,25 @@ export const expiring: ModelsPointExpiringResponse = {
     aTransaction(),
   ],
 }
+
+/**
+ * A request of the customer of the examples to have their data erased,
+ * pending, with what it changes: taken on 20 November, at 10:30 at the
+ * salon, to be run 14 days later.
+ */
+export const aDeletionRequest = (
+  changes: Partial<ModelsCustomerDeletionRequestResponse> = {},
+): ModelsCustomerDeletionRequestResponse => ({
+  id: 'b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d0e',
+  customerId,
+  reason: '店頭で、ご本人から口頭でお申し出がありました。',
+  status: 'pending',
+  requestedBy: ME,
+  requestedAt: '2026-11-20T01:30:00.000Z',
+  scheduledAt: '2026-12-04T01:30:00.000Z',
+  cancelledBy: null,
+  cancelledAt: null,
+  completedBy: null,
+  completedAt: null,
+  ...changes,
+})

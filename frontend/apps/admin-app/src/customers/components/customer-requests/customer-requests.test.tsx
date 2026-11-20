@@ -13,8 +13,13 @@ describe('CustomerRequests', () => {
     // Arrange
     await stories.Answerable.run()
     expect(
-      screen.getByRole('heading', { name: 'ご本人からの請求' }),
+      screen.getByRole('heading', { level: 2, name: 'ご本人からの請求' }),
     ).toBeVisible()
+    expect(
+      screen
+        .getAllByRole('heading', { level: 3 })
+        .map(({ textContent }) => textContent),
+    ).toEqual(['データの開示', 'データの消去'])
     expect(
       screen.getByText(/保有している個人データの開示を求められたときは/),
     ).toHaveTextContent(
@@ -27,7 +32,9 @@ describe('CustomerRequests', () => {
     )
 
     // Assert
-    expect(stories.Answerable.args.onExport).toHaveBeenCalledTimes(1)
+    expect(stories.Answerable.args.dataExport?.onExport).toHaveBeenCalledTimes(
+      1,
+    )
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
@@ -38,10 +45,11 @@ describe('CustomerRequests', () => {
     // Assert
     expect(
       screen.getByText(
-        'ご本人からのデータの開示の請求には、オーナーとマネージャーが応えます。',
+        'ご本人からのデータの開示と消去の請求には、オーナーとマネージャーが応えます。',
       ),
     ).toBeVisible()
     expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.queryByRole('heading', { level: 3 })).toBeNull()
   })
 
   it('should not export again while the data is on its way', async () => {
@@ -54,7 +62,7 @@ describe('CustomerRequests', () => {
     )
 
     // Assert
-    expect(stories.Exporting.args.onExport).not.toHaveBeenCalled()
+    expect(stories.Exporting.args.dataExport?.onExport).not.toHaveBeenCalled()
   })
 
   it('should say why no file was saved, and export again when asked', async () => {
@@ -70,6 +78,22 @@ describe('CustomerRequests', () => {
     )
 
     // Assert
-    expect(stories.NotSaved.args.onExport).toHaveBeenCalledTimes(1)
+    expect(stories.NotSaved.args.dataExport?.onExport).toHaveBeenCalledTimes(1)
+  })
+
+  it('should offer no export of a customer who left the ledger, and show their request', async () => {
+    // Act
+    await stories.Removed.run()
+
+    // Assert
+    expect(
+      screen.queryByRole('button', { name: 'データを出力する' }),
+    ).toBeNull()
+    expect(
+      screen
+        .getAllByRole('heading', { level: 3 })
+        .map(({ textContent }) => textContent),
+    ).toEqual(['データの消去'])
+    expect(screen.getByRole('button', { name: '依頼を取り消す' })).toBeVisible()
   })
 })
