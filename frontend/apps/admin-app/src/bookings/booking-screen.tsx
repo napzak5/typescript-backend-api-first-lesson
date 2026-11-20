@@ -17,12 +17,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { readCustomer } from '../customers/customers-api'
+import { customerKeyOf, readCustomer } from '../customers/customers-api'
 import {
   bookingHrefOf,
   bookingMoveHrefOf,
   bookingsHrefOf,
   checkoutHrefOf,
+  customerHrefOf,
   lineEntryHrefOf,
   lineHrefOf,
   saleHrefOf,
@@ -117,7 +118,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
   const session = useSession()
   const { notify } = useNotifications()
   const customer = useQuery({
-    queryKey: ['customers', booking.customerId],
+    queryKey: customerKeyOf(booking.customerId),
     queryFn: () => readCustomer(booking.customerId),
   })
   const staff = useQuery({
@@ -293,6 +294,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
           <BookingRecord
             booking={booking}
             customer={ofCustomer.type === 'found' ? ofCustomer.customer : null}
+            customerHref={customerHrefOf(salon.id, booking.customerId)}
             staff={ofStaff.items}
             services={ofServices.items}
             timezone={salon.timezone}

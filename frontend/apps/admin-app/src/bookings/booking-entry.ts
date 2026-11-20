@@ -6,6 +6,7 @@ import type {
 import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { keywordIn } from '../keyword'
+import type { RefusedValue } from '../reading'
 import { isDay, momentOf } from '../salon-time'
 import { type Read, textOf } from './booking-actions'
 import type {
@@ -13,7 +14,6 @@ import type {
   BookingRemoval,
   BookingUpdate,
   LineCheck,
-  RefusedValue,
 } from './bookings-api'
 
 /*

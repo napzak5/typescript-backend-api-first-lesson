@@ -1,6 +1,6 @@
 ---
 name: frontend-ui
-description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, how a screen reads from the API (a search kept in the address, a list that goes on, the parts of a page), how a screen writes what it read (a choice kept in the address, what is offered read anew, a refusal), the screens that need a session (sign-in, roles), the screens of a salon (the salon of the address, the clock of the salon, the operations a state allows, a bill the API works out, payments in parts, a receipt on paper), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
+description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, how a screen reads from the API (a search kept in the address, a list that goes on, the parts of a page), how a screen writes what it read (a choice kept in the address, what is offered read anew, a refusal), the screens that need a session (sign-in, roles), the screens of a salon (the salon of the address, the clock of the salon, the operations a state allows, a bill the API works out, payments in parts, a receipt on paper, a ledger of the platform shown below a salon), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
 ---
 
 # Frontend UI
@@ -1227,6 +1227,72 @@ booking (`components/booking-sale/`).
   a `DescriptionList` by the number of the payment, and the cell says how
   much and when.
 
+### A ledger of the platform: found, registered, shown and changed
+
+The customers of the admin application are the example to read:
+`frontend/apps/admin-app/src/customers/` (`customer-ledger-screen.tsx` for
+the ledger, `customer-entry-screen.tsx` for a customer registered,
+`customer-screen.tsx` for the page of a customer, `customer-change-screen.tsx`
+for the change, `with-customer.tsx` for the customer of the address).
+
+- **A ledger that belongs to no salon is still shown below one.** The
+  customers are one ledger for the platform, and every address of the
+  salon shows the same one: the salon of the address gives the clock (the
+  days of a registration, of a visit) and the part that counts what a
+  customer did there. A member of another salon reads the ledger, and the
+  part that counts is refused alone (403, `OtherSalonNotice` in the part).
+- **The conditions of a ledger are the query of the address**
+  (`customer-ledger.ts`: `customerConditionsIn`, `customerQueryOf`). A
+  search replaces the entry; 「条件を外す」 is a link to the address without
+  a query. What the address holds that the API does not take (a day that
+  is none, an end before the start, a state that is none) is no condition,
+  so an address changed by hand shows what is left of it; the same in the
+  form is said at the control and nothing is asked. Days of the salon are
+  sent as the moments they begin and end (`startOfDayAt` of
+  `salon-time.ts`; the end a millisecond before the next day begins). An
+  empty ledger and an empty search are two sentences, and both offer to
+  register one.
+- **Values of a list are written in one control** (the tags: commas of
+  either width or 「、」, `tagsIn`): what is between two of them is one
+  value, nothing is none, a value written twice is one. They are shown
+  joined by 「、」 in the form and as a `TagList` on the page.
+- **A form of many properties is in fieldsets by subject**, each control
+  named as the property of the request (`preferences.preferredServices`),
+  so that a refusal of the API lands at its control. Every control has
+  `autoComplete="off"`: the person who fills it in is the salon, not the
+  customer, and the browser would offer the salon's own address. A new
+  record starts at the values a new one has in the ledger (the rank, the
+  state, active). What is not asked here (who referred the customer) is
+  sent as `null`.
+- **A conflict that does not say which value is found out.** The API
+  answers 409 for an address of mail or a referral code that another
+  customer has, and does not say which. A request that named one says it
+  at that control; one that named both searches the ledger for the
+  address (`duplicateIn` of `customers-api.ts`) and says it at the address
+  when another customer has it, at the code when not. The rules differ
+  (the code of a removed customer stays taken), so the sentence of each
+  control says its own.
+- **The page of a record is a record and parts that read on their own.**
+  The record shows what was read before and what is read anew when it
+  comes (`WithCustomer` with `fresh={false}`); the form that writes it
+  waits for the read anew (`fresh`). Each part (好み設定, このサロンでの利用)
+  is a query of its own, `staleTime: 0`, keyed by the customer, and says
+  its own loading, failure and refusal in its `Card`, so one part that
+  fails leaves the rest of the page.
+- **What a part names by ID is read one by one** when there are a few
+  (the members of the staff a customer wishes for or avoids:
+  `GET /staff-profiles/{id}` each), and one that is not found is named as
+  such (「一覧にないスタッフ」); a failure of one is a failure of the part.
+- **A period is in the address too** (`from` and `to`, both counted,
+  `customer-statistics.ts`), at most the days the API counts over (366),
+  the year up to today when the address has none it takes. The form of the
+  period is a `form` with a name of its own, beside the part it counts.
+- **Ledgers lead to each other.** The name of the customer of a booking is
+  a link to the customer; the page of a customer enters a booking of
+  theirs (`/bookings/new?customerId=`, the step after the choice); a
+  booking search that found nobody leads to the registration, whose
+  customer is booked from their page.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
@@ -1263,7 +1329,7 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
 | `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus |
 | `DescriptionList` | The names and values of one record |
 | `Badge` | The state of a record, in a word |
-| `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at |
+| `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends |
 | `Rating` | A rating out of five: the stars, the number, and how many gave it |
 | `QrCode` | A QR code drawn from its text, as an image with a name: what an authenticator app reads. The text stays in the browser |
 | `Table` | A list of records |

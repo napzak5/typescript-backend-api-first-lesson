@@ -123,6 +123,7 @@ describe('the bookings of a salon, against the API', () => {
         expect(navigationItems()).toEqual([
           ['予約', `/salons/${salonId}/bookings`, 'page'],
           ['売上', `/salons/${salonId}/sales`, null],
+          ['顧客', `/salons/${salonId}/customers`, null],
         ])
       },
     )
@@ -169,6 +170,7 @@ describe('the bookings of a salon, against the API', () => {
         ['サロンを選ぶ', '/', null],
         ['予約', `/salons/${osaka}/bookings`, 'page'],
         ['売上', `/salons/${osaka}/sales`, null],
+        ['顧客', `/salons/${osaka}/customers`, null],
       ])
     })
 

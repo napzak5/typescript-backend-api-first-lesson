@@ -40,3 +40,11 @@ export const Many: Story = {
 export const Repeated: Story = {
   args: { items: ['Wi-Fi', 'ドリンクサービス', 'Wi-Fi'] },
 }
+
+/** A word longer than the line, as an address somebody pasted: it breaks where the line ends */
+export const LongWord: Story = {
+  args: {
+    label: 'タグ',
+    items: ['常連', `https://example.com/${'a'.repeat(120)}`],
+  },
+}

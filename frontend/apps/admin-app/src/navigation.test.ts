@@ -1,7 +1,12 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import { describe, expect, it } from 'vitest'
 import {
+  bookingOfCustomerHrefOf,
   bookingsHrefOf,
+  customerChangeHrefOf,
+  customerEntryHrefOf,
+  customerHrefOf,
+  customersHrefOf,
   navigationFor,
   receiptHrefOf,
   refundHrefOf,
@@ -13,6 +18,7 @@ import {
 const SALON_ID = '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01'
 const BOOKINGS = `/salons/${SALON_ID}/bookings`
 const SALES = `/salons/${SALON_ID}/sales`
+const CUSTOMERS = `/salons/${SALON_ID}/customers`
 
 type Role = ModelsUserResponse['role']
 
@@ -41,11 +47,12 @@ describe('salonIdIn', () => {
 })
 
 describe('navigationFor', () => {
-  it('should lead an administrator to the choice of a salon, and to the bookings and the sales of the salon chosen', () => {
+  it('should lead an administrator to the choice of a salon, and to the bookings, the sales and the customers of the salon chosen', () => {
     expect(navigationFor('admin', `${BOOKINGS}/x`)).toEqual([
       { href: '/', label: 'サロンを選ぶ', current: false },
       { href: BOOKINGS, label: '予約', current: true },
       { href: SALES, label: '売上', current: false },
+      { href: CUSTOMERS, label: '顧客', current: false },
     ])
   })
 
@@ -61,6 +68,7 @@ describe('navigationFor', () => {
       expect(navigationFor(role, BOOKINGS)).toEqual([
         { href: BOOKINGS, label: '予約', current: true },
         { href: SALES, label: '売上', current: false },
+        { href: CUSTOMERS, label: '顧客', current: false },
       ])
     },
   )
@@ -79,6 +87,7 @@ describe('navigationFor', () => {
     expect(navigationFor('owner', `/salons/${SALON_ID}`)).toEqual([
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
+      { href: CUSTOMERS, label: '顧客', current: false },
     ])
   })
 
@@ -91,6 +100,20 @@ describe('navigationFor', () => {
     expect(navigationFor('manager', pathname)).toEqual([
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: true },
+      { href: CUSTOMERS, label: '顧客', current: false },
+    ])
+  })
+
+  it.each<[string, string]>([
+    ['the ledger', CUSTOMERS],
+    ['the registration of a customer', customerEntryHrefOf(SALON_ID)],
+    ['a customer', customerHrefOf(SALON_ID, 'x')],
+    ['the change of a customer', customerChangeHrefOf(SALON_ID, 'x')],
+  ])('should mark the customers as the screen of %s', (_case, pathname) => {
+    expect(navigationFor('staff', pathname)).toEqual([
+      { href: BOOKINGS, label: '予約', current: false },
+      { href: SALES, label: '売上', current: false },
+      { href: CUSTOMERS, label: '顧客', current: true },
     ])
   })
 
@@ -107,5 +130,25 @@ describe('navigationFor', () => {
       saleChangeHrefOf(SALON_ID, 'sale'),
       refundHrefOf(SALON_ID, 'sale', 'payment'),
     ]).toEqual([`${SALES}/sale/edit`, `${SALES}/sale/payments/payment/refund`])
+  })
+
+  it('should write the addresses of the customers of the ledger', () => {
+    expect([
+      customersHrefOf(SALON_ID),
+      customerEntryHrefOf(SALON_ID),
+      customerHrefOf(SALON_ID, 'customer'),
+      customerChangeHrefOf(SALON_ID, 'customer'),
+    ]).toEqual([
+      CUSTOMERS,
+      `${CUSTOMERS}/new`,
+      `${CUSTOMERS}/customer`,
+      `${CUSTOMERS}/customer/edit`,
+    ])
+  })
+
+  it('should write the address of a booking to put in for a customer, on a day', () => {
+    expect(bookingOfCustomerHrefOf(SALON_ID, '2026-11-20', 'customer')).toBe(
+      `${BOOKINGS}/new?date=2026-11-20&customerId=customer`,
+    )
   })
 })

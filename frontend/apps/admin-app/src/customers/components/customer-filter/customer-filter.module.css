@@ -1,0 +1,36 @@
+/* The keywords, the other conditions, then what is done with them. */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background-color: var(--color-surface);
+}
+
+/* One below the other on a narrow screen, side by side on a wide one */
+.keywords,
+.conditions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: var(--space-3);
+}
+
+@media (min-width: 48rem) {
+  .keywords {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .conditions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
