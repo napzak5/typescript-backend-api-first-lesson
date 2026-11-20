@@ -17,6 +17,10 @@ import {
   hoursChangeHrefOf,
   menuHrefOf,
   navigationFor,
+  paymentMethodChangeHrefOf,
+  paymentMethodEntryHrefOf,
+  paymentMethodHrefOf,
+  paymentMethodsHrefOf,
   pointEntryHrefOf,
   receiptHrefOf,
   refundHrefOf,
@@ -396,6 +400,12 @@ describe('navigationFor', () => {
     ['the settings', 'staff', SETTINGS],
     ['the change of the information', 'manager', `${SETTINGS}/edit`],
     ['the change of the hours', 'owner', `${SETTINGS}/hours`],
+    ['the payment methods', 'staff', `${SETTINGS}/payment-methods`],
+    [
+      'the change of a payment method',
+      'manager',
+      `${SETTINGS}/payment-methods/method/edit`,
+    ],
   ])(
     'should mark the settings as the screen of %s for a member (%s)',
     (_case, role, pathname) => {
@@ -413,6 +423,20 @@ describe('navigationFor', () => {
       salonChangeHrefOf(SALON_ID),
       hoursChangeHrefOf(SALON_ID),
     ]).toEqual([SETTINGS, `${SETTINGS}/edit`, `${SETTINGS}/hours`])
+  })
+
+  it('should write the addresses of the payment methods', () => {
+    expect([
+      paymentMethodsHrefOf(SALON_ID),
+      paymentMethodEntryHrefOf(SALON_ID),
+      paymentMethodHrefOf(SALON_ID, 'method'),
+      paymentMethodChangeHrefOf(SALON_ID, 'method'),
+    ]).toEqual([
+      `${SETTINGS}/payment-methods`,
+      `${SETTINGS}/payment-methods/new`,
+      `${SETTINGS}/payment-methods/method`,
+      `${SETTINGS}/payment-methods/method/edit`,
+    ])
   })
 
   it('should write the addresses of the shifts', () => {

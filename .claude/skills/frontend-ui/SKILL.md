@@ -1855,6 +1855,20 @@ The settings are the example to read: `settings-screen.tsx`,
   more hours than the form has controls for says that saving the week
   keeps the first of them.
 
+The payment methods (`src/payment-methods/`) are kept from the settings:
+
+- **A value the API never changes is chosen once** (the kind of a
+  payment method): the form of a change shows it as text, with what to
+  do when it was chosen wrong.
+- **A list another area keeps for long is taken away by a write**: the
+  screens of the sales read the payment methods with the default stale
+  time, so every write of a method takes the list away
+  (`removeQueries` of `paymentMethodsKeyOf`), and the next payment is
+  offered the methods as they are now.
+- **What the records hold is stopped, not removed**: the API keeps a
+  method a payment was received by (409). The dialog closes, and the
+  form says to clear 「この支払い方法を使う」 instead.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,

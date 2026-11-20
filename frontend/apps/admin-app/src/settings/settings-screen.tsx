@@ -6,7 +6,11 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
-import { hoursChangeHrefOf, salonChangeHrefOf } from '../navigation'
+import {
+  hoursChangeHrefOf,
+  paymentMethodsHrefOf,
+  salonChangeHrefOf,
+} from '../navigation'
 import { dayAt } from '../salon-time'
 import { readSalon, salonKeyOf } from '../salons/salons-api'
 import { WithSalon } from '../salons/with-salon'
@@ -53,7 +57,11 @@ const SettingsPart = ({ salon }: SettingsPartProps) => {
         }
       />
       {read.isFetchedAfterMount ? (
-        <SalonRecord salon={salon} today={dayAt(new Date(), salon.timezone)} />
+        <SalonRecord
+          salon={salon}
+          today={dayAt(new Date(), salon.timezone)}
+          paymentMethodsHref={paymentMethodsHrefOf(salon.id)}
+        />
       ) : (
         <LoadingIndicator label='サロンの設定を読み込んでいます' />
       )}

@@ -2,6 +2,7 @@ import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
+import { salon } from '../../../bookings/components/examples'
 import * as salonRecordStories from './salon-record.stories'
 
 const stories = composeStories(salonRecordStories)
@@ -73,7 +74,11 @@ describe('SalonRecord', () => {
       ['タイムゾーン', 'Asia/Tokyo'],
       ['通貨', 'JPY'],
       ['税率', '10%'],
+      ['支払い方法', '支払い方法を見る'],
     ])
+    expect(
+      screen.getByRole('link', { name: '支払い方法を見る' }),
+    ).toHaveAttribute('href', `/salons/${salon.id}/settings/payment-methods`)
   })
 
   it('should show the week from Monday and the dates of the calendar from today', async () => {

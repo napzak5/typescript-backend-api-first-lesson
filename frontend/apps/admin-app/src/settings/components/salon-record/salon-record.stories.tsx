@@ -6,7 +6,11 @@ import { SalonRecord } from './salon-record'
 const meta: Meta<typeof SalonRecord> = {
   title: 'Admin/Settings/SalonRecord',
   component: SalonRecord,
-  args: { salon: aDescribedSalon(), today: TODAY },
+  args: {
+    salon: aDescribedSalon(),
+    today: TODAY,
+    paymentMethodsHref: `/salons/${salon.id}/settings/payment-methods`,
+  },
 }
 
 export default meta
