@@ -190,3 +190,28 @@ export const storedServicesNamed = async (salon: string, name: string) =>
       [salon, name],
     ),
   )
+
+const statesSchema = z.array(
+  z.object({
+    name: z.string(),
+    category: z.string().nullable(),
+    isActive: z.boolean(),
+    serviceStatus: z.string(),
+    allowOnlineBooking: z.boolean(),
+  }),
+)
+
+/** The services of a salon that are in the menu as the database has them, by name: their category and what may be changed of several at once. */
+export const storedStatesOf = async (salon: string) =>
+  statesSchema.parse(
+    await testApi().query(
+      `select v.name, c.name as category, v."isActive", v."serviceStatus"::text as "serviceStatus",
+         v."allowOnlineBooking"
+       from services v
+       join salons s on s.id = v."salonId"
+       left join service_categories c on c.id = v."categoryId"
+       where s.name = $1 and v."deletedAt" is null
+       order by v.name`,
+      [salon],
+    ),
+  )

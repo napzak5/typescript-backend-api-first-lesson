@@ -152,6 +152,10 @@ export const serviceHrefOf = (salonId: string, serviceId: string): string =>
 export const serviceEntryHrefOf = (salonId: string): string =>
   `${menuHrefOf(salonId)}/services/new`
 
+/** The screen that gives several services of the menu the same values. */
+export const servicesChangeHrefOf = (salonId: string): string =>
+  `${menuHrefOf(salonId)}/services/bulk`
+
 /** The screen that changes a service of the menu, and removes it. */
 export const serviceChangeHrefOf = (
   salonId: string,

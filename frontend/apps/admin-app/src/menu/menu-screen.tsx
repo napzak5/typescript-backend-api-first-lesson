@@ -15,6 +15,7 @@ import {
   categoryEntryHrefOf,
   serviceEntryHrefOf,
   serviceHrefOf,
+  servicesChangeHrefOf,
 } from '../navigation'
 import { unreadMessageOf } from '../reading'
 import { readServices, servicesKeyOf } from '../salons/salons-api'
@@ -32,8 +33,9 @@ type MenuPartProps = { salon: ModelsSalonResponse }
 /**
  * The menu of the salon as it is kept, read whenever the screen opens: the
  * services by category, and the categories. An account that changes the
- * menu is offered to add a service and a category, and to change each
- * category; a service is changed from its page.
+ * menu is offered to add a service and a category, to change several
+ * services at once, and to change each category; a service is changed
+ * from its page.
  */
 const MenuPart = ({ salon }: MenuPartProps) => {
   const keeps = useKeepsMenu()
@@ -65,6 +67,12 @@ const MenuPart = ({ salon }: MenuPartProps) => {
                 variant='secondary'
               >
                 カテゴリーを足す
+              </ButtonLink>
+              <ButtonLink
+                href={servicesChangeHrefOf(salon.id)}
+                variant='secondary'
+              >
+                まとめて変える
               </ButtonLink>
             </>
           ) : undefined
