@@ -899,6 +899,20 @@ adds:
   (`chooseReferrer` of `customers.integration.test.tsx`), and what the
   API refuses of it is made between the choice and the send
   (`removeMeanwhile` of the customer who was chosen).
+- **A write that the API keeps a version of is arranged with its
+  version.** What another account wrote meanwhile is a row written by SQL
+  and a version as the API keeps one: the next number, the values the row
+  has then, the account that wrote it, the moment it was written
+  (`recordVersion` of `customers/__tests__/arrangements.ts`). A screen
+  that reads the history to tell what became of a record (a removed
+  customer) is told nothing by a removal without its version. A history
+  of more versions than a page is arranged the same way, a minute apart.
+- **A screen that swaps what it shows at one address** (a customer
+  removed, then brought back) is asserted on both sides: the heading has
+  the focus, the notification is there, and the row is asserted in the
+  database (`isInLedger`). What a list showed at first sight after the
+  swap (`firstSight`) is asserted without the notification, which names
+  the record too.
 
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
