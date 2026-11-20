@@ -1,0 +1,5 @@
+/* Why the sale of the address is not offered, above the form */
+.entry {
+  display: grid;
+  gap: var(--space-4);
+}

@@ -21,6 +21,7 @@ import { customerKeyOf, readCustomer } from '../customers/customers-api'
 import {
   bookingHrefOf,
   paymentEntryHrefOf,
+  pointEntryHrefOf,
   receiptHrefOf,
   refundHrefOf,
   saleChangeHrefOf,
@@ -30,6 +31,7 @@ import { NOT_FOUND, unreadMessageOf, whyUnread } from '../reading'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
 import { WithSalon } from '../salons/with-salon'
 import { PaymentTable } from './components/payment-table/payment-table'
+import { SalePoints } from './components/sale-points/sale-points'
 import { SaleRecord } from './components/sale-record/sale-record'
 import { SaleVoid } from './components/sale-void/sale-void'
 import { whyNoRefund } from './refunds'
@@ -228,6 +230,18 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
                 'レシートは、印刷してお客様に渡せます。何度でも出し直せます。'}
             </p>
           </Card>
+          {ofCustomer.type === 'found' && !sale.isVoid && (
+            <SalePoints
+              usedHref={pointEntryHrefOf(salon.id, ofCustomer.customer.id, {
+                saleId: sale.id,
+                kind: 'used',
+              })}
+              earnedHref={pointEntryHrefOf(salon.id, ofCustomer.customer.id, {
+                saleId: sale.id,
+                kind: 'earned',
+              })}
+            />
+          )}
           {!sale.isVoid && (
             <Card title='取り消し' headingRef={voidHeading}>
               <SaleVoid

@@ -11,6 +11,7 @@ const meta: Meta<typeof CustomerRecord> = {
     timezone: salon.timezone,
     changeHref: `/salons/${salon.id}/customers/${aCustomer().id}/edit`,
     bookingHref: `/salons/${salon.id}/bookings/new?date=2026-11-20&customerId=${aCustomer().id}`,
+    pointsHref: `/salons/${salon.id}/customers/${aCustomer().id}/points`,
     customerHref: (customerId) => `/salons/${salon.id}/customers/${customerId}`,
     referrer: undefined,
   },

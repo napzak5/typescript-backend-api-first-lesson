@@ -53,3 +53,13 @@ export const Failed: Story = {
 export const Complete: Story = {
   args: { count: '2 件', more: 'none' },
 }
+
+/** Rows that lead nowhere: the cell that names a row is its header */
+export const WithoutLinks: Story = {
+  args: {
+    columns: [
+      { key: 'time', header: '時刻', cell: ({ time }) => time },
+      { key: 'name', header: 'お客様', cell: ({ name }) => name },
+    ],
+  },
+}
