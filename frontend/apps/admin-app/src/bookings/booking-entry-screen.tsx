@@ -25,9 +25,18 @@ import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { KeywordSearch } from '../components/keyword-search/keyword-search'
 import { CustomerChoices } from '../customers/components/customer-choices/customer-choices'
-import { findCustomers, readCustomer } from '../customers/customers-api'
+import {
+  CUSTOMER_LISTS,
+  customerKeyOf,
+  findCustomers,
+  readCustomer,
+} from '../customers/customers-api'
 import { keywordOf } from '../keyword'
-import { bookingHrefOf, bookingsHrefOf } from '../navigation'
+import {
+  bookingHrefOf,
+  bookingsHrefOf,
+  customerEntryHrefOf,
+} from '../navigation'
 import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
 import { unreadMessageOf, whyUnread } from '../reading'
 import { dayAt } from '../salon-time'
@@ -72,12 +81,18 @@ const hrefOf = (choice: EntryChoice): string =>
 type CustomerResultsProps = {
   choice: EntryChoice
   keyword: string
+  /** The address of the screen that registers a customer */
+  entryHref: string
 }
 
 /** The customers of the ledger that have the keyword, to choose from. */
-const CustomerResults = ({ choice, keyword }: CustomerResultsProps) => {
+const CustomerResults = ({
+  choice,
+  keyword,
+  entryHref,
+}: CustomerResultsProps) => {
   const found = useInfiniteQuery({
-    queryKey: ['customers', 'search', keyword],
+    queryKey: [...CUSTOMER_LISTS, 'search', keyword],
     queryFn: ({ pageParam }) => findCustomers(keyword, pageParam),
     initialPageParam: firstCursor(),
     getNextPageParam: cursorAfter,
@@ -99,7 +114,12 @@ const CustomerResults = ({ choice, keyword }: CustomerResultsProps) => {
     .with({ type: 'listed', items: [] }, () => (
       <EmptyState
         title='キーワードに合うお客様が見つかりませんでした'
-        description='キーワードを変えて、もう一度お探しください。台帳にないお客様は、この画面では登録できません。'
+        description='キーワードを変えて、もう一度お探しください。台帳にないお客様は、先に台帳に登録してください。登録したお客様の台帳から、予約を入れられます。'
+        action={
+          <ButtonLink href={entryHref} variant='secondary'>
+            お客様を登録する
+          </ButtonLink>
+        }
       />
     ))
     .with({ type: 'listed' }, ({ items, total, rest }) => (
@@ -129,7 +149,7 @@ type StepProps = {
  * Each search is a place to come back to, and so is the choice: the way
  * back from the form leads to the customers that were found.
  */
-const CustomerStep = ({ choice }: Omit<StepProps, 'salon'>) => {
+const CustomerStep = ({ salon, choice }: StepProps) => {
   const [, setQuery] = useSearchParams()
   const queryClient = useQueryClient()
 
@@ -138,7 +158,7 @@ const CustomerStep = ({ choice }: Omit<StepProps, 'salon'>) => {
     if (asked !== undefined && asked === choice.search) {
       // The same search again: whoever sends it wants what there is now
       void queryClient.invalidateQueries({
-        queryKey: ['customers', 'search', asked],
+        queryKey: [...CUSTOMER_LISTS, 'search', asked],
       })
       return
     }
@@ -160,6 +180,7 @@ const CustomerStep = ({ choice }: Omit<StepProps, 'salon'>) => {
           key={choice.search}
           choice={choice}
           keyword={choice.search}
+          entryHref={customerEntryHrefOf(salon.id)}
         />
       )}
     </>
@@ -279,7 +300,7 @@ const EntryStep = ({
   customerId,
 }: StepProps & { customerId: string }) => {
   const customer = useQuery({
-    queryKey: ['customers', customerId],
+    queryKey: customerKeyOf(customerId),
     queryFn: () => readCustomer(customerId),
     refetchOnReconnect: false,
   })
@@ -376,7 +397,7 @@ const BookingEntry = ({ salon }: { salon: ModelsSalonResponse }) => {
     <>
       <PageHeader title={TITLE} description={salon.name} />
       {choice.customerId === undefined ? (
-        <CustomerStep choice={choice} />
+        <CustomerStep salon={salon} choice={choice} />
       ) : (
         <EntryStep
           // The form of another customer is another form

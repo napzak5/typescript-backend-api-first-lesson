@@ -1,0 +1,833 @@
+import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { useLayoutEffect } from 'react'
+import { MemoryRouter, useLocation } from 'react-router'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { App } from '../App'
+import {
+  arrange,
+  dayFromToday,
+  KENJI,
+  OSAKA,
+  OWNER,
+  refuse,
+  SAKURA,
+  STYLIST,
+  salonIdOf,
+  signInAs,
+  TOKYO,
+  YUKI,
+} from '../bookings/__tests__/arrangements'
+import { dayAfter, dayNameOf } from '../salon-time'
+import {
+  arrangeCustomers,
+  arrangePreferences,
+  customerIdOf,
+  giveReferralCode,
+  registeredDaysAgo,
+  removeMeanwhile,
+  storedCustomerCount,
+  storedCustomerOf,
+  writeNoteMeanwhile,
+} from './__tests__/arrangements'
+
+const TITLE = 'Beauty Salon Admin'
+
+const HIROSHI = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
+
+/** The address the application is at, as the router knows it */
+let address = ''
+
+/** The address a screen was opened at, and what the page showed in the commit that opened it */
+let firstSight: [string, string] = ['', '']
+
+const Address = () => {
+  const { pathname, search } = useLocation()
+  address = `${pathname}${search}`
+  useLayoutEffect(() => {
+    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
+  }, [pathname])
+
+  return null
+}
+
+const renderAt = (path: string) =>
+  render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+        <Address />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+
+const heading = (name: string) =>
+  screen.findByRole('heading', { level: 1, name })
+
+const field = (name: string): HTMLElement => screen.getByLabelText(name)
+
+const text = (name: string): HTMLElement =>
+  screen.getByRole('textbox', { name })
+
+/** What the application says in its notifications. */
+const notifications = (): string[] =>
+  screen
+    .getAllByRole('status')
+    .map((region) => region.textContent ?? '')
+    .filter((said) => said !== '')
+
+/** The rows of a table, a list of the texts of their cells each. */
+const rowsOf = (name: string): string[][] =>
+  within(screen.getByRole('table', { name }))
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) =>
+      [
+        ...within(row).queryAllByRole('rowheader'),
+        ...within(row).queryAllByRole('cell'),
+      ].map((cell) => cell.textContent ?? ''),
+    )
+
+/** The names in a table of customers, in alphabetical order: customers registered at once come in no order of their own. */
+const namesIn = (name: string): string[] =>
+  rowsOf(name)
+    .map(([customer]) => customer ?? '')
+    .toSorted()
+
+/** The part of a page under a heading. */
+const part = (name: string): HTMLElement => screen.getByRole('region', { name })
+
+/** What a part of a page describes, term by term. */
+const describedIn = (name: string): Record<string, string> =>
+  Object.fromEntries(
+    within(part(name))
+      .getAllByRole('term')
+      .map((term) => [
+        term.textContent ?? '',
+        term.nextElementSibling?.textContent ?? '',
+      ]),
+  )
+
+/** Opens a page of the salon in Tokyo at its address, signed in. */
+const openAt = async (path: (tokyo: string) => string, email = STYLIST) => {
+  const tokyo = await salonIdOf(TOKYO)
+  renderAt(path(tokyo))
+  await signInAs(email)
+
+  return tokyo
+}
+
+/** Waits for the ledger: its heading, then its table. */
+const theLedger = async (caption = '顧客台帳'): Promise<void> => {
+  await heading('顧客台帳')
+  await screen.findByRole('table', { name: caption })
+}
+
+/** Waits for the page of a customer: its heading, then its parts, which are read after it. */
+const theCustomer = async (): Promise<void> => {
+  await heading('お客様の台帳')
+  await screen.findByRole('region', { name: '台帳' })
+  await within(part('好み設定')).findAllByRole('term')
+  await within(part('このサロンでの利用')).findAllByRole('term')
+}
+
+/** The customers of the seed data, in alphabetical order */
+const EVERYONE = [YUKI.name, KENJI.name, SAKURA.name, HIROSHI.name].toSorted()
+
+const NEW_EMAIL = 'hanako.yamada@example.com'
+
+/** Fills in what a new customer must have. */
+const fillInTheNeeded = async (
+  user: ReturnType<typeof userEvent.setup>,
+  email = NEW_EMAIL,
+): Promise<void> => {
+  await user.type(text('姓'), '山田')
+  await user.type(text('名'), '花子')
+  await user.type(text('メールアドレス'), email)
+  await user.type(text('電話番号'), '090-1234-5678')
+}
+
+describe('the ledger of the customers, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_APP_TITLE', TITLE)
+    vi.stubEnv('VITE_MODE', 'production')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+  })
+
+  describe('finding a customer', () => {
+    it('should lead from the header to every customer of the ledger, with how many there are', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const lastVisit = await dayFromToday(-5)
+      const tokyo = await openAt((salon) => `/salons/${salon}/bookings`)
+
+      // Act
+      await user.click(await screen.findByRole('link', { name: '顧客' }))
+
+      // Assert
+      await theLedger()
+      expect(address).toBe(`/salons/${tokyo}/customers`)
+      expect(namesIn('顧客台帳')).toEqual(EVERYONE)
+      expect(rowsOf('顧客台帳')).toContainEqual([
+        KENJI.name,
+        'ヤマモト ケンジ',
+        '+81-80-9876-5432',
+        'シルバー',
+        '通常',
+        '2 回',
+        dayNameOf(lastVisit),
+      ])
+      expect(screen.getByText('4 人')).toBeVisible()
+      expect(screen.getByRole('link', { name: '顧客' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      )
+      expect(await findAccessibilityViolations(document.body)).toEqual([])
+    })
+
+    it('should find customers by a keyword, by tags, by their state and by their rank, keep them in the address, and lead back to all of them', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const tokyo = await openAt((salon) => `/salons/${salon}/customers`)
+      await theLedger()
+
+      // Act: the kana of a name
+      await user.type(
+        screen.getByRole('searchbox', { name: 'キーワード' }),
+        'ヤマモト{Enter}',
+      )
+
+      // Assert
+      await theLedger('条件に合うお客様')
+      expect(address).toBe(
+        `/salons/${tokyo}/customers?${new URLSearchParams({ search: 'ヤマモト' })}`,
+      )
+      expect(namesIn('条件に合うお客様')).toEqual([KENJI.name])
+
+      // Act: two tags and a rank, every one of them
+      await user.clear(screen.getByRole('searchbox', { name: 'キーワード' }))
+      await user.type(text('タグ'), 'vip、platinum')
+      await user.selectOptions(field('会員ランク'), 'プラチナ')
+      await user.click(screen.getByRole('button', { name: '探す' }))
+
+      // Assert
+      await waitFor(() =>
+        expect(address).toBe(
+          `/salons/${tokyo}/customers?tags=vip&tags=platinum&membershipTier=platinum`,
+        ),
+      )
+      await waitFor(() =>
+        expect(namesIn('条件に合うお客様')).toEqual([HIROSHI.name]),
+      )
+
+      // Act
+      await user.click(screen.getByRole('link', { name: '条件を外す' }))
+
+      // Assert
+      await theLedger()
+      expect(namesIn('顧客台帳')).toEqual(EVERYONE)
+      expect(text('タグ')).toHaveValue('')
+    })
+
+    it('should find the customers registered on the days of the salon, the first and the last of them too', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await registeredDaysAgo(YUKI.email, 10)
+      await registeredDaysAgo(KENJI.email, 3)
+      const from = await dayFromToday(-10)
+      const to = await dayFromToday(-3)
+      await openAt((salon) => `/salons/${salon}/customers`)
+      await theLedger()
+
+      // Act
+      await user.type(field('登録日（から）'), from)
+      await user.type(field('登録日（まで）'), to)
+      await user.click(screen.getByRole('button', { name: '探す' }))
+
+      // Assert
+      await theLedger('条件に合うお客様')
+      // The latest registered first
+      expect(rowsOf('条件に合うお客様').map(([name]) => name)).toEqual([
+        KENJI.name,
+        YUKI.name,
+      ])
+      expect(screen.getByText('2 人')).toBeVisible()
+    })
+
+    it('should say that no customer meets the conditions, and offer to register one', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const tokyo = await openAt((salon) => `/salons/${salon}/customers`)
+      await theLedger()
+
+      // Act
+      await user.selectOptions(field('ステータス'), '利用停止')
+      await user.click(screen.getByRole('button', { name: '探す' }))
+
+      // Assert
+      expect(
+        await screen.findByText('条件に合うお客様はいません'),
+      ).toBeVisible()
+      // The link of the header, and the one of the empty ledger
+      expect(
+        screen
+          .getAllByRole('link', { name: 'お客様を登録する' })
+          .map((link) => link.getAttribute('href')),
+      ).toEqual([
+        `/salons/${tokyo}/customers/new`,
+        `/salons/${tokyo}/customers/new`,
+      ])
+    })
+
+    it('should say at its control what is wrong with the conditions, and ask for nothing', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const tokyo = await openAt((salon) => `/salons/${salon}/customers`)
+      await theLedger()
+
+      // Act
+      await user.type(field('登録日（から）'), '2026-11-20')
+      await user.type(field('登録日（まで）'), '2026-11-19')
+      await user.click(screen.getByRole('button', { name: '探す' }))
+
+      // Assert
+      expect(field('登録日（まで）')).toHaveAccessibleDescription(
+        '終わりの日は、始まりの日と同じか、その後にしてください。',
+      )
+      expect(field('登録日（まで）')).toHaveFocus()
+      expect(address).toBe(`/salons/${tokyo}/customers`)
+    })
+
+    it('should open with the conditions of its address, show twenty customers at a time, and the next ones with the focus on the first of them', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await arrangeCustomers(21, 'walk-in')
+      await openAt((salon) => `/salons/${salon}/customers?tags=walk-in`)
+      await theLedger('条件に合うお客様')
+      expect(text('タグ')).toHaveValue('walk-in')
+      expect(rowsOf('条件に合うお客様').map(([name]) => name)).toEqual(
+        Array.from(
+          { length: 20 },
+          (_, index) => `Walk In ${String(index + 1).padStart(2, '0')}`,
+        ),
+      )
+      expect(screen.getByText('21 人（20 人を表示しています）')).toBeVisible()
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'さらに表示' }))
+
+      // Assert
+      await waitFor(() => expect(rowsOf('条件に合うお客様')).toHaveLength(21))
+      expect(rowsOf('条件に合うお客様').at(-1)?.[0]).toBe('Walk In 21')
+      expect(
+        within(screen.getByRole('table', { name: '条件に合うお客様' }))
+          .getAllByRole('link')
+          .at(20),
+      ).toHaveFocus()
+      expect(screen.getByText('21 人')).toBeVisible()
+      expect(screen.queryByRole('button', { name: 'さらに表示' })).toBeNull()
+    })
+  })
+
+  describe('registering a customer', () => {
+    it('should register a customer from the ledger, show them at once, and find them in the ledger', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const tokyo = await openAt((salon) => `/salons/${salon}/customers`)
+      await theLedger()
+      await user.click(screen.getByRole('link', { name: 'お客様を登録する' }))
+      await heading('お客様を登録する')
+      expect(await findAccessibilityViolations(document.body)).toEqual([])
+
+      // Act
+      await fillInTheNeeded(user, 'Hanako.Yamada@Example.com')
+      await user.type(text('姓（フリガナ）'), 'ヤマダ')
+      await user.type(text('名（フリガナ）'), 'ハナコ')
+      await user.selectOptions(field('髪質'), 'ウェーブ')
+      await user.click(screen.getByRole('checkbox', { name: 'スパ' }))
+      await user.type(text('タグ'), '紹介、カラー')
+      await user.type(text('スタッフ間の申し送り'), '電話で予約')
+      await user.click(screen.getByRole('checkbox', { name: 'メールでの連絡' }))
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      // Assert: the customer the API answered is shown at first sight
+      await theCustomer()
+      const id = await customerIdOf(NEW_EMAIL)
+      expect(address).toBe(`/salons/${tokyo}/customers/${id}`)
+      expect(firstSight[1]).toContain('山田 花子（ヤマダ ハナコ） 様')
+      expect(notifications()).toContain('山田 花子 様を台帳に登録しました。')
+      expect(describedIn('台帳')).toMatchObject({
+        メールアドレス: NEW_EMAIL,
+        髪と頭皮: 'ウェーブ',
+        好みのメニュー: 'スパ',
+        タグ: '紹介カラー',
+        送ってよい連絡: 'メール',
+        スタッフ間の申し送り: '電話で予約',
+      })
+      expect(describedIn('来店とポイント')).toMatchObject({
+        来店回数: '0 回',
+        ポイント: '0 ポイント',
+      })
+      expect(await storedCustomerOf(NEW_EMAIL)).toMatchObject({
+        lastName: '山田',
+        lastNameKana: 'ヤマダ',
+        membershipTier: 'regular',
+        customerStatus: 'active',
+        isActive: true,
+        tags: ['紹介', 'カラー'],
+        preferences: { preferredServices: ['spa'], notes: null },
+        hairType: 'wavy',
+        internalNotes: '電話で予約',
+        referredBy: null,
+        allowEmail: true,
+        allowSms: false,
+      })
+
+      // Act
+      await user.click(screen.getByRole('link', { name: '顧客' }))
+
+      // Assert: the ledger that was read before has the new customer
+      await theLedger()
+      expect(namesIn('顧客台帳')).toEqual([...EVERYONE, '山田 花子'].toSorted())
+    })
+
+    it('should say what is missing at each control, and send nothing', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const before = await storedCustomerCount()
+      await openAt((salon) => `/salons/${salon}/customers/new`)
+      await heading('お客様を登録する')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      // Assert
+      expect(text('姓')).toHaveFocus()
+      expect(text('姓')).toHaveAccessibleDescription('姓を入力してください。')
+      expect(text('メールアドレス')).toHaveAttribute('aria-invalid', 'true')
+      expect(text('電話番号')).toHaveAccessibleDescription(
+        '電話番号を入力してください。',
+      )
+      expect(await storedCustomerCount()).toBe(before)
+    })
+
+    it('should say at its control that another customer has the address of mail, in capitals too', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const before = await storedCustomerCount()
+      await openAt((salon) => `/salons/${salon}/customers/new`)
+      await heading('お客様を登録する')
+      await fillInTheNeeded(user, YUKI.email.toUpperCase())
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      // Assert
+      await waitFor(() =>
+        expect(text('メールアドレス')).toHaveAccessibleDescription(
+          '台帳のお客様の間で、同じアドレスは使えません。 このメールアドレスのお客様が、すでに台帳にいます。台帳で探すか、別のメールアドレスを入力してください。',
+        ),
+      )
+      expect(text('メールアドレス')).toHaveFocus()
+      expect(await storedCustomerCount()).toBe(before)
+    })
+
+    it('should say at its control that another customer has the referral code', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await giveReferralCode(KENJI.email, 'KENJI-2026')
+      await openAt((salon) => `/salons/${salon}/customers/new`)
+      await heading('お客様を登録する')
+      await fillInTheNeeded(user)
+      await user.type(text('紹介コード'), 'KENJI-2026')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      // Assert
+      await waitFor(() => expect(text('紹介コード')).toHaveFocus())
+      expect(text('紹介コード')).toHaveAttribute('aria-invalid', 'true')
+      expect(text('紹介コード')).toHaveAccessibleDescription(
+        expect.stringContaining(
+          'この紹介コードは、ほかのお客様が使っています（台帳から削除したお客様も含みます）。別のコードを入力してください。',
+        ),
+      )
+      expect(text('メールアドレス')).not.toHaveAttribute('aria-invalid')
+    })
+
+    it('should say that the customer was not registered when the database fails, and keep what was filled in', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await refuse('insert', 'customers')
+      await openAt((salon) => `/salons/${salon}/customers/new`)
+      await heading('お客様を登録する')
+      await fillInTheNeeded(user)
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      // Assert
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'お客様を登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(text('姓')).toHaveValue('山田')
+      expect(text('メールアドレス')).toHaveValue(NEW_EMAIL)
+    })
+  })
+
+  describe('the page of a customer', () => {
+    it('should show what the ledger keeps, the preferences with the members named, and what the customer did at the salon over the last year', async () => {
+      // Arrange
+      await arrangePreferences(SAKURA.email)
+      const sakura = await customerIdOf(SAKURA.email)
+      const [visit, today, yearAgo] = await Promise.all([
+        dayFromToday(-20),
+        dayFromToday(0),
+        dayFromToday(-365),
+      ])
+
+      // Act
+      await openAt((salon) => `/salons/${salon}/customers/${sakura}`)
+
+      // Assert
+      await theCustomer()
+      expect(screen.getByText('Sato Sakura（サトウ サクラ） 様')).toBeVisible()
+      expect(describedIn('台帳')).toMatchObject({
+        電話番号: '+81-70-1111-2222',
+        住所: '〒160-0022 TokyoShinjuku-ku5-6-7 Shinjuku Shinjuku Tower 15F',
+        生年月日: dayNameOf('1995-03-10'),
+        好みのメニュー: 'カラー、トリートメント、スパ',
+        好みについてのメモ: 'Sensitive skin, requires patch test',
+        会員ランク: 'レギュラー',
+        タグ: 'sensitive-skintreatment-focus',
+      })
+      expect(describedIn('来店とポイント')).toMatchObject({
+        初回来店日: dayNameOf(visit),
+        最終来店日: dayNameOf(visit),
+        来店回数: '1 回',
+        ポイント: '300 ポイント',
+      })
+      expect(describedIn('好み設定')).toMatchObject({
+        指名したいスタッフ: 'Hiroshi Tanaka',
+        避けたいスタッフ: 'Mika Suzuki、一覧にないスタッフ',
+        希望する時間帯: '10:00〜12:00',
+        希望の長さ: 'ボブ',
+        接客の好み: '静かに過ごしたい',
+      })
+      expect(
+        screen.getByText(`${dayNameOf(yearAgo)}〜${dayNameOf(today)}の集計`),
+      ).toBeVisible()
+      expect(describedIn('このサロンでの利用')).toEqual({
+        予約: '2 件',
+        利用額: '￥0',
+        '予約 1 件あたりの会計': '￥0',
+        最後の来店: `${dayNameOf(visit)} 10:30`,
+        キャンセル率: '0%',
+        無断キャンセル率: '50%',
+      })
+      expect(rowsOf('よく受けたメニュー')).toEqual([['Mens Cut', '1 件']])
+      expect(rowsOf('よく担当したスタッフ')).toEqual([['Yui Watanabe', '1 件']])
+      expect(await findAccessibilityViolations(document.body)).toEqual([])
+    })
+
+    it('should count over another period, keep it in the address, and say at its control a period the API does not count over', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const sakura = await customerIdOf(SAKURA.email)
+      const [from, to] = await Promise.all([dayFromToday(-7), dayFromToday(7)])
+      const tokyo = await openAt(
+        (salon) => `/salons/${salon}/customers/${sakura}`,
+      )
+      await theCustomer()
+
+      // Act: the week before and after today, with the booking to come
+      await user.clear(field('集計する期間（から）'))
+      await user.type(field('集計する期間（から）'), from)
+      await user.clear(field('集計する期間（まで）'))
+      await user.type(field('集計する期間（まで）'), to)
+      await user.click(screen.getByRole('button', { name: '集計する' }))
+
+      // Assert
+      await waitFor(() =>
+        expect(address).toBe(
+          `/salons/${tokyo}/customers/${sakura}?from=${from}&to=${to}`,
+        ),
+      )
+      await waitFor(() =>
+        expect(describedIn('このサロンでの利用')).toMatchObject({
+          予約: '2 件',
+          最後の来店: 'なし',
+          無断キャンセル率: '50%',
+        }),
+      )
+      expect(rowsOf('よく受けたメニュー')).toEqual([
+        ['この期間に完了した予約はありません'],
+      ])
+
+      // Act
+      await user.clear(field('集計する期間（から）'))
+      await user.type(field('集計する期間（から）'), dayAfter(to, -366))
+      await user.click(screen.getByRole('button', { name: '集計する' }))
+
+      // Assert
+      expect(field('集計する期間（まで）')).toHaveAccessibleDescription(
+        '366 日まで集計できます。 期間は 366 日までにしてください。',
+      )
+      expect(address).toBe(
+        `/salons/${tokyo}/customers/${sakura}?from=${from}&to=${to}`,
+      )
+    })
+
+    it('should lead from a booking to its customer, and from the customer to a new booking of theirs', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const bookingId = await arrange({
+        bookingNumber: 'BK-TEST-0301',
+        day: 0,
+        at: '11:00',
+        customer: KENJI.email,
+      })
+      const kenji = await customerIdOf(KENJI.email)
+      const today = await dayFromToday(0)
+      const tokyo = await openAt(
+        (salon) => `/salons/${salon}/bookings/${bookingId}`,
+      )
+      await heading('予約の内容')
+
+      // Act
+      await user.click(await screen.findByRole('link', { name: KENJI.name }))
+
+      // Assert
+      await theCustomer()
+      expect(address).toBe(`/salons/${tokyo}/customers/${kenji}`)
+
+      // Act
+      await user.click(screen.getByRole('link', { name: '予約を入れる' }))
+
+      // Assert: the customer is chosen, and the form asks for the rest
+      await heading('予約を入れる')
+      expect(address).toBe(
+        `/salons/${tokyo}/bookings/new?date=${today}&customerId=${kenji}`,
+      )
+      expect(
+        await screen.findByRole('region', { name: 'お客様' }),
+      ).toHaveTextContent(KENJI.name)
+    })
+
+    it('should say that a customer is not found who is not in the ledger, and lead to the ledger', async () => {
+      // Arrange
+      const kenji = await customerIdOf(KENJI.email)
+      await removeMeanwhile(KENJI.email)
+
+      // Act
+      const tokyo = await openAt(
+        (salon) => `/salons/${salon}/customers/${kenji}`,
+      )
+
+      // Assert
+      await heading('お客様が見つかりません')
+      expect(screen.getByRole('link', { name: '顧客台帳へ' })).toHaveAttribute(
+        'href',
+        `/salons/${tokyo}/customers`,
+      )
+    })
+
+    it('should say to a member of another salon that its use of the salon is not theirs to see, and show the rest of the customer', async () => {
+      // Arrange
+      const osaka = await salonIdOf(OSAKA)
+      const sakura = await customerIdOf(SAKURA.email)
+
+      // Act
+      renderAt(`/salons/${osaka}/customers/${sakura}`)
+      await signInAs(STYLIST)
+
+      // Assert
+      await heading('お客様の台帳')
+      await screen.findByRole('region', { name: '台帳' })
+      await within(part('好み設定')).findAllByRole('term')
+      expect(
+        await within(part('このサロンでの利用')).findByText(
+          'このサロンの利用の集計は、見られません。利用の集計を見られるのは、そのサロンのスタッフと、管理者です。',
+        ),
+      ).toBeVisible()
+      expect(describedIn('台帳')).toMatchObject({
+        電話番号: '+81-70-1111-2222',
+      })
+    })
+  })
+
+  describe('changing a customer', () => {
+    it('should send what was changed, keep what another salon wrote meanwhile, and show the customer so at once', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      const lastVisit = await dayFromToday(-5)
+      const tokyo = await openAt((salon) => `/salons/${salon}/customers`)
+      await theLedger()
+      await user.click(screen.getByRole('link', { name: KENJI.name }))
+      await theCustomer()
+      await user.click(screen.getByRole('link', { name: '台帳を直す' }))
+      await heading('台帳を直す')
+      await screen.findByRole('textbox', { name: '姓' })
+      expect(text('タグ')).toHaveValue('regular、monthly')
+      expect(await findAccessibilityViolations(document.body)).toEqual([])
+      await writeNoteMeanwhile(KENJI.email, '駐車場を使う')
+
+      // Act
+      await user.clear(text('電話番号'))
+      await user.type(text('電話番号'), '080-1111-2222')
+      await user.type(text('タグ'), '、紹介')
+      await user.selectOptions(field('ステータス'), '休眠')
+      await user.click(screen.getByRole('checkbox', { name: '有効なお客様' }))
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      await theCustomer()
+      expect(address).toBe(`/salons/${tokyo}/customers/${kenji}`)
+      expect(firstSight[1]).toContain('080-1111-2222')
+      expect(notifications()).toContain('台帳を直しました。')
+      expect(describedIn('台帳')).toMatchObject({
+        電話番号: '080-1111-2222',
+        ステータス: '休眠',
+        有効: '無効（ご自分では予約を入れられません）',
+        タグ: 'regularmonthly紹介',
+      })
+      expect(await storedCustomerOf(KENJI.email)).toMatchObject({
+        phoneNumber: '080-1111-2222',
+        customerStatus: 'inactive',
+        isActive: false,
+        tags: ['regular', 'monthly', '紹介'],
+        notes: '駐車場を使う',
+        allowSms: false,
+      })
+
+      // Act
+      await user.click(screen.getByRole('link', { name: '顧客' }))
+
+      // Assert: the ledger that was read before shows the customer as they are
+      await theLedger()
+      expect(rowsOf('顧客台帳')).toContainEqual([
+        KENJI.name,
+        'ヤマモト ケンジ',
+        '080-1111-2222',
+        'シルバー',
+        '休眠',
+        '2 回',
+        dayNameOf(lastVisit),
+      ])
+    })
+
+    it('should open the form only once the customer was read anew, not with what the page read before', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      const tokyo = await openAt(
+        (salon) => `/salons/${salon}/customers/${kenji}`,
+      )
+      await theCustomer()
+      await writeNoteMeanwhile(KENJI.email, '駐車場を使う')
+
+      // Act
+      await user.click(screen.getByRole('link', { name: '台帳を直す' }))
+
+      // Assert: no control at first sight, then the note written meanwhile
+      await heading('台帳を直す')
+      expect(firstSight[0]).toBe(`/salons/${tokyo}/customers/${kenji}/edit`)
+      expect(firstSight[1]).not.toContain('備考')
+      expect(await screen.findByRole('textbox', { name: '備考' })).toHaveValue(
+        '駐車場を使う',
+      )
+    })
+
+    it('should ask for nothing when nothing was changed', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      const { updatedAt } = await storedCustomerOf(KENJI.email)
+      await openAt((salon) => `/salons/${salon}/customers/${kenji}/edit`)
+      await heading('台帳を直す')
+      await screen.findByRole('textbox', { name: '姓' })
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      await theCustomer()
+      expect(notifications()).toContain('変更はありませんでした。')
+      expect((await storedCustomerOf(KENJI.email)).updatedAt).toBe(updatedAt)
+    })
+
+    it('should say at its control that another customer has the address of mail, and keep the customer as they were', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await openAt((salon) => `/salons/${salon}/customers/${kenji}/edit`, OWNER)
+      await heading('台帳を直す')
+      await screen.findByRole('textbox', { name: '姓' })
+
+      // Act
+      await user.clear(text('メールアドレス'))
+      await user.type(text('メールアドレス'), YUKI.email)
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      await waitFor(() => expect(text('メールアドレス')).toHaveFocus())
+      expect(text('メールアドレス')).toHaveAccessibleDescription(
+        expect.stringContaining(
+          'このメールアドレスのお客様が、すでに台帳にいます。',
+        ),
+      )
+      expect((await storedCustomerOf(KENJI.email)).email).toBe(KENJI.email)
+    })
+
+    it('should say that the customer is gone when they were removed while the form was open', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await openAt((salon) => `/salons/${salon}/customers/${kenji}/edit`)
+      await heading('台帳を直す')
+      await screen.findByRole('textbox', { name: '姓' })
+      await removeMeanwhile(KENJI.email)
+
+      // Act
+      await user.clear(text('電話番号'))
+      await user.type(text('電話番号'), '080-1111-2222')
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      await heading('お客様が見つかりません')
+      expect(screen.getByRole('link', { name: '顧客台帳へ' })).toBeVisible()
+    })
+
+    it('should say that the ledger was not changed when the database fails, and keep what was filled in', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await refuse('update', 'customers')
+      await openAt((salon) => `/salons/${salon}/customers/${kenji}/edit`)
+      await heading('台帳を直す')
+      await screen.findByRole('textbox', { name: '姓' })
+
+      // Act
+      await user.clear(text('電話番号'))
+      await user.type(text('電話番号'), '080-1111-2222')
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        '台帳を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      )
+      expect(text('電話番号')).toHaveValue('080-1111-2222')
+    })
+  })
+})

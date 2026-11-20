@@ -106,6 +106,17 @@ describe('BookingRecord', () => {
     ])
   })
 
+  it('should lead from the name of the customer to the customer', async () => {
+    // Act
+    await stories.Completed.run()
+
+    // Assert
+    expect(screen.getByRole('link', { name: '山田 花子' })).toHaveAttribute(
+      'href',
+      '/salons/3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60/customers/b08e3c6f-5d7b-4fce-9cad-9b6d2e5f7ab4',
+    )
+  })
+
   it('should say when and why a booking was cancelled, and who is gone', async () => {
     // Act
     await stories.Cancelled.run()

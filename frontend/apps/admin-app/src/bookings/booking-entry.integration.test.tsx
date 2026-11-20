@@ -254,12 +254,12 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       expect(screen.getByText('1 人')).toBeVisible()
     })
 
-    it('should say that no customer has the keyword, and that the screen registers none', async () => {
+    it('should say that no customer has the keyword, and lead to the registration of a customer', async () => {
       // Arrange
       const user = userEvent.setup()
 
       // Act
-      await toTheCustomers(user, 'nobody-has-this')
+      const { tokyo } = await toTheCustomers(user, 'nobody-has-this')
 
       // Assert
       expect(
@@ -267,9 +267,12 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       ).toBeVisible()
       expect(
         screen.getByText(
-          'キーワードを変えて、もう一度お探しください。台帳にないお客様は、この画面では登録できません。',
+          'キーワードを変えて、もう一度お探しください。台帳にないお客様は、先に台帳に登録してください。登録したお客様の台帳から、予約を入れられます。',
         ),
       ).toBeVisible()
+      expect(
+        screen.getByRole('link', { name: 'お客様を登録する' }),
+      ).toHaveAttribute('href', `/salons/${tokyo}/customers/new`)
     })
 
     it('should show the customer that was chosen above the form, and lead back to the customers that were found', async () => {

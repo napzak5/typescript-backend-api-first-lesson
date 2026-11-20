@@ -19,6 +19,7 @@ const meta: Meta<typeof BookingRecord> = {
       customerRequest: '前髪は、眉が隠れるくらいの長さにしたいです。',
     }),
     customer: customers[0] ?? null,
+    customerHref: `/salons/${salon.id}/customers/${customers[0]?.id}`,
     staff,
     services,
     timezone: salon.timezone,

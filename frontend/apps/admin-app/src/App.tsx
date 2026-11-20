@@ -25,6 +25,10 @@ import { BookingMoveScreen } from './bookings/booking-move-screen'
 import { BookingNotesScreen } from './bookings/booking-notes-screen'
 import { BookingScreen } from './bookings/booking-screen'
 import { DayBookingsScreen } from './bookings/day-bookings-screen'
+import { CustomerChangeScreen } from './customers/customer-change-screen'
+import { CustomerEntryScreen } from './customers/customer-entry-screen'
+import { CustomerLedgerScreen } from './customers/customer-ledger-screen'
+import { CustomerScreen } from './customers/customer-screen'
 import { HomeScreen } from './home-screen'
 import { navigationFor } from './navigation'
 import { CheckoutScreen } from './sales/checkout-screen'
@@ -169,6 +173,22 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/sales/:saleId/payments/:paymentId/refund'
                 element={<RefundScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers'
+                element={<CustomerLedgerScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/new'
+                element={<CustomerEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId'
+                element={<CustomerScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId/edit'
+                element={<CustomerChangeScreen />}
               />
               <Route
                 path={SECURITY_PATH}
