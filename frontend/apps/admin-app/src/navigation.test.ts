@@ -23,6 +23,7 @@ import {
   scheduleHrefOf,
   shiftsHrefOf,
   shiftWeekHrefOf,
+  staffAccountHrefOf,
   staffChangeHrefOf,
   staffEntryHrefOf,
   staffLedgerHrefOf,
@@ -263,11 +264,24 @@ describe('navigationFor', () => {
       staffEntryHrefOf(SALON_ID),
       staffMemberHrefOf(SALON_ID, 'member'),
       staffChangeHrefOf(SALON_ID, 'member'),
+      staffAccountHrefOf(SALON_ID, 'member'),
     ]).toEqual([
       STAFF,
       `${STAFF}/new`,
       `${STAFF}/member`,
       `${STAFF}/member/edit`,
+      `${STAFF}/member/account`,
+    ])
+  })
+
+  it('should mark the staff ledger as the screen of the account of a member', () => {
+    expect(navigationFor('owner', staffAccountHrefOf(SALON_ID, 'x'))).toEqual([
+      { href: BOOKINGS, label: '予約', current: false },
+      { href: SALES, label: '売上', current: false },
+      { href: CUSTOMERS, label: '顧客', current: false },
+      { href: TREATMENTS, label: '施術記録', current: false },
+      { href: SHIFTS, label: 'シフト', current: false },
+      { href: STAFF, label: 'スタッフ', current: true },
     ])
   })
 

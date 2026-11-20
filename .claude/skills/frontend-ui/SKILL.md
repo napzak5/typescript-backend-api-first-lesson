@@ -1734,6 +1734,35 @@ for the frame the two screens of a member share, `schedules-api.ts`,
   as well, whose schedule is planned before they come back); the other
   roles read the profile the customers see.
 
+### What a member signs in with: an invitation, a role, an unlinking
+
+The accounts of the staff are the example to read:
+`staff-account-screen.tsx`, `accounts-api.ts`, `account-format.ts` and
+`account-form.ts`.
+
+- **Two reads that decide one view are read side by side**, and what is
+  shown is a pure function of both (`loginOf`): a refusal of either
+  first, then the account as soon as it is found, then the invitation.
+  What is taken outside the screen (an invitation accepted from the link
+  of its mail) is read whenever the screen opens (`staleTime: 0`).
+- **A 409 that names no reason is explained by reading again**, in the
+  order the API checks: the account (the invitation was accepted
+  meanwhile), then the member (made inactive meanwhile), and only then
+  the reason no read can show (an invitation of a minute ago). What was
+  read is shown, what happened meanwhile is said above the cards, and
+  nothing is said to have been sent.
+- **A choice that gives power starts unchosen**: the role of an
+  invitation is chosen each time. A change of a role starts at the role
+  the account has, and a role the signed-in account may not give is not
+  offered; the description says who gives it.
+- **What the account may not do to itself is not offered**, as in the
+  ledger: no change of its own role, no unlinking of itself.
+- **A write shows what it made at once**: its answer is put into the
+  query of what it changed (the invitation mailed, the account with its
+  new role, no account after an unlinking), and the heading of the first
+  card takes the focus when what the screen shows changed. A 404 of a
+  write reads both again and says that they changed meanwhile.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,

@@ -58,6 +58,7 @@ import { StaffChangeScreen } from './staff/staff-change-screen'
 import { StaffEntryScreen } from './staff/staff-entry-screen'
 import { StaffLedgerScreen } from './staff/staff-ledger-screen'
 import { StaffMemberScreen } from './staff/staff-member-screen'
+import { StaffAccountScreen } from './staff-accounts/staff-account-screen'
 import { TreatmentChangeScreen } from './treatments/treatment-change-screen'
 import { TreatmentEntryScreen } from './treatments/treatment-entry-screen'
 import { TreatmentPhotosScreen } from './treatments/treatment-photos-screen'
@@ -307,6 +308,10 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/staff/:staffId/edit'
                 element={<StaffChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/staff/:staffId/account'
+                element={<StaffAccountScreen />}
               />
               <Route
                 path='/salons/:salonId/shifts'
