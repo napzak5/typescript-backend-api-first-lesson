@@ -22,6 +22,7 @@ import {
   recordedMessageOf,
   transactionNameOf,
   whyRefused,
+  withBalance,
 } from './points'
 
 const { id: customerId } = aCustomer()
@@ -466,6 +467,7 @@ describe('afterRecording', () => {
       {
         type: 'done',
         message: '500 ポイントを付与しました。残高は 3,000 ポイントです。',
+        balance: 3000,
       },
     ],
     [
@@ -594,5 +596,26 @@ describe('afterRecording', () => {
   ])('should say what came of %s', (_case, outcome, says) => {
     // Act, Assert
     expect(afterRecording(outcome)).toEqual(says)
+  })
+})
+
+describe('withBalance', () => {
+  it('should give the record of a customer the balance the points left, and keep the rest', () => {
+    expect(
+      withBalance(
+        { type: 'found', customer: aCustomer({ loyaltyPoints: 2500 }) },
+        3000,
+      ),
+    ).toEqual({
+      type: 'found',
+      customer: aCustomer({ loyaltyPoints: 3000 }),
+    })
+  })
+
+  it.each<[string, Parameters<typeof withBalance>[0]]>([
+    ['a customer who was not found', { type: 'notFound' }],
+    ['a customer who was not read', { type: 'failed' }],
+  ])('should leave as it is %s', (_, read) => {
+    expect(withBalance(read, 3000)).toEqual(read)
   })
 })

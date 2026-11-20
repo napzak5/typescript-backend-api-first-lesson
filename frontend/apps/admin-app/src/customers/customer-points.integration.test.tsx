@@ -64,6 +64,29 @@ const Address = () => {
   return null
 }
 
+/**
+ * Holds the readings of the record of a customer until `release` is
+ * called: a screen that opens meanwhile shows what was read of the
+ * customer before, as it does when the reading is slow.
+ */
+const holdReadingsOf = (customerId: string): (() => void) => {
+  const answer = globalThis.fetch
+  const held = Promise.withResolvers<void>()
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+    const request = new Request(input, init)
+    if (
+      request.method === 'GET' &&
+      new URL(request.url).pathname.endsWith(`/customers/${customerId}`)
+    ) {
+      await held.promise
+    }
+
+    return answer(input, init)
+  })
+
+  return () => held.resolve()
+}
+
 const renderAt = (path: string) =>
   render(
     <QueryClientProvider
@@ -381,6 +404,7 @@ describe('the points of customers, against the API', () => {
       await user.type(text('ポイント数'), '500')
       await user.type(screen.getByLabelText('有効期限'), day)
       await user.type(text('説明'), '誕生月のポイント')
+      const release = holdReadingsOf(yuki)
 
       // Act
       await user.click(screen.getByRole('button', { name: '記録する' }))
@@ -414,13 +438,14 @@ describe('the points of customers, against the API', () => {
       // Act
       await user.click(screen.getByRole('link', { name: 'お客様の台帳へ' }))
 
-      // Assert: the balance before the recording is not shown at first sight
+      // Assert: the balance before the recording is not shown, although the customer is not read anew yet
       await heading('お客様の台帳')
       expect(firstSight).toEqual([
         `/salons/${tokyo}/customers/${yuki}`,
         expect.stringContaining('3,000 ポイント'),
       ])
       expect(firstSight[1]).not.toContain('2,500 ポイント')
+      release()
       expect(
         await screen.findByRole('region', { name: '来店とポイント' }),
       ).toHaveTextContent('3,000 ポイント')

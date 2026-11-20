@@ -19,7 +19,11 @@ import { readSale, saleKeyOf } from '../sales/sales-api'
 import { dayAt } from '../salon-time'
 import { WithSalon } from '../salons/with-salon'
 import { PointEntryForm } from './components/point-entry-form/point-entry-form'
-import { CUSTOMER_LISTS, customerKeyOf } from './customers-api'
+import {
+  CUSTOMER_LISTS,
+  type CustomerRead,
+  customerKeyOf,
+} from './customers-api'
 import {
   afterRecording,
   type OfferedSale,
@@ -28,6 +32,7 @@ import {
   pointKindIn,
   pointKindsFor,
   readPointRecording,
+  withBalance,
 } from './points'
 import {
   balanceKeyOf,
@@ -54,8 +59,9 @@ type PointEntryProps = {
  * The form that records points of the customer, for the sale of the
  * address when there is one. After it, the points of the customer are read
  * anew: the screen goes back to the points, with the balance in the
- * notification. The balance the record of the customer holds is read with
- * the customer, whenever a screen of the customer opens.
+ * notification. The record of the customer that was read is given the
+ * balance the points left: the screens of the customer show it before
+ * they have read the customer anew.
  */
 const PointEntry = ({ salon, customer, balance, sale }: PointEntryProps) => {
   const session = useSession()
@@ -72,7 +78,11 @@ const PointEntry = ({ salon, customer, balance, sale }: PointEntryProps) => {
     mutationFn: (recording: PointRecording) => recordPoints(recording),
     onSuccess: (outcome) =>
       match(afterRecording(outcome))
-        .with({ type: 'done' }, ({ message }) => {
+        .with({ type: 'done' }, ({ message, balance }) => {
+          queryClient.setQueryData<CustomerRead>(
+            customerKeyOf(customer.id),
+            (read) => (read === undefined ? read : withBalance(read, balance)),
+          )
           queryClient.removeQueries({ queryKey: pointsKeyOf(customer.id) })
           notify({ tone: 'success', message })
           void navigate(back)
