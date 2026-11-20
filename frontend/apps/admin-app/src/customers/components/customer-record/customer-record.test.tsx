@@ -149,6 +149,12 @@ describe('CustomerRecord', () => {
       'href',
       `${CUSTOMER}/${aCustomer().id}/edit`,
     )
+    expect(
+      within(screen.getByRole('region', { name: '来店とポイント' })).getByRole(
+        'link',
+        { name: 'ポイントの履歴' },
+      ),
+    ).toHaveAttribute('href', `${CUSTOMER}/${aCustomer().id}/points`)
   })
 
   it('should say that a customer who is not active may not book by themselves', async () => {

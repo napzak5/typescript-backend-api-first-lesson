@@ -425,3 +425,140 @@ export const isInLedger = async (customerId: string): Promise<boolean> =>
       [customerId],
     ),
   )[0].present
+
+/** A transaction of the points of a customer, as a test arranges it. */
+export type ArrangedTransaction = {
+  type: 'earned' | 'used' | 'adjusted'
+  /** How the balance moves: negative when it falls */
+  points: number
+  /** How many days before now it was recorded */
+  daysAgo: number
+  description?: string | null
+  /** The day the points given expire on, in days from today in Tokyo */
+  expiresIn?: number | null
+  /** The record it was made for */
+  reference?: { type: 'sale' | 'booking'; id: string } | null
+}
+
+/**
+ * Lets the opening balance the seed gave a customer have been recorded
+ * long ago, before what a test arranges after it.
+ */
+const openedLongAgo = (email: string): Promise<unknown> =>
+  testApi().query(
+    `update customer_points set "createdAt" = now() - interval '60 days'
+     where "customerId" = (select id from customers where email = $1)`,
+    [email],
+  )
+
+/**
+ * Lets a customer have had points recorded before, as the API would have
+ * recorded them: after the opening balance of the seed, in the order
+ * given, each with the balance after it, and the balance of the ledger
+ * after the last.
+ */
+export const arrangePoints = async (
+  email: string,
+  transactions: readonly ArrangedTransaction[],
+): Promise<void> => {
+  await openedLongAgo(email)
+  await testApi().query(
+    `with given as (
+       select *, sum(points) over (order by place) as moved
+       from rows from (
+         jsonb_to_recordset($2::jsonb)
+           as (type text, points int, "daysAgo" int, description text, "expiresIn" int,
+               "referenceType" text, "referenceId" uuid)
+       ) with ordinality
+         as t(type, points, "daysAgo", description, "expiresIn", "referenceType", "referenceId", place)
+     ), customer as (
+       select id, "loyaltyPoints" as opening from customers where email = $1 and "deletedAt" is null
+     ), made as (
+       insert into customer_points ("customerId", "transactionType", points, balance, description,
+                                    "referenceType", "referenceId", "expiryDate", "createdAt")
+       select customer.id, given.type::point_transaction_type, given.points, customer.opening + given.moved,
+              given.description, given."referenceType", given."referenceId",
+              (now() at time zone 'Asia/Tokyo')::date + given."expiresIn",
+              now() - make_interval(days => given."daysAgo")
+       from given cross join customer
+     )
+     update customers set "loyaltyPoints" = customer.opening + (select coalesce(sum(points), 0) from given)
+     from customer where customers.id = customer.id`,
+    [
+      email,
+      JSON.stringify(
+        transactions.map(
+          ({ type, points, daysAgo, description, expiresIn, reference }) => ({
+            type,
+            points,
+            daysAgo,
+            description: description ?? null,
+            expiresIn: expiresIn ?? null,
+            referenceType: reference?.type ?? null,
+            referenceId: reference?.id ?? null,
+          }),
+        ),
+      ),
+    ],
+  )
+}
+
+/**
+ * Lets a customer have been given 10 points at each of so many visits in
+ * the last hour, one a minute, after the opening balance of the seed.
+ */
+export const arrangeVisitPoints = async (
+  email: string,
+  count: number,
+): Promise<void> => {
+  await openedLongAgo(email)
+  await testApi().query(
+    `with customer as (
+       select id, "loyaltyPoints" as opening from customers where email = $1 and "deletedAt" is null
+     ), made as (
+       insert into customer_points ("customerId", "transactionType", points, balance, description, "createdAt")
+       select customer.id, 'earned', 10, customer.opening + 10 * visit, 'ご来店 ' || visit,
+              now() - interval '1 hour' + make_interval(mins => visit)
+       from customer cross join generate_series(1, $2::int) as visit
+     )
+     update customers set "loyaltyPoints" = customer.opening + 10 * $2::int
+     from customer where customers.id = customer.id`,
+    [email, count],
+  )
+}
+
+const storedPointsSchema = z.array(
+  z.object({
+    transactionType: z.string(),
+    points: z.number(),
+    balance: z.number(),
+    description: z.string().nullable(),
+    referenceType: z.string().nullable(),
+    referenceId: z.string().nullable(),
+    expiryDate: z.string().nullable(),
+  }),
+)
+
+/** The transactions of the points of a customer as they are stored, the latest first. */
+export const storedPointsOf = async (email: string) =>
+  storedPointsSchema.parse(
+    await testApi().query(
+      `select "transactionType"::text, points, balance, description, "referenceType",
+              "referenceId"::text, to_char("expiryDate", 'YYYY-MM-DD') as "expiryDate"
+       from customer_points
+       where "customerId" = (select id from customers where email = $1)
+       order by "createdAt" desc, id desc`,
+      [email],
+    ),
+  )
+
+const balanceSchema = z.tuple([z.object({ loyaltyPoints: z.number() })])
+
+/** The balance the ledger keeps for a customer. */
+export const storedBalanceOf = async (email: string): Promise<number> =>
+  balanceSchema.parse(
+    await testApi().query(
+      'select "loyaltyPoints" from customers where email = $1',
+      [email],
+    ),
+  )[0].loyaltyPoints

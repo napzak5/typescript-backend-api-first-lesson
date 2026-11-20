@@ -20,6 +20,8 @@ export type CustomerRecordProps = {
   changeHref: string
   /** The address of the screen that enters a booking of the customer at the salon */
   bookingHref: string
+  /** The address of the points of the customer: the balance, the history, and their recording */
+  pointsHref: string
   /** The address of the page of another customer: the one who referred this one */
   customerHref: (customerId: string) => string
   /**
@@ -66,6 +68,7 @@ export const CustomerRecord = ({
   timezone,
   changeHref,
   bookingHref,
+  pointsHref,
   customerHref,
   referrer,
 }: CustomerRecordProps) => (
@@ -100,7 +103,14 @@ export const CustomerRecord = ({
         ]}
       />
     </Card>
-    <Card title='来店とポイント'>
+    <Card
+      title='来店とポイント'
+      actions={
+        <ButtonLink href={pointsHref} variant='secondary'>
+          ポイントの履歴
+        </ButtonLink>
+      }
+    >
       <DescriptionList
         items={[
           {

@@ -54,6 +54,10 @@ export const arrangeSale = async ({
     ),
   )[0].id
 
+/** Lets a sale have been entered for nobody of the ledger, as for a guest who came in. */
+export const sellToNobody = (id: string): Promise<unknown> =>
+  testApi().query('update sales set "customerId" = null where id = $1', [id])
+
 /** Lets a sale be voided, as the owner would have done it meanwhile. */
 export const voidSale = (id: string): Promise<unknown> =>
   testApi().query(

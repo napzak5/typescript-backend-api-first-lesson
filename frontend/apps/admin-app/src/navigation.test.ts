@@ -7,10 +7,12 @@ import {
   customerEntryHrefOf,
   customerHistoryHrefOf,
   customerHrefOf,
+  customerPointsHrefOf,
   customerPreferencesHrefOf,
   customersHrefOf,
   customerVersionHrefOf,
   navigationFor,
+  pointEntryHrefOf,
   receiptHrefOf,
   refundHrefOf,
   saleChangeHrefOf,
@@ -118,6 +120,8 @@ describe('navigationFor', () => {
     ],
     ['the history of a customer', customerHistoryHrefOf(SALON_ID, 'x')],
     ['a version of a customer', customerVersionHrefOf(SALON_ID, 'x', 3)],
+    ['the points of a customer', customerPointsHrefOf(SALON_ID, 'x')],
+    ['the recording of points', pointEntryHrefOf(SALON_ID, 'x')],
   ])('should mark the customers as the screen of %s', (_case, pathname) => {
     expect(navigationFor('staff', pathname)).toEqual([
       { href: BOOKINGS, label: '予約', current: false },
@@ -150,6 +154,8 @@ describe('navigationFor', () => {
       customerPreferencesHrefOf(SALON_ID, 'customer'),
       customerHistoryHrefOf(SALON_ID, 'customer'),
       customerVersionHrefOf(SALON_ID, 'customer', 12),
+      customerPointsHrefOf(SALON_ID, 'customer'),
+      pointEntryHrefOf(SALON_ID, 'customer'),
     ]).toEqual([
       CUSTOMERS,
       `${CUSTOMERS}/new`,
@@ -158,7 +164,15 @@ describe('navigationFor', () => {
       `${CUSTOMERS}/customer/preferences`,
       `${CUSTOMERS}/customer/history`,
       `${CUSTOMERS}/customer/history/12`,
+      `${CUSTOMERS}/customer/points`,
+      `${CUSTOMERS}/customer/points/new`,
     ])
+  })
+
+  it('should write the address of the points recorded for a sale, of the kind the sale asks for', () => {
+    expect(
+      pointEntryHrefOf(SALON_ID, 'customer', { saleId: 'sale', kind: 'used' }),
+    ).toBe(`${CUSTOMERS}/customer/points/new?saleId=sale&kind=used`)
   })
 
   it('should write the address of a booking to put in for a customer, on a day', () => {

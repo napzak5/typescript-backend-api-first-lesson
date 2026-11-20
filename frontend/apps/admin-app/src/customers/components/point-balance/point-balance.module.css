@@ -1,0 +1,7 @@
+/* The balance stands out from the sentence below it */
+.balance {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}

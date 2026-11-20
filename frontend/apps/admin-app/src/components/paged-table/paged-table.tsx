@@ -23,10 +23,10 @@ export type PagedTableProps<Row> = Omit<TableProps<Row>, 'className'> & {
 
 /**
  * A table whose rows are read a page at a time. When its button adds rows,
- * the focus moves to the link of the first of them: whoever pressed
- * 「さらに表示」 goes on reading where the new rows begin. Rows that nobody
- * asked for (those of a list that was read again) leave the focus where it
- * is.
+ * the focus moves to the link of the first of them, or to the cell that
+ * names it when the row has no link: whoever pressed 「さらに表示」 goes on
+ * reading where the new rows begin. Rows that nobody asked for (those of a
+ * list that was read again) leave the focus where it is.
  */
 export const PagedTable = <Row,>({
   count,
@@ -43,11 +43,18 @@ export const PagedTable = <Row,>({
   // In the commit that shows the added rows, before they are painted
   useLayoutEffect(() => {
     if (asked.current && rows.length > shown.current) {
-      frame.current
+      const added = frame.current
         ?.querySelectorAll('tbody tr')
         .item(shown.current)
-        ?.querySelector<HTMLAnchorElement>('a')
-        ?.focus()
+      const link = added?.querySelector<HTMLAnchorElement>('a')
+      const header = added?.querySelector<HTMLTableCellElement>('th')
+      if (link !== null && link !== undefined) {
+        link.focus()
+      } else if (header !== null && header !== undefined) {
+        // Out of the order of the keyboard: the focus is put there, and it is no control
+        header.tabIndex = -1
+        header.focus()
+      }
       asked.current = false
     }
     shown.current = rows.length

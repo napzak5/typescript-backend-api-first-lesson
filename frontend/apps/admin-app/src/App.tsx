@@ -29,9 +29,11 @@ import { CustomerChangeScreen } from './customers/customer-change-screen'
 import { CustomerEntryScreen } from './customers/customer-entry-screen'
 import { CustomerHistoryScreen } from './customers/customer-history-screen'
 import { CustomerLedgerScreen } from './customers/customer-ledger-screen'
+import { CustomerPointsScreen } from './customers/customer-points-screen'
 import { CustomerPreferencesScreen } from './customers/customer-preferences-screen'
 import { CustomerScreen } from './customers/customer-screen'
 import { CustomerVersionScreen } from './customers/customer-version-screen'
+import { PointEntryScreen } from './customers/point-entry-screen'
 import { HomeScreen } from './home-screen'
 import { navigationFor } from './navigation'
 import { CheckoutScreen } from './sales/checkout-screen'
@@ -204,6 +206,14 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/customers/:customerId/history/:version'
                 element={<CustomerVersionScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId/points'
+                element={<CustomerPointsScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId/points/new'
+                element={<PointEntryScreen />}
               />
               <Route
                 path={SECURITY_PATH}
