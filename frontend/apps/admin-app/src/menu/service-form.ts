@@ -69,10 +69,11 @@ const OPTION_TYPE_ERROR = 'オプションの種類を選んでください。'
 const OPTION_TIME_ERROR = '追加の時間は、0 以上の整数（分）で入力してください。'
 const OPTION_PRICE_ERROR = '追加の料金は、0 以上の整数で入力してください。'
 const OPTION_QUANTITY_ERROR = '選べる数は、1 以上の整数で入力してください。'
-const CHECK_AGAIN = '入力した内容を確かめて、もう一度お試しください。'
+/** What is said when the API refused what the form has no control of */
+export const CHECK_AGAIN = '入力した内容を確かめて、もう一度お試しください。'
 
 /** What is said at the category when it was removed meanwhile */
-const CATEGORY_GONE =
+export const CATEGORY_GONE =
   'このカテゴリーは、その間に削除されていました。カテゴリーを選び直してください。'
 
 /** What is said at the package when one of its services cannot be one now */
@@ -84,7 +85,7 @@ const CONTAINED =
   '別のパッケージに入っているサービスは、パッケージにできません。'
 
 /** What is said when the account may not change the menu of the salon */
-const FORBIDDEN_MESSAGE =
+export const FORBIDDEN_MESSAGE =
   'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。'
 
 const imageSchema = z.httpUrl().check(z.maxLength(LONGEST_URL))
