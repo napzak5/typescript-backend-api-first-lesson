@@ -1,35 +1,64 @@
 import type {
   ModelsCustomerResponse,
+  ModelsCustomerVersionResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   Card,
   type FormErrors,
   LoadingIndicator,
   UnreadNotice,
+  useNotifications,
+  useScreenHeadingFocus,
 } from '@beauty-salon-frontend/ui'
-import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import { type RefObject, useLayoutEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import {
   bookingOfCustomerHrefOf,
   customerChangeHrefOf,
+  customerHistoryHrefOf,
   customerHrefOf,
   customerPreferencesHrefOf,
+  customersHrefOf,
 } from '../navigation'
-import { unreadMessageOf } from '../reading'
+import { NOT_FOUND, unreadMessageOf } from '../reading'
 import { dayAt } from '../salon-time'
 import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
+import { CustomerKeeping } from './components/customer-keeping/customer-keeping'
 import { CustomerPreferences } from './components/customer-preferences/customer-preferences'
 import {
   CustomerRecord,
   type CustomerRecordProps,
 } from './components/customer-record/customer-record'
 import { CustomerStatistics } from './components/customer-statistics/customer-statistics'
+import {
+  RemovedRecord,
+  type RemovedRecordProps,
+} from './components/removed-record/removed-record'
 import { StatisticsPeriod } from './components/statistics-period/statistics-period'
 import { type Referrer, referrerOf } from './customer-form'
+import {
+  afterRemoval,
+  afterRestoration,
+  changerNameOf,
+  mayKeepCustomers,
+} from './customer-history'
+import {
+  type Removal,
+  removeCustomer,
+  removedKeyOf,
+  restoreCustomer,
+} from './customer-history-api'
+import { customerQueryOf } from './customer-ledger'
 import {
   type Period,
   periodIn,
@@ -38,13 +67,17 @@ import {
   readPeriod,
 } from './customer-statistics'
 import {
+  CUSTOMER_LISTS,
+  type CustomerRead,
   customerKeyOf,
+  customerNameOf,
   preferencesKeyOf,
   readCustomer,
   readPreferences,
   readStatistics,
   statisticsKeyOf,
 } from './customers-api'
+import { RemovedCustomer } from './removed-customer'
 import { WithCustomer } from './with-customer'
 
 const TITLE = 'お客様の台帳'
@@ -194,49 +227,269 @@ const UsePart = ({ salon, customer }: PartProps) => {
 }
 
 /**
+ * Forgets what was read of a customer who left the ledger or came back:
+ * the lists that showed them or not, and what was read below their record
+ * (their history, versions, preferences, statistics). The record itself is
+ * then set to what the ledger holds now, where the screen reads it.
+ */
+const forgetCustomer = (queryClient: QueryClient, customerId: string): void => {
+  const key = customerKeyOf(customerId)
+  queryClient.removeQueries({ queryKey: CUSTOMER_LISTS })
+  queryClient.removeQueries({
+    queryKey: key,
+    predicate: ({ queryKey }) => queryKey.length > key.length,
+  })
+}
+
+type HeadingAfterMoveProps = {
+  /** The customer left the ledger here, or came back */
+  moved: RefObject<boolean>
+}
+
+/**
+ * The button that removed or brought back the customer went with what it
+ * did, and the screen is the same one: the focus goes to its heading, in
+ * the commit that shows the customer as they are now.
+ */
+const HeadingAfterMove = ({ moved }: HeadingAfterMoveProps) => {
+  const focusHeading = useScreenHeadingFocus()
+
+  useLayoutEffect(() => {
+    if (moved.current) {
+      moved.current = false
+      focusHeading()
+    }
+  }, [moved, focusHeading])
+
+  return null
+}
+
+type KeepingPartProps = PartProps & HeadingAfterMoveProps
+
+/**
+ * The history of the customer, and their removal from the ledger after a
+ * dialog has asked. A removed customer stays at the address, as the
+ * ledger kept them, and can be brought back from there.
+ */
+const KeepingPart = ({ salon, customer, moved }: KeepingPartProps) => {
+  const session = useSession()
+  const queryClient = useQueryClient()
+  const { notify } = useNotifications()
+  const [open, setOpen] = useState(false)
+  /** What went wrong with an attempt that can be made again: said in the dialog */
+  const [message, setMessage] = useState<string>()
+  /** What the API refused: said beside the buttons */
+  const [refusal, setRefusal] = useState<string>()
+  const name = customerNameOf(customer)
+
+  const left = (): void => {
+    moved.current = true
+    forgetCustomer(queryClient, customer.id)
+    queryClient.setQueryData(customerKeyOf(customer.id), NOT_FOUND)
+  }
+
+  const removal = useMutation({
+    mutationFn: () => removeCustomer(customer.id),
+    onSuccess: (outcome) =>
+      match(afterRemoval(outcome))
+        .with({ type: 'done' }, () => {
+          left()
+          notify({
+            tone: 'success',
+            message: `${name} 様を台帳から削除しました。`,
+          })
+        })
+        .with({ type: 'again' }, ({ message: said }) => setMessage(said))
+        .with({ type: 'refused' }, ({ message: said }) => {
+          setOpen(false)
+          setRefusal(said)
+        })
+        // Another account removed them first: the page says who and when
+        .with({ type: 'gone' }, left)
+        .exhaustive(),
+  })
+
+  return (
+    <CustomerKeeping
+      keepable={
+        session.type === 'signedIn' && mayKeepCustomers(session.user.role)
+      }
+      name={name}
+      historyHref={customerHistoryHrefOf(salon.id, customer.id)}
+      open={open}
+      onOpen={() => {
+        setMessage(undefined)
+        setRefusal(undefined)
+        setOpen(true)
+      }}
+      onClose={() => setOpen(false)}
+      message={message}
+      refusal={refusal}
+      pending={removal.isPending}
+      onRemove={() => removal.mutate()}
+    />
+  )
+}
+
+type RemovedPartProps = HeadingAfterMoveProps & {
+  salon: ModelsSalonResponse
+  version: ModelsCustomerVersionResponse
+  removal: Removal
+}
+
+/**
+ * A customer who left the ledger, as their latest version keeps them, and
+ * the way back for one who was removed. Another customer who took their
+ * address of mail in the meantime is to be changed first: the refusal
+ * leads to them.
+ */
+const RemovedPart = ({ salon, version, removal, moved }: RemovedPartProps) => {
+  const session = useSession()
+  const queryClient = useQueryClient()
+  const { notify } = useNotifications()
+  const [refusal, setRefusal] = useState<RemovedRecordProps['refusal']>()
+  const { customerId } = version
+
+  const restoration = useMutation({
+    mutationFn: () => restoreCustomer(customerId),
+    onSuccess: (outcome) =>
+      match(afterRestoration(outcome, version.email))
+        .with({ type: 'done' }, ({ customer }) => {
+          const read: CustomerRead = { type: 'found', customer }
+          moved.current = true
+          forgetCustomer(queryClient, customerId)
+          queryClient.setQueryData(customerKeyOf(customerId), read)
+          notify({
+            tone: 'success',
+            message: `${customerNameOf(customer)} 様を台帳に戻しました。`,
+          })
+        })
+        .with({ type: 'emailTaken' }, ({ message }) =>
+          setRefusal({
+            message,
+            link: {
+              href: `${customersHrefOf(salon.id)}?${customerQueryOf({ search: version.email, tags: [] })}`,
+              label: 'そのお客様を台帳で探す',
+            },
+          }),
+        )
+        .with({ type: 'refused' }, ({ message }) => setRefusal({ message }))
+        // The customer came back, or left otherwise, in the meantime: what the ledger holds now is read
+        .with({ type: 'changed' }, () => {
+          setRefusal(undefined)
+          void queryClient.invalidateQueries({
+            queryKey: removedKeyOf(customerId),
+            exact: true,
+          })
+          void queryClient.invalidateQueries({
+            queryKey: customerKeyOf(customerId),
+            exact: true,
+          })
+        })
+        .exhaustive(),
+  })
+
+  return (
+    <RemovedRecord
+      version={version}
+      removal={removal}
+      changer={changerNameOf(version.changedBy, {
+        me: session.type === 'signedIn' ? session.user.id : '',
+        customer: null,
+      })}
+      timezone={salon.timezone}
+      historyHref={customerHistoryHrefOf(salon.id, customerId)}
+      customerHref={(id) => customerHrefOf(salon.id, id)}
+      refusal={refusal}
+      pending={restoration.isPending}
+      onRestore={() => restoration.mutate()}
+    />
+  )
+}
+
+type CustomerPageProps = {
+  salon: ModelsSalonResponse
+}
+
+const CustomerPage = ({ salon }: CustomerPageProps) => {
+  const moved = useRef(false)
+
+  return (
+    <WithCustomer
+      salon={salon}
+      title={TITLE}
+      fresh={false}
+      removed={(customerId) => (
+        <>
+          <RemovedCustomer salon={salon} customerId={customerId} title={TITLE}>
+            {({ version, removal }) => (
+              <RemovedPart
+                key={`removed-${customerId}`}
+                salon={salon}
+                version={version}
+                removal={removal}
+                moved={moved}
+              />
+            )}
+          </RemovedCustomer>
+          <HeadingAfterMove moved={moved} />
+        </>
+      )}
+    >
+      {(customer) => (
+        <>
+          <RecordPart
+            key={`record-${customer.id}`}
+            customer={customer}
+            timezone={salon.timezone}
+            changeHref={customerChangeHrefOf(salon.id, customer.id)}
+            bookingHref={bookingOfCustomerHrefOf(
+              salon.id,
+              dayAt(new Date(), salon.timezone),
+              customer.id,
+            )}
+            customerHref={(customerId) => customerHrefOf(salon.id, customerId)}
+          />
+          {/* Another customer (the one who referred this one) is another part */}
+          <PreferencesPart
+            key={`preferences-${customer.id}`}
+            salon={salon}
+            customer={customer}
+          />
+          <UsePart
+            key={`use-${customer.id}`}
+            salon={salon}
+            customer={customer}
+          />
+          <KeepingPart
+            key={`keeping-${customer.id}`}
+            salon={salon}
+            customer={customer}
+            moved={moved}
+          />
+          <HeadingAfterMove moved={moved} />
+        </>
+      )}
+    </WithCustomer>
+  )
+}
+
+/**
  * A customer of the ledger: what the ledger keeps of them, what they want
  * the salons to keep in mind, and what they did at the salon of the
  * address. From here a booking of the customer is entered, and the ledger
- * is changed.
+ * is changed; an owner or a manager reads its history, and removes the
+ * customer from it.
+ *
+ * A customer who was removed stays at the address for an owner or a
+ * manager, as the ledger kept them, and can be brought back from there.
  */
 export const CustomerScreen = () => {
   const { salonId = '' } = useParams()
 
   return (
     <WithSalon salonId={salonId} title={TITLE}>
-      {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh={false}>
-          {(customer) => (
-            <>
-              <RecordPart
-                key={`record-${customer.id}`}
-                customer={customer}
-                timezone={salon.timezone}
-                changeHref={customerChangeHrefOf(salon.id, customer.id)}
-                bookingHref={bookingOfCustomerHrefOf(
-                  salon.id,
-                  dayAt(new Date(), salon.timezone),
-                  customer.id,
-                )}
-                customerHref={(customerId) =>
-                  customerHrefOf(salon.id, customerId)
-                }
-              />
-              {/* Another customer (the one who referred this one) is another part */}
-              <PreferencesPart
-                key={`preferences-${customer.id}`}
-                salon={salon}
-                customer={customer}
-              />
-              <UsePart
-                key={`use-${customer.id}`}
-                salon={salon}
-                customer={customer}
-              />
-            </>
-          )}
-        </WithCustomer>
-      )}
+      {(salon) => <CustomerPage key={salon.id} salon={salon} />}
     </WithSalon>
   )
 }

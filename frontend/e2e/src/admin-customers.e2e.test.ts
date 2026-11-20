@@ -4,7 +4,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { ADMIN_START, enterCredentials, heading, STAFF } from './sign-in'
+import { ADMIN_START, enterCredentials, heading, OWNER, STAFF } from './sign-in'
 
 /*
  * A customer the ledger does not have yet, who calls for a booking: the
@@ -292,6 +292,136 @@ test.describe('the referrer and the preferences of a customer, in a browser', ()
   })
 })
 
+/** The customer of the seed data the removal takes out of the ledger, and brings back */
+const KENJI = { email: 'customer2@example.com', name: 'Yamamoto Kenji' }
+
+/** Lets the bookings of a customer that are not finished have been cancelled: the customer may be removed. */
+const finishBookingsOf = (api: TestApi, email: string): Promise<unknown> =>
+  api.query(
+    `update bookings set status = 'cancelled', "cancelledAt" = now(), "updatedAt" = now()
+     where "customerId" = (select id from customers where email = $1 and "deletedAt" is null)
+       and status in ('draft', 'pending', 'confirmed', 'in_progress')`,
+    [email],
+  )
+
+const presenceSchema = z.tuple([z.object({ present: z.boolean() })])
+
+/** Whether a customer is in the ledger: there, and not removed. */
+const isInLedger = async (api: TestApi, id: string): Promise<boolean> =>
+  presenceSchema.parse(
+    await api.query(
+      'select exists (select 1 from customers where id = $1 and "deletedAt" is null) as present',
+      [id],
+    ),
+  )[0].present
+
+/** The rows of the history: the version, what made it and who, as the table shows them */
+const versionsShown = async (page: Page): Promise<string[][]> => {
+  const rows = await page
+    .getByRole('table', { name: '版の一覧' })
+    .getByRole('row')
+    .all()
+
+  return Promise.all(
+    rows.slice(1).map(async (row) => {
+      const [operation = '', , changer = ''] = await row
+        .getByRole('cell')
+        .allTextContents()
+
+      return [
+        (await row.getByRole('rowheader').textContent()) ?? '',
+        operation,
+        changer,
+      ]
+    }),
+  )
+}
+
+test.describe('the removal and the history of a customer, in a browser', () => {
+  test('should remove a customer after a dialog that keeps the focus and gives it back, read their history and a version, and bring them back, with the keyboard', async ({
+    page,
+    api,
+  }) => {
+    // Arrange
+    const tokyo = await salonId(api)
+    await finishBookingsOf(api, KENJI.email)
+    const kenji = await customerIdOf(api, KENJI.email)
+    await page.goto(`${ADMIN.origin}/salons/${tokyo}/customers/${kenji}`)
+    await enterCredentials(page, OWNER, api.seedPassword)
+    await expect(heading(page, 'お客様の台帳')).toBeFocused()
+    const remove = page.getByRole('button', { name: '台帳から削除する' })
+    const dialog = page.getByRole('dialog', {
+      name: `${KENJI.name} 様を台帳から削除しますか？`,
+    })
+
+    // Act: the dialog opened, and given up with the Escape key
+    await pressWithTheKeyboard(remove)
+
+    // Assert: the focus is in the dialog, and comes back to the button
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByRole('button', { name: '戻る' })).toBeFocused()
+    await expectSoundPage(page)
+    await page.keyboard.press('Escape')
+    await expect(dialog).toBeHidden()
+    await expect(remove).toBeFocused()
+
+    // Act: the removal confirmed
+    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(dialog.getByRole('button', { name: '削除する' }))
+
+    // Assert: the page shows the customer as the ledger kept them, with the focus on its heading
+    await expect(heading(page, 'お客様の台帳')).toBeFocused()
+    await expect(
+      page.getByText(`${KENJI.name} 様を台帳から削除しました。`),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('region', { name: '削除されたときの台帳' }),
+    ).toBeVisible()
+    await expectSoundPage(page)
+    expect(await isInLedger(api, kenji)).toBe(false)
+
+    // Act: the history, and the version of the removal
+    await pressWithTheKeyboard(page.getByRole('link', { name: '変更履歴' }))
+
+    // Assert
+    await expect(heading(page, '変更履歴')).toBeFocused()
+    await expect(page).toHaveURL(
+      `${ADMIN.origin}/salons/${tokyo}/customers/${kenji}/history`,
+    )
+    await expect(page.getByRole('table', { name: '版の一覧' })).toBeVisible()
+    expect(await versionsShown(page)).toEqual([
+      ['版 2', '削除', 'あなた'],
+      ['版 1', '記録の開始', ''],
+    ])
+    await expectSoundPage(page)
+
+    // Act
+    await pressWithTheKeyboard(page.getByRole('link', { name: '版 2' }))
+
+    // Assert
+    await expect(heading(page, '台帳の版')).toBeFocused()
+    await expect(page.getByText(/^版 2・削除・.+・あなた$/)).toBeVisible()
+    await expectSoundPage(page)
+
+    // Act: back to the page of the customer, and the customer brought back
+    await pressWithTheKeyboard(page.getByRole('link', { name: '変更履歴へ' }))
+    await expect(heading(page, '変更履歴')).toBeFocused()
+    await pressWithTheKeyboard(
+      page.getByRole('link', { name: 'お客様の台帳へ' }),
+    )
+    await expect(heading(page, 'お客様の台帳')).toBeFocused()
+    await pressWithTheKeyboard(page.getByRole('button', { name: '台帳に戻す' }))
+
+    // Assert
+    await expect(heading(page, 'お客様の台帳')).toBeFocused()
+    await expect(
+      page.getByText(`${KENJI.name} 様を台帳に戻しました。`),
+    ).toBeVisible()
+    await expect(recorded(page, 'お名前')).toHaveText(KENJI.name)
+    expect(await isInLedger(api, kenji)).toBe(true)
+  })
+})
+
 /** A text that has nowhere to break: an address, as somebody pastes it */
 const UNBROKEN = `https://example.com/${'a'.repeat(120)}`
 
@@ -387,6 +517,49 @@ test.describe('the ledger of the customers, on a screen as narrow as a phone', (
     await page.getByRole('link', { name: '好み設定を直す' }).click()
     await expect(heading(page, '好み設定を直す')).toBeFocused()
     await expect(textbox(page, '特別な要望')).toHaveValue(UNBROKEN)
+    await expectSoundPage(page)
+  })
+
+  test('should fit the dialog of a removal, the page of a customer who left the ledger, their history and a version with what it changed into the width', async ({
+    page,
+    api,
+  }) => {
+    // Arrange: the telephone number changed, so that a version changed something
+    const tokyo = await salonId(api)
+    await finishBookingsOf(api, KENJI.email)
+    const kenji = await customerIdOf(api, KENJI.email)
+    await page.goto(`${ADMIN.origin}/salons/${tokyo}/customers/${kenji}/edit`)
+    await enterCredentials(page, OWNER, api.seedPassword)
+    await expect(heading(page, '台帳を直す')).toBeVisible()
+    await textbox(page, '電話番号').fill('080-3333-4444')
+    await page.getByRole('button', { name: '変更を保存する' }).click()
+    await expect(recorded(page, '電話番号')).toHaveText('080-3333-4444')
+
+    // Act, Assert: the dialog of the removal
+    await page.getByRole('button', { name: '台帳から削除する' }).click()
+    const dialog = page.getByRole('dialog', {
+      name: `${KENJI.name} 様を台帳から削除しますか？`,
+    })
+    await expect(dialog).toBeVisible()
+    await expectSoundPage(page)
+    await dialog.getByRole('button', { name: '削除する' }).click()
+
+    // Act, Assert: the page of the customer who left the ledger
+    await expect(
+      page.getByRole('region', { name: '削除されたときの台帳' }),
+    ).toBeVisible()
+    await expectSoundPage(page)
+
+    // Act, Assert: the history
+    await page.getByRole('link', { name: '変更履歴' }).click()
+    await expect(page.getByRole('table', { name: '版の一覧' })).toBeVisible()
+    await expectSoundPage(page)
+
+    // Act, Assert: the version that changed the telephone number
+    await page.getByRole('link', { name: '版 2' }).click()
+    await expect(
+      page.getByRole('table', { name: '前の版から変えた項目' }),
+    ).toBeVisible()
     await expectSoundPage(page)
   })
 })

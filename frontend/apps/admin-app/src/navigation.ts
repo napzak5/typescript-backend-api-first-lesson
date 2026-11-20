@@ -90,6 +90,19 @@ export const customerPreferencesHrefOf = (
   customerId: string,
 ): string => `${customerHrefOf(salonId, customerId)}/preferences`
 
+/** The history of the versions of a customer. */
+export const customerHistoryHrefOf = (
+  salonId: string,
+  customerId: string,
+): string => `${customerHrefOf(salonId, customerId)}/history`
+
+/** A version of a customer. */
+export const customerVersionHrefOf = (
+  salonId: string,
+  customerId: string,
+  version: number,
+): string => `${customerHistoryHrefOf(salonId, customerId)}/${version}`
+
 /** The screen that puts a booking into the ledger of a salon for a customer, opened on a day. */
 export const bookingOfCustomerHrefOf = (
   salonId: string,
