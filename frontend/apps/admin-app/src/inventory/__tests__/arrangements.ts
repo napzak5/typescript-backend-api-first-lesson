@@ -276,3 +276,34 @@ export const reservedMeanwhile = async (
     [inventoryId, reserved],
   )
 }
+
+const countsSchema = z.array(
+  z.object({
+    productCode: z.string(),
+    currentStock: z.string(),
+    availableStock: z.string(),
+    counted: z.boolean(),
+    countedBy: z.string().nullable(),
+  }),
+)
+
+/**
+ * The stock of the rows of a salon as the database keeps them, in the
+ * order of the codes of their products, with whether they were counted and
+ * the name of the member of the staff who counted them last.
+ */
+export const countsOf = async (salon: string) =>
+  countsSchema.parse(
+    await testApi().query(
+      `select p."productCode", i."currentStock"::text,
+              i."availableStock"::text, i."lastCountedAt" is not null as counted,
+              st."displayName" as "countedBy"
+       from inventory i
+         join products p on p.id = i."productId"
+         join salons s on s.id = i."salonId"
+         left join staff st on st.id = i."lastCountedBy"
+       where s.name = $1
+       order by p."productCode", i."lotNumber" nulls first, i.id`,
+      [salon],
+    ),
+  )

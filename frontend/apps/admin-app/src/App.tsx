@@ -47,8 +47,10 @@ import { InventoryScreen } from './inventory/inventory-screen'
 import { MovementEntryScreen } from './inventory/movement-entry-screen'
 import { MovementsScreen } from './inventory/movements-screen'
 import { StockChangeScreen } from './inventory/stock-change-screen'
+import { StockCountScreen } from './inventory/stock-count-screen'
 import { StockEntryScreen } from './inventory/stock-entry-screen'
 import { StockRowScreen } from './inventory/stock-row-screen'
+import { StockValueScreen } from './inventory/stock-value-screen'
 import { CategoryChangeScreen } from './menu/category-change-screen'
 import { CategoryEntryScreen } from './menu/category-entry-screen'
 import { MenuScreen } from './menu/menu-screen'
@@ -398,6 +400,14 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/inventory/new'
                 element={<StockEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/inventory/count'
+                element={<StockCountScreen />}
+              />
+              <Route
+                path='/salons/:salonId/inventory/value'
+                element={<StockValueScreen />}
               />
               <Route
                 path='/salons/:salonId/inventory/:inventoryId'

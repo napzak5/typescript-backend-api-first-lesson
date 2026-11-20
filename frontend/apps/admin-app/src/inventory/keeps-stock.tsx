@@ -14,15 +14,19 @@ export const useKeepsStock = (): boolean => {
 type StockForbiddenProps = {
   salon: ModelsSalonResponse
   title: string
+  /** What the account may not do here, and who may; by default, change the rows */
+  message?: string | undefined
 }
 
-/** What a screen that changes the stock rows says to an account whose role does not change them. */
-export const StockForbidden = ({ salon, title }: StockForbiddenProps) => (
+/** What a screen for the keepers of the stock says to an account whose role does not keep it. */
+export const StockForbidden = ({
+  salon,
+  title,
+  message = 'このアカウントでは、在庫の行を変えられません。在庫の行を変えられるのは、サロンのオーナーとマネージャーと、管理者です。',
+}: StockForbiddenProps) => (
   <>
     <PageHeader title={title} description={salon.name} />
-    <p>
-      このアカウントでは、在庫の行を変えられません。在庫の行を変えられるのは、サロンのオーナーとマネージャーと、管理者です。
-    </p>
+    <p>{message}</p>
     <p>
       <ButtonLink href={inventoryHrefOf(salon.id)} variant='secondary'>
         在庫へ戻る
