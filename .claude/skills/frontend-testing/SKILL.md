@@ -29,8 +29,9 @@ The styling and component rules are in the skill `frontend-ui`.
 | A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/sign-in.e2e.test.ts` |
 
 `@beauty-salon-frontend/testing` holds what the tests share: the setup
-(`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, and the
-methods of the `dialog` element that jsdom lacks), `findAccessibilityViolations`
+(`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, the
+methods of the `dialog` element that jsdom lacks, and the saving of a file
+a page made), `savedFiles`, `findAccessibilityViolations`
 and `itShouldBeAccessibleInEveryStory`, and the real API of the integration
 tests (`@beauty-salon-frontend/testing/api`). The browser tests take from it
 what knows no test runner: how to start the test server and what to ask it
@@ -151,6 +152,15 @@ describe('Button', () => {
   `main`. `PageHeader` is therefore a `div`; when a page has several regions
   of one role (`status`, `region`), look inside the one that is meant with
   `within(screen.getByRole('main'))`.
+- jsdom has no `URL.createObjectURL`, and a link that names a file to save
+  (`download`) saves nothing. `@beauty-salon-frontend/testing/setup` gives
+  it object URLs and keeps the file a pressed link saves:
+  `await savedFiles()` are the files of this test, oldest first, each with
+  its name, its type and its text (the mark of the byte order kept as
+  `\uFEFF`). A screen test of an export asserts on them, against the real
+  API; a browser test waits for the download of the browser
+  (`page.waitForEvent('download')`) and reads the bytes it saved, which is
+  where the name crossing origins (CORS) is seen.
 - jsdom has no `showModal()` and no `close()` for the `dialog` element.
   `@beauty-salon-frontend/testing/setup` gives it both: the `open` attribute
   and the `close` event, which is what the test of a component asserts. The

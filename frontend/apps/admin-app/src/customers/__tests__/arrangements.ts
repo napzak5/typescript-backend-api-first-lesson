@@ -248,6 +248,19 @@ export const arrangeCustomers = (
     [count, tag],
   )
 
+/**
+ * Lets the ledger have a crowd of customers, each with the tag: more than
+ * a page, or an export, holds. Their names are 「Crowd 00001」 and so on.
+ */
+export const arrangeCrowd = (count: number, tag: string): Promise<unknown> =>
+  testApi().query(
+    `insert into customers ("lastName", "firstName", email, "phoneNumber", tags)
+     select 'Crowd', lpad(n::text, 5, '0'), 'crowd-' || n || '@example.com',
+            '+81-90-' || lpad(n::text, 8, '0'), array[$2::text]
+     from generate_series(1, $1::int) as n`,
+    [count, tag],
+  )
+
 /** Lets the bookings of a customer that are not finished have been cancelled: the customer may be removed. */
 export const finishBookingsOf = (email: string): Promise<unknown> =>
   testApi().query(

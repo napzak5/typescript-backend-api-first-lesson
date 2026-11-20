@@ -1,0 +1,6 @@
+/* The sentence, why no file was saved, and the button, one below the other */
+.requests {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-4);
+}

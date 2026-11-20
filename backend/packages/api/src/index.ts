@@ -155,6 +155,9 @@ export const createApp = ({
       origin: settings.cors.origins,
       credentials: settings.cors.credentials,
       maxAge: settings.cors.maxAgeSeconds,
+      // The name of a file the API answers with (the exports of the
+      // customers): a page of another origin reads it to save the file
+      exposedHeaders: ['Content-Disposition'],
     }),
   )
 

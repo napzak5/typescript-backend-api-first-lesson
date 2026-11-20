@@ -3,6 +3,7 @@ import type {
   ModelsCustomerVersionResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { saveFile } from '@beauty-salon-frontend/io'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -41,12 +42,15 @@ import {
   CustomerRecord,
   type CustomerRecordProps,
 } from './components/customer-record/customer-record'
+import { CustomerRequests } from './components/customer-requests/customer-requests'
 import { CustomerStatistics } from './components/customer-statistics/customer-statistics'
 import {
   RemovedRecord,
   type RemovedRecordProps,
 } from './components/removed-record/removed-record'
 import { StatisticsPeriod } from './components/statistics-period/statistics-period'
+import { afterDataExport } from './customer-export'
+import { exportCustomerData } from './customer-export-api'
 import { type Referrer, referrerOf } from './customer-form'
 import {
   afterRemoval,
@@ -249,6 +253,20 @@ type HeadingAfterMoveProps = {
 }
 
 /**
+ * The customer left the ledger, here or by another account: the page
+ * shows them as removed, and its heading takes the focus.
+ */
+const showRemoved = (
+  queryClient: QueryClient,
+  customerId: string,
+  moved: RefObject<boolean>,
+): void => {
+  moved.current = true
+  forgetCustomer(queryClient, customerId)
+  queryClient.setQueryData(customerKeyOf(customerId), NOT_FOUND)
+}
+
+/**
  * The button that removed or brought back the customer went with what it
  * did, and the screen is the same one: the focus goes to its heading, in
  * the commit that shows the customer as they are now.
@@ -284,11 +302,7 @@ const KeepingPart = ({ salon, customer, moved }: KeepingPartProps) => {
   const [refusal, setRefusal] = useState<string>()
   const name = customerNameOf(customer)
 
-  const left = (): void => {
-    moved.current = true
-    forgetCustomer(queryClient, customer.id)
-    queryClient.setQueryData(customerKeyOf(customer.id), NOT_FOUND)
-  }
+  const left = (): void => showRemoved(queryClient, customer.id, moved)
 
   const removal = useMutation({
     mutationFn: () => removeCustomer(customer.id),
@@ -330,6 +344,49 @@ const KeepingPart = ({ salon, customer, moved }: KeepingPartProps) => {
       refusal={refusal}
       pending={removal.isPending}
       onRemove={() => removal.mutate()}
+    />
+  )
+}
+
+type RequestsPartProps = Omit<PartProps, 'salon'> & HeadingAfterMoveProps
+
+/**
+ * What the salon answers when the customer asks for the data held of them:
+ * the data is saved as a file. A customer who left the ledger meanwhile
+ * is shown as removed, as after a removal by another account.
+ */
+const RequestsPart = ({ customer, moved }: RequestsPartProps) => {
+  const session = useSession()
+  const queryClient = useQueryClient()
+  const { notify } = useNotifications()
+  /** Why no file was saved: said above the button */
+  const [message, setMessage] = useState<string>()
+  const name = customerNameOf(customer)
+
+  const exporting = useMutation({
+    mutationFn: () => exportCustomerData(customer.id),
+    onMutate: () => setMessage(undefined),
+    onSuccess: (outcome) =>
+      match(afterDataExport(outcome, name))
+        .with({ type: 'saved' }, ({ file, message: said }) => {
+          saveFile(file)
+          notify({ tone: 'success', message: said })
+        })
+        .with({ type: 'said' }, ({ message: said }) => setMessage(said))
+        .with({ type: 'gone' }, () =>
+          showRemoved(queryClient, customer.id, moved),
+        )
+        .exhaustive(),
+  })
+
+  return (
+    <CustomerRequests
+      answerable={
+        session.type === 'signedIn' && mayKeepCustomers(session.user.role)
+      }
+      exporting={exporting.isPending}
+      message={message}
+      onExport={() => exporting.mutate()}
     />
   )
 }
@@ -465,6 +522,11 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
             salon={salon}
             customer={customer}
           />
+          <RequestsPart
+            key={`requests-${customer.id}`}
+            customer={customer}
+            moved={moved}
+          />
           <KeepingPart
             key={`keeping-${customer.id}`}
             salon={salon}
@@ -482,7 +544,8 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
  * A customer of the ledger: what the ledger keeps of them, what they want
  * the salons to keep in mind, and what they did at the salon of the
  * address. From here a booking of the customer is entered, and the ledger
- * is changed; an owner or a manager reads its history, and removes the
+ * is changed; an owner or a manager exports the data of the customer when
+ * they ask for it, reads the history of the ledger, and removes the
  * customer from it.
  *
  * A customer who was removed stays at the address for an owner or a

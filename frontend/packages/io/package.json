@@ -5,6 +5,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@beauty-salon-frontend/testing": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",

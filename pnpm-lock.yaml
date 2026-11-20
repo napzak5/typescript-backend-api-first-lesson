@@ -571,6 +571,9 @@ importers:
       '@beauty-salon-frontend/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@beauty-salon-frontend/io':
+        specifier: workspace:*
+        version: link:../../packages/io
       '@beauty-salon-frontend/preferences':
         specifier: workspace:*
         version: link:../../packages/preferences
@@ -930,6 +933,9 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
+      '@beauty-salon-frontend/testing':
+        specifier: workspace:*
+        version: link:../testing
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
