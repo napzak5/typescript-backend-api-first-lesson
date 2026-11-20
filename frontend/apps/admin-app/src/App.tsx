@@ -30,6 +30,7 @@ import { CustomerEntryScreen } from './customers/customer-entry-screen'
 import { CustomerHistoryScreen } from './customers/customer-history-screen'
 import { CustomerImportScreen } from './customers/customer-import-screen'
 import { CustomerLedgerScreen } from './customers/customer-ledger-screen'
+import { CustomerMergeScreen } from './customers/customer-merge-screen'
 import { CustomerPointsScreen } from './customers/customer-points-screen'
 import { CustomerPreferencesScreen } from './customers/customer-preferences-screen'
 import { CustomerScreen } from './customers/customer-screen'
@@ -211,6 +212,10 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/customers/:customerId/history/:version'
                 element={<CustomerVersionScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId/merge'
+                element={<CustomerMergeScreen />}
               />
               <Route
                 path='/salons/:salonId/customers/:customerId/points'

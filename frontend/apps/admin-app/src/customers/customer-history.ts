@@ -9,16 +9,16 @@ import type {
   Removal,
 } from './customer-history-api'
 
-/** The roles that may take a customer out of the ledger, bring one back, and read the history */
+/** The roles that may take a customer out of the ledger, bring one back, merge two, and read the history */
 const KEEPERS: readonly string[] = ['owner', 'manager', 'admin']
 
-/** Whether an account of the role may take customers out of the ledger, bring them back and read their history. */
+/** Whether an account of the role may take customers out of the ledger, bring them back, merge them and read their history. */
 export const mayKeepCustomers = (role: string): boolean =>
   KEEPERS.includes(role)
 
 /** What a member of the staff is told where the ledger would be kept. */
 export const KEPT_BY_OTHERS =
-  '台帳からの削除と変更履歴は、オーナーとマネージャーができます。'
+  '台帳からの削除と統合、変更履歴は、オーナーとマネージャーができます。'
 
 const OPERATION_NAMES: Record<ModelsCustomerVersionOperationType, string> = {
   baseline: '記録の開始',

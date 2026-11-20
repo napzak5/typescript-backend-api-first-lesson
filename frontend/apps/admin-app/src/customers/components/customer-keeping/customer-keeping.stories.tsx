@@ -14,6 +14,7 @@ const meta: Meta<typeof CustomerKeeping> = {
     keepable: true,
     name: '山田 花子',
     historyHref: `/salons/${salon.id}/customers/${aCustomer().id}/history`,
+    mergeHref: `/salons/${salon.id}/customers/${aCustomer().id}/merge`,
     open: false,
     onOpen: fn(),
     onClose: fn(),
