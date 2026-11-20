@@ -1039,7 +1039,14 @@ test.describe('the admin application', () => {
 
 - The file is `src/<subject>.e2e.test.ts`. `test` and `expect` come from
   `./fixtures`, never from `@playwright/test`: the `test` of the fixtures is
-  what gives the API a fresh database after every test.
+  what gives the API a fresh database after every test, and it keeps the
+  browser from reaching anything outside this machine (the seed data has
+  photos at addresses of example.com). A test that needs an image at an
+  address of the web answers it in the browser
+  (`page.route(address, (route) => route.fulfill(…))`,
+  `src/admin-treatment-photos.e2e.test.ts`): the API takes addresses of
+  domain names only, so an address of the application under test will
+  not do.
 - The fixture `api` is what `testApi()` is in an integration test: `origin`,
   `seedPassword`, `query`, `authenticatorCode`, `mails` and `mailedLink`.
   `await page.goto(await api.mailedLink(email))` is the person pressing the
