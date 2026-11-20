@@ -1,0 +1,50 @@
+/* How many are chosen, what is wrong with the choice, and what can be done */
+.chosen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-large);
+  background-color: var(--color-accent-subtle);
+}
+
+.count {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+}
+
+/* The buttons one below the other, side by side where there is room */
+.actions {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+@media (min-width: 40rem) {
+  .actions {
+    grid-auto-flow: column;
+    justify-content: start;
+  }
+}
+
+/* What went wrong, the way and the tag */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* What went wrong, and who are removed */
+.removal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.names {
+  display: grid;
+  gap: var(--space-1);
+  padding-inline-start: var(--space-5);
+  list-style: disc;
+}

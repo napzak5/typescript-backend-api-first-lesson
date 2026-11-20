@@ -13,6 +13,11 @@ export type CheckboxProps = Omit<
   description?: string | undefined
   /** What is wrong with the choice */
   error?: string | undefined
+  /**
+   * The label is read, not shown: for a checkbox whose meaning the place
+   * it stands in shows, as the one that chooses the row of a table
+   */
+  labelHidden?: boolean | undefined
 }
 
 /**
@@ -24,6 +29,7 @@ export const Checkbox = ({
   label,
   description,
   error,
+  labelHidden = false,
   id,
   required,
   className,
@@ -44,7 +50,9 @@ export const Checkbox = ({
             type='checkbox'
             required={required}
           />
-          <span>{label}</span>
+          <span className={labelHidden ? choiceStyles['hidden'] : undefined}>
+            {label}
+          </span>
         </label>
         {required === true && <RequiredMark />}
       </div>

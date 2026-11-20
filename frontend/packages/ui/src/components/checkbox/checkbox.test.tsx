@@ -153,4 +153,24 @@ describe('Checkbox', () => {
     expect(checkbox).not.toHaveClass('in-form')
     expect(checkbox.closest('.field')).toHaveClass('in-form')
   })
+
+  it('should be named by a label that is read and not shown, when its place shows what it means', async () => {
+    // Act
+    await stories.LabelHidden.run()
+    const checkbox = screen.getByRole('checkbox', {
+      name: '山田 花子 様を選ぶ',
+    })
+
+    // Assert
+    expect(screen.getByText('山田 花子 様を選ぶ')).toHaveClass('hidden')
+    expect(checkbox.closest('label')).toHaveTextContent('山田 花子 様を選ぶ')
+  })
+
+  it('should show its label unless it is told not to', async () => {
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(screen.getByText(LABEL)).not.toHaveClass('hidden')
+  })
 })

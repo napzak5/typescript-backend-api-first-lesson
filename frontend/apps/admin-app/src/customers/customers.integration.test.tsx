@@ -201,6 +201,8 @@ describe('the ledger of the customers, against the API', () => {
       expect(namesIn('顧客台帳')).toEqual(EVERYONE)
       expect(rowsOf('顧客台帳')).toContainEqual([
         KENJI.name,
+        // The cell that chooses the customer: the label of its checkbox, read by a screen reader
+        `${KENJI.name} 様を選ぶ`,
         'ヤマモト ケンジ',
         '+81-80-9876-5432',
         'シルバー',
@@ -863,6 +865,8 @@ describe('the ledger of the customers, against the API', () => {
       await theLedger()
       expect(rowsOf('顧客台帳')).toContainEqual([
         KENJI.name,
+        // The cell that chooses the customer: the label of its checkbox, read by a screen reader
+        `${KENJI.name} 様を選ぶ`,
         'ヤマモト ケンジ',
         '080-1111-2222',
         'シルバー',
