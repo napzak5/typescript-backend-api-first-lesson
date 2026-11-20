@@ -38,7 +38,7 @@ this one: a component is not done without its stories and its test.
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
 | The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording, the customers of a file, the merge, the exports, the requests to have the data erased | `frontend/apps/admin-app/src/customers/` |
-| The charts of the customers in the admin application: the chart, the form with the rows of the treatments had before, the search of the charts | `frontend/apps/admin-app/src/charts/` |
+| The charts of the customers in the admin application: the chart, the form with the rows of the treatments had before, the search of the charts, the allergies of a customer with their form and their removal | `frontend/apps/admin-app/src/charts/` |
 | A file the API answers with, saved by the browser: its name, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `saveFile`) |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
@@ -1541,11 +1541,34 @@ The charts of the admin application are the example to read:
   wide** (`.text` of `ChartTable`, `.notes` of `ChartRecord`), as the
   values of the merge do: a cell whose text may break without a least
   width is as narrow as a character in a table that scrolls, and its
-  row as tall as the text is long.
+  row as tall as the text is long. A table of seven columns keeps its
+  long texts at least 10rem wide and lets its row header break its line
+  at 8rem, with the actions of a row one below the other (`AllergyList`):
+  it fits the page from 1180px on, and scrolls on a narrower screen.
 - **A list of records that name their customer by ID reads the customers
   of the page at once** (`readCustomers` of `customers-api.ts`), and a
   customer who left the ledger between the two reads is said to have
   left, without a link.
+- **A record of which the API reads none by itself is found in its
+  list** (`findAllergy` of `allergies-api.ts`): the list is read to its
+  end in its largest pages (`toTheEnd`), and an ID that is none, or of
+  the record of another customer, is not found and says so, with the way
+  back. Its form opens once it was read anew, as any form that changes.
+- **A 404 that may name two things is read again, not guessed**: the API
+  answers 404 to a change of an allergy both when its customer left the
+  ledger and when the allergy was removed. The screen reads the customer
+  and the allergy again (the key of the customer, below which both are),
+  and shows what it finds: the customer not found, or the allergy not
+  there.
+- **A row a list removes after a dialog gives the focus to the heading
+  of its part** (`AllergyList`): the button of the row goes with it. The
+  dialog names the row (「強い香料の記録を削除しますか？」), the buttons of
+  the rows say which row they are for to assistive technology, and what
+  changed meanwhile closes the dialog and is said under the heading. The
+  roles that may not remove see no button, and are told who does it.
+- **A state that a colour sets apart is said in a word first**
+  (`severityToneOf`): the two heaviest severities are a badge of a tone
+  of their own, every severity is its word.
 
 ## Screens that a mailed link opens
 

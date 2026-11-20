@@ -1,4 +1,7 @@
-import type { ModelsMedicalChartResponse } from '@beauty-salon-frontend/api-client'
+import type {
+  ModelsCustomerAllergyResponse,
+  ModelsMedicalChartResponse,
+} from '@beauty-salon-frontend/api-client'
 import { aCustomer } from '../../bookings/components/examples'
 
 /** A chart of the customer of the examples, with what it changes. */
@@ -29,3 +32,42 @@ export const aChart = (
   updatedAt: '2026-11-18T05:30:00.000Z',
   ...changes,
 })
+
+/** An allergy of the customer of the examples, with what it changes. */
+export const anAllergy = (
+  changes: Partial<ModelsCustomerAllergyResponse> = {},
+): ModelsCustomerAllergyResponse => ({
+  id: 'a7c9e1f3-5b2d-4e6f-8a0c-2d4f6b8e0a13',
+  allergyType: 'chemical',
+  allergenName: 'パラフェニレンジアミン（PPD）',
+  severityType: 'severe',
+  symptoms: 'カラー剤で頭皮に赤みとかゆみが出た。',
+  notes: 'ジアミンを含まないカラー剤を使う。\nパッチテストを先に。',
+  confirmedDate: '2025-06-10',
+  createdAt: '2025-06-10T03:00:00.000Z',
+  updatedAt: '2025-06-10T03:00:00.000Z',
+  ...changes,
+})
+
+/** The allergies of the customer of the examples, the heaviest first. */
+export const allergies = (): ModelsCustomerAllergyResponse[] => [
+  anAllergy({
+    id: 'b8d0f2a4-6c3e-4f7a-9b1d-3e5a7c9f1b24',
+    allergyType: 'latex',
+    allergenName: 'ラテックス',
+    severityType: 'life_threatening',
+    symptoms: '手袋が触れたところに、じんましんと息苦しさが出た。',
+    notes: 'ラテックスの手袋は使わない。',
+    confirmedDate: null,
+  }),
+  anAllergy(),
+  anAllergy({
+    id: 'c9e1a3b5-7d4f-4a8b-8c2e-4f6b8d0a2c35',
+    allergyType: 'fragrance',
+    allergenName: '強い香料',
+    severityType: 'mild',
+    symptoms: null,
+    notes: null,
+    confirmedDate: null,
+  }),
+]
