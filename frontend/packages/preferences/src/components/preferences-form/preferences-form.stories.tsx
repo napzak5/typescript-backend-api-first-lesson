@@ -10,7 +10,7 @@ import {
 import { PreferencesForm } from './preferences-form'
 
 const meta: Meta<typeof PreferencesForm> = {
-  title: 'Portal/Preferences/PreferencesForm',
+  title: 'Preferences/PreferencesForm',
   component: PreferencesForm,
   args: {
     preferences,

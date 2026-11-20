@@ -6,6 +6,11 @@ import {
   type ModelsStaffProfileResponse,
   staffProfileGet,
 } from '@beauty-salon-frontend/api-client'
+import {
+  type StaffChoice,
+  staffChoicesOf,
+  staffIdsOf,
+} from '@beauty-salon-frontend/preferences'
 import { match, P } from 'ts-pattern'
 import {
   FAILED,
@@ -24,7 +29,6 @@ import {
   type Unread,
   whyUnread,
 } from '../salons/salons-api'
-import { type StaffChoice, staffChoicesOf, staffIdsOf } from './staff-choices'
 
 /**
  * The key under which the preferences of the customer are kept, as the

@@ -3,11 +3,14 @@ import type {
   ModelsReviewResponse,
   ModelsReviewUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import {
+  linesOf,
+  pictureAddressesError,
+} from '@beauty-salon-frontend/preferences'
 import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { RefusedValue } from '../behind-the-session'
 import type { FormSays, Read } from '../forms'
-import { linesOf, pictureAddressesError } from '../lines'
 import { DETAIL_RATINGS } from '../salons/salon-format'
 import type {
   ReviewChange,

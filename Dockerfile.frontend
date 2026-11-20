@@ -45,6 +45,7 @@ COPY frontend/packages/api-client/package.json ./frontend/packages/api-client/
 COPY frontend/packages/assets/package.json ./frontend/packages/assets/
 COPY frontend/packages/config/package.json ./frontend/packages/config/
 COPY frontend/packages/io/package.json ./frontend/packages/io/
+COPY frontend/packages/preferences/package.json ./frontend/packages/preferences/
 COPY frontend/packages/session/package.json ./frontend/packages/session/
 COPY frontend/packages/testing/package.json ./frontend/packages/testing/
 COPY frontend/packages/theme/package.json ./frontend/packages/theme/
