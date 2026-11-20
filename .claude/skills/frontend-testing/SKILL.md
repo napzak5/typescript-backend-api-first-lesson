@@ -938,6 +938,12 @@ adds:
 - **The text of a row holds the hidden label of its checkbox.** A row of
   a table read by `textContent` (`rowsOf`) has 「山田 花子 様を選ぶ」 in the
   cell of the choice: write it out in the expected row.
+- **What the API refuses is arranged as the API would have kept it**
+  (`askedForErasure`, `arrangeChart`, `keepBalance` of
+  `customers/__tests__/arrangements.ts`), so the screen says why before
+  anything is sent; the same row arranged after the screen read the two
+  (`customer-merge.integration.test.tsx`) is the 409 of the API, which
+  the screen answers by reading again.
 
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
