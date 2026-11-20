@@ -1763,6 +1763,29 @@ The accounts of the staff are the example to read:
   card takes the focus when what the screen shows changed. A 404 of a
   write reads both again and says that they changed meanwhile.
 
+### What a member writes of themselves: a profile the customers read
+
+The own profile is the example to read: `own-profile-screen.tsx`,
+`profile-api.ts` and `profile-form.ts`, with the controls it shares with
+the staff ledger (`staff/introduction.ts`,
+`staff/components/introduction-fields/`).
+
+- **Controls that two forms write are one part**, read by one pure
+  function, as the API holds both requests to the same rules: the
+  ledger writes the introduction of any member, the member their own.
+- **A form keeps what it was opened with** (`Opened` in the screen), and
+  sends what was changed against that alone: the profile is read again
+  whenever the screen opens and when the window comes back, and what is
+  being written stays, as does what the salon changed meanwhile and the
+  form did not.
+- **What the salon decides is shown and said to be the salon's**, beside
+  what the member writes; where the customers read it is a link to the
+  other application.
+- **A screen of the account that belongs to a role is among the links of
+  the header** (`navigationFor`), last, on every screen of that role, not
+  beside the account: on a narrow screen the account has room for two
+  buttons beside the title, and the links scroll.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
