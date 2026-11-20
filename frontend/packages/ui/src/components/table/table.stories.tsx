@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Badge } from '../badge/badge'
-import { Table, type TableProps } from './table'
+import { Table, type TableColumn, type TableProps } from './table'
 
 type Booking = {
   id: string
@@ -41,14 +41,26 @@ const bookings: Booking[] = [
 /** `Table` is generic in its row; the stories are those of a table of bookings. */
 const BookingTable = (props: TableProps<Booking>) => <Table {...props} />
 
+const CUSTOMER: TableColumn<Booking> = {
+  key: 'customer',
+  header: 'お客様',
+  cell: (row) => row.customerName,
+}
+
+const STARTS_AT: TableColumn<Booking> = {
+  key: 'startsAt',
+  header: '開始',
+  cell: (row) => row.startsAt,
+}
+
 const meta: Meta<typeof BookingTable> = {
   title: 'Components/Table',
   component: BookingTable,
   args: {
     caption: '今日の予約',
     columns: [
-      { key: 'customer', header: 'お客様', cell: (row) => row.customerName },
-      { key: 'startsAt', header: '開始', cell: (row) => row.startsAt },
+      CUSTOMER,
+      STARTS_AT,
       { key: 'service', header: 'メニュー', cell: (row) => row.serviceName },
       {
         key: 'status',
@@ -85,4 +97,12 @@ export const WithoutRows: Story = {
 /** A heading above says what the table lists; the caption stays for assistive technology. */
 export const CaptionHidden: Story = {
   args: { captionHidden: true },
+}
+
+/** The rows are named by a column that is not the first */
+export const RowHeaderNotFirst: Story = {
+  args: {
+    columns: [STARTS_AT, CUSTOMER],
+    rowHeader: 'customer',
+  },
 }

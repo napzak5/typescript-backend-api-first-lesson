@@ -42,6 +42,21 @@ describe('Table', () => {
     ).toEqual(['12/3（木）11:30', 'カット、カラー', '仮予約', '13,200 円'])
   })
 
+  it('should head each row by the column it is told to, when that is not the first', async () => {
+    // Act
+    await stories.RowHeaderNotFirst.run()
+
+    // Assert
+    expect(
+      screen.getAllByRole('rowheader').map((header) => header.textContent),
+    ).toEqual(['山田 花子', '鈴木 一郎', '高橋 彩'])
+    expect(
+      within(screen.getByRole('row', { name: /鈴木 一郎/ }))
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent),
+    ).toEqual(['12/3（木）11:30'])
+  })
+
   it('should line a column of amounts up at its end, header and cells alike', async () => {
     // Act
     await stories.Default.run()

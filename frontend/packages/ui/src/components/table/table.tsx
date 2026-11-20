@@ -18,8 +18,10 @@ export type TableProps<Row> = {
   caption: string
   /** Keeps the caption for assistive technology only, when a heading above says the same */
   captionHidden?: boolean | undefined
-  /** The first column names the row: its cells are the headers of their rows */
+  /** The column that names the row (the first, unless `rowHeader` says another): its cells are the headers of their rows */
   columns: readonly TableColumn<Row>[]
+  /** The key of the column that names the rows, when it is not the first: one of controls comes before it */
+  rowHeader?: string | undefined
   rows: readonly Row[]
   rowKey: (row: Row) => string
   /** Said in place of the rows when there are none */
@@ -40,12 +42,14 @@ export const Table = <Row,>({
   caption,
   captionHidden = false,
   columns,
+  rowHeader,
   rows,
   rowKey,
   emptyMessage,
   className,
 }: TableProps<Row>) => {
   const captionId = useId()
+  const header = rowHeader ?? columns[0]?.key
 
   return (
     <section
@@ -87,8 +91,8 @@ export const Table = <Row,>({
           )}
           {rows.map((row) => (
             <tr key={rowKey(row)}>
-              {columns.map((column, index) =>
-                index === 0 ? (
+              {columns.map((column) =>
+                column.key === header ? (
                   <th
                     key={column.key}
                     className={alignmentClass[column.align ?? 'start']}
