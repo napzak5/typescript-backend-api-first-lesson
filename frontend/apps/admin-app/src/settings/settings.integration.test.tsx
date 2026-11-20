@@ -156,6 +156,7 @@ describe('the settings of a salon, against the API', () => {
       ['タイムゾーン', 'Asia/Tokyo'],
       ['通貨', 'JPY'],
       ['税率', '10%'],
+      ['支払い方法', '支払い方法を見る'],
     ])
     expect(rowsOf('営業時間')).toEqual([
       ['月曜日', '10:00〜20:00'],

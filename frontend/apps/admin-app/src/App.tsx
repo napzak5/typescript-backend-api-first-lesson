@@ -52,6 +52,10 @@ import { ServiceScreen } from './menu/service-screen'
 import { ServicesChangeScreen } from './menu/services-change-screen'
 import { navigationFor, OWN_PROFILE_PATH } from './navigation'
 import { OwnProfileScreen } from './own-profile/own-profile-screen'
+import { PaymentMethodChangeScreen } from './payment-methods/payment-method-change-screen'
+import { PaymentMethodEntryScreen } from './payment-methods/payment-method-entry-screen'
+import { PaymentMethodScreen } from './payment-methods/payment-method-screen'
+import { PaymentMethodsScreen } from './payment-methods/payment-methods-screen'
 import { CheckoutScreen } from './sales/checkout-screen'
 import { PaymentEntryScreen } from './sales/payment-entry-screen'
 import { ReceiptScreen } from './sales/receipt-screen'
@@ -372,6 +376,22 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/settings/hours'
                 element={<HoursChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/settings/payment-methods'
+                element={<PaymentMethodsScreen />}
+              />
+              <Route
+                path='/salons/:salonId/settings/payment-methods/new'
+                element={<PaymentMethodEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/settings/payment-methods/:paymentMethodId'
+                element={<PaymentMethodScreen />}
+              />
+              <Route
+                path='/salons/:salonId/settings/payment-methods/:paymentMethodId/edit'
+                element={<PaymentMethodChangeScreen />}
               />
               <Route path={OWN_PROFILE_PATH} element={<OwnProfileScreen />} />
               <Route
