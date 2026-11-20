@@ -69,6 +69,9 @@ import { ProductChangeScreen } from './products/product-change-screen'
 import { ProductEntryScreen } from './products/product-entry-screen'
 import { ProductScreen } from './products/product-screen'
 import { ProductsScreen } from './products/products-screen'
+import { PurchaseOrderEntryScreen } from './purchase-orders/purchase-order-entry-screen'
+import { PurchaseOrderScreen } from './purchase-orders/purchase-order-screen'
+import { PurchaseOrdersScreen } from './purchase-orders/purchase-orders-screen'
 import { CheckoutScreen } from './sales/checkout-screen'
 import { PaymentEntryScreen } from './sales/payment-entry-screen'
 import { ReceiptScreen } from './sales/receipt-screen'
@@ -429,6 +432,18 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/inventory/:inventoryId/movements/new'
                 element={<MovementEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/purchase-orders'
+                element={<PurchaseOrdersScreen />}
+              />
+              <Route
+                path='/salons/:salonId/purchase-orders/new'
+                element={<PurchaseOrderEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/purchase-orders/:purchaseOrderId'
+                element={<PurchaseOrderScreen />}
               />
               <Route
                 path='/salons/:salonId/settings'

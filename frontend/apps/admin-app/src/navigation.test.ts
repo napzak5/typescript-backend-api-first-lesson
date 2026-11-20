@@ -28,6 +28,9 @@ import {
   productEntryHrefOf,
   productHrefOf,
   productsHrefOf,
+  purchaseOrderEntryHrefOf,
+  purchaseOrderHrefOf,
+  purchaseOrdersHrefOf,
   receiptHrefOf,
   refundHrefOf,
   saleChangeHrefOf,
@@ -74,6 +77,7 @@ const STAFF = `/salons/${SALON_ID}/staff`
 const MENU = `/salons/${SALON_ID}/menu`
 const PRODUCTS = `/salons/${SALON_ID}/products`
 const INVENTORY = `/salons/${SALON_ID}/inventory`
+const PURCHASE_ORDERS = `/salons/${SALON_ID}/purchase-orders`
 const SETTINGS = `/salons/${SALON_ID}/settings`
 const SETTINGS_LINK = { href: SETTINGS, label: '設定', current: false }
 
@@ -123,6 +127,7 @@ describe('navigationFor', () => {
       { href: MENU, label: 'メニュー', current: false },
       { href: PRODUCTS, label: '商品', current: false },
       { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
       SETTINGS_LINK,
     ])
@@ -146,6 +151,7 @@ describe('navigationFor', () => {
         { href: MENU, label: 'メニュー', current: false },
         { href: PRODUCTS, label: '商品', current: false },
         { href: INVENTORY, label: '在庫', current: false },
+        { href: PURCHASE_ORDERS, label: '発注', current: false },
         SETTINGS_LINK,
         PROFILE,
       ])
@@ -169,6 +175,7 @@ describe('navigationFor', () => {
         { href: MENU, label: 'メニュー', current: false },
         { href: PRODUCTS, label: '商品', current: false },
         { href: INVENTORY, label: '在庫', current: false },
+        { href: PURCHASE_ORDERS, label: '発注', current: false },
         { href: STAFF, label: 'スタッフ', current: true },
         SETTINGS_LINK,
         PROFILE,
@@ -213,6 +220,7 @@ describe('navigationFor', () => {
       { href: MENU, label: 'メニュー', current: false },
       { href: PRODUCTS, label: '商品', current: false },
       { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
       SETTINGS_LINK,
       PROFILE,
@@ -234,6 +242,7 @@ describe('navigationFor', () => {
       { href: MENU, label: 'メニュー', current: false },
       { href: PRODUCTS, label: '商品', current: false },
       { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
       SETTINGS_LINK,
       PROFILE,
     ])
@@ -263,6 +272,7 @@ describe('navigationFor', () => {
       { href: MENU, label: 'メニュー', current: false },
       { href: PRODUCTS, label: '商品', current: false },
       { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
       SETTINGS_LINK,
       PROFILE,
     ])
@@ -288,6 +298,7 @@ describe('navigationFor', () => {
         { href: MENU, label: 'メニュー', current: false },
         { href: PRODUCTS, label: '商品', current: false },
         { href: INVENTORY, label: '在庫', current: false },
+        { href: PURCHASE_ORDERS, label: '発注', current: false },
         SETTINGS_LINK,
         PROFILE,
       ])
@@ -308,6 +319,7 @@ describe('navigationFor', () => {
       { href: MENU, label: 'メニュー', current: false },
       { href: PRODUCTS, label: '商品', current: false },
       { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
       SETTINGS_LINK,
       PROFILE,
     ])
@@ -323,6 +335,7 @@ describe('navigationFor', () => {
       { href: MENU, label: 'メニュー', current: false },
       { href: PRODUCTS, label: '商品', current: false },
       { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
       { href: STAFF, label: 'スタッフ', current: false },
       SETTINGS_LINK,
       PROFILE,
@@ -384,6 +397,7 @@ describe('navigationFor', () => {
       { href: MENU, label: 'メニュー', current: false },
       { href: PRODUCTS, label: '商品', current: false },
       { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
       { href: STAFF, label: 'スタッフ', current: true },
       SETTINGS_LINK,
       PROFILE,
@@ -408,6 +422,7 @@ describe('navigationFor', () => {
       { href: MENU, label: 'メニュー', current: true },
       { href: PRODUCTS, label: '商品', current: false },
       { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
       SETTINGS_LINK,
       PROFILE,
     ])
@@ -428,6 +443,7 @@ describe('navigationFor', () => {
       { href: MENU, label: 'メニュー', current: false },
       { href: PRODUCTS, label: '商品', current: true },
       { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
       SETTINGS_LINK,
       PROFILE,
     ])
@@ -467,6 +483,7 @@ describe('navigationFor', () => {
       { href: MENU, label: 'メニュー', current: false },
       { href: PRODUCTS, label: '商品', current: false },
       { href: INVENTORY, label: '在庫', current: true },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
       SETTINGS_LINK,
       PROFILE,
     ])
@@ -493,6 +510,41 @@ describe('navigationFor', () => {
       `${INVENTORY}/count`,
       `${INVENTORY}/value`,
       `${INVENTORY}/alerts`,
+    ])
+  })
+
+  it.each<[string, string]>([
+    ['the purchase orders', PURCHASE_ORDERS],
+    ['a new purchase order', purchaseOrderEntryHrefOf(SALON_ID)],
+    ['a purchase order', purchaseOrderHrefOf(SALON_ID, 'x')],
+  ])(
+    'should mark the purchase orders as the screen of %s',
+    (_case, pathname) => {
+      expect(navigationFor('staff', pathname)).toEqual([
+        { href: BOOKINGS, label: '予約', current: false },
+        { href: SALES, label: '売上', current: false },
+        { href: CUSTOMERS, label: '顧客', current: false },
+        { href: TREATMENTS, label: '施術記録', current: false },
+        { href: SHIFTS, label: 'シフト', current: false },
+        { href: MENU, label: 'メニュー', current: false },
+        { href: PRODUCTS, label: '商品', current: false },
+        { href: INVENTORY, label: '在庫', current: false },
+        { href: PURCHASE_ORDERS, label: '発注', current: true },
+        SETTINGS_LINK,
+        PROFILE,
+      ])
+    },
+  )
+
+  it('should write the addresses of the purchase orders', () => {
+    expect([
+      purchaseOrdersHrefOf(SALON_ID),
+      purchaseOrderEntryHrefOf(SALON_ID),
+      purchaseOrderHrefOf(SALON_ID, 'order'),
+    ]).toEqual([
+      PURCHASE_ORDERS,
+      `${PURCHASE_ORDERS}/new`,
+      `${PURCHASE_ORDERS}/order`,
     ])
   })
 
