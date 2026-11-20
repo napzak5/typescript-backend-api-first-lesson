@@ -37,7 +37,7 @@ this one: a component is not done without its stories and its test.
 | The screens of a salon in the admin application: the choice of a salon, and the salon of an address around the screens below it | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
-| The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions | `frontend/apps/admin-app/src/customers/` |
+| The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording | `frontend/apps/admin-app/src/customers/` |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
@@ -1071,7 +1071,9 @@ writes what it read" holds; this is what comes on top.
 - **A table that goes on is `PagedTable`** (`src/components/paged-table/`):
   how many there are and how many are shown above the table, 50 rows at a
   time, 「さらに表示」 below it, and the focus on the link of the first row
-  that was added.
+  that was added, or on its header when the row has no link (the header
+  takes the focus with `tabIndex` -1: a row of the history of the points
+  made for no record).
 - **What a state allows is a button of the part 「状態」**
   (`booking-actions.ts`: `actionsOf(booking, now)`). What leaves the
   booking open is done at once (確定, 施術の開始); what closes it for good
@@ -1247,7 +1249,7 @@ booking (`components/booking-sale/`).
   a `DescriptionList` by the number of the payment, and the cell says how
   much and when.
 
-### A ledger of the platform: found, registered, shown, changed and removed
+### A ledger of the platform: found, registered, shown, changed, removed, and its points
 
 The customers of the admin application are the example to read:
 `frontend/apps/admin-app/src/customers/` (`customer-ledger-screen.tsx` for
@@ -1257,7 +1259,8 @@ for the change, `customer-preferences-screen.tsx` for the preferences a
 salon changes, `with-customer.tsx` for the customer of the address,
 `removed-customer.tsx` for one who left the ledger,
 `customer-history-screen.tsx` and `customer-version-screen.tsx` for the
-history and a version).
+history and a version, `customer-points-screen.tsx` and
+`point-entry-screen.tsx` for the points and their recording).
 
 - **A ledger that belongs to no salon is still shown below one.** The
   customers are one ledger for the platform, and every address of the
@@ -1374,6 +1377,35 @@ history and a version).
   item, the version before and this one; the history names the items the
   API says were changed (`changedTermsOf`), and a value no item shows by
   the name the API gives it.
+- **The parts of a page that the whole platform writes are read each on
+  its own** (the balance, the points that expire soon and the history of
+  the points: `customer-points-screen.tsx`). Points are a customer's, at
+  every salon: each part is read whenever it is shown (`staleTime` 0) and
+  says its own failure where it would be. A row that names a record of a
+  salon reads that record (`SaleName`, `BookingName`, with the queries of
+  the screens of the sales and the bookings): a record that is found is a
+  link by its number to its page at its own salon, one the account may not
+  read (404) is named as of another salon, and one being read is named by
+  its kind.
+- **What a form records is chosen, and the count is always positive**
+  (`components/point-entry-form/`, `points.ts`). A `RadioGroup` says which
+  way the balance moves (付与, 利用, 調整で増やす, 調整で減らす), and the
+  request carries the sign: nobody types a minus and moves the balance the
+  wrong way. What the role may not do is not offered (`pointKindsFor`). A
+  control that belongs to one choice only (the day the points given
+  expire) is there while that choice is made.
+- **A record that another page offers comes in the address, and is read
+  before it is offered** (`?saleId=&kind=` from the part 「ポイント」 of a
+  sale). The form offers it as a checked `Checkbox` named by its number,
+  its time and its total; unchecking it records for no record. One the
+  operation would refuse (void, of another customer, of nobody, not found)
+  is said in a warning `Alert` and not offered (`offeredSaleOf`).
+- **A refusal the API does not explain is explained by reading again**
+  (`whyRefused`): after a 409 the screen reads the balance and the record
+  of the request, and tells a void sale, a balance too small (said at the
+  count, with the balance), a balance above the largest, and a record that
+  has its points already. Only what none of these explains is said as a
+  failure.
 
 ## Screens that a mailed link opens
 
@@ -1408,7 +1440,7 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
 | `Navigation` | The links to the screens. The application says which one is `current` |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen |
-| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus |
+| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading at every width, so they hold one short button; two go in the body, below its text (`SalePoints`) |
 | `DescriptionList` | The names and values of one record |
 | `Badge` | The state of a record, in a word |
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends |

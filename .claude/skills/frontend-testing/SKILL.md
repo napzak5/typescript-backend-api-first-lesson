@@ -913,6 +913,19 @@ adds:
   database (`isInLedger`). What a list showed at first sight after the
   swap (`firstSight`) is asserted without the notification, which names
   the record too.
+- **A ledger that keeps a running balance is arranged with its balance.**
+  Each transaction written by SQL has the balance after it, the opening
+  balance of the seed comes first (`openedLongAgo`), and the balance the
+  ledger keeps is the last one (`arrangePoints` and `arrangeVisitPoints` of
+  `customers/__tests__/arrangements.ts`): a screen that reads the balance
+  from one place and the history from another shows the same numbers. A
+  write is asserted by its row and by the balance (`storedPointsOf`,
+  `storedBalanceOf`).
+- **A refusal the screen explains by reading again is brought about for
+  each reason** (a sale with its points already, a sale voided between
+  the opening of the form and the send, a balance too small), and a value
+  the form refuses is asserted unsent by the requests of the `fetch` that
+  was spied on.
 
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
