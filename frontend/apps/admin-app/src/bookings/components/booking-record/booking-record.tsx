@@ -27,6 +27,8 @@ export type BookingRecordProps = {
     ModelsCustomerResponse,
     'lastName' | 'firstName' | 'phoneNumber'
   > | null
+  /** The address of the page of the customer */
+  customerHref: string
   staff: Names['staff']
   services: Names['services']
   /** The time zone of the salon: the times are those of its clock */
@@ -48,6 +50,7 @@ const NONE = 'なし'
 export const BookingRecord = ({
   booking,
   customer,
+  customerHref,
   staff,
   services,
   timezone,
@@ -104,7 +107,11 @@ export const BookingRecord = ({
             {
               term: 'お客様',
               description:
-                customer === null ? GONE_CUSTOMER : customerNameOf(customer),
+                customer === null ? (
+                  GONE_CUSTOMER
+                ) : (
+                  <Link href={customerHref}>{customerNameOf(customer)}</Link>
+                ),
             },
             ...(customer === null
               ? []

@@ -9,6 +9,17 @@
 
 .item {
   display: inline-block;
+  max-inline-size: 100%;
   margin-inline-end: var(--space-2);
   margin-block-end: var(--space-1);
+}
+
+/*
+ * A word longer than the line (an address somebody pasted) breaks where the
+ * line ends, so the list is never wider than it is given. The badge keeps a
+ * short word on one line.
+ */
+.item > .word {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

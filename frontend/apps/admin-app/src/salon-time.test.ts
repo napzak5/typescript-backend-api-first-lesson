@@ -6,6 +6,7 @@ import {
   isDay,
   momentNameAt,
   momentOf,
+  startOfDayAt,
   timeOfDayAt,
 } from './salon-time'
 
@@ -127,5 +128,33 @@ describe('momentOf', () => {
     ['nothing', '', 'Asia/Tokyo'],
   ])('should give nothing for %s', (_case, local, timezone) => {
     expect(momentOf(local, timezone)).toBeUndefined()
+  })
+})
+
+describe('startOfDayAt', () => {
+  it.each<[string, string, string, string]>([
+    ['in Tokyo', '2026-11-20', 'Asia/Tokyo', '2026-11-19T15:00:00.000Z'],
+    ['in UTC', '2026-11-20', 'UTC', '2026-11-20T00:00:00.000Z'],
+    [
+      'in New York on the day the clock is put forward, after midnight',
+      '2026-03-08',
+      'America/New_York',
+      '2026-03-08T05:00:00.000Z',
+    ],
+    [
+      'in Santiago on the day the clock skips midnight',
+      '2026-09-06',
+      'America/Santiago',
+      '2026-09-06T04:00:00.000Z',
+    ],
+  ])(
+    'should give the moment a day begins %s',
+    (_case, day, timezone, moment) => {
+      expect(startOfDayAt(day, timezone)).toBe(moment)
+    },
+  )
+
+  it('should give nothing for what is no day', () => {
+    expect(startOfDayAt('2026-02-30', 'Asia/Tokyo')).toBeUndefined()
   })
 })

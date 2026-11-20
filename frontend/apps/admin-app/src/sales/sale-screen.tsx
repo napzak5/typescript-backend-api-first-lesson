@@ -17,7 +17,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
-import { readCustomer } from '../customers/customers-api'
+import { customerKeyOf, readCustomer } from '../customers/customers-api'
 import {
   bookingHrefOf,
   paymentEntryHrefOf,
@@ -147,7 +147,7 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
         .exhaustive(),
   })
   const customer = useQuery({
-    queryKey: ['customers', customerId],
+    queryKey: customerKeyOf(customerId ?? ''),
     queryFn: () => readCustomer(customerId ?? ''),
     enabled: customerId !== null,
   })

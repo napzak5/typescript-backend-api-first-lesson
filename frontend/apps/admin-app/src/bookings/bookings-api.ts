@@ -23,7 +23,6 @@ import {
   type ModelsBookingServiceCreateRequest,
   type ModelsBookingServiceResponse,
   type ModelsBookingUpdateRequest,
-  type ModelsProblemDetails,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
@@ -35,6 +34,8 @@ import {
   type NotFound,
   type Page,
   pageOf,
+  type RefusedValue,
+  refusedValuesOf,
   type Unread,
   unreadOf,
   whyUnread,
@@ -74,9 +75,6 @@ export type StatusChange =
   | NotFound
   | Forbidden
   | Unread
-
-/** A value the API refused, with the rule it broke. */
-export type RefusedValue = { field: string; rule: string }
 
 /** What came of creating a booking. */
 export type BookingCreation =
@@ -204,11 +202,6 @@ const UNANSWERED = P.union(
   { status: 429 },
   { status: 500 },
 )
-
-const refusedValuesOf = ({
-  errors,
-}: Pick<ModelsProblemDetails, 'errors'>): RefusedValue[] =>
-  (errors ?? []).map(({ field, rule }) => ({ field, rule }))
 
 /** The keys of what the screens read of the bookings of a salon. */
 export const bookingListsKeyOf = (salonId: string): string[] => [

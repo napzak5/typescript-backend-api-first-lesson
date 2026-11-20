@@ -11,9 +11,9 @@ import {
   nullIfBlank,
   TOO_MANY_REQUESTS,
 } from '../bookings/booking-entry'
+import type { RefusedValue } from '../reading'
 import { dayAt, isDay, momentOf, timeOfDayAt } from '../salon-time'
 import { NO_CASHIER } from './checkout'
-import type { RefusedValue } from './sales-api'
 
 /*
  * Changing a sale after it was entered, and voiding it: what can be

@@ -1,0 +1,26 @@
+/* The days, then what is done with them. */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* One below the other on a narrow screen, side by side on a wide one */
+.days {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+}
+
+@media (min-width: 40rem) {
+  .days {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

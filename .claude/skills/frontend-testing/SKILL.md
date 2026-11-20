@@ -859,6 +859,35 @@ add:
   (`storedRecordOf`: the member, the time on the clock of the salon, the
   day, the note, the voiding; `storedRefundsOf`).
 
+The ledger of the customers
+(`frontend/apps/admin-app/src/customers/customers.integration.test.tsx`)
+adds:
+
+- **Rows written at one moment come in no order of their own.** The seed
+  data registers its customers at once, so the names of a list are
+  compared sorted (`namesIn`); an order is asserted where the test gave
+  the rows moments of their own (`registeredDaysAgo` of
+  `customers/__tests__/arrangements.ts`: noon in Tokyo, so many days ago),
+  the latest first.
+- **A range of days is asserted at both ends**: the rows of its first and
+  of its last day are both found (the end of a day is the millisecond
+  before the next one begins).
+- **A value that another record holds is a statement** (`giveReferralCode`),
+  and an address of mail of the seed data written in capitals is the same
+  address: the screen meets the real 409 and says it at its control.
+- **What another salon wrote meanwhile is a statement between the read
+  and the send** (`writeNoteMeanwhile`), and the stored row keeps it after
+  the change (`storedCustomerOf`); nothing changed leaves `updatedAt` as it
+  was.
+- **What another feature writes is a statement** (`arrangePreferences`:
+  the preferences of a customer with members of the staff, one of them
+  removed since), so that the names and 「一覧にないスタッフ」 are asserted.
+- **What is counted is asserted from the seed data**: the bookings of a
+  seeded customer at the salon over the year up to today (a visit and a
+  no-show), and another period from the address.
+- **A page of parts that read on their own is waited for part by part**
+  (`theCustomer`: the heading, the record, then a term of each part).
+
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
@@ -1086,6 +1115,11 @@ test.describe('the admin application', () => {
   (`src/admin-sale-changes.e2e.test.ts`): the payment given back whole,
   the sale voided, the booking billed again, each asserted on the screen
   it leads to, and the database read once at the end.
+- **A record the test makes is found by a value the test chose**
+  (`src/admin-customers.e2e.test.ts`: the customer by the address of mail),
+  and read after each write, also when the way crosses the screens of two
+  ledgers (a booking search that found nobody, the registration, the
+  booking of the customer, the ledger and the change).
 - **A radio button is chosen with the keyboard**: the focus on it and
   Space, as a person does who goes through the group with Tab.
 - The modules of `frontend/e2e/src` that are no test files are under the

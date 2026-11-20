@@ -1,0 +1,98 @@
+import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
+import { Badge, Link } from '@beauty-salon-frontend/ui'
+import {
+  countOf,
+  PagedTable,
+} from '../../../components/paged-table/paged-table'
+import type { More } from '../../../pages'
+import { dayNameOf } from '../../../salon-time'
+import {
+  countNameOf,
+  customerStatusNameOf,
+  customerStatusToneOf,
+  tierNameOf,
+} from '../../customer-format'
+import { customerKanaOf, customerNameOf } from '../../customers-api'
+
+export type CustomerTableProps = {
+  /** What the table lists: 「顧客台帳」, or 「条件に合うお客様」 */
+  caption: string
+  /** The customers that were read so far, the latest registered first; at least one */
+  rows: readonly ModelsCustomerResponse[]
+  /** How many customers there are; `null` when the API did not count them */
+  total: number | null
+  more: More
+  /** Asks for the customers that come next */
+  onMore: () => void
+  /** The address of the page of a customer */
+  customerHref: (customer: ModelsCustomerResponse) => string
+}
+
+/**
+ * The ledger of the customers: each by name, which leads to the customer,
+ * with the kana of the name, the phone number, the rank, the state, how
+ * often they came and the last visit.
+ */
+export const CustomerTable = ({
+  caption,
+  rows,
+  total,
+  more,
+  onMore,
+  customerHref,
+}: CustomerTableProps) => (
+  <PagedTable
+    caption={caption}
+    columns={[
+      {
+        key: 'name',
+        header: 'お名前',
+        cell: (customer) => (
+          <Link href={customerHref(customer)}>{customerNameOf(customer)}</Link>
+        ),
+      },
+      {
+        key: 'kana',
+        header: 'フリガナ',
+        cell: (customer) => customerKanaOf(customer),
+      },
+      {
+        key: 'phoneNumber',
+        header: '電話番号',
+        cell: ({ phoneNumber }) => phoneNumber,
+      },
+      {
+        key: 'membershipTier',
+        header: '会員ランク',
+        cell: ({ membershipTier }) => tierNameOf(membershipTier),
+      },
+      {
+        key: 'customerStatus',
+        header: 'ステータス',
+        cell: ({ customerStatus }) => (
+          <Badge tone={customerStatusToneOf(customerStatus)}>
+            {customerStatusNameOf(customerStatus)}
+          </Badge>
+        ),
+      },
+      {
+        key: 'visitCount',
+        header: '来店回数',
+        align: 'end',
+        cell: ({ visitCount }) => countNameOf(visitCount, '回'),
+      },
+      {
+        key: 'lastVisitDate',
+        header: '最終来店日',
+        cell: ({ lastVisitDate }) =>
+          lastVisitDate === null ? '来店なし' : dayNameOf(lastVisitDate),
+      },
+    ]}
+    rows={rows}
+    rowKey={({ id }) => id}
+    emptyMessage='お客様はいません'
+    count={countOf(total, rows.length, '人')}
+    more={more}
+    onMore={onMore}
+  />
+)

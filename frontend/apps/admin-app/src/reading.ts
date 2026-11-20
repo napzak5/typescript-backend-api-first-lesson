@@ -18,6 +18,15 @@ export type NotFound = { type: 'notFound' }
 /** The account may not see what was asked for: a member of another salon. */
 export type Forbidden = { type: 'forbidden' }
 
+/** A value the API refused, with the rule it broke. */
+export type RefusedValue = { field: string; rule: string }
+
+/** The values a problem names, with the rules they broke. */
+export const refusedValuesOf = ({
+  errors,
+}: Pick<ModelsProblemDetails, 'errors'>): RefusedValue[] =>
+  (errors ?? []).map(({ field, rule }) => ({ field, rule }))
+
 /** One page of a list, and where the next one begins. */
 export type Page<Item> = {
   type: 'found'
