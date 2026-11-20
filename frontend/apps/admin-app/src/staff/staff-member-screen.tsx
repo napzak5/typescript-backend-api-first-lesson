@@ -15,6 +15,7 @@ import { useNavigate, useParams } from 'react-router'
 import { match } from 'ts-pattern'
 import {
   scheduleHrefOf,
+  staffAccountHrefOf,
   staffChangeHrefOf,
   staffLedgerHrefOf,
 } from '../navigation'
@@ -27,6 +28,7 @@ import {
   isOwnStaffRecord,
   staffCalled,
 } from './staff-format'
+import styles from './staff-member-screen.module.css'
 import { useSignedInUserId, WithStaffMember } from './with-staff-member'
 
 const TITLE = 'スタッフの内容'
@@ -119,12 +121,18 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
           </>
         }
       />
-      <p>
+      <p className={styles['ways']}>
         <ButtonLink
           href={scheduleHrefOf(salon.id, member.id)}
           variant='secondary'
         >
           勤務スケジュール
+        </ButtonLink>
+        <ButtonLink
+          href={staffAccountHrefOf(salon.id, member.id)}
+          variant='secondary'
+        >
+          ログインアカウント
         </ButtonLink>
       </p>
       {!own && (
