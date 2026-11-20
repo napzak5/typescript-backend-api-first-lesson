@@ -69,3 +69,92 @@ export const chartsOfTagged = (tag: string): Promise<unknown> =>
      from customers where $1 = any(tags)`,
     [tag],
   )
+
+const storedAllergiesSchema = z.array(
+  z.object({
+    allergyType: z.string(),
+    allergenName: z.string(),
+    severityType: z.string(),
+    symptoms: z.string().nullable(),
+    notes: z.string().nullable(),
+    confirmedDate: z.string().nullable(),
+  }),
+)
+
+/**
+ * The allergies the database keeps of a customer, by their address of mail,
+ * in the order they were recorded: those of the seed data, recorded at once,
+ * by their allergen.
+ */
+export const storedAllergiesOf = async (email: string) =>
+  storedAllergiesSchema.parse(
+    await testApi().query(
+      `select allergies."allergyType", allergies."allergenName", allergies."severityType",
+              allergies.symptoms, allergies.notes, allergies."confirmedDate"::text as "confirmedDate"
+       from customer_allergies allergies join customers on customers.id = allergies."customerId"
+       where customers.email = $1
+       order by allergies."createdAt", allergies."allergenName" collate "C"`,
+      [email],
+    ),
+  )
+
+const idSchema = z.array(z.object({ id: z.string() }))
+
+/** The ID of the allergy of a customer with the allergen. */
+export const allergyIdOf = async (
+  email: string,
+  allergenName: string,
+): Promise<string> => {
+  const [allergy] = idSchema.parse(
+    await testApi().query(
+      `select allergies.id from customer_allergies allergies
+       join customers on customers.id = allergies."customerId"
+       where customers.email = $1 and allergies."allergenName" = $2`,
+      [email, allergenName],
+    ),
+  )
+  if (allergy === undefined) {
+    throw new Error(`${email} has no allergy of ${allergenName}`)
+  }
+
+  return allergy.id
+}
+
+/** Lets another account have written the symptoms of an allergy meanwhile. */
+export const symptomsWrittenMeanwhile = (
+  email: string,
+  allergenName: string,
+  symptoms: string,
+): Promise<unknown> =>
+  testApi().query(
+    `update customer_allergies set symptoms = $3, "updatedAt" = now()
+     where "customerId" = (select id from customers where email = $1)
+       and "allergenName" = $2`,
+    [email, allergenName, symptoms],
+  )
+
+/** Lets another account have removed an allergy meanwhile. */
+export const allergyRemovedMeanwhile = (
+  email: string,
+  allergenName: string,
+): Promise<unknown> =>
+  testApi().query(
+    `delete from customer_allergies
+     where "customerId" = (select id from customers where email = $1)
+       and "allergenName" = $2`,
+    [email, allergenName],
+  )
+
+/** Lets a customer have as many mild allergies, named 「アレルゲン 01」 on, each recorded a minute before the one after it. */
+export const mildAllergiesOf = (
+  email: string,
+  count: number,
+): Promise<unknown> =>
+  testApi().query(
+    `insert into customer_allergies ("customerId", "allergyType", "allergenName", "severityType", "createdAt", "updatedAt")
+     select customers.id, 'other', 'アレルゲン ' || lpad(n::text, 2, '0'), 'mild',
+            now() - make_interval(mins => $2 - n), now() - make_interval(mins => $2 - n)
+     from customers, generate_series(1, $2::int) as n
+     where customers.email = $1`,
+    [email, count],
+  )

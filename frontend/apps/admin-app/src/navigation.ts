@@ -127,6 +127,19 @@ export const chartChangeHrefOf = (
   customerId: string,
 ): string => `${chartHrefOf(salonId, customerId)}/edit`
 
+/** The screen that records an allergy of a customer, below the chart. */
+export const allergyEntryHrefOf = (
+  salonId: string,
+  customerId: string,
+): string => `${chartHrefOf(salonId, customerId)}/allergies/new`
+
+/** The screen that changes an allergy of a customer. */
+export const allergyChangeHrefOf = (
+  salonId: string,
+  customerId: string,
+  allergyId: string,
+): string => `${chartHrefOf(salonId, customerId)}/allergies/${allergyId}/edit`
+
 /** The search of the charts of the customers. */
 export const chartSearchHrefOf = (salonId: string): string =>
   `${customersHrefOf(salonId)}/charts`
