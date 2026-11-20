@@ -24,6 +24,8 @@ import {
   salonIdIn,
   scheduleChangeHrefOf,
   scheduleHrefOf,
+  serviceChangeHrefOf,
+  serviceEntryHrefOf,
   serviceHrefOf,
   shiftsHrefOf,
   shiftWeekHrefOf,
@@ -336,6 +338,8 @@ describe('navigationFor', () => {
   it.each<[string, string]>([
     ['the menu', MENU],
     ['a service', serviceHrefOf(SALON_ID, 'x')],
+    ['a new service', serviceEntryHrefOf(SALON_ID)],
+    ['the change of a service', serviceChangeHrefOf(SALON_ID, 'x')],
     ['a new category', categoryEntryHrefOf(SALON_ID)],
     ['the change of a category', categoryChangeHrefOf(SALON_ID, 'x')],
   ])('should mark the menu as the screen of %s', (_case, pathname) => {
@@ -354,11 +358,15 @@ describe('navigationFor', () => {
     expect([
       menuHrefOf(SALON_ID),
       serviceHrefOf(SALON_ID, 'service'),
+      serviceEntryHrefOf(SALON_ID),
+      serviceChangeHrefOf(SALON_ID, 'service'),
       categoryEntryHrefOf(SALON_ID),
       categoryChangeHrefOf(SALON_ID, 'category'),
     ]).toEqual([
       MENU,
       `${MENU}/services/service`,
+      `${MENU}/services/new`,
+      `${MENU}/services/service/edit`,
       `${MENU}/categories/new`,
       `${MENU}/categories/category/edit`,
     ])

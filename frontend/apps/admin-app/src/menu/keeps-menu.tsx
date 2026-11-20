@@ -18,7 +18,7 @@ export const MenuForbidden = ({ salon, title }: MenuForbiddenProps) => (
   <>
     <PageHeader title={title} description={salon.name} />
     <p>
-      メニューのカテゴリーは、変えられません。メニューを変えられるのは、サロンのオーナーとマネージャーと、管理者です。
+      このアカウントでは、メニューを変えられません。メニューを変えられるのは、サロンのオーナーとマネージャーと、管理者です。
     </p>
     <p>
       <ButtonLink href={menuHrefOf(salon.id)} variant='secondary'>

@@ -148,6 +148,16 @@ export const menuHrefOf = (salonId: string): string => `/salons/${salonId}/menu`
 export const serviceHrefOf = (salonId: string, serviceId: string): string =>
   `${menuHrefOf(salonId)}/services/${serviceId}`
 
+/** The screen that adds a service to the menu. */
+export const serviceEntryHrefOf = (salonId: string): string =>
+  `${menuHrefOf(salonId)}/services/new`
+
+/** The screen that changes a service of the menu, and removes it. */
+export const serviceChangeHrefOf = (
+  salonId: string,
+  serviceId: string,
+): string => `${serviceHrefOf(salonId, serviceId)}/edit`
+
 /** The screen that adds a category to the menu. */
 export const categoryEntryHrefOf = (salonId: string): string =>
   `${menuHrefOf(salonId)}/categories/new`

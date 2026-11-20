@@ -46,6 +46,8 @@ import { HomeScreen } from './home-screen'
 import { CategoryChangeScreen } from './menu/category-change-screen'
 import { CategoryEntryScreen } from './menu/category-entry-screen'
 import { MenuScreen } from './menu/menu-screen'
+import { ServiceChangeScreen } from './menu/service-change-screen'
+import { ServiceEntryScreen } from './menu/service-entry-screen'
 import { ServiceScreen } from './menu/service-screen'
 import { navigationFor, OWN_PROFILE_PATH } from './navigation'
 import { OwnProfileScreen } from './own-profile/own-profile-screen'
@@ -332,8 +334,16 @@ export const App = () => {
               />
               <Route path='/salons/:salonId/menu' element={<MenuScreen />} />
               <Route
+                path='/salons/:salonId/menu/services/new'
+                element={<ServiceEntryScreen />}
+              />
+              <Route
                 path='/salons/:salonId/menu/services/:serviceId'
                 element={<ServiceScreen />}
+              />
+              <Route
+                path='/salons/:salonId/menu/services/:serviceId/edit'
+                element={<ServiceChangeScreen />}
               />
               <Route
                 path='/salons/:salonId/menu/categories/new'
