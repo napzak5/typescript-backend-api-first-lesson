@@ -37,6 +37,10 @@ describe('StaffProfiles', () => {
         .getAllByRole('heading', { level: 3 })
         .map((heading) => heading.textContent),
     ).toEqual(['田中 ひろし', '鈴木 みか', '伊藤 たけし'])
+    // As many side by side as the width holds
+    expect(
+      screen.getAllByRole('heading', { level: 3 }).at(0)?.closest('ul'),
+    ).toHaveClass('tiles')
   })
 
   it('should say what a person does, is good at and is qualified for', async () => {

@@ -47,6 +47,9 @@ describe('PeriodSwitch', () => {
       ['前の日', '?date=2026-11-19'],
       ['今日', '?date=2026-11-20'],
     ])
+    expect(
+      screen.getByRole('navigation', { name: 'ほかの日' }),
+    ).not.toHaveTextContent('次の日')
   })
 
   it('should leave out the link to the day before the first that is counted', async () => {
@@ -58,5 +61,8 @@ describe('PeriodSwitch', () => {
       ['今日', '?date=2026-11-20'],
       ['次の日', '?date=2026-11-21'],
     ])
+    expect(
+      screen.getByRole('navigation', { name: 'ほかの日' }),
+    ).not.toHaveTextContent('前の日')
   })
 })

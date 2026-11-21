@@ -1,10 +1,31 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { composeStories } from '@storybook/react-vite'
+import { composeStories, composeStory } from '@storybook/react-vite'
+import { useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as pagedListStories from './paged-list.stories'
 
 const stories = composeStories(pagedListStories)
+
+/** A list that is read again, and holds one more review: no press asked for it */
+const ReadAgain = () => {
+  const [count, setCount] = useState(2)
+
+  return (
+    <>
+      <button type='button' onClick={() => setCount(3)}>
+        読み込み直す
+      </button>
+      <stories.Failed
+        items={Array.from({ length: count }, (_, index) => ({
+          id: `review-${index + 1}`,
+          title: `レビュー ${index + 1}`,
+        }))}
+        more='none'
+      />
+    </>
+  )
+}
 
 const items = (): HTMLElement[] =>
   within(screen.getByRole('list', { name: 'レビュー' })).getAllByRole(
@@ -79,6 +100,21 @@ describe('PagedList', () => {
 
     // Assert
     expect(items()[2]).toHaveFocus()
+  })
+
+  it('should leave the focus where it is when items come that no press asked for', async () => {
+    // Arrange
+    await composeStory(
+      { ...pagedListStories.Failed, render: () => <ReadAgain /> },
+      pagedListStories.default,
+    ).run()
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: '読み込み直す' }))
+
+    // Assert
+    expect(items()).toHaveLength(3)
+    expect(screen.getByRole('button', { name: '読み込み直す' })).toHaveFocus()
   })
 
   it('should say that the page did not come, and keep the items it has', async () => {
