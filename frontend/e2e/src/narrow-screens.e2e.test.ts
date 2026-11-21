@@ -306,6 +306,37 @@ test.describe('the screens, on a screen 320 pixels wide', () => {
       expect(right, name).toBeLessThan(card.right)
       expect(await linesOf(button), name).toBe(1)
     }
+    // Side by side or one below the other, as the line has room: apart by the gap of a part
+    const [first, second] = await Promise.all([
+      edgesOf(ledger.getByRole('link', { name: '予約を入れる' })),
+      edgesOf(ledger.getByRole('link', { name: '台帳を直す' })),
+    ])
+    expect(
+      Math.max(second.left - first.right, second.top - first.bottom),
+    ).toBeGreaterThanOrEqual(12)
+  })
+
+  test('should keep a lone button of a part as wide as its label', async ({
+    page,
+    api,
+  }) => {
+    // Arrange
+    const salon = await openTheSalon(page, api)
+
+    // Act
+    await page.goto(`${ADMIN.origin}${salon}/settings`)
+    await expect(heading(page, 'サロンの設定')).toBeVisible()
+
+    // Assert: the button stands at the start of what holds it, and does not take its width
+    const button = page
+      .getByRole('region', { name: 'サロンの削除' })
+      .getByRole('button', { name: 'サロンを削除する' })
+    const [room, { left, right }] = await Promise.all([
+      edgesOf(button.locator('..')),
+      edgesOf(button),
+    ])
+    expect(left).toBe(room.left)
+    expect(right).toBeLessThan(room.right)
   })
 
   test('should break a word longer than the line where the line ends, in a heading, a list, a record and a dialog', async ({
