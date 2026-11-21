@@ -1,4 +1,4 @@
-import type { Page, Unread } from './reading'
+import { FAILED, type Page, type Unread } from './reading'
 
 /** What the pages of a list that were read so far amount to. */
 export type Listing<Item> =
@@ -15,8 +15,6 @@ export type Listing<Item> =
        */
       rest: 'none' | 'more' | 'unread'
     }
-
-const FAILED: Unread = { type: 'failed' }
 
 /**
  * Puts the pages that were read together. A page that was not read ends the

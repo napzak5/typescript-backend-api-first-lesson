@@ -122,7 +122,9 @@ describe('the parts of the patterns', () => {
   it('should leave a 400 to the match with the answers that say nothing', () => {
     expect(readWithUnanswered(problem(400))).toBe('refused')
     expect(readWithUnanswered(null)).toEqual(FAILED)
+    expect(readWithUnanswered(problem(401))).toEqual(FAILED)
     expect(readWithUnanswered(problem(429))).toEqual(TOO_MANY_REQUESTS)
+    expect(readWithUnanswered(problem(500))).toEqual(FAILED)
   })
 
   it.each<[Unread | NotFound, boolean]>([
