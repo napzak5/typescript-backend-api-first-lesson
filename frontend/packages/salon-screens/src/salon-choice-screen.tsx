@@ -6,6 +6,7 @@ import {
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { KeywordSearch } from './components/keyword-search/keyword-search'
@@ -21,7 +22,12 @@ export type SalonChoiceScreenProps = {
   description: string
   /** Where choosing a salon leads */
   salonHref: (salon: ModelsSalonResponse) => string
+  /** What else is done here: 「サロンを登録する」 */
+  actions?: ReactNode | undefined
 }
+
+/** The key every search of the choice is read under: what adds or removes a salon takes them away. */
+export const SALON_CHOICES = ['salons', 'choice']
 
 /**
  * Where an administrator chooses the salon to work on: every salon, or
@@ -32,11 +38,12 @@ export type SalonChoiceScreenProps = {
 export const SalonChoiceScreen = ({
   description,
   salonHref,
+  actions,
 }: SalonChoiceScreenProps) => {
   const [query, setQuery] = useSearchParams()
   const keyword = keywordIn(query, KEYWORD)
   const found = useInfiniteQuery({
-    queryKey: ['salons', 'choice', keyword ?? ''],
+    queryKey: [...SALON_CHOICES, keyword ?? ''],
     queryFn: ({ pageParam }) => findSalons(keyword, pageParam),
     initialPageParam: firstCursor(),
     getNextPageParam: cursorAfter,
@@ -54,7 +61,11 @@ export const SalonChoiceScreen = ({
 
   return (
     <>
-      <PageHeader title='サロンを選ぶ' description={description} />
+      <PageHeader
+        title='サロンを選ぶ'
+        description={description}
+        actions={actions}
+      />
       <KeywordSearch
         label='サロンを探す'
         description='サロンの名前か紹介文にある言葉。空欄のときは、すべてのサロンを並べます。'

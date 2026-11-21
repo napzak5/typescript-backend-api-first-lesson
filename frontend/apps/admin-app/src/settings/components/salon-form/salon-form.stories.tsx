@@ -9,7 +9,7 @@ const meta: Meta<typeof SalonForm> = {
   title: 'Admin/Settings/SalonForm',
   component: SalonForm,
   args: {
-    salon: aDescribedSalon(),
+    subject: { type: 'existing', salon: aDescribedSalon() },
     submitLabel: '変更を保存する',
     onSubmit: fn(),
     actions: (
@@ -28,7 +28,26 @@ type Story = StoryObj<typeof meta>
 export const Recorded: Story = {}
 
 /** Opened with a salon that has little recorded: the controls of what it has not are empty */
-export const LittleRecorded: Story = { args: { salon } }
+export const LittleRecorded: Story = {
+  args: { subject: { type: 'existing', salon } },
+}
+
+/** A salon to be added: nothing written, the time zone and the currency of Japan, a tax of 10 %, and no bookings online */
+export const New: Story = {
+  args: { subject: { type: 'new' }, submitLabel: 'サロンを登録する' },
+}
+
+/** A salon to be added, with what is wrong with its time zone and its currency */
+export const NewWithErrors: Story = {
+  args: {
+    subject: { type: 'new' },
+    submitLabel: 'サロンを登録する',
+    errors: {
+      timezone: 'タイムゾーンを選んでください。',
+      currency: '通貨を選んでください。',
+    },
+  },
+}
 
 /** What is wrong with the values, at their controls */
 export const WithErrors: Story = {

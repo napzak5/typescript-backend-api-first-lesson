@@ -160,6 +160,81 @@ describe('SalonForm', () => {
     )
   })
 
+  it('should open a salon to be added empty, with the tax, the time zone and the currency of Japan, and no bookings online', async () => {
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(LABELS.map((label) => valueIn(text(label)))).toEqual([
+      ...Array.from({ length: LABELS.length - 1 }, () => ''),
+      '10',
+    ])
+    expect(
+      screen.getByRole('checkbox', { name: 'オンライン予約を受け付ける' }),
+    ).not.toBeChecked()
+    expect(screen.getByRole('combobox', { name: 'タイムゾーン' })).toHaveValue(
+      'Asia/Tokyo',
+    )
+    expect(screen.getByRole('combobox', { name: '通貨' })).toHaveValue('JPY')
+    expect(
+      screen.getByRole('option', { name: 'JPY（日本円）' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/^タイムゾーン（.+）と通貨（.+）は、変えられません。/),
+    ).not.toBeInTheDocument()
+  })
+
+  it('should send the time zone and the currency chosen for a salon to be added', async () => {
+    // Arrange
+    const received: [string, FormDataEntryValue][][] = []
+    await stories.New.run({
+      args: {
+        ...stories.New.args,
+        onSubmit: vi.fn((values: FormData) => {
+          received.push(
+            Array.from(values.entries()).filter(([name]) =>
+              ['timezone', 'currency'].includes(name),
+            ),
+          )
+        }),
+      },
+    })
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: 'タイムゾーン' }),
+      'Asia/Seoul',
+    )
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: '通貨' }),
+      'KRW',
+    )
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('button', { name: 'サロンを登録する' }),
+    )
+
+    // Assert
+    expect(received).toEqual([
+      [
+        ['timezone', 'Asia/Seoul'],
+        ['currency', 'KRW'],
+      ],
+    ])
+  })
+
+  it('should say what is wrong with the time zone and the currency at their controls', async () => {
+    // Act
+    await stories.NewWithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('combobox', { name: 'タイムゾーン' }),
+    ).toHaveAccessibleDescription(/タイムゾーンを選んでください。/)
+    expect(
+      screen.getByRole('combobox', { name: '通貨' }),
+    ).toHaveAccessibleDescription(/通貨を選んでください。/)
+  })
+
   it('should say what went wrong with the attempt', async () => {
     // Act
     await stories.NotChanged.run()

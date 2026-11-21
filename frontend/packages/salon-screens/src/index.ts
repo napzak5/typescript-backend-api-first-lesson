@@ -70,6 +70,7 @@ export {
   queryOfKeyword,
 } from './salon-choice'
 export {
+  SALON_CHOICES,
   SalonChoiceScreen,
   type SalonChoiceScreenProps,
 } from './salon-choice-screen'

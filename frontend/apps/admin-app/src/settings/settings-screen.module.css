@@ -1,0 +1,6 @@
+/* The record of the salon, and its removal below it */
+.settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}

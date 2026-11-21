@@ -4,6 +4,7 @@ import {
   PageHeader,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
+import type { ReactNode } from 'react'
 import { Navigate } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { unreadMessageOf } from './reading'
@@ -16,6 +17,8 @@ export type StartScreenProps = {
   choice: string
   /** Where the screens of a salon begin: its bookings, its sales report */
   salonHref: (salonId: string) => string
+  /** What else an administrator does where the salon is chosen: 「サロンを登録する」 */
+  choiceActions?: ReactNode | undefined
 }
 
 /**
@@ -24,7 +27,12 @@ export type StartScreenProps = {
  * the address of the start is replaced, so going back does not lead here
  * again.
  */
-export const StartScreen = ({ title, choice, salonHref }: StartScreenProps) => {
+export const StartScreen = ({
+  title,
+  choice,
+  salonHref,
+  choiceActions,
+}: StartScreenProps) => {
   const { salon, readAgain, readingAgain } = useOwnSalon()
 
   return match(salon)
@@ -38,6 +46,7 @@ export const StartScreen = ({ title, choice, salonHref }: StartScreenProps) => {
       <SalonChoiceScreen
         description={choice}
         salonHref={({ id }) => salonHref(id)}
+        actions={choiceActions}
       />
     ))
     .with({ type: 'member' }, ({ salonId }) => (

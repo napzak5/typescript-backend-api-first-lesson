@@ -61,7 +61,12 @@ import { ServiceChangeScreen } from './menu/service-change-screen'
 import { ServiceEntryScreen } from './menu/service-entry-screen'
 import { ServiceScreen } from './menu/service-screen'
 import { ServicesChangeScreen } from './menu/services-change-screen'
-import { bookingsHrefOf, navigationFor, OWN_PROFILE_PATH } from './navigation'
+import {
+  bookingsHrefOf,
+  navigationFor,
+  OWN_PROFILE_PATH,
+  SALON_ENTRY_PATH,
+} from './navigation'
 import { OwnProfileScreen } from './own-profile/own-profile-screen'
 import { PaymentMethodChangeScreen } from './payment-methods/payment-method-change-screen'
 import { PaymentMethodEntryScreen } from './payment-methods/payment-method-entry-screen'
@@ -89,6 +94,7 @@ import { SaleScreen } from './sales/sale-screen'
 import { SalesLedgerScreen } from './sales/sales-ledger-screen'
 import { HoursChangeScreen } from './settings/hours-change-screen'
 import { SalonChangeScreen } from './settings/salon-change-screen'
+import { SalonEntryScreen } from './settings/salon-entry-screen'
 import { SettingsScreen } from './settings/settings-screen'
 import { ShareLinkEntryScreen } from './share-links/share-link-entry-screen'
 import { ShareLinkScreen } from './share-links/share-link-screen'
@@ -192,9 +198,15 @@ export const App = () => {
                     title={import.meta.env.VITE_APP_TITLE}
                     choice='予約台帳を開くサロンを選びます。'
                     salonHref={bookingsHrefOf}
+                    choiceActions={
+                      <ButtonLink href={SALON_ENTRY_PATH} variant='primary'>
+                        サロンを登録する
+                      </ButtonLink>
+                    }
                   />
                 }
               />
+              <Route path={SALON_ENTRY_PATH} element={<SalonEntryScreen />} />
               <Route
                 path='/salons/:salonId/bookings'
                 element={<DayBookingsScreen />}

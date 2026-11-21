@@ -91,7 +91,7 @@ const SalonChange = ({ salon }: SalonChangeProps) => {
 
   return (
     <SalonForm
-      salon={salon}
+      subject={{ type: 'existing', salon }}
       submitLabel='変更を保存する'
       message={said.message}
       errors={said.errors}
