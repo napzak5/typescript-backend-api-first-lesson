@@ -1,3 +1,4 @@
+import { RadioGroup } from '@beauty-salon-frontend/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { StatisticsPeriod } from './statistics-period'
@@ -23,5 +24,23 @@ export const LastYear: Story = {}
 export const WithErrors: Story = {
   args: {
     errors: { to: '期間は 366 日までにしてください。' },
+  },
+}
+
+/** A further choice of what is counted, below the days */
+export const WithAChoice: Story = {
+  args: {
+    children: (
+      <RadioGroup
+        label='区切り'
+        name='period'
+        options={[
+          { value: 'weekly', label: '週' },
+          { value: 'monthly', label: '月' },
+        ]}
+        defaultValue='monthly'
+        layout='columns'
+      />
+    ),
   },
 }

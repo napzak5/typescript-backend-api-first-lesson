@@ -1,8 +1,13 @@
 import {
+  type ModelsDailySalesResponse,
   type ModelsProblemDetails,
   type ModelsSalesReportResponse,
+  type ModelsSalesTrendPeriodType,
+  type ModelsSalesTrendsResponse,
   salesReportCrudExport,
   salesReportCrudGet,
+  salesReportCrudGetDaily,
+  salesReportCrudGetTrends,
 } from '@beauty-salon-frontend/api-client'
 import { type FileToSave, fileOfAnswer } from '@beauty-salon-frontend/io'
 import {
@@ -19,10 +24,11 @@ import {
 import { match, P } from 'ts-pattern'
 
 /*
- * The sales of a salon over a period, counted by the API at every read,
- * and the CSV file it makes of them. A period the screen sends is one the
- * API counts over (366 days at most, the end not before the start), so a
- * 400 says the salon was removed since it was read.
+ * The sales of a salon, counted by the API at every read: over a period,
+ * in parts of it, on one day, and the CSV file it makes of a period. A
+ * period or a day the screens send is one the API counts over (366 days at
+ * most, the end not before the start), so a 400 says the salon was removed
+ * since it was read.
  */
 
 /** No answer, or one that says nothing a person could act on */
@@ -87,6 +93,86 @@ export const readSalesReport = async (
     .with({ status: 200 }, ({ data }) => ({
       type: 'found',
       report: data.data,
+    }))
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: 400 }, ({ data }) => refusalOf(data))
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+export type SalesTrendsRead =
+  | { type: 'found'; trends: ModelsSalesTrendsResponse }
+  /** The salon was removed */
+  | NotFound
+  /** The account is of another salon */
+  | Forbidden
+  | Unread
+
+export const salesTrendsKeyOf = (
+  salonId: string,
+  { from, to }: Period,
+  unit: ModelsSalesTrendPeriodType,
+): readonly string[] => [
+  ...salesReportsKeyOf(salonId),
+  'trends',
+  from,
+  to,
+  unit,
+]
+
+/**
+ * The sales of the period in parts of a day, a week or a month
+ * (`GET /sales-reports/trends`).
+ */
+export const readSalesTrends = async (
+  salonId: string,
+  period: Period,
+  unit: ModelsSalesTrendPeriodType,
+): Promise<SalesTrendsRead> => {
+  const answer = await salesReportCrudGetTrends({
+    ...paramsOf(salonId, period),
+    period: unit,
+  }).catch(() => null)
+
+  return match(answer)
+    .returnType<SalesTrendsRead>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'found',
+      trends: data.data,
+    }))
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: 400 }, ({ data }) => refusalOf(data))
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+export type DailySalesRead =
+  | { type: 'found'; sales: ModelsDailySalesResponse }
+  /** The salon was removed */
+  | NotFound
+  /** The account is of another salon */
+  | Forbidden
+  | Unread
+
+export const dailySalesKeyOf = (
+  salonId: string,
+  day: string,
+): readonly string[] => [...salesReportsKeyOf(salonId), 'daily', day]
+
+/** The sales of the salon on one day (`GET /sales-reports/daily`). */
+export const readDailySales = async (
+  salonId: string,
+  day: string,
+): Promise<DailySalesRead> => {
+  const answer = await salesReportCrudGetDaily({ salonId, date: day }).catch(
+    () => null,
+  )
+
+  return match(answer)
+    .returnType<DailySalesRead>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'found',
+      sales: data.data,
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))

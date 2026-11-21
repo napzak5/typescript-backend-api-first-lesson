@@ -12,12 +12,21 @@ export const salonIdIn = (pathname: string): string | undefined =>
 export const reportsHrefOf = (salonId: string): string =>
   `/salons/${salonId}/reports`
 
+/** The trends of the sales of a salon. */
+export const trendsHrefOf = (salonId: string): string =>
+  `${reportsHrefOf(salonId)}/trends`
+
+/** The sales of one day of a salon. */
+export const dailyHrefOf = (salonId: string): string =>
+  `${reportsHrefOf(salonId)}/daily`
+
 /** Whether an address is that of a screen, or of one below it. */
 const isAtOrBelow = (pathname: string, screen: string): boolean =>
   pathname === screen || pathname.startsWith(`${screen}/`)
 
 /**
- * The links of the header: the sales report of the salon of the address.
+ * The links of the header: the screens of the sales of the salon of the
+ * address.
  * An administrator chooses the salon at the start (`/`); the owner and a
  * manager are led from there to the salon they belong to, so one who is
  * elsewhere (the security of the account) goes back to the report through
@@ -34,13 +43,21 @@ export const navigationFor = (
       : []
   if (salonId !== undefined) {
     const reports = reportsHrefOf(salonId)
+    const trends = trendsHrefOf(salonId)
+    const daily = dailyHrefOf(salonId)
 
     return [
       ...choice,
+      { href: reports, label: '売上レポート', current: pathname === reports },
       {
-        href: reports,
-        label: '売上レポート',
-        current: isAtOrBelow(pathname, reports),
+        href: trends,
+        label: '売上の推移',
+        current: isAtOrBelow(pathname, trends),
+      },
+      {
+        href: daily,
+        label: '1 日の売上',
+        current: isAtOrBelow(pathname, daily),
       },
     ]
   }

@@ -4,7 +4,7 @@ import {
   TextField,
   useErrorFocus,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, type ReactNode, useState } from 'react'
 import { type Period, periodQueryOf } from '../../period'
 import { EARLIEST_DAY, LATEST_DAY } from '../../salon-time'
 import styles from './statistics-period.module.css'
@@ -18,6 +18,8 @@ export type StatisticsPeriodProps = {
   errors?: FormErrors | undefined
   /** Called with the values of the controls when the form is sent */
   onSubmit: (values: FormData) => void
+  /** Further controls of what is counted, below the days: what the period is cut into */
+  children?: ReactNode
 }
 
 const NO_ERRORS: FormErrors = {}
@@ -33,6 +35,7 @@ export const StatisticsPeriod = ({
   description,
   errors = NO_ERRORS,
   onSubmit,
+  children,
 }: StatisticsPeriodProps) => {
   const form = useErrorFocus(errors)
   const shownQuery = periodQueryOf(period).toString()
@@ -83,6 +86,7 @@ export const StatisticsPeriod = ({
           onChange={(event) => hold('to', event.target.value)}
         />
       </div>
+      {children}
       <div className={styles['actions']}>
         <Button type='submit'>集計する</Button>
       </div>

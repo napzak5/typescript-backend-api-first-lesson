@@ -5,8 +5,13 @@ import {
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { report, SALON_ID } from './components/examples'
-import { exportSalesReport, readSalesReport } from './sales-report-api'
+import { daily, report, SALON_ID, trends } from './components/examples'
+import {
+  exportSalesReport,
+  readDailySales,
+  readSalesReport,
+  readSalesTrends,
+} from './sales-report-api'
 
 /*
  * The answers the real API gives are met in the screen tests. Here are
@@ -18,6 +23,8 @@ const PERIOD = { from: '2026-11-01', to: '2026-11-21' }
 const CALLS: [string, () => Promise<{ type: string }>][] = [
   ['readSalesReport', () => readSalesReport(SALON_ID, PERIOD)],
   ['exportSalesReport', () => exportSalesReport(SALON_ID, PERIOD)],
+  ['readSalesTrends', () => readSalesTrends(SALON_ID, PERIOD, 'weekly')],
+  ['readDailySales', () => readDailySales(SALON_ID, '2026-11-21')],
 ]
 
 const CSV = 'date,sales,tax,discounts,transactions,refunds,net\r\n'
@@ -91,6 +98,46 @@ describe('the sales report', () => {
       salonId: SALON_ID,
       startDate: '2026-11-01',
       endDate: '2026-11-21',
+    })
+  })
+
+  it('should ask for the trend of the period, cut into the parts chosen', async () => {
+    // Arrange
+    const fetched = answering(() =>
+      json(200, { data: trends, meta: null, links: { self: '/' } }),
+    )
+
+    // Act
+    const read = await readSalesTrends(SALON_ID, PERIOD, 'weekly')
+
+    // Assert
+    expect(read).toEqual({ type: 'found', trends })
+    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
+    expect(asked.pathname).toBe('/api/v1/sales-reports/trends')
+    expect(Object.fromEntries(asked.searchParams)).toEqual({
+      salonId: SALON_ID,
+      startDate: '2026-11-01',
+      endDate: '2026-11-21',
+      period: 'weekly',
+    })
+  })
+
+  it('should ask for the sales of one day', async () => {
+    // Arrange
+    const fetched = answering(() =>
+      json(200, { data: daily, meta: null, links: { self: '/' } }),
+    )
+
+    // Act
+    const read = await readDailySales(SALON_ID, '2026-11-21')
+
+    // Assert
+    expect(read).toEqual({ type: 'found', sales: daily })
+    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
+    expect(asked.pathname).toBe('/api/v1/sales-reports/daily')
+    expect(Object.fromEntries(asked.searchParams)).toEqual({
+      salonId: SALON_ID,
+      date: '2026-11-21',
     })
   })
 
