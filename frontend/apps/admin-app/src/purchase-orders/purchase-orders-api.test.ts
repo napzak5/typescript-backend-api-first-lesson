@@ -4,7 +4,12 @@ import { salon } from '../bookings/components/examples'
 import { colourLot, glovesRow } from '../inventory/components/examples'
 import { ORDERS_OF_THE_SALON, pendingOrder } from './components/examples'
 import {
+  approveOrder,
+  cancelOrder,
+  changeOrder,
   makeOrder,
+  moveOrder,
+  type OrderStep,
   purchaseOrderKeyOf,
   purchaseOrdersKeyOf,
   readOrder,
@@ -218,5 +223,149 @@ describe('makeOrder', () => {
 
     // Assert
     expect(made).toEqual(outcome)
+  })
+})
+
+/** The method, the path and the body of the one request that was sent */
+const sentOf = async (fetched: ReturnType<typeof answering>) => {
+  const [asked] = fetched.mock.calls.map(
+    ([input, init]) => new Request(input, init),
+  )
+  const body = await asked?.text()
+
+  return [
+    asked?.method,
+    new URL(asked?.url ?? '').pathname,
+    body === '' || body === undefined ? undefined : JSON.parse(body),
+  ]
+}
+
+const APPROVED = { ...pendingOrder, status: 'approved' }
+
+/** The operations on the status, each as it is called, with what it sends */
+const STEPS: [string, () => Promise<OrderStep>, unknown[]][] = [
+  [
+    'moveOrder',
+    () => moveOrder(pendingOrder.id, 'ordered'),
+    [
+      'PATCH',
+      `/api/v1/purchase-orders/${pendingOrder.id}`,
+      { status: 'ordered' },
+    ],
+  ],
+  [
+    'approveOrder',
+    () => approveOrder(pendingOrder.id),
+    ['POST', `/api/v1/purchase-orders/${pendingOrder.id}/approve`, undefined],
+  ],
+  [
+    'cancelOrder',
+    () => cancelOrder(pendingOrder.id, { cancellationReason: '在庫切れ' }),
+    [
+      'POST',
+      `/api/v1/purchase-orders/${pendingOrder.id}/cancel`,
+      { cancellationReason: '在庫切れ' },
+    ],
+  ],
+]
+
+describe.each(STEPS)('%s', (_, step, sent) => {
+  it('should send the operation, and hand over the order it changed', async () => {
+    // Arrange
+    const fetched = answering(() =>
+      json(200, { data: APPROVED, meta: null, links: null }),
+    )
+
+    // Act
+    const changed = await step()
+
+    // Assert
+    expect(changed).toEqual({ type: 'changed', order: APPROVED })
+    expect(await sentOf(fetched)).toEqual(sent)
+  })
+
+  it.each<[string, Answer, unknown]>([
+    [
+      'a status the operation is not for',
+      () => problem(409),
+      { type: 'conflict' },
+    ],
+    ['an order that is not there', () => problem(404), { type: 'notFound' }],
+    ['the account', () => problem(403), { type: 'forbidden' }],
+    ['a refused ID or body', () => problem(400), { type: 'failed' }],
+    ['a body that is too large', () => problem(413), { type: 'failed' }],
+    ['a body of another type', () => problem(415), { type: 'failed' }],
+    ...UNREAD.map(([name, answer, type]): [string, Answer, unknown] => [
+      name,
+      answer,
+      { type },
+    ]),
+  ])('should change nothing after %s', async (_name, given, outcome) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const changed = await step()
+
+    // Assert
+    expect(changed).toEqual(outcome)
+  })
+})
+
+describe('changeOrder', () => {
+  it('should send what was changed, and hand over the order it changed', async () => {
+    // Arrange
+    const fetched = answering(() =>
+      json(200, { data: pendingOrder, meta: null, links: null }),
+    )
+
+    // Act
+    const changed = await changeOrder(pendingOrder.id, {
+      expectedDelivery: null,
+      notes: '至急',
+    })
+
+    // Assert
+    expect(changed).toEqual({ type: 'changed', order: pendingOrder })
+    expect(await sentOf(fetched)).toEqual([
+      'PATCH',
+      `/api/v1/purchase-orders/${pendingOrder.id}`,
+      { expectedDelivery: null, notes: '至急' },
+    ])
+  })
+
+  it.each<[string, Answer, unknown]>([
+    [
+      'values the API does not take',
+      () =>
+        problem(400, [{ field: 'expectedDelivery', rule: 'invalid_format' }]),
+      {
+        type: 'invalid',
+        values: [{ field: 'expectedDelivery', rule: 'invalid_format' }],
+      },
+    ],
+    [
+      'an order delivered or cancelled meanwhile',
+      () => problem(409),
+      { type: 'conflict' },
+    ],
+    ['an order that is not there', () => problem(404), { type: 'notFound' }],
+    ['the account', () => problem(403), { type: 'forbidden' }],
+    ['a body that is too large', () => problem(413), { type: 'failed' }],
+    ['a body of another type', () => problem(415), { type: 'failed' }],
+    ...UNREAD.map(([name, answer, type]): [string, Answer, unknown] => [
+      name,
+      answer,
+      { type },
+    ]),
+  ])('should change nothing after %s', async (_name, given, outcome) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const changed = await changeOrder(pendingOrder.id, { notes: null })
+
+    // Assert
+    expect(changed).toEqual(outcome)
   })
 })

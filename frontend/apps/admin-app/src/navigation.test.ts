@@ -19,6 +19,7 @@ import {
   menuHrefOf,
   movementEntryHrefOf,
   navigationFor,
+  orderChangeHrefOf,
   paymentMethodChangeHrefOf,
   paymentMethodEntryHrefOf,
   paymentMethodHrefOf,
@@ -517,6 +518,7 @@ describe('navigationFor', () => {
     ['the purchase orders', PURCHASE_ORDERS],
     ['a new purchase order', purchaseOrderEntryHrefOf(SALON_ID)],
     ['a purchase order', purchaseOrderHrefOf(SALON_ID, 'x')],
+    ['the change of a purchase order', orderChangeHrefOf(SALON_ID, 'x')],
   ])(
     'should mark the purchase orders as the screen of %s',
     (_case, pathname) => {
@@ -541,10 +543,12 @@ describe('navigationFor', () => {
       purchaseOrdersHrefOf(SALON_ID),
       purchaseOrderEntryHrefOf(SALON_ID),
       purchaseOrderHrefOf(SALON_ID, 'order'),
+      orderChangeHrefOf(SALON_ID, 'order'),
     ]).toEqual([
       PURCHASE_ORDERS,
       `${PURCHASE_ORDERS}/new`,
       `${PURCHASE_ORDERS}/order`,
+      `${PURCHASE_ORDERS}/order/edit`,
     ])
   })
 

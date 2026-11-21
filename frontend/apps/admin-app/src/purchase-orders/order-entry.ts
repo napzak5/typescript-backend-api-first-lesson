@@ -42,7 +42,7 @@ const TOO_MANY = `1 件の発注に入れられるのは ${MOST_ITEMS} 行まで
 const TAX_MISSING = '税額を入力してください。税がかからなければ 0 にします。'
 const TAX_ERROR = '税額は、0 以上の円の整数で入力してください。'
 const SHIPPING_ERROR = '送料は、0 以上の円の整数で入力してください。'
-const DAY_ERROR = '日付を入力してください。'
+export const DAY_ERROR = '日付を入力してください。'
 const TOO_MUCH =
   '合計が 2,147,483,647 円を超えます。明細を分けて、発注を 2 件以上にしてください。'
 
@@ -160,7 +160,7 @@ const supplierOf = (text: string): Supplier => {
 }
 
 /** The day the order is to be delivered on, as the moment it begins at the salon. */
-const deliveryOf = (
+export const deliveryOf = (
   text: string,
   timezone: string,
 ): string | null | undefined => {

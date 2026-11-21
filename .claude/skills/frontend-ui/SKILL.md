@@ -1952,7 +1952,8 @@ works at the salon:
   takes the focus. A refusal is said under the heading.
 
 The purchase orders of a salon (`src/purchase-orders/`) are searched,
-read and drafted by everybody who works at the salon:
+read, drafted and moved on by everybody who works at the salon, and
+approved and cancelled by its owner, its managers and an administrator:
 
 - **Items as a count enters them**: every stock row of the salon has a
   quantity and a unit price, and only the rows given a quantity are
@@ -1969,6 +1970,19 @@ read and drafted by everybody who works at the salon:
 - **An order of the address**: the routes of the orders are not below
   the salon, and an administrator reads the orders of every salon, so
   an order of another salon is not found at the address of this one.
+- **The steps an account may take**: what a status takes is a table of
+  the status (`order-actions.ts`), filtered by whether the role of the
+  account approves orders, as the API decides it; what is filtered out
+  is said under the buttons, so that a stylist knows whom to ask. A
+  step that only records what happened with the supplier is sent at
+  once; a cancellation asks for its reason in a dialog. As with a
+  booking, the order the API answered with is shown, the heading of the
+  status takes the focus, and a 409 reads the order anew and says so
+  there.
+- **What is written down on an order as it goes on** (the day of the
+  delivery, the notes) is changed on a screen of its own that sends
+  what was changed; an order that does not change any more is offered
+  no link to it, and its address says so.
 
 ## Screens that a mailed link opens
 
