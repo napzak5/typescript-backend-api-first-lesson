@@ -454,8 +454,9 @@ Docker イメージのビルドも行います。イメージは、手元では 
 | ジョブ | 内容 |
 |--------|------|
 | `quality` | `check:versions`、`check:generated`、`check:api-db`、`lint`、`format:check`、`build:prod`、`typecheck`、`knip`。OpenAPI ドキュメントをアーティファクトとして保存する |
-| `unit` | `build:prod` のあと、単体テスト（`pnpm test`） |
-| `test` | `build:prod` のあと、統合テストを、データベースの用意の仕方を変えて 2 通り実行する。`external`: サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使う。`testcontainers`: テスト自身が PostgreSQL のコンテナを起動する。どちらも、すべてのパッケージのテストのファイルを 4 つに分け（Vitest の `--shard`）、1 つずつを別のジョブで並べて実行する（8 つのジョブ）。ファイルが 4 つより少ないパッケージには、ファイルのない部分ができる（`--passWithNoTests`）。`check:db-schema` は、`external` の 1 つ目の部分で実行する。メール送信の統合テストは、どちらの場合も Mailpit のコンテナを、添付ファイルの保存先の統合テストは SeaweedFS のコンテナを、自分で起動する |
+| `scope` | 単体テストと統合テストを走らせるパッケージを決める。フロントエンド（`frontend/`）、ドキュメント（`docs/`、`.md`）、スキル（`.claude/`）だけを変えるプルリクエストでは、変えたパッケージとそれに依存するパッケージ（pnpm の `--filter "...[<ベース>]"`。ベースは、マージのコミットの 1 つ目の親）。ワークスペースのルートは、最後の `--filter "!{.}"` で除く（ドキュメントの変更でルートが選ばれ、ルートのスクリプトはすべてのパッケージを走らせるため）。ほかのファイルを 1 つでも変えるプルリクエストと、push では、すべてのパッケージ。画面のテストはバックエンドのテスト用サーバーを別のプロセスとして起動し、`package.json` の依存にないので、バックエンドの変更ではすべてを走らせる。ルートのファイルは、どのパッケージにも数えられない |
+| `unit` | `build:prod` のあと、`scope` のパッケージの単体テスト |
+| `test` | `build:prod` のあと、`scope` のパッケージの統合テストを、データベースの用意の仕方を変えて 2 通り実行する。`external`: サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使う。`testcontainers`: テスト自身が PostgreSQL のコンテナを起動する。どちらも、すべてのパッケージのテストのファイルを 4 つに分け（Vitest の `--shard`）、1 つずつを別のジョブで並べて実行する（8 つのジョブ）。ファイルが 4 つより少ないパッケージには、ファイルのない部分ができる（`--passWithNoTests`）。`check:db-schema` は、`external` の 1 つ目の部分で実行する。メール送信の統合テストは、どちらの場合も Mailpit のコンテナを、添付ファイルの保存先の統合テストは SeaweedFS のコンテナを、自分で起動する |
 | `e2e` | ブラウザーで通すテスト（`pnpm test:e2e`）。Playwright の Chromium を入れ、サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使う。失敗したときは、レポートと、失敗したテストのトレースをアーティファクトとして保存する |
 | `build` | `pnpm build:dev`、`build:test`、`build:stg`、`build:prod` をそれぞれ実行する |
 | `security` | `pnpm audit --audit-level=high` |
