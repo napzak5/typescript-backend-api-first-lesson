@@ -172,8 +172,9 @@ const ITEMS: readonly LedgerItemOf[] = [
   {
     term: '紹介元',
     fields: ['referredBy'],
+    // The contract says what `null` is: the customer came without a referral
     describe: ({ referredBy }, referrer) =>
-      referredBy === null ? null : referrer,
+      referredBy === null ? 'なし' : referrer,
   },
   {
     term: '送ってよい連絡',

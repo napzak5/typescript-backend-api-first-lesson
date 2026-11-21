@@ -100,7 +100,7 @@ describe('changedItemsOf', () => {
     expect(changed).toEqual([
       {
         term: '紹介元',
-        before: null,
+        before: 'なし',
         after: '紹介: c19f4d7a-6e8c-4adf-8dbe-ac7e3f6a8bc5',
       },
     ])
