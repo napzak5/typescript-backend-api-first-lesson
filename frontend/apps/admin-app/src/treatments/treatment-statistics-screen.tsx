@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsServiceResponse,
@@ -35,7 +35,7 @@ import {
 
 const TITLE = '施術の統計'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 type StatisticsPartProps = {
   salon: ModelsSalonResponse

@@ -10,12 +10,12 @@ import {
   type Page,
   type Problem,
   pageOf,
-  REFUSED,
+  REFUSED_PARTS,
   type Refused,
   refusedValuesOf,
   TOO_MANY_REQUESTS,
   toTheEnd,
-  UNANSWERED,
+  UNANSWERED_PARTS,
   UNREAD_TYPES,
   type Unread,
   unreadMessageOf,
@@ -63,7 +63,7 @@ const readWithRefused = (answer: Answer): string | Unread | NotFound =>
     .returnType<string | Unread | NotFound>()
     .with({ status: 200 }, ({ data }) => data)
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(P.union(...REFUSED), unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive()
 
 const readWithUnanswered = (answer: Answer): string | Unread | NotFound =>
@@ -72,7 +72,7 @@ const readWithUnanswered = (answer: Answer): string | Unread | NotFound =>
     .with({ status: 200 }, ({ data }) => data)
     .with({ status: 400 }, () => 'refused')
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(P.union(...UNANSWERED), unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive()
 
 describe('the parts of the patterns', () => {

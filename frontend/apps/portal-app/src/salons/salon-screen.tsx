@@ -2,6 +2,7 @@ import {
   cursorAfter,
   firstCursor,
   listingOf,
+  UNREAD_TYPES,
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
 import type {
@@ -147,16 +148,13 @@ const StaffSection = ({ salon }: OfSalonProps) => {
             {/* The people are there without their ratings, too */}
             {match(ratings.data)
               .with(undefined, { type: 'found' }, () => null)
-              .with(
-                { type: P.union('tooManyRequests', 'failed') },
-                (reason) => (
-                  <UnreadNotice
-                    message={unreadMessageOf('スタッフの評価', reason)}
-                    onRetry={() => void ratings.refetch()}
-                    pending={ratings.isFetching}
-                  />
-                ),
-              )
+              .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
+                <UnreadNotice
+                  message={unreadMessageOf('スタッフの評価', reason)}
+                  onRetry={() => void ratings.refetch()}
+                  pending={ratings.isFetching}
+                />
+              ))
               .exhaustive()}
             <StaffProfiles
               staff={staff}
@@ -168,7 +166,7 @@ const StaffSection = ({ salon }: OfSalonProps) => {
             />
           </>
         ))
-        .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('スタッフ', reason)}
             onRetry={() => void read.refetch()}
@@ -467,7 +465,7 @@ export const SalonScreen = () => {
           <ButtonLink href='/'>サロンを探す</ButtonLink>
         </>
       ))
-      .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <PageHeader title={TITLE} />
           <UnreadNotice

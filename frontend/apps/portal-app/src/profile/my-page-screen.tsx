@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -20,7 +20,7 @@ import { OWN_PROFILE, readOwnProfile } from './profile-api'
 
 const TITLE = 'マイページ'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const OwnPage = () => {
   const read = useQuery({

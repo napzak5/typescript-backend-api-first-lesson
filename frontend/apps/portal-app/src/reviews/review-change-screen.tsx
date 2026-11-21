@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsReviewUpdateRequest } from '@beauty-salon-frontend/api-client'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
@@ -39,7 +39,7 @@ const TITLE = 'レビューを変更する'
 /** Where what the customer wrote is listed, and where the form leads */
 const OWN_REVIEWS = '/mypage/reviews'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const BACK = (
   <ButtonLink href={OWN_REVIEWS} variant='quiet'>

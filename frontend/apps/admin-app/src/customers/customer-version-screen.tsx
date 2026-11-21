@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerVersionResponse,
   ModelsSalonResponse,
@@ -26,7 +26,7 @@ import { WithCustomer } from './with-customer'
 
 const TITLE = '台帳の版'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 type ComparedVersionProps = {
   salon: ModelsSalonResponse

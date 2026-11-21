@@ -1,4 +1,8 @@
-import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsProductResponse,
   ModelsProductUpdateRequest,
@@ -229,7 +233,7 @@ const ChangePart = ({ salon, productId }: ChangePartProps) => {
         <OtherSalonNotice what='商品' />
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice

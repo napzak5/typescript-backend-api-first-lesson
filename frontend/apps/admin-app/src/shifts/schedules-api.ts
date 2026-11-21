@@ -6,6 +6,7 @@ import {
   outsideTheContract,
   type RefusedValue,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -24,12 +25,7 @@ import { match, P } from 'ts-pattern'
  * reads their own.
  */
 
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 

@@ -5,7 +5,9 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  REFUSED_PARTS,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -27,22 +29,10 @@ import { type PointAttempt, type PointRecording, whyRefused } from './points'
 
 const idSchema = z.uuid()
 
-/** The answers that say nothing of the points, as a pattern */
-const REFUSED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const REFUSED = P.union(...REFUSED_PARTS)
 
 /** The same, for a request whose 400 names the values it refused */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 

@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   OtherSalonNotice,
@@ -58,7 +58,7 @@ const PaymentMethodPart = ({
         <OtherSalonNotice what='支払い方法' />
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice

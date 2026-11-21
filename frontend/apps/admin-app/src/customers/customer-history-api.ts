@@ -7,6 +7,7 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  REFUSED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -34,14 +35,7 @@ const numberOfVersion = (version: string): number | undefined =>
     ? Number(version)
     : undefined
 
-/** The answers that say nothing of the customer, as a pattern */
-const REFUSED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const REFUSED = P.union(...REFUSED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 

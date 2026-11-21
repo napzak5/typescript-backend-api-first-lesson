@@ -1,4 +1,8 @@
-import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsPaymentMethodResponse,
   ModelsPaymentMethodUpdateRequest,
@@ -224,7 +228,7 @@ const ChangePart = ({ salon, paymentMethodId }: ChangePartProps) => {
         <OtherSalonNotice what='支払い方法' />
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice

@@ -4,6 +4,8 @@ import {
   NOT_FOUND,
   type NotFound,
   outsideTheContract,
+  UNANSWERED_PARTS,
+  UNREAD_TYPES,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -28,12 +30,7 @@ import { readStaffMember } from '../staff/staff-api'
  * the account once the member has taken the invitation.
  */
 
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -181,7 +178,7 @@ const whyRefused = async (
     .with({ type: 'found' }, () => RECENT)
     .with({ type: 'notFound' }, () => NOT_FOUND)
     .with({ type: 'forbidden' }, () => FORBIDDEN)
-    .with({ type: P.union('tooManyRequests', 'failed') }, (unread) => unread)
+    .with({ type: P.union(...UNREAD_TYPES) }, (unread) => unread)
     .exhaustive()
 }
 

@@ -56,7 +56,7 @@ export type Page<Item> = {
 /*
  * A pattern cannot be shared: its type cannot be named outside
  * `ts-pattern`. Its parts are, for a match to put together
- * (`.with(P.union(...UNANSWERED), unreadOf)`).
+ * (`.with(P.union(...UNANSWERED_PARTS), unreadOf)`).
  */
 
 /**
@@ -64,15 +64,15 @@ export type Page<Item> = {
  * A 401 is among them: the screens are behind the session, and one that
  * could not be renewed signs the user out.
  */
-export const UNANSWERED: [
+export const UNANSWERED_PARTS: [
   null,
   { status: 401 },
   { status: 429 },
   { status: 500 },
 ] = [null, { status: 401 }, { status: 429 }, { status: 500 }]
 
-/** The answers of `Refused`: those of `UNANSWERED`, and a 400 */
-export const REFUSED: [
+/** The answers of `Refused`: those of `UNANSWERED_PARTS`, and a 400 */
+export const REFUSED_PARTS: [
   null,
   { status: 400 },
   { status: 401 },

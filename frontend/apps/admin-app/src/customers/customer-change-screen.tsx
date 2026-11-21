@@ -1,4 +1,8 @@
-import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerResponse,
   ModelsCustomerUpdateRequest,
@@ -163,7 +167,7 @@ const CustomerToChange = ({ salon, customer }: CustomerToChangeProps) => {
     ))
     .with({ type: 'found' }, ({ customer: found }) => opened(referrerOf(found)))
     .with({ type: 'notFound' }, () => opened({ type: 'gone', id: referredBy }))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('紹介元', reason)}
         onRetry={() => void read.refetch()}

@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsMedicalChartResponse } from '@beauty-salon-frontend/api-client'
 import { LoadingIndicator, UnreadNotice } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
@@ -36,7 +36,7 @@ export const WithChart = ({ customerId, fresh, children }: WithChartProps) => {
       <LoadingIndicator label='カルテを読み込んでいます' />
     ))
     .with({ type: 'read' }, ({ chart }) => children(chart))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('カルテ', reason)}
         onRetry={() => void read.refetch()}

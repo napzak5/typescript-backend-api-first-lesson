@@ -4,6 +4,7 @@ import {
   NOT_FOUND,
   type NotFound,
   outsideTheContract,
+  REFUSED_PARTS,
   type RefusedValue,
   refusedValuesOf,
   type Unread,
@@ -25,14 +26,7 @@ import { customerKeyOf } from './customers-api'
  * itself is run by the operator of the platform.
  */
 
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const REFUSED = P.union(...REFUSED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -68,7 +62,7 @@ export const readErasureRequest = async (
     }))
     .with({ status: 404 }, () => ({ type: 'read', request: null }))
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(REFUSED, unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -144,6 +138,6 @@ export const cancelErasureRequest = async (
     }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(REFUSED, unreadOf)
     .exhaustive(outsideTheContract)
 }

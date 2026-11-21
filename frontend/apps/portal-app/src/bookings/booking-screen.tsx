@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsServiceResponse,
@@ -55,7 +55,7 @@ import { OWN_BOOKING_LISTS } from './own-bookings'
 
 const TITLE = '予約する'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 type OfServiceProps = {
   salon: ModelsSalonResponse

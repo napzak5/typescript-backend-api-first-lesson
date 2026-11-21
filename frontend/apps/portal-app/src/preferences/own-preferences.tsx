@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import {
   ButtonLink,
   Card,
@@ -10,7 +10,7 @@ import { match, P } from 'ts-pattern'
 import { PreferencesDetails } from './components/preferences-details/preferences-details'
 import { OWN_PREFERENCES, readOwnPreferences } from './preferences-api'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /**
  * The part of the page of a customer that shows what they want the salons

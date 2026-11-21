@@ -8,6 +8,7 @@ import {
   type RefusedValue,
   refusedValuesOf,
   TOO_MANY_REQUESTS,
+  UNREAD_TYPES,
   type Unread,
   type Unsent,
   whyUnread,
@@ -180,7 +181,7 @@ const readReviewPage = async (
     .exhaustive(outsideTheContract)
 }
 
-const UNREAD = { type: P.union('tooManyRequests', 'failed') }
+const UNREAD = { type: P.union(...UNREAD_TYPES) }
 
 const isUnread = ({ type }: { type: string }): boolean =>
   type === 'tooManyRequests' || type === 'failed'

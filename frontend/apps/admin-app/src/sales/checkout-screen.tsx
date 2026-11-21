@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsSaleCreateRequest,
@@ -56,7 +56,7 @@ const TITLE = '会計を入れる'
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /** What is said of a calculation whose prices are not those of the menu the screen read */
 const OTHER_PRICES =

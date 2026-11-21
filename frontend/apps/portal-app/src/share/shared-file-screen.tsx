@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSharedFileResponse } from '@beauty-salon-frontend/api-client'
 import {
   Form,
@@ -28,7 +28,7 @@ import {
 
 const TITLE = '共有されたファイル'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const NOT_LOADED: SharedFileContent = {
   type: 'notLoaded',

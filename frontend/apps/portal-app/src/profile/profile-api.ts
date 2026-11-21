@@ -4,6 +4,7 @@ import {
   type RefusedValue,
   refusedValuesOf,
   TOO_MANY_REQUESTS,
+  UNANSWERED_PARTS,
   type Unread,
   type Unsent,
 } from '@beauty-salon-frontend/answers'
@@ -25,17 +26,8 @@ import { unansweredOf } from '../behind-the-session'
  */
 export const OWN_PROFILE = ['own', 'profile']
 
-/**
- * The answers `unansweredOf` reads. (A pattern is a constant of its module:
- * the type of one cannot be written out, so it is not exported.)
- */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 403 },
-  { status: 429 },
-  { status: 500 },
-)
+/** The answers `unansweredOf` reads: those of `UNANSWERED_PARTS`, and a 403 */
+const UNANSWERED = P.union(...UNANSWERED_PARTS, { status: 403 })
 
 export type ProfileRead =
   | { type: 'found'; profile: ModelsCustomerProfileResponse }

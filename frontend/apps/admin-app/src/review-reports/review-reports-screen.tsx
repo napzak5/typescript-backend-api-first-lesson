@@ -2,6 +2,7 @@ import {
   cursorAfter,
   firstCursor,
   listingOf,
+  UNREAD_TYPES,
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
@@ -74,7 +75,7 @@ const useReviewsOf = (salonId: string, reviewIds: readonly string[]) => {
       .with({ type: 'found' }, ({ review }) => reviewNameOf(review))
       .with({ type: 'notFound' }, () => '削除されたレビュー')
       .with(
-        { type: P.union('tooManyRequests', 'failed') },
+        { type: P.union(...UNREAD_TYPES) },
         () => 'レビュー（題名を読めませんでした）',
       )
       .exhaustive(),

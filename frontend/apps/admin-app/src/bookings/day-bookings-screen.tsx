@@ -3,6 +3,7 @@ import {
   FAILED,
   firstCursor,
   listingOf,
+  UNREAD_TYPES,
   unreadMessageOf,
   whyUnread,
 } from '@beauty-salon-frontend/answers'
@@ -52,7 +53,7 @@ import { customerIdsOf, moreOfRows, rowsOf } from './day-bookings'
 
 const TITLE = '予約台帳'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 type DayBookingsProps = {
   salon: ModelsSalonResponse

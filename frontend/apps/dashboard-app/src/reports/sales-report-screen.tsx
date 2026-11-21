@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
 import {
@@ -34,7 +34,7 @@ import { usePeriodCount } from './use-period-count'
 
 const TITLE = '売上レポート'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /** Why the last export saved nothing, for the period it was asked for */
 type ExportSaid = { asked: string; message: string }

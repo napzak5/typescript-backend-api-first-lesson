@@ -1,4 +1,8 @@
-import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsServiceCategoryResponse,
@@ -243,7 +247,7 @@ const ChangePart = ({ salon, categoryId }: ChangePartProps) => {
     categories.isFetchedAfterMount ? categories.data : undefined,
   ])
     .with([{ type: 'notFound' }, P._], () => <CategoryNotFound salon={salon} />)
-    .with([{ type: P.union('tooManyRequests', 'failed') }, P._], ([reason]) => (
+    .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
       <>
         {header}
         <UnreadNotice

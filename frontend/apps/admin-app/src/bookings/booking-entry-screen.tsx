@@ -2,6 +2,7 @@ import {
   cursorAfter,
   firstCursor,
   listingOf,
+  UNREAD_TYPES,
   unreadMessageOf,
   whyUnread,
 } from '@beauty-salon-frontend/answers'
@@ -78,7 +79,7 @@ import { ChosenCustomer } from './components/chosen-customer/chosen-customer'
 
 const TITLE = '予約を入れる'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 

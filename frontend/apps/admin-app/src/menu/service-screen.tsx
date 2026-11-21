@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -68,7 +68,7 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
 
   return match([service.data, menuOf(categories.data, services.data)])
     .with([{ type: 'notFound' }, P._], () => <ServiceNotFound salon={salon} />)
-    .with([{ type: P.union('tooManyRequests', 'failed') }, P._], ([reason]) => (
+    .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
       <>
         {header}
         <UnreadNotice

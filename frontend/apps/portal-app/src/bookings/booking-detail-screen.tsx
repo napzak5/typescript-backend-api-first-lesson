@@ -1,4 +1,8 @@
-import { unreadMessageOf, whyUnread } from '@beauty-salon-frontend/answers'
+import {
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingCancelRequest,
   ModelsCustomerBookingResponse,
@@ -42,7 +46,7 @@ import {
 
 const TITLE = '予約の内容'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const GONE_OR_FOUND = P.union('found', 'notFound')
 

@@ -6,6 +6,7 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  REFUSED_PARTS,
   toTheEnd,
   type Unread,
   unreadOf,
@@ -18,14 +19,7 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 
-/** The answers of `Refused`, as a pattern */
-const REFUSED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const REFUSED = P.union(...REFUSED_PARTS)
 
 export type StaffProfilesRead =
   | { type: 'found'; items: ModelsStaffProfileResponse[] }

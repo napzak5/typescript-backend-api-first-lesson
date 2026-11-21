@@ -1,4 +1,8 @@
-import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerDeletionRequestCreateRequest,
   ModelsCustomerResponse,
@@ -112,7 +116,7 @@ import { WithCustomer } from './with-customer'
 
 const TITLE = 'お客様の台帳'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /** What a part says of a customer who was removed while the page was open */
 const GONE = 'このお客様は、台帳から削除されました。'

@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/api-client'
 import {
   afterPreferencesChange,
@@ -38,7 +38,7 @@ const TITLE = '好みの設定'
 /** Where the preferences are shown, and where the form leads */
 const MY_PAGE = '/mypage'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const BACK = (
   <ButtonLink href={MY_PAGE} variant='quiet'>

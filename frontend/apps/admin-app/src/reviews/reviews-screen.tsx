@@ -2,6 +2,7 @@ import {
   cursorAfter,
   firstCursor,
   listingOf,
+  UNREAD_TYPES,
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
 import type {
@@ -54,7 +55,7 @@ const SummaryPart = ({ salonId }: { salonId: string }) => {
     .with({ type: 'found' }, ({ summary }) => (
       <ReviewSummary summary={summary} />
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('評価のまとめ', reason)}
         onRetry={() => void read.refetch()}

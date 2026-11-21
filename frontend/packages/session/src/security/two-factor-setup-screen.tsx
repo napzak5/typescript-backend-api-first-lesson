@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsAuthTwoFactorSetupResponse,
   ModelsUserResponse,
@@ -33,7 +33,7 @@ import {
   withTwoFactorStatus,
 } from './two-factor-flow'
 
-const UNSENT = P.union('tooManyRequests', 'failed')
+const UNSENT = P.union(...UNREAD_TYPES)
 
 /**
  * Where the set-up is. The secret and the backup codes are in the answer

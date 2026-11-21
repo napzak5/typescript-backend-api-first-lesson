@@ -1,4 +1,8 @@
-import { firstCursor, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import {
+  firstCursor,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
 import {
   Card,
@@ -51,7 +55,7 @@ import {
   withTwoFactorStatus,
 } from './two-factor-flow'
 
-const UNSENT = P.union('tooManyRequests', 'failed')
+const UNSENT = P.union(...UNREAD_TYPES)
 
 type SessionPages = InfiniteData<SessionPage, string | undefined>
 

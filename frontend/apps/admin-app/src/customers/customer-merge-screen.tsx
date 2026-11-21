@@ -1,4 +1,8 @@
-import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerResponse,
   ModelsSalonResponse,
@@ -138,7 +142,7 @@ const MergeWith = ({
         <ButtonLink href={chooseAgainHref}>相手を選び直す</ButtonLink>
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('まとめる相手', reason)}
         onRetry={() => void read.refetch()}

@@ -1,4 +1,8 @@
-import { unreadMessageOf, whyUnread } from '@beauty-salon-frontend/answers'
+import {
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsAttachmentResponse,
   ModelsSalonResponse,
@@ -139,7 +143,7 @@ const ShareLinkPart = ({
   })
   const header = <PageHeader title={TITLE} description={salon.name} />
   const linkRead = link.isFetchedAfterMount ? link.data : undefined
-  const UNREAD = { type: P.union('tooManyRequests', 'failed') }
+  const UNREAD = { type: P.union(...UNREAD_TYPES) }
 
   return (
     match([file.data, linkRead])

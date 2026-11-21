@@ -8,7 +8,9 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  REFUSED_PARTS,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
   whyUnread,
@@ -67,14 +69,7 @@ export type CustomersRead =
 
 const idSchema = z.uuid()
 
-/** The answers of `Refused`, as a pattern */
-const REFUSED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const REFUSED = P.union(...REFUSED_PARTS)
 
 /**
  * Whatever the API answers that is neither the customer nor "not found":
@@ -128,12 +123,7 @@ export const statisticsKeyOf = (
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** The same as `REFUSED`, for a request whose 400 names the values it refused */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 /** How many customers a page of a search has. */
 const CUSTOMERS_PER_PAGE = 20

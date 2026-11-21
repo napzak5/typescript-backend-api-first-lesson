@@ -6,8 +6,11 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  REFUSED_PARTS,
   type RefusedValue,
   refusedValuesOf,
+  UNANSWERED_PARTS,
+  UNREAD_TYPES,
   type Unread,
   unreadOf,
   whyUnread,
@@ -186,22 +189,10 @@ const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 const CONFLICT: StatusChange = { type: 'conflict' }
 
-/** The answers that say nothing about the booking, as a pattern */
-const REFUSED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const REFUSED = P.union(...REFUSED_PARTS)
 
 /** The same, for a request whose 400 names the values it refused */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 /** The keys of what the screens read of the bookings of a salon. */
 export const bookingListsKeyOf = (salonId: string): string[] => [
@@ -622,7 +613,7 @@ export const attemptAddition = async (
     .returnType<AdditionAttempt>()
     .with({ type: 'taken' }, () => ({ type: 'taken', check }))
     .with({ type: P.union('free', 'unassigned') }, () => ({ type: 'tooMuch' }))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (unread) => unread)
+    .with({ type: P.union(...UNREAD_TYPES) }, (unread) => unread)
     .exhaustive()
 }
 

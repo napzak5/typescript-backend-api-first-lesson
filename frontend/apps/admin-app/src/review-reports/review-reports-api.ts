@@ -7,6 +7,7 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -25,13 +26,7 @@ import { match, P } from 'ts-pattern'
  * wrong; a review that breaks the rules is removed, and its reports with it.
  */
 
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 

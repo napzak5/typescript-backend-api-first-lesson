@@ -2,6 +2,7 @@ import {
   cursorAfter,
   firstCursor,
   listingOf,
+  UNREAD_TYPES,
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
 import { RequireSession } from '@beauty-salon-frontend/session'
@@ -41,7 +42,7 @@ import {
 
 const TITLE = '自分のレビュー'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const NO_REVIEWS = (
   <EmptyState

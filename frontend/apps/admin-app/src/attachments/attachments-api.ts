@@ -9,6 +9,7 @@ import {
   pageOf,
   type RefusedValue,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -31,13 +32,7 @@ import { match, P } from 'ts-pattern'
  * few minutes, which the browser calls without the API.
  */
 
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 

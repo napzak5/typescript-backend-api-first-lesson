@@ -2,6 +2,7 @@ import {
   cursorAfter,
   firstCursor,
   listingOf,
+  UNREAD_TYPES,
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
 import type {
@@ -44,7 +45,7 @@ import { WithCustomer } from './with-customer'
 
 const TITLE = 'ポイント'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /**
  * The sale a transaction was made for, by its number, leading to its page

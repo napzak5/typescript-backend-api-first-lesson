@@ -1,4 +1,8 @@
-import { unreadMessageOf, whyUnread } from '@beauty-salon-frontend/answers'
+import {
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsSalonResponse,
@@ -29,7 +33,7 @@ import {
 import { hoursOf } from './booking-format'
 import { bookingKeyOf, readBooking } from './bookings-api'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 export type WithBookingProps = {
   salon: ModelsSalonResponse

@@ -1,4 +1,8 @@
-import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsSaleResponse,
   ModelsSaleUpdateRequest,
@@ -36,7 +40,7 @@ import { WithSale } from './with-sale'
 
 const TITLE = '売上を直す'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 

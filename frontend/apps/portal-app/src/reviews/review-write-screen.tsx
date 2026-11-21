@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
@@ -42,7 +42,7 @@ const TITLE = 'レビューを書く'
 /** Where what the customer wrote is listed, and where the form leads */
 const OWN_REVIEWS = '/mypage/reviews'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const TO_THE_VISITS = (
   <ButtonLink href={listHrefOf('past')}>これまでの予約を見る</ButtonLink>

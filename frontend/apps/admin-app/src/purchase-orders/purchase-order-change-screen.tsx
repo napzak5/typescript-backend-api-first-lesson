@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsPurchaseOrderResponse,
   ModelsPurchaseOrderUpdateRequest,
@@ -163,7 +163,7 @@ const ChangePart = ({ salon, purchaseOrderId }: ChangePartProps) => {
         <OtherSalonNotice what='発注' />
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice

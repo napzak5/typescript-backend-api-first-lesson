@@ -1,5 +1,6 @@
 import {
   NOT_FOUND,
+  UNREAD_TYPES,
   unreadMessageOf,
   whyUnread,
 } from '@beauty-salon-frontend/answers'
@@ -87,7 +88,7 @@ import {
 
 const TITLE = '予約の内容'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /** An operation on the state of a booking, with what it sends. */
 type Operation =

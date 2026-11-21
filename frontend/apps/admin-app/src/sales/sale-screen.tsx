@@ -1,5 +1,6 @@
 import {
   NOT_FOUND,
+  UNREAD_TYPES,
   unreadMessageOf,
   whyUnread,
 } from '@beauty-salon-frontend/answers'
@@ -60,7 +61,7 @@ import { WithPaymentMethods, WithSale } from './with-sale'
 
 const TITLE = '売上の内容'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /** A sale names no customer when none was recorded: nothing is read for it */
 const NO_CUSTOMER: { type: 'none' } = { type: 'none' }

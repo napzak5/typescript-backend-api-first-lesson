@@ -3,6 +3,7 @@ import {
   FAILED,
   firstCursor,
   listingOf,
+  UNREAD_TYPES,
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
 import type {
@@ -174,7 +175,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         ))
         // The list says that the account reads no alerts of the salon
         .with({ type: 'forbidden' }, () => null)
-        .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('アラートの件数', reason)}
             onRetry={() => void summary.refetch()}

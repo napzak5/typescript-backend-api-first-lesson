@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { NoSalonNotice, useOwnSalon } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,
@@ -53,7 +53,7 @@ export const StartScreen = ({
       <Navigate to={salonHref(salonId)} replace />
     ))
     .with({ type: 'none' }, () => <NoSalonNotice />)
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={title} />
         <UnreadNotice

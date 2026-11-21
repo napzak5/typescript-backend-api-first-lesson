@@ -7,6 +7,7 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  REFUSED_PARTS,
   type RefusedValue,
   refusedValuesOf,
   type Unread,
@@ -32,14 +33,7 @@ import { customerKeyOf, readCustomers } from '../customers/customers-api'
  * customers is one for every salon, and so are their charts.
  */
 
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const REFUSED = P.union(...REFUSED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -75,7 +69,7 @@ export const readChart = async (customerId: string): Promise<ChartRead> => {
       .with({ status: 404 }, () => ({ type: 'read', chart: null }))
       // The screens of a customer are behind the same permission as the charts
       .with({ status: 403 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(REFUSED, unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -120,7 +114,7 @@ export const readChartPage = async (
     return match(answer)
       .returnType<Unread>()
       .with({ status: 403 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(REFUSED, unreadOf)
       .exhaustive(outsideTheContract)
   }
   const charts = answer.data.data
@@ -176,7 +170,7 @@ export const createChart = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The body is the form, far from the limits of size and of type
       .with({ status: P.union(413, 415) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(REFUSED, unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -203,6 +197,6 @@ export const updateChart = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(REFUSED, unreadOf)
     .exhaustive(outsideTheContract)
 }

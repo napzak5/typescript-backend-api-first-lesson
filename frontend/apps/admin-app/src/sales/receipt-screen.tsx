@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   OtherSalonNotice,
@@ -24,7 +24,7 @@ import { WithPaymentMethods } from './with-sale'
 
 const TITLE = 'レシート'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /**
  * What is on the screen and not on paper: the heading and the ways on. The

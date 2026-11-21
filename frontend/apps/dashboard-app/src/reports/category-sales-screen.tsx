@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   periodNameOf,
@@ -21,7 +21,7 @@ import { usePeriodCount } from './use-period-count'
 
 const TITLE = '区分別の売上'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /**
  * The sales of services of the salon over a period by kind of service:

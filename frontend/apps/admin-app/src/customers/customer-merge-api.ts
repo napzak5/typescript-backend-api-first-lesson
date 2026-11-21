@@ -4,6 +4,8 @@ import {
   type NotFound,
   outsideTheContract,
   refusedValuesOf,
+  UNANSWERED_PARTS,
+  UNREAD_TYPES,
   type Unread,
   unreadOf,
   whyUnread,
@@ -30,13 +32,7 @@ import { customerKeyOf, readCustomer } from './customers-api'
  * else of both the API looks at before it merges them, and the merge.
  */
 
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -70,7 +66,7 @@ const readErasureAsked = async (
       }))
       // The screen offers the merge only to who may read the requests
       .with({ type: 'forbidden' }, () => FAILED)
-      .with({ type: P.union('tooManyRequests', 'failed') }, (unread) => unread)
+      .with({ type: P.union(...UNREAD_TYPES) }, (unread) => unread)
       .exhaustive()
   )
 }

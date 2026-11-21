@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryResponse,
   ModelsInventoryStockCountRequest,
@@ -152,16 +152,13 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         .with([{ type: 'forbidden' }, P._], () => (
           <OtherSalonNotice what='在庫' />
         ))
-        .with(
-          [{ type: P.union('tooManyRequests', 'failed') }, P._],
-          ([reason]) => (
-            <UnreadNotice
-              message={unreadMessageOf('在庫の行', reason)}
-              onRetry={() => void rows.refetch()}
-              pending={rows.isFetching}
-            />
-          ),
-        )
+        .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
+          <UnreadNotice
+            message={unreadMessageOf('在庫の行', reason)}
+            onRetry={() => void rows.refetch()}
+            pending={rows.isFetching}
+          />
+        ))
         // The salon was removed meanwhile, or the products could not be read
         .with(
           [

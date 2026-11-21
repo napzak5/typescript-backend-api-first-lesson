@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerVersionResponse,
   ModelsSalonResponse,
@@ -92,7 +92,7 @@ export const RemovedCustomer = ({
           />
         </>
       ))
-      .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           {header}
           <UnreadNotice

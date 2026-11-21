@@ -11,6 +11,7 @@ import {
   type RefusedValue,
   refusedValuesOf,
   toTheEnd,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -36,13 +37,7 @@ import type { StockView } from './stock-view'
  * salon is a condition of a list, and a row names its salon itself.
  */
 
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 

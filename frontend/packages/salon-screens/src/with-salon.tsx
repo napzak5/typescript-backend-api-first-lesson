@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
@@ -49,7 +49,7 @@ export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
         <ButtonLink href='/'>トップへ戻る</ButtonLink>
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={title} />
         <UnreadNotice

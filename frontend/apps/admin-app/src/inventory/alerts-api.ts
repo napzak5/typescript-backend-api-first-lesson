@@ -5,6 +5,7 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -27,13 +28,7 @@ import { stockKeyOf } from './inventory-api'
  * reads and acknowledges them, and an administrator.
  */
 
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 

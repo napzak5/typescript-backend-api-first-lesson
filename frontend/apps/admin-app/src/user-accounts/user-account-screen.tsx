@@ -1,4 +1,8 @@
-import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
@@ -230,7 +234,7 @@ const AccountPage = ({ userId }: AccountPageProps) => {
             <ToTheStart />
           </>
         ))
-        .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('アカウント', reason)}
             onRetry={() => void read.refetch()}

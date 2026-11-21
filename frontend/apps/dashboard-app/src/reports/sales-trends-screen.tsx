@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   dayAt,
@@ -37,7 +37,7 @@ import {
 
 const TITLE = '売上の推移'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /** What was wrong with the form, and the days and the parts the address showed when it was sent */
 type Refused = { asked: string; errors: FormErrors }

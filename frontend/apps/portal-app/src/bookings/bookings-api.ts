@@ -7,6 +7,7 @@ import {
   pageOf,
   TOO_MANY_REQUESTS,
   toTheEnd,
+  UNANSWERED_PARTS,
   type Unread,
   type Unsent,
 } from '@beauty-salon-frontend/answers'
@@ -84,17 +85,8 @@ export type Move =
 
 const NOT_FOUND: NotFound = { type: 'notFound' }
 
-/**
- * The answers `unansweredOf` reads. (A pattern is a constant of its module:
- * the type of one cannot be written out, so it is not exported.)
- */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 403 },
-  { status: 429 },
-  { status: 500 },
-)
+/** The answers `unansweredOf` reads: those of `UNANSWERED_PARTS`, and a 403 */
+const UNANSWERED = P.union(...UNANSWERED_PARTS, { status: 403 })
 
 const idSchema = z.uuid()
 

@@ -10,6 +10,7 @@ import {
   pageOf,
   refusedValuesOf,
   toTheEnd,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -31,12 +32,7 @@ import type { StaffEntryAttempt, StaffWriteAttempt } from './staff-form'
  * salon and an administrator keep them.
  */
 
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 

@@ -2,6 +2,7 @@ import {
   type Forbidden,
   NOT_FOUND,
   type NotFound,
+  UNREAD_TYPES,
   type Unread,
   unreadMessageOf,
 } from '@beauty-salon-frontend/answers'
@@ -147,14 +148,8 @@ const shownOf = (
         rows: read.rows,
       },
     }))
-    .with(
-      [{ type: P.union('tooManyRequests', 'failed') }, P._],
-      ([unread]) => unread,
-    )
-    .with(
-      [P._, { type: P.union('tooManyRequests', 'failed') }],
-      ([, unread]) => unread,
-    )
+    .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([unread]) => unread)
+    .with([P._, { type: P.union(...UNREAD_TYPES) }], ([, unread]) => unread)
     .exhaustive()
 
 type ScheduleNotFoundProps = { salon: ModelsSalonResponse }
@@ -256,7 +251,7 @@ export const WithSchedule = ({
         <ScheduleForbidden />
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice

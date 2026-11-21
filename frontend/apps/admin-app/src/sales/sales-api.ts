@@ -8,9 +8,11 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  REFUSED_PARTS,
   type RefusedValue,
   refusedValuesOf,
   toTheEnd,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -141,22 +143,10 @@ const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 const CONFLICT: { type: 'conflict' } = { type: 'conflict' }
 
-/** The answers that say nothing about what was asked for, as a pattern */
-const REFUSED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const REFUSED = P.union(...REFUSED_PARTS)
 
 /** The same, for a request whose 400 names the values it refused */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 /** How many sales a page of the ledger has. */
 const SALES_PER_PAGE = 50

@@ -1,3 +1,4 @@
+import { UNREAD_TYPES } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonRoleType,
   ModelsStaffAccountResponse,
@@ -164,6 +165,6 @@ export const loginOf = (
       invitation: read.invitation,
     }))
     .with({ type: 'notFound' }, () => ({ type: 'none' }))
-    .with({ type: P.union('tooManyRequests', 'failed') }, () => unread)
+    .with({ type: P.union(...UNREAD_TYPES) }, () => unread)
     .exhaustive()
 }

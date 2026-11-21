@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsCustomerProfileResponse } from '@beauty-salon-frontend/api-client'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
@@ -43,7 +43,7 @@ const TITLE = 'お客様の情報'
 /** Where the profile is shown, and where both forms lead */
 const MY_PAGE = '/mypage'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const BACK = (
   <ButtonLink href={MY_PAGE} variant='quiet'>

@@ -1,4 +1,8 @@
-import { unreadMessageOf, whyUnread } from '@beauty-salon-frontend/answers'
+import {
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingRescheduleRequest,
   ModelsCustomerBookingResponse,
@@ -54,7 +58,7 @@ import {
 
 const TITLE = '日時の変更'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 type MoveStepProps = {
   booking: ModelsCustomerBookingResponse

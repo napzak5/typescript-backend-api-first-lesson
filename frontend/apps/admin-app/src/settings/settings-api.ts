@@ -6,6 +6,7 @@ import {
   outsideTheContract,
   type RefusedValue,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -25,13 +26,7 @@ import { match, P } from 'ts-pattern'
  * An administrator adds a salon; the owner and an administrator remove it.
  */
 
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
+const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 

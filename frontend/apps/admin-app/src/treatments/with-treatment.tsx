@@ -1,4 +1,8 @@
-import { unreadMessageOf, whyUnread } from '@beauty-salon-frontend/answers'
+import {
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsCustomerResponse,
@@ -24,7 +28,7 @@ import { treatmentsHrefOf } from '../navigation'
 import { productsKeyOf, readProducts } from '../products/products-api'
 import { readTreatment, treatmentKeyOf } from './treatments-api'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 /** What a screen of a record names and offers, read with the record */
 export type TreatmentContext = {

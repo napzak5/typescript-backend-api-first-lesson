@@ -1,4 +1,8 @@
-import { unreadMessageOf, whyUnread } from '@beauty-salon-frontend/answers'
+import {
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsCustomerResponse,
@@ -53,7 +57,7 @@ const TITLE = '施術記録を書く'
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 type EntryProps = {
   salon: ModelsSalonResponse

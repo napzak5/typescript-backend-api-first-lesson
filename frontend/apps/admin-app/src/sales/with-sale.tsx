@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsPaymentMethodResponse,
   ModelsSaleResponse,
@@ -26,7 +26,7 @@ import {
   saleKeyOf,
 } from './sales-api'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 export type WithSaleProps = {
   salon: ModelsSalonResponse

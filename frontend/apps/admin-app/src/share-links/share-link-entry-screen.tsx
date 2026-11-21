@@ -1,4 +1,4 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsAttachmentResponse,
   ModelsSalonResponse,
@@ -203,7 +203,7 @@ const EntryPart = ({ salon, attachmentId }: EntryPartProps) => {
         },
         () => <AttachmentNotFound salonId={salon.id} />,
       )
-      .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           {header}
           <UnreadNotice

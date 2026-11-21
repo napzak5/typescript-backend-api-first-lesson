@@ -1,4 +1,4 @@
-import { NOT_FOUND } from '@beauty-salon-frontend/answers'
+import { NOT_FOUND, UNREAD_TYPES } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsBookingUpdateRequest,
@@ -27,7 +27,7 @@ import { WithBooking } from './with-booking'
 
 const TITLE = '要望とメモを変える'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
+const UNREAD = P.union(...UNREAD_TYPES)
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
