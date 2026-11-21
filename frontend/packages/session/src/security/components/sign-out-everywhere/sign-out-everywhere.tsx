@@ -32,11 +32,9 @@ export const SignOutEverywhere = ({
   onConfirm,
 }: SignOutEverywhereProps) => (
   <>
-    <p>
-      <Button variant='danger' onClick={onOpen}>
-        すべての端末でサインアウトする
-      </Button>
-    </p>
+    <Button variant='danger' onClick={onOpen}>
+      すべての端末でサインアウトする
+    </Button>
     <Dialog
       open={open}
       onClose={onClose}

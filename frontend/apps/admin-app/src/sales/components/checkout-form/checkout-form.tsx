@@ -14,6 +14,7 @@ import {
   FormPart,
   type FormProps,
   LoadingIndicator,
+  Note,
   Select,
   Table,
   TextArea,
@@ -182,9 +183,9 @@ export const CheckoutForm = ({
               施術を足す
             </Button>
           </div>
-          <p className={styles['changed']} role='status'>
+          <Note className={styles['changed']} role='status'>
             {changed}
-          </p>
+          </Note>
         </div>
       </section>
       <section className={styles['part']} aria-labelledby={amountsName}>
@@ -231,11 +232,9 @@ export const CheckoutForm = ({
           .with({ type: 'uncalculated' }, ({ message }) => (
             <div className={styles['controls']}>
               <Alert tone='warning'>{message}</Alert>
-              <p>
-                <Button onClick={onRecalculate} pending={recalculating}>
-                  計算し直す
-                </Button>
-              </p>
+              <Button onClick={onRecalculate} pending={recalculating}>
+                計算し直す
+              </Button>
             </div>
           ))
           .with({ type: 'unread' }, ({ message }) => (

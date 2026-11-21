@@ -35,9 +35,7 @@ export const ServiceNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
       title='サービスが見つかりません'
       description='アドレスが正しいか、お確かめください。メニューから削除したサービスは、表示できません。'
     />
-    <p>
-      <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
-    </p>
+    <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
   </>
 )
 
@@ -124,9 +122,7 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
           currency={salon.currency}
           serviceHref={(id) => serviceHrefOf(salon.id, id)}
         />
-        <p>
-          <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
-        </p>
+        <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
       </>
     ))
     .exhaustive()

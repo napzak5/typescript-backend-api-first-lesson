@@ -1,8 +1,3 @@
-.note {
-  margin: 0;
-  color: var(--color-text-muted);
-}
-
 /* A day of the week, or a row of a date: a framed group of its own */
 .row {
   padding: var(--space-4);
@@ -21,12 +16,7 @@
   gap: var(--space-fields);
 }
 
-/* The buttons, and the date, are as wide as their words and values */
-.remove,
-.add {
-  justify-self: start;
-}
-
+/* The date is as wide as its value */
 .short {
   justify-self: start;
   min-inline-size: 12rem;

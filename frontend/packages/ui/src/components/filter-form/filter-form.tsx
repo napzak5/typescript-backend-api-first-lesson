@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react'
 import { useWideScreen } from '../../wide-screen'
+import { Actions } from '../actions/actions'
 import { Button } from '../button/button'
 import { ButtonLink } from '../button-link/button-link'
 import { Dialog } from '../dialog/dialog'
@@ -135,7 +136,7 @@ export const FilterForm = ({
             {inSight}
           </div>
         )}
-        <div className={styles['actions']}>
+        <Actions>
           {(!inSheet || children !== undefined) && submitButton}
           {inSheet && (
             <Button aria-haspopup='dialog' onClick={() => setSheetOpen(true)}>
@@ -147,7 +148,7 @@ export const FilterForm = ({
               条件を外す
             </ButtonLink>
           )}
-        </div>
+        </Actions>
         {inSheet && (
           <Dialog
             open={sheetOpen}

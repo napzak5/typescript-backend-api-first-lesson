@@ -231,4 +231,14 @@ describe('Form', () => {
     // Assert
     expect(stories.WithActions.args.onSubmit).not.toHaveBeenCalled()
   })
+
+  it('should stand its button and what else can be done in one row, which is a column on a narrow screen', async () => {
+    // Act
+    await stories.WithActions.run()
+
+    // Assert
+    const row = screen.getByRole('button', { name: 'やめる' }).parentElement
+    expect(row).toHaveClass('row')
+    expect(row).toContainElement(submit())
+  })
 })

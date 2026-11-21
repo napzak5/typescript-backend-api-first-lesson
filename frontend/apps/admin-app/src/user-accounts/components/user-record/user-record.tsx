@@ -1,6 +1,6 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { Alert, Card, DescriptionList } from '@beauty-salon-frontend/ui'
+import { Alert, Card, DescriptionList, Note } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import {
   statusNameOf,
@@ -16,7 +16,6 @@ import {
   timeZoneNoteOf,
   userRoleNameOf,
 } from '../../user-accounts'
-import styles from './user-record.module.css'
 
 export type UserRecordProps = {
   user: ModelsUserResponse
@@ -102,11 +101,9 @@ export const UserRecord = ({
           },
         ]}
       />
-      {statusNote !== undefined && (
-        <p className={styles['note']}>{statusNote}</p>
-      )}
-      {lockNote !== undefined && <p className={styles['note']}>{lockNote}</p>}
-      <p className={styles['note']}>{timeZoneNoteOf(timezone)}</p>
+      {statusNote !== undefined && <Note>{statusNote}</Note>}
+      {lockNote !== undefined && <Note>{lockNote}</Note>}
+      <Note>{timeZoneNoteOf(timezone)}</Note>
     </Card>
   )
 }

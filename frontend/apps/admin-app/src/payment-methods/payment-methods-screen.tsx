@@ -85,9 +85,7 @@ const PaymentMethodsPart = ({ salon }: PaymentMethodsPartProps) => {
           </>
         ))
         .exhaustive()}
-      <p>
-        <ButtonLink href={settingsHrefOf(salon.id)}>設定へ</ButtonLink>
-      </p>
+      <ButtonLink href={settingsHrefOf(salon.id)}>設定へ</ButtonLink>
     </>
   )
 }

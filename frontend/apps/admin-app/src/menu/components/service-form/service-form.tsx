@@ -12,6 +12,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  Note,
   Select,
   TextArea,
   TextField,
@@ -389,9 +390,9 @@ export const ServiceForm = ({
       </FormPart>
       <FormPart label='パッケージ'>
         {containers.length > 0 ? (
-          <p className={styles['note']}>
+          <Note size='small'>
             {`このサービスは、パッケージ${containers.map(({ name }) => `「${name}」`).join('')}に入っているので、パッケージにできません。`}
-          </p>
+          </Note>
         ) : (
           <Checkbox
             label='パッケージにする'
@@ -423,7 +424,6 @@ export const ServiceForm = ({
                   error={said[packagedControlOf(index)]}
                 />
                 <Button
-                  className={styles['remove']}
                   size='small'
                   aria-label={`構成サービス ${index + 1} を外す`}
                   onClick={() => takeAway(row.key, { type: 'addPackaged' })}
@@ -434,11 +434,7 @@ export const ServiceForm = ({
             </fieldset>
           ))}
         {isPackage && packaged.length < MOST_PACKAGED && (
-          <Button
-            className={styles['add']}
-            ref={addPackaged}
-            onClick={() => add('packaged')}
-          >
+          <Button ref={addPackaged} onClick={() => add('packaged')}>
             構成サービスを足す
           </Button>
         )}
@@ -522,7 +518,6 @@ export const ServiceForm = ({
                 defaultChecked={row.shown?.isActive ?? true}
               />
               <Button
-                className={styles['remove']}
                 size='small'
                 aria-label={`オプション ${index + 1} を外す`}
                 onClick={() => takeAway(row.key, { type: 'addOption' })}
@@ -532,11 +527,7 @@ export const ServiceForm = ({
             </div>
           </fieldset>
         ))}
-        <Button
-          className={styles['add']}
-          ref={addOption}
-          onClick={() => add('options')}
-        >
+        <Button ref={addOption} onClick={() => add('options')}>
           オプションを足す
         </Button>
       </FormPart>

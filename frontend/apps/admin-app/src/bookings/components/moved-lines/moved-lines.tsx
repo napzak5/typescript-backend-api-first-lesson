@@ -37,7 +37,7 @@ export const MovedLines = ({
           <p className={styles['service']}>
             {`明細 ${index + 1} ${serviceNameOf(line.serviceId, services)}`}
           </p>
-          <p className={styles['when']}>
+          <p>
             {`${hoursOf(line, timezone)} 担当 ${memberNameOf(line.staffId, staff)}`}
           </p>
           {check !== undefined && (

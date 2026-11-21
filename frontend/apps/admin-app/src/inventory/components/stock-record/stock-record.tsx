@@ -3,7 +3,12 @@ import type {
   ModelsProductResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import { Badge, Card, DescriptionList } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  Card,
+  DescriptionList,
+  WrittenText,
+} from '@beauty-salon-frontend/ui'
 import { NOT_RECORDED } from '../../../staff/staff-format'
 import { performerNameOf } from '../../movement-format'
 import {
@@ -73,7 +78,7 @@ export const StockRecord = ({
               row.notes === null ? (
                 NOT_RECORDED
               ) : (
-                <p className={styles['written']}>{row.notes}</p>
+                <WrittenText>{row.notes}</WrittenText>
               ),
           },
         ]}

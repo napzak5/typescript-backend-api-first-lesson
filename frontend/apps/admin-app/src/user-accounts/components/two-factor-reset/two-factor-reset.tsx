@@ -38,16 +38,14 @@ export const TwoFactorReset = ({
 }: TwoFactorResetProps) => (
   <Card title='2 要素認証のリセット'>
     <div className={styles['reset']}>
-      <p className={styles['text']}>
+      <p>
         認証アプリとバックアップコードの両方をなくした利用者のための操作です。リセットすると、利用者は、パスワードだけでログインし、2
         要素認証を設定し直します。
       </p>
       {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
-      <p className={styles['text']}>
-        <Button variant='danger' onClick={onAsk}>
-          2 要素認証をリセットする
-        </Button>
-      </p>
+      <Button variant='danger' onClick={onAsk}>
+        2 要素認証をリセットする
+      </Button>
     </div>
     <Dialog
       open={asking}

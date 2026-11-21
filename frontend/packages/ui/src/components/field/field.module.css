@@ -36,12 +36,6 @@
   line-height: var(--line-height-tight);
 }
 
-.description {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  line-height: var(--line-height-tight);
-}
-
 .error {
   color: var(--color-danger-text);
   font-size: var(--font-size-small);

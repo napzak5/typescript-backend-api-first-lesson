@@ -9,7 +9,13 @@ import {
   categoryNameOf,
   methodKindNameOf,
 } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
+import {
+  Card,
+  DescriptionList,
+  Link,
+  Note,
+  Table,
+} from '@beauty-salon-frontend/ui'
 import {
   CATEGORY_SALES_NOTE,
   countNameOf,
@@ -68,9 +74,9 @@ export const SalesReport = ({
               { term: '値引き', description: money(report.totalDiscounts) },
             ]}
           />
-          <p className={styles['note']}>
+          <Note>
             売上は、消費税を含み、値引きを引いた額です。純売上は、売上から返金を引いた額です。返金は、返金した日ではなく、もとの会計の日で数えます。
-          </p>
+          </Note>
         </div>
       </Card>
       <Card title='支払い方法別'>
@@ -108,9 +114,9 @@ export const SalesReport = ({
             rowKey={({ method }) => method}
             emptyMessage='受け取った支払いはありません'
           />
-          <p className={styles['note']}>
+          <Note>
             入金は、受け取った支払いから返金を引いた額です。まだ受け取っていない額は入らないので、合わせても売上と同じにならないことがあります。
-          </p>
+          </Note>
         </div>
       </Card>
       <Card title='メニューの区分別'>
@@ -148,8 +154,8 @@ export const SalesReport = ({
             rowKey={({ category }) => category}
             emptyMessage='メニューの売上はありません'
           />
-          <p className={styles['note']}>{CATEGORY_SALES_NOTE}</p>
-          <p className={styles['more']}>
+          <Note>{CATEGORY_SALES_NOTE}</Note>
+          <p>
             <Link href={categoriesHref}>区分別の売上へ</Link>
           </p>
         </div>
@@ -198,8 +204,8 @@ export const SalesReport = ({
             rowKey={({ counted }) => counted.staffId}
             emptyMessage='担当したスタッフのいる売上はありません'
           />
-          <p className={styles['note']}>{STAFF_SALES_NOTE}</p>
-          <p className={styles['more']}>
+          <Note>{STAFF_SALES_NOTE}</Note>
+          <p>
             <Link href={staffHref}>すべてのスタッフの売上へ</Link>
           </p>
         </div>

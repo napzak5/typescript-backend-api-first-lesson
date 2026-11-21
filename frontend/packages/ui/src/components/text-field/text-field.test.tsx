@@ -57,9 +57,13 @@ describe('TextField', () => {
     await stories.WithDescription.run()
     const input = screen.getByRole('textbox', { name: '電話番号' })
 
-    // Assert
+    // Assert: said as close to the control as a note of a form is
     expect(input).toHaveAccessibleDescription('ハイフンなしで入力してください')
     expect(input).not.toHaveAttribute('aria-invalid')
+    expect(screen.getByText('ハイフンなしで入力してください')).toHaveClass(
+      'note',
+      'small',
+    )
   })
 
   it('should be invalid and described by its description, then by its error', async () => {

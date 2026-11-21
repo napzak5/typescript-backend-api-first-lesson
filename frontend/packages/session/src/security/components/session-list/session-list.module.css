@@ -2,24 +2,20 @@
 .list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
-.count {
-  color: var(--color-text-muted);
+  gap: var(--space-content);
 }
 
 .sessions {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-parts);
 }
 
 /* A device: when it signed in, what the API kept of it, and the way to sign it out */
 .session {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-content);
   padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);

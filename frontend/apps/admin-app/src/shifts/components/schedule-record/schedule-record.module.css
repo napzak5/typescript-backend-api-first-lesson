@@ -4,8 +4,3 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-parts);
 }
-
-.note {
-  margin: 0;
-  color: var(--color-text-muted);
-}

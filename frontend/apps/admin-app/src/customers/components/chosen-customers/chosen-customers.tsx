@@ -1,5 +1,7 @@
 import {
+  Actions,
   Alert,
+  BulletList,
   Button,
   Dialog,
   FormDialog,
@@ -112,7 +114,7 @@ export const ChosenCustomers = ({
         </Alert>
       )}
       {count > 0 && (
-        <div className={styles['actions']}>
+        <Actions>
           <Button disabled={tooMany} onClick={() => onOpen('tag')}>
             タグを付ける・外す
           </Button>
@@ -128,7 +130,7 @@ export const ChosenCustomers = ({
           <Button variant='quiet' onClick={onClear}>
             選ぶのをやめる
           </Button>
-        </div>
+        </Actions>
       )}
       <FormDialog
         open={count > 0 && open === 'tag'}
@@ -178,11 +180,11 @@ export const ChosenCustomers = ({
           {open === 'removal' && message !== undefined && (
             <Alert tone='danger'>{message}</Alert>
           )}
-          <ul className={styles['names']} aria-label='削除するお客様'>
+          <BulletList aria-label='削除するお客様'>
             {customers.map(({ id, name }) => (
               <li key={id}>{name} 様</li>
             ))}
-          </ul>
+          </BulletList>
         </div>
       </Dialog>
     </section>

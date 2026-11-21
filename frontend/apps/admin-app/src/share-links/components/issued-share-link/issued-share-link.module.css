@@ -2,7 +2,7 @@
 .issued {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-content);
 }
 
 /* The button, and beside it what it did */
@@ -10,19 +10,5 @@
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
-  gap: var(--space-3);
-}
-
-.copied {
-  color: var(--color-text-muted);
-}
-
-.note {
-  color: var(--color-text-muted);
-}
-
-.links {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, max-content));
   gap: var(--space-3);
 }

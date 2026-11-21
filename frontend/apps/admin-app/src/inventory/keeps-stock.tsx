@@ -27,9 +27,7 @@ export const StockForbidden = ({
   <>
     <PageHeader title={title} description={salon.name} />
     <p>{message}</p>
-    <p>
-      <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ戻る</ButtonLink>
-    </p>
+    <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ戻る</ButtonLink>
   </>
 )
 
@@ -40,8 +38,6 @@ export const StockRowNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
       title='在庫の行が見つかりません'
       description='アドレスが正しいか、お確かめください。削除した在庫の行は、表示できません。'
     />
-    <p>
-      <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
-    </p>
+    <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
   </>
 )

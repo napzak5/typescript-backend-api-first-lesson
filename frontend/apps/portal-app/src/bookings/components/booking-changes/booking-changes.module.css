@@ -3,13 +3,12 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   justify-items: start;
-  gap: var(--space-3);
+  gap: var(--space-content);
 }
 
 /* Whom to ask, where the customer cannot move the booking: it takes the whole row */
 .note {
   grid-column: 1 / -1;
-  color: var(--color-text-muted);
 }
 
 @media (min-width: 40rem) {

@@ -15,6 +15,7 @@ import {
   Form,
   type FormErrors,
   FormPart,
+  Note,
   Select,
   TextArea,
   TextField,
@@ -375,7 +376,6 @@ export const TreatmentForm = ({
                 defaultValue={row.shown?.notes ?? undefined}
               />
               <Button
-                className={styles['remove']}
                 size='small'
                 aria-label={`${index + 1} 件目の商材を外す`}
                 onClick={() => removeRow(row.key)}
@@ -386,13 +386,13 @@ export const TreatmentForm = ({
           </fieldset>
         ))}
         {rows.length < MOST_MATERIALS ? (
-          <Button className={styles['add']} ref={add} onClick={addRow}>
+          <Button ref={add} onClick={addRow}>
             商材を足す
           </Button>
         ) : (
-          <p className={styles['note']}>
+          <Note size='small'>
             {`使った商材は、${MOST_MATERIALS} 件まで書けます。`}
-          </p>
+          </Note>
         )}
       </FormPart>
       <FormPart label='結果と次回'>

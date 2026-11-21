@@ -4,6 +4,7 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { NOT_FOUND, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
+  Actions,
   Alert,
   Button,
   ButtonLink,
@@ -27,7 +28,6 @@ import {
   isOwnStaffRecord,
   staffCalled,
 } from './staff-format'
-import styles from './staff-member-screen.module.css'
 import { useSignedInUserId, WithStaffMember } from './with-staff-member'
 
 const TITLE = 'スタッフの内容'
@@ -117,14 +117,14 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
           </>
         }
       />
-      <p className={styles['ways']}>
+      <Actions>
         <ButtonLink href={scheduleHrefOf(salon.id, member.id)}>
           勤務スケジュール
         </ButtonLink>
         <ButtonLink href={staffAccountHrefOf(salon.id, member.id)}>
           ログインアカウント
         </ButtonLink>
-      </p>
+      </Actions>
       {!own && (
         <Dialog
           open={removing}

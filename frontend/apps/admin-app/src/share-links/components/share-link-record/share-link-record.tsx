@@ -7,6 +7,7 @@ import {
   Card,
   DescriptionList,
   Dialog,
+  Note,
 } from '@beauty-salon-frontend/ui'
 import {
   downloadsNameOf,
@@ -86,14 +87,12 @@ export const ShareLinkRecord = ({
             },
           ]}
         />
-        <p className={styles['note']}>
+        <Note>
           リンクのアドレスは、発行したときにだけ表示しました。なくしたときは、この共有リンクを取り消して、発行し直してください。
-        </p>
-        <div className={styles['buttons']}>
-          <Button variant='danger' onClick={onAsk}>
-            共有リンクを取り消す
-          </Button>
-        </div>
+        </Note>
+        <Button variant='danger' onClick={onAsk}>
+          共有リンクを取り消す
+        </Button>
       </div>
       <Dialog
         open={asking}

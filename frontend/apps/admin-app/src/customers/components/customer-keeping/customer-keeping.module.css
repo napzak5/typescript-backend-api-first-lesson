@@ -1,19 +1,5 @@
 /* The sentence, what was refused, and the buttons, one below the other */
 .keeping {
   display: grid;
-  gap: var(--space-4);
-}
-
-/* The link and the button one below the other, side by side where there is room */
-.actions {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-3);
-}
-
-@media (min-width: 40rem) {
-  .actions {
-    grid-auto-flow: column;
-    justify-content: start;
-  }
+  gap: var(--space-content);
 }

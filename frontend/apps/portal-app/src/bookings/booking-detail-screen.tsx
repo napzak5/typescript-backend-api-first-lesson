@@ -231,9 +231,7 @@ const OwnBooking = () => {
       <>
         <PageHeader title={TITLE} />
         <BookingDetails booking={booking} />
-        <p>
-          <ButtonLink href='/bookings'>予約の一覧へ</ButtonLink>
-        </p>
+        <ButtonLink href='/bookings'>予約の一覧へ</ButtonLink>
       </>
     ))
     .with({ type: 'notFound' }, () => (
@@ -242,9 +240,7 @@ const OwnBooking = () => {
           title='予約が見つかりません'
           description='アドレスが正しいか、お確かめください。ほかのアカウントで入れた予約は、表示できません。'
         />
-        <p>
-          <ButtonLink href='/'>サロンを探す</ButtonLink>
-        </p>
+        <ButtonLink href='/'>サロンを探す</ButtonLink>
       </>
     ))
     .with({ type: UNREAD }, (reason) => (

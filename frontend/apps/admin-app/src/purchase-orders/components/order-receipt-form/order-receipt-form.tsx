@@ -4,12 +4,12 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  Note,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { itemQuantityNameOf } from '../../order-format'
 import { orderedTextOf, receivedControlOf } from '../../order-receipt'
-import styles from './order-receipt-form.module.css'
 
 export type OrderReceiptFormProps = Pick<
   FormProps,
@@ -41,9 +41,9 @@ export const OrderReceiptForm = ({
     >
       {order.items.map((item) =>
         item.inventoryId === null ? (
-          <p key={item.productCode} className={styles['note']}>
+          <Note size='small' key={item.productCode}>
             {`${item.productCode} ${item.productName}: 在庫の行が削除されたので、入荷できません。`}
-          </p>
+          </Note>
         ) : (
           <TextField
             key={item.inventoryId}

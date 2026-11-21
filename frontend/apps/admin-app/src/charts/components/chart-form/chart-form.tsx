@@ -9,6 +9,7 @@ import {
   Form,
   type FormErrors,
   FormPart,
+  Note,
   Select,
   TextArea,
   TextField,
@@ -195,7 +196,6 @@ export const ChartForm = ({
                 defaultValue={row.shown?.notes ?? undefined}
               />
               <Button
-                className={styles['remove']}
                 size='small'
                 aria-label={`${index + 1} 件目の施術を外す`}
                 onClick={() => removeRow(row.key)}
@@ -206,13 +206,13 @@ export const ChartForm = ({
           </fieldset>
         ))}
         {rows.length < MOST_TREATMENTS ? (
-          <Button className={styles['add']} ref={add} onClick={addRow}>
+          <Button ref={add} onClick={addRow}>
             施術を足す
           </Button>
         ) : (
-          <p className={styles['note']}>
+          <Note size='small'>
             {`過去の施術は、${MOST_TREATMENTS} 件まで書けます。`}
-          </p>
+          </Note>
         )}
       </FormPart>
       <TextArea

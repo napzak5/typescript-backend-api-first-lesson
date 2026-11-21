@@ -25,12 +25,6 @@
 /* What somebody wrote, with the line breaks they wrote */
 .text {
   max-inline-size: var(--size-text-column);
-  white-space: pre-line;
-}
-
-.aside {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
 }
 
 /* The addresses of the pictures, each on a line of its own, broken where the line ends */

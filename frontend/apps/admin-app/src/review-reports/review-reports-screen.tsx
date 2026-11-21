@@ -176,9 +176,7 @@ const ReportsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
       ) : (
         <>
           <p>{HANDLERS_ONLY}</p>
-          <p>
-            <ButtonLink href={reviewsHrefOf(salon.id)}>レビューへ</ButtonLink>
-          </p>
+          <ButtonLink href={reviewsHrefOf(salon.id)}>レビューへ</ButtonLink>
         </>
       )}
     </>

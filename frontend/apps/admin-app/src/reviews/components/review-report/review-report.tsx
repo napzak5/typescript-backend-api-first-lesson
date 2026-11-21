@@ -57,11 +57,9 @@ export const ReviewReport = ({
         事実と違う内容や個人情報など、規則に反するレビューを運営に知らせます。サロンは、レビューを削除できません。運営が内容を確かめ、規則に反するレビューは削除します。通報は、1
         つのレビューに 1 回です。
       </p>
-      <div className={styles['buttons']}>
-        <Button variant='danger' onClick={onAsk}>
-          通報する
-        </Button>
-      </div>
+      <Button variant='danger' onClick={onAsk}>
+        通報する
+      </Button>
     </div>
     <FormDialog
       open={asking}

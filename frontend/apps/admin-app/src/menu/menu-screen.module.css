@@ -2,18 +2,17 @@
 .parts {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6);
+  gap: var(--space-parts);
 }
 
 /* A part of the menu: its name above what it holds */
 .part {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-content);
 }
 
 .name {
-  margin: 0;
   font-size: var(--font-size-large);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);

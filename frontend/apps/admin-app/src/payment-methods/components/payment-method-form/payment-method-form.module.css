@@ -3,8 +3,3 @@
   justify-self: start;
   min-inline-size: 12rem;
 }
-
-/* The kind of a method that is changed: shown, since it is not changed */
-.kept {
-  margin: 0;
-}

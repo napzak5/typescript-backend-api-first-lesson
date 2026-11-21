@@ -4,6 +4,7 @@ import {
   FieldRow,
   Form,
   type FormErrors,
+  Note,
   Select,
   TextArea,
   TextField,
@@ -94,10 +95,10 @@ export const PhotoForm = ({
       actions={actions}
       onSubmit={onSubmit}
     >
-      <p className={styles['note']}>
+      <Note size='small'>
         写真は、サロンが写真を置いている場所（写真の保存サービスなど）に置いてから、その
         URL を書きます。施術記録は、写真のファイルを預かりません。
-      </p>
+      </Note>
       {rows.map((key, index) => (
         <fieldset
           key={key}
@@ -168,7 +169,6 @@ export const PhotoForm = ({
             </div>
             {rows.length > 1 && (
               <Button
-                className={styles['remove']}
                 size='small'
                 aria-label={`${index + 1} 枚目の写真の欄を外す`}
                 onClick={() => removeRow(key)}
@@ -180,13 +180,13 @@ export const PhotoForm = ({
         </fieldset>
       ))}
       {rows.length < room ? (
-        <Button className={styles['add']} ref={add} onClick={addRow}>
+        <Button ref={add} onClick={addRow}>
           写真の欄を足す
         </Button>
       ) : (
-        <p className={styles['note']}>
+        <Note size='small'>
           {`この施術記録に足せる写真は、あと ${room} 枚です。`}
-        </p>
+        </Note>
       )}
     </Form>
   )

@@ -3,7 +3,7 @@ import type {
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Table } from '@beauty-salon-frontend/ui'
+import { Note, Table } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { partsOf } from '../../schedule-form'
 import { type Shift, shiftOf, weekdayNameOf } from '../../shift-week'
@@ -92,9 +92,9 @@ export const ScheduleRecord = ({ rows, today }: ScheduleRecordProps) => {
         emptyMessage='今日から後の日付の行はありません。その日だけ勤務時間を変える日や休みの日は、日付ごとの行に入れます。'
       />
       {parts.past.length > 0 && (
-        <p className={styles['note']}>
+        <Note>
           {`今日より前の日付の行が、ほかに ${parts.past.length} 行あります。`}
-        </p>
+        </Note>
       )}
     </div>
   )

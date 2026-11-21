@@ -1,5 +1,6 @@
 import { type ReactNode, type Ref, useId } from 'react'
 import { match } from 'ts-pattern'
+import { Actions } from '../actions/actions'
 import styles from './card.module.css'
 
 type HeadingLevel = 2 | 3
@@ -57,9 +58,7 @@ export const Card = ({
             </h3>
           ))
           .exhaustive()}
-        {actions !== undefined && (
-          <div className={styles['actions']}>{actions}</div>
-        )}
+        {actions !== undefined && <Actions>{actions}</Actions>}
       </div>
       {children}
     </section>

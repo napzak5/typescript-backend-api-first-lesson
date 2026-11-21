@@ -20,10 +20,6 @@
   font-size: var(--font-size-display);
 }
 
-.description {
-  color: var(--color-text-muted);
-}
-
 .actions {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
@@ -35,6 +31,13 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
+}
+
+/* A button here takes the room it is given, which it does not elsewhere (`button.module.css`) */
+.actions > *,
+.otherActions > * {
+  inline-size: auto;
+  block-size: auto;
 }
 
 @media (min-width: 40rem) {

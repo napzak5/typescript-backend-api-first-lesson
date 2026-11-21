@@ -349,9 +349,7 @@ const BookingPage = () => {
           title='予約できるメニューが見つかりません'
           description='アドレスが正しいか、お確かめください。掲載を終えたサロンか、メニューかもしれません。'
         />
-        <p>
-          <ButtonLink href='/'>サロンを探す</ButtonLink>
-        </p>
+        <ButtonLink href='/'>サロンを探す</ButtonLink>
       </>
     ))
     .with([{ type: UNREAD }, P._], ([reason]) => (

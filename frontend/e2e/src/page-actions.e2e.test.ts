@@ -45,9 +45,10 @@ test.describe('the actions of a screen, on a screen as narrow as a phone', () =>
     // Act
     await otherActions(page).click()
 
-    // Assert: one row, below which the conditions of the ledger start
+    // Assert: one row of two columns, each button as wide as its column, below which the conditions of the ledger start
     expect(others.top).toBe(entry.top)
     expect(others.left).toBeGreaterThan(entry.right)
+    expect(others.right - others.left).toBe(entry.right - entry.left)
     const search = await edgesOf(
       page.getByRole('search', { name: 'お客様を探す' }),
     )

@@ -2,12 +2,5 @@
 .referrer {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-}
-
-.actions {
-  display: grid;
-  grid-auto-flow: column;
-  justify-content: start;
-  gap: var(--space-3);
+  gap: var(--space-fields);
 }

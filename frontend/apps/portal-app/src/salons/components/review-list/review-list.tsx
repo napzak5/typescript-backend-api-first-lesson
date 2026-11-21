@@ -2,7 +2,7 @@ import type {
   ModelsReviewResponse,
   ModelsReviewSortType,
 } from '@beauty-salon-frontend/api-client'
-import { Alert, Button, Link, Select } from '@beauty-salon-frontend/ui'
+import { Actions, Alert, Button, Link, Select } from '@beauty-salon-frontend/ui'
 import { type ChangeEvent, useLayoutEffect, useRef } from 'react'
 import type { More } from '../../pages'
 import { postedOf } from '../../salon-format'
@@ -55,7 +55,7 @@ const ORDERS: readonly { value: ModelsReviewSortType; label: string }[] = [
   { value: 'helpful', label: '参考になった順' },
 ]
 
-type ActionsProps = {
+type ReviewActionsProps = {
   review: ModelsReviewResponse
   timezone: string
   customer: ReviewListCustomer
@@ -67,7 +67,7 @@ type ActionsProps = {
  * with the text that is seen. A review is found helpful once: the button
  * then says that it is pressed, and pressing it again asks for nothing.
  */
-const Actions = ({ review, timezone, customer }: ActionsProps) => {
+const ReviewActions = ({ review, timezone, customer }: ReviewActionsProps) => {
   const posted = postedOf(review, timezone)
   const pressed = customer.helpful.has(review.id)
 
@@ -81,7 +81,7 @@ const Actions = ({ review, timezone, customer }: ActionsProps) => {
       </Link>
     </p>
   ) : (
-    <div className={styles['actions']}>
+    <Actions>
       <Button
         size='small'
         aria-pressed={pressed}
@@ -104,7 +104,7 @@ const Actions = ({ review, timezone, customer }: ActionsProps) => {
       >
         通報する
       </Button>
-    </div>
+    </Actions>
   )
 }
 
@@ -163,7 +163,7 @@ export const ReviewList = ({
           <li key={review.id} className={styles['review']} tabIndex={-1}>
             <ReviewContent review={review} timezone={timezone} />
             {customer !== undefined && (
-              <Actions
+              <ReviewActions
                 review={review}
                 timezone={timezone}
                 customer={customer}
@@ -178,11 +178,9 @@ export const ReviewList = ({
         </Alert>
       )}
       {more !== 'none' && (
-        <p>
-          <Button onClick={onMore} pending={more === 'loading'}>
-            {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-          </Button>
-        </p>
+        <Button onClick={onMore} pending={more === 'loading'}>
+          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
+        </Button>
       )}
     </div>
   )

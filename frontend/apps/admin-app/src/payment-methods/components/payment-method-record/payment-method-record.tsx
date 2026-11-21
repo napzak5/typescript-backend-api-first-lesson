@@ -1,6 +1,6 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
 import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList } from '@beauty-salon-frontend/ui'
+import { Card, DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
 import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   amountsNameOf,
@@ -8,7 +8,6 @@ import {
   placesNameOf,
   usedNameOf,
 } from '../../payment-method-format'
-import styles from './payment-method-record.module.css'
 
 export type PaymentMethodRecordProps = {
   method: ModelsPaymentMethodResponse
@@ -35,7 +34,7 @@ export const PaymentMethodRecord = ({
             method.description === null ? (
               NOT_RECORDED
             ) : (
-              <p className={styles['written']}>{method.description}</p>
+              <WrittenText>{method.description}</WrittenText>
             ),
         },
         { term: '1 回の金額', description: amountsNameOf(method, currency) },

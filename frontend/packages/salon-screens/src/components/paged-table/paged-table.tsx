@@ -1,6 +1,7 @@
 import {
   Alert,
   Button,
+  Note,
   Table,
   type TableProps,
 } from '@beauty-salon-frontend/ui'
@@ -67,9 +68,7 @@ export const PagedTable = <Row,>({
 
   return (
     <div className={styles['pagedTable']} ref={frame}>
-      <p className={styles['count']} role='status'>
-        {count}
-      </p>
+      <Note role='status'>{count}</Note>
       <Table {...table} rows={rows} />
       {more === 'failed' && (
         <Alert tone='danger'>
@@ -77,11 +76,9 @@ export const PagedTable = <Row,>({
         </Alert>
       )}
       {more !== 'none' && (
-        <p>
-          <Button onClick={askForMore} pending={more === 'loading'}>
-            {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-          </Button>
-        </p>
+        <Button onClick={askForMore} pending={more === 'loading'}>
+          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
+        </Button>
       )}
     </div>
   )

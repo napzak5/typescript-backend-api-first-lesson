@@ -1,6 +1,6 @@
 import type { ModelsDailySalesResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, dayNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList } from '@beauty-salon-frontend/ui'
+import { Card, DescriptionList, Note } from '@beauty-salon-frontend/ui'
 import { countNameOf } from '../../sales-report'
 import styles from './daily-sales.module.css'
 
@@ -33,9 +33,9 @@ export const DailySales = ({ sales, currency }: DailySalesProps) => {
             { term: '純売上', description: money(sales.net) },
           ]}
         />
-        <p className={styles['note']}>
+        <Note>
           売上は、消費税を含み、値引きを引いた額です。返金は、この日の会計から返した額で、返金した日には数えません。純売上は、売上から返金を引いた額です。
-        </p>
+        </Note>
       </div>
     </Card>
   )

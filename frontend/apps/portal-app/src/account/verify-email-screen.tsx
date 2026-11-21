@@ -110,15 +110,13 @@ const ConfirmWithToken = ({ token }: { token: string }) => {
           description='ボタンを押すと、メールアドレスの確認が済み、アカウントを使えるようになります。'
         />
         {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-        <p>
-          <Button
-            variant='primary'
-            pending={confirmation.isPending}
-            onClick={() => confirmation.mutate(token)}
-          >
-            メールアドレスを確認する
-          </Button>
-        </p>
+        <Button
+          variant='primary'
+          pending={confirmation.isPending}
+          onClick={() => confirmation.mutate(token)}
+        >
+          メールアドレスを確認する
+        </Button>
       </>
     ))
     .with({ type: 'confirmed' }, () => (
@@ -127,9 +125,7 @@ const ConfirmWithToken = ({ token }: { token: string }) => {
           title='メールアドレスを確認しました'
           description='登録が完了しました。登録したメールアドレスとパスワードでサインインしてください。'
         />
-        <p>
-          <ButtonLink href='/sign-in'>サインインする</ButtonLink>
-        </p>
+        <ButtonLink href='/sign-in'>サインインする</ButtonLink>
       </>
     ))
     .with({ type: 'linkRefused' }, () => (

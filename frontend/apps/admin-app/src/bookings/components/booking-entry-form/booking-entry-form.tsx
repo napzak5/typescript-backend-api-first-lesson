@@ -113,9 +113,7 @@ export const BookingEntryForm = ({
         >
           担当の空きを確かめる
         </Button>
-        <p className={styles['checked']} role='status'>
-          {checked}
-        </p>
+        <p role='status'>{checked}</p>
       </div>
     </FormPart>
     <FormPart label='受付の記録'>

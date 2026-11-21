@@ -1,5 +1,6 @@
 import type { ModelsStaffProfileResponse } from '@beauty-salon-frontend/api-client'
 import {
+  Actions,
   Alert,
   Button,
   EmptyState,
@@ -155,7 +156,7 @@ export const BookingForm = ({
           onChange={chooseDate}
           required
         />
-        <div className={styles['steps']}>
+        <Actions>
           <Button
             size='small'
             disabled={choice.date <= today}
@@ -171,7 +172,7 @@ export const BookingForm = ({
           >
             次の日
           </Button>
-        </div>
+        </Actions>
       </div>
       {match(times)
         .with({ type: 'loading' }, () => (
@@ -207,11 +208,9 @@ export const BookingForm = ({
         .exhaustive()}
       {children}
       {times.type === 'listed' && times.times.length > 0 && (
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary' pending={pending}>
-            {submitLabel}
-          </Button>
-        </div>
+        <Button type='submit' variant='primary' pending={pending}>
+          {submitLabel}
+        </Button>
       )}
     </form>
   )

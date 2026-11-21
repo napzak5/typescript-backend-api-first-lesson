@@ -174,11 +174,9 @@ export const SaleChangeScreen = () => {
               .with(P.string, (why) => (
                 <>
                   <p>{why}</p>
-                  <p>
-                    <ButtonLink href={saleHrefOf(salon.id, sale.id)}>
-                      売上の内容へ
-                    </ButtonLink>
-                  </p>
+                  <ButtonLink href={saleHrefOf(salon.id, sale.id)}>
+                    売上の内容へ
+                  </ButtonLink>
                 </>
               ))
               .with(undefined, () => (

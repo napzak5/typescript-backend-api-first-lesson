@@ -148,11 +148,9 @@ const NotReceived = ({
 }) => (
   <>
     <p>{reason}</p>
-    <p>
-      <ButtonLink href={purchaseOrderHrefOf(salonId, order.id)}>
-        発注へ戻る
-      </ButtonLink>
-    </p>
+    <ButtonLink href={purchaseOrderHrefOf(salonId, order.id)}>
+      発注へ戻る
+    </ButtonLink>
   </>
 )
 

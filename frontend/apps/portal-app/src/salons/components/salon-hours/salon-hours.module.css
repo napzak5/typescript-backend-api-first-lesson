@@ -14,11 +14,6 @@
   font-size: var(--font-size-body);
 }
 
-.note {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-}
-
 /*
  * The days share two columns: the names, as wide as the longest of them,
  * and what is said of the days, which takes the rest and wraps in it.

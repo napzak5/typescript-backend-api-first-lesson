@@ -7,7 +7,7 @@ import {
   type More,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
-import { Badge, Button, Link } from '@beauty-salon-frontend/ui'
+import { Badge, Button, Link, WrittenText } from '@beauty-salon-frontend/ui'
 import {
   acknowledgementNameOf,
   alertKindNameOf,
@@ -126,7 +126,7 @@ export const AlertTable = ({
         header: '確認',
         wrap: 'words',
         cell: (alert) => (
-          <span className={styles['acknowledgement']}>
+          <div className={styles['acknowledgement']}>
             <span>
               {acknowledgementNameOf(alert.acknowledgement, timezone, staff)}
             </span>
@@ -140,12 +140,12 @@ export const AlertTable = ({
               </Button>
             ) : (
               alert.acknowledgement.notes !== null && (
-                <span className={styles['notes']}>
+                <WrittenText className={styles['notes']}>
                   {alert.acknowledgement.notes}
-                </span>
+                </WrittenText>
               )
             )}
-          </span>
+          </div>
         ),
       },
     ]}

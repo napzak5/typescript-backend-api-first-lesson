@@ -40,9 +40,7 @@ export const ScheduleScreen = () => {
                 rows={schedule.rows}
                 today={dayAt(new Date(), salon.timezone)}
               />
-              <p>
-                <ButtonLink href={shiftsHrefOf(salon.id)}>シフトへ</ButtonLink>
-              </p>
+              <ButtonLink href={shiftsHrefOf(salon.id)}>シフトへ</ButtonLink>
             </>
           )}
         </WithSchedule>

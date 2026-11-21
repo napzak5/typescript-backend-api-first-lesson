@@ -43,13 +43,12 @@ describe('Card', () => {
     // Act
     await stories.WithActions.run()
 
-    // Assert
-    expect(
-      within(screen.getByRole('region', { name: '基本情報' })).getByRole(
-        'button',
-        { name: '編集' },
-      ),
-    ).toBeVisible()
+    // Assert: they follow each other like words
+    const edit = within(
+      screen.getByRole('region', { name: '基本情報' }),
+    ).getByRole('button', { name: '編集' })
+    expect(edit).toBeVisible()
+    expect(edit.parentElement).toHaveClass('flow')
   })
 
   it('should keep its heading out of the way of the Tab key unless something is to move the focus to it', async () => {

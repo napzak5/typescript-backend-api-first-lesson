@@ -1,5 +1,5 @@
 /* The sentences and the table, one below the other */
 .expiring {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-content);
 }

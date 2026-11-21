@@ -6,6 +6,8 @@ import {
   Card,
   Dialog,
   EmptyState,
+  Note,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import {
@@ -99,9 +101,7 @@ export const TreatmentPhotos = ({
                     {photoCalled(photo, photos)}
                   </span>
                   {photo.description !== null && (
-                    <span className={styles['description']}>
-                      {photo.description}
-                    </span>
+                    <WrittenText>{photo.description}</WrittenText>
                   )}
                   <span className={styles['use']}>{photoUseOf(photo)}</span>
                 </figcaption>
@@ -127,9 +127,9 @@ export const TreatmentPhotos = ({
         </ul>
       )}
       {roomOf({ photos }) === 0 && (
-        <p className={styles['note']}>
+        <Note>
           {`施術写真は、${MOST_PHOTOS} 枚まで記録できます。足すときは、写真を外してから足してください。`}
-        </p>
+        </Note>
       )}
     </div>
     <Dialog

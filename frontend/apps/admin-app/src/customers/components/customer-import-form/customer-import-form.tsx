@@ -1,5 +1,7 @@
 import {
+  Actions,
   Alert,
+  BulletList,
   Button,
   FileField,
   type FormErrors,
@@ -105,12 +107,12 @@ export const CustomerImportForm = ({
               <p>
                 直したファイルを選び直してください。どのお客様も、まだ登録していません。
               </p>
-              <ul className={styles['list']}>
+              <BulletList>
                 {problems.map((problem) => {
                   const text = problemTextOf(problem)
                   return <li key={text}>{text}</li>
                 })}
-              </ul>
+              </BulletList>
             </div>
           </Alert>
         )}
@@ -152,14 +154,14 @@ export const CustomerImportForm = ({
           emptyMessage='登録するお客様はいません'
         />
       )}
-      <div className={styles['actions']}>
+      <Actions layout='row'>
         <Button type='submit' form={formId} variant='primary' pending={pending}>
           {customers.length === 0
             ? '登録する'
             : `${customers.length} 人を登録する`}
         </Button>
         {actions}
-      </div>
+      </Actions>
     </div>
   )
 }

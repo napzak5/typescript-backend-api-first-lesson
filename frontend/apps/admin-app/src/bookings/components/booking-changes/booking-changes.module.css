@@ -2,7 +2,7 @@
 .changes {
   display: grid;
   justify-items: start;
-  gap: var(--space-3);
+  gap: var(--space-content);
 }
 
 @media (min-width: 40rem) {

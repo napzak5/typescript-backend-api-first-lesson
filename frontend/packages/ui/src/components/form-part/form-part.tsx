@@ -1,4 +1,5 @@
 import { type ComponentPropsWithoutRef, type ReactNode, useId } from 'react'
+import { Note } from '../note/note'
 import styles from './form-part.module.css'
 
 export type FormPartProps = Omit<
@@ -39,9 +40,9 @@ export const FormPart = ({
       <legend className={styles['label']}>{label}</legend>
       <div className={styles['controls']}>
         {described && (
-          <p className={styles['description']} id={descriptionId}>
+          <Note size='small' id={descriptionId}>
             {description}
-          </p>
+          </Note>
         )}
         {children}
       </div>

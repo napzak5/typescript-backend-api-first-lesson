@@ -28,7 +28,7 @@ export const SalonRemoval = ({
 }: SalonRemovalProps) => (
   <Card title='サロンの削除'>
     <div className={styles['removal']}>
-      <p className={styles['text']}>
+      <p>
         {`サロン「${name}」を削除すると、サロンの一覧とお客様の画面から消え、スタッフはこのサロンの画面を使えなくなります。削除したサロンは、元に戻せません。終わっていない予約があるあいだは、削除できません。`}
       </p>
       {match(refusal)
@@ -42,11 +42,9 @@ export const SalonRemoval = ({
           <Alert tone='danger'>{message}</Alert>
         ))
         .exhaustive()}
-      <p className={styles['text']}>
-        <Button variant='danger' onClick={onRemove}>
-          サロンを削除する
-        </Button>
-      </p>
+      <Button variant='danger' onClick={onRemove}>
+        サロンを削除する
+      </Button>
     </div>
   </Card>
 )

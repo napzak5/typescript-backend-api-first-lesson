@@ -50,11 +50,9 @@ export const BookingReview = ({ bookingId, salon }: BookingReviewProps) => {
           .with({ type: 'found' }, ({ review }) => (
             <>
               <ReviewContent review={review} timezone={salon.timezone} />
-              <p>
-                <ButtonLink href={`/mypage/reviews/${review.id}`}>
-                  レビューを変更する
-                </ButtonLink>
-              </p>
+              <ButtonLink href={`/mypage/reviews/${review.id}`}>
+                レビューを変更する
+              </ButtonLink>
             </>
           ))
           .with({ type: 'none' }, () => (

@@ -2,7 +2,7 @@
 .record {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-content);
 }
 
 /* An image as large as the column allows, and no taller than most screens */
@@ -20,16 +20,4 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10rem, max-content));
   gap: var(--space-4);
-  padding: 0;
-  list-style: none;
-}
-
-.buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, max-content));
-  gap: var(--space-3);
-}
-
-.note {
-  color: var(--color-text-muted);
 }

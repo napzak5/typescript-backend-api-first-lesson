@@ -41,9 +41,7 @@ export const SessionGate = ({
           title='サインインを確認できません'
           description='通信の状態を確かめて、もう一度お試しください。'
         />
-        <p>
-          <Button onClick={retry}>もう一度試す</Button>
-        </p>
+        <Button onClick={retry}>もう一度試す</Button>
       </>
     ))
     .with({ type: 'signedIn' }, ({ user }) =>
@@ -55,9 +53,7 @@ export const SessionGate = ({
             title='このアプリケーションは利用できません'
             description={`${user.email} のアカウントでは利用できません。利用できるアカウントでサインインし直してください。`}
           />
-          <p>
-            <Button onClick={onSignOut}>サインアウト</Button>
-          </p>
+          <Button onClick={onSignOut}>サインアウト</Button>
         </>
       ),
     )

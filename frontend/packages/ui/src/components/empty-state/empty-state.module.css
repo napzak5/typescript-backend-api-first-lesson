@@ -5,7 +5,6 @@
 
 .description {
   max-inline-size: var(--size-text-column);
-  color: var(--color-text-muted);
 }
 
 /* Where the content of a page would be: a frame, and the words in its middle */

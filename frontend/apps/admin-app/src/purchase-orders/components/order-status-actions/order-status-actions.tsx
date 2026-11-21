@@ -1,10 +1,12 @@
 import type { ModelsPurchaseOrderResponse } from '@beauty-salon-frontend/api-client'
 import {
+  Actions,
   Badge,
   Button,
   ButtonLink,
   Card,
   FormDialog,
+  Note,
   TextArea,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
@@ -79,7 +81,7 @@ export const OrderStatusActions = ({
           </Badge>
         </p>
         {(actions.length > 0 || receiveHref !== undefined) && (
-          <div className={styles['buttons']}>
+          <Actions>
             {actions.map(
               (action) =>
                 action !== 'cancel' && (
@@ -103,9 +105,9 @@ export const OrderStatusActions = ({
                 {LABELS.cancel}
               </Button>
             )}
-          </div>
+          </Actions>
         )}
-        {note !== undefined && <p className={styles['note']}>{note}</p>}
+        {note !== undefined && <Note>{note}</Note>}
       </div>
       <FormDialog
         open={asking}

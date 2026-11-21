@@ -6,6 +6,7 @@ import {
   Form,
   FormPart,
   type FormProps,
+  Note,
   Select,
   TextArea,
   TextField,
@@ -16,7 +17,6 @@ import {
   PREFERRED_SERVICES,
 } from '../../profile-flow'
 import { CATEGORY_OPTIONS, GENDER_OPTIONS } from '../../profile-format'
-import styles from './profile-form.module.css'
 
 export type ProfileFormProps = Pick<
   FormProps,
@@ -105,11 +105,11 @@ export const ProfileForm = ({
         defaultValue={profile?.alternativePhone ?? undefined}
         error={errors['alternativePhone']}
       />
-      <p className={styles['note']}>
+      <Note size='small'>
         {profile === null
           ? 'メールアドレスは、サインインに使っているものを登録します。'
           : `メールアドレス（${profile.email}）は、ここでは変更できません。変更するときは、サロンにお問い合わせください。`}
-      </p>
+      </Note>
     </FormPart>
     <FormPart label='住所'>
       <TextField

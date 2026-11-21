@@ -221,7 +221,7 @@ test.describe('the reviews of a customer, in a browser', () => {
     ).toBeVisible()
     await expect(written.getByText(/^丁寧でした。/)).toHaveCSS(
       'white-space',
-      'pre-line',
+      'pre-wrap',
     )
     await expect(pictures(written)).toHaveText([PICTURE])
     await expect(pictures(written)).toHaveAttribute('href', PICTURE)
@@ -432,7 +432,7 @@ test.describe('the reviews of a customer, on a screen as narrow as a phone', () 
     // Assert: what was written in paragraphs keeps its line breaks
     await expect(
       review.getByText(/^またのご来店をお待ちしています。/),
-    ).toHaveCSS('white-space', 'pre-line')
+    ).toHaveCSS('white-space', 'pre-wrap')
     await expectSoundPage(page)
 
     // Act: the dialog, which names the review

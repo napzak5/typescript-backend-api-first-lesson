@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { classNames } from '../../class-names'
+import { Actions } from '../actions/actions'
+import { Note } from '../note/note'
 import styles from './empty-state.module.css'
 
 /**
@@ -37,8 +39,8 @@ export const EmptyState = ({
   <div className={classNames(styles['emptyState'], kindClass[kind])}>
     <p className={styles['title']}>{title}</p>
     {description !== undefined && (
-      <p className={styles['description']}>{description}</p>
+      <Note className={styles['description']}>{description}</Note>
     )}
-    {actions}
+    {actions !== undefined && <Actions>{actions}</Actions>}
   </div>
 )

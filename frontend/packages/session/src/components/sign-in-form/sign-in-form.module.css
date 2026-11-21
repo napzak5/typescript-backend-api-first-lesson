@@ -3,10 +3,3 @@
   gap: var(--space-fields);
   max-inline-size: var(--size-form-column);
 }
-
-.actions {
-  display: grid;
-  grid-auto-flow: column;
-  justify-content: start;
-  gap: var(--space-3);
-}

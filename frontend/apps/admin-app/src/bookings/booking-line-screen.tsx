@@ -135,11 +135,9 @@ const LineOfBooking = ({ salon, booking }: LineOfBookingProps) => {
     ? read.data
     : undefined
   const back = (
-    <p>
-      <ButtonLink href={bookingHrefOf(salon.id, booking.id)}>
-        予約の内容へ
-      </ButtonLink>
-    </p>
+    <ButtonLink href={bookingHrefOf(salon.id, booking.id)}>
+      予約の内容へ
+    </ButtonLink>
   )
 
   return match(shown)

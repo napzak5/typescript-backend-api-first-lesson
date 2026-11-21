@@ -59,9 +59,7 @@ export const DayChoice = ({
         error={errors['date']}
         onChange={(event) => hold('date', event.target.value)}
       />
-      <div className={styles['actions']}>
-        <Button type='submit'>表示する</Button>
-      </div>
+      <Button type='submit'>表示する</Button>
     </form>
   )
 }

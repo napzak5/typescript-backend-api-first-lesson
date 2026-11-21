@@ -5,7 +5,7 @@ import type {
   ModelsTreatmentsByServiceResponse,
 } from '@beauty-salon-frontend/api-client'
 import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList, Table } from '@beauty-salon-frontend/ui'
+import { Card, DescriptionList, Note, Table } from '@beauty-salon-frontend/ui'
 import { serviceNameOf } from '../../../bookings/day-bookings'
 import { averageNameOf, countNameOf } from '../../treatment-statistics'
 import styles from './treatment-statistics.module.css'
@@ -67,10 +67,10 @@ export const TreatmentStatistics = ({
           rowKey={({ category }) => category}
           emptyMessage='施術記録はありません'
         />
-        <p className={styles['note']}>
+        <Note>
           いくつもの区分のサービスをした施術記録は、区分ごとに 1
           件と数えます。合わせた数は、施術記録の数より多いことがあります。
-        </p>
+        </Note>
       </div>
     </Card>
     <Card title='施術記録の多いサービス'>

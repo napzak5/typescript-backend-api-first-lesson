@@ -3,9 +3,7 @@ import { attachmentsHrefOf } from '../navigation'
 
 /** The way back to the files of the salon */
 export const ToTheFiles = ({ salonId }: { salonId: string }) => (
-  <p>
-    <ButtonLink href={attachmentsHrefOf(salonId)}>ファイルの一覧へ</ButtonLink>
-  </p>
+  <ButtonLink href={attachmentsHrefOf(salonId)}>ファイルの一覧へ</ButtonLink>
 )
 
 /** What the screen of a file says when there is none to show: none at the address, one removed, or one of another salon. */

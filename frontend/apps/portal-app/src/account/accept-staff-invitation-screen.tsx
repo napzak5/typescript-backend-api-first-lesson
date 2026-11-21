@@ -167,25 +167,21 @@ const JoinWithAccount = ({ token, invitation, onEnd }: StepProps) => {
           ...termsOf(invitation),
         ]}
       />
-      <p>
-        <Button
-          variant='primary'
-          pending={joining.isPending}
-          onClick={() => joining.mutate()}
-        >
-          招待を受ける
-        </Button>
-      </p>
+      <Button
+        variant='primary'
+        pending={joining.isPending}
+        onClick={() => joining.mutate()}
+      >
+        招待を受ける
+      </Button>
     </>
   )
 }
 
 const ToAdmin = () => (
-  <p>
-    <ButtonLink href={import.meta.env.VITE_ADMIN_APP_URL}>
-      店舗向けの画面を開く
-    </ButtonLink>
-  </p>
+  <ButtonLink href={import.meta.env.VITE_ADMIN_APP_URL}>
+    店舗向けの画面を開く
+  </ButtonLink>
 )
 
 const AcceptWithToken = ({ token }: { token: string }) => {

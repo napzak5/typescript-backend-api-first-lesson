@@ -1,6 +1,7 @@
 import type { ModelsCustomerVersionResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
+  Actions,
   Alert,
   Button,
   ButtonLink,
@@ -77,14 +78,14 @@ export const RemovedRecord = ({
           )}
         </Alert>
       )}
-      <div className={styles['actions']}>
+      <Actions>
         {why === undefined && (
           <Button variant='primary' pending={pending} onClick={onRestore}>
             台帳に戻す
           </Button>
         )}
         <ButtonLink href={historyHref}>変更履歴</ButtonLink>
-      </div>
+      </Actions>
       <Card title='削除されたときの台帳'>
         <DescriptionList
           items={ledgerItemsOf(

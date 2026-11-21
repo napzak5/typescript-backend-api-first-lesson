@@ -1,8 +1,3 @@
-.note {
-  margin: 0;
-  color: var(--color-text-muted);
-}
-
 /* A treatment the customer had before: a framed group of its own */
 .row {
   padding: var(--space-4);
@@ -19,10 +14,4 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-fields);
-}
-
-/* The buttons are as wide as their words */
-.remove,
-.add {
-  justify-self: start;
 }

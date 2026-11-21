@@ -45,22 +45,18 @@ const OwnPage = () => {
             </Card>
             <Card title='お客様の情報'>
               <ProfileDetails profile={profile} />
-              <p>
-                <ButtonLink href='/mypage/profile'>
-                  お客様の情報を変更する
-                </ButtonLink>
-              </p>
+              <ButtonLink href='/mypage/profile'>
+                お客様の情報を変更する
+              </ButtonLink>
             </Card>
             <OwnPreferences />
             <Card title='レビュー'>
               <p>
                 来店したサロンに書いたレビューを確かめ、変更し、削除できます。
               </p>
-              <p>
-                <ButtonLink href='/mypage/reviews'>
-                  自分のレビューを見る
-                </ButtonLink>
-              </p>
+              <ButtonLink href='/mypage/reviews'>
+                自分のレビューを見る
+              </ButtonLink>
             </Card>
           </>
         ))
@@ -88,11 +84,7 @@ const OwnPage = () => {
         <p>
           パスワードの変更と、このアカウントでサインインしている端末の確認ができます。
         </p>
-        <p>
-          <ButtonLink href={SECURITY_PATH}>
-            アカウントの安全を確かめる
-          </ButtonLink>
-        </p>
+        <ButtonLink href={SECURITY_PATH}>アカウントの安全を確かめる</ButtonLink>
       </Card>
     </>
   )

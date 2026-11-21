@@ -3,6 +3,7 @@ import {
   DescriptionList,
   type DescriptionListItem,
   TagList,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import { addressOf, telephoneHrefOf, webAddressOf } from '../../salon-format'
 import styles from './salon-about.module.css'
@@ -85,7 +86,9 @@ export const SalonAbout = ({ salon }: SalonAboutProps) => {
   return (
     <div className={styles['about']}>
       {salon.description !== null && (
-        <p className={styles['description']}>{salon.description}</p>
+        <WrittenText className={styles['description']}>
+          {salon.description}
+        </WrittenText>
       )}
       <DescriptionList items={items} />
     </div>

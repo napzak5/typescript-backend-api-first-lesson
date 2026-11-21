@@ -1,5 +1,11 @@
 import type { ModelsSharedFileResponse } from '@beauty-salon-frontend/api-client'
-import { Alert, Button, Card, DescriptionList } from '@beauty-salon-frontend/ui'
+import {
+  Alert,
+  Button,
+  Card,
+  DescriptionList,
+  Note,
+} from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import { match } from 'ts-pattern'
 import { factsOf, isImage, LOAD_NOTE } from '../../shared-file'
@@ -43,15 +49,13 @@ export const SharedFileRecord = ({
       {match(content)
         .with({ type: 'notLoaded' }, ({ pending, message }) => (
           <>
-            <p className={styles['note']}>{LOAD_NOTE}</p>
+            <Note>{LOAD_NOTE}</Note>
             {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-            <div className={styles['buttons']}>
-              <Button onClick={onLoad} pending={pending}>
-                {message === undefined
-                  ? 'ファイルを読み込む'
-                  : 'もう一度読み込む'}
-              </Button>
-            </div>
+            <Button onClick={onLoad} pending={pending}>
+              {message === undefined
+                ? 'ファイルを読み込む'
+                : 'もう一度読み込む'}
+            </Button>
           </>
         ))
         .with({ type: 'loaded' }, ({ url }) => (

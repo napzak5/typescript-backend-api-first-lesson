@@ -36,11 +36,9 @@ export const OwnPreferences = () => {
         .with({ type: 'found' }, ({ preferences, staff }) => (
           <>
             <PreferencesDetails preferences={preferences} staff={staff} />
-            <p>
-              <ButtonLink href='/mypage/preferences'>
-                好みの設定を変更する
-              </ButtonLink>
-            </p>
+            <ButtonLink href='/mypage/preferences'>
+              好みの設定を変更する
+            </ButtonLink>
           </>
         ))
         // The page shows this part for an account that has a profile. One

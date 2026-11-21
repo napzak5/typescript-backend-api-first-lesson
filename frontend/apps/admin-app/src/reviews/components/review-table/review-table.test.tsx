@@ -71,6 +71,10 @@ describe('ReviewTable', () => {
         .map((rating) => rating.getAttribute('aria-label')),
     ).toEqual(['5 段階中 3.0', '5 段階中 4.0', '5 段階中 5.0'])
     expect(
+      screen.getByText(/^カウンセリングが丁寧で、/),
+      'a comment keeps the lines it was written in',
+    ).toHaveClass('lines')
+    expect(
       screen.getByRole('rowheader', { name: '仕上がりに大満足' }),
     ).toBeVisible()
     expect(

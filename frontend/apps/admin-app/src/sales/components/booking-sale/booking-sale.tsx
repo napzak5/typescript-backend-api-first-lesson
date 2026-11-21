@@ -14,7 +14,6 @@ import { match, P } from 'ts-pattern'
 import { saleOfBooking, whyNoCheckout } from '../../checkout'
 import { paymentStatusNameOf, paymentStatusToneOf } from '../../sale-format'
 import type { SalesOfBooking } from '../../sales-api'
-import styles from './booking-sale.module.css'
 
 export type BookingSaleProps = {
   booking: Pick<ModelsBookingResponse, 'status'>
@@ -58,7 +57,7 @@ export const BookingSale = ({
         />
       ))
       .with({ type: 'forbidden' }, () => (
-        <p className={styles['said']}>この予約の会計は、見られません。</p>
+        <p>この予約の会計は、見られません。</p>
       ))
       .with({ type: 'found' }, ({ sales: found }) => {
         const sale = saleOfBooking(found)
@@ -102,7 +101,7 @@ export const BookingSale = ({
             }
           />
         ) : (
-          <p className={styles['said']}>{why}</p>
+          <p>{why}</p>
         )
       })
       .exhaustive()}

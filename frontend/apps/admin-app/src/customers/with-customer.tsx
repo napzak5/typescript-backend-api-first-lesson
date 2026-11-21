@@ -62,9 +62,7 @@ export const CustomerNotFound = ({
           : 'アドレスが正しいか、お確かめください。台帳から削除されたお客様は、表示できません。'
       }
     />
-    <p>
-      <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
-    </p>
+    <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
   </>
 )
 

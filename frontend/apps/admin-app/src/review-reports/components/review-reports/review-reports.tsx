@@ -38,7 +38,7 @@ export const ReviewReports = ({
 }: ReviewReportsProps) => (
   <Card title='通報' headingRef={headingRef}>
     <div className={styles['reports']}>
-      <p className={styles['text']}>
+      <p>
         お客様とサロンから届いた、このレビューへの通報です。レビューが規則に反していなければ、通報を却下します。反していれば、「レビューの削除」から、レビューを削除します。
       </p>
       {refusal !== undefined && <Alert tone='warning'>{refusal}</Alert>}
