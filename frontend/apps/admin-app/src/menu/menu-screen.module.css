@@ -2,7 +2,7 @@
 .parts {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-8);
+  gap: var(--space-6);
 }
 
 /* A part of the menu: its name above what it holds */

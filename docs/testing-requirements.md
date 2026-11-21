@@ -83,7 +83,7 @@ show what the constraints of `services` and `service_options` refuse.
 | What a form does with its values and with the answer of the API | Unit, of pure functions | `frontend/packages/session/src/components/sign-in-screen/sign-in-flow.test.ts`, `frontend/apps/portal-app/src/account/account-flow.test.ts`, `frontend/apps/portal-app/src/bookings/booking-flow.test.ts` |
 | What a screen makes of its address and of what it read: the conditions of a search, dates and amounts in the time zone and the currency of the salon, the pages of a list | Unit, of pure functions | `frontend/apps/portal-app/src/salons/salon-search.test.ts`, `frontend/apps/portal-app/src/salons/salon-format.test.ts`, `frontend/apps/portal-app/src/salons/pages.test.ts` |
 | Applications: the frame, the routes and what depends on the environment, as somebody who is not signed in sees them | Component test in a `MemoryRouter`, with an accessibility test; no API | `frontend/apps/portal-app/src/App.test.tsx` |
-| The style rules (CSS Modules, Grid and no flex, tokens) in every package and application; the contrast of the colour tokens | Unit | `frontend/packages/theme/src/style-rules.test.ts`, `frontend/packages/theme/src/tokens.test.ts` |
+| The style rules (CSS Modules, Grid and no flex, tokens) in every package and application; the contrast of the colour tokens; the typefaces the theme loads | Unit | `frontend/packages/theme/src/style-rules.test.ts`, `frontend/packages/theme/src/tokens.test.ts`, `frontend/packages/theme/src/typefaces.test.ts` |
 
 The tests of `config` and of `theme` run in Node, the others in jsdom (the
 session is kept in `localStorage`). The unit tests of `admin-app`,

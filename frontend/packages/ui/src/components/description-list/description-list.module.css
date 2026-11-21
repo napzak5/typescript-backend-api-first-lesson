@@ -1,23 +1,28 @@
 /*
- * On a narrow screen a name stands above its value. On a wide one the names
- * share one column, as wide as the longest of them, and the values the other.
+ * The names share one column and the values the other, on every screen: a
+ * record takes one line for each of its values. The column of the names is
+ * as wide as the longest of them and never more than two fifths of the
+ * list: a name that is longer goes on in a second line.
  */
 .list {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3) var(--space-6);
+  grid-template-columns: fit-content(40%) minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
 }
 
+/* The first line of a name stands on the line of its value, whose letters are larger */
 .item {
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
+  align-items: baseline;
 }
 
 .term {
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
 }
 
 .description {
@@ -26,10 +31,6 @@
 
 @media (min-width: 40rem) {
   .list {
-    grid-template-columns: max-content minmax(0, 1fr);
-  }
-
-  .term {
-    padding-block-start: 0.15em;
+    column-gap: var(--space-6);
   }
 }

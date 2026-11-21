@@ -1,7 +1,14 @@
-/* A checkbox or a radio button with its label beside it: one target to press. */
+/*
+ * A checkbox or a radio button with its label beside it: one target to
+ * press. The label has a column only when it is shown: a column that
+ * stays empty would still keep its gap, and a mark that stands alone in
+ * the cell of a table would be wider than it looks.
+ */
 .choice {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   align-items: center;
   gap: var(--space-2);
   min-block-size: var(--size-control-small);

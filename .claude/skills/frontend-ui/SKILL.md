@@ -17,6 +17,7 @@ this one: a component is not done without its stories and its test.
 | What | Where |
 |------|-------|
 | Tokens (custom properties) | `frontend/packages/theme/src/tokens.css` |
+| Typefaces (Inter, Noto Sans JP), and the test that they are loaded and named | `frontend/packages/theme/src/styles.css`, `typefaces.test.ts` |
 | Reset and the styles of bare elements (body, headings, links, the focus ring) | `frontend/packages/theme/src/reset.css`, `global.css` |
 | The check of the style rules | `frontend/packages/theme/src/style-rules.ts`, run by `style-rules.test.ts` over every package and app |
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
@@ -73,7 +74,7 @@ is broken.
    | Header, content that takes the rest | `grid-template-rows: auto minmax(0, 1fr)` |
    | Centred | `display: grid; place-items: center` |
    | Cards that wrap | `grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr))` |
-   | Label and value pairs | `grid-template-columns: max-content minmax(0, 1fr)` |
+   | Label and value pairs | `grid-template-columns: fit-content(40%) minmax(0, 1fr)`: a long label goes on in a second line instead of taking the row |
    | Rows that share their columns | The list is the grid; a row is `display: grid; grid-template-columns: subgrid; grid-column: 1 / -1` |
 
    Write `minmax(0, 1fr)`, not `1fr`, for a track whose content may be long:
@@ -153,6 +154,33 @@ is broken.
     somebody chose), so a button is never wider than what it is in; it is
     not given `white-space: nowrap`. `narrow-screens.e2e.test.ts` opens
     every screen at that width: a new screen is added to its list.
+12. **Type and density are the theme's.** The page is drawn in Inter (Latin
+    letters and figures) and Noto Sans JP. `styles.css` of the theme loads
+    both from the packages `@fontsource-variable/*`, so they are served
+    with the application and no other site is asked; a browser fetches
+    only the files of the characters a page shows. `typefaces.test.ts`
+    checks that the packages, the imports and `--font-family` agree: a
+    family that is misspelled is no error, the page is then drawn in the
+    typeface of the system. The screens show much at once: text is 14px
+    (`--font-size-body`) with 1.6 between its lines, small text 12px, the
+    heading of a card 16px, of a section 20px and of a screen 24px. A
+    control is 40px high for a finger and 36px where the pointer is a fine
+    one (`--size-control`, which `tokens.css` sets in a media query): do
+    not write the height of a control. Three gaps have a name, because
+    many stylesheets have to agree on them:
+
+    | Token | What it is | Value |
+    |-------|------------|-------|
+    | `--space-frame` | The room inside a frame: a `Card`, the conditions of a search, a `Dialog`, any box with a border of its own | 16px, 20px from 40rem |
+    | `--space-parts` | The gap between the parts of a screen: its cards, its lists | 16px |
+    | `--space-fields` | The gap between the fields of a form or of a search | 12px |
+
+    A frame, a stack of parts and a form use these names, not a step of
+    the scale. A part of a form (a `fieldset` under its `legend`) is
+    further from what stands before it than its fields are from each
+    other, and that room is a margin of the fieldset, not a padding: the
+    legend stands on the upper edge of the fieldset, so a padding ends up
+    below the name (`.part:not(:first-child)` in the stylesheet of a form).
 
 ### Adding a token
 
@@ -263,7 +291,7 @@ nobody reads is removed.
   empty in advance.
 - What is typed into keeps `--font-size-control` (16px): below that, iOS zooms
   the page when the control takes focus.
-- A form is a grid: `display: grid; gap: var(--space-4)`. Fields that share a
+- A form is a grid: `display: grid; gap: var(--space-fields)`. Fields that share a
   row are columns of it. A field keeps its label, its control and its
   messages as high as they are (`align-content: start` in
   `field.module.css`), so a field beside one that says an error is not
@@ -2281,7 +2309,7 @@ A share link opens a file for somebody who has no account
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (one below the other on a narrow screen, side by side from 40rem) |
 | `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are; below it they follow each other like words, and go on in the next line where the card ends: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
-| `DescriptionList` | The names and values of one record |
+| `DescriptionList` | The names and values of one record, side by side on every screen, one line for a value. The names share a column as wide as the longest of them, and never more than two fifths of the list: a longer name goes on in a second line |
 | `Badge` | The state of a record, in a word |
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends |
 | `Rating` | A rating out of five: the stars, the number, and how many gave it |

@@ -2,7 +2,7 @@
 .form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-fields);
 }
 
 /* One below the other on a narrow screen, side by side on a wide one */
@@ -10,7 +10,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: var(--space-4);
+  gap: var(--space-fields);
 }
 
 .actions {
