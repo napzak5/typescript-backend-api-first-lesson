@@ -9,6 +9,7 @@ import {
   Form,
   type FormErrors,
   FormPart,
+  FormRow,
   Note,
   RadioGroup,
   TextField,
@@ -26,7 +27,6 @@ import {
   weeklyControlOf,
 } from '../../schedule-form'
 import { weekdayNameOf } from '../../shift-week'
-import styles from './schedule-form.module.css'
 
 export type ScheduleFormProps = {
   /** The schedule the form was opened with, as the API lists it */
@@ -197,36 +197,31 @@ export const ScheduleForm = ({
           const works = weekly[weekday] ?? false
 
           return (
-            <fieldset key={weekday} className={styles['row']}>
-              <legend className={styles['rowName']}>
-                {weekdayNameOf(weekday)}
-              </legend>
-              <div className={styles['rowControls']}>
-                <RadioGroup
-                  label='勤務'
-                  name={nameOf('works')}
-                  options={[
-                    { value: WORKS, label: '勤務する' },
-                    { value: OFF, label: '勤務しない' },
-                  ]}
-                  value={works ? WORKS : OFF}
-                  onChange={(event) =>
-                    setWeekly({
-                      ...weekly,
-                      [weekday]: event.target.value === WORKS,
-                    })
-                  }
-                />
-                {works && <Hours nameOf={nameOf} shown={row} errors={errors} />}
-                <TextField
-                  label='備考'
-                  name={nameOf('notes')}
-                  autoComplete='off'
-                  defaultValue={row?.notes ?? undefined}
-                  error={errors[nameOf('notes')]}
-                />
-              </div>
-            </fieldset>
+            <FormRow key={weekday} label={weekdayNameOf(weekday)}>
+              <RadioGroup
+                label='勤務'
+                name={nameOf('works')}
+                options={[
+                  { value: WORKS, label: '勤務する' },
+                  { value: OFF, label: '勤務しない' },
+                ]}
+                value={works ? WORKS : OFF}
+                onChange={(event) =>
+                  setWeekly({
+                    ...weekly,
+                    [weekday]: event.target.value === WORKS,
+                  })
+                }
+              />
+              {works && <Hours nameOf={nameOf} shown={row} errors={errors} />}
+              <TextField
+                label='備考'
+                name={nameOf('notes')}
+                autoComplete='off'
+                defaultValue={row?.notes ?? undefined}
+                error={errors[nameOf('notes')]}
+              />
+            </FormRow>
           )
         })}
       </FormPart>
@@ -239,9 +234,8 @@ export const ScheduleForm = ({
             dateControlOf(index, property)
 
           return (
-            <fieldset
+            <FormRow
               key={row.key}
-              className={styles['row']}
               ref={(group) => {
                 if (group === null) {
                   groups.current.delete(row.key)
@@ -249,53 +243,49 @@ export const ScheduleForm = ({
                   groups.current.set(row.key, group)
                 }
               }}
+              label={`${index + 1} 行目`}
             >
-              <legend className={styles['rowName']}>
-                {`${index + 1} 行目`}
-              </legend>
-              <div className={styles['rowControls']}>
-                <TextField
-                  width='short'
-                  label='日付'
-                  type='date'
-                  name={nameOf('date')}
-                  autoComplete='off'
-                  required
-                  defaultValue={row.shown?.date ?? undefined}
-                  error={said[nameOf('date')]}
-                />
-                <RadioGroup
-                  label='勤務'
-                  name={nameOf('works')}
-                  options={[
-                    { value: WORKS, label: '勤務する' },
-                    { value: OFF, label: '休み' },
-                  ]}
-                  value={row.works ? WORKS : OFF}
-                  onChange={(event) =>
-                    choose(row.key, event.target.value === WORKS)
-                  }
-                />
-                {row.works && (
-                  <Hours nameOf={nameOf} shown={row.shown} errors={said} />
-                )}
-                <TextField
-                  label='備考'
-                  name={nameOf('notes')}
-                  autoComplete='off'
-                  description='休みの理由（有給休暇、研修など）や、勤務時間を変える理由です。'
-                  defaultValue={row.shown?.notes ?? undefined}
-                  error={said[nameOf('notes')]}
-                />
-                <Button
-                  size='small'
-                  aria-label={`${index + 1} 行目を外す`}
-                  onClick={() => removeRow(row.key)}
-                >
-                  外す
-                </Button>
-              </div>
-            </fieldset>
+              <TextField
+                width='short'
+                label='日付'
+                type='date'
+                name={nameOf('date')}
+                autoComplete='off'
+                required
+                defaultValue={row.shown?.date ?? undefined}
+                error={said[nameOf('date')]}
+              />
+              <RadioGroup
+                label='勤務'
+                name={nameOf('works')}
+                options={[
+                  { value: WORKS, label: '勤務する' },
+                  { value: OFF, label: '休み' },
+                ]}
+                value={row.works ? WORKS : OFF}
+                onChange={(event) =>
+                  choose(row.key, event.target.value === WORKS)
+                }
+              />
+              {row.works && (
+                <Hours nameOf={nameOf} shown={row.shown} errors={said} />
+              )}
+              <TextField
+                label='備考'
+                name={nameOf('notes')}
+                autoComplete='off'
+                description='休みの理由（有給休暇、研修など）や、勤務時間を変える理由です。'
+                defaultValue={row.shown?.notes ?? undefined}
+                error={said[nameOf('notes')]}
+              />
+              <Button
+                size='small'
+                aria-label={`${index + 1} 行目を外す`}
+                onClick={() => removeRow(row.key)}
+              >
+                外す
+              </Button>
+            </FormRow>
           )
         })}
         {rows.length + parts.past.length < MOST_DATES ? (

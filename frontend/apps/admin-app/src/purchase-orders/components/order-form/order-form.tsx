@@ -13,6 +13,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  FormRow,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -132,10 +133,7 @@ export const OrderForm = ({
           const unitPrice = unitPriceControlOf(row.id)
 
           return (
-            <fieldset key={row.id} className={styles['row']}>
-              <legend className={styles['rowName']}>
-                {stockRowNameOf(row, product)}
-              </legend>
+            <FormRow key={row.id} label={stockRowNameOf(row, product)}>
               <FieldRow>
                 <TextField
                   label='数量'
@@ -155,7 +153,7 @@ export const OrderForm = ({
                   error={errors[unitPrice]}
                 />
               </FieldRow>
-            </fieldset>
+            </FormRow>
           )
         })}
         <p className={styles['subtotal']}>

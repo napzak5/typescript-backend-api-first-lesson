@@ -15,6 +15,7 @@ import {
   Form,
   type FormErrors,
   FormPart,
+  FormRow,
   Note,
   Select,
   TextArea,
@@ -307,9 +308,8 @@ export const TreatmentForm = ({
         description='記録しても在庫は減りません。在庫から出した分は、在庫の画面で記録します。'
       >
         {rows.map((row, index) => (
-          <fieldset
+          <FormRow
             key={row.key}
-            className={styles['row']}
             ref={(group) => {
               if (group === null) {
                 groups.current.delete(row.key)
@@ -317,73 +317,69 @@ export const TreatmentForm = ({
                 groups.current.set(row.key, group)
               }
             }}
+            label={`${index + 1} 件目の商材`}
           >
-            <legend className={styles['rowName']}>
-              {`${index + 1} 件目の商材`}
-            </legend>
-            <div className={styles['rowControls']}>
-              <Select
-                label='商品'
-                name={materialControlOf(index, 'productId')}
-                options={productOptionsOf(products, row.shown?.productId)}
-                placeholder='選んでください'
-                required
-                value={row.productId}
-                onChange={(event) => choose(row.key, event.target.value)}
-                error={said[materialControlOf(index, 'productId')]}
-              />
-              <FieldRow>
-                <TextField
-                  label='量'
-                  name={materialControlOf(index, 'quantity')}
-                  inputMode='decimal'
-                  autoComplete='off'
-                  required
-                  description='小数第 2 位まで。'
-                  defaultValue={
-                    row.shown === undefined
-                      ? undefined
-                      : String(row.shown.quantity)
-                  }
-                  error={said[materialControlOf(index, 'quantity')]}
-                />
-                <TextField
-                  label='単位'
-                  name={materialControlOf(index, 'unit')}
-                  autoComplete='off'
-                  required
-                  description='商品を選ぶと、商品の単位が入ります。'
-                  value={row.unit}
-                  onChange={(event) => write(row.key, event.target.value)}
-                  error={said[materialControlOf(index, 'unit')]}
-                />
-              </FieldRow>
-              {takesLot(row) ? (
-                <TextField
-                  label='ロット番号'
-                  name={materialControlOf(index, 'lotNumber')}
-                  autoComplete='off'
-                  required
-                  description='ロットで管理している商品です。使った商品のロット番号を書きます。'
-                  defaultValue={row.shown?.lotNumber ?? undefined}
-                  error={said[materialControlOf(index, 'lotNumber')]}
-                />
-              ) : null}
+            <Select
+              label='商品'
+              name={materialControlOf(index, 'productId')}
+              options={productOptionsOf(products, row.shown?.productId)}
+              placeholder='選んでください'
+              required
+              value={row.productId}
+              onChange={(event) => choose(row.key, event.target.value)}
+              error={said[materialControlOf(index, 'productId')]}
+            />
+            <FieldRow>
               <TextField
-                label='商材のメモ'
-                name={materialControlOf(index, 'notes')}
+                label='量'
+                name={materialControlOf(index, 'quantity')}
+                inputMode='decimal'
                 autoComplete='off'
-                defaultValue={row.shown?.notes ?? undefined}
+                required
+                description='小数第 2 位まで。'
+                defaultValue={
+                  row.shown === undefined
+                    ? undefined
+                    : String(row.shown.quantity)
+                }
+                error={said[materialControlOf(index, 'quantity')]}
               />
-              <Button
-                size='small'
-                aria-label={`${index + 1} 件目の商材を外す`}
-                onClick={() => removeRow(row.key)}
-              >
-                外す
-              </Button>
-            </div>
-          </fieldset>
+              <TextField
+                label='単位'
+                name={materialControlOf(index, 'unit')}
+                autoComplete='off'
+                required
+                description='商品を選ぶと、商品の単位が入ります。'
+                value={row.unit}
+                onChange={(event) => write(row.key, event.target.value)}
+                error={said[materialControlOf(index, 'unit')]}
+              />
+            </FieldRow>
+            {takesLot(row) ? (
+              <TextField
+                label='ロット番号'
+                name={materialControlOf(index, 'lotNumber')}
+                autoComplete='off'
+                required
+                description='ロットで管理している商品です。使った商品のロット番号を書きます。'
+                defaultValue={row.shown?.lotNumber ?? undefined}
+                error={said[materialControlOf(index, 'lotNumber')]}
+              />
+            ) : null}
+            <TextField
+              label='商材のメモ'
+              name={materialControlOf(index, 'notes')}
+              autoComplete='off'
+              defaultValue={row.shown?.notes ?? undefined}
+            />
+            <Button
+              size='small'
+              aria-label={`${index + 1} 件目の商材を外す`}
+              onClick={() => removeRow(row.key)}
+            >
+              外す
+            </Button>
+          </FormRow>
         ))}
         {rows.length < MOST_MATERIALS ? (
           <Button ref={add} onClick={addRow}>
