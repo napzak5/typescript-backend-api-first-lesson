@@ -282,6 +282,6 @@ export const AcceptStaffInvitationScreen = () => {
   return token === null ? (
     <LinkUnusable description='このページは、招待のメールのリンクから開いてください。' />
   ) : (
-    <AcceptWithToken token={token} />
+    <AcceptWithToken key={token} token={token} />
   )
 }

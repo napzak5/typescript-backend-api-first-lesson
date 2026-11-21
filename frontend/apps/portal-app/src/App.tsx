@@ -48,6 +48,7 @@ import {
   SECURITY_PATH,
   TWO_FACTOR_PATH,
 } from './security/security-screens'
+import { SharedFileScreen } from './share/shared-file-screen'
 import { SignInHelp } from './sign-in-help'
 import { pathAfterSignIn, SIGN_IN_PATH } from './sign-in-path'
 
@@ -145,6 +146,8 @@ export const App = () => {
               path='/accept-staff-invitation'
               element={<AcceptStaffInvitationScreen />}
             />
+            {/* The address of the share links that a salon gives */}
+            <Route path='/share' element={<SharedFileScreen />} />
             <Route path='*' element={<NotFoundPage />} />
           </Routes>
         </AppShell>

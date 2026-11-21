@@ -155,6 +155,6 @@ export const VerifyEmailScreen = () => {
       このページは、確認メールのリンクから開いてください。メールが見つからないときは、新しいリンクをお送りします。
     </AskForAnotherMail>
   ) : (
-    <ConfirmWithToken token={token} />
+    <ConfirmWithToken key={token} token={token} />
   )
 }
