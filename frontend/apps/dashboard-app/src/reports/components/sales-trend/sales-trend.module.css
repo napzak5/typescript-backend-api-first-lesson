@@ -1,0 +1,11 @@
+/* The chart, the table of the same sums, and how they are counted below them */
+.part {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}

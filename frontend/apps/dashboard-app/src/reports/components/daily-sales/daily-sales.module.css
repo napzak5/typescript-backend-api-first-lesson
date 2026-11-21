@@ -1,0 +1,11 @@
+/* The sums of the day, and how they are counted below them */
+.part {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}

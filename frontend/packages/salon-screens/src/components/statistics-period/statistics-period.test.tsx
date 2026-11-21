@@ -73,6 +73,39 @@ describe('StatisticsPeriod', () => {
     ])
   })
 
+  it('should hand over a further choice with the days, between them and the button', async () => {
+    // Arrange
+    const received: [string, FormDataEntryValue][][] = []
+    await stories.WithAChoice.run({
+      args: {
+        ...stories.WithAChoice.args,
+        onSubmit: vi.fn((values: FormData) => {
+          received.push([...values])
+        }),
+      },
+    })
+    await userEvent.click(screen.getByRole('radio', { name: '週' }))
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: '集計する' }))
+
+    // Assert
+    expect(received).toEqual([
+      [
+        ['from', '2025-11-20'],
+        ['to', '2026-11-20'],
+        ['period', 'weekly'],
+      ],
+    ])
+    expect(
+      screen
+        .getByRole('radiogroup', { name: '区切り' })
+        .compareDocumentPosition(
+          screen.getByRole('button', { name: '集計する' }),
+        ),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
   it('should say what is wrong at the control, and take the focus there', async () => {
     // Act
     await stories.WithErrors.run()

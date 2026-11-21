@@ -1,8 +1,26 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import { describe, expect, it } from 'vitest'
-import { navigationFor, reportsHrefOf, salonIdIn } from './navigation'
+import {
+  dailyHrefOf,
+  navigationFor,
+  reportsHrefOf,
+  salonIdIn,
+  trendsHrefOf,
+} from './navigation'
 
 const SALON_ID = '3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60'
+
+/** The screens of the sales of the salon, the one of `current` marked */
+const salesOf = (current: string) =>
+  [
+    [`/salons/${SALON_ID}/reports`, '売上レポート'],
+    [`/salons/${SALON_ID}/reports/trends`, '売上の推移'],
+    [`/salons/${SALON_ID}/reports/daily`, '1 日の売上'],
+  ].map(([href = '', label = '']) => ({
+    href,
+    label,
+    current: href === current,
+  }))
 
 describe('salonIdIn', () => {
   it.each<[string, string | undefined]>([
@@ -17,19 +35,26 @@ describe('salonIdIn', () => {
 })
 
 describe('navigationFor', () => {
-  it('should lead an administrator to the choice of a salon and to the report of the salon chosen', () => {
+  it('should lead an administrator to the choice of a salon and to the screens of the sales of the salon chosen', () => {
     // Act
     const items = navigationFor('admin', reportsHrefOf(SALON_ID))
 
     // Assert
     expect(items).toEqual([
       { href: '/', label: 'サロンを選ぶ', current: false },
-      {
-        href: `/salons/${SALON_ID}/reports`,
-        label: '売上レポート',
-        current: true,
-      },
+      ...salesOf(reportsHrefOf(SALON_ID)),
     ])
+  })
+
+  it.each<[string, string]>([
+    [reportsHrefOf(SALON_ID), reportsHrefOf(SALON_ID)],
+    [trendsHrefOf(SALON_ID), trendsHrefOf(SALON_ID)],
+    [dailyHrefOf(SALON_ID), dailyHrefOf(SALON_ID)],
+    [`${dailyHrefOf(SALON_ID)}/x`, dailyHrefOf(SALON_ID)],
+    [`/salons/${SALON_ID}/elsewhere`, ''],
+  ])('should mark the screen of the sales at %s alone', (pathname, current) => {
+    // Act, Assert
+    expect(navigationFor('owner', pathname)).toEqual(salesOf(current))
   })
 
   it('should mark the choice of a salon as the screen an administrator is on', () => {
@@ -43,13 +68,9 @@ describe('navigationFor', () => {
     'should lead the %s to the report of their salon, and back to it through the start from elsewhere',
     (role) => {
       // Act, Assert
-      expect(navigationFor(role, reportsHrefOf(SALON_ID))).toEqual([
-        {
-          href: `/salons/${SALON_ID}/reports`,
-          label: '売上レポート',
-          current: true,
-        },
-      ])
+      expect(navigationFor(role, reportsHrefOf(SALON_ID))).toEqual(
+        salesOf(reportsHrefOf(SALON_ID)),
+      )
       expect(navigationFor(role, '/account/security')).toEqual([
         { href: '/', label: '売上レポート', current: false },
       ])
