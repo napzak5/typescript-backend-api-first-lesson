@@ -143,7 +143,6 @@ const SUMS_OF_TODAY: [string, string][] = [
 
 describe('the sales report, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

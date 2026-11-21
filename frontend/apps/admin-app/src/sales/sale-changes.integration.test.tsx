@@ -26,8 +26,6 @@ import {
   voidSale,
 } from './__tests__/arrangements'
 
-const TITLE = 'Beauty Salon Admin'
-
 /** What a member of the staff is told where a sale would be voided or given back */
 const UNDONE_BY_OTHERS =
   '売上の取り消しと返金は、オーナーとマネージャーができます。'
@@ -148,7 +146,6 @@ const openAt = async (path: (tokyo: string) => string, email = OWNER) => {
 
 describe('changing, voiding and giving back a sale, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

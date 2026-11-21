@@ -17,7 +17,7 @@ import {
 } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { CUSTOMER, enterCredentials, heading } from './sign-in'
+import { CUSTOMER, enterCredentials, heading, PORTAL_START } from './sign-in'
 
 /*
  * The seed data gives the customer two bookings to come and three visits
@@ -249,7 +249,7 @@ test.describe('the bookings of a customer, in a browser', () => {
 
     // Act: the header leads to the search, and from there to the bookings
     await mainMenu(page).getByRole('link', { name: 'サロンを探す' }).click()
-    await expect(heading(page, PORTAL.title)).toBeFocused()
+    await expect(heading(page, PORTAL_START)).toBeFocused()
     await mainMenu(page).getByRole('link', { name: '予約の一覧' }).click()
 
     // Assert: the list without a query is the one of the visits to come

@@ -33,8 +33,6 @@ import {
  * says so.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const renderAt = (path: string) =>
   render(
     <QueryClientProvider
@@ -71,7 +69,6 @@ const choice = (name: string): HTMLElement =>
 
 describe('several services of the menu changed at once, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

@@ -134,7 +134,6 @@ const chosenUnit = (): string | null =>
 
 describe('the trends of the sales, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

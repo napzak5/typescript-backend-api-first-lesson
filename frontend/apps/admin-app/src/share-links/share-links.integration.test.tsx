@@ -42,8 +42,6 @@ import {
  * (`share.integration.test.tsx` there, and the browser tests).
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const PORTAL = 'https://portal.salon.example'
 
 const CONSENT = 'カラー同意書_田中様.pdf'
@@ -171,7 +169,6 @@ const MOMENT = /^\d{4}年\d+月\d+日（.） \d{2}:\d{2}$/
 
 describe('the share links of a file', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
     vi.stubEnv('VITE_PORTAL_APP_URL', PORTAL)
   })

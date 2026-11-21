@@ -46,8 +46,6 @@ import { expiryNameOf } from './stock-format'
  * says so.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The address a screen was opened at, and what the page showed in the commit that opened it */
 let firstSight: [string, string] = ['', '']
 
@@ -185,7 +183,6 @@ const MOMENT = String.raw`\d{4}年\d{1,2}月\d{1,2}日（.） \d{2}:\d{2}`
 
 describe('the screen of the alerts of the stock', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

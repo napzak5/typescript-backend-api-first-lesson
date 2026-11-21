@@ -29,8 +29,6 @@ import { storedSalonOf } from './__tests__/arrangements'
  * them first, in the database.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The address and the text of the main part of the last screen, as it was first shown */
 let firstSight: [string, string] = ['', '']
 
@@ -180,7 +178,6 @@ const askToRemove = async (name: string): Promise<HTMLElement> => {
 
 describe('adding a salon, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 
@@ -339,7 +336,6 @@ describe('adding a salon, against the API', () => {
 
 describe('removing a salon, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

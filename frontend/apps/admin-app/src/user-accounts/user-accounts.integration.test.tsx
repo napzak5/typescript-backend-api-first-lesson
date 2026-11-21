@@ -51,8 +51,6 @@ import {
  * two factors; `__tests__/arrangements.ts` makes them so.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The address a screen was opened at, and what the page showed in the commit that opened it */
 let firstSight: [string, string] = ['', '']
 
@@ -159,7 +157,6 @@ const askToReset = async (
 
 describe('the accounts of the users, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

@@ -48,7 +48,6 @@ const STAFF_OF_TODAY = [
 
 describe('the sales of the staff, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

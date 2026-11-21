@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, within } from '@testing-library/react'
@@ -26,7 +27,6 @@ const renderAt = (path: string) =>
  */
 describe('App', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Portal')
     vi.stubEnv('VITE_MODE', 'production')
     vi.stubEnv('VITE_ADMIN_APP_URL', 'https://admin.salon.example')
   })
@@ -35,12 +35,16 @@ describe('App', () => {
     vi.unstubAllEnvs()
   })
 
-  it('should show the title of the application in the header', () => {
+  it('should name the application in the header, with a link to its first screen', () => {
     // Act
     renderAt('/sign-in')
 
     // Assert
-    expect(screen.getByRole('banner')).toHaveTextContent('Beauty Salon Portal')
+    expect(
+      within(screen.getByRole('banner')).getByRole('link', {
+        name: applications.portal.name,
+      }),
+    ).toHaveAttribute('href', '/')
   })
 
   it('should say that a page does not exist and lead back to the root', () => {
@@ -84,7 +88,7 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'サインイン' }),
     ).toHaveFocus()
-    expect(document.title).toBe('サインイン | Beauty Salon Portal')
+    expect(document.title).toBe(`サインイン | ${applications.portal.name}`)
   })
 
   it('should show the sign-in screen at its address', () => {
@@ -135,7 +139,7 @@ describe('App', () => {
     // Assert
     expect(screen.getByRole('heading', { level: 1, name: title })).toBeVisible()
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
-    expect(document.title).toBe(`${title} | Beauty Salon Portal`)
+    expect(document.title).toBe(`${title} | ${applications.portal.name}`)
   })
 
   it.each([

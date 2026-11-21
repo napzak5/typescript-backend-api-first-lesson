@@ -136,21 +136,22 @@ jobs:
           docker logs smoke
           exit 1
 
-      # A bundle is built for one environment. The application title is a
-      # VITE_* value that every app renders, so the bundle must contain the
-      # title of its environment as a whole string literal.
+      # A bundle is built for one environment. The origin of the API is a
+      # VITE_* value that differs between the environments and that every app
+      # calls, so the bundle must contain the origin of its environment as a
+      # whole string literal.
       - name: Verify the environment of the ${{ matrix.image.name }} bundle
         if: matrix.image.name != 'backend'
         run: |
-          title=$(grep '^VITE_APP_TITLE=' "frontend/apps/${{ matrix.image.app }}-app/.env.${{ matrix.image.mode }}" | cut -d= -f2-)
-          test -n "$title"
+          origin=$(grep '^VITE_BACKEND_BASE_URL=' "frontend/apps/${{ matrix.image.app }}-app/.env.${{ matrix.image.mode }}" | cut -d= -f2-)
+          test -n "$origin"
           for quote in '`' '"' "'"; do
-            if docker run --rm test-${{ matrix.image.name }}:${{ github.sha }} grep -rqF "${quote}${title}${quote}" dist; then
-              echo "✅ the bundle shows ${quote}${title}${quote} (${{ matrix.image.mode }})"
+            if docker run --rm test-${{ matrix.image.name }}:${{ github.sha }} grep -rqF "${quote}${origin}${quote}" dist; then
+              echo "✅ the bundle calls ${quote}${origin}${quote} (${{ matrix.image.mode }})"
               exit 0
             fi
           done
-          echo "❌ the bundle does not contain the title of ${{ matrix.image.mode }}: ${title}"
+          echo "❌ the bundle does not contain the origin of the API of ${{ matrix.image.mode }}: ${origin}"
           exit 1
 
       - name: Smoke test ${{ matrix.image.name }} container
@@ -160,6 +161,15 @@ jobs:
           for _ in $(seq 1 20); do
             if curl --fail --silent --output /dev/null "http://localhost:${{ matrix.image.port }}/"; then
               echo "✅ ${{ matrix.image.name }} is serving on port ${{ matrix.image.port }}"
+              # The icons and the image of a link are files of the image, not
+              # the page that the server answers for an address it does not know
+              for file in favicon.ico apple-touch-icon.png og-image.png; do
+                type=$(curl --fail --silent --output /dev/null --write-out '%{content_type}' "http://localhost:${{ matrix.image.port }}/${file}")
+                case "$type" in
+                  image/*) echo "✅ /${file} is served as ${type}" ;;
+                  *) echo "❌ /${file} is served as ${type}"; docker stop smoke; exit 1 ;;
+                esac
+              done
               docker stop smoke
               exit 0
             fi

@@ -1,4 +1,5 @@
 import { authCrudLogin } from '@beauty-salon-frontend/api-client'
+import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -21,7 +22,7 @@ import {
  * portal adds: where they are, who gets to them, and the ways between them.
  */
 
-const TITLE = 'Beauty Salon Portal'
+const TITLE = applications.portal.name
 const STYLIST = 'stylist1@beautysalon.jp'
 const NEW_PASSWORD = 'aoi sora to shiroi kumo no aida'
 
@@ -63,7 +64,6 @@ const lastPasswordChangeOf = async (email: string): Promise<unknown> => {
 
 describe('the security of the account in the portal, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

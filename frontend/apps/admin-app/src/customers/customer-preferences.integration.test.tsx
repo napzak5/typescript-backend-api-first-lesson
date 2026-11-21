@@ -36,8 +36,6 @@ import {
  * opened at the salon in Tokyo, whose five members of the staff it offers.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const OSAKA = 'Hair & Spa Osaka'
 
 /** How the form names a member of the staff: with their salon. */
@@ -129,7 +127,6 @@ const openForm = async (email = YUKI.email, account = STYLIST) => {
 
 describe('the preferences of a customer, changed by a salon against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

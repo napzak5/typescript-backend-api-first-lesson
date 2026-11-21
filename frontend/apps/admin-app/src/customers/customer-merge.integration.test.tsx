@@ -36,8 +36,6 @@ import {
  * otherwise.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The second record of Kenji */
 const AGAIN = {
   lastName: 'Yamamoto',
@@ -148,7 +146,6 @@ const merge = async (
 
 describe('merging two records of one customer, against the API', () => {
   beforeEach(async () => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
     await registeredMeanwhile(AGAIN, OWNER)
   })

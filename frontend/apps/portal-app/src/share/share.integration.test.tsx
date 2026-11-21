@@ -38,8 +38,6 @@ import {
  * account opens the link, as its fragment carries the token.
  */
 
-const TITLE = 'Beauty Salon Portal'
-
 const PHOTO = '施術後のスタイル_正面.png'
 const CONSENT = 'カラー同意書_田中様.pdf'
 
@@ -145,7 +143,6 @@ const operationsAsked = (fetched: MockInstance<typeof fetch>): string[] =>
 
 describe('the screen of a share link, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

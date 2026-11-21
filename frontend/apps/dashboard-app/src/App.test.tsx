@@ -1,6 +1,7 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
@@ -17,7 +18,6 @@ const renderAt = (path: string) =>
 /** Nobody is signed in: what the application shows without asking the API. */
 describe('App', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Dashboard')
     vi.stubEnv('VITE_MODE', 'production')
     vi.stubEnv('VITE_PORTAL_APP_URL', 'https://portal.salon.example')
   })
@@ -26,14 +26,16 @@ describe('App', () => {
     vi.unstubAllEnvs()
   })
 
-  it('should show the title of the application in the header', () => {
+  it('should name the application in the header, with a link to its first screen', () => {
     // Act
     renderAt('/')
 
     // Assert
-    expect(screen.getByRole('banner')).toHaveTextContent(
-      'Beauty Salon Dashboard',
-    )
+    expect(
+      within(screen.getByRole('banner')).getByRole('link', {
+        name: applications.dashboard.name,
+      }),
+    ).toHaveAttribute('href', '/')
   })
 
   it.each(['/', '/no-such-page'])(
@@ -47,7 +49,7 @@ describe('App', () => {
         screen.getByRole('heading', { level: 1, name: 'サインイン' }),
       ).toBeVisible()
       expect(screen.getAllByRole('heading')).toHaveLength(1)
-      expect(document.title).toBe('サインイン | Beauty Salon Dashboard')
+      expect(document.title).toBe(`サインイン | ${applications.dashboard.name}`)
     },
   )
 
@@ -56,8 +58,8 @@ describe('App', () => {
     renderAt('/')
 
     // Assert
-    expect(screen.getByRole('banner')).toHaveTextContent(
-      /^Beauty Salon Dashboard$/,
+    expect(screen.getByRole('banner').textContent).toBe(
+      applications.dashboard.name,
     )
   })
 

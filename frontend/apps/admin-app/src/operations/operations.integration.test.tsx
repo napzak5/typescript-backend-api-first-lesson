@@ -50,8 +50,6 @@ import { ADMINISTRATORS_ONLY } from './operations'
  * what each of them handles, which the seed data does not have.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const renderAt = (path: string) =>
   render(
     <QueryClientProvider
@@ -147,7 +145,6 @@ const arrangeExpiredPoints = (email: string, points: number) =>
 
 describe('the operations of the platform, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

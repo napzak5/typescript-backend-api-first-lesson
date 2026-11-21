@@ -37,7 +37,7 @@ const renderApplication = (
       }
     >
       <NotificationProvider>
-        <AppShell title='Beauty Salon Portal' account={<SessionAccount />}>
+        <AppShell title='Kushi' account={<SessionAccount />}>
           <RequireSession roles={roles} {...signInScreen}>
             <PageHeader title='マイページ' />
           </RequireSession>
@@ -115,7 +115,7 @@ describe('signing in on the screen, against the API', () => {
     expect(
       screen.queryByRole('heading', { name: 'マイページ' }),
     ).not.toBeInTheDocument()
-    expect(document.title).toBe('サインイン | Beauty Salon Portal')
+    expect(document.title).toBe('サインイン | Kushi')
     expect(await findAccessibilityViolations()).toEqual([])
   })
 
@@ -170,7 +170,7 @@ describe('signing in on the screen, against the API', () => {
 
     // Assert
     expect(await heading('マイページ')).toHaveFocus()
-    expect(document.title).toBe('マイページ | Beauty Salon Portal')
+    expect(document.title).toBe('マイページ | Kushi')
     expect(within(screen.getByRole('banner')).getByText(CUSTOMER)).toBeVisible()
     expect(
       within(screen.getByRole('main')).getByRole('status'),

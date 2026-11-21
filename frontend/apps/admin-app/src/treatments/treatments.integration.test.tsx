@@ -57,8 +57,6 @@ import {
  * otherwise; another account did something meanwhile.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const VIP = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 
 const MASK = 'Intensive Hair Mask 250ml（TREAT001）'
@@ -198,7 +196,6 @@ const addMaterial = async (
 
 describe('the treatment records, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

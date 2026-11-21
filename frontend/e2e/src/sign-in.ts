@@ -23,6 +23,9 @@ export const OPERATOR = 'admin@beautysalon.jp'
 export const NEWCOMER = 'newcomer@example.com'
 export const NEWCOMER_PASSWORD = 'a passphrase that only this test knows'
 
+/** The first screen of the portal, for everybody: the search of the salons. */
+export const PORTAL_START = 'サロンを探す'
+
 /**
  * The first screen of the admin application for a member of the staff of a
  * salon: the bookings of their salon, today.

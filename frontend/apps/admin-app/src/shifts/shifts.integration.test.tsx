@@ -50,8 +50,6 @@ import { mondayOf, weekNameOf } from './shift-week'
  * weeks after it, so that the rows of dates a test arranges are shown.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The path a screen was opened at, and what the page showed in the commit that opened it */
 let firstSight: [string, string] = ['', '']
 
@@ -178,7 +176,6 @@ const openChange = async (staffCode: string): Promise<string> => {
 
 describe('the shifts, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

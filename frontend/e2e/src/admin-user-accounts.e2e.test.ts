@@ -10,6 +10,7 @@ import {
   enterCredentials,
   heading,
   OPERATOR,
+  PORTAL_START,
   signOutButton,
 } from './sign-in'
 
@@ -180,7 +181,7 @@ test.describe('the accounts of the users, in a browser', () => {
     await enterCredentials(page, CUSTOMER, api.seedPassword)
 
     // Assert
-    await expect(heading(page, PORTAL.title)).toBeFocused()
+    await expect(heading(page, PORTAL_START)).toBeFocused()
     await expect(page.getByRole('banner')).toContainText(CUSTOMER)
     await expect(signOutButton(page)).toBeVisible()
   })

@@ -40,8 +40,6 @@ import {
  * test says otherwise; another account did something meanwhile.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const VIP = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 
 /** The address the seed data keeps a photo of a record at */
@@ -170,7 +168,6 @@ const openPhotosOf = async (
 
 describe('the photos and the statistics of the treatment records, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

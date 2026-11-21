@@ -28,8 +28,6 @@ import {
   YUKI,
 } from './__tests__/arrangements'
 
-const TITLE = 'Beauty Salon Admin'
-
 const MOVE_TAKEN =
   '担当の時間が、ほかの予約と重なっているため、日時と担当を変えられませんでした。動かしたあとの明細ごとに、重なるほかの予約を確かめました。'
 
@@ -261,7 +259,6 @@ const backToTheDay = async (
 
 describe('moving a booking and changing its lines, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

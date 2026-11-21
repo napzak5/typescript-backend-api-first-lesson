@@ -25,8 +25,6 @@ import {
   YUKI,
 } from './__tests__/arrangements'
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The address the application is at, as the router knows it */
 let address = ''
 
@@ -92,7 +90,6 @@ const rowsOf = async (day: string): Promise<string[][]> => {
 
 describe('the bookings of a salon, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

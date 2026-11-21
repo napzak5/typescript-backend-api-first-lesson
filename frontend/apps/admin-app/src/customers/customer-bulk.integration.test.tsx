@@ -36,8 +36,6 @@ import {
  * tags, an owner removes.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const HIROSHI = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 
 /** The address the application is at, as the router knows it */
@@ -172,7 +170,6 @@ const retag = async (
 
 describe('writing customers at once, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -44,7 +45,7 @@ import {
  * zone the tests run.
  */
 
-const TITLE = 'Beauty Salon Portal'
+const TITLE = applications.portal.name
 
 const OSAKA = 'Hair & Spa Osaka'
 
@@ -339,7 +340,6 @@ const book = async (): Promise<{
 
 describe('the bookings of a customer, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

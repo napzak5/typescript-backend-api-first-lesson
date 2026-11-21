@@ -78,12 +78,16 @@ const ScreensInCommit = ({ seen }: { seen: WhatTheDocumentSays }) => {
 describe('AppShell', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
-  it('should name the application in the banner', async () => {
+  it('should name the application in the banner, with a link to its first screen beside the mark', async () => {
     // Act
     await stories.NavigationInHeader.run()
 
-    // Assert
-    expect(screen.getByRole('banner')).toHaveTextContent('Beauty Salon Admin')
+    // Assert: the mark adds nothing to the name of the link, and is not read out
+    const name = within(screen.getByRole('banner')).getByRole('link', {
+      name: 'Kushi Admin',
+    })
+    expect(name).toHaveAttribute('href', '/')
+    expect(name.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('should hold the content of the screen in the main landmark', async () => {
@@ -182,7 +186,9 @@ describe('AppShell', () => {
     // Assert
     expect(screen.queryByRole('navigation')).toBeNull()
     expect(screen.queryByRole('button')).toBeNull()
-    expect(screen.getByRole('banner')).toHaveTextContent('Beauty Salon Portal')
+    expect(
+      within(screen.getByRole('banner')).getByRole('link', { name: 'Kushi' }),
+    ).toHaveAttribute('href', '/')
   })
 
   it('should name the document after the screen and the application', async () => {
@@ -190,7 +196,7 @@ describe('AppShell', () => {
     await stories.NavigationInHeader.run()
 
     // Assert
-    expect(document.title).toBe('予約台帳 | Beauty Salon Admin')
+    expect(document.title).toBe('予約台帳 | Kushi Admin')
   })
 
   it('should name the document once when the screen is named like the application', async () => {
@@ -198,7 +204,7 @@ describe('AppShell', () => {
     await stories.HomeScreen.run()
 
     // Assert
-    expect(document.title).toBe('Beauty Salon Admin')
+    expect(document.title).toBe('Kushi Admin')
   })
 
   it('should leave the focus alone for the first screen of a page', async () => {
@@ -222,7 +228,7 @@ describe('AppShell', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: '顧客台帳' }),
     ).toHaveFocus()
-    expect(document.title).toBe('顧客台帳 | Beauty Salon Admin')
+    expect(document.title).toBe('顧客台帳 | Kushi Admin')
   })
 
   it('should have moved the focus and named the document in the commit that shows the screen, before it is painted', async () => {
@@ -245,7 +251,7 @@ describe('AppShell', () => {
     // Assert
     expect(seen).toHaveBeenLastCalledWith(
       screen.getByRole('heading', { level: 1, name: '顧客台帳' }),
-      '顧客台帳 | Beauty Salon Admin',
+      '顧客台帳 | Kushi Admin',
     )
   })
 
@@ -296,7 +302,7 @@ describe('AppShell', () => {
     expect(onTheButton).toHaveAccessibleName('予約をキャンセルする')
     expect(seen).toHaveBeenLastCalledWith(
       screen.getByRole('heading', { level: 1, name: '予約の内容' }),
-      '予約の内容 | Beauty Salon Admin',
+      '予約の内容 | Kushi Admin',
     )
   })
 
