@@ -2140,6 +2140,29 @@ salon, and an administrator looks after them at `/users/:userId`:
   its buttons in a row, so two long ones are put in a grid of their own
   that stacks them on a narrow screen (`account-record.module.css`).
 
+The operations of the platform (`src/operations/`) are run by an
+administrator at `/operations`, led to from the header after the choice
+of a salon:
+
+- **Probes are read for a person as well as for a machine**: the three
+  of them are asked at once, and one that does not answer is said to be
+  silent while the others are shown as they answered, so that a process
+  that runs and a database it does not reach tell where it stops. A 503
+  of a probe is a state, not a failure.
+- **An operation that is meant to run at intervals is run by hand after a
+  dialog**: each says what it does, and the dialog what cannot be undone.
+  One part (`OperationRun`) serves the three, with their words
+  (`RunCopy`) and what each run did. The keys the API defaults are sent
+  as null, as its documents use them.
+- **What a run did is said where it was run, with its moment**: no
+  record of the runs can be read again, so the part says it, with a
+  table of what was carried out where there is one, until the screen is
+  left. That there was nothing to do is said too.
+- **A run that may have stopped halfway is said to be so**: the API does
+  everything that was due up to a failure and never the same thing
+  twice, so a failure says that what came before is done and that
+  another run does the rest.
+
 The files of a salon (`src/attachments/`) go between the browser and the
 object storage, at URLs the API signs; the API keeps what is known of a
 file:

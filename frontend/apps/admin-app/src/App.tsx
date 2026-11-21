@@ -64,9 +64,11 @@ import { ServicesChangeScreen } from './menu/services-change-screen'
 import {
   bookingsHrefOf,
   navigationFor,
+  OPERATIONS_PATH,
   OWN_PROFILE_PATH,
   SALON_ENTRY_PATH,
 } from './navigation'
+import { OperationsScreen } from './operations/operations-screen'
 import { OwnProfileScreen } from './own-profile/own-profile-screen'
 import { PaymentMethodChangeScreen } from './payment-methods/payment-method-change-screen'
 import { PaymentMethodEntryScreen } from './payment-methods/payment-method-entry-screen'
@@ -210,6 +212,7 @@ export const App = () => {
               />
               <Route path={SALON_ENTRY_PATH} element={<SalonEntryScreen />} />
               <Route path='/users/:userId' element={<UserAccountScreen />} />
+              <Route path={OPERATIONS_PATH} element={<OperationsScreen />} />
               <Route
                 path='/salons/:salonId/bookings'
                 element={<DayBookingsScreen />}

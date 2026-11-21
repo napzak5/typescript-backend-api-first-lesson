@@ -380,7 +380,7 @@
 
 - 依頼は、ID、顧客、理由（`reason`）、状態（`status`。`pending`・`cancelled`・`completed`）、受け付けた人と日時（`requestedBy`、`requestedAt`）、消去の予定日時（`scheduledAt`）、取り消した人と日時（`cancelledBy`、`cancelledAt`）、実行した人と日時（`completedBy`、`completedAt`）です。`links` は、依頼の確認（`self`）と顧客（`customer`）です。実行の `links` は null です
 - 権限は、受け付け、確認、取り消しが出力と同じ `admin`・`owner`・`manager`、実行がポイントの失効（`POST /api/v1/points/expire`）と同じ `admin` だけです。依頼したのが本人かどうかの確認と、消去したことの本人への通知（第 35 条第 7 項）は、サロンが行います。顧客本人は、どのオペレーションも呼べません（403）
-- 実行を定期的に呼ぶ仕組みは、ポイントの失効と同じく、本番環境の準備の範囲です
+- 実行を定期的に呼ぶ仕組みは、ポイントの失効と同じく、本番環境の準備の範囲です。管理者が、admin-app の[運用の画面](./frontend-api-integration.md#運用の画面)から実行します
 
 ### 依頼の受け付け
 

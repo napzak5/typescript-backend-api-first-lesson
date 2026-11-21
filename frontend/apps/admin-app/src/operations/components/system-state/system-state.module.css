@@ -1,0 +1,15 @@
+/* What the probes said, then the state of each thing the API depends on */
+.state {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* What the API says went wrong: it breaks its lines rather than widen the table */
+.error {
+  display: block;
+  min-inline-size: 10rem;
+  max-inline-size: 28rem;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
