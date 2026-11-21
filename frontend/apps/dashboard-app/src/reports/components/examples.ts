@@ -1,5 +1,7 @@
 import type {
   ModelsDailySalesResponse,
+  ModelsSalesByCategoryResponse,
+  ModelsSalesByStaffResponse,
   ModelsSalesReportResponse,
   ModelsSalesTrendsResponse,
 } from '@beauty-salon-frontend/api-client'
@@ -50,6 +52,41 @@ export const report: ModelsSalesReportResponse = {
     },
   ],
 }
+
+/**
+ * The sales of the month of every member of the staff who had a line of
+ * them: the last sold products alone
+ */
+export const byStaff: ModelsSalesByStaffResponse[] = [
+  ...report.topStaff,
+  {
+    staffId: '9c3e4a5b-6d7f-4a8b-8c1d-2e3f4a5b6c7d',
+    displayName: 'Yuki Sato',
+    totalSales: 9900,
+    serviceCount: 2,
+    averageServiceValue: 4950,
+  },
+  {
+    staffId: '0d4f5b6c-7e8a-4b9c-9d2e-3f4a5b6c7d8e',
+    displayName: 'Kenji Watanabe',
+    totalSales: 5500,
+    serviceCount: 1,
+    averageServiceValue: 5500,
+  },
+  {
+    staffId: '1e5a6c7d-8f9b-4cad-8e3f-4a5b6c7d8e9f',
+    displayName: 'Aoi Ito',
+    totalSales: 3300,
+    serviceCount: 0,
+    averageServiceValue: 0,
+  },
+]
+
+/** The sales of services of the month by kind of service, a service of no category among them */
+export const byCategory: ModelsSalesByCategoryResponse[] = [
+  ...report.salesByCategory,
+  { category: 'other', amount: 4400, count: 2, percentage: 11.1 },
+]
 
 /** Twelve months of sales, cut into months: none in the second */
 export const trends: ModelsSalesTrendsResponse = {

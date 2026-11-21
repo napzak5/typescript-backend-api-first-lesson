@@ -1,0 +1,22 @@
+/* The amount, and its bar under it across the cell */
+.shared {
+  display: grid;
+  justify-items: end;
+  row-gap: var(--space-1);
+}
+
+/* The whole length of a bar: 100 percent */
+.track {
+  display: grid;
+  inline-size: 100%;
+  min-inline-size: 4rem;
+  block-size: 0.375rem;
+  border-radius: var(--radius-small);
+  background: var(--color-surface-sunken);
+}
+
+.bar {
+  justify-self: start;
+  border-radius: var(--radius-small);
+  background: var(--color-accent);
+}

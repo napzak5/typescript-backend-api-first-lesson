@@ -5,12 +5,24 @@ import {
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { daily, report, SALON_ID, trends } from './components/examples'
+import {
+  byCategory,
+  byStaff,
+  daily,
+  report,
+  SALON_ID,
+  trends,
+} from './components/examples'
 import {
   exportSalesReport,
   readDailySales,
+  readSalesByCategory,
+  readSalesByStaff,
   readSalesReport,
   readSalesTrends,
+  salesByCategoryKeyOf,
+  salesByStaffKeyOf,
+  salesReportKeyOf,
 } from './sales-report-api'
 
 /*
@@ -25,6 +37,8 @@ const CALLS: [string, () => Promise<{ type: string }>][] = [
   ['exportSalesReport', () => exportSalesReport(SALON_ID, PERIOD)],
   ['readSalesTrends', () => readSalesTrends(SALON_ID, PERIOD, 'weekly')],
   ['readDailySales', () => readDailySales(SALON_ID, '2026-11-21')],
+  ['readSalesByStaff', () => readSalesByStaff(SALON_ID, PERIOD)],
+  ['readSalesByCategory', () => readSalesByCategory(SALON_ID, PERIOD)],
 ]
 
 const CSV = 'date,sales,tax,discounts,transactions,refunds,net\r\n'
@@ -120,6 +134,63 @@ describe('the sales report', () => {
       endDate: '2026-11-21',
       period: 'weekly',
     })
+  })
+
+  it.each<[string, () => Promise<unknown>, unknown, string, unknown]>([
+    [
+      'every member of the staff',
+      () => readSalesByStaff(SALON_ID, PERIOD),
+      byStaff,
+      '/api/v1/sales-reports/by-staff',
+      { type: 'found', staff: byStaff },
+    ],
+    [
+      'every kind of service',
+      () => readSalesByCategory(SALON_ID, PERIOD),
+      byCategory,
+      '/api/v1/sales-reports/by-category',
+      { type: 'found', categories: byCategory },
+    ],
+  ])(
+    'should ask for the sales of the period of %s',
+    async (_case, readOf, data, path, found) => {
+      // Arrange
+      const fetched = answering(() =>
+        json(200, { data, meta: null, links: { self: '/' } }),
+      )
+
+      // Act
+      const read = await readOf()
+
+      // Assert
+      expect(read).toEqual(found)
+      const asked = new URL(String(fetched.mock.calls[0]?.[0]))
+      expect(asked.pathname).toBe(path)
+      expect(Object.fromEntries(asked.searchParams)).toEqual({
+        salonId: SALON_ID,
+        startDate: '2026-11-01',
+        endDate: '2026-11-21',
+      })
+    },
+  )
+
+  it('should keep every read of the sales under a key of its own, the reads of one salon under one key', () => {
+    // Arrange
+    const keys = [
+      salesReportKeyOf(SALON_ID, PERIOD),
+      salesByStaffKeyOf(SALON_ID, PERIOD),
+      salesByCategoryKeyOf(SALON_ID, PERIOD),
+      salesByStaffKeyOf(SALON_ID, { from: PERIOD.from, to: PERIOD.from }),
+    ]
+
+    // Assert
+    expect(new Set(keys.map((key) => JSON.stringify(key))).size).toBe(
+      keys.length,
+    )
+    const ofTheSalon = salesReportKeyOf(SALON_ID, PERIOD).slice(0, -2)
+    expect(keys.map((key) => key.slice(0, ofTheSalon.length))).toEqual(
+      keys.map(() => ofTheSalon),
+    )
   })
 
   it('should ask for the sales of one day', async () => {

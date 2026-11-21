@@ -1,11 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { report } from '../examples'
+import { report, SALON_ID } from '../examples'
 import { SalesReport } from './sales-report'
 
 const meta: Meta<typeof SalesReport> = {
   title: 'Dashboard/Reports/SalesReport',
   component: SalesReport,
-  args: { report, currency: 'JPY' },
+  args: {
+    report,
+    currency: 'JPY',
+    staffHref: `/salons/${SALON_ID}/reports/staff?from=2026-11-01&to=2026-11-21`,
+    categoriesHref: `/salons/${SALON_ID}/reports/categories?from=2026-11-01&to=2026-11-21`,
+  },
 }
 
 export default meta

@@ -102,6 +102,29 @@ describe('SalesReport', () => {
     ])
   })
 
+  it('should lead from the kinds of service and from the five who sold the most to the whole of each, over the same days', async () => {
+    // Act
+    await stories.Counted.run()
+
+    // Assert
+    expect(
+      within(
+        screen.getByRole('region', { name: 'メニューの区分別' }),
+      ).getByRole('link', { name: '区分別の売上へ' }),
+    ).toHaveAttribute(
+      'href',
+      '/salons/3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60/reports/categories?from=2026-11-01&to=2026-11-21',
+    )
+    expect(
+      within(
+        screen.getByRole('region', { name: 'スタッフ別の上位 5 人' }),
+      ).getByRole('link', { name: 'すべてのスタッフの売上へ' }),
+    ).toHaveAttribute(
+      'href',
+      '/salons/3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60/reports/staff?from=2026-11-01&to=2026-11-21',
+    )
+  })
+
   it('should say that nothing was received, no service sold and nobody of the staff sold anything', async () => {
     // Act
     await stories.WithoutBreakdown.run()

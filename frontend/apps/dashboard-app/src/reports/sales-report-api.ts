@@ -1,11 +1,15 @@
 import {
   type ModelsDailySalesResponse,
   type ModelsProblemDetails,
+  type ModelsSalesByCategoryResponse,
+  type ModelsSalesByStaffResponse,
   type ModelsSalesReportResponse,
   type ModelsSalesTrendPeriodType,
   type ModelsSalesTrendsResponse,
   salesReportCrudExport,
   salesReportCrudGet,
+  salesReportCrudGetByCategory,
+  salesReportCrudGetByStaff,
   salesReportCrudGetDaily,
   salesReportCrudGetTrends,
 } from '@beauty-salon-frontend/api-client'
@@ -25,7 +29,8 @@ import { match, P } from 'ts-pattern'
 
 /*
  * The sales of a salon, counted by the API at every read: over a period,
- * in parts of it, on one day, and the CSV file it makes of a period. A
+ * by member of the staff, by kind of service, in parts of a period, on one
+ * day, and the CSV file it makes of a period. A
  * period or a day the screens send is one the API counts over (366 days at
  * most, the end not before the start), so a 400 says the salon was removed
  * since it was read.
@@ -93,6 +98,77 @@ export const readSalesReport = async (
     .with({ status: 200 }, ({ data }) => ({
       type: 'found',
       report: data.data,
+    }))
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: 400 }, ({ data }) => refusalOf(data))
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+export type SalesByStaffRead =
+  | { type: 'found'; staff: ModelsSalesByStaffResponse[] }
+  /** The salon was removed */
+  | NotFound
+  /** The account is of another salon */
+  | Forbidden
+  | Unread
+
+export const salesByStaffKeyOf = (
+  salonId: string,
+  { from, to }: Period,
+): readonly string[] => [...salesReportsKeyOf(salonId), 'by-staff', from, to]
+
+/**
+ * The sales of the period of every member of the staff who had a line of
+ * them, the most first (`GET /sales-reports/by-staff`).
+ */
+export const readSalesByStaff = async (
+  salonId: string,
+  period: Period,
+): Promise<SalesByStaffRead> => {
+  const answer = await salesReportCrudGetByStaff(
+    paramsOf(salonId, period),
+  ).catch(() => null)
+
+  return match(answer)
+    .returnType<SalesByStaffRead>()
+    .with({ status: 200 }, ({ data }) => ({ type: 'found', staff: data.data }))
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: 400 }, ({ data }) => refusalOf(data))
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+export type SalesByCategoryRead =
+  | { type: 'found'; categories: ModelsSalesByCategoryResponse[] }
+  /** The salon was removed */
+  | NotFound
+  /** The account is of another salon */
+  | Forbidden
+  | Unread
+
+export const salesByCategoryKeyOf = (
+  salonId: string,
+  { from, to }: Period,
+): readonly string[] => [...salesReportsKeyOf(salonId), 'by-category', from, to]
+
+/**
+ * The sales of services of the period by kind of service, the most first
+ * (`GET /sales-reports/by-category`).
+ */
+export const readSalesByCategory = async (
+  salonId: string,
+  period: Period,
+): Promise<SalesByCategoryRead> => {
+  const answer = await salesReportCrudGetByCategory(
+    paramsOf(salonId, period),
+  ).catch(() => null)
+
+  return match(answer)
+    .returnType<SalesByCategoryRead>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'found',
+      categories: data.data,
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
