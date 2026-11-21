@@ -5,9 +5,8 @@ import type {
   ModelsPaymentStatusType,
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
-import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
+import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeProps } from '@beauty-salon-frontend/ui'
-import { amountOf } from '../bookings/booking-format'
 
 /*
  * A sale and its payments in the words of the salon, and what follows from
@@ -57,20 +56,6 @@ const PAYMENT_NAMES: Record<ModelsPaymentStatusType, string> = {
 /** The state of one payment of a sale, in the word the salon uses. */
 export const paymentNameOf = (status: ModelsPaymentStatusType): string =>
   PAYMENT_NAMES[status]
-
-const METHOD_NAMES: Record<ModelsPaymentMethodType, string> = {
-  cash: '現金',
-  credit_card: 'クレジットカード',
-  debit_card: 'デビットカード',
-  e_money: '電子マネー',
-  qr_payment: 'QR コード決済',
-  bank_transfer: '銀行振込',
-  point: 'ポイント',
-}
-
-/** A kind of payment, in the word the salon uses. */
-export const methodKindNameOf = (method: ModelsPaymentMethodType): string =>
-  METHOD_NAMES[method]
 
 /** The kinds of payment that record the card: its last four digits and its brand. */
 export const CARD_METHODS: readonly ModelsPaymentMethodType[] = [

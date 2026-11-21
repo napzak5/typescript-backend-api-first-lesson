@@ -1,14 +1,4 @@
-import {
-  cursorAfter,
-  findSalons,
-  firstCursor,
-  KeywordSearch,
-  keywordIn,
-  keywordOf,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
-} from '@beauty-salon-frontend/salon-screens'
+import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   EmptyState,
   LoadingIndicator,
@@ -18,16 +8,31 @@ import {
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
-import { bookingsHrefOf } from '../navigation'
+import { KeywordSearch } from './components/keyword-search/keyword-search'
 import { SalonChoices } from './components/salon-choices/salon-choices'
+import { keywordIn, keywordOf } from './keyword'
+import { cursorAfter, firstCursor, listingOf, moreOf } from './pages'
+import { unreadMessageOf } from './reading'
 import { KEYWORD, queryOfKeyword } from './salon-choice'
+import { findSalons } from './salons-api'
+
+export type SalonChoiceScreenProps = {
+  /** What the salon is chosen for: 「予約台帳を開くサロンを選びます。」 */
+  description: string
+  /** Where choosing a salon leads */
+  salonHref: (salon: ModelsSalonResponse) => string
+}
 
 /**
  * Where an administrator chooses the salon to work on: every salon, or
  * those with a keyword. The keyword is in the query of the address, so a
- * reload and the way back from a salon show the same choice.
+ * reload and the way back from a salon show the same choice. The choice is
+ * the start of an application (`/`).
  */
-export const SalonChoiceScreen = () => {
+export const SalonChoiceScreen = ({
+  description,
+  salonHref,
+}: SalonChoiceScreenProps) => {
   const [query, setQuery] = useSearchParams()
   const keyword = keywordIn(query, KEYWORD)
   const found = useInfiniteQuery({
@@ -49,10 +54,7 @@ export const SalonChoiceScreen = () => {
 
   return (
     <>
-      <PageHeader
-        title='サロンを選ぶ'
-        description='予約台帳を開くサロンを選びます。'
-      />
+      <PageHeader title='サロンを選ぶ' description={description} />
       <KeywordSearch
         label='サロンを探す'
         description='サロンの名前か紹介文にある言葉。空欄のときは、すべてのサロンを並べます。'
@@ -94,7 +96,7 @@ export const SalonChoiceScreen = () => {
             onMore={() =>
               void (rest === 'unread' ? found.refetch() : found.fetchNextPage())
             }
-            salonHref={({ id }) => bookingsHrefOf(id)}
+            salonHref={salonHref}
           />
         ))
         .exhaustive()}

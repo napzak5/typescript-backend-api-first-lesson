@@ -5,11 +5,14 @@ import {
   ModelsTreatmentPhotoType,
   type ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { RefusedValue } from '@beauty-salon-frontend/salon-screens'
+import {
+  type Read,
+  type RefusedValue,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 import type { SelectOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
-import { type Read, textOf } from '../bookings/booking-actions'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import type { PhotoRemoval, PhotosAdding } from './treatments-api'
 

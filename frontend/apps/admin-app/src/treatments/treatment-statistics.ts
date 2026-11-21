@@ -1,5 +1,8 @@
-import { isDay } from '@beauty-salon-frontend/salon-screens'
-import type { Period } from '../customers/customer-statistics'
+import {
+  isDay,
+  monthUntil,
+  type Period,
+} from '@beauty-salon-frontend/salon-screens'
 import { NOT_RECORDED } from './treatment-format'
 
 /*
@@ -7,12 +10,6 @@ import { NOT_RECORDED } from './treatment-format'
  * counted over, kept in the query of the address, and how the counts are
  * said.
  */
-
-/** The month up to today: from its first day, both ends counted. */
-export const monthUntil = (today: string): Period => ({
-  from: `${today.slice(0, 8)}01`,
-  to: today,
-})
 
 /**
  * The period in the query of an address: the month up to today, unless

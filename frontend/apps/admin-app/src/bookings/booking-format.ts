@@ -44,10 +44,6 @@ export const hoursOf = (
 ): string =>
   `${timeOfDayAt(startTime, timezone)}〜${timeOfDayAt(endTime, timezone)}`
 
-/** An amount in the currency of the salon: 「￥5,500」. */
-export const amountOf = (amount: number, currency: string): string =>
-  new Intl.NumberFormat('ja-JP', { style: 'currency', currency }).format(amount)
-
 /** What is said of a customer who was removed. */
 export const GONE_CUSTOMER = '削除された顧客'
 

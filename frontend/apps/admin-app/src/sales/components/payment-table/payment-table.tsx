@@ -2,9 +2,8 @@ import type {
   ModelsPaymentMethodResponse,
   ModelsPaymentResponse,
 } from '@beauty-salon-frontend/api-client'
-import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
+import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
-import { amountOf } from '../../../bookings/booking-format'
 import {
   cardNameOf,
   methodNameOf,

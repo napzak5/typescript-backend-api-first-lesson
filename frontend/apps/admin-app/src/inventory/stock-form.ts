@@ -4,9 +4,13 @@ import type {
   ModelsInventoryUpdateRequest,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import { isDay, type RefusedValue } from '@beauty-salon-frontend/salon-screens'
+import {
+  isDay,
+  type Read,
+  type RefusedValue,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,

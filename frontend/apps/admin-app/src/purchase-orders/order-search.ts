@@ -2,9 +2,10 @@ import type { ModelsOrderStatusType } from '@beauty-salon-frontend/api-client'
 import {
   dayAfter,
   isDay,
+  type Read,
   startOfDayAt,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import { type Read, textOf } from '../bookings/booking-actions'
 import { nullIfBlank } from '../bookings/booking-entry'
 import { orderStatusIn } from './order-format'
 import type { OrderListParams } from './purchase-orders-api'

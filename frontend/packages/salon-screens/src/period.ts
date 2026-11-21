@@ -1,11 +1,7 @@
-import {
-  dayAfter,
-  dayNameOf,
-  isDay,
-} from '@beauty-salon-frontend/salon-screens'
-import { type Read, textOf } from '../bookings/booking-actions'
+import { type Read, textOf } from './form'
+import { dayAfter, dayNameOf, isDay } from './salon-time'
 
-/** The days of the visits the use of a salon is counted over, at the salon; both ends counted. */
+/** The days something of a salon is counted over, on its clock; both ends counted. */
 export type Period = { from: string; to: string }
 
 /** The most days the API counts over */
@@ -16,6 +12,12 @@ const daysOf = ({ from, to }: Period): number =>
   (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) /
     (24 * 60 * 60 * 1000) +
   1
+
+/** The month up to today: from its first day, both ends counted. */
+export const monthUntil = (today: string): Period => ({
+  from: `${today.slice(0, 8)}01`,
+  to: today,
+})
 
 /** The year up to today: the 366 days that end with it. */
 export const lastYearUntil = (today: string): Period => ({

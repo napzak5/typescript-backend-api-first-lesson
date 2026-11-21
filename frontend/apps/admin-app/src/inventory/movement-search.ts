@@ -5,9 +5,10 @@ import type {
 import {
   dayAfter,
   isDay,
+  type Read,
   startOfDayAt,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import { type Read, textOf } from '../bookings/booking-actions'
 import { movementTypeIn } from './movement-format'
 
 /*

@@ -26,6 +26,7 @@ import {
   type NotFound,
   outsideTheContract,
   type Page,
+  type Period,
   pageOf,
   type RefusedValue,
   refusedValuesOf,
@@ -36,7 +37,6 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod'
-import type { Period } from '../customers/customer-statistics'
 import { readCustomers } from '../customers/customers-api'
 
 /*

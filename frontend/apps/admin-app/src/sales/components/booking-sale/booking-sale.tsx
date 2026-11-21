@@ -1,5 +1,5 @@
 import type { ModelsBookingResponse } from '@beauty-salon-frontend/api-client'
-import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
+import { amountOf, unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   ButtonLink,
@@ -10,7 +10,6 @@ import {
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
-import { amountOf } from '../../../bookings/booking-format'
 import { saleOfBooking, whyNoCheckout } from '../../checkout'
 import { paymentStatusNameOf, paymentStatusToneOf } from '../../sale-format'
 import type { SalesOfBooking } from '../../sales-api'

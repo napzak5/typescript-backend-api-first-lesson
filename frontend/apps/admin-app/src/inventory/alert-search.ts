@@ -2,9 +2,9 @@ import type {
   ModelsInventoryAlertSeverityType,
   ModelsInventoryAlertType,
 } from '@beauty-salon-frontend/api-client'
+import { textOf } from '@beauty-salon-frontend/salon-screens'
 import type { SelectOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { textOf } from '../bookings/booking-actions'
 import { alertKindIn, severityIn } from './alert-format'
 
 /*

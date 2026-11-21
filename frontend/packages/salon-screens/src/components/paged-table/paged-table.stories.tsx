@@ -11,7 +11,7 @@ export const VISITS: Visit[] = [
 ]
 
 const meta: Meta<typeof PagedTable<Visit>> = {
-  title: 'Admin/PagedTable',
+  title: 'SalonScreens/PagedTable',
   component: PagedTable<Visit>,
   args: {
     caption: '来店',

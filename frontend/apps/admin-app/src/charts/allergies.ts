@@ -8,7 +8,9 @@ import {
 import {
   EARLIEST_DAY,
   isDay,
+  type Read,
   type RefusedValue,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import type {
   BadgeProps,
@@ -16,7 +18,6 @@ import type {
   SelectOption,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { mayKeepCustomers } from '../customers/customer-history'
 import type { AllergyRemoval, AllergyWrite } from './allergies-api'

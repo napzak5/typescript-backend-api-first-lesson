@@ -1,11 +1,12 @@
 import type { ModelsBookingServiceResponse } from '@beauty-salon-frontend/api-client'
 import {
+  amountOf,
   dayAt,
   dayNameOf,
   momentNameAt,
 } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList } from '@beauty-salon-frontend/ui'
-import { amountOf, hoursOf } from '../../booking-format'
+import { hoursOf } from '../../booking-format'
 import { memberNameOf, type Names, serviceNameOf } from '../../day-bookings'
 
 export type BookingLineRecordProps = {

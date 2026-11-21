@@ -8,9 +8,10 @@ import {
   isDay,
   keywordIn,
   LONGEST_KEYWORD,
+  type Read,
   startOfDayAt,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import { type Read, textOf } from '../bookings/booking-actions'
 import { CUSTOMER_STATUSES, TIERS } from './customer-format'
 
 /**

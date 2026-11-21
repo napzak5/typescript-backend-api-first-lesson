@@ -2,8 +2,8 @@ import type {
   ModelsCustomerBulkUpdateItem,
   ModelsCustomerResponse,
 } from '@beauty-salon-frontend/api-client'
+import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import { TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { customerNameOf } from './customers-api'
 

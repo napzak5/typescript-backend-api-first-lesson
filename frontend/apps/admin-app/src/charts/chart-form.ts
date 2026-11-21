@@ -8,11 +8,12 @@ import {
 import {
   EARLIEST_DAY,
   isDay,
+  type Read,
   type RefusedValue,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import type { SelectOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { tagsIn } from '../customers/customer-ledger'
 import type { ChartWrite } from './charts-api'

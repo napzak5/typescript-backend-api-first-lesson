@@ -1,6 +1,6 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
+import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList } from '@beauty-salon-frontend/ui'
-import { methodKindNameOf } from '../../../sales/sale-format'
 import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   amountsNameOf,

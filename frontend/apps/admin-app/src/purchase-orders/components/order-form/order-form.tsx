@@ -2,7 +2,11 @@ import type {
   ModelsInventoryResponse,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
+import {
+  amountOf,
+  EARLIEST_DAY,
+  LATEST_DAY,
+} from '@beauty-salon-frontend/salon-screens'
 import {
   Form,
   type FormErrors,
@@ -11,7 +15,6 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { type FormEvent, useState } from 'react'
-import { amountOf } from '../../../bookings/booking-format'
 import {
   productOf,
   quantityNameOf,

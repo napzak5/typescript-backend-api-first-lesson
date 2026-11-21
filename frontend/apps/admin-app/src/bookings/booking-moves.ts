@@ -8,10 +8,11 @@ import type {
 import {
   isDay,
   momentOf,
+  type Read,
   type RefusedValue,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from './booking-actions'
 import {
   afterRefusal,
   type FormSays,

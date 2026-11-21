@@ -2,7 +2,7 @@ import type {
   ModelsPurchaseOrderResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
+import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   Card,
@@ -12,7 +12,6 @@ import {
   Table,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { amountOf } from '../../../bookings/booking-format'
 import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   deliveryDayNameOf,

@@ -7,11 +7,12 @@ import {
   type Forbidden,
   isDay,
   type NotFound,
+  type Read,
   type RefusedValue,
+  textOf,
   type Unread,
 } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,

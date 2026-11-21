@@ -2,9 +2,10 @@ import type { ProductCrudListParams } from '@beauty-salon-frontend/api-client'
 import {
   keywordIn,
   LONGEST_KEYWORD,
+  type Read,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 
 /*
  * Which products the ledger shows. The names are those of the query of the

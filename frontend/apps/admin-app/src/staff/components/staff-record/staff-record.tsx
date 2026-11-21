@@ -1,8 +1,11 @@
 import type { ModelsStaffResponse } from '@beauty-salon-frontend/api-client'
-import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
+import {
+  amountOf,
+  dayNameOf,
+  momentNameAt,
+} from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList, TagList } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { amountOf } from '../../../bookings/booking-format'
 import {
   activityNameOf,
   bookingsNameOf,

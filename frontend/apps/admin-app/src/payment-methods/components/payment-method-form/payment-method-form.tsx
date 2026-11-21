@@ -1,4 +1,5 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
+import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Checkbox,
   Form,
@@ -7,7 +8,6 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { methodKindNameOf } from '../../../sales/sale-format'
 import { KIND_OPTIONS } from '../../payment-method-format'
 import styles from './payment-method-form.module.css'
 

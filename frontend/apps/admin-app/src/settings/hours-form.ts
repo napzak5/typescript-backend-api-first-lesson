@@ -5,9 +5,12 @@ import type {
   ModelsOpeningHours,
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { isDay, type NotFound } from '@beauty-salon-frontend/salon-screens'
+import {
+  isDay,
+  type NotFound,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
-import { textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,

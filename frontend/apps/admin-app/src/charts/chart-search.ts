@@ -1,9 +1,10 @@
 import {
   keywordIn,
   LONGEST_KEYWORD,
+  type Read,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import type { SelectOption } from '@beauty-salon-frontend/ui'
-import { type Read, textOf } from '../bookings/booking-actions'
 import type { ChartConditions } from './charts-api'
 
 /*

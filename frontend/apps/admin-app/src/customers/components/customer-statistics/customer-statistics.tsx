@@ -1,7 +1,6 @@
 import type { ModelsCustomerStatisticsResponse } from '@beauty-salon-frontend/api-client'
-import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
+import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { DescriptionList, Table } from '@beauty-salon-frontend/ui'
-import { amountOf } from '../../../bookings/booking-format'
 import { countNameOf, rateNameOf } from '../../customer-format'
 import styles from './customer-statistics.module.css'
 

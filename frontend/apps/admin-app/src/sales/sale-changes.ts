@@ -7,11 +7,12 @@ import {
   dayAt,
   isDay,
   momentOf,
+  type Read,
   type RefusedValue,
+  textOf,
   timeOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   NOT_ON_THE_CLOCK,

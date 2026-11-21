@@ -7,11 +7,12 @@ import type {
 import {
   EARLIEST_DAY,
   isDay,
+  type Read,
   type RefusedValue,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,

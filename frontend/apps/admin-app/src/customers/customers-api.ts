@@ -32,6 +32,7 @@ import {
   type NotFound,
   outsideTheContract,
   type Page,
+  type Period,
   pageOf,
   readSalon,
   refusedValuesOf,
@@ -50,7 +51,6 @@ import {
   type CustomerConditions,
   customerListParamsOf,
 } from './customer-ledger'
-import type { Period } from './customer-statistics'
 
 export type CustomerRead =
   | { type: 'found'; customer: ModelsCustomerResponse }

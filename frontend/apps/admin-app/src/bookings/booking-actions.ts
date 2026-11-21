@@ -4,7 +4,12 @@ import type {
   ModelsBookingResponse,
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
-import { isDay, momentOf } from '@beauty-salon-frontend/salon-screens'
+import {
+  isDay,
+  momentOf,
+  type Read,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import type { StatusChange } from './bookings-api'
 
@@ -42,18 +47,6 @@ export const actionsOf = (
     (action) =>
       action !== 'noShow' || now.getTime() >= new Date(startTime).getTime(),
   )
-
-/** What a form gives: a request, or what is wrong with each field. */
-export type Read<Request> =
-  | { type: 'valid'; request: Request }
-  | { type: 'invalid'; errors: Record<string, string> }
-
-/** The text of a control of a form; nothing for one that is not there. */
-export const textOf = (values: FormData, name: string): string => {
-  const value = values.get(name)
-
-  return typeof value === 'string' ? value : ''
-}
 
 const NOT_A_MOMENT =
   '日付と時刻を入力してください。サロンの時計で、その時刻がない日（夏時間の始まり）もあります。'

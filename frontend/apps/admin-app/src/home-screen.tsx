@@ -1,4 +1,7 @@
-import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
+import {
+  SalonChoiceScreen,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { NoSalonNotice, useOwnSalon } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,
@@ -8,7 +11,6 @@ import {
 import { Navigate } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { bookingsHrefOf } from './navigation'
-import { SalonChoiceScreen } from './salons/salon-choice-screen'
 
 /**
  * The start of the application. An administrator chooses a salon here; a
@@ -25,7 +27,12 @@ export const HomeScreen = () => {
         <LoadingIndicator label='サロンを確かめています' />
       </>
     ))
-    .with({ type: 'platform' }, () => <SalonChoiceScreen />)
+    .with({ type: 'platform' }, () => (
+      <SalonChoiceScreen
+        description='予約台帳を開くサロンを選びます。'
+        salonHref={({ id }) => bookingsHrefOf(id)}
+      />
+    ))
     .with({ type: 'member' }, ({ salonId }) => (
       <Navigate to={bookingsHrefOf(salonId)} replace />
     ))

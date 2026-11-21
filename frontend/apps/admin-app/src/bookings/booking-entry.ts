@@ -7,11 +7,12 @@ import {
   isDay,
   keywordIn,
   momentOf,
+  type Read,
   type RefusedValue,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from './booking-actions'
 import type {
   BookingCreation,
   BookingRemoval,

@@ -3,16 +3,19 @@ import type {
   ModelsPaymentResponse,
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { RefusedValue } from '@beauty-salon-frontend/salon-screens'
+import {
+  amountOf,
+  type Read,
+  type RefusedValue,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,
   TOO_MANY_REQUESTS,
   yenOf,
 } from '../bookings/booking-entry'
-import { amountOf } from '../bookings/booking-format'
 import { whyNoVoid } from './sale-changes'
 
 /*

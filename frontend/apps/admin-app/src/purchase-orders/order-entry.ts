@@ -5,11 +5,12 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   isDay,
+  type Read,
   type RefusedValue,
   startOfDayAt,
+  textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,

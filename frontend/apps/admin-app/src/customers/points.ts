@@ -8,21 +8,22 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  amountOf,
   type Forbidden,
   isDay,
   LATEST_DAY,
   momentNameAt,
+  type Read,
   type RefusedValue,
+  textOf,
   type Unread,
 } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,
   TOO_MANY_REQUESTS,
 } from '../bookings/booking-entry'
-import { amountOf } from '../bookings/booking-format'
 import type { SaleRead } from '../sales/sales-api'
 import { countNameOf } from './customer-format'
 import type { CustomerRead } from './customers-api'

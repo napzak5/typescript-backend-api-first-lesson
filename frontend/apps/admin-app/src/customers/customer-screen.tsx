@@ -9,6 +9,12 @@ import {
   dayAt,
   NOT_FOUND,
   OtherSalonNotice,
+  type Period,
+  periodIn,
+  periodNameOf,
+  periodQueryOf,
+  readPeriod,
+  StatisticsPeriod,
   unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
@@ -60,7 +66,6 @@ import {
   RemovedRecord,
   type RemovedRecordProps,
 } from './components/removed-record/removed-record'
-import { StatisticsPeriod } from './components/statistics-period/statistics-period'
 import {
   afterErasureAsk,
   afterErasureCancel,
@@ -89,13 +94,6 @@ import {
   restoreCustomer,
 } from './customer-history-api'
 import { customerQueryOf } from './customer-ledger'
-import {
-  type Period,
-  periodIn,
-  periodNameOf,
-  periodQueryOf,
-  readPeriod,
-} from './customer-statistics'
 import {
   CUSTOMER_LISTS,
   type CustomerRead,

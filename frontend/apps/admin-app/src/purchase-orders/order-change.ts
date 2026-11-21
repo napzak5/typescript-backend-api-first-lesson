@@ -2,9 +2,8 @@ import type {
   ModelsPurchaseOrderResponse,
   ModelsPurchaseOrderUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { dayAt } from '@beauty-salon-frontend/salon-screens'
+import { dayAt, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,

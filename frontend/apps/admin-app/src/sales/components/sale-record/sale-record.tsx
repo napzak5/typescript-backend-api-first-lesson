@@ -2,7 +2,11 @@ import type {
   ModelsCustomerResponse,
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
-import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
+import {
+  amountOf,
+  dayNameOf,
+  momentNameAt,
+} from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   ButtonLink,
@@ -13,7 +17,7 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import { NO_RECORD } from '../../../bookings/booking-entry'
-import { amountOf, GONE_CUSTOMER } from '../../../bookings/booking-format'
+import { GONE_CUSTOMER } from '../../../bookings/booking-format'
 import { memberNameOf, type Names } from '../../../bookings/day-bookings'
 import { customerNameOf } from '../../../customers/customers-api'
 import {

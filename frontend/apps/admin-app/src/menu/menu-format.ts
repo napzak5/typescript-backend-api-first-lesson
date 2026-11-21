@@ -7,7 +7,7 @@ import {
   type ModelsServiceResponse,
   ModelsServiceStatusType,
 } from '@beauty-salon-frontend/api-client'
-import { amountOf } from '../bookings/booking-format'
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import type { Option } from '../customers/customer-format'
 
 /*

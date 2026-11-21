@@ -8,10 +8,13 @@ import {
   linesOf,
   pictureAddressesError,
 } from '@beauty-salon-frontend/preferences'
-import type { RefusedValue } from '@beauty-salon-frontend/salon-screens'
+import {
+  type Read,
+  type RefusedValue,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,

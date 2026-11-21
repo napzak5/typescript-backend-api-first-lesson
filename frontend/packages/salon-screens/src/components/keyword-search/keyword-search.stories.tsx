@@ -3,7 +3,7 @@ import { fn } from 'storybook/test'
 import { KeywordSearch } from './keyword-search'
 
 const meta: Meta<typeof KeywordSearch> = {
-  title: 'Admin/KeywordSearch',
+  title: 'SalonScreens/KeywordSearch',
   component: KeywordSearch,
   args: {
     label: 'サロンを探す',

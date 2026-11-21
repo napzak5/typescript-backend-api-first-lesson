@@ -1,6 +1,6 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
+import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Link, Table } from '@beauty-salon-frontend/ui'
-import { methodKindNameOf } from '../../../sales/sale-format'
 import {
   amountsNameOf,
   feeNameOf,
