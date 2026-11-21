@@ -332,6 +332,20 @@ export const attachmentHrefOf = (
   attachmentId: string,
 ): string => `${attachmentsHrefOf(salonId)}/${attachmentId}`
 
+/** The form that issues a share link of a file. */
+export const shareLinkEntryHrefOf = (
+  salonId: string,
+  attachmentId: string,
+): string => `${attachmentHrefOf(salonId, attachmentId)}/share-links/new`
+
+/** A share link of a file, which revokes it. */
+export const shareLinkHrefOf = (
+  salonId: string,
+  attachmentId: string,
+  shareLinkId: string,
+): string =>
+  `${attachmentHrefOf(salonId, attachmentId)}/share-links/${shareLinkId}`
+
 /** The ledger of the customers, from the screens of a salon. */
 export const customersHrefOf = (salonId: string): string =>
   `/salons/${salonId}/customers`

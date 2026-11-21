@@ -16,6 +16,7 @@ import { match, P } from 'ts-pattern'
 import { attachmentsHrefOf } from '../navigation'
 import { unreadMessageOf } from '../reading'
 import { WithSalon } from '../salons/with-salon'
+import { ShareLinksOfFile } from '../share-links/share-links-of-file'
 import { afterRemoving, removesAttachment } from './attachment-file'
 import { AttachmentNotFound, ToTheFiles } from './attachment-not-found'
 import {
@@ -235,6 +236,7 @@ const AttachmentPart = ({ salon, attachmentId }: AttachmentPartProps) => {
         <>
           <PageHeader title={attachment.filename} description={salon.name} />
           <AttachmentDetails salon={salon} attachment={attachment} />
+          <ShareLinksOfFile salon={salon} attachment={attachment} />
           <ToTheFiles salonId={salon.id} />
         </>
       ))
