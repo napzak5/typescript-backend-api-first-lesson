@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
 import { box, saveButton, text, value } from './mypage'
 import {
   CUSTOMER,
@@ -27,9 +28,6 @@ const LONG_BUILDING =
   'The_Garden_Residence_At_Meguro_North_Wing_Annex_Building_Number_Three_Room_1204'
 const LONG_NOTES =
   '頭皮が敏感なので、刺激の少ない薬剤でお願いします。\n\n使っている製品の一覧: https://products.example.com/organic_shampoo_and_treatment_for_sensitive_scalp_autumn_2026'
-
-const mainMenu = (page: Page): Locator =>
-  page.getByRole('navigation', { name: 'メインメニュー' })
 
 const changeLink = (page: Page): Locator =>
   page.getByRole('link', { name: 'お客様の情報を変更する' })
@@ -62,9 +60,10 @@ test.describe('the page and the profile of a customer, in a browser', () => {
     await expect(value(page, 'お客様の情報', 'お名前')).toHaveText(
       'Tanaka Yuki',
     )
-    await expect(
-      mainMenu(page).getByRole('link', { name: 'マイページ' }),
-    ).toHaveAttribute('aria-current', 'page')
+    await expect(mainMenuLink(page, 'マイページ')).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
     await expectSoundPage(page)
 
     // Act: to the form, by its link and the Enter key

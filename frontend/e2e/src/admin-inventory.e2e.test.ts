@@ -4,6 +4,7 @@ import { ADMIN } from './applications'
 import { salonId, TOKYO } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
 import { enterCredentials, heading, OWNER } from './sign-in'
 
 /*
@@ -73,12 +74,6 @@ const writeInto = async (control: Locator, value: string): Promise<void> => {
   await control.fill(value)
 }
 
-/** A link of the navigation of the application */
-const navigationLink = (page: Page, name: string): Locator =>
-  page
-    .getByRole('navigation', { name: 'メインメニュー' })
-    .getByRole('link', { name, exact: true })
-
 /** A link of the views of the stock */
 const viewLink = (page: Page, name: string): Locator =>
   page
@@ -96,7 +91,7 @@ test.describe('the stock of a salon, in a browser', () => {
     await expect(heading(page, '予約台帳')).toBeVisible()
 
     // Act
-    await pressWithTheKeyboard(navigationLink(page, '在庫'))
+    await pressWithTheKeyboard(mainMenuLink(page, '在庫'))
     await expect(heading(page, '在庫')).toBeFocused()
     await pressWithTheKeyboard(
       page.getByRole('link', { name: '在庫の行を足す' }),

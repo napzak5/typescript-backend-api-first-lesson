@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test'
 import { DASHBOARD } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
+import { mainMenuLink, pressInTheMenu } from './main-menu'
 import { pressWithTheKeyboard, sellACutToday } from './sales'
 import {
   DASHBOARD_START,
@@ -18,12 +19,6 @@ import {
 
 const STAFF = 'スタッフ別の売上'
 const KINDS = '区分別の売上'
-
-/** A link of the header */
-const menuLink = (page: Page, name: string): Locator =>
-  page
-    .getByRole('navigation', { name: 'メインメニュー' })
-    .getByRole('link', { name })
 
 /** The cells of the rows of a table, row by row */
 const rowsOf = (page: Page, table: string): Locator =>
@@ -72,7 +67,7 @@ test.describe('the sales of the staff and of the kinds of service, in a browser'
     ).toBeVisible()
 
     // Act
-    await pressWithTheKeyboard(menuLink(page, KINDS))
+    await pressWithTheKeyboard(mainMenuLink(page, KINDS))
 
     // Assert
     await expect(heading(page, KINDS)).toBeFocused()
@@ -100,7 +95,7 @@ test.describe('the sales of the staff and of the kinds of service, on a screen a
       await expect(heading(page, DASHBOARD_START)).toBeFocused()
 
       // Act
-      await menuLink(page, screen).click()
+      await pressInTheMenu(page, screen)
 
       // Assert
       await expect(

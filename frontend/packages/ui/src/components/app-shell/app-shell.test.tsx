@@ -1,6 +1,9 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
-import { useLayoutEffect, useState } from 'react'
+import { act, useLayoutEffect, useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import { Button } from '../button/button'
@@ -12,11 +15,6 @@ const stories = composeStories(appShellStories)
 
 type WhatTheDocumentSays = (focused: Element | null, title: string) => void
 
-/**
- * Two screens, and what the document says in the commit that shows each: the
- * layout effect of a component runs after those of what it holds, and before
- * the browser paints.
- */
 /**
  * The list of the bookings, then a booking whose button goes when it is
  * pressed, and what the document says in every commit: the layout effects
@@ -58,6 +56,11 @@ const AScreenAfterAnother = ({ seen }: { seen: WhatTheDocumentSays }) => {
   )
 }
 
+/**
+ * Two screens, and what the document says in the commit that shows each: the
+ * layout effect of a component runs after those of what it holds, and before
+ * the browser paints.
+ */
 const ScreensInCommit = ({ seen }: { seen: WhatTheDocumentSays }) => {
   const [shown, setShown] = useState('予約台帳')
 
@@ -157,26 +160,152 @@ describe('AppShell', () => {
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
   })
 
-  it('should keep its navigation under the header unless it is told otherwise', async () => {
+  it('should mark the link of the current screen in the navigation', async () => {
     // Act
     await stories.NavigationInHeader.run()
 
     // Assert
-    expect(screen.getByRole('banner').parentElement).toHaveClass('frame')
-    expect(screen.getByRole('banner').parentElement).not.toHaveClass(
-      'navigationAtSide',
+    const navigation = within(
+      screen.getByRole('navigation', { name: 'メインメニュー' }),
     )
+    expect(navigation.getByRole('link', { name: '予約台帳' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(navigation.getAllByRole('link')).toHaveLength(4)
   })
 
-  it('should carry the class of a navigation that stands beside the content', async () => {
+  it('should have no navigation when the application gives it no links', async () => {
+    // Arrange
+    const WithoutLinks = composeStory(
+      { ...appShellStories.NavigationInHeader, args: { navigation: [] } },
+      appShellStories.default,
+    )
+
     // Act
-    await stories.NavigationAtSide.run()
+    await WithoutLinks.run()
 
     // Assert
-    expect(screen.getByRole('banner').parentElement).toHaveClass(
-      'frame',
-      'navigationAtSide',
+    expect(screen.queryByRole('navigation')).toBeNull()
+    expect(
+      within(screen.getByRole('banner')).getByRole('button', {
+        name: 'サインアウト',
+      }),
+    ).toBeVisible()
+  })
+
+  it('should hold the links and the account behind the button of the menu on a narrow screen', async () => {
+    // Act
+    await stories.NarrowScreen.run()
+
+    // Assert: the header is the name and the button
+    const banner = within(screen.getByRole('banner'))
+    expect(banner.getByRole('link', { name: 'Kushi Admin' })).toBeVisible()
+    expect(
+      banner.getByRole('button', { name: 'メインメニュー' }),
+    ).toHaveAttribute('aria-haspopup', 'dialog')
+    expect(screen.queryByRole('navigation')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'サインアウト' })).toBeNull()
+    expect(screen.queryByText('佐藤 美咲')).not.toBeVisible()
+  })
+
+  it('should open the menu, with the links and the account, as a dialog of its name', async () => {
+    // Act
+    await stories.MenuOnNarrowScreen.run()
+
+    // Assert
+    const menu = within(screen.getByRole('dialog', { name: 'メインメニュー' }))
+    const links = within(
+      menu.getByRole('navigation', { name: 'メインメニュー' }),
+    ).getAllByRole('link')
+    expect(links.map((link) => link.textContent)).toEqual([
+      '予約台帳',
+      '会計',
+      '顧客台帳',
+      'スタッフ',
+    ])
+    expect(links[0]).toHaveAttribute('aria-current', 'page')
+    expect(menu.getByText('佐藤 美咲')).toBeVisible()
+    expect(menu.getByRole('button', { name: 'サインアウト' })).toBeVisible()
+    expect(menu.getByRole('button', { name: '閉じる' })).toBeVisible()
+  })
+
+  it.each<[string, string]>([
+    ['link', '顧客台帳'],
+    ['button', 'サインアウト'],
+    ['button', '閉じる'],
+  ])(
+    'should close the menu once a %s in it is pressed: %s',
+    async (role, name) => {
+      // Arrange: links within the page, which jsdom follows
+      const MenuOnNarrowScreen = composeStory(
+        {
+          ...appShellStories.MenuOnNarrowScreen,
+          args: {
+            navigation: [
+              { href: '#bookings', label: '予約台帳', current: true },
+              { href: '#customers', label: '顧客台帳' },
+            ],
+          },
+        },
+        appShellStories.default,
+      )
+      await MenuOnNarrowScreen.run()
+
+      // Act
+      await userEvent.click(
+        within(screen.getByRole('dialog')).getByRole(role, { name }),
+      )
+
+      // Assert
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(
+        screen.getByRole('button', { name: 'メインメニュー' }),
+      ).toBeVisible()
+    },
+  )
+
+  it('should close the menu on a press on the overlay, and open it again from its button', async () => {
+    // Arrange
+    await stories.MenuOnNarrowScreen.run()
+
+    // Act
+    await userEvent.click(screen.getByRole('dialog'))
+    const closed = screen.queryByRole('dialog')
+    await userEvent.click(
+      screen.getByRole('button', { name: 'メインメニュー' }),
     )
+
+    // Assert
+    expect(closed).toBeNull()
+    expect(screen.getByRole('dialog', { name: 'メインメニュー' })).toBeVisible()
+  })
+
+  it('should keep the account beside the name on a narrow screen without links', async () => {
+    // Act
+    await stories.SignedOutOnNarrowScreen.run()
+
+    // Assert
+    const banner = within(screen.getByRole('banner'))
+    expect(banner.getByRole('link', { name: 'サインイン' })).toBeVisible()
+    expect(banner.queryByRole('button', { name: 'メインメニュー' })).toBeNull()
+  })
+
+  it('should draw the menu when the window is made narrow, and the navigation again when it is made wide', async () => {
+    // Arrange
+    await stories.NavigationInHeader.run()
+
+    // Act
+    act(() => setWindowWidth(390))
+    const narrow = screen.queryByRole('navigation')
+    act(() => setWindowWidth(1024))
+
+    // Assert
+    expect(narrow).toBeNull()
+    expect(
+      screen.getByRole('navigation', { name: 'メインメニュー' }),
+    ).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'メインメニュー' })).toBeNull()
   })
 
   it('should have no navigation and nothing of an account before signing in', async () => {

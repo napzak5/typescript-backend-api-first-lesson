@@ -19,7 +19,10 @@ export default defineConfig({
     // context of its own: without one, what another file rendered would stay
     // in the document
     pool: 'vmThreads',
-    setupFiles: ['@beauty-salon-frontend/testing/setup', './vitest.setup.ts'],
+    setupFiles: [
+      '@beauty-salon-frontend/testing/setup',
+      '@beauty-salon-frontend/testing/stories',
+    ],
     // The tests that need the API are run by `test:integration`
     exclude: [...configDefaults.exclude, '**/*.integration.test.*'],
     css: {

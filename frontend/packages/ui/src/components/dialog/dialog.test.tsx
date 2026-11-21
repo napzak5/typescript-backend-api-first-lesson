@@ -119,6 +119,63 @@ describe('Dialog', () => {
     below.remove()
   })
 
+  it('should not close a question on a press on the overlay: it has to be answered', async () => {
+    // Arrange
+    await stories.Confirmation.run()
+
+    // Act: the overlay is the dialog element, outside its content
+    await userEvent.click(screen.getByRole('dialog'))
+
+    // Assert
+    expect(screen.getByRole('dialog')).toHaveAttribute('open')
+    expect(stories.Confirmation.args.onClose).not.toHaveBeenCalled()
+  })
+
+  it('should close a menu on a press on the overlay, and tell its caller once', async () => {
+    // Arrange
+    await stories.Menu.run()
+
+    // Act
+    await userEvent.click(screen.getByRole('dialog'))
+
+    // Assert
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(stories.Menu.args.onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it.each<[string, string]>([
+    ['link', '明日の予約'],
+    ['button', '閉じる'],
+  ])(
+    'should close a menu once one of its %ss is pressed: %s',
+    async (role, name) => {
+      // Arrange
+      await stories.Menu.run()
+
+      // Act
+      await userEvent.click(screen.getByRole(role, { name }))
+
+      // Assert
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(stories.Menu.args.onClose).toHaveBeenCalledTimes(1)
+    },
+  )
+
+  it('should keep a menu open on a press on what is neither a link nor a button', async () => {
+    // Arrange
+    await stories.Menu.run()
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('heading', { name: '予約台帳を開く' }),
+    )
+    await userEvent.click(screen.getByRole('list'))
+
+    // Assert
+    expect(screen.getByRole('dialog')).toHaveAttribute('open')
+    expect(stories.Menu.args.onClose).not.toHaveBeenCalled()
+  })
+
   it('should not be shown while it is closed', async () => {
     // Act
     await stories.Closed.run()

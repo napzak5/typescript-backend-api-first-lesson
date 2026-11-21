@@ -4,6 +4,7 @@ import { ADMIN, PORTAL } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
 import { ADMIN_START, enterCredentials, heading, STAFF } from './sign-in'
 
 /*
@@ -61,11 +62,7 @@ test.describe('the own profile, in a browser', () => {
     await expect(heading(page, ADMIN_START)).toBeFocused()
 
     // Act: from the navigation to the profile
-    await pressWithTheKeyboard(
-      page
-        .getByRole('navigation', { name: 'メインメニュー' })
-        .getByRole('link', { name: 'プロフィール' }),
-    )
+    await pressWithTheKeyboard(mainMenuLink(page, 'プロフィール'))
 
     // Assert
     await expect(heading(page, 'プロフィール')).toBeVisible()

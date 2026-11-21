@@ -1,7 +1,6 @@
 /*
- * Header, navigation, content. On a narrow screen they are one below the
- * other; on a wide one the navigation stays under the header or stands
- * beside the content, as the application chose.
+ * Header, navigation, content, one below the other. A narrow screen has no
+ * navigation under the header: its links are in the menu (app-shell.tsx).
  */
 .frame {
   display: grid;
@@ -25,14 +24,15 @@
 }
 
 /*
- * The name, and the account under it on a narrow screen: a long word of the
- * name has the whole width. From 40rem they stand side by side.
+ * One row: the name, and at its end the button of the menu, or the account.
+ * It is as high as the button, whichever stands there.
  */
 .headerContent {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  min-block-size: var(--size-control);
 }
 
 /* The mark and the name: a link as wide as they are, not as the row */
@@ -73,16 +73,54 @@
 
 /*
  * The words of the links begin where the content begins: a link has its own
- * padding, so the row has none on a narrow screen and little on a wide one.
+ * padding, so the row has little.
  */
 .navigation {
   grid-area: navigation;
   display: grid;
   grid-template-columns: minmax(0, var(--size-page));
   justify-content: center;
-  padding: var(--space-1) 0;
+  padding: var(--space-1) var(--space-2);
   border-block-end: 1px solid var(--color-border);
   background-color: var(--color-surface);
+}
+
+/* A square as high as a control, its icon in the middle, quiet as the header is */
+.menuButton {
+  display: grid;
+  place-items: center;
+  inline-size: var(--size-control);
+  block-size: var(--size-control);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-medium);
+  background-color: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .menuButton:hover {
+    background-color: var(--color-surface-sunken);
+  }
+}
+
+.menuIcon {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* The account, below the links and apart from them */
+.menuAccount {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
 }
 
 /* One column as wide as a page, in the middle: the notification, then the content */
@@ -128,38 +166,11 @@
   }
 
   .headerContent {
-    grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--space-4);
-  }
-
-  .navigation {
-    padding-inline: var(--space-2);
   }
 
   .main {
     padding: var(--space-5) var(--space-6) var(--space-8);
-  }
-}
-
-@media (min-width: 60rem) {
-  .navigationAtSide {
-    grid-template-columns: var(--size-side-navigation) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas:
-      "header header"
-      "navigation main";
-  }
-
-  .navigationAtSide .navigation {
-    grid-template-columns: minmax(0, 1fr);
-    align-content: start;
-    padding: var(--space-4) var(--space-2);
-    border-block-end: 0;
-    border-inline-end: 1px solid var(--color-border);
-  }
-
-  .navigationAtSide .header {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -168,8 +179,7 @@
  * the navigation and the way past them are for the screen.
  */
 @media print {
-  .frame,
-  .navigationAtSide {
+  .frame {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto;
     grid-template-areas: "main";

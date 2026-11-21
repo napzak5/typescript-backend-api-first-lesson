@@ -8,3 +8,5 @@ export {
 } from './accessibility'
 export { type SavedFile, savedFiles } from './saved-files'
 export { itShouldBeAccessibleInEveryStory } from './story-accessibility'
+export { atTheWidthOfTheStory } from './story-width'
+export { setWindowWidth } from './window-width'

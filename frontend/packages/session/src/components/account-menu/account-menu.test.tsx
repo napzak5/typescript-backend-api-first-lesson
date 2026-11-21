@@ -1,6 +1,6 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent } from 'storybook/test'
+import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as accountMenuStories from './account-menu.stories'
 
@@ -15,6 +15,38 @@ describe('AccountMenu', () => {
 
     // Assert
     expect(screen.getByText('hanako@example.com')).toHaveClass('user')
+  })
+
+  it('should show the whole address in the menu of a narrow screen, above buttons as high as its links', async () => {
+    // Act
+    await stories.InTheMenu.run()
+
+    // Assert
+    const menu = within(screen.getByRole('dialog', { name: 'メインメニュー' }))
+    expect(
+      menu.getByText(
+        'hanako.yamada.reservations@beauty-salon-group.example.com',
+      ),
+    ).toHaveClass('userInMenu')
+    for (const control of [
+      menu.getByRole('link', { name: 'アカウントの安全' }),
+      menu.getByRole('button', { name: 'サインアウト' }),
+    ]) {
+      expect(control).not.toHaveClass('small')
+    }
+  })
+
+  it('should keep the address short and the buttons small in the header', async () => {
+    // Act
+    await stories.WithTheSecurityOfTheAccount.run()
+
+    // Assert
+    expect(screen.getByRole('link', { name: 'アカウントの安全' })).toHaveClass(
+      'small',
+    )
+    expect(screen.getByRole('button', { name: 'サインアウト' })).toHaveClass(
+      'small',
+    )
   })
 
   it('should lead to the security of the account where the application has a screen for it, and nowhere else', async () => {

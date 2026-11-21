@@ -15,7 +15,10 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    setupFiles: ['@beauty-salon-frontend/testing/setup', './vitest.setup.ts'],
+    setupFiles: [
+      '@beauty-salon-frontend/testing/setup',
+      '@beauty-salon-frontend/testing/stories',
+    ],
     // The tests that need the API are run by `test:integration`
     exclude: [...configDefaults.exclude, '**/*.integration.test.*'],
     css: {

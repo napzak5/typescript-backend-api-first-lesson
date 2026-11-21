@@ -1,6 +1,7 @@
 import { ADMIN, DASHBOARD, PORTAL } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
+import { menu, menuButton } from './main-menu'
 import {
   ADMIN_START,
   CUSTOMER,
@@ -163,19 +164,23 @@ test.describe('on a screen as narrow as a phone', () => {
     await expectSoundPage(page)
   })
 
-  test('should fit the header of a signed-in user into the width', async ({
+  test('should fit the header of a signed-in user, and the menu with the account, into the width', async ({
     page,
     api,
   }) => {
     // Arrange
     await page.goto(ADMIN.origin)
+    await enterCredentials(page, STAFF, api.seedPassword)
+    await expect(heading(page, ADMIN_START)).toBeFocused()
+    await expectSoundPage(page)
 
     // Act
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await menuButton(page).click()
 
     // Assert
-    await expect(heading(page, ADMIN_START)).toBeFocused()
-    await expect(signOutButton(page)).toBeVisible()
+    await expect(
+      menu(page).getByRole('button', { name: 'サインアウト' }),
+    ).toBeVisible()
     await expectSoundPage(page)
   })
 

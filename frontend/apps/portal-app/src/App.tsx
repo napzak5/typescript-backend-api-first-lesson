@@ -10,7 +10,6 @@ import {
   EnvironmentBanner,
   type LinkComponent,
   LinkProvider,
-  Navigation,
   NotificationProvider,
   PageHeader,
 } from '@beauty-salon-frontend/ui'
@@ -100,11 +99,7 @@ export const App = () => {
         <AppShell
           title={applications.portal.name}
           account={<SessionAccount signInHref={SIGN_IN_PATH} />}
-          navigation={
-            items.length > 0 ? (
-              <Navigation label='メインメニュー' items={items} />
-            ) : undefined
-          }
+          navigation={items}
         >
           <Routes>
             <Route path='/' element={<SalonSearchScreen />} />
