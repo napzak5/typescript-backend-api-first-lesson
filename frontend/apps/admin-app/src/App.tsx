@@ -69,6 +69,7 @@ import { ProductChangeScreen } from './products/product-change-screen'
 import { ProductEntryScreen } from './products/product-entry-screen'
 import { ProductScreen } from './products/product-screen'
 import { ProductsScreen } from './products/products-screen'
+import { PurchaseOrderChangeScreen } from './purchase-orders/purchase-order-change-screen'
 import { PurchaseOrderEntryScreen } from './purchase-orders/purchase-order-entry-screen'
 import { PurchaseOrderScreen } from './purchase-orders/purchase-order-screen'
 import { PurchaseOrdersScreen } from './purchase-orders/purchase-orders-screen'
@@ -444,6 +445,10 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/purchase-orders/:purchaseOrderId'
                 element={<PurchaseOrderScreen />}
+              />
+              <Route
+                path='/salons/:salonId/purchase-orders/:purchaseOrderId/edit'
+                element={<PurchaseOrderChangeScreen />}
               />
               <Route
                 path='/salons/:salonId/settings'

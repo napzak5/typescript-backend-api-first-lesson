@@ -235,6 +235,12 @@ export const purchaseOrderHrefOf = (
   purchaseOrderId: string,
 ): string => `${purchaseOrdersHrefOf(salonId)}/${purchaseOrderId}`
 
+/** The screen that changes the day of the delivery and the notes of a purchase order. */
+export const orderChangeHrefOf = (
+  salonId: string,
+  purchaseOrderId: string,
+): string => `${purchaseOrderHrefOf(salonId, purchaseOrderId)}/edit`
+
 /** The movements of a stock row, the latest first. */
 export const stockMovementsHrefOf = (
   salonId: string,

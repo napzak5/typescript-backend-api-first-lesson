@@ -1,30 +1,210 @@
-import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import type {
+  ModelsPurchaseOrderCancelRequest,
+  ModelsPurchaseOrderResponse,
+  ModelsSalonResponse,
+  ModelsStaffProfileResponse,
+} from '@beauty-salon-frontend/api-client'
+import { useSession } from '@beauty-salon-frontend/session'
 import {
+  Alert,
   ButtonLink,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  useNotifications,
 } from '@beauty-salon-frontend/ui'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { purchaseOrdersHrefOf, stockRowHrefOf } from '../navigation'
+import { orderChangeHrefOf, stockRowHrefOf } from '../navigation'
 import { unreadMessageOf } from '../reading'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
 import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { OrderRecord } from './components/order-record/order-record'
-import { purchaseOrderKeyOf, readOrder } from './purchase-orders-api'
+import {
+  type OrderMoveAction,
+  OrderStatusActions,
+} from './components/order-status-actions/order-status-actions'
+import {
+  afterOrderStep,
+  isClosedOrder,
+  MOVED_TO,
+  mayApproveOrders,
+  ORDER_CHANGED_ELSEWHERE,
+  orderActionNoteOf,
+  orderActionsOf,
+  readOrderCancellation,
+} from './order-actions'
+import { OrderNotFound, ToTheOrders } from './order-not-found'
+import {
+  approveOrder,
+  cancelOrder,
+  moveOrder,
+  type OrderRead,
+  type OrderStep,
+  purchaseOrderKeyOf,
+  purchaseOrdersKeyOf,
+  readOrder,
+} from './purchase-orders-api'
 
 const TITLE = '発注'
 
-/** The way back to the orders of the salon */
-const ToTheOrders = ({ salonId }: { salonId: string }) => (
-  <p>
-    <ButtonLink href={purchaseOrdersHrefOf(salonId)} variant='secondary'>
-      発注へ
-    </ButtonLink>
-  </p>
-)
+/** An operation on the status of an order, with what it sends. */
+type Operation =
+  | { type: OrderMoveAction }
+  | { type: 'cancel'; request: ModelsPurchaseOrderCancelRequest }
+
+const send = (id: string, operation: Operation): Promise<OrderStep> =>
+  match(operation)
+    .with({ type: 'approve' }, () => approveOrder(id))
+    .with({ type: 'cancel' }, ({ request }) => cancelOrder(id, request))
+    .with({ type: P.union('submit', 'order', 'ship') }, ({ type }) =>
+      moveOrder(id, MOVED_TO[type]),
+    )
+    .exhaustive()
+
+/** What is said about an attempt, and where: in the open dialog, or where the status is. */
+type Said = { where: 'dialog' | 'page'; message: string }
+
+type OrderDetailsProps = {
+  salon: ModelsSalonResponse
+  order: ModelsPurchaseOrderResponse
+  /** The staff of the salon, who name who made and approved the order; `undefined` while they are read */
+  staff: readonly ModelsStaffProfileResponse[] | undefined
+}
+
+/**
+ * The status of an order with what the account may do to it, and the
+ * order itself. After an operation, the order the API answered with is
+ * shown, and the focus goes to the heading of the status. When the order
+ * changed elsewhere meanwhile, it is read anew, and the screen says so
+ * where the status is.
+ */
+const OrderDetails = ({ salon, order, staff }: OrderDetailsProps) => {
+  const queryClient = useQueryClient()
+  const { notify } = useNotifications()
+  const session = useSession()
+  const approves =
+    session.type === 'signedIn' && mayApproveOrders(session.user.role)
+  const [asking, setAsking] = useState(false)
+  const [said, setSaid] = useState<Said>()
+  const [cancellationErrors, setCancellationErrors] = useState<
+    Record<string, string>
+  >({})
+  const statusHeading = useRef<HTMLHeadingElement>(null)
+  /**
+   * When the order was last changed, as the screen showed it when an
+   * operation on it was done: the focus goes to the heading of the status
+   * in the commit that shows it changed
+   */
+  const changedFrom = useRef<string>(undefined)
+  const key = purchaseOrderKeyOf(order.id)
+
+  useLayoutEffect(() => {
+    if (
+      changedFrom.current !== undefined &&
+      changedFrom.current !== order.updatedAt
+    ) {
+      changedFrom.current = undefined
+      statusHeading.current?.focus()
+    }
+  }, [order.updatedAt])
+
+  // The dialog that had the focus is gone, and what is said is said where
+  // the status is: the focus goes there in the commit that says it
+  useLayoutEffect(() => {
+    if (said?.message === ORDER_CHANGED_ELSEWHERE) {
+      statusHeading.current?.focus()
+    }
+  }, [said])
+
+  /** The lists that were read are dropped: the order is in another place in them */
+  const forgetLists = (): void =>
+    queryClient.removeQueries({ queryKey: purchaseOrdersKeyOf(salon.id) })
+
+  const step = useMutation({
+    mutationFn: (operation: Operation) => send(order.id, operation),
+    onSuccess: (outcome, operation) =>
+      match(afterOrderStep(outcome, operation.type, order.orderNumber))
+        .with({ type: 'done' }, ({ message }) => {
+          if (outcome.type !== 'changed') {
+            return
+          }
+          const read: OrderRead = { type: 'found', order: outcome.order }
+          changedFrom.current = order.updatedAt
+          setAsking(false)
+          setSaid(undefined)
+          queryClient.setQueryData(key, read)
+          forgetLists()
+          notify({ tone: 'success', message })
+        })
+        .with({ type: 'again' }, ({ message }) =>
+          setSaid({
+            where: operation.type === 'cancel' ? 'dialog' : 'page',
+            message,
+          }),
+        )
+        .with({ type: 'changed' }, ({ message }) => {
+          setAsking(false)
+          setSaid({ where: 'page', message })
+          forgetLists()
+          void queryClient.invalidateQueries({ queryKey: key })
+        })
+        .with({ type: 'gone' }, () => {
+          setAsking(false)
+          void queryClient.invalidateQueries({ queryKey: key })
+        })
+        .exhaustive(),
+  })
+
+  const act = (operation: Operation): void => {
+    setSaid(undefined)
+    step.mutate(operation)
+  }
+
+  return (
+    <>
+      {said?.where === 'page' && <Alert tone='danger'>{said.message}</Alert>}
+      <OrderStatusActions
+        order={order}
+        actions={orderActionsOf(order.status, approves)}
+        note={orderActionNoteOf(order.status, approves)}
+        headingRef={statusHeading}
+        pending={step.isPending ? step.variables.type : undefined}
+        asking={asking}
+        message={said?.where === 'dialog' ? said.message : undefined}
+        cancellationErrors={cancellationErrors}
+        onAct={(action) => act({ type: action })}
+        onAsk={() => {
+          // What was said about an attempt before is said no longer
+          setSaid(undefined)
+          setCancellationErrors({})
+          setAsking(true)
+        }}
+        onClose={() => setAsking(false)}
+        onCancel={(values) =>
+          match(readOrderCancellation(values))
+            .with({ type: 'invalid' }, ({ errors }) =>
+              setCancellationErrors(errors),
+            )
+            .with({ type: 'valid' }, ({ request }) => {
+              setCancellationErrors({})
+              act({ type: 'cancel', request })
+            })
+            .exhaustive()
+        }
+      />
+      <OrderRecord
+        order={order}
+        timezone={salon.timezone}
+        currency={salon.currency}
+        staff={staff}
+        rowHref={(inventoryId) => stockRowHrefOf(salon.id, inventoryId)}
+      />
+    </>
+  )
+}
 
 type OrderPartProps = {
   salon: ModelsSalonResponse
@@ -51,15 +231,6 @@ const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
     queryKey: staffProfilesKeyOf(salon.id),
     queryFn: () => readStaffProfiles(salon.id),
   })
-  const notFound = (
-    <>
-      <PageHeader
-        title='発注が見つかりません'
-        description='アドレスが正しいか、お確かめください。'
-      />
-      <ToTheOrders salonId={salon.id} />
-    </>
-  )
 
   return (
     match(read.data)
@@ -69,12 +240,12 @@ const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
           <LoadingIndicator label='発注を読み込んでいます' />
         </>
       ))
-      .with({ type: 'notFound' }, () => notFound)
+      .with({ type: 'notFound' }, () => <OrderNotFound salonId={salon.id} />)
       // An order of another salon. The salon is compared by a predicate: as a
       // pattern, a string that is no literal would rule out every order
       .with(
         { type: 'found', order: P.when(({ salonId }) => salonId !== salon.id) },
-        () => notFound,
+        () => <OrderNotFound salonId={salon.id} />,
       )
       .with({ type: 'forbidden' }, () => (
         <>
@@ -97,15 +268,23 @@ const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
           <PageHeader
             title={`${TITLE} ${order.orderNumber}`}
             description={salon.name}
+            actions={
+              !isClosedOrder(order.status) && (
+                <ButtonLink
+                  href={orderChangeHrefOf(salon.id, order.id)}
+                  variant='secondary'
+                >
+                  納品予定日とメモを直す
+                </ButtonLink>
+              )
+            }
           />
-          <OrderRecord
+          <OrderDetails
+            salon={salon}
             order={order}
-            timezone={salon.timezone}
-            currency={salon.currency}
             staff={match(staff.data)
               .with({ type: 'found' }, ({ items }) => items)
               .otherwise(() => undefined)}
-            rowHref={(inventoryId) => stockRowHrefOf(salon.id, inventoryId)}
           />
           <ToTheOrders salonId={salon.id} />
         </>
