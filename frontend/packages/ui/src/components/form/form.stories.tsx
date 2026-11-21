@@ -128,3 +128,19 @@ export const WithActions: Story = {
     ),
   },
 }
+
+/**
+ * On a screen as narrow as a phone its buttons stand one below the other,
+ * each as wide as the form: two of them do not always fit in a line.
+ */
+export const OnANarrowScreen: Story = {
+  globals: { viewport: { value: 'mobile1', isRotated: false } },
+  args: {
+    submitLabel: '変更を保存する',
+    actions: (
+      <Button variant='quiet' onClick={fn()}>
+        変更しないで戻る
+      </Button>
+    ),
+  },
+}

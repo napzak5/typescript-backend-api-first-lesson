@@ -83,6 +83,7 @@ const STYLES_IMPORT = /import\s+(\w+)\s+from\s+['"](\.[^'"]*\.module\.css)['"]/g
 const LITERAL_CLASS_NAME = /className=(?:'[^']*'|"[^"]*")/g
 const INLINE_FLEX = /display:\s*['"](?:inline-)?flex['"]/g
 const INLINE_CUSTOM_PROPERTY = /['"](--[\w-]+)['"]\s*:/g
+const SET_CUSTOM_PROPERTY = /\.setProperty\(\s*['"](--[\w-]+)['"]/g
 
 const isStylesheet = (file: SourceFile): boolean => file.path.endsWith('.css')
 const isComponent = (file: SourceFile): boolean => file.path.endsWith('.tsx')
@@ -252,9 +253,10 @@ export const checkStyleRules = (
     }
   }
   const propertiesSetByComponents = new Set(
-    components.flatMap((file) =>
-      matchesOf(file.content, INLINE_CUSTOM_PROPERTY),
-    ),
+    components.flatMap((file) => [
+      ...matchesOf(file.content, INLINE_CUSTOM_PROPERTY),
+      ...matchesOf(file.content, SET_CUSTOM_PROPERTY),
+    ]),
   )
   const classesByModule = new Map(
     stylesheets

@@ -1,22 +1,33 @@
 /*
  * As wide as its label: a grid item stretches by default, so the container
  * decides the width (`justify-items`, or a column of its own).
+ *
+ * Its label stays on one line while there is room, and a Japanese label is
+ * not broken between two characters. A label that is longer than the line
+ * the button stands in (it may hold a name somebody chose) goes on in a
+ * second line, so a button is never wider than what it is in. For that the
+ * column of the label may be narrower than the label: a column is as wide
+ * as its longest word otherwise, and a Japanese label is one word.
  */
 .button {
   display: inline-grid;
   grid-auto-flow: column;
+  grid-auto-columns: minmax(0, auto);
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   min-block-size: var(--size-control);
-  padding: 0 var(--space-4);
+  padding: var(--space-2) var(--space-4);
   border: 1px solid transparent;
   border-radius: var(--radius-medium);
   font-size: var(--font-size-body);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-tight);
+  text-align: center;
   text-decoration: none;
-  white-space: nowrap;
+  text-wrap: balance;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   cursor: pointer;
   transition:
     background-color var(--duration-short) ease,
@@ -25,7 +36,7 @@
 
 .small {
   min-block-size: var(--size-control-small);
-  padding: 0 var(--space-3);
+  padding: var(--space-1) var(--space-3);
   font-size: var(--font-size-small);
 }
 

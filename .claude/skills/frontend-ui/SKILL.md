@@ -79,12 +79,14 @@ is broken.
    Write `minmax(0, 1fr)`, not `1fr`, for a track whose content may be long:
    a bare `1fr` grows with its content and overflows. A grid does not wrap
    items of different widths: a row that may not fit scrolls sideways
-   (`navigation.module.css`), or becomes a column below a width. A row
+   (`navigation.module.css`), or becomes a column below a width (the
+   buttons of a `Form` and the actions of a `Dialog`, below 40rem). A row
    of links that scrolls is scrolled, by itself and alone, to put its
    current link in its middle whenever its links or the current one
    change, and not when it is drawn again (`navigation.tsx`). What
    follows each other like words (the tags of a salon, a rating with its
-   date and a badge) is no layout: it stays in the flow of the text,
+   date and a badge, the buttons under the heading of a `Card` on a narrow
+   screen) is no layout: it stays in the flow of the text,
    `display: inline-block` with a margin, and goes on in the next line where
    the line ends (`tag-list.module.css`). The underline of a link does not
    reach into such a box: inside a link it gets `text-decoration: inherit`,
@@ -141,6 +143,16 @@ is broken.
     and the styles of bare elements in `base`. The stylesheet of a component
     is in no layer, so it wins over both in whatever order the stylesheets
     load, and it needs no extra specificity and no `!important` to do so.
+11. **A screen fits a window 320 pixels wide** (WCAG 2.2, 1.4.10): the page
+    is no wider than the window, and nothing sticks out of what it is in.
+    The browser of a phone shows a page that is wider shrunk, and then
+    nothing that is fixed to the window, the overlay of a dialog as well,
+    covers what is seen. A row of buttons is a row only where there is
+    room. A `Button` puts a label that is longer than the line it stands
+    in on a second line, between its words (a label may hold a name
+    somebody chose), so a button is never wider than what it is in; it is
+    not given `white-space: nowrap`. `narrow-screens.e2e.test.ts` opens
+    every screen at that width: a new screen is added to its list.
 
 ### Adding a token
 
@@ -206,7 +218,7 @@ nobody reads is removed.
 | `CheckboxGroup` | Several of a few choices. The chosen values are sent under one name (`formData.getAll(name)`). `layout='columns'` for many short ones |
 | `FileField` | A file to choose (`accept` names its kinds). The screen reads the chosen file itself (`onChange`, `event.currentTarget.files`); it is not sent with the form. Its button looks like a secondary button |
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
-| `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it |
+| `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it and what else can be done (`actions`): one below the other and as wide as the form below 40rem, in a row from there |
 
 ```tsx
 <TextField
@@ -2268,7 +2280,7 @@ A share link opens a file for somebody who has no account
 | `Navigation` | The links to the screens. The application says which one is `current`; a row too long for the screen is scrolled to it |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (one below the other on a narrow screen, side by side from 40rem) |
-| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
+| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are; below it they follow each other like words, and go on in the next line where the card ends: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
 | `DescriptionList` | The names and values of one record |
 | `Badge` | The state of a record, in a word |
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends |
@@ -2278,7 +2290,7 @@ A share link opens a file for somebody who has no account
 | `EmptyState` | What is shown where content would be, while there is none |
 | `LoadingIndicator` | What is shown where content will be, while it loads |
 | `UnreadNotice` | What is shown where content could not be read: the message the application words (`unreadMessageOf(what, reason)`), and the button that reads again |
-| `Dialog` | A question or a small form that has to be dealt with first; `size='wide'` for a table to choose from |
+| `Dialog` | A question or a small form that has to be dealt with first: a sheet on the bottom edge of a narrow screen, a box in the middle of a wider one; `size='wide'` for a table to choose from |
 | `NotificationProvider`, `useNotifications` | The result of what the user just did |
 
 - **A screen** is a `PageHeader`, then its content; the frame gives them their
@@ -2331,7 +2343,22 @@ A share link opens a file for somebody who has no account
   the package switches off, in place, with the reason.
 - **`Dialog`** is the `dialog` element opened with `showModal()`: the browser
   keeps the focus inside, makes the page behind inert, closes on Escape and
-  gives the focus back. Give the actions in the order they are read, the one
+  gives the focus back. While it is open the page behind it does not
+  scroll (`html:has(.dialog:modal)` in its stylesheet), and its overlay
+  covers the window to its edges. The scrollbar of the page goes with the
+  scrolling; where it took room of the window, the page keeps as much at
+  its end, so it does not move sideways (the dialog notes the width in
+  `--scrollbar-room` when it opens). Do not keep a strip free for the
+  scrollbar with `scrollbar-gutter`: the overlay does not cover such a
+  strip. A press on the overlay
+  does not close it: it holds a question that has to be answered, or what
+  somebody typed. Below 40rem it is a sheet on the bottom edge, as wide as
+  the screen, which comes up from below (`@starting-style`; closing takes
+  no time), with its actions one below the other, each as wide as the
+  sheet. From 40rem it is a box in the middle, with its actions in a row
+  at its end. It is never higher than the window: what is longer scrolls
+  inside it, and its actions stay in sight at its bottom
+  (`position: sticky`). Give the actions in the order they are read, the one
   that changes nothing first (「戻る」, then 「予約を取り消す」): the focus
   goes to the first. In a dialog with a form, the first control of the form
   stands before the actions and takes the focus. The description breaks
