@@ -5,8 +5,8 @@ import type {
   ModelsInventoryAlertType,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeProps, SelectOption } from '@beauty-salon-frontend/ui'
-import { momentNameAt } from '../salon-time'
 import { performerNameOf } from './movement-format'
 import { stockRowNameOf } from './stock-format'
 

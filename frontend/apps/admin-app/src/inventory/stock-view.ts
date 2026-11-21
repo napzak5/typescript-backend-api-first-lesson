@@ -1,5 +1,5 @@
+import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { z } from 'zod'
-import { type Read, textOf } from '../bookings/booking-actions'
 
 /*
  * What the stock screen shows, kept in the query of its address: every

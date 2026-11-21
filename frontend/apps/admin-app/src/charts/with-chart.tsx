@@ -1,9 +1,9 @@
 import type { ModelsMedicalChartResponse } from '@beauty-salon-frontend/api-client'
+import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import { LoadingIndicator, UnreadNotice } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
-import { unreadMessageOf } from '../reading'
 import { chartKeyOf, readChart } from './charts-api'
 
 type WithChartProps = {

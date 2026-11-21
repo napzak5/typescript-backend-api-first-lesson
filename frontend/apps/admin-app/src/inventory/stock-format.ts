@@ -2,8 +2,8 @@ import type {
   ModelsInventoryResponse,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import type { NavigationItem, SelectOption } from '@beauty-salon-frontend/ui'
-import { momentNameAt } from '../salon-time'
 import { NOT_RECORDED } from '../staff/staff-format'
 import { EXPIRY_WINDOWS, type StockView, stockQueryOf } from './stock-view'
 

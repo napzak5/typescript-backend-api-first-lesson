@@ -1,4 +1,5 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Form,
   type FormProps,
@@ -6,7 +7,6 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useState } from 'react'
-import { amountOf } from '../../../bookings/booking-format'
 import { methodLabelOf, takesCard } from '../../payments'
 import styles from './payment-form.module.css'
 

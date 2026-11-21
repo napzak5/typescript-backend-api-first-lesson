@@ -1,4 +1,5 @@
 import type { ModelsReviewResponse } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   Button,
@@ -7,7 +8,6 @@ import {
   Dialog,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
-import { momentNameAt } from '../../../salon-time'
 import styles from './review-answer.module.css'
 
 export type ReviewAnswerProps = {

@@ -2,6 +2,13 @@ import type {
   ModelsSalonResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  dayAfter,
+  dayAt,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   EmptyState,
@@ -13,10 +20,7 @@ import { useQueries, useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { scheduleHrefOf, shiftsHrefOf, shiftWeekHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { dayAfter, dayAt } from '../salon-time'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import {
   type ShiftMember,
   ShiftTable,

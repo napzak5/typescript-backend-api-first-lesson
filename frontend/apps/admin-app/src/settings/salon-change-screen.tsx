@@ -3,6 +3,13 @@ import type {
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import {
+  NOT_FOUND,
+  readSalon,
+  type SalonRead,
+  salonKeyOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -14,9 +21,6 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { settingsHrefOf } from '../navigation'
-import { NOT_FOUND } from '../reading'
-import { readSalon, type SalonRead, salonKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import { SalonForm } from './components/salon-form/salon-form'
 import { SettingsForbidden, useKeepsSalon } from './keeps-salon'
 import { afterSalonChange, readSalonChange } from './salon-form'

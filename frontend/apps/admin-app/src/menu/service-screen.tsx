@@ -1,5 +1,9 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -9,9 +13,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { menuHrefOf, serviceChangeHrefOf, serviceHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
 import { readServices, servicesKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import { ServiceRecord } from './components/service-record/service-record'
 import { useKeepsMenu } from './keeps-menu'
 import {

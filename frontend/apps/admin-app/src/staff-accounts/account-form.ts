@@ -4,8 +4,8 @@ import type {
   ModelsStaffInvitationResponse,
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
+import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { roleNameOf } from './account-format'
 import type {

@@ -1,4 +1,5 @@
 import type { ModelsPurchaseOrderResponse } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Form,
   type FormErrors,
@@ -6,7 +7,6 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import { deliveryDayOf } from '../../order-change'
 
 export type OrderChangeFormProps = Pick<

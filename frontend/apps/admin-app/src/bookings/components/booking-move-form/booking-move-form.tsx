@@ -4,13 +4,17 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  EARLIEST_DAY,
+  LATEST_DAY,
+  timeOfDayAt,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   Form,
   type FormProps,
   Select,
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
-import { EARLIEST_DAY, LATEST_DAY, timeOfDayAt } from '../../../salon-time'
 import type { LineCheck } from '../../bookings-api'
 import type { Names } from '../../day-bookings'
 import { MovedLines } from '../moved-lines/moved-lines'

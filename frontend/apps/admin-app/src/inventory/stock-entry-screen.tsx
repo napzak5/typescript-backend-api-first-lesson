@@ -4,6 +4,12 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  NOT_FOUND,
+  salonKeyOf,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
@@ -22,9 +28,6 @@ import {
   stockRowHrefOf,
 } from '../navigation'
 import { productsKeyOf, readProducts } from '../products/products-api'
-import { NOT_FOUND, unreadMessageOf } from '../reading'
-import { salonKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import { StockForm } from './components/stock-form/stock-form'
 import {
   addStockRow,

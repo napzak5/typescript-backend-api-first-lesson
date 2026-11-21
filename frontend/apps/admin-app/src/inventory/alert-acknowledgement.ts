@@ -2,8 +2,8 @@ import type {
   ModelsInventoryAlertAcknowledgeRequest,
   ModelsInventoryAlertResponse,
 } from '@beauty-salon-frontend/api-client'
+import { textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { textOf } from '../bookings/booking-actions'
 import { nullIfBlank } from '../bookings/booking-entry'
 import { alertNameOf } from './alert-format'
 import type { AlertAcknowledgement } from './alerts-api'

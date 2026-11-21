@@ -2,10 +2,12 @@ import {
   type ModelsPaymentMethodResponse,
   ModelsPaymentMethodType,
 } from '@beauty-salon-frontend/api-client'
+import {
+  amountOf,
+  methodKindNameOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
-import { amountOf } from '../bookings/booking-format'
 import type { Option } from '../customers/customer-format'
-import { methodKindNameOf } from '../sales/sale-format'
 
 /*
  * How the payment methods of a salon are named on the screens: the kinds

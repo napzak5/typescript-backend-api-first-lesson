@@ -2,6 +2,7 @@ import type {
   ModelsCustomerResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   LoadingIndicator,
@@ -13,7 +14,6 @@ import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { customersHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
 import {
   customerKanaOf,
   customerKeyOf,

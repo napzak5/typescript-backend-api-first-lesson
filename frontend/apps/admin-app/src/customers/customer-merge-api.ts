@@ -3,18 +3,18 @@ import {
   type ModelsCustomerResponse,
   type ModelsMedicalChartResponse,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import { readChart } from '../charts/charts-api'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   type Forbidden,
   type NotFound,
+  outsideTheContract,
   refusedValuesOf,
   type Unread,
   unreadOf,
   whyUnread,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
+import { readChart } from '../charts/charts-api'
 import { readErasureRequest } from './customer-erasure-api'
 import type {
   MergeAttempt,

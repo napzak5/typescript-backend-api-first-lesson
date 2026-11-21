@@ -1,4 +1,5 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
+import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   Card,
@@ -6,7 +7,6 @@ import {
   Link,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { dayNameOf, momentNameAt } from '../../../salon-time'
 import { type Referrer, referrerNameOf } from '../../customer-form'
 import { countNameOf } from '../../customer-format'
 import styles from './customer-record.module.css'

@@ -4,6 +4,12 @@ import type {
   ModelsSaleVoidRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  NOT_FOUND,
+  unreadMessageOf,
+  WithSalon,
+  whyUnread,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -27,9 +33,7 @@ import {
   saleChangeHrefOf,
   salesHrefOf,
 } from '../navigation'
-import { NOT_FOUND, unreadMessageOf, whyUnread } from '../reading'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import { PaymentTable } from './components/payment-table/payment-table'
 import { SalePoints } from './components/sale-points/sale-points'
 import { SaleRecord } from './components/sale-record/sale-record'

@@ -1,7 +1,7 @@
 import type { ModelsCustomerVersionResponse } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { momentNameAt } from '../../../salon-time'
 import { operationNameOf } from '../../customer-history'
 import {
   changedItemsOf,

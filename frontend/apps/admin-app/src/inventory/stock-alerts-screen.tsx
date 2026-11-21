@@ -3,6 +3,16 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  moreOf,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   Alert,
   ButtonLink,
   EmptyState,
@@ -26,10 +36,7 @@ import {
   stockAlertsHrefOf,
   stockRowHrefOf,
 } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { FAILED, unreadMessageOf } from '../reading'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import {
   acknowledgementOf,
   afterAcknowledgement,

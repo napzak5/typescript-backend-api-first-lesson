@@ -5,11 +5,11 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   countOf,
+  type More,
+  momentNameAt,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
+} from '@beauty-salon-frontend/salon-screens'
 import { priceNameOf } from '../../../products/product-format'
-import { momentNameAt } from '../../../salon-time'
 import {
   changeNameOf,
   movementReasonOf,

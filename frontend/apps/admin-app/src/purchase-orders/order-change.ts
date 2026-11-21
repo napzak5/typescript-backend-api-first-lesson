@@ -2,14 +2,13 @@ import type {
   ModelsPurchaseOrderResponse,
   ModelsPurchaseOrderUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { dayAt, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,
   TOO_MANY_REQUESTS,
 } from '../bookings/booking-entry'
-import { dayAt } from '../salon-time'
 import { DAY_ERROR, deliveryOf } from './order-entry'
 import type { OrderUpdate } from './purchase-orders-api'
 

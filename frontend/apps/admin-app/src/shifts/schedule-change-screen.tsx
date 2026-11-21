@@ -3,6 +3,11 @@ import type {
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
 import {
+  dayAt,
+  NOT_FOUND,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   PageHeader,
   useNotifications,
@@ -13,9 +18,6 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { scheduleHrefOf } from '../navigation'
-import { NOT_FOUND } from '../reading'
-import { dayAt } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import { ScheduleForm } from './components/schedule-form/schedule-form'
 import {
   afterScheduleSave,

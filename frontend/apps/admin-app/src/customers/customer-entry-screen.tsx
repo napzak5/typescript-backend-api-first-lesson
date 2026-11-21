@@ -2,6 +2,7 @@ import type {
   ModelsCustomerCreateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   PageHeader,
@@ -13,8 +14,6 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { customerHrefOf, customersHrefOf } from '../navigation'
-import { dayAt } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import { CustomerForm } from './components/customer-form/customer-form'
 import {
   afterCustomerWrite,

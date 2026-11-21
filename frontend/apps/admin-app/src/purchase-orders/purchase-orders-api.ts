@@ -16,8 +16,6 @@ import {
   purchaseOrderCrudReceive,
   purchaseOrderCrudUpdate,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   type Forbidden,
@@ -25,6 +23,7 @@ import {
   LARGEST_PAGE,
   NOT_FOUND,
   type NotFound,
+  outsideTheContract,
   type Page,
   pageOf,
   type RefusedValue,
@@ -32,7 +31,8 @@ import {
   toTheEnd,
   type Unread,
   unreadOf,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
 
 /*
  * The purchase orders of a salon: what it asks its suppliers for, item by

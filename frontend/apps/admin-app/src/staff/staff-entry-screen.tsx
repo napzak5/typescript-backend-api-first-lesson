@@ -2,6 +2,7 @@ import type {
   ModelsSalonResponse,
   ModelsStaffCreateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   PageHeader,
@@ -13,7 +14,6 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { staffLedgerHrefOf, staffMemberHrefOf } from '../navigation'
-import { WithSalon } from '../salons/with-salon'
 import { StaffForm } from './components/staff-form/staff-form'
 import {
   attemptStaffEntry,

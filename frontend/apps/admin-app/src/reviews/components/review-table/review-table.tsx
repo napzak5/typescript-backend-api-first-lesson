@@ -2,12 +2,12 @@ import type {
   ModelsReviewResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import { Badge, Link, Rating } from '@beauty-salon-frontend/ui'
 import {
   countOf,
+  type More,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
+} from '@beauty-salon-frontend/salon-screens'
+import { Badge, Link, Rating } from '@beauty-salon-frontend/ui'
 import { reviewDayNameOf, reviewNameOf } from '../../review-format'
 import styles from './review-table.module.css'
 

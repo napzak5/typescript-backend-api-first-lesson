@@ -5,6 +5,18 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  dayAt,
+  firstCursor,
+  KeywordSearch,
+  keywordOf,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+  WithSalon,
+  whyUnread,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   Alert,
   ButtonLink,
   EmptyState,
@@ -23,7 +35,6 @@ import {
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { KeywordSearch } from '../components/keyword-search/keyword-search'
 import { CustomerChoices } from '../customers/components/customer-choices/customer-choices'
 import {
   CUSTOMER_LISTS,
@@ -31,22 +42,17 @@ import {
   findCustomers,
   readCustomer,
 } from '../customers/customers-api'
-import { keywordOf } from '../keyword'
 import {
   bookingHrefOf,
   bookingsHrefOf,
   customerEntryHrefOf,
 } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { unreadMessageOf, whyUnread } from '../reading'
-import { dayAt } from '../salon-time'
 import {
   readServices,
   readStaffProfiles,
   servicesKeyOf,
   staffProfilesKeyOf,
 } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import {
   afterEntry,
   checkedSaysOf,

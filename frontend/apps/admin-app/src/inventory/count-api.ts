@@ -5,16 +5,16 @@ import {
   type ModelsInventoryStockCountResponse,
   type ModelsInventoryValueReportResponse,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   type Forbidden,
+  outsideTheContract,
   type RefusedValue,
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
 import { stockKeyOf } from './inventory-api'
 
 /*

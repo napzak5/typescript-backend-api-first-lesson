@@ -3,6 +3,10 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  amountOf,
+  methodKindNameOf,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   Alert,
   Button,
   DescriptionList,
@@ -16,10 +20,8 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { useId, useRef } from 'react'
 import { match } from 'ts-pattern'
-import { amountOf } from '../../../bookings/booking-format'
 import { memberNameOf } from '../../../bookings/day-bookings'
 import { type Bill, type BillLine, NO_CASHIER } from '../../checkout'
-import { methodKindNameOf } from '../../sale-format'
 import styles from './checkout-form.module.css'
 
 export type CheckoutFormProps = Pick<

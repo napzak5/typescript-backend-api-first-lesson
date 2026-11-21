@@ -2,6 +2,7 @@ import type {
   ModelsServiceCategoryResponse,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Card,
   DescriptionList,
@@ -9,7 +10,6 @@ import {
   Table,
   TagList,
 } from '@beauty-salon-frontend/ui'
-import { amountOf } from '../../../bookings/booking-format'
 import { levelNameOf, NOT_RECORDED } from '../../../staff/staff-format'
 import { minutesNameOf } from '../../../treatments/treatment-format'
 import {

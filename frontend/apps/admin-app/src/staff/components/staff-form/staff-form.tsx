@@ -1,4 +1,5 @@
 import type { ModelsStaffResponse } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Checkbox,
   Form,
@@ -6,7 +7,6 @@ import {
   Select,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import { LEVEL_OPTIONS } from '../../staff-format'
 import { IntroductionFields } from '../introduction-fields/introduction-fields'
 import styles from './staff-form.module.css'

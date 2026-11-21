@@ -2,8 +2,13 @@ import type {
   InventoryCrudListMovementsParams,
   ModelsInventoryTransactionType,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '../bookings/booking-actions'
-import { dayAfter, isDay, startOfDayAt } from '../salon-time'
+import {
+  dayAfter,
+  isDay,
+  type Read,
+  startOfDayAt,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { movementTypeIn } from './movement-format'
 
 /*

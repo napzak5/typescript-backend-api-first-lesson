@@ -1,5 +1,9 @@
+import {
+  answering,
+  problem,
+  UNREAD,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { answering, problem, UNREAD } from '../__tests__/api-answers'
 import { salon } from '../bookings/components/examples'
 import { card } from './components/examples'
 import {

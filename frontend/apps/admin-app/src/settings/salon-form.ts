@@ -3,9 +3,9 @@ import type {
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { linesOf } from '@beauty-salon-frontend/preferences'
+import { textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
-import { textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,

@@ -1,5 +1,11 @@
 import type { ModelsCustomerAllergyResponse } from '@beauty-salon-frontend/api-client'
 import {
+  countOf,
+  dayNameOf,
+  type More,
+  PagedTable,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   Alert,
   Badge,
   Button,
@@ -12,13 +18,7 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import { match } from 'ts-pattern'
-import {
-  countOf,
-  PagedTable,
-} from '../../../components/paged-table/paged-table'
 import { UNRECORDED } from '../../../customers/customer-format'
-import type { More } from '../../../pages'
-import { dayNameOf } from '../../../salon-time'
 import {
   allergyTypeNameOf,
   REMOVED_BY_OTHERS,

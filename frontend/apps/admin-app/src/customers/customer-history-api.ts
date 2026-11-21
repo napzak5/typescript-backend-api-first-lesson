@@ -7,20 +7,20 @@ import {
   type ModelsCustomerResponse,
   type ModelsCustomerVersionResponse,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import * as z from 'zod/mini'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   type Forbidden,
   from,
   NOT_FOUND,
   type NotFound,
+  outsideTheContract,
   type Page,
   pageOf,
   type Unread,
   unreadOf,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
+import * as z from 'zod/mini'
 import { customerKeyOf } from './customers-api'
 
 const idSchema = z.uuid()

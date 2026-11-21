@@ -3,6 +3,14 @@ import type {
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import {
+  dayAt,
+  NOT_FOUND,
+  readSalon,
+  type SalonRead,
+  salonKeyOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -14,10 +22,6 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { settingsHrefOf } from '../navigation'
-import { NOT_FOUND } from '../reading'
-import { dayAt } from '../salon-time'
-import { readSalon, type SalonRead, salonKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import { HoursForm } from './components/hours-form/hours-form'
 import { attemptHoursChange, type Hours, hoursOf } from './hours-api'
 import { afterHoursChange, readHoursChange } from './hours-form'

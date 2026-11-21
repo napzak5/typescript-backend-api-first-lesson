@@ -2,6 +2,14 @@ import type {
   ModelsCustomerResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  KeywordSearch,
+  keywordIn,
+  keywordOf,
+  NOT_FOUND,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
@@ -15,11 +23,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { KeywordSearch } from '../components/keyword-search/keyword-search'
-import { keywordIn, keywordOf } from '../keyword'
 import { customerHrefOf, customerMergeHrefOf } from '../navigation'
-import { NOT_FOUND, unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { CustomerMerge } from './components/customer-merge/customer-merge'
 import { KEPT_BY_OTHERS, mayKeepCustomers } from './customer-history'
 import {

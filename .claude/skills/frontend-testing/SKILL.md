@@ -251,7 +251,10 @@ end: `frontend/apps/portal-app/src/salons/salons-api.test.ts`. The answers
 such tests make up are one module of the application
 (`frontend/apps/portal-app/src/__tests__/api-answers.ts`: `problem`,
 `record`, `page`, `answering`, and `asked` and `sent` for what a function
-asked for).
+asked for). The admin and the dashboard applications and the packages take
+theirs from `@beauty-salon-frontend/testing/answers` (`json`, `problem`,
+`answering`, and `UNREAD`, the answers that say nothing with what a read
+makes of them).
 
 ## Against the real API
 

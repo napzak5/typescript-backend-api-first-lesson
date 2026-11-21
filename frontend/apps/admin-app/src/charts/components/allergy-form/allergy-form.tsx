@@ -1,4 +1,5 @@
 import type { ModelsCustomerAllergyResponse } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Form,
   type FormErrors,
@@ -8,7 +9,6 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { EARLIEST_DAY } from '../../../salon-time'
 import { ALLERGY_TYPE_OPTIONS, SEVERITY_OPTIONS } from '../../allergies'
 
 export type AllergyFormProps = {

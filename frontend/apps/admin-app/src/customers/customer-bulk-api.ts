@@ -3,15 +3,15 @@ import {
   customerCrudBulkDelete,
   customerCrudBulkUpdate,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   type Forbidden,
+  outsideTheContract,
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
 import {
   type RemovalAttempt,
   type RetagAttempt,

@@ -24,14 +24,12 @@ import {
   type ModelsBookingServiceResponse,
   type ModelsBookingUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import * as z from 'zod/mini'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   from,
   NOT_FOUND,
   type NotFound,
+  outsideTheContract,
   type Page,
   pageOf,
   type RefusedValue,
@@ -39,7 +37,9 @@ import {
   type Unread,
   unreadOf,
   whyUnread,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
+import * as z from 'zod/mini'
 import type { DayConditions } from './booking-day'
 import {
   type AdditionAttempt,

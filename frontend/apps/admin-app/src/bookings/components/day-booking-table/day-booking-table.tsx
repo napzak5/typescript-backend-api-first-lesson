@@ -1,10 +1,10 @@
-import { Badge, Link } from '@beauty-salon-frontend/ui'
 import {
   countOf,
+  type More,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
+} from '@beauty-salon-frontend/salon-screens'
+import { Badge, Link } from '@beauty-salon-frontend/ui'
 import { customerNameOf } from '../../../customers/customers-api'
-import type { More } from '../../../pages'
 import {
   GONE_CUSTOMER,
   GONE_SERVICE,

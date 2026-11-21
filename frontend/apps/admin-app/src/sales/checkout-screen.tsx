@@ -6,6 +6,11 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   UnreadNotice,
@@ -22,9 +27,7 @@ import {
   WithStaffAndServices,
 } from '../bookings/with-booking'
 import { bookingHrefOf, saleHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
 import { servicesKeyOf } from '../salons/salons-api'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import {
   afterCheckout,
   agreesWith,

@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { salon } from '../../../bookings/components/examples'
+import { salon } from '../../__stories__/examples'
 import { SalonChoices } from './salon-choices'
 
 const meta: Meta<typeof SalonChoices> = {
-  title: 'Admin/Salons/SalonChoices',
+  title: 'SalonScreens/SalonChoices',
   component: SalonChoices,
   args: {
     salons: [

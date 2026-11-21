@@ -4,6 +4,11 @@ import type {
   ModelsSalonResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
@@ -22,9 +27,7 @@ import {
   orderReceiptHrefOf,
   stockRowHrefOf,
 } from '../navigation'
-import { unreadMessageOf } from '../reading'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { OrderRecord } from './components/order-record/order-record'
 import {
   type OrderMoveAction,

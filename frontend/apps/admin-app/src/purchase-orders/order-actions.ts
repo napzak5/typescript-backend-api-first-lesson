@@ -2,8 +2,9 @@ import type {
   ModelsOrderStatusType,
   ModelsPurchaseOrderCancelRequest,
 } from '@beauty-salon-frontend/api-client'
+import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type ChangeSays, type Read, textOf } from '../bookings/booking-actions'
+import type { ChangeSays } from '../bookings/booking-actions'
 import { nullIfBlank } from '../bookings/booking-entry'
 import type { OrderStep } from './purchase-orders-api'
 

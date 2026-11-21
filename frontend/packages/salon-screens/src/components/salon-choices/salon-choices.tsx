@@ -1,10 +1,7 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { Badge, Link } from '@beauty-salon-frontend/ui'
-import {
-  countOf,
-  PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
+import type { More } from '../../pages'
+import { countOf, PagedTable } from '../paged-table/paged-table'
 
 export type SalonChoicesProps = {
   /** The salons that were read so far, in the order of the API; at least one */
@@ -14,7 +11,7 @@ export type SalonChoicesProps = {
   more: More
   /** Asks for the salons that come next */
   onMore: () => void
-  /** Where choosing a salon leads: its bookings */
+  /** Where choosing a salon leads */
   salonHref: (salon: ModelsSalonResponse) => string
 }
 
@@ -33,8 +30,8 @@ const addressOf = ({
     .join(' ')
 
 /**
- * The salons to choose from. The name of a salon leads to its bookings; a
- * salon that takes no bookings now is among them and says so.
+ * The salons to choose from. The name of a salon leads to what it is chosen
+ * for; a salon that takes no bookings now is among them and says so.
  */
 export const SalonChoices = ({
   salons,

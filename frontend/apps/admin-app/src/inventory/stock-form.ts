@@ -4,15 +4,18 @@ import type {
   ModelsInventoryUpdateRequest,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  isDay,
+  type Read,
+  type RefusedValue,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,
   TOO_MANY_REQUESTS,
 } from '../bookings/booking-entry'
-import type { RefusedValue } from '../reading'
-import { isDay } from '../salon-time'
 import type { TreatmentRemovalSays } from '../treatments/treatment-format'
 import type { StockRowRemoval, StockRowWrite } from './inventory-api'
 import { productOf } from './stock-format'

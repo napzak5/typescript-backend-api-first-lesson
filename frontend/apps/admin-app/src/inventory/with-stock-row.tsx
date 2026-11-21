@@ -4,6 +4,10 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  OtherSalonNotice,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
@@ -12,8 +16,6 @@ import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
 import { productsKeyOf, readProducts } from '../products/products-api'
-import { unreadMessageOf } from '../reading'
-import { OtherSalonNotice } from '../salons/with-salon'
 import { readStockRow, stockRowKeyOf } from './inventory-api'
 import { StockRowNotFound } from './keeps-stock'
 

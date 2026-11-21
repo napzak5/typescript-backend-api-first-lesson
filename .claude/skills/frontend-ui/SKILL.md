@@ -34,15 +34,14 @@ this one: a component is not done without its stories and its test.
 | Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
 | The salon of who is signed in (`useOwnSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/salon/`, `src/components/no-salon-notice/` |
-| The screens of a salon in the admin application: the choice of a salon, and the salon of an address around the screens below it | `frontend/apps/admin-app/src/salons/` |
+| What the screens of a salon share, in the admin and the dashboard applications: how an answer of the API is read (`reading.ts`, `outside-the-contract.ts`), a list that goes on (`pages.ts`, `PagedTable`), the search by a keyword (`keyword.ts`, `KeywordSearch`), the clock of a salon (`salon-time.ts`), the salons searched for and read (`salons-api.ts`), the choice of a salon at the start (`SalonChoiceScreen`, `SalonChoices`), the salon of an address around the screens below it (`WithSalon`), the period of a count with its form (`period.ts`, `StatisticsPeriod`), what a form gives (`form.ts`: `Read`, `textOf`), an amount and the names of the kinds of payment and of service (`format.ts`) | `frontend/packages/salon-screens/src/` (`@beauty-salon-frontend/salon-screens`) |
+| The staff and the services of a salon that a booking names, in the admin application | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
 | The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording, the customers of a file, the merge, the exports, the requests to have the data erased | `frontend/apps/admin-app/src/customers/` |
 | The charts of the customers in the admin application: the chart, the form with the rows of the treatments had before, the search of the charts, the allergies of a customer with their form and their removal | `frontend/apps/admin-app/src/charts/` |
 | The treatment records in the admin application: the list, a record with its removal, the form with the rows of the products used, the part of the page of a booking, the photos of a record with their form and their removal, the statistics over a period; the products of a salon, read to the end | `frontend/apps/admin-app/src/treatments/`, `src/products/products-api.ts` |
 | A file the API answers with, saved by the browser: its name, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `saveFile`) |
-| A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
-| The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
@@ -1029,7 +1028,7 @@ state, `booking-entry-screen.tsx` for a booking the salon puts in,
 `booking-notes-screen.tsx` for the change of what it wrote down,
 `booking-move-screen.tsx`, `booking-line-entry-screen.tsx` and
 `booking-line-screen.tsx` for a move, a line added and a line taken away)
-and `src/salons/` (the choice of a salon, the salon of an address).
+and `SalonChoiceScreen` and `WithSalon` of `salon-screens` (the choice of a salon, the salon of an address).
 Everything of "A screen that reads from the API" and of "A screen that
 writes what it read" holds; this is what comes on top.
 
@@ -1044,7 +1043,7 @@ writes what it read" holds; this is what comes on top.
   is told so (`NoSalonNotice`), and that the invitation of an owner brings
   it in.
 - **The salon of the address is read once, around the screens below it**
-  (`WithSalon` of `salons/with-salon.tsx`): its name is the description of
+  (`WithSalon` of `salon-screens`): its name is the description of
   the `PageHeader`, and its time zone and currency go to what is shown.
   While it is read there is the `LoadingIndicator` alone, as on a screen
   named after what it reads: the screen inside draws its own `PageHeader`,
@@ -1057,7 +1056,7 @@ writes what it read" holds; this is what comes on top.
   of another salon under the address of this one is not found, for `admin`
   too.
 - **The clock is the salon's.** Today is `dayAt(new Date(), salon.timezone)`,
-  and a time is the time of day there (`salon-time.ts`, with
+  and a time is the time of day there (`salon-time.ts` of `salon-screens`, with
   `hourCycle: 'h23'`: midnight is 00:00). A `datetime-local` control is read
   on the clock of the salon and sent in UTC (`momentOf`); a time that the
   clock skips there is an error at the control, not a guess.
@@ -1074,7 +1073,7 @@ writes what it read" holds; this is what comes on top.
   not there is named as such (「削除された顧客」, 「一覧にないスタッフ」,
   「削除されたメニュー」), and the row stays: its booking can still be
   moved on.
-- **A table that goes on is `PagedTable`** (`src/components/paged-table/`):
+- **A table that goes on is `PagedTable`** (`salon-screens`):
   how many there are and how many are shown above the table, 50 rows at a
   time, 「さらに表示」 below it, and the focus on the link of the first row
   that was added, or on its header when the row has no link (the header
@@ -1098,9 +1097,9 @@ writes what it read" holds; this is what comes on top.
 - **A state changed elsewhere (409)** is said on the page, in one sentence
   (`CHANGED_ELSEWHERE`), the dialog closes, the lists are removed and the
   booking is read again; the focus goes to the heading 「状態」.
-- **A search by a keyword is `KeywordSearch`** (`src/components/keyword-search/`):
+- **A search by a keyword is `KeywordSearch`** (`salon-screens`):
   a `search` landmark named after what it finds, the keyword (`keywordIn`
-  of `src/keyword.ts`: trimmed, at most 100 characters, none when blank) in
+  of `keyword.ts` there: trimmed, at most 100 characters, none when blank) in
   a parameter of the address, and a link that clears it. Nothing is asked
   of the API without a keyword where the list would be the whole ledger
   (the customers).
@@ -1341,7 +1340,7 @@ and `customer-export.ts` for the ledger and a customer saved as files).
   `GET /staff-profiles/{id}` each), and one that is not found is named as
   such (「一覧にないスタッフ」); a failure of one is a failure of the part.
 - **A period is in the address too** (`from` and `to`, both counted,
-  `customer-statistics.ts`), at most the days the API counts over (366),
+  `period.ts` of `salon-screens`), at most the days the API counts over (366),
   the year up to today when the address has none it takes. The form of the
   period is a `form` with a name of its own, beside the part it counts.
 - **Ledgers lead to each other.** The name of the customer of a booking is
@@ -1655,7 +1654,7 @@ with `components/treatment-statistics/`.
   the next attempt against what it read.
 - **A count over a period is read whenever it is shown**
   (`staleTime: 0`), its days are in the query of the address
-  (`StatisticsPeriod`, shared with the statistics of a customer), and a
+  (`StatisticsPeriod` of `salon-screens`, shared with the statistics of a customer), and a
   period in which nothing was written says so instead of a table of
   zeros. What a count counts twice (a record of two categories counts in
   both) is said under the table.

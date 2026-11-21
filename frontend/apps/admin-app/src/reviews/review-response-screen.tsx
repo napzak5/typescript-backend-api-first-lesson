@@ -2,6 +2,10 @@ import type {
   ModelsReviewResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -16,8 +20,6 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { reviewHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { ResponseForm } from './components/response-form/response-form'
 import {
   afterResponding,

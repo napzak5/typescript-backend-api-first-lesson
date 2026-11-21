@@ -4,6 +4,15 @@ import type {
   ModelsBookingResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  dayNameOf,
+  momentNameAt,
+  NOT_FOUND,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+  whyUnread,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
@@ -30,17 +39,14 @@ import {
   treatmentEntryHrefOf,
   treatmentHrefOf,
 } from '../navigation'
-import { NOT_FOUND, unreadMessageOf, whyUnread } from '../reading'
 import { BookingSale } from '../sales/components/booking-sale/booking-sale'
 import { readSalesOfBooking, salesOfBookingKeyOf } from '../sales/sales-api'
-import { dayNameOf, momentNameAt } from '../salon-time'
 import {
   readServices,
   readStaffProfiles,
   servicesKeyOf,
   staffProfilesKeyOf,
 } from '../salons/salons-api'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { BookingTreatment } from '../treatments/components/booking-treatment/booking-treatment'
 import { isTreated } from '../treatments/treatment-format'
 import {

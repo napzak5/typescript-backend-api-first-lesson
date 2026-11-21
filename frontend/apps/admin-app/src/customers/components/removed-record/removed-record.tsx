@@ -1,4 +1,5 @@
 import type { ModelsCustomerVersionResponse } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   Button,
@@ -8,7 +9,6 @@ import {
   Link,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { momentNameAt } from '../../../salon-time'
 import { whyUnrestorable } from '../../customer-history'
 import type { Removal } from '../../customer-history-api'
 import { ledgerItemsOf } from '../customer-record/ledger-items'

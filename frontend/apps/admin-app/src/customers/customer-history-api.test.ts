@@ -1,5 +1,5 @@
+import { answering, json, UNREAD } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { answering, json, UNREAD } from '../__tests__/api-answers'
 import { aCustomer } from '../bookings/components/examples'
 import {
   readHistoryPage,

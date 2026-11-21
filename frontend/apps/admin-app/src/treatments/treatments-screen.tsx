@@ -4,6 +4,14 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   type FormErrors,
@@ -23,9 +31,6 @@ import {
   treatmentHrefOf,
   treatmentStatisticsHrefOf,
 } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { TreatmentFilter } from './components/treatment-filter/treatment-filter'
 import { TreatmentTable } from './components/treatment-table/treatment-table'
 import { customerCalled } from './treatment-format'

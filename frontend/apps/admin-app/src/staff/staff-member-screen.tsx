@@ -2,6 +2,7 @@ import type {
   ModelsSalonResponse,
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
+import { NOT_FOUND, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   Button,
@@ -19,8 +20,6 @@ import {
   staffChangeHrefOf,
   staffLedgerHrefOf,
 } from '../navigation'
-import { NOT_FOUND } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { StaffRecord } from './components/staff-record/staff-record'
 import { removeStaffMember, STAFF_LISTS, staffKeyOf } from './staff-api'
 import {

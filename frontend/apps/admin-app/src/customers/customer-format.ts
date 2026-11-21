@@ -8,6 +8,7 @@ import {
   ModelsScalpConditionType,
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
+import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeProps } from '@beauty-salon-frontend/ui'
 
 /*
@@ -77,21 +78,6 @@ export const GENDERS: readonly ModelsCustomerGenderType[] = Object.values(
   ModelsCustomerGenderType,
 )
 
-const CATEGORY_NAMES: Record<ModelsServiceCategoryType, string> = {
-  cut: 'カット',
-  color: 'カラー',
-  perm: 'パーマ',
-  treatment: 'トリートメント',
-  spa: 'スパ',
-  styling: 'スタイリング',
-  extension: 'エクステンション',
-  other: 'その他',
-}
-
-/** A kind of service: 「カラー」. */
-export const categoryNameOf = (category: ModelsServiceCategoryType): string =>
-  CATEGORY_NAMES[category]
-
 /** The kinds of service, in the order of the contract. */
 export const CATEGORIES: readonly ModelsServiceCategoryType[] = Object.values(
   ModelsServiceCategoryType,
@@ -143,7 +129,7 @@ export const GENDER_OPTIONS: readonly Option[] = GENDERS.map((gender) => ({
 }))
 
 export const CATEGORY_OPTIONS: readonly Option[] = CATEGORIES.map(
-  (category) => ({ value: category, label: CATEGORY_NAMES[category] }),
+  (category) => ({ value: category, label: categoryNameOf(category) }),
 )
 
 export const HAIR_TYPE_OPTIONS: readonly Option[] = HAIR_TYPES.map(
@@ -176,7 +162,7 @@ export const categoriesNameOf = (
   categories.length === 0
     ? UNRECORDED
     : CATEGORIES.filter((category) => categories.includes(category))
-        .map((category) => CATEGORY_NAMES[category])
+        .map((category) => categoryNameOf(category))
         .join('、')
 
 /** The hair and the scalp of a customer, what of them was recorded: 「ストレート、細い髪、頭皮は乾燥」. */

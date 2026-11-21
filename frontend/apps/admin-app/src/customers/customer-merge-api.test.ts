@@ -2,8 +2,13 @@ import type {
   ModelsCustomerDeletionRequestResponse,
   ModelsCustomerDeletionRequestStatusType,
 } from '@beauty-salon-frontend/api-client'
+import {
+  answering,
+  json,
+  problem,
+  UNREAD,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { aCustomer, customers } from '../bookings/components/examples'
 import type { MergePair } from './customer-merge'
 import { mergeCustomers, readMerge } from './customer-merge-api'

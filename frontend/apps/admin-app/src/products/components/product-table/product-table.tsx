@@ -1,10 +1,10 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
-import { Badge, Link } from '@beauty-salon-frontend/ui'
 import {
   countOf,
+  type More,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
+} from '@beauty-salon-frontend/salon-screens'
+import { Badge, Link } from '@beauty-salon-frontend/ui'
 import { NOT_RECORDED } from '../../../staff/staff-format'
 import { carriedNameOf, priceNameOf, usesNameOf } from '../../product-format'
 

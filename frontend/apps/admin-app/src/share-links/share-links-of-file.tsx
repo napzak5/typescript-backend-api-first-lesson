@@ -2,12 +2,18 @@ import type {
   ModelsAttachmentResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { match } from 'ts-pattern'
 import { shareLinkEntryHrefOf, shareLinkHrefOf } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { FAILED, unreadMessageOf } from '../reading'
 import {
   ShareLinkList,
   type ShareLinkListing,

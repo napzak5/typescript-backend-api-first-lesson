@@ -2,6 +2,7 @@ import type {
   ModelsMedicalChartResponse,
   ModelsPreviousTreatment,
 } from '@beauty-salon-frontend/api-client'
+import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   Card,
@@ -10,7 +11,6 @@ import {
   TagList,
 } from '@beauty-salon-frontend/ui'
 import { UNRECORDED } from '../../../customers/customer-format'
-import { dayNameOf, momentNameAt } from '../../../salon-time'
 import { treatmentNameOf } from '../../chart-form'
 import styles from './chart-record.module.css'
 

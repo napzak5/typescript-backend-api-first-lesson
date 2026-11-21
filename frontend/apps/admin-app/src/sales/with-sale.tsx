@@ -4,6 +4,11 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  momentNameAt,
+  OtherSalonNotice,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -14,9 +19,6 @@ import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { salesHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { momentNameAt } from '../salon-time'
-import { OtherSalonNotice } from '../salons/with-salon'
 import {
   paymentMethodsKeyOf,
   readPaymentMethods,

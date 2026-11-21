@@ -6,6 +6,7 @@ import type {
   ModelsTreatmentMaterial,
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
+import { LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Button,
   CheckboxGroup,
@@ -20,7 +21,6 @@ import {
 import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
 import { GONE_SERVICE, UNLISTED_STAFF } from '../../../bookings/booking-format'
 import { tagsTextOf } from '../../../customers/customer-ledger'
-import { LATEST_DAY } from '../../../salon-time'
 import { MOST_MATERIALS, materialControlOf } from '../../treatment-form'
 import {
   productNameOf,
