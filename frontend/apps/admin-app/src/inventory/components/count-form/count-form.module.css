@@ -1,0 +1,28 @@
+/* The part of the form, under its name */
+.part {
+  padding-block-start: var(--space-2);
+}
+
+/*
+ * A browser sets the legend of a fieldset apart from what the fieldset
+ * lays out, so the gap below the name is the name's own.
+ */
+.name {
+  margin-block-end: var(--space-3);
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+/* The note, the count of each row and the reason, one below the other */
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* How the counts are entered */
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}

@@ -3,11 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { salon } from '../bookings/components/examples'
 import { colour } from '../products/components/examples'
-import { colourLot } from './components/examples'
+import { colourLot, STOCK_OF_THE_SALON } from './components/examples'
 import {
   addStockRow,
   changeStockRow,
+  everyStockRowKeyOf,
   mayKeepStock,
+  readEveryStockRow,
   readStockPage,
   readStockRow,
   removeStockRow,
@@ -60,6 +62,57 @@ describe('mayKeepStock', () => {
     ['customer', false],
   ])('should let %s keep the stock: %s', (role, keeps) => {
     expect(mayKeepStock(role)).toBe(keeps)
+  })
+})
+
+describe('everyStockRowKeyOf', () => {
+  it('should read every row below the stock of the salon, so that dropping the stock drops it', () => {
+    expect(everyStockRowKeyOf(salon.id)).toEqual([
+      'salons',
+      salon.id,
+      'inventory',
+      'every',
+    ])
+  })
+})
+
+describe('readEveryStockRow', () => {
+  it('should read the rows of the salon page by page, the largest pages, to the end', async () => {
+    // Arrange
+    const [first, ...rest] = STOCK_OF_THE_SALON
+    const fetched = answering((request) =>
+      new URL(request.url).searchParams.has('cursor')
+        ? page(rest, null)
+        : page(first === undefined ? [] : [first], first?.id ?? null),
+    )
+
+    // Act
+    const read = await readEveryStockRow(salon.id)
+
+    // Assert
+    expect(read).toEqual({ type: 'found', items: STOCK_OF_THE_SALON })
+    expect(
+      fetched.mock.calls.map(([asked]) =>
+        Object.fromEntries(new URL(new Request(asked).url).searchParams),
+      ),
+    ).toEqual([
+      { salonId: salon.id, limit: '100' },
+      { salonId: salon.id, cursor: first?.id, limit: '100' },
+    ])
+  })
+
+  it.each<[string, Answer, string]>([
+    ['the account', () => problem(403), 'forbidden'],
+    ...UNREAD,
+  ])('should read no rows after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const read = await readEveryStockRow(salon.id)
+
+    // Assert
+    expect(read).toEqual({ type })
   })
 })
 

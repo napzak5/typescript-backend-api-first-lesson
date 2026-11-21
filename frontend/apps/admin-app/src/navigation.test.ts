@@ -48,10 +48,12 @@ import {
   staffEntryHrefOf,
   staffLedgerHrefOf,
   staffMemberHrefOf,
+  stockCountHrefOf,
   stockEntryHrefOf,
   stockMovementsHrefOf,
   stockRowChangeHrefOf,
   stockRowHrefOf,
+  stockValueHrefOf,
   treatmentChangeHrefOf,
   treatmentEntryHrefOf,
   treatmentHrefOf,
@@ -451,6 +453,8 @@ describe('navigationFor', () => {
     ['the change of a stock row', stockRowChangeHrefOf(SALON_ID, 'x')],
     ['the movements of a stock row', stockMovementsHrefOf(SALON_ID, 'x')],
     ['a new movement of a stock row', movementEntryHrefOf(SALON_ID, 'x')],
+    ['the count of the stock', stockCountHrefOf(SALON_ID)],
+    ['the value of the stock', stockValueHrefOf(SALON_ID)],
   ])('should mark the stock as the screen of %s', (_case, pathname) => {
     expect(navigationFor('staff', pathname)).toEqual([
       { href: BOOKINGS, label: '予約', current: false },
@@ -474,6 +478,8 @@ describe('navigationFor', () => {
       stockRowChangeHrefOf(SALON_ID, 'row'),
       stockMovementsHrefOf(SALON_ID, 'row'),
       movementEntryHrefOf(SALON_ID, 'row'),
+      stockCountHrefOf(SALON_ID),
+      stockValueHrefOf(SALON_ID),
     ]).toEqual([
       INVENTORY,
       `${INVENTORY}/new`,
@@ -481,6 +487,8 @@ describe('navigationFor', () => {
       `${INVENTORY}/row/edit`,
       `${INVENTORY}/row/movements`,
       `${INVENTORY}/row/movements/new`,
+      `${INVENTORY}/count`,
+      `${INVENTORY}/value`,
     ])
   })
 
