@@ -17,7 +17,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { orderChangeHrefOf, stockRowHrefOf } from '../navigation'
+import {
+  orderChangeHrefOf,
+  orderReceiptHrefOf,
+  stockRowHrefOf,
+} from '../navigation'
 import { unreadMessageOf } from '../reading'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
 import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
@@ -29,6 +33,7 @@ import {
 import {
   afterOrderStep,
   isClosedOrder,
+  isReceivableOrder,
   MOVED_TO,
   mayApproveOrders,
   ORDER_CHANGED_ELSEWHERE,
@@ -170,6 +175,11 @@ const OrderDetails = ({ salon, order, staff }: OrderDetailsProps) => {
         order={order}
         actions={orderActionsOf(order.status, approves)}
         note={orderActionNoteOf(order.status, approves)}
+        receiveHref={
+          isReceivableOrder(order.status)
+            ? orderReceiptHrefOf(salon.id, order.id)
+            : undefined
+        }
         headingRef={statusHeading}
         pending={step.isPending ? step.variables.type : undefined}
         asking={asking}

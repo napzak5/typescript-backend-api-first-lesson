@@ -20,6 +20,7 @@ import {
   movementEntryHrefOf,
   navigationFor,
   orderChangeHrefOf,
+  orderReceiptHrefOf,
   paymentMethodChangeHrefOf,
   paymentMethodEntryHrefOf,
   paymentMethodHrefOf,
@@ -34,6 +35,7 @@ import {
   purchaseOrdersHrefOf,
   receiptHrefOf,
   refundHrefOf,
+  reorderSuggestionsHrefOf,
   saleChangeHrefOf,
   salesHrefOf,
   salonChangeHrefOf,
@@ -59,6 +61,7 @@ import {
   stockRowChangeHrefOf,
   stockRowHrefOf,
   stockValueHrefOf,
+  suggestedOrderHrefOf,
   treatmentChangeHrefOf,
   treatmentEntryHrefOf,
   treatmentHrefOf,
@@ -519,6 +522,8 @@ describe('navigationFor', () => {
     ['a new purchase order', purchaseOrderEntryHrefOf(SALON_ID)],
     ['a purchase order', purchaseOrderHrefOf(SALON_ID, 'x')],
     ['the change of a purchase order', orderChangeHrefOf(SALON_ID, 'x')],
+    ['the receipt of a purchase order', orderReceiptHrefOf(SALON_ID, 'x')],
+    ['the reorder suggestions', reorderSuggestionsHrefOf(SALON_ID)],
   ])(
     'should mark the purchase orders as the screen of %s',
     (_case, pathname) => {
@@ -544,11 +549,25 @@ describe('navigationFor', () => {
       purchaseOrderEntryHrefOf(SALON_ID),
       purchaseOrderHrefOf(SALON_ID, 'order'),
       orderChangeHrefOf(SALON_ID, 'order'),
+      orderReceiptHrefOf(SALON_ID, 'order'),
+      reorderSuggestionsHrefOf(SALON_ID),
     ]).toEqual([
       PURCHASE_ORDERS,
       `${PURCHASE_ORDERS}/new`,
       `${PURCHASE_ORDERS}/order`,
       `${PURCHASE_ORDERS}/order/edit`,
+      `${PURCHASE_ORDERS}/order/receive`,
+      `${PURCHASE_ORDERS}/suggestions`,
+    ])
+  })
+
+  it('should write the address of a new purchase order that starts with the suggestions of a supplier', () => {
+    expect([
+      suggestedOrderHrefOf(SALON_ID, 'A&B 商事'),
+      suggestedOrderHrefOf(SALON_ID, null),
+    ]).toEqual([
+      `${PURCHASE_ORDERS}/new?suggested=A%26B+%E5%95%86%E4%BA%8B`,
+      `${PURCHASE_ORDERS}/new?suggested=`,
     ])
   })
 
