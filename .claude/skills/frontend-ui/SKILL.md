@@ -43,7 +43,7 @@ this one: a component is not done without its stories and its test.
 | The treatment records in the admin application: the list, a record with its removal, the form with the rows of the products used, the part of the page of a booking, the photos of a record with their form and their removal, the statistics over a period; the products of a salon, read to the end | `frontend/apps/admin-app/src/treatments/`, `src/products/products-api.ts` |
 | A file the API answers with, saved by the browser: its name, the file of an answer, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `fileOfAnswer`, `saveFile`) |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
-| The sales report of a salon in the dashboard: the screen with its period and its export as a CSV file, the four parts of a report, the words of its counts | `frontend/apps/dashboard-app/src/reports/` |
+| The sales report of a salon in the dashboard: the screen with its period and its export as a CSV file, the four parts of a report, the words of its counts; the trends of the sales with their chart, and the sales of one day | `frontend/apps/dashboard-app/src/reports/` |
 | The links of the header of the dashboard, by the role and the salon of the address | `frontend/apps/dashboard-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
@@ -1683,6 +1683,30 @@ salon: `reports/sales-report-screen.tsx` with `components/sales-report/`,
   saved is a notification that names the days and the file, and the
   button keeps the focus. Why nothing was saved is an `Alert` under the
   header, for the days it was asked for: other days take it away.
+- **What was wrong with a form is said for what the address showed when
+  it was sent**: a link to another day, or the header, changes what is
+  shown, and the error goes with it (`Refused` of the three screens).
+- **Further choices of what is counted are children of
+  `StatisticsPeriod`**, below the days and above the button: the parts a
+  trend is cut into are a `RadioGroup` whose value is in the address
+  beside the days (`period`), sent with them.
+
+A chart is a picture of a table (`components/trend-chart/` with
+`components/sales-trend/`):
+
+- **The table holds the numbers, the chart draws them**: the chart is
+  `aria-hidden`, the table beside it is read, and both are on the screen.
+- **A chart is a grid of columns**, one a part (`grid-template-columns:
+  repeat(n, minmax(0, 1fr))` inline), each a block whose height is its
+  share of the scale. Columns are no wider than `1.5rem`, rounded at the
+  top by `--radius-small`, in the one colour `--color-accent`, and stand
+  apart by a gap of 2px, none when there are more than 60.
+- **One scale from 0 to a round amount** (`scaleTopOf`: 1, 2 or 5 times
+  a power of ten), hairlines at its top, its half and its zero, and its
+  amounts beside them (`axisAmountOf`: short from ￥10,000 on). The axis
+  names the first and the last part alone; the amount of a part shows on
+  a pointer over its whole height, a tip of CSS that opens towards the
+  middle.
 
 ### A ledger that some roles keep: registered, changed, made inactive, removed
 
