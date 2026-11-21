@@ -3,8 +3,13 @@ import { describe, expect, it } from 'vitest'
 import { salon } from '../bookings/components/examples'
 import {
   afterSalonChange,
+  afterSalonEntry,
+  CURRENCY_CHOICES,
   coordinateTextOf,
+  NEW_SALON,
   readSalonChange,
+  readSalonEntry,
+  TIME_ZONE_CHOICES,
 } from './salon-form'
 
 /** A salon with something in every value the form shows */
@@ -362,5 +367,169 @@ describe('afterSalonChange', () => {
     ],
   ])('should say what came of %j above the form', (outcome, message) => {
     expect(afterSalonChange(outcome)).toEqual({ message, errors: {} })
+  })
+})
+
+/** The form of a salon to be added, filled in as a salon is, with the time zone and the currency of Japan */
+const entryOf = (
+  shown: ModelsSalonResponse,
+  changes: Record<string, string | null> = {},
+): FormData =>
+  formOf(shown, { timezone: 'Asia/Tokyo', currency: 'JPY', ...changes })
+
+describe('readSalonEntry', () => {
+  it('should send every value under the name of its property, with the time zone and the currency chosen and no hours', () => {
+    // Act
+    const read = readSalonEntry(
+      entryOf(described, { timezone: 'Europe/Paris', currency: 'EUR' }),
+    )
+
+    // Assert
+    expect(read).toEqual({
+      type: 'valid',
+      request: {
+        name: 'Salon Hikari 表参道店',
+        nameKana: 'サロン ヒカリ',
+        description: '表参道の駅から歩いて 3 分です。',
+        postalCode: '150-0001',
+        prefecture: '東京都',
+        city: '渋谷区',
+        address: '神宮前 4-1-1',
+        building: '光ビル 2 階',
+        latitude: 35.66,
+        longitude: 139.71,
+        phoneNumber: '03-1234-5678',
+        alternativePhone: '090-1234-5678',
+        email: 'omotesando@example.com',
+        websiteUrl: 'https://hikari.example.com',
+        logoUrl: 'https://hikari.example.com/logo.png',
+        imageUrls: [
+          'https://hikari.example.com/1.jpg',
+          'https://hikari.example.com/2.jpg',
+        ],
+        features: ['カット', 'カラー'],
+        amenities: ['Wi-Fi'],
+        taxRate: 10,
+        isActive: true,
+        timezone: 'Europe/Paris',
+        currency: 'EUR',
+        businessHours: null,
+        openingHours: [],
+      },
+    })
+  })
+
+  it('should send what was left empty as nothing, and no bookings online when the box is not ticked', () => {
+    // Act
+    const read = readSalonEntry(entryOf(salon, { isActive: null }))
+
+    // Assert
+    expect(read).toMatchObject({
+      type: 'valid',
+      request: {
+        nameKana: null,
+        building: null,
+        latitude: null,
+        websiteUrl: null,
+        imageUrls: [],
+        features: [],
+        isActive: false,
+      },
+    })
+  })
+
+  it('should say every value that is wrong at once, the time zone and the currency with the others', () => {
+    // Act
+    const read = readSalonEntry(
+      entryOf(salon, { name: '', email: '', timezone: '', currency: '' }),
+    )
+
+    // Assert
+    expect(read).toEqual({
+      type: 'invalid',
+      errors: {
+        name: 'サロンの名前を、255 文字までで入力してください。',
+        email: 'メールアドレスを入力してください。',
+        timezone: 'タイムゾーンを選んでください。',
+        currency: '通貨を選んでください。',
+      },
+    })
+  })
+
+  it.each<[string, string | null, string]>([
+    ['timezone', 'Mars/Olympus', 'タイムゾーンを選んでください。'],
+    ['timezone', 'asia/tokyo', 'タイムゾーンを選んでください。'],
+    ['timezone', null, 'タイムゾーンを選んでください。'],
+    ['currency', 'jpy', '通貨を選んでください。'],
+    ['currency', 'YEN', '通貨を選んでください。'],
+    ['currency', null, '通貨を選んでください。'],
+  ])('should refuse %s chosen as %j', (control, text, message) => {
+    expect(readSalonEntry(entryOf(salon, { [control]: text }))).toEqual({
+      type: 'invalid',
+      errors: { [control]: message },
+    })
+  })
+})
+
+describe('the choices of a salon to be added', () => {
+  it('should offer the time zones by their names, the one of Japan among them', () => {
+    expect(TIME_ZONE_CHOICES).toContainEqual({
+      value: 'Asia/Tokyo',
+      label: 'Asia/Tokyo',
+    })
+    expect(TIME_ZONE_CHOICES.length).toBeGreaterThan(300)
+  })
+
+  it('should offer the currencies by their codes and names', () => {
+    expect(CURRENCY_CHOICES).toContainEqual({
+      value: 'JPY',
+      label: 'JPY（日本円）',
+    })
+    expect(CURRENCY_CHOICES).toContainEqual({
+      value: 'EUR',
+      label: 'EUR（ユーロ）',
+    })
+  })
+
+  it('should open with what the choices offer', () => {
+    expect(TIME_ZONE_CHOICES.map(({ value }) => value)).toContain(
+      NEW_SALON.timezone,
+    )
+    expect(CURRENCY_CHOICES.map(({ value }) => value)).toContain(
+      NEW_SALON.currency,
+    )
+  })
+})
+
+describe('afterSalonEntry', () => {
+  it('should say an email address of another salon at the email address', () => {
+    expect(afterSalonEntry({ type: 'emailTaken' })).toEqual({
+      message: undefined,
+      errors: {
+        email:
+          'このメールアドレスは、ほかのサロンが使っています。ほかのメールアドレスを入力してください。',
+      },
+    })
+  })
+
+  it.each<[Parameters<typeof afterSalonEntry>[0], string]>([
+    [
+      { type: 'invalid', values: [{ field: 'timezone', rule: 'custom' }] },
+      '入力した内容を確かめて、もう一度お試しください。',
+    ],
+    [
+      { type: 'forbidden' },
+      'このアカウントでは、サロンを登録できません。サロンを登録できるのは、管理者です。',
+    ],
+    [
+      { type: 'tooManyRequests' },
+      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+    ],
+    [
+      { type: 'failed' },
+      'サロンを登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    ],
+  ])('should say what came of %j above the form', (outcome, message) => {
+    expect(afterSalonEntry(outcome)).toEqual({ message, errors: {} })
   })
 })

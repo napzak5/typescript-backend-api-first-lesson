@@ -28,8 +28,8 @@ export type OwnSalonState = {
   readingAgain: boolean
 }
 
-/** The key the salon of the account is read under: what changes the account takes it away. */
-const OWN_SALON = ['account', 'salon']
+/** The key the salon of the account is read under: what changes the account, or removes its salon, takes it away. */
+export const OWN_SALON = ['account', 'salon']
 
 const PLATFORM: OwnSalon = { type: 'platform' }
 const NONE: OwnSalonRead = { type: 'none' }
