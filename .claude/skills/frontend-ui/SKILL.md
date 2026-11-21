@@ -2344,9 +2344,13 @@ A share link opens a file for somebody who has no account
 - **`Dialog`** is the `dialog` element opened with `showModal()`: the browser
   keeps the focus inside, makes the page behind inert, closes on Escape and
   gives the focus back. While it is open the page behind it does not
-  scroll (`html:has(.dialog:modal)` in its stylesheet; the theme keeps the
-  room of the scrollbar with `scrollbar-gutter`, so the page does not move
-  sideways), and its overlay covers the window. A press on the overlay
+  scroll (`html:has(.dialog:modal)` in its stylesheet), and its overlay
+  covers the window to its edges. The scrollbar of the page goes with the
+  scrolling; where it took room of the window, the page keeps as much at
+  its end, so it does not move sideways (the dialog notes the width in
+  `--scrollbar-room` when it opens). Do not keep a strip free for the
+  scrollbar with `scrollbar-gutter`: the overlay does not cover such a
+  strip. A press on the overlay
   does not close it: it holds a question that has to be answered, or what
   somebody typed. Below 40rem it is a sheet on the bottom edge, as wide as
   the screen, which comes up from below (`@starting-style`; closing takes

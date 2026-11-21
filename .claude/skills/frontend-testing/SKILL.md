@@ -1180,6 +1180,20 @@ test.describe('the admin application', () => {
   far the page is scrolled after the wheel was turned. A page that does
   not move proves little by itself, so the same test closes the dialog
   and sees the page scroll.
+- **The browser of the tests draws no scrollbars** (Playwright starts it
+  with `--hide-scrollbars`), and whether a scrollbar takes room of the
+  window depends on the system: on macOS it lies over the page, on Linux
+  and Windows it stands beside it. So what depends on that room passes on
+  one machine and fails on another (a strip kept free with
+  `scrollbar-gutter` was 15 pixels wide in CI and none on macOS). Such a
+  thing is tested in a file of its own whose browser draws scrollbars
+  (`src/dialog-scrollbar.e2e.test.ts`): `test.use({ launchOptions: {
+  ignoreDefaultArgs: ['--hide-scrollbars'] } })` at the top of the file
+  (Playwright refuses it inside a `describe`, because it needs a worker
+  of its own), and a scrollbar of a width the test decides
+  (`page.addStyleTag` with `html::-webkit-scrollbar`), so that it measures
+  the same everywhere. `expectSoundLayout` compares the page with the
+  window without its scrollbar (`clientWidth`), for the same reason.
 - What a test needs before the path it drives, and which another test
   drives through its screens already, it asks of the API with the
   `request` fixture of Playwright (`accessTokenOf` and `setUpTwoFactor` in
