@@ -22,7 +22,8 @@ You start without the caller's conversation, and the caller reads only your fina
    - `frontend/packages/ui` (shared components and their Storybook), `frontend/packages/theme` (tokens, typefaces, and the check of the style rules) and `frontend/packages/testing` (what the tests share)
    - `frontend/packages/preferences`: the form of what a customer wishes for, which the portal and the admin application share (the form, how it is read, what a refusal says, the staff it offers)
    - `frontend/packages/salon-screens`: what the screens of a salon share in the admin and the dashboard applications (how an answer of the API is read, a list that goes on with `PagedTable`, the search by a keyword, the clock of a salon, the salons searched for and read, the choice of a salon, `WithSalon`, the period of a count with its form, what a form gives, amounts and the names of the kinds of payment and of service)
-   - `frontend/packages/config` (the `env` object over `import.meta.env`) and `frontend/packages/assets`
+   - `frontend/packages/config` (the `env` object over `import.meta.env`)
+   - `frontend/packages/brand`: the names of the applications (`applications.admin.name`), the icons and the image of a shared link with the drawings they are drawn from, and the Vite plugin that serves them and names them in the head of the page
 
 ## What exists
 

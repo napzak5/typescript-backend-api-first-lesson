@@ -251,7 +251,7 @@ export const useSession = (): Session
 const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'staff', 'admin']
 
 <NotificationProvider>
-  <AppShell title={import.meta.env.VITE_APP_TITLE} account={<SessionAccount />}>
+  <AppShell title={applications.admin.name} account={<SessionAccount />}>
     <RequireSession roles={ROLES}>
       <Routes>…</Routes>
     </RequireSession>
@@ -1197,13 +1197,14 @@ const queryClient = new QueryClient({
 | 変数 | 使っている場所 |
 |------|----------------|
 | `VITE_MODE` | `App.tsx` の `EnvironmentBanner`（本番以外で、画面の隅に環境名を表示する）、`main.tsx` の Devtools の表示判定 |
-| `VITE_APP_TITLE` | `App.tsx` のヘッダーとトップページの見出し（portal-app のトップページは、サロンを探す画面） |
 | `VITE_BACKEND_BASE_URL` | API サーバーのオリジン（パスは付けない）。`config` パッケージの `env` を通して `customInstance` が使う。アプリのコードからは使われていない |
-| `VITE_ADMIN_APP_URL` | portal-app だけにある。admin-app のオリジン。招待を受けたあとの「店舗向けの画面を開く」のリンク先 |
-| `VITE_PORTAL_APP_URL` | admin-app と dashboard-app にある。portal-app のオリジン。サインインの画面の「パスワードを忘れた場合」のリンク先（`/forgot-password`） |
+| `VITE_ADMIN_APP_URL` | portal-app と admin-app にある。admin-app のオリジン。portal-app では、招待を受けたあとの「店舗向けの画面を開く」のリンク先。admin-app では、ブランドのプラグインが OGP の画像のアドレスに使う |
+| `VITE_PORTAL_APP_URL` | 3 つのアプリすべてにある。portal-app のオリジン。admin-app と dashboard-app では、サインインの画面の「パスワードを忘れた場合」のリンク先（`/forgot-password`）。portal-app では、ブランドのプラグインが OGP の画像のアドレスに使う |
+| `VITE_DASHBOARD_APP_URL` | dashboard-app だけにある。dashboard-app のオリジン。ブランドのプラグインが OGP の画像のアドレスに使う |
 
 - どのファイルが読まれるかは Vite のモードで決まります。開発サーバー（`pnpm dev`）と `build:dev` は `development`、`build:localhost` は `localhost`、`build:test` は `test`、`build:stg` は `staging`、`build:prod` は `production` です。3つのアプリとも、この 5 つのモードの `.env.<mode>` を持っています。
-- ローカル用の 3 つ（`localhost`、`development`、`test`）の `VITE_BACKEND_BASE_URL` は `http://localhost:3000` で、リポジトリ直下の `.env.*` の `PORT` と同じです。ほかのアプリのオリジンは、開発サーバーのもの（portal-app は `http://localhost:3001`、admin-app は `http://localhost:3002`）です。
+- ローカル用の 3 つ（`localhost`、`development`、`test`）の `VITE_BACKEND_BASE_URL` は `http://localhost:3000` で、リポジトリ直下の `.env.*` の `PORT` と同じです。アプリのオリジンは、開発サーバーのもの（portal-app は `http://localhost:3001`、admin-app は `http://localhost:3002`、dashboard-app は `http://localhost:3003`）です。
+- アプリの名前は環境変数ではなく、`@beauty-salon-frontend/brand` の `applications` から読みます（`applications.admin.name`）。ページの `<head>`（タイトル、説明、アイコン、OGP）は、各アプリの `vite.config.ts` の `brand('<アプリ>')` が書きます。
 - `config` パッケージの `env` は、設定されていない変数を `undefined` として返します。
 
 ## アプリから使う

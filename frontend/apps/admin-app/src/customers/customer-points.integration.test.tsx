@@ -42,8 +42,6 @@ import {
  * counter, and an owner adjusts.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** What is said when the points could not be recorded, whatever the reason */
 const RECORD_AGAIN =
   'ポイントを記録できませんでした。通信の状態を確かめて、もう一度お試しください。'
@@ -191,7 +189,6 @@ const fromTheSale = async (
 
 describe('the points of customers, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

@@ -3,7 +3,7 @@ import * as z from 'zod'
 import { PORTAL } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
-import { heading } from './sign-in'
+import { heading, PORTAL_START } from './sign-in'
 
 /** The two salons of the seed data */
 const TOKYO = 'Beauty Studio Tokyo'
@@ -56,7 +56,7 @@ test.describe('the salons, in a browser', () => {
   }) => {
     // Arrange: the start lists the salons
     await page.goto(PORTAL.origin)
-    await expect(heading(page, PORTAL.title)).toBeVisible()
+    await expect(heading(page, PORTAL_START)).toBeVisible()
     await expect(names(page)).toHaveCount(2)
     await expectSoundPage(page)
 
@@ -116,7 +116,7 @@ test.describe('the salons, in a browser', () => {
 
     // Assert
     await expect(page).toHaveURL(`${PORTAL.origin}/?prefecture=Osaka`)
-    await expect(heading(page, PORTAL.title)).toBeFocused()
+    await expect(heading(page, PORTAL_START)).toBeFocused()
     await expect(prefecture(page)).toHaveValue('Osaka')
     await expect(names(page)).toHaveText([OSAKA])
 
@@ -229,7 +229,7 @@ test.describe('the salons, in a browser', () => {
     await expect(heading(page, 'サロンが見つかりません')).toBeVisible()
     await expectSoundPage(page)
     await page.getByRole('link', { name: 'サロンを探す' }).click()
-    await expect(heading(page, PORTAL.title)).toBeFocused()
+    await expect(heading(page, PORTAL_START)).toBeFocused()
     await expect(names(page)).toHaveCount(2)
   })
 })

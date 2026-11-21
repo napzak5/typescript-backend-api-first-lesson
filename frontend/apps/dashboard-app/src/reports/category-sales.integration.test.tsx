@@ -43,7 +43,6 @@ const KINDS_OF_TODAY = [
 
 describe('the sales by kind of service, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

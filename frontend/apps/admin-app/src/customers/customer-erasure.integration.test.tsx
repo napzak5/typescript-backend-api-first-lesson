@@ -30,8 +30,6 @@ import {
  * the operator of the platform, did something meanwhile.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const OPERATOR = 'admin@beautysalon.jp'
 
 const ASK = '消去の依頼を受け付けますか？'
@@ -114,7 +112,6 @@ const theRequest = async (): Promise<void> => {
 
 describe('the requests of a customer to have their data erased, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

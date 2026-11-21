@@ -43,7 +43,7 @@ export const ScreensProvider = ({
 /**
  * Makes `title` the screen that is shown, and returns the ref of its heading.
  *
- * The document is named after the screen (「予約台帳 | Beauty Salon Admin」),
+ * The document is named after the screen (「予約台帳 | Kushi Admin」),
  * which is what a tab, the history and a screen reader say of it. When the
  * screen takes the place of another one, the focus moves to its heading: a
  * page that loads starts at its top, and a screen that replaces another

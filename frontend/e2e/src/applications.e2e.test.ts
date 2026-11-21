@@ -8,6 +8,7 @@ import {
   enterCredentials,
   heading,
   MANAGER,
+  PORTAL_START,
   STAFF,
   signInButton,
   signOutButton,
@@ -91,7 +92,7 @@ test.describe('the portal application', () => {
     await page.goto(PORTAL.origin)
 
     // Assert
-    await expect(heading(page, PORTAL.title)).toBeVisible()
+    await expect(heading(page, PORTAL_START)).toBeVisible()
     await expect(
       page.getByRole('banner').getByRole('link', { name: 'サインイン' }),
     ).toBeVisible()
@@ -115,7 +116,7 @@ test.describe('the portal application', () => {
     await enterCredentials(page, CUSTOMER, api.seedPassword)
 
     // Assert
-    await expect(heading(page, PORTAL.title)).toBeFocused()
+    await expect(heading(page, PORTAL_START)).toBeFocused()
     await expect(page).toHaveURL(`${PORTAL.origin}/`)
     await expect(page.getByRole('banner')).toContainText(CUSTOMER)
     await expectSoundPage(page)
@@ -128,14 +129,14 @@ test.describe('the portal application', () => {
     // Arrange
     await page.goto(`${PORTAL.origin}/sign-in`)
     await enterCredentials(page, CUSTOMER, api.seedPassword)
-    await expect(heading(page, PORTAL.title)).toBeFocused()
+    await expect(heading(page, PORTAL_START)).toBeFocused()
 
     // Act
     await signOutButton(page).click()
 
     // Assert
     await expect(page.getByText('サインアウトしました。')).toBeVisible()
-    await expect(heading(page, PORTAL.title)).toBeVisible()
+    await expect(heading(page, PORTAL_START)).toBeVisible()
     await expect(page).toHaveURL(`${PORTAL.origin}/`)
     await expect(
       page.getByRole('banner').getByRole('link', { name: 'サインイン' }),
@@ -185,7 +186,7 @@ test.describe('on a screen as narrow as a phone', () => {
     await page.goto(PORTAL.origin)
 
     // Assert
-    await expect(heading(page, PORTAL.title)).toBeVisible()
+    await expect(heading(page, PORTAL_START)).toBeVisible()
     await expectSoundPage(page)
   })
 })

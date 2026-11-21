@@ -40,8 +40,6 @@ import {
  * otherwise; a manager did something meanwhile.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const PPD = 'パラフェニレンジアミン（PPD）'
 
 const FRAGRANCE = '強い香料'
@@ -160,7 +158,6 @@ const theForm = (): Promise<HTMLElement> =>
 
 describe('the allergies of the customers, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

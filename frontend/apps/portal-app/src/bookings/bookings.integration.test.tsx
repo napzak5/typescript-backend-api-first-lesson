@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -41,7 +42,7 @@ import {
   takeAway,
 } from './__tests__/arrangements'
 
-const TITLE = 'Beauty Salon Portal'
+const TITLE = applications.portal.name
 
 /** The address the application is at, as the router knows it */
 let address = ''
@@ -103,7 +104,6 @@ const statusMessages = (): (string | null)[] =>
 
 describe('the screens of a booking, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

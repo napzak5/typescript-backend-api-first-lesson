@@ -32,8 +32,6 @@ import {
   YUKI,
 } from './__tests__/arrangements'
 
-const TITLE = 'Beauty Salon Admin'
-
 const CHANGED_ELSEWHERE =
   '予約の状態が、ほかの画面か端末で変わっていました。いまの状態を読み込み直しました。'
 
@@ -116,7 +114,6 @@ const openBooking = async (id: string, email = OWNER): Promise<void> => {
 
 describe('a booking of a salon, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

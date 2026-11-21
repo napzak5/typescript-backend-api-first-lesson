@@ -1,4 +1,5 @@
 import type { ModelsCustomerPreferencesUpdateRequest } from '@beauty-salon-frontend/api-client'
+import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { NotificationProvider } from '@beauty-salon-frontend/ui'
@@ -52,7 +53,7 @@ import { OwnPreferences } from './own-preferences'
  * `preferences-flow.test.ts` and `preferences-api.test.ts`.
  */
 
-const TITLE = 'Beauty Salon Portal'
+const TITLE = applications.portal.name
 
 const STYLIST = 'stylist1@beautysalon.jp'
 const ADMIN = 'admin@beautysalon.jp'
@@ -385,7 +386,6 @@ const EVERYTHING_SAID = {
 
 describe('the preferences of a customer, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

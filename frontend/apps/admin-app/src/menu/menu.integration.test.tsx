@@ -41,8 +41,6 @@ import {
  * meanwhile where a test says so.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const renderAt = (path: string) =>
   render(
     <QueryClientProvider
@@ -117,7 +115,6 @@ const openedForm = async (title: string): Promise<void> => {
 
 describe('the menu, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

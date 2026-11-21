@@ -35,8 +35,6 @@ import { customerQueryOf } from './customer-ledger'
  * export.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const HIROSHI = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 
 const renderAt = (path: string) =>
@@ -120,7 +118,6 @@ const theSavedFile = async (): Promise<SavedFile> => {
 
 describe('exporting customers, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

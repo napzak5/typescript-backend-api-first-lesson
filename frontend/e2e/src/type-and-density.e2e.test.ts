@@ -4,7 +4,13 @@ import { ADMIN, PORTAL } from './applications'
 import { salonId } from './bookings'
 import { edgesOf } from './checks'
 import { expect, test } from './fixtures'
-import { CUSTOMER, enterCredentials, heading, OWNER } from './sign-in'
+import {
+  CUSTOMER,
+  enterCredentials,
+  heading,
+  OWNER,
+  PORTAL_START,
+} from './sign-in'
 
 /*
  * What the theme decides for every screen, as the browser draws it: the
@@ -43,7 +49,7 @@ test.describe('the type and the density of the screens', () => {
   }) => {
     // Act
     await page.goto(PORTAL.origin)
-    await expect(heading(page, PORTAL.title)).toBeVisible()
+    await expect(heading(page, PORTAL_START)).toBeVisible()
     const drawn = await page.evaluate(async () => {
       await document.fonts.ready
 

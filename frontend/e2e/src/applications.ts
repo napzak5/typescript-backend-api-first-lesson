@@ -1,18 +1,24 @@
+import { type ApplicationKey, applications } from '@beauty-salon-frontend/brand'
+
 /** One of the applications, as the browser tests serve it. */
 export type Application = {
   /** The directory of the application under `frontend/apps` */
-  name: 'portal-app' | 'admin-app' | 'dashboard-app'
+  name: `${ApplicationKey}-app`
+  /** Its key in the table of the brand */
+  key: ApplicationKey
   port: number
   origin: string
-  /** `VITE_APP_TITLE` of its `.env.test` */
+  /** Its name, in its header and in the title of its pages */
   title: string
 }
 
-const application = (
-  name: Application['name'],
-  port: number,
-  title: string,
-): Application => ({ name, port, origin: `http://127.0.0.1:${port}`, title })
+const application = (key: ApplicationKey, port: number): Application => ({
+  name: `${key}-app`,
+  key,
+  port,
+  origin: `http://127.0.0.1:${port}`,
+  title: applications[key].name,
+})
 
 /**
  * Where the browser tests run the API and the applications: on this machine
@@ -22,16 +28,8 @@ const application = (
 export const API_PORT = 4100
 export const API_ORIGIN = `http://127.0.0.1:${API_PORT}`
 
-export const PORTAL = application(
-  'portal-app',
-  4101,
-  'Beauty Salon Portal (Test)',
-)
-export const ADMIN = application('admin-app', 4102, 'Beauty Salon Admin (Test)')
-export const DASHBOARD = application(
-  'dashboard-app',
-  4103,
-  'Beauty Salon Dashboard (Test)',
-)
+export const PORTAL = application('portal', 4101)
+export const ADMIN = application('admin', 4102)
+export const DASHBOARD = application('dashboard', 4103)
 
 export const APPLICATIONS = [PORTAL, ADMIN, DASHBOARD]

@@ -34,8 +34,6 @@ import {
  * Somebody did something meanwhile where a test says so.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 const renderAt = (path: string) =>
   render(
     <QueryClientProvider
@@ -135,7 +133,6 @@ const SEED_WEEK = [
 
 describe('the hours of a salon, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

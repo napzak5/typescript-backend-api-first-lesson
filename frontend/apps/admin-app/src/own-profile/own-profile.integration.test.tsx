@@ -30,7 +30,6 @@ import {
  * something meanwhile where a test says so.
  */
 
-const TITLE = 'Beauty Salon Admin'
 const PORTAL = 'https://portal.salon.example'
 
 const renderAt = (path: string) =>
@@ -100,7 +99,6 @@ const UNAVAILABLE =
 
 describe('the own profile, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
     vi.stubEnv('VITE_PORTAL_APP_URL', PORTAL)
   })

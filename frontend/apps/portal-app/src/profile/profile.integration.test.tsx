@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import {
@@ -49,7 +50,7 @@ import {
  * the screen. It is in `profile-api.test.ts` and `profile-flow.test.ts`.
  */
 
-const TITLE = 'Beauty Salon Portal'
+const TITLE = applications.portal.name
 
 const STYLIST = 'stylist1@beautysalon.jp'
 
@@ -232,7 +233,6 @@ const SEEDED = {
 
 describe('the page and the profile of a customer, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

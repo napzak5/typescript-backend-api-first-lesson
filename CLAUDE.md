@@ -194,7 +194,7 @@ frontend/
     ├── preferences/      # The form of what a customer wishes for, which the portal and the admin application share
     ├── salon-screens/    # What the screens of a salon share in the admin and the dashboard applications: reading the API, lists that go on, the clock of a salon, the choice of a salon and the salon of an address, the period of a count
     ├── config/           # Values of the environment
-    └── assets/           # Images
+    └── brand/            # The names of the applications, their icons and the image of a shared link, and the Vite plugin that serves them and names them in the head of the page
 ```
 
 Styles are CSS Modules over the tokens of `theme`, layout is CSS Grid and

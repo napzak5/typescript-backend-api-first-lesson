@@ -5,7 +5,14 @@ import { HIROSHI, salonId, serviceId, staffId } from './bookings'
 import { edgesOf, expectSoundLayout } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { sellACutToday } from './sales'
-import { CUSTOMER, enterCredentials, heading, OPERATOR, OWNER } from './sign-in'
+import {
+  CUSTOMER,
+  enterCredentials,
+  heading,
+  OPERATOR,
+  OWNER,
+  PORTAL_START,
+} from './sign-in'
 
 /*
  * The screens on the narrowest screen they are made for, 320 CSS pixels
@@ -94,7 +101,7 @@ test.describe('the screens, on a screen 320 pixels wide', () => {
 
     // Act and assert: what everybody sees
     await measureScreens(page, PORTAL, '', [
-      ['/', PORTAL.title],
+      ['/', PORTAL_START],
       [`/salons/${salon}`, 'Beauty Studio Tokyo'],
       ['/register', 'アカウントの登録'],
       ['/forgot-password', 'パスワードの再設定'],
@@ -103,7 +110,7 @@ test.describe('the screens, on a screen 320 pixels wide', () => {
 
     // Act and assert: what a customer sees
     await enterCredentials(page, CUSTOMER, api.seedPassword)
-    await expect(heading(page, PORTAL.title)).toBeVisible()
+    await expect(heading(page, PORTAL_START)).toBeVisible()
     await measureScreens(page, PORTAL, '', [
       [`/salons/${salon}/services/${service}/booking`, '予約する'],
       ['/bookings', '予約の一覧'],

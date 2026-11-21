@@ -19,7 +19,7 @@ const meta: Meta<typeof AppShell> = {
   component: AppShell,
   parameters: { layout: 'fullscreen' },
   args: {
-    title: 'Beauty Salon Admin',
+    title: 'Kushi Admin',
     navigation: <Navigation label='メインメニュー' items={items} />,
     account: (
       <>
@@ -64,7 +64,7 @@ export const NavigationAtSide: Story = {
 /** Before signing in: no navigation and nothing of an account. */
 export const SignedOut: Story = {
   args: {
-    title: 'Beauty Salon Portal',
+    title: 'Kushi',
     navigation: undefined,
     account: undefined,
     children: <PageHeader title='サインイン' />,
@@ -74,7 +74,7 @@ export const SignedOut: Story = {
 /** The screen whose heading is the name of the application: the document is named once. */
 export const HomeScreen: Story = {
   args: {
-    children: <PageHeader title='Beauty Salon Admin' />,
+    children: <PageHeader title='Kushi Admin' />,
   },
 }
 

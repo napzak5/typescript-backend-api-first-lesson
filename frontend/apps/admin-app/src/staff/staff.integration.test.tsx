@@ -44,8 +44,6 @@ import {
  * arranges. Another owner did something meanwhile where a test says so.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The path a screen was opened at, and what the page showed in the commit that opened it */
 let firstSight: [string, string] = ['', '']
 
@@ -141,7 +139,6 @@ const openEntry = async (): Promise<void> => {
 
 describe('the staff ledger, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

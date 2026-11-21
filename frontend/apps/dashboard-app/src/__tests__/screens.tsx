@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   type RenderResult,
@@ -16,7 +17,7 @@ import { App } from '../App'
  */
 
 /** The title of the application in the tests */
-export const TITLE = 'Beauty Salon Dashboard'
+export const TITLE = applications.dashboard.name
 
 /** The path a screen was opened at, and what the page showed in the commit that opened it */
 let opened: [string, string] = ['', '']
