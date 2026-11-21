@@ -17,5 +17,10 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
     exclude: ['src/**/*.integration.test.ts'],
+    // Every file imports much the same modules: they are evaluated once per
+    // worker instead of once per file. No test leaves behind what another
+    // file could see (`vitest doctor` runs the files in a shuffled order
+    // with this setting, twice)
+    isolate: false,
   },
 })

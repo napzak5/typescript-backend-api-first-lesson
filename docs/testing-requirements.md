@@ -86,7 +86,9 @@ show what the constraints of `services` and `service_options` refuse.
 | The style rules (CSS Modules, Grid and no flex, tokens) in every package and application; the contrast of the colour tokens | Unit | `frontend/packages/theme/src/style-rules.test.ts`, `frontend/packages/theme/src/tokens.test.ts` |
 
 The tests of `config` and of `theme` run in Node, the others in jsdom (the
-session is kept in `localStorage`). How a component is tested from its
+session is kept in `localStorage`). The unit tests of `admin-app`,
+`portal-app` and `ui` run in the `vmThreads` pool of Vitest: the DOM is set
+up once per worker, and every file still runs in a context of its own. How a component is tested from its
 stories, how accessibility is checked and how code that calls the API is
 tested is the subject of the skill
 [frontend-testing](../.claude/skills/frontend-testing/SKILL.md). Environment
@@ -173,7 +175,13 @@ a service.
   separate them with blank lines.
 - **Independent**: no test relies on another having run. Every API test and
   every migration test gets a database of its own, and every integration test
-  of the frontend a fresh copy of the seeded database.
+  of the frontend a fresh copy of the seeded database. The unit tests of
+  `domain` and of `api` share the modules they import across the files of a
+  worker (`isolate: false`): a test there writes no state of a module and
+  stubs nothing global; what it stubs belongs to the test, as the
+  dependencies of a use case do. `vitest doctor` in the package runs the
+  files twice in a shuffled order with this setting, and says whether they
+  still pass.
 - **Integration tests use the real thing**: the production `createApp`, the
   real repository, a real PostgreSQL. A failure is produced by real means — a
   database nothing listens on, a dropped column, a corrupt stored value — not
