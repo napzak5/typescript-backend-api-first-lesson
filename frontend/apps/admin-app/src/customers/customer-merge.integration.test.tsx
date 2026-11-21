@@ -199,7 +199,7 @@ describe('merging two records of one customer, against the API', () => {
     expect(differenceOf('フリガナ')).toEqual([
       'フリガナ',
       'ヤマモト ケンジ',
-      '未登録',
+      '記録なし',
       'ヤマモト ケンジ',
     ])
     expect(

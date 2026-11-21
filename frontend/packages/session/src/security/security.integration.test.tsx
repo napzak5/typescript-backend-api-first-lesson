@@ -470,7 +470,8 @@ describe('the security of an account, against the API', () => {
       if (added === undefined || last === undefined) {
         return
       }
-      expect(within(added).getByRole('heading', { level: 3 })).toHaveFocus()
+      // The device takes the focus, and is read from its name
+      expect(added).toHaveFocus()
       expect(within(added).getByText(last.ipAddress ?? '')).toBeVisible()
       expect(
         within(devicesPart()).queryByRole('button', { name: 'さらに表示' }),

@@ -221,7 +221,7 @@ const SEEDED = {
   フリガナ: 'タナカ ユキ',
   メールアドレス: CUSTOMER,
   電話番号: '+81-90-1234-5678',
-  予備の電話番号: '未登録',
+  予備の電話番号: '記録なし',
   住所: '〒153-0063Tokyo Meguro-ku 7-8-9 MeguroMeguro Heights 301',
   生年月日: '1990年5月15日',
   性別: '女性',
@@ -348,9 +348,9 @@ describe('the page and the profile of a customer, against the API', () => {
         初めての来店: dayOf(stored.firstVisitDate),
         最後の来店: dayOf(stored.lastVisitDate),
         紹介コード: '未発行',
-        髪質: '未登録',
-        髪の太さ: '未登録',
-        頭皮の状態: '未登録',
+        髪質: '記録なし',
+        髪の太さ: '記録なし',
+        頭皮の状態: '記録なし',
       })
       expect(stored.firstVisitDate).not.toBeNull()
       expect(stored.lastVisitDate).not.toBe(stored.firstVisitDate)
@@ -884,13 +884,13 @@ describe('the page and the profile of a customer, against the API', () => {
         フリガナ: 'ヤマダ',
         メールアドレス: NEWCOMER,
         電話番号: '090-5550-0199',
-        予備の電話番号: '未登録',
+        予備の電話番号: '記録なし',
         住所: '〒150-0001東京都 渋谷区',
-        生年月日: '未登録',
+        生年月日: '記録なし',
         性別: '女性',
-        職業: '未登録',
+        職業: '記録なし',
         好みのメニュー: 'カット、スパ',
-        サロンに伝えておきたいこと: '未登録',
+        サロンに伝えておきたいこと: '記録なし',
         受け取る連絡: 'メールでの連絡',
       })
       expect(detailsIn(await region('会員の情報'))).toMatchObject({

@@ -7,11 +7,7 @@ import {
   WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
-import {
-  bookingsNameOf,
-  levelNameOf,
-  NOT_RECORDED,
-} from '../../../staff/staff-format'
+import { bookingsNameOf, levelNameOf } from '../../../staff/staff-format'
 
 export type ProfileRecordProps = {
   profile: ModelsStaffProfileResponse
@@ -22,7 +18,7 @@ export type ProfileRecordProps = {
 }
 
 const namesOrNone = (label: string, names: readonly string[]) =>
-  names.length === 0 ? NOT_RECORDED : <TagList label={label} items={names} />
+  names.length === 0 ? 'なし' : <TagList label={label} items={names} />
 
 /**
  * The profile of a member as the customers are shown it, read by the member
@@ -39,7 +35,7 @@ export const ProfileRecord = ({
       items={[
         { term: '表示名', description: profile.displayName },
         { term: 'レベル', description: levelNameOf(profile.level) },
-        { term: '役職', description: profile.position ?? NOT_RECORDED },
+        { term: '役職', description: profile.position },
         { term: '予約', description: bookingsNameOf(profile) },
         {
           term: '専門',
@@ -53,22 +49,19 @@ export const ProfileRecord = ({
           term: '経験年数',
           description:
             profile.yearsOfExperience === null
-              ? NOT_RECORDED
+              ? null
               : `${profile.yearsOfExperience} 年`,
         },
         {
           term: '紹介文',
           description:
-            profile.bio === null ? (
-              NOT_RECORDED
-            ) : (
+            profile.bio === null ? null : (
               <WrittenText>{profile.bio}</WrittenText>
             ),
         },
         {
           term: '写真の URL',
-          description:
-            profile.imageUrl === null ? NOT_RECORDED : profile.imageUrl,
+          description: profile.imageUrl === null ? null : profile.imageUrl,
         },
       ]}
     />

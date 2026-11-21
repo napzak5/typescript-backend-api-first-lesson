@@ -37,9 +37,6 @@ export const SATISFACTION_OPTIONS: readonly ChoiceOption[] = SATISFACTIONS.map(
   ([value]) => ({ value: String(value), label: satisfactionNameOf(value) }),
 )
 
-/** What is said of what the member of the staff did not record */
-export const NOT_RECORDED = '記録なし'
-
 /** What is said of a satisfaction the customer did not give */
 export const NOT_ANSWERED = '未回答'
 

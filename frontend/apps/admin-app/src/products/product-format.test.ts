@@ -11,10 +11,10 @@ import {
 } from './product-format'
 
 describe('priceNameOf', () => {
-  it.each<[number | null, string]>([
+  it.each<[number | null, string | null]>([
     [3000, '￥3,000'],
     [0, '￥0'],
-    [null, '記録なし'],
+    [null, null],
   ])('should name the price %s %s', (price, name) => {
     expect(priceNameOf(price, 'JPY')).toBe(name)
   })
@@ -65,7 +65,7 @@ describe('the words of a product', () => {
       leadTimeNameOf(null),
       expiryNameOf(24),
       expiryNameOf(null),
-    ]).toEqual(['0 日', '3 日', '記録なし', '24 か月', '記録なし'])
+    ]).toEqual(['0 日', '3 日', null, '24 か月', null])
   })
 })
 

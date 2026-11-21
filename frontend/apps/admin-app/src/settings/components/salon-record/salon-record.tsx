@@ -8,7 +8,6 @@ import {
   WrittenText,
 } from '@beauty-salon-frontend/ui'
 import { weekdayNameOf } from '../../../shifts/shift-week'
-import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   calendarFrom,
   coordinatesNameOf,
@@ -27,10 +26,10 @@ export type SalonRecordProps = {
 }
 
 const writtenOrNone = (text: string | null) =>
-  text === null ? NOT_RECORDED : <WrittenText>{text}</WrittenText>
+  text === null ? null : <WrittenText>{text}</WrittenText>
 
 const addressOrNone = (address: string | null) =>
-  address === null ? NOT_RECORDED : address
+  address === null ? null : address
 
 const namesOrNone = (label: string, names: readonly string[]) =>
   names.length === 0 ? 'なし' : <TagList label={label} items={names} />
@@ -51,7 +50,7 @@ export const SalonRecord = ({
       <DescriptionList
         items={[
           { term: '名前', description: salon.name },
-          { term: 'カナ', description: salon.nameKana ?? NOT_RECORDED },
+          { term: 'カナ', description: salon.nameKana },
           { term: '紹介', description: writtenOrNone(salon.description) },
           {
             term: 'オンライン予約',
@@ -67,11 +66,11 @@ export const SalonRecord = ({
     <Card title='所在地'>
       <DescriptionList
         items={[
-          { term: '郵便番号', description: salon.postalCode ?? NOT_RECORDED },
+          { term: '郵便番号', description: salon.postalCode },
           { term: '都道府県', description: salon.prefecture },
           { term: '市区町村', description: salon.city },
           { term: '町名・番地', description: salon.address },
-          { term: '建物', description: salon.building ?? NOT_RECORDED },
+          { term: '建物', description: salon.building },
           {
             term: '地図の位置',
             description: coordinatesNameOf(salon.latitude, salon.longitude),
@@ -85,7 +84,7 @@ export const SalonRecord = ({
           { term: '電話番号', description: salon.phoneNumber },
           {
             term: '予備の電話番号',
-            description: salon.alternativePhone ?? NOT_RECORDED,
+            description: salon.alternativePhone,
           },
           { term: 'メールアドレス', description: addressOrNone(salon.email) },
           {

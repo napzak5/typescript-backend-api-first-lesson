@@ -2,7 +2,6 @@ import type { ModelsCustomerAllergyResponse } from '@beauty-salon-frontend/api-c
 import {
   countOf,
   dayNameOf,
-  type More,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -14,12 +13,12 @@ import {
   Dialog,
   Link,
   LoadingIndicator,
+  type More,
   Note,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import { match } from 'ts-pattern'
-import { UNRECORDED } from '../../../customers/customer-format'
 import {
   allergyTypeNameOf,
   REMOVED_BY_OTHERS,
@@ -139,13 +138,13 @@ export const AllergyList = ({
                 key: 'symptoms',
                 header: '症状',
                 wrap: 'lines',
-                cell: ({ symptoms }) => symptoms ?? UNRECORDED,
+                cell: ({ symptoms }) => symptoms,
               },
               {
                 key: 'notes',
                 header: '施術のときの注意',
                 wrap: 'lines',
-                cell: ({ notes }) => notes ?? '',
+                cell: ({ notes }) => notes,
               },
               {
                 key: 'confirmedDate',

@@ -1,0 +1,6 @@
+/* How many, the items, then the button: as near as the content of a part */
+.pagedList {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-content);
+}

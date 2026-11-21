@@ -1,6 +1,5 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
-import { Badge, Link } from '@beauty-salon-frontend/ui'
-import type { More } from '../../pages'
+import { Badge, Link, type More } from '@beauty-salon-frontend/ui'
 import { countOf, PagedTable } from '../paged-table/paged-table'
 
 export type SalonChoicesProps = {

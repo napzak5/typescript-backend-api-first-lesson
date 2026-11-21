@@ -676,7 +676,7 @@ describe('the sales of a salon, against the API', () => {
       ])
       expect(await within(part('売上')).findByText('支払い済み')).toBeVisible()
       expect(rowsOf('支払い').map((row) => row.slice(2, 5))).toEqual([
-        ['Cash', '￥3,000', 'なし'],
+        ['Cash', '￥3,000', '記録なし'],
         ['Credit Card', '￥2,500', 'VISA 下 4 桁 4242'],
       ])
       expect(

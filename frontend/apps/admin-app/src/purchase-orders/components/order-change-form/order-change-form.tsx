@@ -38,6 +38,7 @@ export const OrderChangeForm = ({
 }: OrderChangeFormProps) => (
   <Form {...form} errors={errors}>
     <TextField
+      width='short'
       label='納品予定日'
       name='expectedDelivery'
       autoComplete='off'

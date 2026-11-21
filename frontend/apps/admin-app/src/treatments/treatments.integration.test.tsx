@@ -394,7 +394,7 @@ describe('the treatment records, against the API', () => {
         'Hair Color - Natural Brown（COLOR001）',
         '1 tube',
         await lotOf('COLOR001'),
-        '',
+        '記録なし',
       ],
       [
         'Developer 6% 1000ml（DEVELOPER001）',
@@ -475,7 +475,7 @@ describe('the treatment records, against the API', () => {
     expect(notifications()).toContain(
       `${KENJI.name} 様の施術記録を書きました。`,
     )
-    expect(materialsOf()).toEqual([[MASK, '15 jar', lot, '']])
+    expect(materialsOf()).toEqual([[MASK, '15 jar', lot, '記録なし']])
     const { updatedAt: _updatedAt, ...stored } =
       (await storedTreatmentOf(bookingId)) ?? {}
     expect(stored).toEqual({

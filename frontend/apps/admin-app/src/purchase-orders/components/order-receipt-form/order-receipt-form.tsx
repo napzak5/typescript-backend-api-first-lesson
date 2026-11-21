@@ -46,6 +46,7 @@ export const OrderReceiptForm = ({
           </Note>
         ) : (
           <TextField
+            width='short'
             key={item.inventoryId}
             label={`${item.productCode} ${item.productName}`}
             name={receivedControlOf(item.inventoryId)}

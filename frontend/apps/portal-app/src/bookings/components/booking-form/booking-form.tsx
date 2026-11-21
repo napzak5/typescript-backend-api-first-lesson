@@ -80,6 +80,10 @@ const ANYBODY = ''
  * which reads the times for them; the time, and what the controls that
  * were given hold, are kept by the browser until the form is sent. There
  * is nothing to send while the day has no time.
+ *
+ * It is no `Form` of the package, which always has its button and is sent
+ * to be read: here choosing the staff or the day reads other times at
+ * once, and the button is there only while the day has a free time.
  */
 export const BookingForm = ({
   staff,
@@ -151,6 +155,7 @@ export const BookingForm = ({
           label='日付'
           autoComplete='off'
           type='date'
+          width='short'
           min={today}
           value={choice.date}
           onChange={chooseDate}

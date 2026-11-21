@@ -2,10 +2,10 @@ import type { ModelsPointTransactionResponse } from '@beauty-salon-frontend/api-
 import {
   countOf,
   dayNameOf,
-  type More,
   momentNameAt,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
+import type { More } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { countNameOf } from '../../customer-format'
 import { movementOf, transactionNameOf } from '../../points'
@@ -78,7 +78,7 @@ export const PointHistory = ({
       {
         key: 'description',
         header: '説明',
-        cell: ({ description }) => description ?? '',
+        cell: ({ description }) => description,
       },
     ]}
     rows={transactions}

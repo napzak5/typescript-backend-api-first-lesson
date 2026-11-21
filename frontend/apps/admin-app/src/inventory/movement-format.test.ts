@@ -85,7 +85,7 @@ describe('changeNameOf', () => {
 })
 
 describe('movementReasonOf', () => {
-  it.each<[string, string | null, string | null, string]>([
+  it.each<[string, string | null, string | null, string | null]>([
     ['what it says', '容器の破損', null, '容器の破損'],
     ['the receipt of a purchase order', null, 'purchase_order', '発注の入荷'],
     [
@@ -94,22 +94,21 @@ describe('movementReasonOf', () => {
       'purchase_order',
       '箱がつぶれていた',
     ],
-    ['nothing, of another record', null, 'treatment_record', '記録なし'],
-    ['nothing', null, null, '記録なし'],
+    ['nothing, of another record', null, 'treatment_record', null],
+    ['nothing', null, null, null],
   ])('should say %s', (_, reason, referenceType, said) => {
     expect(movementReasonOf({ reason, referenceType })).toBe(said)
   })
 })
 
 describe('performerNameOf', () => {
-  it.each<[string, string | null, string]>([
+  it.each<[string, string, string]>([
     ['a member of the staff', staff[1]?.id ?? '', '佐藤 健'],
     [
       'a member who left',
       '9e0f1a2b-3c4d-4e5f-8a6b-7c8d9e0f1a2b',
       '一覧にないスタッフ',
     ],
-    ['nobody, for an administrator', null, '記録なし'],
   ])('should name %s', (_, performedBy, named) => {
     expect(performerNameOf(performedBy, staff)).toBe(named)
   })

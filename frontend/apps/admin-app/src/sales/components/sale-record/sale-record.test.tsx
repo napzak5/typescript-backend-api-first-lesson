@@ -34,7 +34,7 @@ describe('SaleRecord', () => {
       ['会計の担当', '田中 美咲'],
       ['予約', '予約の内容'],
       ['支払い', '未払い'],
-      ['メモ', 'なし'],
+      ['メモ', '記録なし'],
     ])
     expect(screen.getByRole('link', { name: '予約の内容' })).toHaveAttribute(
       'href',

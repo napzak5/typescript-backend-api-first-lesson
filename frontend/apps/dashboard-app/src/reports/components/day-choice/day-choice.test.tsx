@@ -32,13 +32,18 @@ describe('DayChoice', () => {
     await stories.Chosen.run()
 
     // Assert
-    expect(screen.getByRole('form', { name: '売上を見る日' })).toBeVisible()
+    expect(field().closest('search')).toHaveAttribute(
+      'aria-label',
+      '売上を見る日',
+    )
     expect(field()).toHaveValue('2026-11-21')
     expect(field()).toHaveAttribute('min', '1900-01-01')
     expect(field()).toHaveAttribute('max', '2999-12-31')
     expect(field()).toHaveAccessibleDescription(
       '会計した日（サロンの日付）で数えます。',
     )
+    // It shows the sales of a day: nothing is searched for
+    expect(screen.getByRole('button', { name: '表示する' })).toBeInTheDocument()
   })
 
   it('should hand over the day filled in, from the keyboard too', async () => {

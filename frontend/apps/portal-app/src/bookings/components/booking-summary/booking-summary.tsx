@@ -98,9 +98,7 @@ export const BookingSummary = ({
         {
           term: 'ご要望',
           description:
-            booking.customerRequest === null ? (
-              'なし'
-            ) : (
+            booking.customerRequest === null ? null : (
               <WrittenText>{booking.customerRequest}</WrittenText>
             ),
         },

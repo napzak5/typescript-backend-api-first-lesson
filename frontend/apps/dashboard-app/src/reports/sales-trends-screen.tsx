@@ -113,7 +113,6 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                   onChange={(event) =>
                     setChosen({ asked, unit: trendUnitOf(event.target.value) })
                   }
-                  layout='columns'
                 />
               </StatisticsPeriod>
               <p>{`${periodNameOf(period)}の売上の推移`}</p>

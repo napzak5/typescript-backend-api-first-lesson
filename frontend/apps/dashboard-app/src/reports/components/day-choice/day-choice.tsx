@@ -1,13 +1,10 @@
 import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
-  Button,
+  FilterForm,
   type FormErrors,
   TextField,
-  useErrorFocus,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import type { FormEvent } from 'react'
-import styles from './day-choice.module.css'
 
 export type DayChoiceProps = {
   /** The day that is shown: that of the address */
@@ -30,21 +27,14 @@ export const DayChoice = ({
   errors = NO_ERRORS,
   onSubmit,
 }: DayChoiceProps) => {
-  const form = useErrorFocus(errors)
   const [values, hold] = useFilterValues(day, () => ({ date: day }))
 
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
-
   return (
-    <form
-      className={styles['form']}
-      aria-label='売上を見る日'
-      noValidate
-      onSubmit={submit}
-      ref={form}
+    <FilterForm
+      label='売上を見る日'
+      purpose='view'
+      errors={errors}
+      onSubmit={onSubmit}
     >
       <TextField
         label='日付'
@@ -59,7 +49,6 @@ export const DayChoice = ({
         error={errors['date']}
         onChange={(event) => hold('date', event.target.value)}
       />
-      <Button type='submit'>表示する</Button>
-    </form>
+    </FilterForm>
   )
 }

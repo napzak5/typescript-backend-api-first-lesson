@@ -49,14 +49,14 @@ describe('CustomerMerge', () => {
       'まとめたあと',
     ])
     expect(differences()).toEqual([
-      ['フリガナ', 'ヤマダ ハナコ', '未登録', 'ヤマダ ハナコ'],
+      ['フリガナ', 'ヤマダ ハナコ', '記録なし', 'ヤマダ ハナコ'],
       [
         'メールアドレス',
         'hanako@example.com',
         'hanako.yamada@example.com',
         'hanako@example.com',
       ],
-      ['職業', '未登録', '会社員', '会社員'],
+      ['職業', '記録なし', '会社員', '会社員'],
       ['タグ', 'vip', 'なし', 'vip'],
       ['紹介元', 'なし', '紹介したお客様', '紹介したお客様'],
     ])
@@ -106,14 +106,14 @@ describe('CustomerMerge', () => {
 
     // Assert
     expect(differences()).toEqual([
-      ['フリガナ', '未登録', 'ヤマダ ハナコ', 'ヤマダ ハナコ'],
+      ['フリガナ', '記録なし', 'ヤマダ ハナコ', 'ヤマダ ハナコ'],
       [
         'メールアドレス',
         'hanako.yamada@example.com',
         'hanako@example.com',
         'hanako.yamada@example.com',
       ],
-      ['職業', '会社員', '未登録', '会社員'],
+      ['職業', '会社員', '記録なし', '会社員'],
       ['タグ', 'なし', 'vip', 'vip'],
       ['紹介元', '紹介したお客様', 'なし', '紹介したお客様'],
     ])

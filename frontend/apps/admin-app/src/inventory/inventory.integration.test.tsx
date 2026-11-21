@@ -458,7 +458,7 @@ describe('the stock screens', () => {
     ])
     expect(terms('在庫の行')).toEqual([
       ['商品', 'Styling Wax 80g（WAX001）'],
-      ['ロット番号', 'なし'],
+      ['ロット番号', '記録なし'],
       ['使用期限', '期限なし'],
       ['保管場所', 'Front Shelf'],
       ['棚', 'F-1'],
@@ -743,7 +743,7 @@ describe('the stock screens', () => {
 
     // Assert
     await openedRow()
-    expect(terms('在庫の行')[1]).toEqual(['ロット番号', 'なし'])
+    expect(terms('在庫の行')[1]).toEqual(['ロット番号', '記録なし'])
     expect((await storedRowsOf(TOKYO))[1]?.lotNumber).toBeNull()
   })
 

@@ -69,6 +69,7 @@ export const ShareLinkForm = ({
       error={errors[PERIOD]}
     />
     <TextField
+      width='short'
       label='ダウンロードの回数の上限'
       name={MAX_DOWNLOADS}
       inputMode='numeric'

@@ -1,7 +1,6 @@
 import type { ModelsServiceCategoryResponse } from '@beauty-salon-frontend/api-client'
 import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Link, Table } from '@beauty-salon-frontend/ui'
-import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   categoriesById,
   categoryPathOf,
@@ -69,7 +68,7 @@ export const CategoryTable = ({
         {
           key: 'color',
           header: '色',
-          cell: ({ color }) => color ?? NOT_RECORDED,
+          cell: ({ color }) => color,
         },
         {
           key: 'isActive',

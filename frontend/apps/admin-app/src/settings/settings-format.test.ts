@@ -137,14 +137,14 @@ describe('calendarFrom', () => {
         day: '2026年11月21日（土）',
         hours: '10:00〜17:00',
         holiday: 'いいえ',
-        notes: '記録なし',
+        notes: null,
       },
       {
         date: '2026-11-23',
         day: '2026年11月23日（月）',
         hours: '10:00〜17:00',
         holiday: '勤労感謝の日',
-        notes: '記録なし',
+        notes: null,
       },
       {
         date: '2026-11-24',
@@ -158,7 +158,7 @@ describe('calendarFrom', () => {
         day: '2026年11月25日（水）',
         hours: '終日休業',
         holiday: '祝日・休業日',
-        notes: '記録なし',
+        notes: null,
       },
     ])
   })
@@ -175,10 +175,10 @@ describe('taxRateNameOf', () => {
 })
 
 describe('coordinatesNameOf', () => {
-  it.each<[number | null, number | null, string]>([
+  it.each<[number | null, number | null, string | null]>([
     [35.658, 139.7016, '緯度 35.658、経度 139.7016'],
     [35.658, null, '緯度 35.658、経度 記録なし'],
-    [null, null, '記録なし'],
+    [null, null, null],
   ])('should name %s and %s as %s', (latitude, longitude, name) => {
     expect(coordinatesNameOf(latitude, longitude)).toBe(name)
   })

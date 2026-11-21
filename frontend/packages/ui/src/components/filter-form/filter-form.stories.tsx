@@ -179,6 +179,42 @@ export const ChoicesOnly: Story = {
   ),
 }
 
+/** The days that something is counted over, and how they are cut */
+export const Counting: Story = {
+  render: ({ shown, ...filter }) => (
+    <FilterForm
+      {...filter}
+      label='集計する期間'
+      purpose='count'
+      conditions={
+        <Select
+          label='区切り'
+          name='unit'
+          options={[
+            { value: 'daily', label: '日' },
+            { value: 'weekly', label: '週' },
+          ]}
+        />
+      }
+    >
+      <TextField
+        label='集計する期間（から）'
+        name='from'
+        type='date'
+        autoComplete='off'
+        defaultValue={shown.from ?? ''}
+      />
+      <TextField
+        label='集計する期間（まで）'
+        name='to'
+        type='date'
+        autoComplete='off'
+        defaultValue={shown.to ?? ''}
+      />
+    </FilterForm>
+  ),
+}
+
 /** A search by one keyword: it has no other conditions, and no sheet */
 export const KeywordOnly: Story = {
   render: ({ shown, ...filter }) => (

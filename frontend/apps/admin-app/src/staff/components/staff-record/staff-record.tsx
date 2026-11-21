@@ -18,7 +18,6 @@ import {
   commissionNameOf,
   fullStaffNameOf,
   levelNameOf,
-  NOT_RECORDED,
 } from '../../staff-format'
 import styles from './staff-record.module.css'
 
@@ -32,13 +31,11 @@ export type StaffRecordProps = {
   actions?: ReactNode
 }
 
-const textOrNone = (text: string | null): string => text ?? NOT_RECORDED
-
 const writtenOrNone = (text: string | null) =>
-  text === null ? NOT_RECORDED : <WrittenText>{text}</WrittenText>
+  text === null ? null : <WrittenText>{text}</WrittenText>
 
 const namesOrNone = (label: string, names: readonly string[]) =>
-  names.length === 0 ? NOT_RECORDED : <TagList label={label} items={names} />
+  names.length === 0 ? 'なし' : <TagList label={label} items={names} />
 
 /**
  * A member of the staff ledger, as the owner of the salon reads them: who
@@ -58,9 +55,9 @@ export const StaffRecord = ({
         items={[
           { term: '表示名', description: member.displayName },
           { term: '氏名', description: fullStaffNameOf(member) },
-          { term: 'スタッフコード', description: textOrNone(member.staffCode) },
+          { term: 'スタッフコード', description: member.staffCode },
           { term: 'レベル', description: levelNameOf(member.level) },
-          { term: '役職', description: textOrNone(member.position) },
+          { term: '役職', description: member.position },
           { term: '状態', description: activityNameOf(member) },
           {
             term: 'ログインアカウント',
@@ -81,7 +78,7 @@ export const StaffRecord = ({
           { term: '電話番号', description: member.phoneNumber },
           {
             term: '予備の電話番号',
-            description: textOrNone(member.alternativePhone),
+            description: member.alternativePhone,
           },
         ]}
       />
@@ -91,27 +88,25 @@ export const StaffRecord = ({
         items={[
           {
             term: '雇用形態',
-            description: textOrNone(member.employmentType),
+            description: member.employmentType,
           },
           {
             term: '入社日',
             description:
-              member.hireDate === null
-                ? NOT_RECORDED
-                : dayNameOf(member.hireDate),
+              member.hireDate === null ? null : dayNameOf(member.hireDate),
           },
           {
             term: '基本給',
             description:
               member.baseSalary === null
-                ? NOT_RECORDED
+                ? null
                 : amountOf(member.baseSalary, currency),
           },
           {
             term: '歩合率',
             description:
               member.commissionRate === null
-                ? NOT_RECORDED
+                ? null
                 : commissionNameOf(member.commissionRate),
           },
         ]}
@@ -132,14 +127,13 @@ export const StaffRecord = ({
             term: '経験年数',
             description:
               member.yearsOfExperience === null
-                ? NOT_RECORDED
+                ? null
                 : `${member.yearsOfExperience} 年`,
           },
           { term: '紹介文', description: writtenOrNone(member.bio) },
           {
             term: '写真の URL',
-            description:
-              member.imageUrl === null ? NOT_RECORDED : member.imageUrl,
+            description: member.imageUrl === null ? null : member.imageUrl,
           },
         ]}
       />

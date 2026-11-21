@@ -1,6 +1,0 @@
-/* The days, then what is done with them. */
-.form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-fields);
-}

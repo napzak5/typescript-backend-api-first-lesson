@@ -12,7 +12,7 @@ import {
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { levelNameOf, NOT_RECORDED } from '../../../staff/staff-format'
+import { levelNameOf } from '../../../staff/staff-format'
 import { minutesNameOf } from '../../../treatments/treatment-format'
 import {
   availabilityNameOf,
@@ -41,10 +41,10 @@ export type ServiceRecordProps = {
 const UNLISTED_SERVICE = 'メニューにないサービス'
 
 const writtenOrNone = (text: string | null) =>
-  text === null ? NOT_RECORDED : <WrittenText>{text}</WrittenText>
+  text === null ? null : <WrittenText>{text}</WrittenText>
 
 const addressOrNone = (address: string | null) =>
-  address === null ? NOT_RECORDED : address
+  address === null ? null : address
 
 const namesOrNone = (label: string, names: readonly string[]) =>
   names.length === 0 ? 'なし' : <TagList label={label} items={names} />
@@ -92,7 +92,7 @@ export const ServiceRecord = ({
             { term: '表示順', description: String(service.sortOrder) },
             {
               term: '短い紹介',
-              description: service.shortDescription ?? NOT_RECORDED,
+              description: service.shortDescription,
             },
             { term: '説明', description: writtenOrNone(service.description) },
             { term: 'タグ', description: namesOrNone('タグ', service.tags) },

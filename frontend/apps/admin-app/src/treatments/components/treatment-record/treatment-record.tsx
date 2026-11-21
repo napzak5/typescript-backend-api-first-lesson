@@ -22,7 +22,6 @@ import {
   customerCalled,
   minutesNameOf,
   NOT_ANSWERED,
-  NOT_RECORDED,
   productNameOf,
   quantityNameOf,
   REMOVED_PRODUCT,
@@ -58,10 +57,10 @@ export type TreatmentRecordProps = {
 type Row = { place: number; material: ModelsTreatmentMaterial }
 
 const writtenOrNone = (text: string | null) =>
-  text === null ? NOT_RECORDED : <WrittenText>{text}</WrittenText>
+  text === null ? null : <WrittenText>{text}</WrittenText>
 
 const namesOrNone = (label: string, names: readonly string[]) =>
-  names.length === 0 ? NOT_RECORDED : <TagList label={label} items={names} />
+  names.length === 0 ? 'なし' : <TagList label={label} items={names} />
 
 /**
  * A treatment record, as a member of the staff reads it before the next
@@ -124,7 +123,7 @@ export const TreatmentRecord = ({
               term: '施術時間',
               description:
                 record.processingTime === null
-                  ? NOT_RECORDED
+                  ? null
                   : minutesNameOf(record.processingTime),
             },
             {
@@ -188,13 +187,13 @@ export const TreatmentRecord = ({
             {
               key: 'lotNumber',
               header: 'ロット番号',
-              cell: ({ material: { lotNumber } }) => lotNumber ?? '',
+              cell: ({ material: { lotNumber } }) => lotNumber,
             },
             {
               key: 'notes',
               header: 'メモ',
               wrap: 'lines',
-              cell: ({ material: { notes } }) => notes ?? '',
+              cell: ({ material: { notes } }) => notes,
             },
           ]}
           rows={record.materials.map((material, place) => ({
@@ -224,7 +223,7 @@ export const TreatmentRecord = ({
               term: '次に勧める日',
               description:
                 record.nextRecommendedDate === null
-                  ? NOT_RECORDED
+                  ? null
                   : dayNameOf(record.nextRecommendedDate),
             },
             {

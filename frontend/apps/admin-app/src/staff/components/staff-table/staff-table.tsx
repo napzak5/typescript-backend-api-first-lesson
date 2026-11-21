@@ -1,16 +1,11 @@
 import type { ModelsStaffResponse } from '@beauty-salon-frontend/api-client'
-import {
-  countOf,
-  type More,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
-import { Link } from '@beauty-salon-frontend/ui'
+import { countOf, PagedTable } from '@beauty-salon-frontend/salon-screens'
+import { Link, type More } from '@beauty-salon-frontend/ui'
 import {
   activityNameOf,
   bookingsNameOf,
   fullStaffNameOf,
   levelNameOf,
-  NOT_RECORDED,
 } from '../../staff-format'
 
 export type StaffTableProps = {
@@ -60,7 +55,7 @@ export const StaffTable = ({
       {
         key: 'position',
         header: '役職',
-        cell: ({ position }) => position ?? NOT_RECORDED,
+        cell: ({ position }) => position,
       },
       {
         key: 'canReceiveBookings',

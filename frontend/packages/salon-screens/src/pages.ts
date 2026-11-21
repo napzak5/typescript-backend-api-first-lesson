@@ -1,3 +1,4 @@
+import type { More } from '@beauty-salon-frontend/ui'
 import type { Page, Unread } from './reading'
 
 /** What the pages of a list that were read so far amount to. */
@@ -57,9 +58,6 @@ export const cursorAfter = <Item>(
 
 /** The cursor of the first page of a list: there is none. */
 export const firstCursor = (): string | undefined => undefined
-
-/** What the button below a list does, and whether there is one. */
-export type More = 'none' | 'available' | 'loading' | 'failed'
 
 /**
  * What comes after the items of a list, for the component that shows them.

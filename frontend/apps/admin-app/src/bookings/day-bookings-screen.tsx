@@ -21,6 +21,7 @@ import {
   EmptyState,
   LoadingIndicator,
   PageHeader,
+  PeriodSwitch,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query'
@@ -45,7 +46,6 @@ import {
 import { bookingListsKeyOf, readDayBookings } from './bookings-api'
 import { BookingFilter } from './components/booking-filter/booking-filter'
 import { DayBookingTable } from './components/day-booking-table/day-booking-table'
-import { DaySwitch } from './components/day-switch/day-switch'
 import { customerIdsOf, moreOfRows, rowsOf } from './day-bookings'
 
 const TITLE = '予約台帳'
@@ -191,10 +191,12 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
           [P._, { type: 'found' }, { type: 'found' }],
           ([ofBookings, ofStaff, ofServices]) => (
             <>
-              <DaySwitch
-                dayBeforeHref={hrefOf(dayAfter(conditions.date, -1))}
-                todayHref={hrefOf(today)}
-                dayAfterHref={hrefOf(dayAfter(conditions.date, 1))}
+              <PeriodSwitch
+                label='予約の日'
+                unit='day'
+                beforeHref={hrefOf(dayAfter(conditions.date, -1))}
+                currentHref={hrefOf(today)}
+                afterHref={hrefOf(dayAfter(conditions.date, 1))}
               />
               <BookingFilter
                 conditions={conditions}

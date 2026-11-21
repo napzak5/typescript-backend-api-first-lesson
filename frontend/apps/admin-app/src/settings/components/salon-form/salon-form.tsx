@@ -235,6 +235,7 @@ export const SalonForm = ({
       </FormPart>
       <FormPart label='会計'>
         <TextField
+          width='short'
           label='税率（%）'
           name='taxRate'
           inputMode='decimal'

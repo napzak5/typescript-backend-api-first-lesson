@@ -9,7 +9,8 @@ type Booking = {
   serviceName: string
   status: '確定' | '仮予約'
   totalAmount: number
-  notes: string
+  /** `null` when nothing was handed over */
+  notes: string | null
 }
 
 const bookings: Booking[] = [
@@ -29,7 +30,7 @@ const bookings: Booking[] = [
     serviceName: 'カット、カラー',
     status: '仮予約',
     totalAmount: 13200,
-    notes: '',
+    notes: null,
   },
   {
     id: 'b3',
@@ -112,7 +113,7 @@ export const RowHeaderNotFirst: Story = {
   },
 }
 
-/** Columns of text: the services break between words, the notes keep their lines */
+/** Columns of text: the services break between words, the notes keep their lines, and notes that were not written are said so */
 export const WithText: Story = {
   args: {
     columns: [

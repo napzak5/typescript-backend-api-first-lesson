@@ -269,9 +269,9 @@ describe('hairOf', () => {
 
   it('should say of each that it is missing when no salon wrote it down', () => {
     expect(hairOf(newProfile)).toEqual([
-      { term: '髪質', description: '未登録' },
-      { term: '髪の太さ', description: '未登録' },
-      { term: '頭皮の状態', description: '未登録' },
+      { term: '髪質', description: null },
+      { term: '髪の太さ', description: null },
+      { term: '頭皮の状態', description: null },
     ])
   })
 })

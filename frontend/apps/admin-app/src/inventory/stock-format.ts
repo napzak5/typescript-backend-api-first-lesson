@@ -4,7 +4,6 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import type { ChoiceOption, NavigationItem } from '@beauty-salon-frontend/ui'
-import { NOT_RECORDED } from '../staff/staff-format'
 import { EXPIRY_WINDOWS, type StockView, stockQueryOf } from './stock-view'
 
 /*
@@ -56,14 +55,14 @@ export const expiryNameOf = (expiryDate: string | null): string =>
 export const isExpired = (expiryDate: string | null, today: string): boolean =>
   expiryDate !== null && expiryDate < today
 
-/** Where a row is kept: 「Storage Room A（棚 B-2）」. */
+/** Where a row is kept: 「Storage Room A（棚 B-2）」, or `null` when it is not recorded. */
 export const placeNameOf = ({
   location,
   shelf,
-}: Pick<ModelsInventoryResponse, 'location' | 'shelf'>): string =>
+}: Pick<ModelsInventoryResponse, 'location' | 'shelf'>): string | null =>
   location === null
     ? shelf === null
-      ? NOT_RECORDED
+      ? null
       : `棚 ${shelf}`
     : shelf === null
       ? location

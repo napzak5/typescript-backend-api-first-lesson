@@ -318,9 +318,6 @@ const SOURCE_NAMES: Record<string, string> = {
 export const sourceNameOf = (source: string): string =>
   SOURCE_NAMES[source] ?? source
 
-/** What the record says of a deposit, or of a way, that was not written down */
-export const NO_RECORD = '記録なし'
-
 /** What a form says about an attempt: about the whole of it, and at its controls. */
 export type FormSays = { message: string | undefined; errors: FormErrors }
 

@@ -16,7 +16,6 @@ import {
   genderNameOf,
   hairNameOf,
   tierNameOf,
-  UNRECORDED,
 } from '../../customer-format'
 import { customerKanaOf, customerNameOf } from '../../customers-api'
 
@@ -69,11 +68,9 @@ type LedgerItemOf = {
   describe: (values: LedgerValues, referrer: ReactNode) => ReactNode
 }
 
-const NONE = 'なし'
-
 /** A text that was written in several lines, with its line breaks. */
 const written = (text: string | null) =>
-  text === null ? UNRECORDED : <WrittenText>{text}</WrittenText>
+  text === null ? null : <WrittenText>{text}</WrittenText>
 
 /** The items of the ledger, in the order the page of a customer shows them. */
 const ITEMS: readonly LedgerItemOf[] = [
@@ -88,7 +85,7 @@ const ITEMS: readonly LedgerItemOf[] = [
     describe: (values) => {
       const kana = customerKanaOf(values)
 
-      return kana === '' ? UNRECORDED : kana
+      return kana === '' ? null : kana
     },
   },
   { term: 'メールアドレス', fields: ['email'], describe: ({ email }) => email },
@@ -100,7 +97,7 @@ const ITEMS: readonly LedgerItemOf[] = [
   {
     term: '予備の電話番号',
     fields: ['alternativePhone'],
-    describe: ({ alternativePhone }) => alternativePhone ?? UNRECORDED,
+    describe: ({ alternativePhone }) => alternativePhone,
   },
   {
     term: '住所',
@@ -111,7 +108,7 @@ const ITEMS: readonly LedgerItemOf[] = [
     term: '生年月日',
     fields: ['birthDate'],
     describe: ({ birthDate }) =>
-      birthDate === null ? UNRECORDED : dayNameOf(birthDate),
+      birthDate === null ? null : dayNameOf(birthDate),
   },
   {
     term: '性別',
@@ -121,7 +118,7 @@ const ITEMS: readonly LedgerItemOf[] = [
   {
     term: '職業',
     fields: ['occupation'],
-    describe: ({ occupation }) => occupation ?? UNRECORDED,
+    describe: ({ occupation }) => occupation,
   },
   {
     term: '髪と頭皮',
@@ -165,7 +162,7 @@ const ITEMS: readonly LedgerItemOf[] = [
     term: 'タグ',
     fields: ['tags'],
     describe: ({ tags }) =>
-      tags.length === 0 ? NONE : <TagList label='タグ' items={tags} />,
+      tags.length === 0 ? 'なし' : <TagList label='タグ' items={tags} />,
   },
   {
     term: '紹介コード',
@@ -175,8 +172,9 @@ const ITEMS: readonly LedgerItemOf[] = [
   {
     term: '紹介元',
     fields: ['referredBy'],
+    // The contract says what `null` is: the customer came without a referral
     describe: ({ referredBy }, referrer) =>
-      referredBy === null ? NONE : referrer,
+      referredBy === null ? 'なし' : referrer,
   },
   {
     term: '送ってよい連絡',

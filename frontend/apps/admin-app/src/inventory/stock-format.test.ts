@@ -75,11 +75,11 @@ describe('isExpired', () => {
 })
 
 describe('placeNameOf', () => {
-  it.each<[string | null, string | null, string]>([
+  it.each<[string | null, string | null, string | null]>([
     ['バックヤード', 'B-2', 'バックヤード（棚 B-2）'],
     ['バックヤード', null, 'バックヤード'],
     [null, 'B-2', '棚 B-2'],
-    [null, null, '記録なし'],
+    [null, null, null],
   ])('should say where %s %s is', (location, shelf, name) => {
     expect(placeNameOf({ location, shelf })).toBe(name)
   })

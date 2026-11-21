@@ -170,7 +170,7 @@ test.describe('a booking, in a browser', () => {
     // Assert
     await expect(heading(page, '予約の内容')).toBeFocused()
     await expect(details(page).nth(3)).toHaveText(MIKA)
-    await expect(details(page).last()).toHaveText('なし')
+    await expect(details(page).last()).toHaveText('記録なし')
     expect(await bookingsOn(api, date)).toEqual([
       { customer: CUSTOMER, staff: MIKA, status: 'pending', time: '11:30' },
     ])
