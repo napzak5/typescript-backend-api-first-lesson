@@ -62,13 +62,19 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
 
-/** The item takes the focus: what it begins with is no link */
+/**
+ * The item takes the focus: it is read from its beginning, and its link
+ * comes after its text
+ */
 export const ItemFocus: Story = {
   args: {
     focus: 'item',
     children: (review) => (
       <>
         <h3>{review.title}</h3>
+        <p>
+          <Link href={`/reviews/${review.id}/photo`}>{review.title}の写真</Link>
+        </p>
         <Button size='small' onClick={fn()}>
           参考になった
         </Button>

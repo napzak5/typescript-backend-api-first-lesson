@@ -255,6 +255,18 @@ describe('SignInForm', () => {
     expect(received).toEqual([[['twoFactorCode', '123456']]])
   })
 
+  it('should offer no way back in the first step, although its screen always gives one', async () => {
+    // Act
+    await stories.Credentials.run({
+      args: { ...stories.Credentials.args, onBack: vi.fn() },
+    })
+
+    // Assert
+    expect(
+      screen.queryByRole('button', { name: 'メールアドレスの入力に戻る' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('should offer the way back to the first step', async () => {
     // Arrange
     await stories.TwoFactorCode.run()

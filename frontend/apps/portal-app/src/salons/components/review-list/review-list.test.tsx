@@ -9,10 +9,14 @@ import * as reviewListStories from './review-list.stories'
 
 const stories = composeStories(reviewListStories)
 
-const listed = (): HTMLElement[] =>
-  within(screen.getByRole('list', { name: 'レビュー' })).getAllByRole(
-    'listitem',
-  )
+/** The reviews, without the items of the lists a review holds (its photos) */
+const listed = (): HTMLElement[] => {
+  const reviews = screen.getByRole('list', { name: 'レビュー' })
+
+  return within(reviews)
+    .getAllByRole('listitem')
+    .filter((item) => item.parentElement === reviews)
+}
 
 /** A review of the list, as the texts of its paragraphs. */
 const saidIn = (review: HTMLElement | undefined): (string | null)[] =>
@@ -45,10 +49,12 @@ const ChangingReviews = ({ seen, ...props }: ChangingReviewsProps) => {
     reviews: props.reviews,
     sortBy: props.sortBy,
   })
+  // It holds a link, to its photo, after its text
   const added = {
     ...fullReview,
     id: ADDED_ID,
     title: 'あとから読み込んだレビュー',
+    imageUrls: ['https://photos.example.com/added.jpg'],
   }
 
   useLayoutEffect(() => {
