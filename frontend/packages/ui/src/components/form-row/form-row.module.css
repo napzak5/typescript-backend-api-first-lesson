@@ -1,0 +1,18 @@
+/* A frame inside the part of the form, narrower than that of a card */
+.row {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+}
+
+/* The name stands on the upper edge of the frame, with room on its sides */
+.name {
+  padding-inline: var(--space-2);
+  font-weight: var(--font-weight-bold);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-fields);
+}

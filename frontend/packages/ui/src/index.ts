@@ -71,6 +71,7 @@ export {
   type FormDialogProps,
 } from './components/form-dialog/form-dialog'
 export { FormPart, type FormPartProps } from './components/form-part/form-part'
+export { FormRow, type FormRowProps } from './components/form-row/form-row'
 export {
   Link,
   type LinkComponent,
