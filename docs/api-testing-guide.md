@@ -162,7 +162,12 @@ The tests change nothing in the database the URL names, so the instance of
 the same instance, one per test, so the user needs the right to create
 databases.
 
-CI runs the integration tests both ways.
+CI runs the integration tests both ways. Each way is cut into four parts,
+run by four jobs side by side: every package's test files are split by
+Vitest's `--shard` (`pnpm test:integration --shard=<part>/4
+--passWithNoTests`). `pnpm test:integration` does not wait for the tests of
+a package's dependencies (`pnpm -r --no-sort`), so the API tests do not
+wait for those of the database package.
 
 The integration tests of the `infrastructure` package send mail to a real
 SMTP server and use no database. They always start a Mailpit container

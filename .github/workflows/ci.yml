@@ -60,8 +60,37 @@ jobs:
           path: specs/tsp-output/@typespec/openapi3/generated/openapi.yaml
           retention-days: 30
 
+  unit:
+    name: Unit Test
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm build:prod
+
+      - name: Run unit tests
+        run: pnpm test
+
   test:
-    name: Test (${{ matrix.database }} database)
+    name: Test (${{ matrix.database }} database, part ${{ matrix.part }} of 4)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -69,6 +98,9 @@ jobs:
         # external: the PostgreSQL service below, through TEST_DATABASE_URL
         # testcontainers: a container started by the test setup itself
         database: [external, testcontainers]
+        # The test files of every package are cut into four parts (Vitest's
+        # --shard), each run by a job of its own
+        part: [1, 2, 3, 4]
     env:
       CI: true
       NODE_ENV: test
@@ -107,17 +139,14 @@ jobs:
       - name: Build all packages
         run: pnpm build:prod
 
-      - name: Run unit tests
-        if: matrix.database == 'external'
-        run: pnpm test
-
       - name: Run integration tests
-        run: pnpm test:integration
+        # A package with fewer test files than parts has parts without any
+        run: pnpm test:integration --shard=${{ matrix.part }}/4 --passWithNoTests
         env:
           TEST_DATABASE_URL: ${{ matrix.database == 'external' && 'postgres://postgres:postgres@localhost:5432/beauty_salon_test' || '' }}
 
       - name: Check the database schema files are up to date
-        if: matrix.database == 'external'
+        if: matrix.database == 'external' && matrix.part == 1
         run: pnpm check:db-schema
 
   # A browser on the built applications, the production API and PostgreSQL.
@@ -214,7 +243,7 @@ jobs:
   # The images are published only for a commit on main whose checks passed.
   publish-staging-images:
     name: Publish Staging Images
-    needs: [quality, test, e2e, build]
+    needs: [quality, unit, test, e2e, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
