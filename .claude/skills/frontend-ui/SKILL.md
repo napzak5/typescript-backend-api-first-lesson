@@ -1998,6 +1998,23 @@ administrator:
   product, an item a stock row), says above itself how many rows it
   filled, and works its subtotal out from what it starts with.
 
+The reviews of a salon (`src/reviews/`) are public, so everybody who
+works at the salon reads them; what an account does to one is decided
+by its role, as the API decides it:
+
+- **What a role may not do is said where it would do it**: the owner
+  and a manager write the answer of the salon and report a review, an
+  administrator only withdraws an answer, a stylist reads. The part of
+  the answer says under its buttons who does what is not offered, and
+  the address of the form of the answer says it in place of the form.
+- **A refusal the API cannot be asked about first**: the API does not
+  say who reported a review, so the report is offered every time, and
+  a 409 replaces the form of the dialog with what it means and a
+  single button that closes it, which takes the focus.
+- **A withdrawal is a write of null**: it asks first in a dialog,
+  shows the review the API answered with and moves the focus to the
+  heading of the answer, as an operation of a booking does.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,

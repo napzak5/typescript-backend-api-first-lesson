@@ -1,0 +1,39 @@
+/* The rating and the day, what the customer wrote, then the rest of the review. */
+.record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/*
+ * The rating, the day and the mark of the visit follow each other like
+ * words, and go on in the next line where the line ends.
+ */
+.date,
+.verified {
+  margin-inline-start: var(--space-3);
+}
+
+.date {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.title {
+  font-weight: var(--font-weight-bold);
+  overflow-wrap: anywhere;
+}
+
+/* What the customer wrote, with the line breaks they wrote */
+.text {
+  max-inline-size: var(--size-text-column);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* The addresses of the pictures, each on a line of its own, broken where the line ends */
+.pictures {
+  display: grid;
+  gap: var(--space-1);
+  overflow-wrap: anywhere;
+}
