@@ -131,6 +131,6 @@ export const ResetPasswordScreen = () => {
       <AskAgain />
     </LinkUnusable>
   ) : (
-    <ResetWithToken token={token} />
+    <ResetWithToken key={token} token={token} />
   )
 }
