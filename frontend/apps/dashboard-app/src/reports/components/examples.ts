@@ -1,8 +1,12 @@
-import type { ModelsSalesReportResponse } from '@beauty-salon-frontend/api-client'
+import type {
+  ModelsDailySalesResponse,
+  ModelsSalesReportResponse,
+  ModelsSalesTrendsResponse,
+} from '@beauty-salon-frontend/api-client'
 
 /*
- * What the stories of the sales reports show: a month of a salon in
- * Tokyo, counted as the API counts it.
+ * What the stories of the sales reports show: the sales of a salon in
+ * Tokyo, counted as the API counts them.
  */
 
 /** The salon the examples are of */
@@ -45,4 +49,39 @@ export const report: ModelsSalesReportResponse = {
       averageServiceValue: 6050,
     },
   ],
+}
+
+/** Twelve months of sales, cut into months: none in the second */
+export const trends: ModelsSalesTrendsResponse = {
+  labels: [
+    '2025-12',
+    '2026-01',
+    '2026-02',
+    '2026-03',
+    '2026-04',
+    '2026-05',
+    '2026-06',
+    '2026-07',
+    '2026-08',
+    '2026-09',
+    '2026-10',
+    '2026-11',
+  ],
+  sales: [
+    48_000, 0, 39_600, 52_800, 61_600, 44_000, 57_200, 66_000, 70_400, 50_600,
+    74_800, 41_800,
+  ],
+  transactions: [5, 0, 4, 6, 7, 5, 6, 7, 8, 5, 8, 4],
+  average: [
+    9600, 0, 9900, 8800, 8800, 8800, 9533, 9428, 8800, 10_120, 9350, 10_450,
+  ],
+}
+
+/** The sales of one day: two sales, a part of one given back */
+export const daily: ModelsDailySalesResponse = {
+  date: '2026-11-21',
+  sales: 13_200,
+  transactions: 2,
+  refunds: 2200,
+  net: 11_000,
 }

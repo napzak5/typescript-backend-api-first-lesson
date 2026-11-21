@@ -3,7 +3,6 @@ import { saveFile } from '@beauty-salon-frontend/io'
 import {
   dayAt,
   monthUntil,
-  OtherSalonNotice,
   type Period,
   periodIn,
   periodNameOf,
@@ -16,7 +15,6 @@ import {
 import {
   Alert,
   Button,
-  ButtonLink,
   EmptyState,
   type FormErrors,
   LoadingIndicator,
@@ -29,6 +27,7 @@ import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { SalesReport } from './components/sales-report/sales-report'
+import { ReportRefusal } from './report-refusal'
 import { afterReportExport, REPORT_PERIOD } from './sales-report'
 import {
   exportSalesReport,
@@ -43,6 +42,9 @@ const UNREAD = P.union('tooManyRequests', 'failed')
 /** Why the last export saved nothing, for the period it was asked for */
 type ExportSaid = { asked: string; message: string }
 
+/** What was wrong with the form, and the days the address showed when it was sent */
+type Refused = { asked: string; errors: FormErrors }
+
 /**
  * The sales of the salon over a period, counted: the month up to today at
  * the salon, or the days in the query of the address. The report is read
@@ -52,11 +54,13 @@ type ExportSaid = { asked: string; message: string }
  */
 const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  // What was wrong with what was sent, while the address shows the days it was sent from
+  const [refused, setRefused] = useState<Refused>()
   const [exportSaid, setExportSaid] = useState<ExportSaid>()
   const { notify } = useNotifications()
   const period = periodIn(query, monthUntil(dayAt(new Date(), salon.timezone)))
   const asked = periodQueryOf(period).toString()
+  const errors = refused?.asked === asked ? refused.errors : undefined
   const read = useQuery({
     queryKey: salesReportKeyOf(salon.id, period),
     queryFn: () => readSalesReport(salon.id, period),
@@ -85,10 +89,10 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   const count = (values: FormData): void => {
     const filled = readPeriod(values)
     if (filled.type === 'invalid') {
-      setErrors(filled.errors)
+      setRefused({ asked, errors: filled.errors })
       return
     }
-    setErrors(undefined)
+    setRefused(undefined)
     if (periodQueryOf(filled.request).toString() === asked) {
       // The same days again: whoever sends it wants what there is now
       void read.refetch()
@@ -115,25 +119,10 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   )
 
   return match(shown)
-    .with({ type: 'forbidden' }, () => (
+    .with({ type: P.union('forbidden', 'notFound') }, ({ type }) => (
       <>
         {header(false)}
-        <OtherSalonNotice
-          what='売上レポート'
-          who='そのサロンのオーナーとマネージャーと、管理者'
-          start='売上レポート'
-        />
-      </>
-    ))
-    .with({ type: 'notFound' }, () => (
-      <>
-        {header(false)}
-        <p>このサロンは削除されたため、売上レポートを見られません。</p>
-        <p>
-          <ButtonLink href='/' variant='secondary'>
-            トップへ戻る
-          </ButtonLink>
-        </p>
+        <ReportRefusal refusal={type} what={TITLE} />
       </>
     ))
     .with(P.union(undefined, { type: P.union('found', UNREAD) }), (counted) => (

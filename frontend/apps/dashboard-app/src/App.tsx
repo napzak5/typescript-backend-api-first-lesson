@@ -20,7 +20,9 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { Link, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { navigationFor, reportsHrefOf } from './navigation'
+import { DailySalesScreen } from './reports/daily-sales-screen'
 import { SalesReportScreen } from './reports/sales-report-screen'
+import { SalesTrendsScreen } from './reports/sales-trends-screen'
 
 /** Who this application is for: those who run a salon, and the operator of the platform */
 const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'admin']
@@ -108,6 +110,14 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/reports'
                 element={<SalesReportScreen />}
+              />
+              <Route
+                path='/salons/:salonId/reports/trends'
+                element={<SalesTrendsScreen />}
+              />
+              <Route
+                path='/salons/:salonId/reports/daily'
+                element={<DailySalesScreen />}
               />
               <Route
                 path={SECURITY_PATH}

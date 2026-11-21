@@ -1009,6 +1009,17 @@ adds:
 - **A salon removed meanwhile is a statement** (`removeTokyo`) between the
   report the screen read and what it asks next: the export and the count
   meet the real refusal of the API.
+- **The screens of the sales share how they are rendered and read**
+  (`dashboard-app/src/__tests__/screens.tsx`: the application at an
+  address, what it showed at first sight, the terms of a card, the rows of
+  a table, a link of the header). A part of a trend is named by the
+  database in Tokyo too (`date_trunc` of the week or the month), so that
+  the first week and the last month the test expects are those of the
+  clock of the API.
+- **A chart hidden from assistive technology is tested from its story**
+  (`trend-chart.test.tsx`: the height of a column, the amounts of the
+  scale, the tip of a part, `aria-hidden`), and its table on the screen.
+  The browser test hovers a column and sees its tip.
 
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who

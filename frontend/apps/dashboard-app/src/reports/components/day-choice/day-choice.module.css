@@ -1,0 +1,18 @@
+/* The day, then what is done with it; the field no wider than a date needs */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+}
+
+@media (min-width: 40rem) {
+  .form {
+    grid-template-columns: minmax(0, 20rem);
+  }
+}

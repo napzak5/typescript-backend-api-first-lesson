@@ -4,11 +4,8 @@ import {
   type SavedFile,
   savedFiles,
 } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ADMIN,
@@ -24,7 +21,16 @@ import {
   TOKYO,
   voidSale,
 } from '../__tests__/arrangements'
-import { App } from '../App'
+import {
+  countOver,
+  firstSight,
+  heading,
+  menuLink,
+  renderAt,
+  rowsOf,
+  TITLE,
+  termsOf,
+} from '../__tests__/screens'
 import { reportsHrefOf } from '../navigation'
 
 /*
@@ -33,61 +39,12 @@ import { reportsHrefOf } from '../navigation'
  * period a report starts with, the month up to today.
  */
 
-const TITLE = 'Beauty Salon Dashboard'
-
-/** The path a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 /** What the application says in its notifications. */
 const notifications = (): string[] =>
   screen
     .getAllByRole('status')
     .map((region) => region.textContent ?? '')
     .filter((said) => said !== '')
-
-/** What a card says, term by term */
-const termsOf = async (card: string): Promise<[string, string][]> =>
-  within(await screen.findByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
-    ])
-
-/** The rows of a table, cell by cell in the order they are shown */
-const rowsOf = (table: string): (string | null)[][] =>
-  within(screen.getByRole('table', { name: table }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      Array.from(row.querySelectorAll('th, td'), (cell) => cell.textContent),
-    )
 
 /** The only file the page saved, once it has saved one. */
 const theSavedFile = async (): Promise<SavedFile> => {
@@ -183,18 +140,6 @@ const SUMS_OF_TODAY: [string, string][] = [
   ['消費税', '￥2,000'],
   ['値引き', '￥1,000'],
 ]
-
-/** Changes the days the report counts over, as the owner types them, and counts. */
-const countOver = async (from: string, to: string): Promise<void> => {
-  const user = userEvent.setup()
-  const first = screen.getByLabelText('集計する期間（から）')
-  const last = screen.getByLabelText('集計する期間（まで）')
-  await user.clear(first)
-  await user.type(first, from)
-  await user.clear(last)
-  await user.type(last, to)
-  await user.click(screen.getByRole('button', { name: '集計する' }))
-}
 
 describe('the sales report, against the API', () => {
   beforeEach(() => {
@@ -335,6 +280,29 @@ describe('the sales report, against the API', () => {
     },
   )
 
+  it('should say nothing more of what was wrong once the header leads to the month up to today', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const today = await dayFromToday(0)
+    renderAt(
+      `${reportsHrefOf(await salonIdOf(TOKYO))}?from=2020-01-01&to=2020-01-31`,
+    )
+    await signInAs(OWNER)
+    await screen.findByText('この期間の売上はありません')
+    await countOver('2026-11-10', '2026-11-01')
+
+    // Act
+    await user.click(menuLink('売上レポート'))
+
+    // Assert
+    await waitFor(() =>
+      expect(screen.getByLabelText('集計する期間（まで）')).toHaveValue(today),
+    )
+    expect(screen.getByLabelText('集計する期間（まで）')).not.toHaveAttribute(
+      'aria-invalid',
+    )
+  })
+
   it('should save the sales of the period as the CSV file the API makes, a day a row, and say so', async () => {
     // Arrange
     const user = userEvent.setup()
@@ -425,16 +393,12 @@ describe('the sales report, against the API', () => {
     await sellToday()
 
     // Act
-    await user.click(
-      within(
-        screen.getByRole('navigation', { name: 'メインメニュー' }),
-      ).getByRole('link', { name: '売上レポート' }),
-    )
+    await user.click(menuLink('売上レポート'))
 
     // Assert
     expect(await termsOf('期間の合計')).toEqual(SUMS_OF_TODAY)
-    expect(firstSight[0]).toMatch(/\/reports$/)
-    expect(firstSight[1]).not.toContain('この期間の売上はありません')
+    expect(firstSight()[0]).toMatch(/\/reports$/)
+    expect(firstSight()[1]).not.toContain('この期間の売上はありません')
   })
 
   it('should let an administrator choose the salon whose report to open', async () => {
@@ -454,11 +418,7 @@ describe('the sales report, against the API', () => {
     // Assert
     expect(await heading('売上レポート')).toHaveFocus()
     expect(await termsOf('期間の合計')).toEqual(SUMS_OF_TODAY)
-    expect(
-      within(
-        screen.getByRole('navigation', { name: 'メインメニュー' }),
-      ).getByRole('link', { name: '売上レポート' }),
-    ).toHaveAttribute('aria-current', 'page')
+    expect(menuLink('売上レポート')).toHaveAttribute('aria-current', 'page')
   })
 
   it('should tell the owner that the report of another salon is not theirs to see, and lead them to their own', async () => {

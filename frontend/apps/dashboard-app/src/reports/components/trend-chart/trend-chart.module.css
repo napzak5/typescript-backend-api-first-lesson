@@ -1,0 +1,122 @@
+/*
+ * The amounts of the axis beside the plot, the names of the first and the
+ * last part below it.
+ */
+.chart {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: 12rem auto;
+  column-gap: var(--space-2);
+  row-gap: var(--space-1);
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The top, the half and the zero of the scale, level with the lines of the plot */
+.axis {
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  justify-items: end;
+}
+
+.top,
+.half {
+  align-self: start;
+  transform: translateY(-50%);
+}
+
+.top {
+  grid-row: 1;
+}
+
+.half {
+  grid-row: 2;
+}
+
+.zero {
+  grid-row: 2;
+  align-self: end;
+  transform: translateY(50%);
+}
+
+/*
+ * One column a part, on hairlines at the top, the half and the zero of the
+ * scale. Columns stand apart by a gap of the surface, unless there are too
+ * many for it.
+ */
+.plot {
+  display: grid;
+  align-items: end;
+  column-gap: 2px;
+  background:
+    linear-gradient(var(--color-border), var(--color-border)) top / 100% 1px
+    no-repeat,
+    linear-gradient(var(--color-border), var(--color-border)) center / 100% 1px
+    no-repeat,
+    linear-gradient(var(--color-border-control), var(--color-border-control))
+    bottom / 100% 1px no-repeat;
+}
+
+.dense {
+  column-gap: 0;
+}
+
+/* The whole height of a part takes the pointer, not the column alone */
+.part {
+  position: relative;
+  display: grid;
+  align-items: end;
+  justify-items: center;
+  block-size: 100%;
+}
+
+/* No wider than 1.5rem, rounded at its top, square on the zero */
+.column {
+  inline-size: 100%;
+  max-inline-size: 1.5rem;
+  border-start-start-radius: var(--radius-small);
+  border-start-end-radius: var(--radius-small);
+  background: var(--color-accent);
+}
+
+.dense .column {
+  border-radius: 0;
+}
+
+.part:hover .column {
+  background: var(--color-accent-hover);
+}
+
+/* The part and its amount, above the plot, on a pointer over the part */
+.tip {
+  position: absolute;
+  inset-block-end: 100%;
+  z-index: 1;
+  display: none;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.fromStart {
+  inset-inline-start: 0;
+}
+
+.fromEnd {
+  inset-inline-end: 0;
+}
+
+.part:hover .tip {
+  display: block;
+}
+
+.labels {
+  grid-column: 2;
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: space-between;
+}
