@@ -5,6 +5,12 @@
       "entry": ["scripts/*.ts", "taze.config.js"],
       "ignoreDependencies": ["concurrently"]
     },
+    "frontend/packages/theme": {
+      "ignoreDependencies": [
+        "@fontsource-variable/inter",
+        "@fontsource-variable/noto-sans-jp"
+      ]
+    },
     "specs": {
       "ignoreDependencies": [
         "@typespec/http",

@@ -4,6 +4,14 @@
  */
 @layer reset, base;
 
+/*
+ * The typefaces the tokens name, in the weights from regular to bold. They
+ * are served with the application, so no other site is asked for them, and
+ * the browser fetches only the files of the characters a page shows.
+ */
+@import "@fontsource-variable/inter/wght.css";
+@import "@fontsource-variable/noto-sans-jp/wght.css";
+
 /* The tokens are what the two files after them read. */
 @import "./tokens.css";
 @import "./reset.css";

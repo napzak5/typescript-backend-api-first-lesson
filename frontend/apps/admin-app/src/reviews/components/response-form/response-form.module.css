@@ -6,7 +6,7 @@
 }
 
 .parts {
-  gap: var(--space-6);
+  gap: var(--space-parts);
 }
 
 .review {

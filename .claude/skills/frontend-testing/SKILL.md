@@ -21,6 +21,7 @@ The styling and component rules are in the skill `frontend-ui`.
 | The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx` |
 | The style rules, for every package and app | One test in the theme package | `frontend/packages/theme/src/style-rules.test.ts` |
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
+| The typefaces: the dependencies, their imports and `--font-family` agree | Read from the files of the theme | `frontend/packages/theme/src/typefaces.test.ts` |
 | Modules without markup (configuration, the style rules) | Unit tests in Node | `frontend/packages/config/src/env/env.test.ts` |
 | The fetch function, the session and the generated client | In jsdom, over the real client and the real fetch function, with `fetch` itself stubbed | `frontend/packages/session/src/session.test.tsx` |
 | The functions of a screen that call the API, for the answers the real API cannot be made to give | The same | `frontend/apps/portal-app/src/account/account-api.test.ts` |
@@ -1194,6 +1195,12 @@ test.describe('the admin application', () => {
   (`page.addStyleTag` with `html::-webkit-scrollbar`), so that it measures
   the same everywhere. `expectSoundLayout` compares the page with the
   window without its scrollbar (`clientWidth`), for the same reason.
+- **A page is measured in its typefaces.** The theme loads them with
+  `font-display: swap`: until they have come, the text is drawn in the
+  typeface of the system, whose letters are of other widths. The helpers
+  that measure (`expectSoundPage`, `expectSoundLayout`, `edgesOf`) wait
+  for `document.fonts.ready` first; a measure a test takes itself does
+  the same.
 - What a test needs before the path it drives, and which another test
   drives through its screens already, it asks of the API with the
   `request` fixture of Playwright (`accessTokenOf` and `setUpTwoFactor` in

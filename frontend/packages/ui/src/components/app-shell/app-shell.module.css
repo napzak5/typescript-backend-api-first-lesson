@@ -19,7 +19,7 @@
   display: grid;
   grid-template-columns: minmax(0, var(--size-page));
   justify-content: center;
-  padding: var(--space-3) var(--space-6);
+  padding: var(--space-2) var(--space-4);
   border-block-end: 1px solid var(--color-border);
   background-color: var(--color-surface);
 }
@@ -50,12 +50,16 @@
   gap: var(--space-3);
 }
 
+/*
+ * The words of the links begin where the content begins: a link has its own
+ * padding, so the row has none on a narrow screen and little on a wide one.
+ */
 .navigation {
   grid-area: navigation;
   display: grid;
   grid-template-columns: minmax(0, var(--size-page));
   justify-content: center;
-  padding: var(--space-2) var(--space-6);
+  padding: var(--space-1) 0;
   border-block-end: 1px solid var(--color-border);
   background-color: var(--color-surface);
 }
@@ -67,13 +71,13 @@
   grid-template-columns: minmax(0, var(--size-page));
   align-content: start;
   justify-content: center;
-  padding: var(--space-8) var(--space-6);
+  padding: var(--space-4);
 }
 
 .content {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6);
+  gap: var(--space-parts);
 }
 
 .skipLink {
@@ -98,9 +102,21 @@
 }
 
 @media (min-width: 40rem) {
+  .header {
+    padding-inline: var(--space-6);
+  }
+
   .headerContent {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: var(--space-4);
+  }
+
+  .navigation {
+    padding-inline: var(--space-2);
+  }
+
+  .main {
+    padding: var(--space-5) var(--space-6) var(--space-8);
   }
 }
 
@@ -116,7 +132,7 @@
   .navigationAtSide .navigation {
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
-    padding: var(--space-6) var(--space-3);
+    padding: var(--space-4) var(--space-2);
     border-block-end: 0;
     border-inline-end: 1px solid var(--color-border);
   }
