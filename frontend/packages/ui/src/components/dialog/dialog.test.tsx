@@ -1,14 +1,23 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as dialogStories from './dialog.stories'
 
 const stories = composeStories(dialogStories)
 
 const TITLE = '予約を取り消しますか？'
 
+/** What the dialog notes on the page: how much of the window its scrollbar takes */
+const noted = (): string =>
+  document.documentElement.style.getPropertyValue('--scrollbar-room')
+
 describe('Dialog', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    document.documentElement.style.removeProperty('--scrollbar-room')
+  })
+
   itShouldBeAccessibleInEveryStory(stories)
 
   it('should be a dialog named by its title and described by its description', async () => {
@@ -77,6 +86,37 @@ describe('Dialog', () => {
     expect(content.parentElement?.nextElementSibling).toContainElement(
       screen.getByRole('button', { name: '閉じる' }),
     )
+  })
+
+  it('should note how much of the window the scrollbar of the page takes when it opens', async () => {
+    // Arrange: the page is 15 pixels narrower than its window
+    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(
+      window.innerWidth - 15,
+    )
+
+    // Act
+    await stories.Confirmation.run()
+
+    // Assert
+    expect(noted()).toBe('15px')
+  })
+
+  it('should leave the note as it is when it opens above another dialog, under which the page has no scrollbar', async () => {
+    // Arrange: a dialog is open, and the page behind it is as wide as its window
+    const below = document.createElement('dialog')
+    below.setAttribute('open', '')
+    document.body.append(below)
+    document.documentElement.style.setProperty('--scrollbar-room', '15px')
+    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(
+      window.innerWidth,
+    )
+
+    // Act
+    await stories.Confirmation.run()
+
+    // Assert
+    expect(noted()).toBe('15px')
+    below.remove()
   })
 
   it('should not be shown while it is closed', async () => {

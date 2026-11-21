@@ -1,7 +1,7 @@
 import type { Locator, Page } from '@playwright/test'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
-import { edgesOf, expectSoundPage } from './checks'
+import { cornersUnderTheDialog, edgesOf, expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import { enterCredentials, heading, OPERATOR, OWNER } from './sign-in'
 
@@ -11,25 +11,10 @@ import { enterCredentials, heading, OPERATOR, OWNER } from './sign-in'
  * it is open. On a screen as narrow as a phone it is a sheet on the bottom
  * edge, on a wide one a box in the middle. It is never higher than the
  * window: what is longer scrolls inside it, with its actions in sight.
+ *
+ * The browser of these tests draws no scrollbars. What a dialog does over
+ * a page whose scrollbar takes room is in `dialog-scrollbar.e2e.test.ts`.
  */
-
-/** Whether each corner of the window, a pixel inside it, is under the open dialog or its overlay */
-const cornersUnderTheDialog = (page: Page): Promise<boolean[]> =>
-  page.evaluate(() => {
-    const right = window.innerWidth - 2
-    const bottom = window.innerHeight - 2
-
-    return [
-      { x: 1, y: 1 },
-      { x: right, y: 1 },
-      { x: 1, y: bottom },
-      { x: right, y: bottom },
-    ].map(
-      ({ x, y }) =>
-        document.elementFromPoint(x, y)?.closest('dialog[open]') instanceof
-        HTMLDialogElement,
-    )
-  })
 
 /** How far the page is scrolled down */
 const scrolledDown = (page: Page): Promise<number> =>

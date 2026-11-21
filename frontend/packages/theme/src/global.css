@@ -2,14 +2,8 @@
  * The page itself: what text looks like before a component says otherwise.
  */
 @layer base {
-  /*
-   * The room of the scrollbar is kept on every page: a page does not move
-   * sideways when it gets long enough to scroll, or when a dialog stops it
-   * from scrolling.
-   */
   :root {
     color-scheme: light;
-    scrollbar-gutter: stable;
   }
 
   body {

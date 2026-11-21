@@ -1,10 +1,13 @@
 /*
  * While a dialog is open as a modal, the page behind it stays where it is:
- * it cannot be used, so it does not scroll either. The theme keeps the room
- * of the scrollbar (`scrollbar-gutter`), so the page does not move sideways
- * when the scrollbar goes.
+ * it cannot be used, so it does not scroll either. Its scrollbar goes, and
+ * the window is the dialog's to its edge: a strip kept free for the
+ * scrollbar (`scrollbar-gutter`) is one the overlay does not cover. Where
+ * the scrollbar took room, the page keeps as much at its end (dialog.tsx
+ * notes how much), so it does not move sideways.
  */
 :global(html):has(.dialog:modal) {
+  padding-inline-end: var(--scrollbar-room, 0);
   overflow: hidden;
 }
 

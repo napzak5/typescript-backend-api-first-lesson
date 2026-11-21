@@ -164,6 +164,23 @@ describe('checkStyleRules', () => {
     expect(broken).toEqual([])
   })
 
+  it('should accept a custom property a component sets on an element of the page', () => {
+    // Act
+    const broken = rulesBrokenBy(
+      component(
+        'sheet/sheet.module.css',
+        '.sheet { padding-inline-end: var(--scrollbar-room, 0); }',
+      ),
+      component(
+        'sheet/sheet.tsx',
+        "import styles from './sheet.module.css'\nconst note = () => document.documentElement.style.setProperty('--scrollbar-room', '15px')\nexport const Sheet = () => <div className={styles.sheet} onClick={note} />",
+      ),
+    )
+
+    // Assert
+    expect(broken).toEqual([])
+  })
+
   it('should accept a custom property a component sets in a style', () => {
     // Act
     const broken = rulesBrokenBy(

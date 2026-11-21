@@ -26,7 +26,8 @@ export const findAccessibilityViolations = async (
 
 /**
  * What a layout must not do, measured on the page as the browser laid it out:
- * `overflow` is by how many pixels the page is wider than the window,
+ * `overflow` is by how many pixels the page is wider than the window has
+ * room for it (a scrollbar that takes room is not part of that),
  * `spilling` names the elements that hold something wider than they are and
  * neither scroll it nor cut it off (a line that does not wrap sticks out of
  * its card long before it makes the page wider), and `flex` is how many
@@ -39,7 +40,9 @@ const measureLayout = (
     const elements = [...document.querySelectorAll('body *')]
 
     return {
-      overflow: document.documentElement.scrollWidth - window.innerWidth,
+      overflow:
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
       spilling: elements
         .filter(
           (element) =>
@@ -98,4 +101,22 @@ export const edgesOf = (element: Locator): Promise<Edges> =>
       right: Math.round(right),
       bottom: Math.round(bottom),
     }
+  })
+
+/** Whether each corner of the window, a pixel inside it, is under the open dialog or its overlay */
+export const cornersUnderTheDialog = (page: Page): Promise<boolean[]> =>
+  page.evaluate(() => {
+    const right = window.innerWidth - 2
+    const bottom = window.innerHeight - 2
+
+    return [
+      { x: 1, y: 1 },
+      { x: right, y: 1 },
+      { x: 1, y: bottom },
+      { x: right, y: bottom },
+    ].map(
+      ({ x, y }) =>
+        document.elementFromPoint(x, y)?.closest('dialog[open]') instanceof
+        HTMLDialogElement,
+    )
   })

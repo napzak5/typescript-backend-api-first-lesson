@@ -29,6 +29,22 @@ export type DialogProps = {
   size?: 'medium' | 'wide' | undefined
 }
 
+/**
+ * Notes how much of the window the scrollbar of the page takes, for the
+ * stylesheet: while a modal dialog is open the page has no scrollbar, and
+ * keeps that room. Under a dialog that is open already there is no
+ * scrollbar to measure, and the note stays as it is.
+ */
+const noteTheScrollbarOfThePage = (): void => {
+  const page = document.documentElement
+  if (document.querySelector('dialog[open]') === null) {
+    page.style.setProperty(
+      '--scrollbar-room',
+      `${window.innerWidth - page.clientWidth}px`,
+    )
+  }
+}
+
 const sizeClass: Record<
   NonNullable<DialogProps['size']>,
   string | undefined
@@ -42,7 +58,8 @@ const sizeClass: Record<
  * It is the `dialog` element of the browser, opened as a modal: the browser
  * keeps the focus inside, makes the rest of the page inert, closes it on the
  * Escape key and gives the focus back to what opened it. While it is open
- * the page behind it does not scroll.
+ * the page behind it does not scroll, and stays where it is when its
+ * scrollbar goes.
  *
  * On a narrow screen it is a sheet on the bottom edge with its actions one
  * below the other; on a wider one a box in the middle, with its actions in a
@@ -77,6 +94,7 @@ export const Dialog = ({
     }
     if (open) {
       told.current = false
+      noteTheScrollbarOfThePage()
       dialog.showModal()
     } else {
       dialog.close()
