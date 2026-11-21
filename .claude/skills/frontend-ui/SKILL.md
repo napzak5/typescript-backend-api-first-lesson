@@ -2113,6 +2113,33 @@ platform alone, below the salon of the reviews:
   removed is put as not found, the lists of the salon are dropped, and
   the screen goes to the reviews.
 
+The accounts users sign in with (`src/user-accounts/`) belong to no
+salon, and an administrator looks after them at `/users/:userId`:
+
+- **A record with no screen of its own is reached from those that hold
+  its ID**: the API searches no users, so the customer page and the
+  account of a member lead an administrator to the account, and offer
+  other roles nothing. The address is not below a salon, so the header
+  is that of the start, and the moments are those of the device, with
+  its time zone said under them, as on the security of an account.
+- **What the API takes is worked out as it decides it**: a lock is a
+  state of `locked` or a lock that lasts beyond now (`lockOf`), and a
+  second factor is reset when it is on; an operation is offered then
+  alone, never on the account of the session, and the page says when
+  there is nothing to do.
+- **A write that only brings back what time would is done at once**: the
+  lifting of a lock has no dialog; the reset of a second factor asks
+  first, and says that the person who asks is made sure of by the
+  support, since nothing else checks it. Either shows the account the
+  API answered with and moves the focus to the heading of its record; a
+  409 reads it anew and says above the record what changed meanwhile.
+- **What another screen read of the same row is dropped**: a write on the
+  account of a member drops what the account screen of the member read,
+  so the way back shows it read anew.
+- **Buttons that do not fit side by side stack**: the head of a card puts
+  its buttons in a row, so two long ones are put in a grid of their own
+  that stacks them on a narrow screen (`account-record.module.css`).
+
 The files of a salon (`src/attachments/`) go between the browser and the
 object storage, at URLs the API signs; the API keeps what is known of a
 file:

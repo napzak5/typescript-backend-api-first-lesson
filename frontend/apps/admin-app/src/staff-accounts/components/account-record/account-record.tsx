@@ -22,7 +22,7 @@ export type AccountRecordProps = {
   timezone: string
   /** The heading, which takes the focus when the account is shown after a write */
   headingRef?: Ref<HTMLHeadingElement> | undefined
-  /** What can be done with the account: unlinking it */
+  /** What can be done with the account: leading to it, unlinking it */
   actions?: ReactNode
 }
 
@@ -43,7 +43,15 @@ export const AccountRecord = ({
   const note = statusNoteOf(account.status)
 
   return (
-    <Card title='ログインアカウント' headingRef={headingRef} actions={actions}>
+    <Card
+      title='ログインアカウント'
+      headingRef={headingRef}
+      actions={
+        actions === undefined ? undefined : (
+          <div className={styles['actions']}>{actions}</div>
+        )
+      }
+    >
       <DescriptionList
         items={[
           {

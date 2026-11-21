@@ -32,7 +32,11 @@ import { type Ref, useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
-import { staffChangeHrefOf, staffMemberHrefOf } from '../navigation'
+import {
+  staffChangeHrefOf,
+  staffMemberHrefOf,
+  userAccountHrefOf,
+} from '../navigation'
 import { STAFF_LISTS, type StaffRead, staffKeyOf } from '../staff/staff-api'
 import { staffCalled } from '../staff/staff-format'
 import {
@@ -40,6 +44,7 @@ import {
   useSignedInUserId,
   WithStaffMember,
 } from '../staff/with-staff-member'
+import { useAdministersAccounts } from '../user-accounts/administers-accounts'
 import {
   afterInvitation,
   afterRevocation,
@@ -391,12 +396,15 @@ type AccountPartProps = PartProps & {
 /**
  * The account linked to a member: its role changed, or the account
  * unlinked after a dialog. The signed-in account may do neither to itself.
+ * An administrator is led to the account itself, where its lock is lifted
+ * and its second factor reset.
  */
 const AccountPart = ({ account, ...props }: AccountPartProps) => {
   const { salon, member, headingRef, onMoved } = props
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const own = isOwnAccount(account, useSignedInUserId())
+  const administers = useAdministersAccounts()
   const [unlinking, setUnlinking] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
   const [message, setMessage] = useState<string>()
@@ -448,10 +456,22 @@ const AccountPart = ({ account, ...props }: AccountPartProps) => {
         timezone={salon.timezone}
         headingRef={headingRef}
         actions={
-          !own && (
-            <Button variant='danger' onClick={() => setUnlinking(true)}>
-              紐づけを解除する
-            </Button>
+          (administers || !own) && (
+            <>
+              {administers && (
+                <ButtonLink
+                  href={userAccountHrefOf(account.id)}
+                  variant='secondary'
+                >
+                  アカウントの状態を見る
+                </ButtonLink>
+              )}
+              {!own && (
+                <Button variant='danger' onClick={() => setUnlinking(true)}>
+                  紐づけを解除する
+                </Button>
+              )}
+            </>
           )
         }
       />
