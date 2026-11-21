@@ -316,6 +316,31 @@ describe('FilterForm', () => {
     ).toBeVisible()
   })
 
+  it('should count over the days that are sent, with how they are cut', async () => {
+    // Arrange
+    const onSubmit = vi.fn<(values: FormData) => void>()
+    await stories.Counting.run({
+      args: {
+        ...stories.Counting.args,
+        shown: { from: '2026-04-01', to: '2026-04-30' },
+        onSubmit,
+      },
+    })
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: '集計する' }))
+
+    // Assert
+    expect(
+      screen.getByLabelText('集計する期間（から）').closest('search'),
+    ).toHaveAttribute('aria-label', '集計する期間')
+    expect(entriesOf(onSubmit.mock.lastCall?.[0])).toEqual([
+      ['from', '2026-04-01'],
+      ['to', '2026-04-30'],
+      ['unit', 'daily'],
+    ])
+  })
+
   it('should keep a search by one keyword without a sheet on a narrow screen', async () => {
     // Arrange: the story chooses no viewport, and keeps the width of the test
     setWindowWidth(390)
