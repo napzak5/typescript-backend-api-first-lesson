@@ -1,7 +1,6 @@
 import type { ModelsCustomerBookingResponse } from '@beauty-salon-frontend/api-client'
-import { Alert, Badge, Button, Link, Note } from '@beauty-salon-frontend/ui'
-import { useId, useLayoutEffect, useRef } from 'react'
-import type { More } from '../../../salons/pages'
+import { Badge, Link, type More, PagedList } from '@beauty-salon-frontend/ui'
+import { useId } from 'react'
 import { statusNameOf, statusToneOf, whenKnownOf } from '../../booking-format'
 import type { Row } from '../../own-bookings'
 import styles from './booking-list.module.css'
@@ -41,11 +40,8 @@ const countOf = (total: number | null, shown: number): string => {
 
 /**
  * The bookings of a customer: when each is, where, what, and where it
- * stands. The time of a booking is the link to its page. When its button
- * adds bookings to the list, the focus moves to the first of them: whoever
- * pressed 「さらに表示」 goes on reading where the new ones begin. Bookings
- * that nobody asked for (those whose names arrive later, those of a list
- * that was read again) leave the focus where it is.
+ * stands. The time of a booking is the link to its page, and takes the
+ * focus when 「さらに表示」 added the booking.
  */
 export const BookingList = ({
   title,
@@ -56,40 +52,24 @@ export const BookingList = ({
   bookingHref,
 }: BookingListProps) => {
   const headingId = useId()
-  const list = useRef<HTMLUListElement>(null)
-  const shown = useRef(rows.length)
-  // Whether the button was pressed and what it asked for is yet to be shown
-  const asked = useRef(false)
-
-  // In the commit that shows the added bookings, before they are painted
-  useLayoutEffect(() => {
-    if (asked.current && rows.length > shown.current) {
-      list.current?.children
-        .item(shown.current)
-        ?.querySelector<HTMLAnchorElement>('a')
-        ?.focus()
-      asked.current = false
-    }
-    shown.current = rows.length
-  }, [rows.length])
-
-  const askForMore = (): void => {
-    asked.current = true
-    onMore()
-  }
 
   return (
     <section className={styles['list']} aria-labelledby={headingId}>
       <h2 className={styles['heading']} id={headingId}>
         {title}
       </h2>
-      <Note role='status'>{countOf(total, rows.length)}</Note>
-      <ul className={styles['bookings']} ref={list}>
-        {rows.map(({ booking, salon, serviceName }) => {
+      <PagedList
+        items={rows}
+        itemKey={({ booking }) => booking.id}
+        count={countOf(total, rows.length)}
+        more={more}
+        onMore={onMore}
+      >
+        {({ booking, salon, serviceName }) => {
           const when = whenKnownOf(booking, salon?.timezone ?? null)
 
           return (
-            <li key={booking.id} className={styles['booking']}>
+            <>
               <h3 className={styles['when']}>
                 <Link href={bookingHref(booking)}>
                   <span className={styles['whole']}>{when.day}</span>
@@ -108,20 +88,10 @@ export const BookingList = ({
                   {statusNameOf(booking.status)}
                 </Badge>
               </p>
-            </li>
+            </>
           )
-        })}
-      </ul>
-      {more === 'failed' && (
-        <Alert tone='danger'>
-          続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。
-        </Alert>
-      )}
-      {more !== 'none' && (
-        <Button onClick={askForMore} pending={more === 'loading'}>
-          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-        </Button>
-      )}
+        }}
+      </PagedList>
     </section>
   )
 }

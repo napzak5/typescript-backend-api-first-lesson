@@ -4,6 +4,7 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   Badge,
+  CardList,
   DescriptionList,
   Rating,
   TagList,
@@ -70,7 +71,7 @@ const Person = ({ person, rating }: PersonProps) => {
   ]
 
   return (
-    <li className={styles['person']}>
+    <>
       <h3 className={styles['name']}>{person.displayName}</h3>
       <p className={styles['role']}>{roleOf(person)}</p>
       {rating !== undefined &&
@@ -88,15 +89,13 @@ const Person = ({ person, rating }: PersonProps) => {
       )}
       {person.bio !== null && <WrittenText>{person.bio}</WrittenText>}
       {skills.length > 0 && <DescriptionList items={skills} />}
-    </li>
+    </>
   )
 }
 
 /** The people of a salon, as the salon shows them to its customers. */
 export const StaffProfiles = ({ staff, ratings }: StaffProfilesProps) => (
-  <ul className={styles['staff']}>
-    {staff.map((person) => (
-      <Person key={person.id} person={person} rating={ratings?.[person.id]} />
-    ))}
-  </ul>
+  <CardList items={staff} itemKey={({ id }) => id} layout='tiles'>
+    {(person) => <Person person={person} rating={ratings?.[person.id]} />}
+  </CardList>
 )

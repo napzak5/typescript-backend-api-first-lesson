@@ -1,10 +1,6 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
-import {
-  countOf,
-  type More,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
-import { Badge, Link } from '@beauty-salon-frontend/ui'
+import { countOf, PagedTable } from '@beauty-salon-frontend/salon-screens'
+import { Badge, Link, type More } from '@beauty-salon-frontend/ui'
 import { carriedNameOf, priceNameOf, usesNameOf } from '../../product-format'
 
 export type ProductTableProps = {

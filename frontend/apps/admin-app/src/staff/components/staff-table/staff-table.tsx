@@ -1,10 +1,6 @@
 import type { ModelsStaffResponse } from '@beauty-salon-frontend/api-client'
-import {
-  countOf,
-  type More,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
-import { Link } from '@beauty-salon-frontend/ui'
+import { countOf, PagedTable } from '@beauty-salon-frontend/salon-screens'
+import { Link, type More } from '@beauty-salon-frontend/ui'
 import {
   activityNameOf,
   bookingsNameOf,

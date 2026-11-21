@@ -1,11 +1,10 @@
 import type { ModelsCustomerHistoryEntryResponse } from '@beauty-salon-frontend/api-client'
 import {
   countOf,
-  type More,
   momentNameAt,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
-import { Link } from '@beauty-salon-frontend/ui'
+import { Link, type More } from '@beauty-salon-frontend/ui'
 import { operationNameOf } from '../../customer-history'
 import { changedTermsOf } from '../customer-record/ledger-items'
 

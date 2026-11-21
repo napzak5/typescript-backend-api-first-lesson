@@ -1,13 +1,10 @@
 import type { ModelsReviewReportResponse } from '@beauty-salon-frontend/api-client'
-import {
-  countOf,
-  type More,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
+import { countOf, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   Button,
   Link,
+  type More,
   type TableColumn,
 } from '@beauty-salon-frontend/ui'
 import {

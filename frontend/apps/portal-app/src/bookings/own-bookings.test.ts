@@ -2,8 +2,8 @@ import type {
   ModelsBookingStatusType,
   ModelsCustomerBookingResponse,
 } from '@beauty-salon-frontend/api-client'
+import type { More } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
-import type { More } from '../salons/pages'
 import { booking } from './components/examples'
 import {
   askedOf,

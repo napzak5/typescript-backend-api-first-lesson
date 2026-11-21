@@ -235,7 +235,7 @@ describe('SessionList', () => {
       expect(listed()).toHaveLength(3)
     })
 
-    it('should move the focus to the name of the first device that was added', async () => {
+    it('should move the focus to the first device that was added, to be read from its name', async () => {
       // Arrange
       await growing.run()
 
@@ -244,8 +244,11 @@ describe('SessionList', () => {
 
       // Assert
       expect(listed()).toHaveLength(2)
-      expect(nameOf(deviceAt(1))).toHaveFocus()
-      expect(nameOf(deviceAt(1))).toHaveAttribute('tabindex', '-1')
+      expect(deviceAt(1)).toHaveFocus()
+      expect(deviceAt(1)).toHaveAttribute('tabindex', '-1')
+      expect(deviceAt(1).firstElementChild).toContainElement(
+        nameOf(deviceAt(1)),
+      )
     })
 
     it('should leave the focus where it is when devices come that no press asked for', async () => {

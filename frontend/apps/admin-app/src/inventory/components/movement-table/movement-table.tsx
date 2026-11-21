@@ -5,10 +5,10 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   countOf,
-  type More,
   momentNameAt,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
+import type { More } from '@beauty-salon-frontend/ui'
 import { priceNameOf } from '../../../products/product-format'
 import {
   changeNameOf,

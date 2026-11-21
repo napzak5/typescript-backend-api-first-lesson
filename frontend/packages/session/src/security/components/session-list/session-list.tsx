@@ -1,13 +1,11 @@
 import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
 import {
-  Alert,
   Badge,
   Button,
   DescriptionList,
-  Note,
+  type More,
+  PagedList,
 } from '@beauty-salon-frontend/ui'
-import { useLayoutEffect, useRef } from 'react'
-import type { More } from '../../security-flow'
 import {
   addressOf,
   browserOf,
@@ -42,9 +40,8 @@ export type SessionListProps = {
  * The devices the account is signed in on: for each, when it signed in,
  * the browser and the address the API kept, when it was used last and when
  * its sign-in runs out. Every device but this one can be signed out from
- * here; this one signs out in the header. When the button below adds
- * devices to the list, the focus moves to the first of them; devices that
- * nobody asked for (a list that was read again) leave the focus where it is.
+ * here; this one signs out in the header. A device that 「さらに表示」 added
+ * takes the focus itself, so that it is read from its name.
  */
 export const SessionList = ({
   sessions,
@@ -54,87 +51,52 @@ export const SessionList = ({
   ending,
   onEnd,
   timeZone,
-}: SessionListProps) => {
-  const list = useRef<HTMLUListElement>(null)
-  const shown = useRef(sessions.length)
-  // Whether the button was pressed and what it asked for is yet to be shown
-  const asked = useRef(false)
+}: SessionListProps) => (
+  <PagedList
+    items={sessions}
+    itemKey={({ id }) => id}
+    label='サインインしている端末'
+    count={countOf(total, sessions.length)}
+    focus='item'
+    more={more}
+    onMore={onMore}
+  >
+    {(session) => {
+      const name = sessionNameOf(session, timeZone)
 
-  // In the commit that shows the added sessions, before they are painted
-  useLayoutEffect(() => {
-    if (asked.current && sessions.length > shown.current) {
-      list.current?.children
-        .item(shown.current)
-        ?.querySelector<HTMLHeadingElement>('h3')
-        ?.focus()
-      asked.current = false
-    }
-    shown.current = sessions.length
-  }, [sessions.length])
-
-  const askForMore = (): void => {
-    asked.current = true
-    onMore()
-  }
-
-  return (
-    <div className={styles['list']}>
-      <Note role='status'>{countOf(total, sessions.length)}</Note>
-      <ul
-        className={styles['sessions']}
-        ref={list}
-        aria-label='サインインしている端末'
-      >
-        {sessions.map((session) => {
-          const name = sessionNameOf(session, timeZone)
-
-          return (
-            <li key={session.id} className={styles['session']}>
-              <div className={styles['heading']}>
-                <h3 className={styles['name']} tabIndex={-1}>
-                  {name}
-                </h3>
-                {session.current && <Badge tone='info'>この端末</Badge>}
-              </div>
-              <DescriptionList
-                items={[
-                  { term: 'ブラウザー', description: browserOf(session) },
-                  { term: 'IP アドレス', description: addressOf(session) },
-                  {
-                    term: '最後に使われた日時',
-                    description: momentOf(session.lastActivityAt, timeZone),
-                  },
-                  {
-                    term: 'サインインが切れる日時',
-                    description: momentOf(session.refreshExpiresAt, timeZone),
-                  },
-                ]}
-              />
-              {!session.current && (
-                <Button
-                  variant='danger'
-                  size='small'
-                  aria-label={`${name}をサインアウトさせる`}
-                  pending={ending === session.id}
-                  onClick={() => onEnd(session)}
-                >
-                  サインアウトさせる
-                </Button>
-              )}
-            </li>
-          )
-        })}
-      </ul>
-      {more === 'failed' && (
-        <Alert tone='danger'>
-          続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。
-        </Alert>
-      )}
-      {more !== 'none' && (
-        <Button onClick={askForMore} pending={more === 'loading'}>
-          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-        </Button>
-      )}
-    </div>
-  )
-}
+      return (
+        <>
+          <div className={styles['heading']}>
+            <h3 className={styles['name']}>{name}</h3>
+            {session.current && <Badge tone='info'>この端末</Badge>}
+          </div>
+          <DescriptionList
+            items={[
+              { term: 'ブラウザー', description: browserOf(session) },
+              { term: 'IP アドレス', description: addressOf(session) },
+              {
+                term: '最後に使われた日時',
+                description: momentOf(session.lastActivityAt, timeZone),
+              },
+              {
+                term: 'サインインが切れる日時',
+                description: momentOf(session.refreshExpiresAt, timeZone),
+              },
+            ]}
+          />
+          {!session.current && (
+            <Button
+              variant='danger'
+              size='small'
+              aria-label={`${name}をサインアウトさせる`}
+              pending={ending === session.id}
+              onClick={() => onEnd(session)}
+            >
+              サインアウトさせる
+            </Button>
+          )}
+        </>
+      )
+    }}
+  </PagedList>
+)

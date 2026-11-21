@@ -1,4 +1,4 @@
-/* The heading, how many there are, the salons, then the way to more. */
+/* The heading, then the salons and the way to more */
 .results {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -7,22 +7,6 @@
 
 .heading {
   font-size: var(--font-size-title);
-}
-
-.salons {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-parts);
-}
-
-.salon {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-2);
-  padding: var(--space-frame);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background-color: var(--color-surface);
 }
 
 .name {

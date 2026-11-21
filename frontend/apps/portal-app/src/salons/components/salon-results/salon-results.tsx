@@ -1,14 +1,13 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
-  Alert,
-  Button,
   Link,
+  type More,
   Note,
+  PagedList,
   Rating,
   TagList,
 } from '@beauty-salon-frontend/ui'
-import { useId, useLayoutEffect, useRef } from 'react'
-import type { More } from '../../pages'
+import { useId } from 'react'
 import { addressOf } from '../../salon-format'
 import styles from './salon-results.module.css'
 
@@ -40,10 +39,8 @@ const countOf = (total: number | null, shown: number): string => {
 }
 
 /**
- * The salons a search found. When its button adds salons to the list, the
- * focus moves to the first of them: whoever pressed 「さらに表示」 goes on
- * reading where the new salons begin. Salons that nobody asked for (those
- * of a list that was read again) leave the focus where it is.
+ * The salons a search found. The name of a salon is the link to its page,
+ * and takes the focus when 「さらに表示」 added the salon.
  */
 export const SalonResults = ({
   salons,
@@ -53,37 +50,21 @@ export const SalonResults = ({
   salonHref,
 }: SalonResultsProps) => {
   const headingId = useId()
-  const list = useRef<HTMLUListElement>(null)
-  const shown = useRef(salons.length)
-  // Whether the button was pressed and what it asked for is yet to be shown
-  const asked = useRef(false)
-
-  // In the commit that shows the added salons, before they are painted
-  useLayoutEffect(() => {
-    if (asked.current && salons.length > shown.current) {
-      list.current?.children
-        .item(shown.current)
-        ?.querySelector<HTMLAnchorElement>('a')
-        ?.focus()
-      asked.current = false
-    }
-    shown.current = salons.length
-  }, [salons.length])
-
-  const askForMore = (): void => {
-    asked.current = true
-    onMore()
-  }
 
   return (
     <section className={styles['results']} aria-labelledby={headingId}>
       <h2 className={styles['heading']} id={headingId}>
         検索結果
       </h2>
-      <Note role='status'>{countOf(total, salons.length)}</Note>
-      <ul className={styles['salons']} ref={list}>
-        {salons.map((salon) => (
-          <li key={salon.id} className={styles['salon']}>
+      <PagedList
+        items={salons}
+        itemKey={({ id }) => id}
+        count={countOf(total, salons.length)}
+        more={more}
+        onMore={onMore}
+      >
+        {(salon) => (
+          <>
             <h3 className={styles['name']}>
               <Link href={salonHref(salon)}>{salon.name}</Link>
             </h3>
@@ -98,19 +79,9 @@ export const SalonResults = ({
             {salon.features.length > 0 && (
               <TagList label={`${salon.name}の特徴`} items={salon.features} />
             )}
-          </li>
-        ))}
-      </ul>
-      {more === 'failed' && (
-        <Alert tone='danger'>
-          続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。
-        </Alert>
-      )}
-      {more !== 'none' && (
-        <Button onClick={askForMore} pending={more === 'loading'}>
-          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-        </Button>
-      )}
+          </>
+        )}
+      </PagedList>
     </section>
   )
 }

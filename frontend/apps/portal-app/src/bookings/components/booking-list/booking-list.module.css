@@ -1,4 +1,4 @@
-/* The heading, how many there are, the bookings, then the way to more. */
+/* The heading, then the bookings and the way to more */
 .list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -7,23 +7,6 @@
 
 .heading {
   font-size: var(--font-size-title);
-}
-
-.bookings {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-parts);
-}
-
-/* A booking: when it is, then where, what, and where it stands */
-.booking {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-2);
-  padding: var(--space-frame);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background-color: var(--color-surface);
 }
 
 .when {

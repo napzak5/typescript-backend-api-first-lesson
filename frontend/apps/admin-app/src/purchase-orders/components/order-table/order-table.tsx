@@ -2,10 +2,9 @@ import type { ModelsPurchaseOrderResponse } from '@beauty-salon-frontend/api-cli
 import {
   amountOf,
   countOf,
-  type More,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
-import { Badge, Link } from '@beauty-salon-frontend/ui'
+import { Badge, Link, type More } from '@beauty-salon-frontend/ui'
 import {
   deliveryDayNameOf,
   orderDayNameOf,
