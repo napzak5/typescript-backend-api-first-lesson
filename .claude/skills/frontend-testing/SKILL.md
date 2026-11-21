@@ -187,7 +187,13 @@ describe('Button', () => {
   its controls: what a test counts with `querySelectorAll` is counted
   inside the element it is about (`closest('form')`), not in the
   document.
-- jsdom lays nothing out and has no `matchMedia`. A component that draws
+- jsdom lays nothing out, so nothing scrolls there, and it has no
+  `ResizeObserver`: the setup gives it one that is never told of a
+  change. A table there fits its room and is no region; a test of what
+  a table does when it scrolls gives the elements a size
+  (`vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get')`) and restores
+  it after (`vi.restoreAllMocks()`).
+- jsdom has no `matchMedia`. A component that draws
   something else on a narrow screen asks it (`AppShell`, below 40rem), so
   `@beauty-salon-frontend/testing/setup` gives jsdom a window of a width:
   1024 pixels, as wide as jsdom says, in every test, until the test calls
