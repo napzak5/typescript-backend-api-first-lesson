@@ -1,3 +1,4 @@
+import type { SharedFileCrudGet200 } from '@beauty-salon-frontend/api-client'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
@@ -110,9 +111,12 @@ export const revokedMeanwhile = async (shareLinkId: string): Promise<void> => {
   await testApi().query('delete from share_links where id = $1', [shareLinkId])
 }
 
+/** What a test reads of the file of a token: its name */
 const sharedFileSchema = z.object({
   data: z.object({ filename: z.string() }),
-})
+}) satisfies z.ZodType<{
+  data: Pick<SharedFileCrudGet200['data'], 'filename'>
+}>
 
 /**
  * What the API tells of the file of a token, as the screen of the portal

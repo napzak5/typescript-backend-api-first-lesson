@@ -1,14 +1,11 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type { ApiSessionSearchRequest } from '@beauty-salon-backend/domain'
 import { z } from 'zod'
-import { numberParameter } from '../../../shared/query-parameters'
+import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
 /** The parameter of the session list that is not text, as its type. */
-const sessionSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
-
-export const decodeSessionSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(sessionSearchQuerySchema, query, 'Invalid session search')
+export const decodeSessionSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiSessionSearchRequest, 'limit'>>,
+  'Invalid session search',
+)

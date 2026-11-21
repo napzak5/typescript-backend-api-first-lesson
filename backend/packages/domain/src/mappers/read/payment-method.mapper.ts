@@ -22,7 +22,9 @@ const convertedColumnsSchema = z.object({
   fee: numericSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiPaymentMethodResponse, 'fee' | 'createdAt' | 'updatedAt'>
+>
 
 const toApiPaymentMethod = (
   paymentMethod: DbPaymentMethod,

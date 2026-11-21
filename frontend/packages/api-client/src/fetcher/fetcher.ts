@@ -1,14 +1,12 @@
 import { env } from '@beauty-salon-frontend/config'
+import { type StoredSession, sessionStore } from '@beauty-salon-frontend/io'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
-import { renewSession, sessionAfterRejectionOf } from '../session/renew-session'
-import { type StoredSession, sessionStore } from '../session/stored-session'
+import type { ModelsProblemDetails } from '../generated/models'
+import { ModelsErrorCodeType } from '../generated/models'
+import { renewSession, sessionAfterRejectionOf } from './renew-session'
 
 const REQUEST_TIMEOUT_MS = 30_000
-
-/** The codes of the API for a 401 that is about the access token (docs/authentication.md) */
-export const ACCESS_TOKEN_EXPIRED = '1003'
-export const SESSION_NOT_FOUND = '1004'
 
 type HttpResponse = {
   data: unknown
@@ -16,7 +14,10 @@ type HttpResponse = {
   headers: Headers
 }
 
-const problemSchema = z.object({ code: z.string() })
+/** What is read of a problem of the API: its code */
+const problemSchema = z.object({
+  code: z.enum(ModelsErrorCodeType),
+}) satisfies z.ZodMiniType<Pick<ModelsProblemDetails, 'code'>>
 
 const isJsonMediaType = (contentType: string): boolean => {
   const [mediaType = ''] = contentType.split(';')
@@ -81,10 +82,17 @@ const sessionToRetryWith = (
 ): Promise<StoredSession | null> => {
   const problem = problemSchema.safeParse(response.data)
 
-  return match(problem.success ? problem.data.code : null)
-    .with(ACCESS_TOKEN_EXPIRED, () => renewSession(origin, session))
-    .with(SESSION_NOT_FOUND, async () => sessionAfterRejectionOf(session))
-    .otherwise(async () => null)
+  return (
+    match(problem.success ? problem.data.code : null)
+      // The two codes of a 401 that is about the access token (docs/authentication.md)
+      .with(ModelsErrorCodeType.NUMBER_1003, () =>
+        renewSession(origin, session),
+      )
+      .with(ModelsErrorCodeType.NUMBER_1004, async () =>
+        sessionAfterRejectionOf(session),
+      )
+      .otherwise(async () => null)
+  )
 }
 
 /**

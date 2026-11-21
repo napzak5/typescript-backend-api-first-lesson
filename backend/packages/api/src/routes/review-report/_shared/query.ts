@@ -1,18 +1,11 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type { ApiReviewReportSearchRequest } from '@beauty-salon-backend/domain'
 import { z } from 'zod'
-import { numberParameter } from '../../../shared/query-parameters'
+import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
 /** The parameter of the report list that is not text, as its type. */
-const reviewReportSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
-
-export const decodeReviewReportSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(
-    reviewReportSearchQuerySchema,
-    query,
-    'Invalid review report search',
-  )
+export const decodeReviewReportSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiReviewReportSearchRequest, 'limit'>>,
+  'Invalid review report search',
+)

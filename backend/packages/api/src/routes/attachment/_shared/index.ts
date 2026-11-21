@@ -1,11 +1,14 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
+import type {
+  ApiAttachmentDownloadUrlRequest,
+  ApiAttachmentSearchRequest,
+} from '@beauty-salon-backend/domain'
 import type { operations } from '@beauty-salon-backend/generated'
-import type { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import type { JsonBody } from '../../../shared/operation-types'
 import {
   booleanParameter,
   numberParameter,
+  queryDecoder,
 } from '../../../shared/query-parameters'
 
 /** The attachment of a request to `/attachments/:attachmentId`. */
@@ -43,21 +46,17 @@ export const attachmentLinks = (
 })
 
 /** The parameter of the list of attachments that is not text, as its type. */
-const attachmentSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
-
-export const decodeAttachmentSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(attachmentSearchQuerySchema, query, 'Invalid attachment search')
+export const decodeAttachmentSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiAttachmentSearchRequest, 'limit'>>,
+  'Invalid attachment search',
+)
 
 /** The parameter of a download that is not text, as its type. */
-const attachmentDownloadQuerySchema = z.looseObject({
-  inline: booleanParameter.exactOptional(),
-})
-
-export const decodeAttachmentDownloadQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(attachmentDownloadQuerySchema, query, 'Invalid attachment download')
+export const decodeAttachmentDownloadQuery = queryDecoder(
+  z.looseObject({
+    inline: booleanParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiAttachmentDownloadUrlRequest, 'inline'>>,
+  'Invalid attachment download',
+)

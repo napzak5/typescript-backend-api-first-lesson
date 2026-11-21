@@ -16,7 +16,9 @@ const convertedColumnsSchema = z.object({
   commissionRate: numericSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiStaffResponse, 'commissionRate' | 'createdAt' | 'updatedAt'>
+>
 
 const toApiStaff = (member: DbStaff): Result<ApiStaffResponse, DomainError> => {
   const { deletedAt, ...columns } = member

@@ -1,28 +1,27 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type {
+  ApiCustomerExportRequest,
+  ApiCustomerSearchRequest,
+} from '@beauty-salon-backend/domain'
 import { z } from 'zod'
 import {
   listParameter,
   numberParameter,
+  queryDecoder,
 } from '../../../shared/query-parameters'
 
 /** The parameters of the customer list that are not text, as their types. */
-const customerSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-  tags: listParameter.exactOptional(),
-})
-
-export const decodeCustomerSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(customerSearchQuerySchema, query, 'Invalid customer search')
+export const decodeCustomerSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+    tags: listParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiCustomerSearchRequest, 'limit' | 'tags'>>,
+  'Invalid customer search',
+)
 
 /** The parameters of the CSV export that are not text, as their types. */
-const customerExportQuerySchema = z.looseObject({
-  tags: listParameter.exactOptional(),
-})
-
-export const decodeCustomerExportQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(customerExportQuerySchema, query, 'Invalid customer export')
+export const decodeCustomerExportQuery = queryDecoder(
+  z.looseObject({
+    tags: listParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiCustomerExportRequest, 'tags'>>,
+  'Invalid customer export',
+)

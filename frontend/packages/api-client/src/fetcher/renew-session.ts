@@ -1,6 +1,7 @@
+import { type StoredSession, sessionStore } from '@beauty-salon-frontend/io'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
-import { type StoredSession, sessionStore } from './stored-session'
+import type { AuthCrudRefreshToken200 } from '../generated/models'
 
 /** Where a refresh token is exchanged: the path of the operation `refreshToken` of the API */
 export const SESSION_RENEWAL_PATH = '/api/v1/auth/refresh'
@@ -8,7 +9,16 @@ export const SESSION_RENEWAL_PATH = '/api/v1/auth/refresh'
 const RENEWAL_LOCK = 'beauty-salon:session-renewal'
 const RENEWAL_TIMEOUT_MS = 30_000
 
-/** What is read from the answer of the API; the contract is the OpenAPI document */
+/** What is read of the answer of `refreshToken`: the two tokens and the user they belong to */
+type RenewedSession = {
+  data: Pick<
+    AuthCrudRefreshToken200['data'],
+    'accessToken' | 'refreshToken'
+  > & {
+    user: Pick<AuthCrudRefreshToken200['data']['user'], 'id'>
+  }
+}
+
 const token = z.string().check(z.minLength(1))
 
 const renewedSessionSchema = z.object({
@@ -17,7 +27,7 @@ const renewedSessionSchema = z.object({
     refreshToken: token,
     user: z.object({ id: token }),
   }),
-})
+}) satisfies z.ZodMiniType<RenewedSession>
 
 type Renewal =
   | { type: 'renewed'; session: StoredSession }

@@ -20,7 +20,12 @@ const convertedColumnsSchema = z.object({
   uploadedAt: timestampSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiAttachmentResponse,
+    'uploadExpiresAt' | 'uploadedAt' | 'createdAt' | 'updatedAt'
+  >
+>
 
 const toApiAttachment = (
   attachment: DbAttachment,

@@ -1,3 +1,7 @@
+import type {
+  AuthCrudEnableTwoFactor200,
+  AuthCrudLogin200,
+} from '@beauty-salon-frontend/api-client'
 import {
   type APIRequestContext,
   expect,
@@ -59,13 +63,19 @@ export const enterCredentials = async (
   await signInButton(page).click()
 }
 
+/** What a test reads of a sign-in: the access token */
 const signedInSchema = z.object({
   data: z.object({ accessToken: z.string() }),
-})
+}) satisfies z.ZodType<{
+  data: Pick<AuthCrudLogin200['data'], 'accessToken'>
+}>
 
+/** What a test reads of the set-up of a second factor: the secret and the backup codes */
 const setUpSchema = z.object({
   data: z.object({ secret: z.string(), backupCodes: z.array(z.string()) }),
-})
+}) satisfies z.ZodType<{
+  data: Pick<AuthCrudEnableTwoFactor200['data'], 'secret' | 'backupCodes'>
+}>
 
 /**
  * An access token of an account of the seed data: for what a test asks of

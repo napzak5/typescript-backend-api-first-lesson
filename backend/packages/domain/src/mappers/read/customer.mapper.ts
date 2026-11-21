@@ -19,7 +19,12 @@ const convertedColumnsSchema = z.object({
   preferences: storedCustomerPreferencesSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiCustomerResponse,
+    'gender' | 'preferences' | 'createdAt' | 'updatedAt'
+  >
+>
 
 const toApiCustomer = (
   customer: DbCustomer,

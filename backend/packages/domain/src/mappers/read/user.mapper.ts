@@ -16,7 +16,16 @@ const convertedColumnsSchema = z.object({
   lastLoginAt: timestampSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiUserResponse,
+    | 'lastPasswordChange'
+    | 'lockedUntil'
+    | 'lastLoginAt'
+    | 'createdAt'
+    | 'updatedAt'
+  >
+>
 
 export const UserReadMapper = {
   toApiUser(user: DbUser): Result<ApiUserResponse, DomainError> {

@@ -31,9 +31,22 @@ const convertedOrderSchema = z.object({
   cancelledAt: timestampSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiPurchaseOrderResponse,
+    | 'orderDate'
+    | 'expectedDelivery'
+    | 'actualDelivery'
+    | 'approvedAt'
+    | 'cancelledAt'
+    | 'createdAt'
+    | 'updatedAt'
+  >
+>
 
-const convertedItemSchema = z.object({ quantity: numericSchema })
+const convertedItemSchema = z.object({
+  quantity: numericSchema,
+}) satisfies z.ZodType<Pick<ApiPurchaseOrderItem, 'quantity'>>
 
 const convertedSuggestionSchema = z.object({
   currentStock: numericSchema,
@@ -42,7 +55,17 @@ const convertedSuggestionSchema = z.object({
   maximumStock: numericSchema.nullable(),
   suggestedQuantity: numericSchema,
   lastOrderDate: timestampSchema.nullable(),
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiReorderSuggestionResponse,
+    | 'currentStock'
+    | 'onOrderQuantity'
+    | 'reorderPoint'
+    | 'maximumStock'
+    | 'suggestedQuantity'
+    | 'lastOrderDate'
+  >
+>
 
 const MESSAGE = 'Invalid stored purchase order'
 

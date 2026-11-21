@@ -20,7 +20,7 @@ import { timestampSchema } from './columns'
 const convertedColumnsSchema = z.object({
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<Pick<ApiServiceResponse, 'createdAt' | 'updatedAt'>>
 
 const toApiServiceOption = ({
   name,

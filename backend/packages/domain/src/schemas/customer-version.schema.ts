@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import {
+  type ApiCustomerVersionPathParameters,
   type ApiCustomerVersionSearchRequest,
   customerVersionIdSchema,
 } from '../models/customer-version'
@@ -20,4 +21,4 @@ export const customerVersionNumberSchema = z.strictObject({
     .regex(/^\d+$/, 'Must be a whole number')
     .transform(Number)
     .pipe(z.number().int().min(1).max(LAST_VERSION)),
-})
+}) satisfies z.ZodType<Pick<ApiCustomerVersionPathParameters, 'version'>>

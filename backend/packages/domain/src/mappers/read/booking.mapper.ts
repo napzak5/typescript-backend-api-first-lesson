@@ -23,7 +23,9 @@ const convertedServiceColumnsSchema = z.object({
   startTime: timestampSchema,
   endTime: timestampSchema,
   completedAt: timestampSchema.nullable(),
-})
+}) satisfies z.ZodType<
+  Pick<ApiBookingServiceResponse, 'startTime' | 'endTime' | 'completedAt'>
+>
 
 const convertedBookingColumnsSchema = z.object({
   startTime: timestampSchema,
@@ -35,7 +37,20 @@ const convertedBookingColumnsSchema = z.object({
   actualEndTime: timestampSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiBookingResponse,
+    | 'startTime'
+    | 'endTime'
+    | 'reminderSentAt'
+    | 'cancelledAt'
+    | 'completedAt'
+    | 'actualStartTime'
+    | 'actualEndTime'
+    | 'createdAt'
+    | 'updatedAt'
+  >
+>
 
 const toApiBookingService = (
   service: DbBookingService,

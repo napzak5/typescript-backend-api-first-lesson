@@ -19,7 +19,9 @@ import { timestampSchema } from './columns'
 const convertedColumnsSchema = z.object({
   expiresAt: timestampSchema,
   createdAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiStaffInvitationResponse, 'expiresAt' | 'createdAt'>
+>
 
 export const StaffInvitationReadMapper = {
   toApiStaffInvitation(

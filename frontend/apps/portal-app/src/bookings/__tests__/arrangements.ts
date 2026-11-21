@@ -1,3 +1,7 @@
+import type {
+  AuthCrudLogin200,
+  CustomerBookingsCreate201,
+} from '@beauty-salon-frontend/api-client'
 import { signIn } from '@beauty-salon-frontend/session'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { expect } from 'vitest'
@@ -183,7 +187,12 @@ export const ask = (
     body: JSON.stringify(body),
   })
 
-const signedInSchema = z.object({ data: z.object({ accessToken: z.string() }) })
+/** What a test reads of a sign-in: the access token */
+const signedInSchema = z.object({
+  data: z.object({ accessToken: z.string() }),
+}) satisfies z.ZodType<{
+  data: Pick<AuthCrudLogin200['data'], 'accessToken'>
+}>
 
 export const accessTokenOf = async (
   email: string,
@@ -199,9 +208,12 @@ export const accessTokenOf = async (
   return signedInSchema.parse(await answer.json()).data.accessToken
 }
 
+/** What a test reads of a booking it made: its ID and its number */
 const bookedSchema = z.object({
   data: z.object({ id: z.uuid(), bookingNumber: z.string() }),
-})
+}) satisfies z.ZodType<{
+  data: Pick<CustomerBookingsCreate201['data'], 'id' | 'bookingNumber'>
+}>
 
 /** A booking that a customer made somewhere else: in another tab, or a moment earlier. */
 export const bookThroughApi = async (

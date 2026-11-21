@@ -18,7 +18,9 @@ import { timestampSchema } from './columns'
 const convertedColumnsSchema = z.object({
   referenceType: PointReferenceTypeSchema.nullable(),
   createdAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiPointTransactionResponse, 'referenceType' | 'createdAt'>
+>
 
 const toApiPointTransaction = (
   transaction: DbPointTransaction,

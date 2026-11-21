@@ -20,7 +20,9 @@ import { timestampSchema } from './columns'
 const convertedAllergySchema = z.object({
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiCustomerAllergyResponse, 'createdAt' | 'updatedAt'>
+>
 
 const toApiCustomerAllergy = (
   allergy: DbCustomerAllergy,

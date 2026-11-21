@@ -20,6 +20,8 @@ export type ApiCustomerVersionChangeResponse =
 export type ApiCustomerVersionSearchRequest = NonNullable<
   operations['CustomerCrud_getHistory']['parameters']['query']
 >
+export type ApiCustomerVersionPathParameters =
+  operations['CustomerCrud_getVersion']['parameters']['path']
 
 // Database types, inferred from the Drizzle schema
 export type DbCustomerVersion = DeepRequired<
