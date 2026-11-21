@@ -46,6 +46,7 @@ import { HomeScreen } from './home-screen'
 import { InventoryScreen } from './inventory/inventory-screen'
 import { MovementEntryScreen } from './inventory/movement-entry-screen'
 import { MovementsScreen } from './inventory/movements-screen'
+import { StockAlertsScreen } from './inventory/stock-alerts-screen'
 import { StockChangeScreen } from './inventory/stock-change-screen'
 import { StockCountScreen } from './inventory/stock-count-screen'
 import { StockEntryScreen } from './inventory/stock-entry-screen'
@@ -408,6 +409,10 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/inventory/value'
                 element={<StockValueScreen />}
+              />
+              <Route
+                path='/salons/:salonId/inventory/alerts'
+                element={<StockAlertsScreen />}
               />
               <Route
                 path='/salons/:salonId/inventory/:inventoryId'

@@ -207,6 +207,10 @@ export const stockCountHrefOf = (salonId: string): string =>
 export const stockValueHrefOf = (salonId: string): string =>
   `${inventoryHrefOf(salonId)}/value`
 
+/** The alerts of the stock of a salon. */
+export const stockAlertsHrefOf = (salonId: string): string =>
+  `${inventoryHrefOf(salonId)}/alerts`
+
 /** A stock row of a salon. */
 export const stockRowHrefOf = (salonId: string, inventoryId: string): string =>
   `${inventoryHrefOf(salonId)}/${inventoryId}`

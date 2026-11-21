@@ -17,6 +17,7 @@ import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import {
   inventoryHrefOf,
+  stockAlertsHrefOf,
   stockCountHrefOf,
   stockEntryHrefOf,
   stockRowHrefOf,
@@ -141,9 +142,16 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
       在庫の行を足す
     </ButtonLink>
   ) : undefined
+  // Every member of the staff sees to the alerts
+  const alerts = (
+    <ButtonLink href={stockAlertsHrefOf(salon.id)} variant='secondary'>
+      在庫のアラート
+    </ButtonLink>
+  )
   const actions = keeps ? (
     <>
       {entry}
+      {alerts}
       <ButtonLink href={stockCountHrefOf(salon.id)} variant='secondary'>
         棚卸しする
       </ButtonLink>
@@ -151,7 +159,9 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
         在庫評価額
       </ButtonLink>
     </>
-  ) : undefined
+  ) : (
+    alerts
+  )
 
   if (pages[0]?.type === 'forbidden') {
     return (
