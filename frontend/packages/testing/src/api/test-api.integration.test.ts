@@ -456,6 +456,149 @@ describe('the code of an authenticator app', () => {
   })
 })
 
+describe('the files of an API', () => {
+  const SEEDED_ADMINISTRATOR = 'admin@beautysalon.jp'
+  const signedInSchema = z.object({
+    data: z.object({ accessToken: z.string() }),
+  })
+  const issuedSchema = z.object({
+    data: z.object({
+      attachment: z.object({ id: z.string() }),
+      uploadUrl: z.string(),
+      uploadHeaders: z.record(z.string(), z.string()),
+    }),
+  })
+  const downloadSchema = z.object({
+    data: z.object({ downloadUrl: z.string() }),
+  })
+
+  /** The first bytes of a PNG image, and some more */
+  const PNG = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+    0x49, 0x48, 0x44, 0x52,
+  ])
+
+  /** Calls the API as the seeded administrator */
+  const asAdministrator = async (): Promise<
+    (path: string, init?: RequestInit) => Promise<Response>
+  > => {
+    const signedIn = signedInSchema.parse(
+      await (await signIn(SEEDED_ADMINISTRATOR, testApi().seedPassword)).json(),
+    )
+
+    return (path, init) =>
+      call(path, {
+        ...init,
+        headers: {
+          Authorization: `Bearer ${signedIn.data.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+  }
+
+  /** Asks the API for the URL of an upload of the bytes, as a PNG image of no salon */
+  const issueUpload = async (
+    asAdmin: (path: string, init?: RequestInit) => Promise<Response>,
+    bytes: Uint8Array,
+  ) => {
+    const issued = await asAdmin('/api/v1/attachments/upload-url', {
+      method: 'POST',
+      body: JSON.stringify({
+        filename: 'before.png',
+        contentType: 'image/png',
+        size: bytes.byteLength,
+        salonId: null,
+      }),
+    })
+    expect(issued.status).toBe(201)
+
+    return issuedSchema.parse(await issued.json()).data
+  }
+
+  it('are kept in a storage of their own: what is sent to the URL the API issued is what its download URL answers', async () => {
+    // Arrange
+    const asAdmin = await asAdministrator()
+    const { attachment, uploadUrl, uploadHeaders } = await issueUpload(
+      asAdmin,
+      PNG,
+    )
+
+    // Act
+    const sent = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: uploadHeaders,
+      body: PNG,
+    })
+    const completed = await asAdmin(
+      `/api/v1/attachments/${attachment.id}/complete`,
+      { method: 'POST' },
+    )
+    const download = downloadSchema.parse(
+      await (
+        await asAdmin(`/api/v1/attachments/${attachment.id}/download-url`)
+      ).json(),
+    ).data
+    const fetched = await fetch(download.downloadUrl)
+
+    // Assert
+    expect(sent.status).toBe(200)
+    expect(completed.status).toBe(200)
+    expect(await completed.json()).toMatchObject({
+      data: { status: 'uploaded' },
+    })
+    expect(fetched.status).toBe(200)
+    expect(fetched.headers.get('content-type')).toBe('image/png')
+    expect(new Uint8Array(await fetched.arrayBuffer())).toEqual(PNG)
+  })
+
+  it('are looked at by the API: one that is not what its type says is refused, and removed', async () => {
+    // Arrange
+    const asAdmin = await asAdministrator()
+    const text = new TextEncoder().encode('not an image, but text')
+    const { attachment, uploadUrl, uploadHeaders } = await issueUpload(
+      asAdmin,
+      text,
+    )
+    await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: uploadHeaders,
+      body: text,
+    })
+
+    // Act
+    const completed = await asAdmin(
+      `/api/v1/attachments/${attachment.id}/complete`,
+      { method: 'POST' },
+    )
+    const read = await asAdmin(`/api/v1/attachments/${attachment.id}`)
+
+    // Assert
+    expect(completed.status).toBe(409)
+    expect(read.status).toBe(404)
+  })
+
+  it('are sent from the pages of an application: the storage lets every origin send a file', async () => {
+    // Arrange
+    const { uploadUrl } = await issueUpload(await asAdministrator(), PNG)
+
+    // Act
+    const answer = await fetch(uploadUrl, {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://localhost:4001',
+        'Access-Control-Request-Method': 'PUT',
+        'Access-Control-Request-Headers': 'content-type,if-none-match',
+      },
+    })
+
+    // Assert
+    expect(answer.ok).toBe(true)
+    expect(['*', 'http://localhost:4001']).toContain(
+      answer.headers.get('access-control-allow-origin'),
+    )
+  })
+})
+
 describe('an API that is removed', () => {
   it('stops answering and leaves no database behind', async () => {
     const other = await start({

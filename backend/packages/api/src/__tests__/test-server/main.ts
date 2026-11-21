@@ -4,6 +4,7 @@ import { PostgreSqlContainer } from '@testcontainers/postgresql'
 import { openTestDatabases } from '../_shared/test-databases'
 import { createControl } from './control'
 import { LOOPBACK, listen, openTestApis, stop } from './test-apis'
+import { startTestStorage } from './test-storage'
 
 /**
  * The test server: what the tests of the clients (the screens, the browser
@@ -11,6 +12,8 @@ import { LOOPBACK, listen, openTestApis, stop } from './test-apis'
  * one at TEST_DATABASE_URL or a container, and on it a template database
  * with the schema and the seed data; every API it starts for a test has a
  * copy of that template (see `control.ts` for what a test may ask for).
+ * The APIs keep their files in the object storage of the server, a
+ * SeaweedFS container (`test-storage.ts`).
  *
  * It is started with TEST_SERVER_TOKEN, the token that every request to it
  * has to carry. When it is ready it prints one line, `READY` followed by the
@@ -52,7 +55,12 @@ const databases = await openTestDatabases(
     'could not create its template database: it needs a PostgreSQL it may create databases on',
   ),
 )
-const apis = openTestApis(databases)
+const storage = await startTestStorage().catch(
+  explain(
+    'could not start its object storage, a SeaweedFS container: it needs a running Docker daemon',
+  ),
+)
+const apis = openTestApis(databases, storage.fileStorage)
 const control = createServer(createControl(apis, token, SEED_PASSWORD))
 const port = await listen(control)
 
@@ -65,6 +73,7 @@ const shutDown = async (): Promise<void> => {
   await stop(control)
   await apis.close()
   await databases.close()
+  await storage.stop()
   await container?.stop()
   process.exit(0)
 }

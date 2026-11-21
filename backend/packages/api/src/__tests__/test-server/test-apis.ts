@@ -1,14 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import type { Mail } from '@beauty-salon-backend/domain'
+import type { IFileStorage, Mail } from '@beauty-salon-backend/domain'
 import {
   createLogger,
   TotpAuthenticator,
 } from '@beauty-salon-backend/infrastructure'
 import type { Express } from 'express'
 import { createApp } from '../../index'
-import { InMemoryFileStorage } from '../_shared/in-memory-file-storage'
 import type { TestDatabase, TestDatabases } from '../_shared/test-databases'
 
 /** What the applications encrypt the secrets of authenticator apps under. */
@@ -91,6 +90,7 @@ const applicationOn = (
   database: TestDatabase,
   { corsOrigins, publicAppUrl }: TestApiSettings,
   deliver: (mail: Mail) => void,
+  fileStorage: IFileStorage,
 ): Express =>
   createApp({
     database: database.db,
@@ -101,7 +101,7 @@ const applicationOn = (
       publicAppUrl,
     },
     mailer: { deliver },
-    fileStorage: new InMemoryFileStorage(),
+    fileStorage,
     twoFactorAuthenticator: new TotpAuthenticator(TWO_FACTOR_ENCRYPTION_KEY),
     logger: createLogger({
       level: 'silent',
@@ -137,10 +137,13 @@ export const stop = (server: Server): Promise<void> =>
 /**
  * The APIs that the tests of the clients call. Each is the application that
  * production runs (`createApp`), with a mailer that keeps the mails for the
- * test to read and a file storage in memory, on a port of its own and on a
- * database of its own: a copy of the template of `databases`.
+ * test to read, on a port of its own and on a database of its own: a copy
+ * of the template of `databases`. They share the object storage given.
  */
-export const openTestApis = (databases: TestDatabases): TestApis => {
+export const openTestApis = (
+  databases: TestDatabases,
+  fileStorage: IFileStorage,
+): TestApis => {
   const apis = new Map<string, TestApi>()
 
   const close = async ({ server, database }: TestApi): Promise<void> => {
@@ -163,7 +166,7 @@ export const openTestApis = (databases: TestDatabases): TestApis => {
         database,
         settings,
         mails: [],
-        app: applicationOn(database, settings, deliver),
+        app: applicationOn(database, settings, deliver, fileStorage),
         // Looked up for every request: a reset replaces the application
         server: createServer((request, response) => api.app(request, response)),
       }
@@ -199,9 +202,14 @@ export const openTestApis = (databases: TestDatabases): TestApis => {
       api.mails = mails
       // A mail of a request that the previous application still answers is
       // not one of the next test
-      api.app = applicationOn(api.database, api.settings, (mail) => {
-        mails.push(mail)
-      })
+      api.app = applicationOn(
+        api.database,
+        api.settings,
+        (mail) => {
+          mails.push(mail)
+        },
+        fileStorage,
+      )
       await previous.drop()
 
       return true
