@@ -175,3 +175,104 @@ export const padRowsOf = async (
     [salon, count],
   )
 }
+
+const namedSchema = z.tuple([z.object({ displayName: z.string() })])
+
+/** The name the salon shows of the member of the staff an account of the seed data is. */
+export const displayNameOf = async (email: string): Promise<string> =>
+  namedSchema.parse(
+    await testApi().query(
+      `select s."displayName" from staff s join users u on u.id = s."userId"
+       where u.email = $1`,
+      [email],
+    ),
+  )[0].displayName
+
+const movementsSchema = z.array(
+  z.object({
+    transactionType: z.string(),
+    quantity: z.string(),
+    balanceAfter: z.string(),
+    unitCost: z.number().nullable(),
+    totalCost: z.number().nullable(),
+    reason: z.string().nullable(),
+    performedBy: z.string().nullable(),
+  }),
+)
+
+/** The movements of a row as the database keeps them, the latest first. */
+export const storedMovementsOf = async (inventoryId: string) =>
+  movementsSchema.parse(
+    await testApi().query(
+      `select "transactionType"::text, quantity::text, "balanceAfter"::text,
+              "unitCost", "totalCost", reason, "performedBy"::text
+       from inventory_transactions
+       where "inventoryId" = $1
+       order by "createdAt" desc, id desc`,
+      [inventoryId],
+    ),
+  )
+
+/** A movement that was recorded earlier, as the arrangement gives it */
+type Earlier = {
+  transactionType: string
+  quantity: number
+  /** When it was recorded: a moment of UTC */
+  createdAt: string
+  reason?: string
+  referenceType?: string
+}
+
+/**
+ * Lets movements of a row have been recorded earlier, one after the other
+ * from the 20 the seed began the row with. The row keeps its stock: the
+ * history is all a test of it reads.
+ */
+export const recordedEarlier = async (
+  inventoryId: string,
+  movements: readonly Earlier[],
+): Promise<void> => {
+  // Each movement begins from the 20 of the seed and what the ones before it moved
+  const befores = movements.map((_, index) =>
+    movements
+      .slice(0, index)
+      .reduce((balance, { quantity }) => balance + quantity, 20),
+  )
+  await Promise.all(
+    movements.map((movement, index) =>
+      testApi().query(
+        `insert into inventory_transactions
+           ("salonId", "productId", "inventoryId", "transactionType", quantity,
+            "balanceBefore", "balanceAfter", reason, "referenceType", "referenceId",
+            "lotNumber", "expiryDate", "createdAt")
+         select i."salonId", i."productId", i.id, $2::inventory_transaction_type, $3,
+                $4::numeric, $4::numeric + $3::numeric, $5, $6::varchar,
+                case when $6::varchar is null then null else gen_random_uuid() end,
+                i."lotNumber", i."expiryDate", $7
+         from inventory i where i.id = $1`,
+        [
+          inventoryId,
+          movement.transactionType,
+          movement.quantity,
+          befores[index] ?? 20,
+          movement.reason ?? null,
+          movement.referenceType ?? null,
+          movement.createdAt,
+        ],
+      ),
+    ),
+  )
+}
+
+/** Lets some of the stock of a row have been reserved meanwhile. */
+export const reservedMeanwhile = async (
+  inventoryId: string,
+  reserved: number,
+): Promise<void> => {
+  await testApi().query(
+    `update inventory set "reservedStock" = $2,
+       "availableStock" = "currentStock" - $2::numeric, "updatedAt" = now()
+     where id = $1`,
+    [inventoryId, reserved],
+  )
+}

@@ -1,5 +1,8 @@
-import type { ModelsInventoryResponse } from '@beauty-salon-frontend/api-client'
-import { salon } from '../../bookings/components/examples'
+import type {
+  ModelsInventoryResponse,
+  ModelsInventoryTransactionResponse,
+} from '@beauty-salon-frontend/api-client'
+import { salon, staff } from '../../bookings/components/examples'
 import { colour, gloves, shampoo } from '../../products/components/examples'
 
 /*
@@ -79,4 +82,82 @@ export const STOCK_OF_THE_SALON: ModelsInventoryResponse[] = [
   colourLot,
   shampooRow,
   glovesRow,
+]
+
+const aMovement = (
+  movement: Pick<
+    ModelsInventoryTransactionResponse,
+    'id' | 'transactionType' | 'quantity' | 'balanceAfter' | 'createdAt'
+  > &
+    Partial<ModelsInventoryTransactionResponse>,
+): ModelsInventoryTransactionResponse => ({
+  salonId: salon.id,
+  productId: colourLot.productId,
+  inventoryId: colourLot.id,
+  balanceBefore: movement.balanceAfter - movement.quantity,
+  unitCost: null,
+  totalCost: null,
+  referenceType: null,
+  referenceId: null,
+  lotNumber: colourLot.lotNumber,
+  expiryDate: colourLot.expiryDate,
+  reason: null,
+  performedBy: staff[0]?.id ?? null,
+  ...movement,
+})
+
+/** A member of the staff who left the salon: the salon shows no profile of them */
+const LEFT_MEMBER = '9e0f1a2b-3c4d-4e5f-8a6b-7c8d9e0f1a2b'
+
+/**
+ * The movements of the lot of the colour, the latest first: the stock it
+ * began with, a receipt of a purchase order, a use in a treatment, a sale
+ * by a member who left, and a disposal. They leave the 12 tubes it has.
+ */
+export const MOVEMENTS_OF_THE_LOT: ModelsInventoryTransactionResponse[] = [
+  aMovement({
+    id: 'a1b2c3d4-0005-4e6f-8a7b-9c0d1e2f3a4b',
+    transactionType: 'disposal',
+    quantity: -1.5,
+    balanceAfter: 12,
+    reason: 'キャップが割れていた',
+    performedBy: staff[1]?.id ?? null,
+    createdAt: '2026-11-19T09:00:00.000Z',
+  }),
+  aMovement({
+    id: 'a1b2c3d4-0004-4e6f-8a7b-9c0d1e2f3a4b',
+    transactionType: 'sale',
+    quantity: -1,
+    balanceAfter: 13.5,
+    performedBy: LEFT_MEMBER,
+    createdAt: '2026-11-12T03:15:00.000Z',
+  }),
+  aMovement({
+    id: 'a1b2c3d4-0003-4e6f-8a7b-9c0d1e2f3a4b',
+    transactionType: 'use',
+    quantity: -15.5,
+    balanceAfter: 14.5,
+    createdAt: '2026-11-10T05:30:00.000Z',
+  }),
+  aMovement({
+    id: 'a1b2c3d4-0002-4e6f-8a7b-9c0d1e2f3a4b',
+    transactionType: 'purchase',
+    quantity: 10,
+    balanceAfter: 30,
+    unitCost: 1200,
+    totalCost: 12000,
+    referenceType: 'purchase_order',
+    referenceId: 'b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e',
+    performedBy: staff[1]?.id ?? null,
+    createdAt: '2026-10-15T01:00:00.000Z',
+  }),
+  aMovement({
+    id: 'a1b2c3d4-0001-4e6f-8a7b-9c0d1e2f3a4b',
+    transactionType: 'adjustment',
+    quantity: 20,
+    balanceAfter: 20,
+    reason: '在庫移動の記録を始めた時点の在庫数',
+    performedBy: null,
+    createdAt: '2026-10-01T00:00:00.000Z',
+  }),
 ]

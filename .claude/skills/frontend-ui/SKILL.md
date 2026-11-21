@@ -1901,6 +1901,23 @@ the header:
   that the product was marked otherwise meanwhile, the products are
   read anew and the form follows them.
 
+The movements of a stock row (`src/inventory/`) are recorded and read
+by everybody who works at the salon:
+
+- **A sign is chosen, not typed**: a quantity is typed as it is
+  counted, and the kind gives it its sign; a kind that moves either way
+  asks which way, in words ("the stock grows", "the stock shrinks").
+  Nothing is chosen at first, so that no movement is recorded the wrong
+  way by default.
+- **What may be taken out is said before it is asked**: the form says
+  the stock of the row and what of it is not reserved, and checks the
+  quantity against them before sending. When the API says that the
+  stock changed meanwhile (409), the row is read anew and the form says
+  the stock it has now.
+- **A history below its record**: the movements of a row are read under
+  the key of the row, so that dropping the row once a movement is
+  recorded drops its history as well.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,

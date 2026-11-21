@@ -209,6 +209,18 @@ export const stockRowChangeHrefOf = (
   inventoryId: string,
 ): string => `${stockRowHrefOf(salonId, inventoryId)}/edit`
 
+/** The movements of a stock row, the latest first. */
+export const stockMovementsHrefOf = (
+  salonId: string,
+  inventoryId: string,
+): string => `${stockRowHrefOf(salonId, inventoryId)}/movements`
+
+/** The screen that records a movement of a stock row. */
+export const movementEntryHrefOf = (
+  salonId: string,
+  inventoryId: string,
+): string => `${stockMovementsHrefOf(salonId, inventoryId)}/new`
+
 /** The menu of a salon: its categories and their services. */
 export const menuHrefOf = (salonId: string): string => `/salons/${salonId}/menu`
 
