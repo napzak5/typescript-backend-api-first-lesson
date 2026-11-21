@@ -46,7 +46,9 @@ describe('StatisticsPeriod', () => {
     await stories.LastYear.run()
 
     // Assert
-    expect(screen.getByRole('form', { name: '集計する期間' })).toBeVisible()
+    expect(
+      screen.getByLabelText('集計する期間（から）').closest('search'),
+    ).toHaveAttribute('aria-label', '集計する期間')
     expect(from()).toHaveValue('2025-11-20')
     expect(to()).toHaveValue('2026-11-20')
     expect(from()).toHaveAttribute('min', '1900-01-01')

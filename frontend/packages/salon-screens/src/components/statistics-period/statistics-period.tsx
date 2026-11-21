@@ -1,15 +1,12 @@
 import {
-  Button,
-  FieldRow,
+  FilterForm,
   type FormErrors,
   TextField,
-  useErrorFocus,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import type { FormEvent, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { type Period, periodQueryOf } from '../../period'
 import { EARLIEST_DAY, LATEST_DAY } from '../../salon-time'
-import styles from './statistics-period.module.css'
 
 export type StatisticsPeriodProps = {
   /** The period that is shown: that of the address */
@@ -20,7 +17,7 @@ export type StatisticsPeriodProps = {
   errors?: FormErrors | undefined
   /** Called with the values of the controls when the form is sent */
   onSubmit: (values: FormData) => void
-  /** Further controls of what is counted, below the days: what the period is cut into */
+  /** Further controls of what is counted, after the days: what the period is cut into */
   children?: ReactNode
 }
 
@@ -30,7 +27,9 @@ const NO_ERRORS: FormErrors = {}
  * The days that something is counted over, both ends counted: what a
  * customer did at the salon, or the treatment records the salon wrote.
  * Like the filters of the ledgers, it mirrors the address: when that
- * changes under it, the controls show the other days.
+ * changes under it, the controls show the other days. The days are in
+ * sight on every screen; what the period is cut into is one of the other
+ * conditions, in the sheet of a narrow screen.
  */
 export const StatisticsPeriod = ({
   period,
@@ -39,54 +38,44 @@ export const StatisticsPeriod = ({
   onSubmit,
   children,
 }: StatisticsPeriodProps) => {
-  const form = useErrorFocus(errors)
   const [values, hold] = useFilterValues(
     periodQueryOf(period).toString(),
     () => period,
   )
 
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
-
   return (
-    <form
-      className={styles['form']}
-      aria-label='集計する期間'
-      noValidate
-      onSubmit={submit}
-      ref={form}
+    <FilterForm
+      label='集計する期間'
+      purpose='count'
+      conditions={children}
+      errors={errors}
+      onSubmit={onSubmit}
     >
-      <FieldRow>
-        <TextField
-          label='集計する期間（から）'
-          name='from'
-          autoComplete='off'
-          type='date'
-          min={EARLIEST_DAY}
-          max={LATEST_DAY}
-          required
-          value={values.from}
-          error={errors['from']}
-          onChange={(event) => hold('from', event.target.value)}
-        />
-        <TextField
-          label='集計する期間（まで）'
-          name='to'
-          autoComplete='off'
-          type='date'
-          min={EARLIEST_DAY}
-          max={LATEST_DAY}
-          required
-          description={description}
-          value={values.to}
-          error={errors['to']}
-          onChange={(event) => hold('to', event.target.value)}
-        />
-      </FieldRow>
-      {children}
-      <Button type='submit'>集計する</Button>
-    </form>
+      <TextField
+        label='集計する期間（から）'
+        name='from'
+        autoComplete='off'
+        type='date'
+        min={EARLIEST_DAY}
+        max={LATEST_DAY}
+        required
+        value={values.from}
+        error={errors['from']}
+        onChange={(event) => hold('from', event.target.value)}
+      />
+      <TextField
+        label='集計する期間（まで）'
+        name='to'
+        autoComplete='off'
+        type='date'
+        min={EARLIEST_DAY}
+        max={LATEST_DAY}
+        required
+        description={description}
+        value={values.to}
+        error={errors['to']}
+        onChange={(event) => hold('to', event.target.value)}
+      />
+    </FilterForm>
   )
 }

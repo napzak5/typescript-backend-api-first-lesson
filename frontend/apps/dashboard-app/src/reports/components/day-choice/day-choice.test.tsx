@@ -32,7 +32,10 @@ describe('DayChoice', () => {
     await stories.Chosen.run()
 
     // Assert
-    expect(screen.getByRole('form', { name: '売上を見る日' })).toBeVisible()
+    expect(field().closest('search')).toHaveAttribute(
+      'aria-label',
+      '売上を見る日',
+    )
     expect(field()).toHaveValue('2026-11-21')
     expect(field()).toHaveAttribute('min', '1900-01-01')
     expect(field()).toHaveAttribute('max', '2999-12-31')

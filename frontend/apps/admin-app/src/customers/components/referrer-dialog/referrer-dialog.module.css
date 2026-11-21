@@ -1,6 +1,0 @@
-/* The keyword, then the button that searches for it */
-.search {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-fields);
-}
