@@ -2310,7 +2310,8 @@ The workflows in `.github/workflows`:
   the toolchain-version, generated-file, API–database and schema-file checks,
   lint, format check, build, type check, knip, the unit tests, the integration
   tests (once against an external PostgreSQL and once through
-  testcontainers), the browser tests, a build for each environment, and a
+  testcontainers, each cut into four parts that run in jobs side by side),
+  the browser tests, a build for each environment, and a
   dependency audit. On a
   push to `main`, once the checks have passed, it calls `publish-images.yml`
   for staging. `make ci-check` runs the same checks locally, except
