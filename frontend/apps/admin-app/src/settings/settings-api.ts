@@ -26,8 +26,6 @@ import { match, P } from 'ts-pattern'
  * An administrator adds a salon; the owner and an administrator remove it.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 const KEEPERS: readonly string[] = ['owner', 'manager', 'admin']
@@ -76,7 +74,7 @@ export const changeSalon = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -107,7 +105,7 @@ export const addSalon = async (
     .with({ status: 409 }, () => ({ type: 'emailTaken' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -133,6 +131,6 @@ export const removeSalon = async (salonId: string): Promise<SalonRemoval> => {
     .with({ status: 409 }, () => ({ type: 'bookingsUnfinished' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }

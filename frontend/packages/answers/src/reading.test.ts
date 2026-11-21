@@ -9,6 +9,8 @@ import {
   type NotFound,
   type Page,
   type Problem,
+  PUBLIC_REFUSED_PARTS,
+  PUBLIC_UNANSWERED_PARTS,
   pageOf,
   REFUSED_PARTS,
   type Refused,
@@ -74,6 +76,34 @@ const readWithUnanswered = (answer: Answer): string | Unread | NotFound =>
     .with({ status: 400 }, () => 'refused')
     .with({ status: 404 }, () => NOT_FOUND)
     .with(P.union(...UNANSWERED_PARTS), unreadOf)
+    .exhaustive()
+
+/** What a request makes of every answer of an operation that needs no session */
+type PublicAnswer =
+  | { status: 200; data: string }
+  | Problem<400>
+  | Problem<404>
+  | Problem<429>
+  | Problem<500>
+  | null
+
+const readPublic = (answer: PublicAnswer): string | Unread | NotFound =>
+  match(answer)
+    .returnType<string | Unread | NotFound>()
+    .with({ status: 200 }, ({ data }) => data)
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
+    .exhaustive()
+
+const readPublicWithUnanswered = (
+  answer: PublicAnswer,
+): string | Unread | NotFound =>
+  match(answer)
+    .returnType<string | Unread | NotFound>()
+    .with({ status: 200 }, ({ data }) => data)
+    .with({ status: 400 }, () => 'refused')
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with(P.union(...PUBLIC_UNANSWERED_PARTS), unreadOf)
     .exhaustive()
 
 describe('the parts of the patterns', () => {
@@ -275,5 +305,25 @@ describe('unsentMessageOf', () => {
     expect(unsentMessageOf(FAILED)).toBe(
       '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
     )
+  })
+})
+
+describe('the parts of the patterns of an operation that needs no session', () => {
+  it.each<[string, PublicAnswer, string | Unread | NotFound]>([
+    ['what was asked for', { status: 200, data: 'read' }, 'read'],
+    ['nothing at the address', problem(404), NOT_FOUND],
+    ['a value the screens should not have sent', problem(400), FAILED],
+    ['too many requests', problem(429), TOO_MANY_REQUESTS],
+    ['a failure of the API', problem(500), FAILED],
+    ['no answer', null, FAILED],
+  ])('should read %s', (_, answer, read) => {
+    expect(readPublic(answer)).toEqual(read)
+  })
+
+  it('should leave a 400 to the match with the answers that say nothing', () => {
+    expect(readPublicWithUnanswered(problem(400))).toBe('refused')
+    expect(readPublicWithUnanswered(null)).toEqual(FAILED)
+    expect(readPublicWithUnanswered(problem(429))).toEqual(TOO_MANY_REQUESTS)
+    expect(readPublicWithUnanswered(problem(500))).toEqual(FAILED)
   })
 })

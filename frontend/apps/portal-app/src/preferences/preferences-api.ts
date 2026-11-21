@@ -42,9 +42,6 @@ export const OWN_PREFERENCES = ['own', 'preferences']
  */
 export const OWN_PREFERENCES_TO_CHANGE = ['own', 'preferences-to-change']
 
-/** The answers `unansweredOf` reads: those of `UNANSWERED_PARTS`, and a 403 */
-const UNANSWERED = P.union(...UNANSWERED_PARTS, { status: 403 })
-
 export type PreferencesRead =
   | {
       type: 'found'
@@ -89,7 +86,7 @@ const readStored = async (): Promise<StoredRead> => {
       preferences: data.data,
     }))
     .with({ status: 404 }, () => ({ type: 'none' }))
-    .with(UNANSWERED, unansweredOf)
+    .with(P.union(...UNANSWERED_PARTS, { status: 403 }), unansweredOf)
     .exhaustive(outsideTheContract)
 }
 

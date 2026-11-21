@@ -42,8 +42,6 @@ import {
 
 const TITLE = '自分のレビュー'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 const NO_REVIEWS = (
   <EmptyState
     title='レビューは、まだありません'
@@ -195,7 +193,7 @@ const OwnReviews = () => {
           <Reviews customerId={id} />
         ))
         .with({ type: 'none' }, () => NO_PROFILE)
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void profile.refetch()}

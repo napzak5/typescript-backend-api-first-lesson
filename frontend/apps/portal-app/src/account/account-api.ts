@@ -85,14 +85,21 @@ type Refused =
   | Problem<500>
   | null
 
-const REFUSED = P.union(
+const REFUSED_PARTS: [
   null,
   { status: 400 },
   { status: 413 },
   { status: 415 },
   { status: 429 },
   { status: 500 },
-)
+] = [
+  null,
+  { status: 400 },
+  { status: 413 },
+  { status: 415 },
+  { status: 429 },
+  { status: 500 },
+]
 
 const ACCEPTED: { type: 'accepted' } = { type: 'accepted' }
 
@@ -137,7 +144,7 @@ export const register = async (
   match(await authCrudRegister(request).catch(() => null))
     .returnType<RequestOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
-    .with(REFUSED, refusalOf)
+    .with(P.union(...REFUSED_PARTS), refusalOf)
     .exhaustive(outsideTheContract)
 
 /** Asks for the mail that confirms an address once more. */
@@ -147,7 +154,7 @@ export const sendVerificationAgain = async (
   match(await authCrudSendEmailVerification({ email }).catch(() => null))
     .returnType<RequestOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
-    .with(REFUSED, refusalOf)
+    .with(P.union(...REFUSED_PARTS), refusalOf)
     .exhaustive(outsideTheContract)
 
 /** Confirms the address that the token was mailed to. */
@@ -155,7 +162,7 @@ export const confirmEmail = async (token: string): Promise<TokenOutcome> =>
   match(await authCrudConfirmEmailVerification({ token }).catch(() => null))
     .returnType<TokenOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
-    .with(REFUSED, tokenRefusalOf)
+    .with(P.union(...REFUSED_PARTS), tokenRefusalOf)
     .exhaustive(outsideTheContract)
 
 /** Asks for the mail with which a password is set anew. */
@@ -165,7 +172,7 @@ export const requestPasswordReset = async (
   match(await authCrudForgotPassword({ email }).catch(() => null))
     .returnType<RequestOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
-    .with(REFUSED, refusalOf)
+    .with(P.union(...REFUSED_PARTS), refusalOf)
     .exhaustive(outsideTheContract)
 
 /** Asks whether the token of a password reset still works. It stays usable. */
@@ -175,7 +182,7 @@ export const checkPasswordReset = async (
   match(await authCrudVerifyResetToken({ token }).catch(() => null))
     .returnType<TokenOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
-    .with(REFUSED, tokenRefusalOf)
+    .with(P.union(...REFUSED_PARTS), tokenRefusalOf)
     .exhaustive(outsideTheContract)
 
 /** Sets the password of the account that the token was mailed to. Nobody is signed in by it. */
@@ -186,7 +193,7 @@ export const resetPassword = async (
   match(await authCrudResetPassword({ token, newPassword }).catch(() => null))
     .returnType<TokenOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
-    .with(REFUSED, tokenRefusalOf)
+    .with(P.union(...REFUSED_PARTS), tokenRefusalOf)
     .exhaustive(outsideTheContract)
 
 /** Asks what the invitation is and which of the two ways takes it. It stays usable. */
@@ -207,7 +214,7 @@ export const checkInvitation = async (
     // An invitation without a way to take it is none a person can use
     .with({ status: 200 }, () => ({ type: 'failed' }))
     .with({ status: 409 }, () => ({ type: 'accountExists' }))
-    .with(REFUSED, tokenRefusalOf)
+    .with(P.union(...REFUSED_PARTS), tokenRefusalOf)
     .exhaustive(outsideTheContract)
 
 /** Creates the account of the invited person, with the password they chose. Nobody is signed in by it. */
@@ -221,7 +228,7 @@ export const acceptInvitation = async (
     .returnType<InvitationAcceptance>()
     .with({ status: 204 }, () => ACCEPTED)
     .with({ status: 409 }, () => ({ type: 'accountExists' }))
-    .with(REFUSED, tokenRefusalOf)
+    .with(P.union(...REFUSED_PARTS), tokenRefusalOf)
     .exhaustive(outsideTheContract)
 
 /** Ties the account that is signed in to the staff member of the invitation. */
@@ -235,5 +242,5 @@ export const joinInvitation = async (
     .with(P.union({ status: 403 }, { status: 409 }), () => ({
       type: 'notForThisAccount',
     }))
-    .with(REFUSED, tokenRefusalOf)
+    .with(P.union(...REFUSED_PARTS), tokenRefusalOf)
     .exhaustive(outsideTheContract)

@@ -26,8 +26,6 @@ import { match, P } from 'ts-pattern'
  * wrong; a review that breaks the rules is removed, and its reports with it.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /**
@@ -72,7 +70,7 @@ export const readReportPage = async (
     .returnType<ReportPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: P.union(400, 403) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -102,6 +100,6 @@ export const dismissReport = async (reportId: string): Promise<Dismissal> => {
     .with({ status: 409 }, () => ({ type: 'dismissedAlready' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }

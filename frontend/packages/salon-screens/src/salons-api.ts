@@ -4,8 +4,8 @@ import {
   type NotFound,
   outsideTheContract,
   type Page,
+  PUBLIC_REFUSED_PARTS,
   pageOf,
-  REFUSED_PARTS,
   type Unread,
   unreadOf,
 } from '@beauty-salon-frontend/answers'
@@ -16,8 +16,6 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
-
-const REFUSED = P.union(...REFUSED_PARTS)
 
 export type SalonPage = Page<ModelsSalonResponse> | Unread
 
@@ -47,7 +45,7 @@ export const findSalons = async (
   return match(answer)
     .returnType<SalonPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -67,7 +65,7 @@ export const readSalon = async (id: string): Promise<SalonRead> => {
     .returnType<SalonRead>()
     .with({ status: 200 }, ({ data }) => ({ type: 'found', salon: data.data }))
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 

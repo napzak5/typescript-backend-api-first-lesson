@@ -143,8 +143,6 @@ const ShareLinkPart = ({
   })
   const header = <PageHeader title={TITLE} description={salon.name} />
   const linkRead = link.isFetchedAfterMount ? link.data : undefined
-  const UNREAD = { type: P.union(...UNREAD_TYPES) }
-
   return (
     match([file.data, linkRead])
       .returnType<ReactNode>()
@@ -188,22 +186,28 @@ const ShareLinkPart = ({
             <ShareLinkNotFound salonId={salon.id} attachmentId={attachmentId} />
           ),
       )
-      .with(P.union([UNREAD, P._], [P._, UNREAD]), () => (
-        <>
-          {header}
-          <UnreadNotice
-            message={unreadMessageOf(
-              '共有リンク',
-              whyUnread([file.data, linkRead]),
-            )}
-            onRetry={() => {
-              void file.refetch()
-              void link.refetch()
-            }}
-            pending={file.isFetching || link.isFetching}
-          />
-        </>
-      ))
+      .with(
+        P.union(
+          [{ type: P.union(...UNREAD_TYPES) }, P._],
+          [P._, { type: P.union(...UNREAD_TYPES) }],
+        ),
+        () => (
+          <>
+            {header}
+            <UnreadNotice
+              message={unreadMessageOf(
+                '共有リンク',
+                whyUnread([file.data, linkRead]),
+              )}
+              onRetry={() => {
+                void file.refetch()
+                void link.refetch()
+              }}
+              pending={file.isFetching || link.isFetching}
+            />
+          </>
+        ),
+      )
       .with(P.union([undefined, P._], [P._, undefined]), () => (
         <>
           {header}

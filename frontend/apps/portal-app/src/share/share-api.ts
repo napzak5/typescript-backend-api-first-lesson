@@ -37,7 +37,12 @@ type PasswordRefused = { type: 'passwordRefused' }
 type Unusable = { type: 'unusable' }
 
 /** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(null, { status: P.union(413, 415, 500) })
+const UNANSWERED_PARTS: [
+  null,
+  { status: 413 },
+  { status: 415 },
+  { status: 500 },
+] = [null, { status: 413 }, { status: 415 }, { status: 500 }]
 
 export type SharedFileRead =
   | { type: 'found'; file: ModelsSharedFileResponse }
@@ -64,7 +69,7 @@ export const readSharedFile = async (
     .with({ status: P.union(400, 403) }, () => PASSWORD_REFUSED)
     .with({ status: 404 }, () => UNUSABLE)
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }
 
@@ -95,7 +100,7 @@ const issueDownload = async (token: string, password: string | null) => {
     .with({ status: P.union(400, 403) }, () => PASSWORD_REFUSED)
     .with({ status: 404 }, () => UNUSABLE)
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }
 

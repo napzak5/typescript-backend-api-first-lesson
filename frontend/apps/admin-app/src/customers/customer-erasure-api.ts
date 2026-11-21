@@ -26,8 +26,6 @@ import { customerKeyOf } from './customers-api'
  * itself is run by the operator of the platform.
  */
 
-const REFUSED = P.union(...REFUSED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 export type ErasureRequest = ModelsCustomerDeletionRequestResponse
@@ -62,7 +60,7 @@ export const readErasureRequest = async (
     }))
     .with({ status: 404 }, () => ({ type: 'read', request: null }))
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -138,6 +136,6 @@ export const cancelErasureRequest = async (
     }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

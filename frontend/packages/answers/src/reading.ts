@@ -55,8 +55,11 @@ export type Page<Item> = {
 
 /*
  * A pattern cannot be shared: its type cannot be named outside
- * `ts-pattern`. Its parts are, for a match to put together
- * (`.with(P.union(...UNANSWERED_PARTS), unreadOf)`).
+ * `ts-pattern`. Its parts are, and a match puts them together where it is
+ * written (`.with(P.union(...UNANSWERED_PARTS), unreadOf)`): the answer of
+ * the operation then refuses a part it cannot be, and `.exhaustive()` an
+ * answer that no part takes. A pattern kept in a constant is not checked
+ * against the answers it is matched with.
  */
 
 /**
@@ -79,6 +82,22 @@ export const REFUSED_PARTS: [
   { status: 429 },
   { status: 500 },
 ] = [null, { status: 400 }, { status: 401 }, { status: 429 }, { status: 500 }]
+
+/**
+ * The answers of an operation that needs no session that say nothing a
+ * person could act on, and no answer at all: those of `UNANSWERED_PARTS`
+ * but a 401, which such an operation does not answer.
+ */
+export const PUBLIC_UNANSWERED_PARTS: [null, { status: 429 }, { status: 500 }] =
+  [null, { status: 429 }, { status: 500 }]
+
+/** The answers of `Refused` that an operation that needs no session gives: those of `PUBLIC_UNANSWERED_PARTS`, and a 400 */
+export const PUBLIC_REFUSED_PARTS: [
+  null,
+  { status: 400 },
+  { status: 429 },
+  { status: 500 },
+] = [null, { status: 400 }, { status: 429 }, { status: 500 }]
 
 export const NOT_FOUND: { type: 'notFound' } = { type: 'notFound' }
 

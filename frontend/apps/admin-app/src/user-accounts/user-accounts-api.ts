@@ -21,8 +21,6 @@ import { match, P } from 'ts-pattern'
  * user who lost both the authenticator and the backup codes.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** The key the account of a user is read under. */
@@ -46,7 +44,7 @@ export const readUser = async (userId: string): Promise<UserRead> => {
     .with({ status: 200 }, ({ data }) => ({ type: 'found', user: data.data }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -77,7 +75,7 @@ export const unlockAccount = async (userId: string): Promise<Unlocking> => {
     .with({ status: 409 }, () => ({ type: 'notLocked' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -108,6 +106,6 @@ export const resetTwoFactor = async (
     .with({ status: 409 }, () => ({ type: 'notEnabled' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }

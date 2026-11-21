@@ -28,8 +28,6 @@ import { readCustomers } from './customers-api'
  * a write or none of it.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** Registers the customers of a file (`POST /customers/bulk`). */
@@ -59,7 +57,7 @@ export const registerCustomers = async (
       .with({ status: 403 }, () => FORBIDDEN)
       .with({ status: 413 }, () => ({ type: 'tooLarge' }))
       .with({ status: 415 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -116,7 +114,7 @@ export const retagCustomers = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // Only the tags are sent, as they were read: the API has nothing else to refuse
       .with({ status: P.union(400, 409, 413, 415) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -146,6 +144,6 @@ export const removeCustomers = async (
     .with({ status: 404 }, () => goneOf(ids))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(400, 413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

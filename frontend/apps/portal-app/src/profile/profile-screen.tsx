@@ -43,8 +43,6 @@ const TITLE = 'お客様の情報'
 /** Where the profile is shown, and where both forms lead */
 const MY_PAGE = '/mypage'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 const BACK = (
   <ButtonLink href={MY_PAGE} variant='quiet'>
     マイページへ戻る
@@ -214,7 +212,7 @@ const OwnProfile = () => {
         <ProfileRegistration />
       </>
     ))
-    .with({ type: UNREAD }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice

@@ -143,11 +143,6 @@ const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 const CONFLICT: { type: 'conflict' } = { type: 'conflict' }
 
-const REFUSED = P.union(...REFUSED_PARTS)
-
-/** The same, for a request whose 400 names the values it refused */
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 /** How many sales a page of the ledger has. */
 const SALES_PER_PAGE = 50
 
@@ -196,7 +191,7 @@ export const readSales = async (
     .returnType<SalePage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -217,7 +212,7 @@ export const readSalesOfBooking = async (
       .returnType<SalePage>()
       .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
       .with({ status: 403 }, () => FORBIDDEN)
-      .with(REFUSED, unreadOf)
+      .with(P.union(...REFUSED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   })
 
@@ -241,7 +236,7 @@ export const readSale = async (id: string): Promise<SaleRead> => {
     .with({ status: 200 }, ({ data }) => ({ type: 'found', sale: data.data }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -267,7 +262,7 @@ export const calculateSale = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -287,7 +282,7 @@ export const createSale = async (
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -312,7 +307,7 @@ export const recordPayment = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -334,7 +329,7 @@ export const updateSale = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -356,7 +351,7 @@ export const voidSale = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -381,7 +376,7 @@ export const refundPayment = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -401,7 +396,7 @@ export const readReceipt = async (saleId: string): Promise<ReceiptRead> => {
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -425,7 +420,7 @@ export const readPaymentMethods = async (
       .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
       .with({ status: 404 }, () => NOT_FOUND)
       .with({ status: 403 }, () => FORBIDDEN)
-      .with(REFUSED, unreadOf)
+      .with(P.union(...REFUSED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   })
 

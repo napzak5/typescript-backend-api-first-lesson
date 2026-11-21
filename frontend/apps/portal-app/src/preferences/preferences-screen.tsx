@@ -38,8 +38,6 @@ const TITLE = '好みの設定'
 /** Where the preferences are shown, and where the form leads */
 const MY_PAGE = '/mypage'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 const BACK = (
   <ButtonLink href={MY_PAGE} variant='quiet'>
     マイページへ戻る
@@ -185,7 +183,7 @@ const OwnPreferencesToChange = () => {
             />
           </>
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('好みの設定', reason)}
             onRetry={() => void read.refetch()}

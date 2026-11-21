@@ -28,8 +28,6 @@ import {
 
 const TITLE = '共有されたファイル'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 const NOT_LOADED: SharedFileContent = {
   type: 'notLoaded',
   pending: false,
@@ -260,7 +258,7 @@ const SharedFileOfToken = ({ token }: { token: string }) => {
           />
         ))
         .with({ type: 'unusable' }, () => <ShareLinkUnusable />)
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <>
             <PageHeader title={TITLE} />
             <UnreadNotice

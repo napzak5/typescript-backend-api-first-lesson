@@ -25,8 +25,6 @@ import {
  * conditions of the ledger, and everything held of one customer.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** What a spreadsheet tells a CSV file of UTF-8 by: the mark of its byte order */
@@ -73,7 +71,7 @@ export const exportLedger = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The conditions are those the ledger is read by, which the API takes
       .with({ status: 400 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -107,7 +105,7 @@ export const exportCustomerData = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The ID is that of a customer the page shows
       .with({ status: 400 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }

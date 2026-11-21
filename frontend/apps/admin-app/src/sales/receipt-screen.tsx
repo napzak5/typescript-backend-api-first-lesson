@@ -24,8 +24,6 @@ import { WithPaymentMethods } from './with-sale'
 
 const TITLE = 'レシート'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 /**
  * What is on the screen and not on paper: the heading and the ways on. The
  * heading is in it whatever the screen shows, so that it stays one element
@@ -123,7 +121,7 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
           <OtherSalonNotice what='売上' />
         </>
       ))
-      .with({ type: UNREAD }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <OnScreen>
             <PageHeader title={TITLE} description={salon.name} />

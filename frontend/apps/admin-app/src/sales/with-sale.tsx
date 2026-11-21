@@ -26,8 +26,6 @@ import {
   saleKeyOf,
 } from './sales-api'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 export type WithSaleProps = {
   salon: ModelsSalonResponse
   /** The title of the screen */
@@ -95,7 +93,7 @@ export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
           <OtherSalonNotice what='売上' />
         </>
       ))
-      .with({ type: UNREAD }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <PageHeader title={title} description={salon.name} />
           <UnreadNotice
@@ -136,7 +134,7 @@ export const WithPaymentMethods = ({
     ))
     .with({ type: 'found' }, ({ items }) => children(items))
     .with({ type: 'forbidden' }, () => <OtherSalonNotice what='売上' />)
-    .with({ type: P.union(UNREAD, 'notFound') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES, 'notFound') }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('支払い方法', reason)}
         onRetry={() => void methods.refetch()}

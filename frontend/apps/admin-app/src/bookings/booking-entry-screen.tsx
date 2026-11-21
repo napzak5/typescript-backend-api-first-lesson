@@ -79,8 +79,6 @@ import { ChosenCustomer } from './components/chosen-customer/chosen-customer'
 
 const TITLE = '予約を入れる'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 /** The address of the screen with another choice in it. */
@@ -359,9 +357,9 @@ const EntryStep = ({
         ),
     )
     .with(
-      [{ type: UNREAD }, P._, P._],
-      [P._, { type: UNREAD }, P._],
-      [P._, P._, { type: P.union(UNREAD, 'notFound') }],
+      [{ type: P.union(...UNREAD_TYPES) }, P._, P._],
+      [P._, { type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
           message={unreadMessageOf('お客様とメニュー', whyUnread(reads))}

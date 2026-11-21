@@ -34,8 +34,6 @@ import { type ProductConditions, productListParamsOf } from './product-ledger'
  * a manager and an administrator keep them.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 const KEEPERS: readonly string[] = ['owner', 'manager', 'admin']
@@ -115,7 +113,7 @@ export const readProductPage = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The salon was removed after it was read, or the product of the cursor meanwhile
       .with({ status: P.union(400, 404) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -148,7 +146,7 @@ export const readProduct = async (
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -182,7 +180,7 @@ export const addProduct = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -210,7 +208,7 @@ export const changeProduct = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -235,6 +233,6 @@ export const removeProduct = async (
     .with({ status: 409 }, () => ({ type: 'inStock' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

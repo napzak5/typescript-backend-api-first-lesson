@@ -37,8 +37,6 @@ import { WithBooking, WithStaffAndServices } from './with-booking'
 
 const TITLE = '施術明細の内容'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 type LineProps = {
   salon: ModelsSalonResponse
   booking: ModelsBookingResponse
@@ -159,7 +157,7 @@ const LineOfBooking = ({ salon, booking }: LineOfBookingProps) => {
       </>
     ))
     .with({ type: 'forbidden' }, () => <OtherSalonNotice />)
-    .with({ type: UNREAD }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('施術明細', reason)}
         onRetry={() => void read.refetch()}

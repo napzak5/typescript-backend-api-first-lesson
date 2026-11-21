@@ -30,8 +30,6 @@ import { type MovementConditions, movementParamsOf } from './movement-search'
  * record the others as well. A movement is never changed nor removed.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /**
@@ -75,7 +73,7 @@ export const readMovementPage = async (
       // The movement of the cursor is of no other row, and the conditions are
       // those the API takes: nothing a person could act on
       .with({ status: 400 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -114,6 +112,6 @@ export const recordMovement = async (
     .with({ status: 409 }, () => ({ type: 'outOfRange' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

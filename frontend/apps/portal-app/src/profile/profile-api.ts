@@ -26,9 +26,6 @@ import { unansweredOf } from '../behind-the-session'
  */
 export const OWN_PROFILE = ['own', 'profile']
 
-/** The answers `unansweredOf` reads: those of `UNANSWERED_PARTS`, and a 403 */
-const UNANSWERED = P.union(...UNANSWERED_PARTS, { status: 403 })
-
 export type ProfileRead =
   | { type: 'found'; profile: ModelsCustomerProfileResponse }
   /** The account has no profile yet: nobody has said who the customer is */
@@ -63,7 +60,7 @@ export const readOwnProfile = async (): Promise<ProfileRead> => {
       profile: data.data,
     }))
     .with({ status: 404 }, () => ({ type: 'none' }))
-    .with(UNANSWERED, unansweredOf)
+    .with(P.union(...UNANSWERED_PARTS, { status: 403 }), unansweredOf)
     .exhaustive(outsideTheContract)
 }
 

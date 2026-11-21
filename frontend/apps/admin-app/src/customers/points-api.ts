@@ -29,11 +29,6 @@ import { type PointAttempt, type PointRecording, whyRefused } from './points'
 
 const idSchema = z.uuid()
 
-const REFUSED = P.union(...REFUSED_PARTS)
-
-/** The same, for a request whose 400 names the values it refused */
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** The key of what is read of the points of a customer: below the customer, whose record holds the balance too. */
@@ -80,7 +75,7 @@ export const readBalance = async (customerId: string): Promise<BalanceRead> => {
       balance: data.data.balance,
     }))
     .with({ status: P.union(403, 404) }, () => FAILED)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -113,7 +108,7 @@ export const readExpiring = async (
       expiring: data.data,
     }))
     .with({ status: P.union(403, 404) }, () => FAILED)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -138,7 +133,7 @@ export const readTransactionsPage = async (
     .returnType<Page<ModelsPointTransactionResponse> | Unread>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: P.union(403, 404) }, () => FAILED)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -173,7 +168,7 @@ export const recordPoints = async (
     .with({ status: 409 }, () => ({ type: 'conflict' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
   if (outcome.type !== 'conflict') {
     return outcome

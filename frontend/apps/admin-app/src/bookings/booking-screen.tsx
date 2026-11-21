@@ -88,8 +88,6 @@ import {
 
 const TITLE = '予約の内容'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 /** An operation on the state of a booking, with what it sends. */
 type Operation =
   | { type: 'confirm' }
@@ -386,9 +384,9 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
       ),
     )
     .with(
-      [{ type: UNREAD }, P._, P._],
-      [P._, { type: UNREAD }, P._],
-      [P._, P._, { type: P.union(UNREAD, 'notFound') }],
+      [{ type: P.union(...UNREAD_TYPES) }, P._, P._],
+      [P._, { type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
           message={unreadMessageOf('予約の内容', whyUnread(reads))}
@@ -457,7 +455,7 @@ const BookingOfSalon = ({ salon }: BookingOfSalonProps) => {
           <OtherSalonNotice />
         </>
       ))
-      .with({ type: UNREAD }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <PageHeader title={TITLE} description={salon.name} />
           <UnreadNotice

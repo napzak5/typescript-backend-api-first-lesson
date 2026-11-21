@@ -28,8 +28,6 @@ import { stockKeyOf } from './inventory-api'
  * reads and acknowledges them, and an administrator.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /**
@@ -76,7 +74,7 @@ export const readAlertPage = async (
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -103,7 +101,7 @@ export const readAlertSummary = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -135,6 +133,6 @@ export const acknowledgeAlert = async (
     .with({ status: 409 }, () => ({ type: 'acknowledgedAlready' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(400, 413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

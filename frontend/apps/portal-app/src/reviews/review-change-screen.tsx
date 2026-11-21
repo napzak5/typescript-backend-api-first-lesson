@@ -39,8 +39,6 @@ const TITLE = 'レビューを変更する'
 /** Where what the customer wrote is listed, and where the form leads */
 const OWN_REVIEWS = '/mypage/reviews'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 const BACK = (
   <ButtonLink href={OWN_REVIEWS} variant='quiet'>
     自分のレビューへ戻る
@@ -198,7 +196,7 @@ const ReviewToChange = () => {
             />
           </>
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void read.refetch()}

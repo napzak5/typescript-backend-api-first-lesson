@@ -28,8 +28,6 @@ import { treatmentsHrefOf } from '../navigation'
 import { productsKeyOf, readProducts } from '../products/products-api'
 import { readTreatment, treatmentKeyOf } from './treatments-api'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 /** What a screen of a record names and offers, read with the record */
 export type TreatmentContext = {
   record: ModelsTreatmentRecordResponse
@@ -122,7 +120,7 @@ export const WithTreatment = ({
       .with([{ type: 'notFound' }, P._, P._, P._], () => (
         <TreatmentNotFound salonId={salon.id} />
       ))
-      .with([{ type: UNREAD }, P._, P._, P._], ([reason]) => (
+      .with([{ type: P.union(...UNREAD_TYPES) }, P._, P._, P._], ([reason]) => (
         <>
           {header}
           <UnreadNotice
@@ -183,9 +181,14 @@ export const WithTreatment = ({
         () => <TreatmentNotFound salonId={salon.id} />,
       )
       .with(
-        [{ type: 'found' }, { type: UNREAD }, P._, P._],
-        [{ type: 'found' }, P._, { type: UNREAD }, P._],
-        [{ type: 'found' }, P._, P._, { type: P.union(UNREAD, 'notFound') }],
+        [{ type: 'found' }, { type: P.union(...UNREAD_TYPES) }, P._, P._],
+        [{ type: 'found' }, P._, { type: P.union(...UNREAD_TYPES) }, P._],
+        [
+          { type: 'found' },
+          P._,
+          P._,
+          { type: P.union(...UNREAD_TYPES, 'notFound') },
+        ],
         ([, ...reads]) => (
           <>
             {header}

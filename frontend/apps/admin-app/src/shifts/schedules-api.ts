@@ -25,8 +25,6 @@ import { match, P } from 'ts-pattern'
  * reads their own.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** The roles that plan the schedules of a salon: a member of the staff reads their own */
@@ -65,7 +63,7 @@ export const readSchedule = async (
       // An ID that is no ID names no member either
       .with({ status: P.union(400, 404) }, () => NOT_FOUND)
       .with({ status: 403 }, () => FORBIDDEN)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -125,7 +123,7 @@ const saveSchedule = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 

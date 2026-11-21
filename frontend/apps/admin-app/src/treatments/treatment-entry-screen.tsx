@@ -57,8 +57,6 @@ const TITLE = '施術記録を書く'
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 type EntryProps = {
   salon: ModelsSalonResponse
   booking: ModelsBookingResponse
@@ -287,9 +285,9 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
       ),
     )
     .with(
-      [{ type: UNREAD }, P._, P._],
-      [P._, { type: UNREAD }, P._],
-      [P._, P._, { type: P.union(UNREAD, 'notFound') }],
+      [{ type: P.union(...UNREAD_TYPES) }, P._, P._],
+      [P._, { type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
           message={unreadMessageOf('お客様と商品', whyUnread(reads))}

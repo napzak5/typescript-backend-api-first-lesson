@@ -5,6 +5,7 @@ import {
   type NotFound,
   outsideTheContract,
   type Page,
+  PUBLIC_REFUSED_PARTS,
   pageOf,
   toTheEnd,
   type Unread,
@@ -31,13 +32,6 @@ import {
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import type { SalonConditions } from './salon-search'
-
-/**
- * The answers of a public operation that say nothing about what was asked
- * for, and no answer at all: those of `Refused` but a 401, which a request
- * without a session never gets.
- */
-const REFUSED = P.union(null, { status: 400 }, { status: 429 }, { status: 500 })
 
 type SalonPage = Page<ModelsSalonResponse> | Unread
 
@@ -95,7 +89,7 @@ export const findSalons = async (
   return match(answer)
     .returnType<SalonPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -115,7 +109,7 @@ export const readSalon = async (id: string): Promise<SalonRead> => {
     .returnType<SalonRead>()
     .with({ status: 200 }, ({ data }) => ({ type: 'found', salon: data.data }))
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -133,7 +127,7 @@ const readCategories = async (
     .returnType<Page<ModelsServiceCategoryResponse> | NotFound | Unread>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -151,7 +145,7 @@ const readServices = async (
     .returnType<Page<ModelsServiceResponse> | NotFound | Unread>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -191,7 +185,7 @@ const readStaffPage = async (
   return match(answer)
     .returnType<Page<ModelsStaffProfileResponse> | Unread>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -215,7 +209,7 @@ export const readReviewSummary = async (
       summary: data.data,
     }))
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -233,7 +227,7 @@ const readStaffReviewSummary = async (
       summary: data.data,
     }))
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -281,6 +275,6 @@ export const readReviews = async (
   return match(answer)
     .returnType<ReviewPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

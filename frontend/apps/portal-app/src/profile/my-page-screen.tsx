@@ -20,8 +20,6 @@ import { OWN_PROFILE, readOwnProfile } from './profile-api'
 
 const TITLE = 'マイページ'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 const OwnPage = () => {
   const read = useQuery({
     queryKey: OWN_PROFILE,
@@ -71,7 +69,7 @@ const OwnPage = () => {
             }
           />
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('お客様の情報', reason)}
             onRetry={() => void read.refetch()}

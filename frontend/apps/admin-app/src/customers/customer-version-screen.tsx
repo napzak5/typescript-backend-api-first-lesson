@@ -26,8 +26,6 @@ import { WithCustomer } from './with-customer'
 
 const TITLE = '台帳の版'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 type ComparedVersionProps = {
   salon: ModelsSalonResponse
   version: ModelsCustomerVersionResponse
@@ -61,7 +59,7 @@ const ComparedVersion = ({ salon, version, changer }: ComparedVersionProps) => {
     ))
     .with({ type: 'found' }, ({ version: previous }) => record(previous))
     .with({ type: P.union('notFound', 'forbidden') }, () => record(undefined))
-    .with({ type: UNREAD }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <UnreadNotice
           message={unreadMessageOf('前の版', reason)}
@@ -144,7 +142,7 @@ const VersionPart = ({
             </p>
           ))
           .with({ type: 'forbidden' }, () => <p>{KEPT_BY_OTHERS}</p>)
-          .with({ type: UNREAD }, (reason) => (
+          .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
             <UnreadNotice
               message={unreadMessageOf('版', reason)}
               onRetry={() => void read.refetch()}

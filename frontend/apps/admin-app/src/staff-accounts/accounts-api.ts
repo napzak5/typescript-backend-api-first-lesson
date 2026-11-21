@@ -30,8 +30,6 @@ import { readStaffMember } from '../staff/staff-api'
  * the account once the member has taken the invitation.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** The key the account of a member is read under. */
@@ -70,7 +68,7 @@ export const readAccount = async (
       // No account is linked to the member, nor to an ID that is no ID
       .with({ status: P.union(400, 404) }, () => NOT_FOUND)
       .with({ status: 403 }, () => FORBIDDEN)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -97,7 +95,7 @@ export const readInvitation = async (
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -145,7 +143,7 @@ const createInvitation = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The screen sends only the roles the account may give
       .with({ status: P.union(400, 413, 415) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -223,7 +221,7 @@ export const revokeInvitation = async (
     .with({ status: 204 }, () => ({ type: 'revoked' }))
     .with({ status: P.union(400, 404) }, () => GONE)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -260,7 +258,7 @@ export const changeRole = async (
     .with({ status: 409 }, () => OWN)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(400, 413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -289,6 +287,6 @@ export const unlinkAccount = async (
     .with({ status: P.union(400, 404) }, () => GONE)
     .with({ status: 409 }, () => OWN)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

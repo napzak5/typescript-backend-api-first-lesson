@@ -33,8 +33,6 @@ import {
   withTwoFactorStatus,
 } from './two-factor-flow'
 
-const UNSENT = P.union(...UNREAD_TYPES)
-
 /**
  * Where the set-up is. The secret and the backup codes are in the answer
  * that issued them and nowhere else, so the steps are held here and not in
@@ -230,7 +228,7 @@ export const TwoFactorSetupScreen = ({
         .with({ type: 'found' }, ({ user }) => (
           <Setup user={user} securityHref={securityHref} />
         ))
-        .with({ type: UNSENT }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('アカウント', reason)}
             onRetry={() => void read.refetch()}

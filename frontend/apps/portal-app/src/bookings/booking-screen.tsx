@@ -55,8 +55,6 @@ import { OWN_BOOKING_LISTS } from './own-bookings'
 
 const TITLE = '予約する'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 type OfServiceProps = {
   salon: ModelsSalonResponse
   service: ModelsServiceResponse
@@ -230,7 +228,7 @@ const TimeStep = ({ salon, service, staff }: TimeStepProps) => {
           .returnType<TimesOfDay>()
           .with(undefined, () => ({ type: 'loading' }))
           .with({ type: 'found' }, () => ({ type: 'listed', times }))
-          .with({ type: UNREAD }, (reason) => ({
+          .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
             type: 'unread',
             reason,
             retrying: slots.isFetching,
@@ -298,14 +296,14 @@ const BookingSteps = ({ salon, service }: OfServiceProps) => {
         .with([undefined, P._], [P._, undefined], () => (
           <LoadingIndicator label='予約に必要な情報を読み込んでいます' />
         ))
-        .with([{ type: UNREAD }, P._], ([reason]) => (
+        .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
           <UnreadNotice
             message={unreadMessageOf('スタッフ', reason)}
             onRetry={() => void staff.refetch()}
             pending={staff.isFetching}
           />
         ))
-        .with([P._, { type: UNREAD }], ([, reason]) => (
+        .with([P._, { type: P.union(...UNREAD_TYPES) }], ([, reason]) => (
           <UnreadNotice
             message={unreadMessageOf('お客様の情報', reason)}
             onRetry={() => void profile.refetch()}
@@ -352,7 +350,7 @@ const BookingPage = () => {
         <ButtonLink href='/'>サロンを探す</ButtonLink>
       </>
     ))
-    .with([{ type: UNREAD }, P._], ([reason]) => (
+    .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice
@@ -362,7 +360,7 @@ const BookingPage = () => {
         />
       </>
     ))
-    .with([P._, { type: UNREAD }], ([, reason]) => (
+    .with([P._, { type: P.union(...UNREAD_TYPES) }], ([, reason]) => (
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice

@@ -35,11 +35,6 @@ import { customerKeyOf } from '../customers/customers-api'
  * one allergy: it is found in the list of the customer.
  */
 
-const REFUSED = P.union(...REFUSED_PARTS)
-
-/** The same, for a request whose 400 names the values it refused */
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 const idSchema = z.uuid()
@@ -76,7 +71,7 @@ const readPage = async (
       .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
       // The screens read the customer first, and are behind the same permission
       .with({ status: P.union(403, 404) }, () => FAILED)
-      .with(REFUSED, unreadOf)
+      .with(P.union(...REFUSED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -156,7 +151,7 @@ export const addAllergy = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The body is the form, far from the limits of size and of type
       .with({ status: P.union(413, 415) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -192,7 +187,7 @@ export const updateAllergy = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -219,6 +214,6 @@ export const removeAllergy = async (
     .with({ status: 204 }, () => ({ type: 'removed' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

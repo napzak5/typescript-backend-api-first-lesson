@@ -85,9 +85,6 @@ export type Move =
 
 const NOT_FOUND: NotFound = { type: 'notFound' }
 
-/** The answers `unansweredOf` reads: those of `UNANSWERED_PARTS`, and a 403 */
-const UNANSWERED = P.union(...UNANSWERED_PARTS, { status: 403 })
-
 const idSchema = z.uuid()
 
 const isId = (value: string): boolean => idSchema.safeParse(value).success
@@ -229,7 +226,7 @@ export const readOwnBooking = async (id: string): Promise<OwnBookingRead> => {
     }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unansweredOf)
+    .with(P.union(...UNANSWERED_PARTS, { status: 403 }), unansweredOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -266,7 +263,7 @@ const readOwnBookingsPage = async (
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 404 }, () => NO_BOOKINGS)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unansweredOf)
+    .with(P.union(...UNANSWERED_PARTS, { status: 403 }), unansweredOf)
     .exhaustive(outsideTheContract)
 }
 

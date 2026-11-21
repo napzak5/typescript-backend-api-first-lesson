@@ -28,8 +28,6 @@ import { match, P } from 'ts-pattern'
  * read with the sales (`readPaymentMethods` in `sales/sales-api.ts`).
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 const KEEPERS: readonly string[] = ['owner', 'manager', 'admin']
@@ -65,7 +63,7 @@ export const readPaymentMethod = async (
     .with({ status: 200 }, ({ data }) => ({ type: 'found', method: data.data }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -98,7 +96,7 @@ export const addPaymentMethod = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -127,7 +125,7 @@ export const changePaymentMethod = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -154,6 +152,6 @@ export const removePaymentMethod = async (
     .with({ status: 409 }, () => ({ type: 'inUse' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

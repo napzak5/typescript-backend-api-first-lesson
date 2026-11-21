@@ -82,13 +82,13 @@ const CONFLICT: { type: 'conflict' } = { type: 'conflict' }
  * on: no answer, a session that could not be renewed, a body the API did
  * not read, an error of the server.
  */
-const UNANSWERED = P.union(
+const UNANSWERED_PARTS: [
   null,
   { status: 401 },
   { status: 413 },
   { status: 415 },
   { status: 500 },
-)
+] = [null, { status: 401 }, { status: 413 }, { status: 415 }, { status: 500 }]
 
 /**
  * The account of the session, read anew. `useSession` reads it once for a
@@ -173,7 +173,7 @@ export const changePassword = async (
       values: refusedValuesOf(data),
     }))
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }
 
@@ -231,7 +231,7 @@ export const startTwoFactor = async (
     }))
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }
 
@@ -254,7 +254,7 @@ export const confirmTwoFactor = async (
     }))
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }
 
@@ -279,7 +279,7 @@ export const issueBackupCodes = async (
     }))
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }
 
@@ -301,6 +301,6 @@ export const stopTwoFactor = async (
     }))
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }

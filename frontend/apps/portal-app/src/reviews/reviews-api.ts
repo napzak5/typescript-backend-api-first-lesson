@@ -4,6 +4,7 @@ import {
   type NotFound,
   outsideTheContract,
   type Page,
+  PUBLIC_REFUSED_PARTS,
   pageOf,
   type RefusedValue,
   refusedValuesOf,
@@ -11,6 +12,7 @@ import {
   UNREAD_TYPES,
   type Unread,
   type Unsent,
+  unreadOf,
   whyUnread,
 } from '@beauty-salon-frontend/answers'
 import {
@@ -67,13 +69,6 @@ export const reviewToChangeKey = (reviewId: string): string[] => [
 const REVIEWS_PER_PAGE = 10
 
 const NOT_FOUND: NotFound = { type: 'notFound' }
-
-/**
- * The answers to a request to read that say nothing about what was asked
- * for, and no answer at all. A 400 is among them: the screens ask for what
- * the API takes.
- */
-const REFUSED = P.union(null, { status: 400 }, { status: 500 })
 
 /** A review with what a screen names it by. */
 export type OwnReview = {
@@ -176,12 +171,9 @@ const readReviewPage = async (
   return match(answer)
     .returnType<Page<ModelsReviewResponse> | Unread>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
-    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(REFUSED, () => FAILED)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
-
-const UNREAD = { type: P.union(...UNREAD_TYPES) }
 
 const isUnread = ({ type }: { type: string }): boolean =>
   type === 'tooManyRequests' || type === 'failed'
@@ -269,8 +261,7 @@ export const readReviewOfBooking = async (
 
       return review === undefined ? { type: 'none' } : { type: 'found', review }
     })
-    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(REFUSED, () => FAILED)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -302,10 +293,10 @@ export const readVisitToReview = async (
     match(reads)
       .returnType<VisitRead>()
       .with(
-        [UNREAD, P._, P._, P._],
-        [P._, UNREAD, P._, P._],
-        [P._, P._, UNREAD, P._],
-        [P._, P._, P._, UNREAD],
+        [{ type: P.union(...UNREAD_TYPES) }, P._, P._, P._],
+        [P._, { type: P.union(...UNREAD_TYPES) }, P._, P._],
+        [P._, P._, { type: P.union(...UNREAD_TYPES) }, P._],
+        [P._, P._, P._, { type: P.union(...UNREAD_TYPES) }],
         () => whyUnread(reads),
       )
       .with([P._, { type: 'found' }, P._, P._], ([, { review }]) => ({
@@ -352,8 +343,7 @@ const readReview = async (
     >()
     .with({ status: 200 }, ({ data }) => ({ type: 'found', review: data.data }))
     .with({ status: 404 }, () => NOT_FOUND)
-    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(REFUSED, () => FAILED)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 

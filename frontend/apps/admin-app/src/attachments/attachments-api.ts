@@ -32,8 +32,6 @@ import { match, P } from 'ts-pattern'
  * few minutes, which the browser calls without the API.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** The key the files of a salon are listed under: an upload or a removal drops every page. */
@@ -75,7 +73,7 @@ export const readAttachmentPage = async (
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -100,7 +98,7 @@ export const readAttachment = async (
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -132,7 +130,7 @@ export const readDownloadUrl = async (
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: P.union(403, 409) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -196,7 +194,7 @@ const issueUpload = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -234,7 +232,7 @@ const completeUpload = async (attachmentId: string): Promise<Uploading> => {
     .with({ status: 409 }, () => ({ type: 'notAsDeclared' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(400, 404) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -283,6 +281,6 @@ export const removeAttachment = async (
     .with({ status: 204 }, () => ({ type: 'removed' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

@@ -34,8 +34,6 @@ import { match, P } from 'ts-pattern'
  * breaks the rules, and removes a review that does.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /**
@@ -164,7 +162,7 @@ export const respondToReview = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -197,7 +195,7 @@ export const reportReview = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -220,6 +218,6 @@ export const removeReview = async (
     .with({ status: 204 }, () => ({ type: 'removed' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }

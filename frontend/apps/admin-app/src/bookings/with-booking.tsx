@@ -33,8 +33,6 @@ import {
 import { hoursOf } from './booking-format'
 import { bookingKeyOf, readBooking } from './bookings-api'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 export type WithBookingProps = {
   salon: ModelsSalonResponse
   /** The title of the screen */
@@ -99,7 +97,7 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
           <OtherSalonNotice />
         </>
       ))
-      .with({ type: UNREAD }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <PageHeader title={title} description={salon.name} />
           <UnreadNotice
@@ -161,8 +159,8 @@ export const WithStaffAndServices = ({
       children(ofStaff.items, ofServices.items),
     )
     .with(
-      [{ type: UNREAD }, P._],
-      [P._, { type: P.union(UNREAD, 'notFound') }],
+      [{ type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
           message={unreadMessageOf(label, whyUnread(reads))}

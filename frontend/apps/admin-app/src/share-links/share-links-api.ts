@@ -29,8 +29,6 @@ import { match, P } from 'ts-pattern'
  * the answer that issues it, and never again.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** The key the links of a file are listed under: an issue or a revocation drops every page. */
@@ -73,7 +71,7 @@ export const readShareLinkPage = async (
     .with({ status: 400 }, () => FAILED)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -99,7 +97,7 @@ export const readShareLink = async (
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -139,7 +137,7 @@ export const issueShareLink = async (
     .with({ status: 409 }, () => ({ type: 'notUploaded' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -161,6 +159,6 @@ export const revokeShareLink = async (
     .with({ status: 204 }, () => ({ type: 'revoked' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

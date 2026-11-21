@@ -20,8 +20,6 @@ import { dailySalesKeyOf, readDailySales } from './sales-report-api'
 
 const TITLE = '1 日の売上'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 /** What was wrong with the form, and the day the address showed when it was sent */
 type Refused = { asked: string; errors: FormErrors }
 
@@ -74,7 +72,9 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <ReportRefusal refusal={type} what='売上' />
         ))
         .with(
-          P.union(undefined, { type: P.union('found', UNREAD) }),
+          P.union(undefined, {
+            type: P.union('found', P.union(...UNREAD_TYPES)),
+          }),
           (counted) => (
             <>
               <DayChoice day={day} errors={errors} onSubmit={show} />
@@ -92,7 +92,7 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 .with({ type: 'found' }, ({ sales }) => (
                   <DailySales sales={sales} currency={salon.currency} />
                 ))
-                .with({ type: UNREAD }, (reason) => (
+                .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                   <UnreadNotice
                     message={unreadMessageOf('売上', reason)}
                     onRetry={() => void read.refetch()}

@@ -27,8 +27,6 @@ import { WithBooking } from './with-booking'
 
 const TITLE = '要望とメモを変える'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type NotesChangeProps = {
@@ -65,8 +63,9 @@ const NotesChange = ({ salon, booking }: NotesChangeProps) => {
         .with({ type: 'notFound' }, () => {
           queryClient.setQueryData(key, NOT_FOUND)
         })
-        .with({ type: P.union('invalid', 'forbidden', UNREAD) }, (refused) =>
-          setSaid(afterNotesChange(refused)),
+        .with(
+          { type: P.union('invalid', 'forbidden', P.union(...UNREAD_TYPES)) },
+          (refused) => setSaid(afterNotesChange(refused)),
         )
         .exhaustive(),
   })

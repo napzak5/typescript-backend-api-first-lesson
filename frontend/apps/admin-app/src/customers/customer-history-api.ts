@@ -35,8 +35,6 @@ const numberOfVersion = (version: string): number | undefined =>
     ? Number(version)
     : undefined
 
-const REFUSED = P.union(...REFUSED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** The key of the history of a customer, the pages that were read. */
@@ -79,7 +77,7 @@ export const readHistoryPage = async (
     .returnType<Page<ModelsCustomerHistoryEntryResponse> | Unread>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: P.union(403, 404) }, () => FAILED)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -114,7 +112,7 @@ export const readVersion = async (
     }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -159,7 +157,7 @@ export const readRemoved = async (customerId: string): Promise<RemovedRead> => {
     // Every customer has a version: none is a customer that is not there
     .with({ status: 200 }, { status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
   if (latest.type !== 'latest') {
     return latest
@@ -204,7 +202,7 @@ export const removeCustomer = async (
     .with({ status: 409 }, () => ({ type: 'unfinished' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -244,6 +242,6 @@ export const restoreCustomer = async (
     .with({ status: 409 }, () => ({ type: 'unrestorable' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

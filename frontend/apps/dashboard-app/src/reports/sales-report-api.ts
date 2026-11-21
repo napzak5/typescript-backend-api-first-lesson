@@ -37,8 +37,6 @@ import { match, P } from 'ts-pattern'
  * since it was read.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** The query of a report: the salon and the days of its sales */
@@ -96,7 +94,7 @@ export const readSalesReport = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -130,7 +128,7 @@ export const readSalesByStaff = async (
     .with({ status: 200 }, ({ data }) => ({ type: 'found', staff: data.data }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -167,7 +165,7 @@ export const readSalesByCategory = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -213,7 +211,7 @@ export const readSalesTrends = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -247,7 +245,7 @@ export const readDailySales = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -279,6 +277,6 @@ export const exportSalesReport = async (
     })
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

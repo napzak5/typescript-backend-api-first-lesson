@@ -37,8 +37,6 @@ import type { StockView } from './stock-view'
  * salon is a condition of a list, and a row names its salon itself.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 const KEEPERS: readonly string[] = ['owner', 'manager', 'admin']
@@ -77,7 +75,7 @@ const pageFrom = (answer: StockListAnswer): StockPage =>
     .with({ status: 403 }, () => FORBIDDEN)
     // The salon was removed after it was read, or the row of the cursor meanwhile
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 
 /**
@@ -161,7 +159,7 @@ export const readStockRow = async (
     .with({ status: 200 }, ({ data }) => ({ type: 'found', row: data.data }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -195,7 +193,7 @@ export const addStockRow = async (
     .with({ status: 409 }, () => ({ type: 'lotTaken' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -219,7 +217,7 @@ export const changeStockRow = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -243,6 +241,6 @@ export const removeStockRow = async (
     .with({ status: 409 }, () => ({ type: 'inStock' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

@@ -32,8 +32,6 @@ import type { StaffEntryAttempt, StaffWriteAttempt } from './staff-form'
  * salon and an administrator keep them.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** The key every list of the ledger is read under: a write drops them all. */
@@ -62,7 +60,7 @@ export const readStaffPage = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The salon was read before, and the screens send only what the API takes
       .with(P.union({ status: 400 }, { status: 404 }), () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -91,7 +89,7 @@ export const readStaffMember = async (
       // An ID that is no ID names no member either
       .with({ status: P.union(400, 404) }, () => NOT_FOUND)
       .with({ status: 403 }, () => FORBIDDEN)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -131,7 +129,7 @@ const createStaffMember = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The salon was read before the form opened: one removed since is a failure of the write
       .with({ status: P.union(404, 413, 415) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -161,7 +159,7 @@ const updateStaffMember = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -189,7 +187,7 @@ export const readWholeLedger = (
       .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
       .with({ status: 403 }, () => FORBIDDEN)
       .with(P.union({ status: 400 }, { status: 404 }), () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   })
 
@@ -274,6 +272,6 @@ export const removeStaffMember = async (
     .with({ status: 409 }, () => ({ type: 'busy' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }

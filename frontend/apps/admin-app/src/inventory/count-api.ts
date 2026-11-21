@@ -25,8 +25,6 @@ import { stockKeyOf } from './inventory-api'
  * administrator.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /** A value of the request that names a row the API did not find among those of the salon */
@@ -66,7 +64,7 @@ export const countStock = async (
     .with({ status: 409 }, () => ({ type: 'belowReserved' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -100,6 +98,6 @@ export const readValueReport = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

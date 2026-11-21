@@ -7,6 +7,7 @@ import {
   type NotFound,
   outsideTheContract,
   type Page,
+  PUBLIC_UNANSWERED_PARTS,
   pageOf,
   type RefusedValue,
   refusedValuesOf,
@@ -42,8 +43,6 @@ import type { ServicesRead } from '../salons/salons-api'
  * services. Everybody reads it; the owner, a manager and an administrator
  * change it.
  */
-
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -93,7 +92,7 @@ export const readCategories = (salonId: string): Promise<CategoriesRead> =>
       .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
       .with({ status: 404 }, () => NOT_FOUND)
       .with({ status: 400 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...PUBLIC_UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   })
 
@@ -155,7 +154,7 @@ export const readCategory = async (
       category: data.data,
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...PUBLIC_UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -178,7 +177,7 @@ export const readService = async (
       service: data.data,
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...PUBLIC_UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -215,7 +214,7 @@ export const addCategory = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -244,7 +243,7 @@ export const changeCategory = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -273,7 +272,7 @@ export const removeCategory = async (
     .with({ status: 204 }, () => ({ type: 'removed' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -308,7 +307,7 @@ export const addService = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -338,7 +337,7 @@ export const changeService = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -367,7 +366,7 @@ export const removeService = async (
     .with({ status: 409 }, () => ({ type: 'inUse' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -403,6 +402,6 @@ export const changeServices = async (
     .with({ status: 404 }, () => ({ type: 'servicesGone' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

@@ -32,8 +32,6 @@ import { customerKeyOf, readCustomer } from './customers-api'
  * else of both the API looks at before it merges them, and the merge.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 /**
@@ -184,6 +182,6 @@ export const mergeCustomers = async (
     .with({ status: 409 }, () => ({ type: 'refused' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

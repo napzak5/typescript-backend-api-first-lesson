@@ -61,8 +61,6 @@ import { WithPaymentMethods, WithSale } from './with-sale'
 
 const TITLE = '売上の内容'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 /** A sale names no customer when none was recorded: nothing is read for it */
 const NO_CUSTOMER: { type: 'none' } = { type: 'none' }
 
@@ -273,16 +271,20 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
         </>
       ),
     )
-    .with([{ type: UNREAD }, P._], [P._, { type: UNREAD }], (reads) => (
-      <UnreadNotice
-        message={unreadMessageOf('売上の内容', whyUnread(reads))}
-        onRetry={() => {
-          void customer.refetch()
-          void staff.refetch()
-        }}
-        pending={customer.isFetching || staff.isFetching}
-      />
-    ))
+    .with(
+      [{ type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, { type: P.union(...UNREAD_TYPES) }],
+      (reads) => (
+        <UnreadNotice
+          message={unreadMessageOf('売上の内容', whyUnread(reads))}
+          onRetry={() => {
+            void customer.refetch()
+            void staff.refetch()
+          }}
+          pending={customer.isFetching || staff.isFetching}
+        />
+      ),
+    )
     .exhaustive()
 }
 

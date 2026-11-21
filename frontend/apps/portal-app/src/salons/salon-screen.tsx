@@ -62,8 +62,6 @@ import {
 /** The title of the screen that could not read the salon, and so not its name */
 const TITLE = 'サロンの詳細'
 
-const NOT_READ = P.union('notFound', 'tooManyRequests', 'failed')
-
 type OfSalonProps = {
   salon: ModelsSalonResponse
 }
@@ -102,7 +100,7 @@ const MenuSection = ({ salon }: OfSalonProps) => {
             />
           )
         })
-        .with({ type: NOT_READ }, (reason) => (
+        .with({ type: P.union('notFound', ...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('メニュー', reason)}
             onRetry={() => void read.refetch()}
@@ -322,7 +320,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         .with({ type: 'found' }, (found) => (
           <ReviewSummary summary={found.summary} />
         ))
-        .with({ type: NOT_READ }, (reason) => (
+        .with({ type: P.union('notFound', ...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('評価', reason)}
             onRetry={() => void summary.refetch()}

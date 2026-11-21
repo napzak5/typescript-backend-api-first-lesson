@@ -12,8 +12,6 @@ import { match, P } from 'ts-pattern'
 import { ReviewContent } from '../salons/components/review-content/review-content'
 import { readReviewOfBooking, reviewOfBookingKey } from './reviews-api'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 type BookingReviewProps = {
   bookingId: string
   /** The salon of the booking; `null` when it is no longer there */
@@ -66,7 +64,7 @@ export const BookingReview = ({ bookingId, salon }: BookingReviewProps) => {
               }
             />
           ))
-          .with({ type: UNREAD }, (reason) => (
+          .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
             <UnreadNotice
               message={unreadMessageOf('レビュー', reason)}
               onRetry={() => void read.refetch()}

@@ -21,8 +21,6 @@ import { match, P } from 'ts-pattern'
  * themselves. The API knows the member from the account.
  */
 
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 /** The key the profile of the account is read under */
 export const OWN_PROFILE: string[] = ['own-profile']
 
@@ -51,7 +49,7 @@ export const readOwnProfile = async (): Promise<ProfileRead> => {
       profile: data.data,
     }))
     .with({ status: P.union(403, 404) }, () => UNAVAILABLE)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -80,6 +78,6 @@ export const saveOwnProfile = async (
     }))
     .with({ status: P.union(403, 404) }, () => UNAVAILABLE)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

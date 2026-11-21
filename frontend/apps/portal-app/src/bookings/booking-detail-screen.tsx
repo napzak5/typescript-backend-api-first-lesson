@@ -46,8 +46,6 @@ import {
 
 const TITLE = '予約の内容'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 const GONE_OR_FOUND = P.union('found', 'notFound')
 
 type BookingDetailsProps = {
@@ -200,9 +198,9 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
       },
     )
     .with(
-      [{ type: UNREAD }, P._, P._],
-      [P._, { type: UNREAD }, P._],
-      [P._, P._, { type: UNREAD }],
+      [{ type: P.union(...UNREAD_TYPES) }, P._, P._],
+      [P._, { type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, P._, { type: P.union(...UNREAD_TYPES) }],
       (reads) => (
         <UnreadNotice
           message={unreadMessageOf('予約の内容', whyUnread(reads))}
@@ -247,7 +245,7 @@ const OwnBooking = () => {
         <ButtonLink href='/'>サロンを探す</ButtonLink>
       </>
     ))
-    .with({ type: UNREAD }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice

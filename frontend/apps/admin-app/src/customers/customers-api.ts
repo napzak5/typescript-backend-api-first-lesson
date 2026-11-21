@@ -69,15 +69,11 @@ export type CustomersRead =
 
 const idSchema = z.uuid()
 
-const REFUSED = P.union(...REFUSED_PARTS)
-
 /**
  * Whatever the API answers that is neither the customer nor "not found":
  * 403 too, which an account that no salon reaches is given, and which the
  * screens of the salon have already said.
  */
-const UNREAD = P.union(REFUSED, { status: 403 })
-
 const unreadOfAnswer = (
   answer: { status: 403 } | Parameters<typeof unreadOf>[0],
 ): Unread => (answer?.status === 403 ? FAILED : unreadOf(answer))
@@ -122,9 +118,6 @@ export const statisticsKeyOf = (
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
-/** The same as `REFUSED`, for a request whose 400 names the values it refused */
-const UNANSWERED = P.union(...UNANSWERED_PARTS)
-
 /** How many customers a page of a search has. */
 const CUSTOMERS_PER_PAGE = 20
 
@@ -147,7 +140,7 @@ export const findCustomers = async (
   return match(answer)
     .returnType<CustomerPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
-    .with(UNREAD, unreadOfAnswer)
+    .with(P.union(...REFUSED_PARTS, { status: 403 }), unreadOfAnswer)
     .exhaustive(outsideTheContract)
 }
 
@@ -169,7 +162,7 @@ export const readCustomerPage = async (
   return match(answer)
     .returnType<CustomerPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
-    .with(UNREAD, unreadOfAnswer)
+    .with(P.union(...REFUSED_PARTS, { status: 403 }), unreadOfAnswer)
     .exhaustive(outsideTheContract)
 }
 
@@ -187,7 +180,7 @@ export const readCustomer = async (id: string): Promise<CustomerRead> => {
       customer: data.data,
     }))
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(UNREAD, unreadOfAnswer)
+    .with(P.union(...REFUSED_PARTS, { status: 403 }), unreadOfAnswer)
     .exhaustive(outsideTheContract)
 }
 
@@ -238,7 +231,7 @@ export const readCustomers = async (
     .with({ status: 200 }, ({ data }) => found(data.data))
     .with({ status: 404 }, () => readOneByOne(asked))
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNREAD, unreadOfAnswer)
+    .with(P.union(...REFUSED_PARTS, { status: 403 }), unreadOfAnswer)
     .exhaustive(outsideTheContract)
 }
 
@@ -283,7 +276,7 @@ const createCustomer = async (
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -308,7 +301,7 @@ const updateCustomer = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -334,7 +327,7 @@ const isEmailTaken = async (
           customer.email === email.toLowerCase() && customer.id !== self,
       ),
     )
-    .with(UNREAD, unreadOfAnswer)
+    .with(P.union(...REFUSED_PARTS, { status: 403 }), unreadOfAnswer)
     .exhaustive(outsideTheContract)
 }
 
@@ -437,7 +430,7 @@ const readStoredPreferences = async (
       preferences: data.data,
     }))
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(UNREAD, unreadOfAnswer)
+    .with(P.union(...REFUSED_PARTS, { status: 403 }), unreadOfAnswer)
     .exhaustive(outsideTheContract)
 }
 
@@ -575,7 +568,7 @@ export const updatePreferences = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -607,6 +600,6 @@ export const readStatistics = async (
     }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

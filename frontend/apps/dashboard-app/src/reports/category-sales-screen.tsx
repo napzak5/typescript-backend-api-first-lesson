@@ -21,8 +21,6 @@ import { usePeriodCount } from './use-period-count'
 
 const TITLE = '区分別の売上'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 /**
  * The sales of services of the salon over a period by kind of service:
  * the month up to today at the salon, or the days in the query of the
@@ -44,7 +42,9 @@ const CategoriesPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <ReportRefusal refusal={type} what={TITLE} />
         ))
         .with(
-          P.union(undefined, { type: P.union('found', UNREAD) }),
+          P.union(undefined, {
+            type: P.union('found', P.union(...UNREAD_TYPES)),
+          }),
           (counted) => (
             <>
               <StatisticsPeriod
@@ -70,7 +70,7 @@ const CategoriesPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                     currency={salon.currency}
                   />
                 ))
-                .with({ type: UNREAD }, (reason) => (
+                .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                   <UnreadNotice
                     message={unreadMessageOf(TITLE, reason)}
                     onRetry={() => void read.refetch()}

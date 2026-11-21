@@ -54,8 +54,6 @@ import { customerIdsOf, rowsOf } from './day-bookings'
 
 const TITLE = '予約台帳'
 
-const UNREAD = P.union(...UNREAD_TYPES)
-
 type DayBookingsProps = {
   salon: ModelsSalonResponse
 }
@@ -175,8 +173,8 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
           <LoadingIndicator label='予約を読み込んでいます' />
         ))
         .with(
-          [P._, { type: UNREAD }, P._],
-          [P._, P._, { type: P.union(UNREAD, 'notFound') }],
+          [P._, { type: P.union(...UNREAD_TYPES) }, P._],
+          [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
           ([, ofStaff, ofServices]) => (
             <UnreadNotice
               message={unreadMessageOf(
