@@ -1,6 +1,10 @@
 import type { ModelsPaymentStatusType } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '../bookings/booking-actions'
-import { dayNameOf, isDay } from '../salon-time'
+import {
+  dayNameOf,
+  isDay,
+  type Read,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 
 /**
  * Which sales of a salon the ledger shows: those whose day (at the salon)

@@ -3,6 +3,17 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  dayAt,
+  FAILED,
+  firstCursor,
+  listingOf,
+  moreOf,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   type FormErrors,
@@ -23,11 +34,7 @@ import {
   stockRowHrefOf,
   stockValueHrefOf,
 } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
 import { productsKeyOf, readProducts } from '../products/products-api'
-import { FAILED, unreadMessageOf } from '../reading'
-import { dayAt } from '../salon-time'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { StockFilter } from './components/stock-filter/stock-filter'
 import { StockTable } from './components/stock-table/stock-table'
 import { readStockPage, stockKeyOf } from './inventory-api'

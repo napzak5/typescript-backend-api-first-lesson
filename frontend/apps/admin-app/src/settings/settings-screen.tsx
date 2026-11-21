@@ -1,5 +1,11 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  dayAt,
+  readSalon,
+  salonKeyOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -11,9 +17,6 @@ import {
   paymentMethodsHrefOf,
   salonChangeHrefOf,
 } from '../navigation'
-import { dayAt } from '../salon-time'
-import { readSalon, salonKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import { SalonRecord } from './components/salon-record/salon-record'
 import { useKeepsSalon } from './keeps-salon'
 

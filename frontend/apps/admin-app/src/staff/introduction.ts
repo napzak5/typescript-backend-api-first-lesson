@@ -2,8 +2,8 @@ import type {
   ModelsStaffProfileResponse,
   ModelsStaffProfileUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import * as z from 'zod'
-import { type Read, textOf } from '../bookings/booking-actions'
 import { nullIfBlank } from '../bookings/booking-entry'
 import { tagsIn } from '../customers/customer-ledger'
 import { numberOf } from '../treatments/treatment-form'

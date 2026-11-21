@@ -1,5 +1,16 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  dayAt,
+  FAILED,
+  firstCursor,
+  listingOf,
+  moreOf,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   EmptyState,
   type FormErrors,
   LoadingIndicator,
@@ -11,10 +22,6 @@ import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { saleHrefOf } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { FAILED, unreadMessageOf } from '../reading'
-import { dayAt } from '../salon-time'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { LedgerFilter } from './components/ledger-filter/ledger-filter'
 import { SaleTable } from './components/sale-table/sale-table'
 import { readSales, saleListsKeyOf } from './sales-api'

@@ -4,6 +4,12 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  dayAt,
+  NOT_FOUND,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   UnreadNotice,
@@ -15,9 +21,6 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { customerHrefOf } from '../navigation'
-import { NOT_FOUND, unreadMessageOf } from '../reading'
-import { dayAt } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import { CustomerForm } from './components/customer-form/customer-form'
 import {
   afterCustomerWrite,

@@ -1,6 +1,6 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { amountOf } from '../bookings/booking-format'
 import type { Option } from '../customers/customer-format'
 import { NOT_RECORDED } from '../staff/staff-format'
 import type { Carried, Purpose } from './product-ledger'

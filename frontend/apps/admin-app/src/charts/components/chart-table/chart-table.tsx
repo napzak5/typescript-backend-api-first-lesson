@@ -1,13 +1,13 @@
-import { Link } from '@beauty-salon-frontend/ui'
 import {
   countOf,
+  type More,
+  momentNameAt,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
+} from '@beauty-salon-frontend/salon-screens'
+import { Link } from '@beauty-salon-frontend/ui'
 import { UNRECORDED } from '../../../customers/customer-format'
 import { tagsTextOf } from '../../../customers/customer-ledger'
 import { customerNameOf } from '../../../customers/customers-api'
-import type { More } from '../../../pages'
-import { momentNameAt } from '../../../salon-time'
 import type { FoundChart } from '../../charts-api'
 import styles from './chart-table.module.css'
 

@@ -9,22 +9,22 @@ import {
   medicalChartCrudList,
   medicalChartCrudUpdate,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import { customerKeyOf, readCustomers } from '../customers/customers-api'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   type Forbidden,
   from,
   NOT_FOUND,
   type NotFound,
+  outsideTheContract,
   type Page,
   pageOf,
   type RefusedValue,
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
+import { customerKeyOf, readCustomers } from '../customers/customers-api'
 
 /*
  * The charts of the customers: what a member of the staff makes sure of

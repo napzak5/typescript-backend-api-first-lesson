@@ -3,8 +3,16 @@ import type {
   ModelsStaffResponse,
   ModelsStaffUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import {
+  type Forbidden,
+  isDay,
+  type NotFound,
+  type Read,
+  type RefusedValue,
+  textOf,
+  type Unread,
+} from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   nullIfBlank,
@@ -19,8 +27,6 @@ import {
   phoneError,
   tooLong,
 } from '../customers/customer-form'
-import type { Forbidden, NotFound, RefusedValue, Unread } from '../reading'
-import { isDay } from '../salon-time'
 import { numberOf } from '../treatments/treatment-form'
 import {
   controlOf,

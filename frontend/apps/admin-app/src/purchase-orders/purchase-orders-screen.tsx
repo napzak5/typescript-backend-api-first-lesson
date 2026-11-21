@@ -1,5 +1,15 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  moreOf,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   type FormErrors,
@@ -17,9 +27,6 @@ import {
   purchaseOrdersHrefOf,
   reorderSuggestionsHrefOf,
 } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { FAILED, unreadMessageOf } from '../reading'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { OrderFilter } from './components/order-filter/order-filter'
 import { OrderTable } from './components/order-table/order-table'
 import {

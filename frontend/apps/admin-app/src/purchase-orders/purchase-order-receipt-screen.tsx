@@ -4,6 +4,11 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -17,8 +22,6 @@ import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { stockKeyOf, stockRowKeyOf } from '../inventory/inventory-api'
 import { purchaseOrderHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { OrderReceiptForm } from './components/order-receipt-form/order-receipt-form'
 import { OrderNotFound } from './order-not-found'
 import {

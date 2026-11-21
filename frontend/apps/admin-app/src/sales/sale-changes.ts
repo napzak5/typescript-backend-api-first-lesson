@@ -3,16 +3,22 @@ import type {
   ModelsSaleUpdateRequest,
   ModelsSaleVoidRequest,
 } from '@beauty-salon-frontend/api-client'
+import {
+  dayAt,
+  isDay,
+  momentOf,
+  type Read,
+  type RefusedValue,
+  textOf,
+  timeOfDayAt,
+} from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
   NOT_ON_THE_CLOCK,
   nullIfBlank,
   TOO_MANY_REQUESTS,
 } from '../bookings/booking-entry'
-import type { RefusedValue } from '../reading'
-import { dayAt, isDay, momentOf, timeOfDayAt } from '../salon-time'
 import { NO_CASHIER } from './checkout'
 
 /*

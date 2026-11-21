@@ -6,21 +6,21 @@ import {
   shareLinkCrudGet,
   shareLinkCrudList,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   type Forbidden,
   from,
   NOT_FOUND,
   type NotFound,
+  outsideTheContract,
   type Page,
   pageOf,
   type RefusedValue,
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
 
 /*
  * The share links of a file: a link that shows the file to somebody who

@@ -4,6 +4,11 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
@@ -28,8 +33,6 @@ import {
   SUGGESTED_PARAMETER,
 } from '../navigation'
 import { productsKeyOf, readProducts } from '../products/products-api'
-import { unreadMessageOf } from '../reading'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { OrderForm } from './components/order-form/order-form'
 import { afterOrderEntry, readOrderEntry } from './order-entry'
 import { orderStatusNameOf } from './order-format'

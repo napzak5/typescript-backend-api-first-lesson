@@ -5,6 +5,19 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
+import {
+  dayAt,
+  NOT_FOUND,
+  OtherSalonNotice,
+  type Period,
+  periodIn,
+  periodNameOf,
+  periodQueryOf,
+  readPeriod,
+  StatisticsPeriod,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -36,9 +49,6 @@ import {
   customersHrefOf,
   treatmentsOfCustomerHrefOf,
 } from '../navigation'
-import { NOT_FOUND, unreadMessageOf } from '../reading'
-import { dayAt } from '../salon-time'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import {
   CustomerErasure,
   type ErasureDialog,
@@ -56,7 +66,6 @@ import {
   RemovedRecord,
   type RemovedRecordProps,
 } from './components/removed-record/removed-record'
-import { StatisticsPeriod } from './components/statistics-period/statistics-period'
 import {
   afterErasureAsk,
   afterErasureCancel,
@@ -85,13 +94,6 @@ import {
   restoreCustomer,
 } from './customer-history-api'
 import { customerQueryOf } from './customer-ledger'
-import {
-  type Period,
-  periodIn,
-  periodNameOf,
-  periodQueryOf,
-  readPeriod,
-} from './customer-statistics'
 import {
   CUSTOMER_LISTS,
   type CustomerRead,

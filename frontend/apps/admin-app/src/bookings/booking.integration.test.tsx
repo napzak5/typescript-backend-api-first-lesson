@@ -1,3 +1,4 @@
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -13,7 +14,6 @@ import { useLayoutEffect } from 'react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../App'
-import { dayNameOf } from '../salon-time'
 import {
   ADMIN,
   arrange,

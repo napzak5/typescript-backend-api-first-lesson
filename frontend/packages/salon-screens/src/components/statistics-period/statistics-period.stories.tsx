@@ -3,7 +3,7 @@ import { fn } from 'storybook/test'
 import { StatisticsPeriod } from './statistics-period'
 
 const meta: Meta<typeof StatisticsPeriod> = {
-  title: 'Admin/Customers/StatisticsPeriod',
+  title: 'SalonScreens/StatisticsPeriod',
   component: StatisticsPeriod,
   args: {
     period: { from: '2025-11-20', to: '2026-11-20' },

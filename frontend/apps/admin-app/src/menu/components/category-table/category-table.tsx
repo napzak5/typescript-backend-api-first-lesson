@@ -1,6 +1,6 @@
 import type { ModelsServiceCategoryResponse } from '@beauty-salon-frontend/api-client'
+import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Link, Table } from '@beauty-salon-frontend/ui'
-import { categoryNameOf } from '../../../customers/customer-format'
 import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   categoriesById,

@@ -1,8 +1,7 @@
+import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
 import { useParams } from 'react-router'
 import { scheduleChangeHrefOf, shiftsHrefOf } from '../navigation'
-import { dayAt } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import { ScheduleRecord } from './components/schedule-record/schedule-record'
 import { usePlansShifts, WithSchedule } from './with-schedule'
 

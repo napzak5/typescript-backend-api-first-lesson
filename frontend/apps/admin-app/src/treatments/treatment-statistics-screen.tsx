@@ -3,6 +3,16 @@ import type {
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  dayAt,
+  type Period,
+  periodNameOf,
+  periodQueryOf,
+  readDays,
+  StatisticsPeriod,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   type FormErrors,
@@ -15,17 +25,7 @@ import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { WithStaffAndServices } from '../bookings/with-booking'
-import { StatisticsPeriod } from '../customers/components/statistics-period/statistics-period'
-import {
-  type Period,
-  periodNameOf,
-  periodQueryOf,
-  readDays,
-} from '../customers/customer-statistics'
 import { treatmentsHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { dayAt } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import { TreatmentStatistics } from './components/treatment-statistics/treatment-statistics'
 import { statisticsPeriodIn } from './treatment-statistics'
 import {

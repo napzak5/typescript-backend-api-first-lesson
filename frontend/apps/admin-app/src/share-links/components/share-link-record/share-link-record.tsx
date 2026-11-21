@@ -1,4 +1,5 @@
 import type { ModelsShareLinkResponse } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   Badge,
@@ -7,7 +8,6 @@ import {
   DescriptionList,
   Dialog,
 } from '@beauty-salon-frontend/ui'
-import { momentNameAt } from '../../../salon-time'
 import {
   downloadsNameOf,
   passwordNameOf,

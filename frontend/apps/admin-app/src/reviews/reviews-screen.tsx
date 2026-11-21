@@ -3,6 +3,14 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   EmptyState,
   type FormErrors,
   LoadingIndicator,
@@ -14,10 +22,7 @@ import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { reviewHrefOf, reviewsHrefOf } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { unreadMessageOf } from '../reading'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import { ReviewFilter } from './components/review-filter/review-filter'
 import { ReviewSummary } from './components/review-summary/review-summary'
 import { ReviewTable } from './components/review-table/review-table'

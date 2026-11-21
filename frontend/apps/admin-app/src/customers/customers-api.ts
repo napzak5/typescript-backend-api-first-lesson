@@ -23,9 +23,6 @@ import {
   staffChoicesOf,
   staffIdsOf,
 } from '@beauty-salon-frontend/preferences'
-import { match, P } from 'ts-pattern'
-import * as z from 'zod/mini'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   type Forbidden,
@@ -33,14 +30,19 @@ import {
   LARGEST_PAGE,
   NOT_FOUND,
   type NotFound,
+  outsideTheContract,
   type Page,
+  type Period,
   pageOf,
+  readSalon,
   refusedValuesOf,
   type Unread,
   unreadOf,
   whyUnread,
-} from '../reading'
-import { readSalon, readStaffProfiles } from '../salons/salons-api'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
+import * as z from 'zod/mini'
+import { readStaffProfiles } from '../salons/salons-api'
 import type {
   CustomerEntryAttempt,
   CustomerWriteAttempt,
@@ -49,7 +51,6 @@ import {
   type CustomerConditions,
   customerListParamsOf,
 } from './customer-ledger'
-import type { Period } from './customer-statistics'
 
 export type CustomerRead =
   | { type: 'found'; customer: ModelsCustomerResponse }

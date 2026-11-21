@@ -1,5 +1,10 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -13,9 +18,7 @@ import {
   paymentMethodHrefOf,
   settingsHrefOf,
 } from '../navigation'
-import { unreadMessageOf } from '../reading'
 import { paymentMethodsKeyOf, readPaymentMethods } from '../sales/sales-api'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { PaymentMethodTable } from './components/payment-method-table/payment-method-table'
 import { useKeepsPaymentMethods } from './keeps-payment-methods'
 

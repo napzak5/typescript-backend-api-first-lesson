@@ -4,7 +4,7 @@ import type {
   ModelsSalonResponse,
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { readSalon } from '../salons/salons-api'
+import { readSalon } from '@beauty-salon-frontend/salon-screens'
 import { changeSalon, type SalonChange } from './settings-api'
 
 /*

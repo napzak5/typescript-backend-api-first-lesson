@@ -1,6 +1,6 @@
 import type { ModelsInventoryValueReportResponse } from '@beauty-salon-frontend/api-client'
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import { EmptyState, Table } from '@beauty-salon-frontend/ui'
-import { amountOf } from '../../../bookings/booking-format'
 
 export type ValueReportProps = {
   report: ModelsInventoryValueReportResponse

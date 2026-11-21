@@ -2,10 +2,10 @@ import type {
   ModelsStaffInvitationResponse,
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { Badge, Card, DescriptionList } from '@beauty-salon-frontend/ui'
 import type { ReactNode, Ref } from 'react'
 import { match } from 'ts-pattern'
-import { momentNameAt } from '../../../salon-time'
 import {
   type InvitationState,
   invitationStateOf,

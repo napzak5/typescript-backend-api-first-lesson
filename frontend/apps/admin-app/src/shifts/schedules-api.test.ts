@@ -1,6 +1,11 @@
 import type { ModelsStaffSchedule } from '@beauty-salon-frontend/api-client'
+import {
+  answering,
+  json,
+  problem,
+  UNREAD,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { aSchedule, aWeek } from './components/examples'
 import {
   attemptScheduleSave,

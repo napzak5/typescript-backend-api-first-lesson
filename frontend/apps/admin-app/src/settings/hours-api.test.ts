@@ -1,6 +1,11 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import {
+  answering,
+  json,
+  problem,
+  UNREAD,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { aDescribedSalon } from './components/examples'
 import { attemptHoursChange, hoursOf, sameHours } from './hours-api'
 

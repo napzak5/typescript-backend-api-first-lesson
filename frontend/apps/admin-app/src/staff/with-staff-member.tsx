@@ -2,6 +2,7 @@ import type {
   ModelsSalonResponse,
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
+import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -14,7 +15,6 @@ import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { staffLedgerHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
 import { readStaffMember, staffKeyOf } from './staff-api'
 import { fullStaffNameOf, mayKeepStaffLedger } from './staff-format'
 

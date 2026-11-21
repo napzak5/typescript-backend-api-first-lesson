@@ -1,5 +1,5 @@
 import type { ModelsReviewResponse } from '@beauty-salon-frontend/api-client'
-import { dayAt, dayNameOf } from '../salon-time'
+import { dayAt, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 
 /*
  * How the screens name what a review holds.

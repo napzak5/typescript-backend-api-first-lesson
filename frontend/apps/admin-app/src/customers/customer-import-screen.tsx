@@ -1,4 +1,5 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   Card,
@@ -10,8 +11,6 @@ import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { customersHrefOf } from '../navigation'
-import { dayAt } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import {
   type ChosenFile,
   CustomerImportForm,

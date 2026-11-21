@@ -4,8 +4,8 @@ import type {
   ModelsServiceResponse,
   ModelsServiceUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { textOf } from '../bookings/booking-actions'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import type { Option } from '../customers/customer-format'
 import { LEVELS } from '../staff/staff-format'

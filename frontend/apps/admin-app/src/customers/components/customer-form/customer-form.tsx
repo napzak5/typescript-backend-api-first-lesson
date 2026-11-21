@@ -1,4 +1,5 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Checkbox,
   CheckboxGroup,
@@ -9,7 +10,6 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { type ReactNode, useState } from 'react'
-import { EARLIEST_DAY } from '../../../salon-time'
 import {
   PREFERENCE_NOTES,
   PREFERRED_SERVICES,

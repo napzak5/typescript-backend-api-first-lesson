@@ -2,6 +2,10 @@ import type {
   ModelsAttachmentResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,
@@ -14,8 +18,6 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { attachmentsHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { ShareLinksOfFile } from '../share-links/share-links-of-file'
 import { afterRemoving, removesAttachment } from './attachment-file'
 import { AttachmentNotFound, ToTheFiles } from './attachment-not-found'

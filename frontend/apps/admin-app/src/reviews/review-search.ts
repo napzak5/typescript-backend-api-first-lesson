@@ -1,6 +1,6 @@
 import type { ModelsReviewSortType } from '@beauty-salon-frontend/api-client'
+import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import * as z from 'zod'
-import { type Read, textOf } from '../bookings/booking-actions'
 import type { ReviewListParams } from './reviews-api'
 
 /*

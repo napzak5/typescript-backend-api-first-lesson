@@ -1,11 +1,12 @@
 import type { ModelsPointTransactionResponse } from '@beauty-salon-frontend/api-client'
-import type { ReactNode } from 'react'
 import {
   countOf,
+  dayNameOf,
+  type More,
+  momentNameAt,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
-import { dayNameOf, momentNameAt } from '../../../salon-time'
+} from '@beauty-salon-frontend/salon-screens'
+import type { ReactNode } from 'react'
 import { countNameOf } from '../../customer-format'
 import { movementOf, transactionNameOf } from '../../points'
 

@@ -10,12 +10,14 @@ const packageDirectory = (name: string): string =>
 const config: StorybookConfig = {
   // One catalogue for the components of the whole frontend: those of this
   // package, those the screens of the session are made of, the form of the
-  // preferences of a customer that two applications show, and those that
-  // one application has for itself
+  // preferences of a customer that two applications show, the tables and
+  // the search that the screens of a salon share, and those that one
+  // application has for itself
   stories: [
     '../src/**/*.stories.tsx',
     '../../session/src/**/*.stories.tsx',
     '../../preferences/src/**/*.stories.tsx',
+    '../../salon-screens/src/**/*.stories.tsx',
     '../../../apps/*/src/**/*.stories.tsx',
   ],
   addons: [

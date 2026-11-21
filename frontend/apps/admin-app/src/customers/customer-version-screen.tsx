@@ -2,6 +2,10 @@ import type {
   ModelsCustomerVersionResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -12,8 +16,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { customerHistoryHrefOf, customerHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { VersionRecord } from './components/version-record/version-record'
 import {
   changerNameOf,

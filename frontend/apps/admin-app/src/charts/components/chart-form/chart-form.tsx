@@ -2,6 +2,7 @@ import type {
   ModelsMedicalChartResponse,
   ModelsPreviousTreatment,
 } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Button,
   Form,
@@ -12,7 +13,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
 import { tagsTextOf } from '../../../customers/customer-ledger'
-import { EARLIEST_DAY } from '../../../salon-time'
 import {
   MOST_TREATMENTS,
   rowControlOf,

@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   lastYearUntil,
+  monthUntil,
   type Period,
   periodIn,
   periodNameOf,
   periodQueryOf,
   readDays,
   readPeriod,
-} from './customer-statistics'
+} from './period'
 
 const TODAY = '2026-11-20'
 
@@ -18,6 +19,15 @@ const formOf = (from: string, to: string): FormData => {
 
   return form
 }
+
+describe('monthUntil', () => {
+  it.each<[string, Period]>([
+    [TODAY, { from: '2026-11-01', to: TODAY }],
+    ['2026-12-01', { from: '2026-12-01', to: '2026-12-01' }],
+  ])('should count the month up to %s', (today, period) => {
+    expect(monthUntil(today)).toEqual(period)
+  })
+})
 
 describe('lastYearUntil', () => {
   it('should give the 366 days that end with today', () => {

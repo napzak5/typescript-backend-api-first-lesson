@@ -1,3 +1,4 @@
+import { periodNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor, within } from '@testing-library/react'
@@ -16,7 +17,6 @@ import {
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
-import { periodNameOf } from '../customers/customer-statistics'
 import {
   treatmentHrefOf,
   treatmentPhotosHrefOf,

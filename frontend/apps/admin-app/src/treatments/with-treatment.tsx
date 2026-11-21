@@ -8,6 +8,10 @@ import type {
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -21,7 +25,6 @@ import { WithStaffAndServices } from '../bookings/with-booking'
 import { customerKeyOf, readCustomer } from '../customers/customers-api'
 import { treatmentsHrefOf } from '../navigation'
 import { productsKeyOf, readProducts } from '../products/products-api'
-import { unreadMessageOf, whyUnread } from '../reading'
 import { readTreatment, treatmentKeyOf } from './treatments-api'
 
 const UNREAD = P.union('tooManyRequests', 'failed')

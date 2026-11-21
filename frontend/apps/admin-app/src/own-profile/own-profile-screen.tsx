@@ -2,6 +2,7 @@ import type {
   ModelsStaffProfileResponse,
   ModelsStaffProfileUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   Card,
@@ -14,7 +15,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
-import { unreadMessageOf } from '../reading'
 import { ProfileForm } from './components/profile-form/profile-form'
 import { ProfileRecord } from './components/profile-record/profile-record'
 import {

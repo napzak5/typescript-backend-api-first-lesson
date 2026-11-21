@@ -1,5 +1,15 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  moreOf,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   EmptyState,
   LoadingIndicator,
   PageHeader,
@@ -16,9 +26,6 @@ import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { attachmentHrefOf } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { FAILED, unreadMessageOf } from '../reading'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { afterUploading, readChosenFile } from './attachment-file'
 import {
   attachmentsKeyOf,

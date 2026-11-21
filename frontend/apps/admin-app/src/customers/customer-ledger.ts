@@ -3,9 +3,15 @@ import type {
   ModelsCustomerStatusType,
   ModelsMembershipTierType,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '../bookings/booking-actions'
-import { keywordIn, LONGEST_KEYWORD } from '../keyword'
-import { dayAfter, isDay, startOfDayAt } from '../salon-time'
+import {
+  dayAfter,
+  isDay,
+  keywordIn,
+  LONGEST_KEYWORD,
+  type Read,
+  startOfDayAt,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { CUSTOMER_STATUSES, TIERS } from './customer-format'
 
 /**

@@ -1,3 +1,4 @@
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
@@ -20,7 +21,6 @@ import {
   salonChangeHrefOf,
   settingsHrefOf,
 } from '../navigation'
-import { dayNameOf } from '../salon-time'
 import {
   dayOffArranged,
   phoneChangedMeanwhile,

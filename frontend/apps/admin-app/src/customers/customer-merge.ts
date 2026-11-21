@@ -3,8 +3,8 @@ import type {
   ModelsCustomerResponse,
   ModelsMedicalChartResponse,
 } from '@beauty-salon-frontend/api-client'
+import type { Forbidden, Unread } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import type { Forbidden, Unread } from '../reading'
 import type { LedgerValues } from './components/customer-record/ledger-items'
 import { countNameOf } from './customer-format'
 import { KEPT_BY_OTHERS } from './customer-history'

@@ -1,5 +1,10 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   Button,
   ButtonLink,
   LoadingIndicator,
@@ -11,8 +16,6 @@ import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { saleHrefOf, salesHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { Receipt } from './components/receipt/receipt'
 import styles from './receipt-screen.module.css'
 import { whyNoReceipt } from './sale-format'

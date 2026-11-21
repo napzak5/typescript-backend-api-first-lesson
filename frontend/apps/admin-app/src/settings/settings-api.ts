@@ -3,18 +3,18 @@ import {
   type ModelsSalonUpdateRequest,
   salonCrudUpdate,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   type Forbidden,
   NOT_FOUND,
   type NotFound,
+  outsideTheContract,
   type RefusedValue,
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
 
 /*
  * The settings of a salon: everybody who works at it reads them (the salon

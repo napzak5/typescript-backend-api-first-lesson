@@ -2,10 +2,13 @@ import type {
   ModelsReviewReportReasonType,
   ModelsReviewReportRequest,
 } from '@beauty-salon-frontend/api-client'
+import {
+  type Read,
+  type RefusedValue,
+  textOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { type Read, textOf } from '../bookings/booking-actions'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
-import type { RefusedValue } from '../reading'
 import type { Reporting, Responding } from './reviews-api'
 
 /*

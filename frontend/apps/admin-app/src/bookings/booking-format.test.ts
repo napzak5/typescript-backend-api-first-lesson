@@ -1,7 +1,7 @@
 import type { ModelsBookingStatusType } from '@beauty-salon-frontend/api-client'
 import type { BadgeProps } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
-import { amountOf, hoursOf, statusNameOf, statusToneOf } from './booking-format'
+import { hoursOf, statusNameOf, statusToneOf } from './booking-format'
 
 type StatusCase = [ModelsBookingStatusType, string, BadgeProps['tone']]
 
@@ -33,11 +33,5 @@ describe('hoursOf', () => {
         'Asia/Tokyo',
       ),
     ).toBe('10:00〜11:30')
-  })
-})
-
-describe('amountOf', () => {
-  it('should write an amount in the currency of the salon', () => {
-    expect(amountOf(5500, 'JPY')).toBe('￥5,500')
   })
 })

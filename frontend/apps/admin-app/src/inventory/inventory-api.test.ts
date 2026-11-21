@@ -1,6 +1,11 @@
 import type { ModelsInventoryResponse } from '@beauty-salon-frontend/api-client'
+import {
+  answering,
+  json,
+  problem,
+  UNREAD,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { salon } from '../bookings/components/examples'
 import { colour } from '../products/components/examples'
 import { colourLot, STOCK_OF_THE_SALON } from './components/examples'

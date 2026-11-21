@@ -1,6 +1,6 @@
 import type { ModelsBookingStatusType } from '@beauty-salon-frontend/api-client'
+import { isDay } from '@beauty-salon-frontend/salon-screens'
 import * as z from 'zod/mini'
-import { isDay } from '../salon-time'
 
 /**
  * Which bookings of a salon the list shows: those of one day, and of a

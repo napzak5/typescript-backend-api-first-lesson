@@ -1,11 +1,11 @@
 import type { ModelsAttachmentResponse } from '@beauty-salon-frontend/api-client'
-import { Link } from '@beauty-salon-frontend/ui'
 import {
   countOf,
+  type More,
+  momentNameAt,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
-import { momentNameAt } from '../../../salon-time'
+} from '@beauty-salon-frontend/salon-screens'
+import { Link } from '@beauty-salon-frontend/ui'
 import { contentTypeNameOf, sizeNameOf } from '../../attachment-file'
 
 export type AttachmentTableProps = {

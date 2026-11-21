@@ -4,9 +4,9 @@ import type {
   ModelsTreatmentsByCategoryResponse,
   ModelsTreatmentsByServiceResponse,
 } from '@beauty-salon-frontend/api-client'
+import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList, Table } from '@beauty-salon-frontend/ui'
 import { serviceNameOf } from '../../../bookings/day-bookings'
-import { categoryNameOf } from '../../../customers/customer-format'
 import { averageNameOf, countNameOf } from '../../treatment-statistics'
 import styles from './treatment-statistics.module.css'
 

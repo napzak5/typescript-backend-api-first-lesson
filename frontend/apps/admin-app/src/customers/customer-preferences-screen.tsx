@@ -11,6 +11,11 @@ import {
   type StaffChoice,
 } from '@beauty-salon-frontend/preferences'
 import {
+  NOT_FOUND,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   UnreadNotice,
@@ -22,8 +27,6 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { customerHrefOf, customersHrefOf } from '../navigation'
-import { NOT_FOUND, unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { CANNOT_HANDLE_CUSTOMERS } from './customer-form'
 import {
   customerKeyOf,

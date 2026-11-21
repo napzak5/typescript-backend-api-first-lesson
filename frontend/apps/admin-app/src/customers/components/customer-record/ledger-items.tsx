@@ -1,11 +1,11 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   type DescriptionListItem,
   TagList,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { dayNameOf } from '../../../salon-time'
 import {
   addressNameOf,
   categoriesNameOf,

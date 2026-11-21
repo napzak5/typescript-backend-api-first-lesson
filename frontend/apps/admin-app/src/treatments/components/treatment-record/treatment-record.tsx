@@ -6,6 +6,7 @@ import type {
   ModelsTreatmentMaterial,
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
+import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Card,
   DescriptionList,
@@ -16,7 +17,6 @@ import {
 import type { ReactNode } from 'react'
 import { UNLISTED_STAFF } from '../../../bookings/booking-format'
 import { serviceNameOf, staffNameOf } from '../../../bookings/day-bookings'
-import { dayNameOf, momentNameAt } from '../../../salon-time'
 import {
   customerCalled,
   minutesNameOf,

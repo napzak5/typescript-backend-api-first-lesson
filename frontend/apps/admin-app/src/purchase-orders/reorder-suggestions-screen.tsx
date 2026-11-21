@@ -1,5 +1,10 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
@@ -10,8 +15,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { purchaseOrdersHrefOf, suggestedOrderHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { ReorderSuggestions } from './components/reorder-suggestions/reorder-suggestions'
 import { ToTheOrders } from './order-not-found'
 import { suggestionGroupsOf } from './order-suggestions'

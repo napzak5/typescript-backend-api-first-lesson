@@ -1,6 +1,6 @@
 import type { FileToSave } from '@beauty-salon-frontend/io'
+import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { unreadMessageOf } from '../reading'
 import type { DataExport, LedgerExport } from './customer-export-api'
 
 /*

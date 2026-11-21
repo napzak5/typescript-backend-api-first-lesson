@@ -1,5 +1,13 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   type FormErrors,
@@ -12,9 +20,6 @@ import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { chartHrefOf, customersHrefOf } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import {
   chartConditionsIn,
   chartQueryOf,

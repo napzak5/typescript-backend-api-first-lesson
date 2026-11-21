@@ -5,6 +5,17 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  moreOf,
+  NOT_FOUND,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   type FormErrors,
@@ -24,10 +35,7 @@ import {
   stockMovementsHrefOf,
   stockRowHrefOf,
 } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { FAILED, NOT_FOUND, unreadMessageOf } from '../reading'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { MovementFilter } from './components/movement-filter/movement-filter'
 import { MovementTable } from './components/movement-table/movement-table'
 import { stockRowKeyOf } from './inventory-api'

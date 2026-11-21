@@ -2,9 +2,9 @@ import type {
   ModelsStaffAccountResponse,
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList } from '@beauty-salon-frontend/ui'
 import type { ReactNode, Ref } from 'react'
-import { momentNameAt } from '../../../salon-time'
 import {
   roleNameOf,
   sameAddress,

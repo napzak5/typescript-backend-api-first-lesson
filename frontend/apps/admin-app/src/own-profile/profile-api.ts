@@ -4,15 +4,15 @@ import {
   staffOwnProfileGet,
   staffOwnProfileUpdate,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
+  outsideTheContract,
   type RefusedValue,
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
 
 /*
  * The profile of the member of the staff the signed-in account is linked

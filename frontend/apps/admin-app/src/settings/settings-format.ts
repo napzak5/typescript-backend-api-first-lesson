@@ -5,7 +5,7 @@ import type {
   ModelsOpeningHours,
   ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
-import { dayAt, dayNameOf } from '../salon-time'
+import { dayAt, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { timeNameOf, WEEKDAYS } from '../shifts/shift-week'
 import { NOT_RECORDED } from '../staff/staff-format'
 

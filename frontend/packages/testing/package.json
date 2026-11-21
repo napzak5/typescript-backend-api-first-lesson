@@ -10,7 +10,8 @@
     "./api/setup": "./src/api/setup.ts",
     "./api/global-setup": "./src/api/global-setup.ts",
     "./api/test-server": "./src/api/test-server.ts",
-    "./accessibility": "./src/accessibility.ts"
+    "./accessibility": "./src/accessibility.ts",
+    "./answers": "./src/answers.ts"
   },
   "scripts": {
     "clean": "rm -rf *.tsbuildinfo",
