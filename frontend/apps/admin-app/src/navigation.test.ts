@@ -1,6 +1,8 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import { describe, expect, it } from 'vitest'
 import {
+  attachmentHrefOf,
+  attachmentsHrefOf,
   bookingOfCustomerHrefOf,
   bookingsHrefOf,
   categoryChangeHrefOf,
@@ -79,6 +81,7 @@ const BOOKINGS = `/salons/${SALON_ID}/bookings`
 const SALES = `/salons/${SALON_ID}/sales`
 const CUSTOMERS = `/salons/${SALON_ID}/customers`
 const REVIEWS = `/salons/${SALON_ID}/reviews`
+const FILES = `/salons/${SALON_ID}/files`
 const TREATMENTS = `/salons/${SALON_ID}/treatments`
 const SHIFTS = `/salons/${SALON_ID}/shifts`
 const STAFF = `/salons/${SALON_ID}/staff`
@@ -131,6 +134,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -156,6 +160,7 @@ describe('navigationFor', () => {
         { href: SALES, label: '売上', current: false },
         { href: CUSTOMERS, label: '顧客', current: false },
         { href: REVIEWS, label: 'レビュー', current: false },
+        { href: FILES, label: 'ファイル', current: false },
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
@@ -181,6 +186,7 @@ describe('navigationFor', () => {
         { href: SALES, label: '売上', current: false },
         { href: CUSTOMERS, label: '顧客', current: false },
         { href: REVIEWS, label: 'レビュー', current: false },
+        { href: FILES, label: 'ファイル', current: false },
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
@@ -227,6 +233,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -250,6 +257,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: true },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -281,6 +289,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: true },
       { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -308,6 +317,7 @@ describe('navigationFor', () => {
         { href: SALES, label: '売上', current: false },
         { href: CUSTOMERS, label: '顧客', current: false },
         { href: REVIEWS, label: 'レビュー', current: false },
+        { href: FILES, label: 'ファイル', current: false },
         { href: TREATMENTS, label: '施術記録', current: true },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
@@ -330,6 +340,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
       { href: MENU, label: 'メニュー', current: false },
@@ -347,6 +358,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
       { href: MENU, label: 'メニュー', current: false },
@@ -410,6 +422,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -436,6 +449,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: true },
@@ -458,6 +472,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -499,6 +514,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -549,6 +565,7 @@ describe('navigationFor', () => {
         { href: SALES, label: '売上', current: false },
         { href: CUSTOMERS, label: '顧客', current: false },
         { href: REVIEWS, label: 'レビュー', current: false },
+        { href: FILES, label: 'ファイル', current: false },
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
@@ -599,6 +616,7 @@ describe('navigationFor', () => {
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
       { href: REVIEWS, label: 'レビュー', current: true },
+      { href: FILES, label: 'ファイル', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -616,6 +634,34 @@ describe('navigationFor', () => {
       reviewHrefOf(SALON_ID, 'review'),
       reviewResponseHrefOf(SALON_ID, 'review'),
     ]).toEqual([REVIEWS, `${REVIEWS}/review`, `${REVIEWS}/review/response`])
+  })
+
+  it.each<[string, string]>([
+    ['the files', FILES],
+    ['a file', attachmentHrefOf(SALON_ID, 'x')],
+  ])('should mark the files as the screen of %s', (_case, pathname) => {
+    expect(navigationFor('staff', pathname)).toEqual([
+      { href: BOOKINGS, label: '予約', current: false },
+      { href: SALES, label: '売上', current: false },
+      { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: false },
+      { href: FILES, label: 'ファイル', current: true },
+      { href: TREATMENTS, label: '施術記録', current: false },
+      { href: SHIFTS, label: 'シフト', current: false },
+      { href: MENU, label: 'メニュー', current: false },
+      { href: PRODUCTS, label: '商品', current: false },
+      { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
+      SETTINGS_LINK,
+      PROFILE,
+    ])
+  })
+
+  it('should write the addresses of the files', () => {
+    expect([
+      attachmentsHrefOf(SALON_ID),
+      attachmentHrefOf(SALON_ID, 'file'),
+    ]).toEqual([FILES, `${FILES}/file`])
   })
 
   it('should write the addresses of the menu', () => {

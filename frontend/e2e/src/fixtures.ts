@@ -40,8 +40,13 @@ export type TestApi = {
   mailedLink: (to: string) => Promise<string>
 }
 
-/** Every address but those of the applications and the API under test, which listen on this machine */
-const ELSEWHERE = /^https?:\/\/(?!127\.0\.0\.1[:/])/
+/**
+ * Every address but those of this machine: the applications and the API
+ * under test listen on 127.0.0.1, and the object storage of the test
+ * server, which the browser sends files to and reads them from, at the
+ * host its container is reached at, `localhost`
+ */
+const ELSEWHERE = /^https?:\/\/(?!(?:127\.0\.0\.1|localhost)[:/])/
 
 /**
  * `test` of the browser tests: import it from here, not from
