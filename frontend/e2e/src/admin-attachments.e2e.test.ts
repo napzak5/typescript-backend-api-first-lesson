@@ -4,6 +4,7 @@ import * as z from 'zod'
 import { ADMIN } from './applications'
 import { part, salonId } from './bookings'
 import { expectSoundPage } from './checks'
+import { PDF, PNG } from './files'
 import { expect, type TestApi, test } from './fixtures'
 import { enterCredentials, heading, MANAGER, OWNER } from './sign-in'
 
@@ -18,17 +19,6 @@ import { enterCredentials, heading, MANAGER, OWNER } from './sign-in'
  */
 
 const CONSENT = 'カラー同意書_田中様.pdf'
-
-/** A PDF of one empty page */
-const PDF = Buffer.from(
-  '%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n',
-)
-
-/** A PNG image of one pixel */
-const PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-  'base64',
-)
 
 const storedSchema = z.array(
   z.object({
