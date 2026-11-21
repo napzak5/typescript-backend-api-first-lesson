@@ -2340,7 +2340,7 @@ A share link opens a file for somebody who has no account
 | `AppShell` | The frame of an application: the link that skips to the content, the header (the mark and the `title`, a link to the first screen of the application, and the `account` at its end), the links of `navigation` in a row under the header, the main content with the notification at its top. Below 40rem the header is one row, and the links and the account are in its menu |
 | `Navigation` | Links to screens or to views of one, under a name of their own. The application says which one is `current`; a row too long for the screen is scrolled to it, and `orientation='vertical'` puts them below each other, in as many columns as there is room for |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
-| `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (one below the other on a narrow screen, side by side from 40rem) |
+| `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (`actions` always in sight, `otherActions` in the same row from 40rem and in a sheet behind 「ほかの操作」 below it) |
 | `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are; below it they follow each other like words, and go on in the next line where the card ends: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
 | `DescriptionList` | The names and values of one record, side by side on every screen, one line for a value. The names share a column as wide as the longest of them, and never more than two fifths of the list: a longer name goes on in a second line |
 | `Badge` | The state of a record, in a word |
@@ -2381,16 +2381,28 @@ A share link opens a file for somebody who has no account
   of the screen a link opened. Without links (a visitor of the portal) the
   account stays in the header, beside the name: the way in.
 - **What is drawn differently on a narrow screen is drawn once.**
-  `AppShell` and `FilterForm` ask the browser whether the window is 40rem
-  wide (`useWideScreen` of `ui/src/wide-screen.ts`, `matchMedia`, which
-  hears when the window is turned) and draw either the row of links or the
-  menu, either the conditions in a row or their sheet. They do not draw
+  `AppShell`, `FilterForm` and `PageHeader` ask the browser whether the
+  window is 40rem wide (`useWideScreen` of `ui/src/wide-screen.ts`,
+  `matchMedia`, which hears when the window is turned) and draw either the
+  row of links or the menu, either the conditions in a row or their sheet,
+  either the other actions in the row or their sheet. They do not draw
   both and hide one with a stylesheet: a screen reader would find the same
   control twice, and so would a test. What only changes its look stays a
   media query of the stylesheet.
 - **A screen** is a `PageHeader`, then its content; the frame gives them their
   width and the gaps between them. One `h1` per screen, and headings go down
   one level at a time.
+- **The actions of a screen** are side by side on every width: below 40rem
+  in columns 10rem wide at least (two on a phone, a button as wide as its
+  column), from 40rem in the row of the heading. A screen with up to two
+  actions gives them all as `actions`. One with more gives its main action
+  as `actions` and the others as `otherActions`: in the row on a wide
+  screen, and behind 「ほかの操作」 on a narrow one, in a sheet
+  (`Dialog kind='menu'`) that closes once one of them is pressed. So the
+  heading ends in one row of actions, and the content starts on the first
+  screen. `otherActions` are links and buttons that do their work at once:
+  an action that opens a dialog of its own stays in `actions`, since the
+  dialog would close with the sheet.
 - **The title of the document and the focus follow the screen.** Inside
   `AppShell`, `PageHeader` sets `document.title` to the title of the screen
   and that of the application (「顧客台帳 | Kushi Admin」; the title of
