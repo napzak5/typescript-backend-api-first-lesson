@@ -9,6 +9,7 @@ import {
   Form,
   type FormErrors,
   FormPart,
+  Note,
   RadioGroup,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -287,7 +288,6 @@ export const ScheduleForm = ({
                   error={said[nameOf('notes')]}
                 />
                 <Button
-                  className={styles['remove']}
                   size='small'
                   aria-label={`${index + 1} 行目を外す`}
                   onClick={() => removeRow(row.key)}
@@ -299,13 +299,13 @@ export const ScheduleForm = ({
           )
         })}
         {rows.length + parts.past.length < MOST_DATES ? (
-          <Button className={styles['add']} ref={add} onClick={addRow}>
+          <Button ref={add} onClick={addRow}>
             日付の行を足す
           </Button>
         ) : (
-          <p className={styles['note']}>
+          <Note size='small'>
             {`日付ごとの行は、今日より前の行と合わせて ${MOST_DATES} 行まで入れられます。`}
-          </p>
+          </Note>
         )}
         {parts.past.length > 0 && (
           <Checkbox

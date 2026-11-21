@@ -1,5 +1,6 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import {
+  Actions,
   Badge,
   Button,
   ButtonLink,
@@ -9,7 +10,6 @@ import {
 import type { Ref } from 'react'
 import { match } from 'ts-pattern'
 import { passwordChangedOf, twoFactorStateOf } from '../../security-format'
-import styles from './security-summary.module.css'
 
 export type SecuritySummaryProps = {
   /** The account of the session, as the API has it now */
@@ -56,9 +56,7 @@ export const SecuritySummary = ({
             },
           ]}
         />
-        <p>
-          <ButtonLink href={passwordHref}>パスワードを変更する</ButtonLink>
-        </p>
+        <ButtonLink href={passwordHref}>パスワードを変更する</ButtonLink>
       </Card>
       <Card title='2 要素認証' headingRef={twoFactorHeadingRef}>
         <DescriptionList
@@ -72,7 +70,7 @@ export const SecuritySummary = ({
           ]}
         />
         <p>{twoFactor.description}</p>
-        <p className={styles['actions']}>
+        <Actions>
           {match(user.twoFactorStatus)
             .with('disabled', () => (
               <ButtonLink href={twoFactorHref}>2 要素認証を設定する</ButtonLink>
@@ -91,7 +89,7 @@ export const SecuritySummary = ({
               </>
             ))
             .exhaustive()}
-        </p>
+        </Actions>
       </Card>
     </>
   )

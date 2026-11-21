@@ -55,17 +55,12 @@
 .content {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-content);
   padding: var(--space-frame) var(--space-frame) 0;
 }
 
 .title {
   font-size: var(--font-size-large);
-}
-
-/* What the question is about, below it and quieter */
-.description {
-  color: var(--color-text-muted);
 }
 
 /*
@@ -80,6 +75,12 @@
   gap: var(--space-3);
   padding: var(--space-4) var(--space-frame) var(--space-frame);
   background-color: var(--color-surface);
+}
+
+/* A button here takes the room it is given, which it does not elsewhere (`button.module.css`) */
+.actions > * {
+  inline-size: auto;
+  block-size: auto;
 }
 
 /* From here on a box in the middle of the screen, its actions at its end */

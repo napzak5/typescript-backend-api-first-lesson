@@ -137,13 +137,9 @@ export const ChartEntryScreen = () => {
                 ) : (
                   <>
                     <p>このお客様には、カルテがあります。</p>
-                    <p>
-                      <ButtonLink
-                        href={chartChangeHrefOf(salon.id, customer.id)}
-                      >
-                        カルテを直す
-                      </ButtonLink>
-                    </p>
+                    <ButtonLink href={chartChangeHrefOf(salon.id, customer.id)}>
+                      カルテを直す
+                    </ButtonLink>
                   </>
                 )
               }

@@ -108,7 +108,7 @@ describe('PreferencesDetails', () => {
     await stories.Wordy.run()
 
     // Assert
-    expect(shownAs('特別な要望')?.firstElementChild).toHaveClass('written')
+    expect(shownAs('特別な要望')?.firstElementChild).toHaveClass('writtenText')
     expect(shownAs('特別な要望')?.textContent).toContain('\n\n')
   })
 })

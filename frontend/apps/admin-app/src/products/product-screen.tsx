@@ -79,9 +79,7 @@ const ProductPart = ({ salon, productId }: ProductPartProps) => {
           }
         />
         <ProductRecord product={found.product} currency={salon.currency} />
-        <p>
-          <ButtonLink href={productsHrefOf(salon.id)}>商品台帳へ</ButtonLink>
-        </p>
+        <ButtonLink href={productsHrefOf(salon.id)}>商品台帳へ</ButtonLink>
       </>
     ))
     .exhaustive()

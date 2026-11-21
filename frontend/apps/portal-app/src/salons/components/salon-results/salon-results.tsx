@@ -1,5 +1,12 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
-import { Alert, Button, Link, Rating, TagList } from '@beauty-salon-frontend/ui'
+import {
+  Alert,
+  Button,
+  Link,
+  Note,
+  Rating,
+  TagList,
+} from '@beauty-salon-frontend/ui'
 import { useId, useLayoutEffect, useRef } from 'react'
 import type { More } from '../../pages'
 import { addressOf } from '../../salon-format'
@@ -73,16 +80,14 @@ export const SalonResults = ({
       <h2 className={styles['heading']} id={headingId}>
         検索結果
       </h2>
-      <p className={styles['count']} role='status'>
-        {countOf(total, salons.length)}
-      </p>
+      <Note role='status'>{countOf(total, salons.length)}</Note>
       <ul className={styles['salons']} ref={list}>
         {salons.map((salon) => (
           <li key={salon.id} className={styles['salon']}>
             <h3 className={styles['name']}>
               <Link href={salonHref(salon)}>{salon.name}</Link>
             </h3>
-            <p className={styles['address']}>{addressOf(salon)}</p>
+            <Note size='small'>{addressOf(salon)}</Note>
             <p>
               <Rating
                 value={salon.rating}
@@ -102,11 +107,9 @@ export const SalonResults = ({
         </Alert>
       )}
       {more !== 'none' && (
-        <p>
-          <Button onClick={askForMore} pending={more === 'loading'}>
-            {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-          </Button>
-        </p>
+        <Button onClick={askForMore} pending={more === 'loading'}>
+          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
+        </Button>
       )}
     </section>
   )

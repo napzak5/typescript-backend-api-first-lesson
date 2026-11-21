@@ -86,9 +86,7 @@ export const StatisticsPeriod = ({
         />
       </FieldRow>
       {children}
-      <div className={styles['actions']}>
-        <Button type='submit'>集計する</Button>
-      </div>
+      <Button type='submit'>集計する</Button>
     </form>
   )
 }

@@ -53,19 +53,17 @@ export const SaleVoid = ({
   onVoid,
 }: SaleVoidProps) => {
   if (why !== undefined) {
-    return <p className={styles['why']}>{why}</p>
+    return <p>{why}</p>
   }
 
   return (
     <div className={styles['void']}>
-      <p className={styles['why']}>
+      <p>
         誤って入れた売上や、支払いを全額返金して払い直す売上を、取り消します。
       </p>
-      <p>
-        <Button variant='danger' onClick={onOpen}>
-          売上を取り消す
-        </Button>
-      </p>
+      <Button variant='danger' onClick={onOpen}>
+        売上を取り消す
+      </Button>
       <FormDialog
         open={open}
         onClose={onClose}

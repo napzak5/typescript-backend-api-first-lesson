@@ -243,9 +243,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           />
         ))
         .exhaustive()}
-      <p>
-        <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
-      </p>
+      <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
       <AlertDialog
         alert={seeing}
         onClose={() => setSeeing(undefined)}

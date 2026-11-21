@@ -4,10 +4,3 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-fields);
 }
-
-/* What a part is for, or why it asks for nothing: said as the description of a control is */
-.note {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  line-height: var(--line-height-tight);
-}

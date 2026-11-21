@@ -5,17 +5,8 @@
   gap: var(--space-parts);
 }
 
-/* What was written in several lines keeps its line breaks */
-.written {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
 /* The addresses of the photos, one in a line */
 .addresses {
   display: grid;
   gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }

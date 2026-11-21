@@ -3,7 +3,7 @@ import type {
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { Badge, Card, DescriptionList } from '@beauty-salon-frontend/ui'
+import { Badge, Card, DescriptionList, Note } from '@beauty-salon-frontend/ui'
 import type { ReactNode, Ref } from 'react'
 import { match } from 'ts-pattern'
 import {
@@ -11,7 +11,6 @@ import {
   invitationStateOf,
   roleNameOf,
 } from '../../account-format'
-import styles from './invitation-record.module.css'
 
 export type InvitationRecordProps = {
   invitation: ModelsStaffInvitationResponse
@@ -33,26 +32,26 @@ type StateWordsProps = { state: InvitationState; member: ModelsStaffResponse }
 const StateWords = ({ state, member }: StateWordsProps) =>
   match(state)
     .with('waiting', () => (
-      <p className={styles['note']}>
+      <Note>
         招待されたスタッフが、メールのリンクからパスワードを決めると、ログインアカウントができます。すでにスタッフのアカウントを持っていて、どのサロンにも属していない人は、そのアカウントでログインして招待に参加します。
-      </p>
+      </Note>
     ))
     .with('expired', () => (
-      <p className={styles['note']}>
+      <Note>
         期限が切れたので、この招待のリンクは使えません。招待し直すと、新しいリンクを送ります。
-      </p>
+      </Note>
     ))
     .with('elsewhere', () => (
-      <p className={styles['note']}>
+      <Note>
         招待したあとで、台帳のメールアドレスが変わりました（いまは
         {member.email}
         ）。この招待のリンクは使えません。招待し直すと、いまのメールアドレスに送ります。
-      </p>
+      </Note>
     ))
     .with('inactive', () => (
-      <p className={styles['note']}>
+      <Note>
         無効なスタッフへの招待は、スタッフ情報を有効に戻すまで使えません。
-      </p>
+      </Note>
     ))
     .exhaustive()
 

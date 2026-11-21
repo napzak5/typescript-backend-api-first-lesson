@@ -46,9 +46,10 @@ describe('EmptyState', () => {
 
     // Assert
     expect(action).toHaveAttribute('href', '/salons')
-    expect(action.previousElementSibling).toHaveTextContent(
+    expect(action.parentElement?.previousElementSibling).toHaveTextContent(
       '予約すると、ここに表示されます。',
     )
+    expect(action.parentElement).toHaveClass('flow')
   })
 
   it('should hold nothing but its title when it is given nothing else', async () => {

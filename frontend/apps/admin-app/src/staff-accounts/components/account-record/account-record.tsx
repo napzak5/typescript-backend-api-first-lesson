@@ -3,7 +3,7 @@ import type {
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList } from '@beauty-salon-frontend/ui'
+import { Card, DescriptionList, Note } from '@beauty-salon-frontend/ui'
 import type { ReactNode, Ref } from 'react'
 import {
   roleNameOf,
@@ -12,7 +12,6 @@ import {
   statusNoteOf,
   twoFactorNameOf,
 } from '../../account-format'
-import styles from './account-record.module.css'
 
 export type AccountRecordProps = {
   account: ModelsStaffAccountResponse
@@ -43,15 +42,7 @@ export const AccountRecord = ({
   const note = statusNoteOf(account.status)
 
   return (
-    <Card
-      title='ログインアカウント'
-      headingRef={headingRef}
-      actions={
-        actions === undefined ? undefined : (
-          <div className={styles['actions']}>{actions}</div>
-        )
-      }
-    >
+    <Card title='ログインアカウント' headingRef={headingRef} actions={actions}>
       <DescriptionList
         items={[
           {
@@ -77,13 +68,13 @@ export const AccountRecord = ({
           },
         ]}
       />
-      {note !== undefined && <p className={styles['note']}>{note}</p>}
+      {note !== undefined && <Note>{note}</Note>}
       {!sameAddress(account.email, member.email) && (
-        <p className={styles['note']}>
+        <Note>
           ログインには、このメールアドレスを使います。台帳のメールアドレス（
           {member.email}
           ）とは違います。招待を受け入れたあとで台帳を直しても、ログインのメールアドレスは変わりません。
-        </p>
+        </Note>
       )}
     </Card>
   )

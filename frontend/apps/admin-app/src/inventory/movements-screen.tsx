@@ -202,11 +202,9 @@ const MovementHistory = ({
             />
           ))
           .exhaustive()}
-        <p>
-          <ButtonLink href={stockRowHrefOf(salon.id, row.id)}>
-            在庫の行へ
-          </ButtonLink>
-        </p>
+        <ButtonLink href={stockRowHrefOf(salon.id, row.id)}>
+          在庫の行へ
+        </ButtonLink>
       </>
     ))
 }

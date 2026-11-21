@@ -209,11 +209,9 @@ const InactiveNotice = ({
     <p>
       無効なスタッフは、招待できません。休職や退職の手続きが終わって復帰するときは、スタッフ情報を有効に戻してから招待してください。
     </p>
-    <p>
-      <ButtonLink href={staffChangeHrefOf(salon.id, member.id)}>
-        スタッフ情報を直す
-      </ButtonLink>
-    </p>
+    <ButtonLink href={staffChangeHrefOf(salon.id, member.id)}>
+      スタッフ情報を直す
+    </ButtonLink>
   </>
 )
 
@@ -605,11 +603,9 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
         ))
         .with({ type: 'none' }, () => <NoLoginPart {...props} />)
         .exhaustive()}
-      <p>
-        <ButtonLink href={staffMemberHrefOf(salon.id, member.id)}>
-          スタッフの内容へ
-        </ButtonLink>
-      </p>
+      <ButtonLink href={staffMemberHrefOf(salon.id, member.id)}>
+        スタッフの内容へ
+      </ButtonLink>
     </>
   )
 }

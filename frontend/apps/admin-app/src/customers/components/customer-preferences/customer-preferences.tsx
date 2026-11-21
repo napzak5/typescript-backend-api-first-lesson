@@ -2,7 +2,7 @@ import type {
   ModelsCustomerPreferencesResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import { DescriptionList } from '@beauty-salon-frontend/ui'
+import { DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
 import styles from './customer-preferences.module.css'
 
 export type CustomerPreferencesProps = {
@@ -95,7 +95,7 @@ export const CustomerPreferences = ({
             preferences.specialRequests === null ? (
               UNSET
             ) : (
-              <p className={styles['written']}>{preferences.specialRequests}</p>
+              <WrittenText>{preferences.specialRequests}</WrittenText>
             ),
         },
       ]}

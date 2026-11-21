@@ -26,6 +26,10 @@ type StyleRule =
   | 'unused-class'
   /** A class name comes from a CSS Module, not from a string in the markup */
   | 'no-literal-class-name'
+  /** A CSS Module does not do again what the reset does to every element: a margin of 0, a list without its bullets */
+  | 'repeats-the-reset'
+  /** A stylesheet is written for a narrow screen and widened at 40rem or 60rem: no other width, no `max-width` */
+  | 'unknown-breakpoint'
 
 export type StyleRuleViolation = {
   path: string
@@ -84,6 +88,9 @@ const LITERAL_CLASS_NAME = /className=(?:'[^']*'|"[^"]*")/g
 const INLINE_FLEX = /display:\s*['"](?:inline-)?flex['"]/g
 const INLINE_CUSTOM_PROPERTY = /['"](--[\w-]+)['"]\s*:/g
 const SET_CUSTOM_PROPERTY = /\.setProperty\(\s*['"](--[\w-]+)['"]/g
+const MEDIA_WIDTH = /\b(min|max)-width\s*:\s*([^)\s]+)/g
+/** The widths a stylesheet is widened at; a media query cannot read a token */
+const BREAKPOINTS = new Set(['40rem', '60rem'])
 
 const isStylesheet = (file: SourceFile): boolean => file.path.endsWith('.css')
 /** A component, or a module beside the components that reads a CSS Module for them (the classes of a state) */
@@ -91,6 +98,14 @@ const isComponent = (file: SourceFile): boolean =>
   file.path.endsWith('.tsx') || file.path.endsWith('.ts')
 const isTokensFile = (file: SourceFile): boolean =>
   path.basename(file.path) === TOKENS_FILE
+const isModule = (file: SourceFile): boolean =>
+  file.path.endsWith('.module.css')
+
+/** `margin: 0` and `list-style: none`, which the reset of the theme gives every element that has them otherwise */
+const repeatsTheReset = (property: string, value: string): boolean =>
+  (property === 'margin' && value.split(/\s+/).every((part) => part === '0')) ||
+  ((property === 'list-style' || property === 'list-style-type') &&
+    value === 'none')
 
 const matchesOf = (text: string, pattern: RegExp): string[] =>
   Array.from(text.matchAll(pattern), (match) => match[1] ?? match[0])
@@ -151,6 +166,13 @@ const checkStylesheet = (
     ) {
       report('no-tailwind', `@${atRule.name} ${atRule.params}`.trim())
     }
+    if (atRule.name === 'media') {
+      for (const [, side, width = ''] of atRule.params.matchAll(MEDIA_WIDTH)) {
+        if (side === 'max' || !BREAKPOINTS.has(width)) {
+          report('unknown-breakpoint', `@media ${atRule.params}`)
+        }
+      }
+    }
   })
 
   root.walkDecls((declaration) => {
@@ -161,6 +183,13 @@ const checkStylesheet = (
       /^flex(?:-|$)/.test(declaration.prop)
     ) {
       report('no-flex', text)
+    }
+
+    if (
+      isModule(file) &&
+      repeatsTheReset(declaration.prop, declaration.value)
+    ) {
+      report('repeats-the-reset', text)
     }
 
     if (isTokensFile(file)) {
@@ -262,7 +291,7 @@ export const checkStyleRules = (
   )
   const classesByModule = new Map(
     stylesheets
-      .filter(({ file }) => file.path.endsWith('.module.css'))
+      .filter(({ file }) => isModule(file))
       .map(({ file, root }) => [file.path, definedClasses(root)]),
   )
 

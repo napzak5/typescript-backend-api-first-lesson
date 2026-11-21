@@ -9,6 +9,7 @@ import {
   DescriptionList,
   Table,
   TagList,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import { UNRECORDED } from '../../../customers/customer-format'
 import { treatmentNameOf } from '../../chart-form'
@@ -29,7 +30,7 @@ export type ChartRecordProps = {
 type Row = { place: number; treatment: ModelsPreviousTreatment }
 
 const writtenOrNone = (text: string | null) =>
-  text === null ? UNRECORDED : <p className={styles['written']}>{text}</p>
+  text === null ? UNRECORDED : <WrittenText>{text}</WrittenText>
 
 const productsOrNone = (label: string, names: readonly string[]) =>
   names.length === 0 ? UNRECORDED : <TagList label={label} items={names} />

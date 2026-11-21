@@ -32,8 +32,6 @@ export const SettingsForbidden = ({ salon, title }: SettingsForbiddenProps) => (
     <p>
       このアカウントでは、サロンの設定を変えられません。設定を変えられるのは、サロンのオーナーとマネージャーと、管理者です。
     </p>
-    <p>
-      <ButtonLink href={settingsHrefOf(salon.id)}>設定へ戻る</ButtonLink>
-    </p>
+    <ButtonLink href={settingsHrefOf(salon.id)}>設定へ戻る</ButtonLink>
   </>
 )

@@ -2,8 +2,3 @@
 .line {
   display: block;
 }
-
-/* What a customer wrote, with the line breaks it was written with */
-.notes {
-  white-space: pre-wrap;
-}

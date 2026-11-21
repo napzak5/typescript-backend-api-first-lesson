@@ -7,6 +7,7 @@ import {
   DescriptionList,
   Dialog,
   LoadingIndicator,
+  Note,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -131,13 +132,11 @@ export const AttachmentRecord = ({
         ]}
       />
       {removes ? (
-        <div className={styles['buttons']}>
-          <Button variant='danger' onClick={onAsk}>
-            ファイルを削除する
-          </Button>
-        </div>
+        <Button variant='danger' onClick={onAsk}>
+          ファイルを削除する
+        </Button>
       ) : (
-        <p className={styles['note']}>{REMOVAL_NOTE}</p>
+        <Note>{REMOVAL_NOTE}</Note>
       )}
     </div>
     <Dialog

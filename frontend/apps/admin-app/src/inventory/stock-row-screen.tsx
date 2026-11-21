@@ -71,9 +71,7 @@ const StockRowPart = ({ salon, inventoryId }: StockRowPartProps) => {
               .with({ type: 'found' }, ({ items }) => items)
               .otherwise(() => undefined)}
           />
-          <p>
-            <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
-          </p>
+          <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
         </>
       )}
     </WithStockRow>

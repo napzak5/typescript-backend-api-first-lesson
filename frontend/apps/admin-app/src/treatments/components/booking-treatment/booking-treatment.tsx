@@ -73,25 +73,21 @@ export const BookingTreatment = ({
           ))
           .with({ type: 'found', record: P.nonNullable }, ({ record }) => (
             <div className={styles['part']}>
-              <p className={styles['said']}>
+              <p>
                 {`${momentNameAt(record.createdAt, timezone)}に書いた施術記録があります。`}
               </p>
-              <p className={styles['said']}>
-                <ButtonLink href={treatmentHref(record.id)}>
-                  施術記録を見る
-                </ButtonLink>
-              </p>
+              <ButtonLink href={treatmentHref(record.id)}>
+                施術記録を見る
+              </ButtonLink>
             </div>
           ))
           .exhaustive(),
       )
       .with(P.union('draft', 'pending', 'confirmed'), () => (
-        <p className={styles['said']}>施術を始めると、施術記録を書けます。</p>
+        <p>施術を始めると、施術記録を書けます。</p>
       ))
       .with(P.union('cancelled', 'no_show'), () => (
-        <p className={styles['said']}>
-          施術をしなかった予約には、施術記録はありません。
-        </p>
+        <p>施術をしなかった予約には、施術記録はありません。</p>
       ))
       .exhaustive()}
   </Card>

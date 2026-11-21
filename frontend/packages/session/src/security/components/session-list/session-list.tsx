@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   DescriptionList,
+  Note,
 } from '@beauty-salon-frontend/ui'
 import { useLayoutEffect, useRef } from 'react'
 import type { More } from '../../security-flow'
@@ -78,9 +79,7 @@ export const SessionList = ({
 
   return (
     <div className={styles['list']}>
-      <p className={styles['count']} role='status'>
-        {countOf(total, sessions.length)}
-      </p>
+      <Note role='status'>{countOf(total, sessions.length)}</Note>
       <ul
         className={styles['sessions']}
         ref={list}
@@ -112,17 +111,15 @@ export const SessionList = ({
                 ]}
               />
               {!session.current && (
-                <p>
-                  <Button
-                    variant='danger'
-                    size='small'
-                    aria-label={`${name}をサインアウトさせる`}
-                    pending={ending === session.id}
-                    onClick={() => onEnd(session)}
-                  >
-                    サインアウトさせる
-                  </Button>
-                </p>
+                <Button
+                  variant='danger'
+                  size='small'
+                  aria-label={`${name}をサインアウトさせる`}
+                  pending={ending === session.id}
+                  onClick={() => onEnd(session)}
+                >
+                  サインアウトさせる
+                </Button>
               )}
             </li>
           )
@@ -134,11 +131,9 @@ export const SessionList = ({
         </Alert>
       )}
       {more !== 'none' && (
-        <p>
-          <Button onClick={askForMore} pending={more === 'loading'}>
-            {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-          </Button>
-        </p>
+        <Button onClick={askForMore} pending={more === 'loading'}>
+          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
+        </Button>
       )}
     </div>
   )

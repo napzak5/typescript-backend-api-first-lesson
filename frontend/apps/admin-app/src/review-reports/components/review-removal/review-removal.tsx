@@ -37,15 +37,13 @@ export const ReviewRemoval = ({
 }: ReviewRemovalProps) => (
   <Card title='レビューの削除'>
     <div className={styles['removal']}>
-      <p className={styles['text']}>
+      <p>
         規則に反するレビューを削除します。削除すると、お客様の画面とサロンの画面から消え、このレビューへの通報も消えます。削除したレビューは、元に戻せません。
       </p>
       {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
-      <p className={styles['text']}>
-        <Button variant='danger' onClick={onAsk}>
-          レビューを削除する
-        </Button>
-      </p>
+      <Button variant='danger' onClick={onAsk}>
+        レビューを削除する
+      </Button>
     </div>
     <Dialog
       open={asking}

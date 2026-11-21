@@ -14,6 +14,7 @@ import {
   Dialog,
   Link,
   LoadingIndicator,
+  Note,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
@@ -186,7 +187,7 @@ export const AllergyList = ({
           />
         ))
         .exhaustive()}
-      {!removable && <p className={styles['note']}>{REMOVED_BY_OTHERS}</p>}
+      {!removable && <Note>{REMOVED_BY_OTHERS}</Note>}
     </div>
     {removable && (
       <Dialog

@@ -1,6 +1,6 @@
 import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/api-client'
 import type { StaffChoice } from '@beauty-salon-frontend/preferences'
-import { DescriptionList } from '@beauty-salon-frontend/ui'
+import { DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
 import { webAddressOf } from '../../../salons/salon-format'
 import { staffNamed, timeSlotOf, UNSET } from '../../preferences-format'
 import styles from './preferences-details.module.css'
@@ -93,7 +93,7 @@ export const PreferencesDetails = ({
             preferences.specialRequests === null ? (
               UNSET
             ) : (
-              <p className={styles['written']}>{preferences.specialRequests}</p>
+              <WrittenText>{preferences.specialRequests}</WrittenText>
             ),
         },
       ]}

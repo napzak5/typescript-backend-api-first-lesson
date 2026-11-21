@@ -2,6 +2,7 @@ import {
   Button,
   ButtonLink,
   FormDialog,
+  Note,
   TextArea,
 } from '@beauty-salon-frontend/ui'
 import styles from './booking-changes.module.css'
@@ -50,9 +51,9 @@ export const BookingChanges = ({
   return (
     <div className={styles['changes']}>
       {moveHref === undefined ? (
-        <p className={styles['note']}>
+        <Note className={styles['note']}>
           この予約の日時の変更は、サロンにお問い合わせください。
-        </p>
+        </Note>
       ) : (
         <ButtonLink href={moveHref}>日時を変更する</ButtonLink>
       )}

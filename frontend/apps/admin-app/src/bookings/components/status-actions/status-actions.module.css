@@ -2,16 +2,5 @@
 .statusActions {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
-.note {
-  color: var(--color-text-muted);
-}
-
-/* The buttons in a row, and below each other when they do not fit */
-.buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, max-content));
-  gap: var(--space-3);
+  gap: var(--space-content);
 }

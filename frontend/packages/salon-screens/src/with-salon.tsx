@@ -46,9 +46,7 @@ export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
           title='サロンが見つかりません'
           description='アドレスが正しいか、お確かめください。削除されたサロンは、表示できません。'
         />
-        <p>
-          <ButtonLink href='/'>トップへ戻る</ButtonLink>
-        </p>
+        <ButtonLink href='/'>トップへ戻る</ButtonLink>
       </>
     ))
     .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
@@ -85,8 +83,6 @@ export const OtherSalonNotice = ({
 }: OtherSalonNoticeProps) => (
   <>
     <p>{`このサロンの${what}は、見られません。${what}を見られるのは、${who}です。`}</p>
-    <p>
-      <ButtonLink href='/'>{`自分のサロンの${start}へ`}</ButtonLink>
-    </p>
+    <ButtonLink href='/'>{`自分のサロンの${start}へ`}</ButtonLink>
   </>
 )

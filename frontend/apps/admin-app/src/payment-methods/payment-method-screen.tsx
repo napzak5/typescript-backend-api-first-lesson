@@ -85,11 +85,9 @@ const PaymentMethodPart = ({
           }
         />
         <PaymentMethodRecord method={found.method} currency={salon.currency} />
-        <p>
-          <ButtonLink href={paymentMethodsHrefOf(salon.id)}>
-            支払い方法へ
-          </ButtonLink>
-        </p>
+        <ButtonLink href={paymentMethodsHrefOf(salon.id)}>
+          支払い方法へ
+        </ButtonLink>
       </>
     ))
     .exhaustive()

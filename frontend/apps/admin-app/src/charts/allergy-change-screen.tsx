@@ -77,11 +77,9 @@ const WithAllergy = ({
         <p>
           このアレルギーの記録は、ありません。ほかのアカウントが削除したのかもしれません。
         </p>
-        <p>
-          <ButtonLink href={chartHrefOf(salon.id, customer.id)}>
-            カルテへ
-          </ButtonLink>
-        </p>
+        <ButtonLink href={chartHrefOf(salon.id, customer.id)}>
+          カルテへ
+        </ButtonLink>
       </>
     ))
     .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (

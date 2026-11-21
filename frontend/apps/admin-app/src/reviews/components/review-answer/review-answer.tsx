@@ -1,12 +1,14 @@
 import type { ModelsReviewResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
+  Actions,
   Alert,
   Button,
   ButtonLink,
   Card,
   Dialog,
   EmptyState,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import styles from './review-answer.module.css'
@@ -67,7 +69,9 @@ export const ReviewAnswer = ({
           <EmptyState kind='part' title='まだ返信していません。' />
         ) : (
           <>
-            <p className={styles['text']}>{review.ownerResponse}</p>
+            <WrittenText className={styles['text']}>
+              {review.ownerResponse}
+            </WrittenText>
             {review.ownerRespondedAt !== null && (
               <p className={styles['moment']}>
                 {`返信日時 ${momentNameAt(review.ownerRespondedAt, timezone)}`}
@@ -76,7 +80,7 @@ export const ReviewAnswer = ({
           </>
         )}
         {(responseHref !== undefined || withdrawable) && (
-          <div className={styles['buttons']}>
+          <Actions>
             {responseHref !== undefined && (
               <ButtonLink href={responseHref} variant='primary'>
                 {answered ? '返信を直す' : '返信を書く'}
@@ -87,7 +91,7 @@ export const ReviewAnswer = ({
                 返信を取り下げる
               </Button>
             )}
-          </div>
+          </Actions>
         )}
         {note !== undefined && <p className={styles['note']}>{note}</p>}
       </div>

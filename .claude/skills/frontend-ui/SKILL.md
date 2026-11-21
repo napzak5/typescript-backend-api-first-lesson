@@ -82,13 +82,14 @@ is broken.
    a bare `1fr` grows with its content and overflows. A grid does not wrap
    items of different widths: a row that may not fit scrolls sideways
    (`navigation.module.css`), or becomes a column below a width (the
-   buttons of a `Form` and the actions of a `Dialog`, below 40rem). A row
+   buttons of a `Form`, an `Actions` of the layout `row`, and the actions of
+   a `Dialog`, below 40rem). A row
    of links that scrolls is scrolled, by itself and alone, to put its
    current link in its middle whenever its links or the current one
    change, and not when it is drawn again (`navigation.tsx`). What
    follows each other like words (the tags of a salon, a rating with its
-   date and a badge, the buttons under the heading of a `Card` on a narrow
-   screen) is no layout: it stays in the flow of the text,
+   date and a badge, the buttons of an `Actions`) is no layout: it stays in
+   the flow of the text,
    `display: inline-block` with a margin, and goes on in the next line where
    the line ends (`tag-list.module.css`). The underline of a link does not
    reach into such a box: inside a link it gets `text-decoration: inherit`,
@@ -137,7 +138,8 @@ is broken.
    `margin-inline`, `padding-block`, `inset-inline-start`; `rem` for sizes.
    Hover styles sit inside `@media (hover: hover)`. A stylesheet is written
    for a narrow screen first and widened with `@media (min-width: 40rem)` or
-   `60rem`; a media query cannot read a token, so these two are written out.
+   `60rem`; a media query cannot read a token, so these two are written out,
+   and no other width is, nor a `max-width` (`unknown-breakpoint`).
 9. **The focus ring is global.** `global.css` draws it for `:focus-visible`.
    A component does not remove an outline; it may move the ring with
    `outline-offset`.
@@ -145,6 +147,10 @@ is broken.
     and the styles of bare elements in `base`. The stylesheet of a component
     is in no layer, so it wins over both in whatever order the stylesheets
     load, and it needs no extra specificity and no `!important` to do so.
+    The reset takes the margin of every element and the bullets of every
+    list: a CSS Module does not say `margin: 0` or `list-style: none` again
+    (`repeats-the-reset`), and a list that shows its bullets is a
+    `BulletList`.
 11. **A screen fits a window 320 pixels wide** (WCAG 2.2, 1.4.10): the page
     is no wider than the window, and nothing sticks out of what it is in.
     The browser of a phone shows a page that is wider shrunk, and then
@@ -167,17 +173,19 @@ is broken.
     heading of a card 16px, of a section 20px and of a screen 24px. A
     control is 40px high for a finger and 36px where the pointer is a fine
     one (`--size-control`, which `tokens.css` sets in a media query): do
-    not write the height of a control. Three gaps have a name, because
+    not write the height of a control. Four gaps have a name, because
     many stylesheets have to agree on them:
 
     | Token | What it is | Value |
     |-------|------------|-------|
     | `--space-frame` | The room inside a frame: a `Card`, the conditions of a search, a `Dialog`, any box with a border of its own | 16px, 20px from 40rem |
-    | `--space-parts` | The gap between the parts of a screen: its cards, its lists | 16px |
+    | `--space-parts` | The gap between the parts of a screen: its cards, a list of cards, the sections of a page | 16px |
+    | `--space-content` | The gap between what a part holds one below the other: its heading, its sentences, its table, its buttons (`Card`, the content of a `Dialog`) | 12px |
     | `--space-fields` | The gap between the fields of a form or of a search | 12px |
 
-    A frame, a stack of parts and a form use these names, not a step of
-    the scale. A part of a form (`FormPart`: a `fieldset` under its
+    A frame, a stack of parts, a stack inside a part and a form use these
+    names, not a step of the scale; a step is for what stands closer (a
+    name and what it says, the lines of one entry). A part of a form (`FormPart`: a `fieldset` under its
     `legend`) is further from what stands before it than its fields are
     from each other, and that room is a margin of the fieldset, not a
     padding: the legend stands on the upper edge of the fieldset, so a
@@ -261,7 +269,7 @@ nobody reads is removed.
 | `CheckboxGroup` | Several of a few choices. The chosen values are sent under one name (`formData.getAll(name)`). `layout='columns'` for many short ones. It is a `fieldset`, where `RadioGroup` is a `radiogroup`: a group of checkboxes is never required as a whole, and one of radio buttons says so (`aria-required`) |
 | `FileField` | A file to choose (`accept` names its kinds). The screen reads the chosen file itself (`onChange`, `event.currentTarget.files`); it is not sent with the form. Its button looks like a secondary button |
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
-| `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it and what else can be done (`actions`): one below the other and as wide as the form below 40rem, in a row from there |
+| `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it and what else can be done (`actions`): one below the other and as wide as the form below 40rem, in a row from there (an `Actions` of the layout `row`) |
 | `FormPart` | A part of a long form under its name (`label`: a `fieldset` and its `legend`), with what it says of all its controls (`description`, which the `fieldset` is described by) before them, in the look of a description. What else a `fieldset` takes (`disabled`, `onChange`) is handed to it |
 | `FieldRow` | Two controls that are read together (a name and its kana, the start and the end), or three (`columns={3}`: the prices of a product), side by side from 40rem and one below the other below it. Each keeps its height, so their upper edges stay in line when one has a description |
 | `FormDialog` | A question answered with a form (a cancellation and its reason, a tag for the chosen customers): a `Dialog` whose content is the form, with 「戻る」 and the button that sends it (`submitLabel`, `submitVariant='danger'` for what cannot be undone) among its actions. Enter in a control sends it, nothing is sent again while `pending`, and the focus goes to the first control with an error. `answer` is what the form brought when it is to be read before the dialog closes (the codes issued, the report made before): it takes the place of the form, with 「閉じる」 alone, and takes the focus |
@@ -2366,7 +2374,11 @@ A share link opens a file for somebody who has no account
 | `Navigation` | Links to screens or to views of one, under a name of their own. The application says which one is `current`; a row too long for the screen is scrolled to it, and `orientation='vertical'` puts them below each other, in as many columns as there is room for |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (`actions` always in sight, `otherActions` in the same row from 40rem and in a sheet behind 「ほかの操作」 below it) |
-| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are; below it they follow each other like words, and go on in the next line where the card ends: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
+| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` (an `Actions`) stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are; below it they follow each other like words, and go on in the next line where the card ends: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
+| `Actions` | Buttons and links that stand together in the body of a part, in the order they are read. `flow` (the default) lets them follow each other like words and go on in the next line where the part ends: what can be done with a part, each on its own (「変更履歴」, 「ほかのお客様とまとめる」 and 「台帳から削除する」 of a customer); `row` puts them one below the other and as wide as the part below 40rem, and in a row from there, as a `Form` does: the button that sends what was entered and the way back from it, where they stand outside a `Form` (「登録する」 and 「やめる」 of a file of customers); `stack` puts them one below the other, each as wide as its label. A lone button needs none: it is as wide as its label wherever it stands |
+| `Note` | A sentence said more quietly than the text around it: what a part, a list or a screen leaves out or adds (`size='medium'`, the default), or what goes with a control or a part of a form, as close to it as its description (`size='small'`). The descriptions of `Field`, `FormPart`, `Dialog`, `PageHeader` and `EmptyState` are `Note`s |
+| `WrittenText` | What somebody wrote in several lines (a note, a request, a review), shown with its line breaks and its spaces: it is a paragraph, and a cell of a `Table` keeps its lines with `wrap: 'lines'` |
+| `BulletList` | A short list of sentences with their bullets: what stands in the way of a merge, the rows of a file that were refused. A list of records is a `Table`, a list of cards a `ul` of `Card`s |
 | `DescriptionList` | The names and values of one record, side by side on every screen, one line for a value. The names share a column as wide as the longest of them, and never more than two fifths of the list: a longer name goes on in a second line |
 | `Badge` | The state of a record, in a word, in the colours of a `Tone`, or `neutral` (`BadgeTone`) |
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends |
@@ -2453,6 +2465,13 @@ A share link opens a file for somebody who has no account
   screen that stays, and takes away what had the focus, moves it to its
   heading with `useScreenHeadingFocus()` of the same file ("What was
   written is listed, changed and taken back").
+- **A button is as wide as its label, wherever it stands.** `Button` and
+  `ButtonLink` size themselves to their content (`:where(.button)` in
+  `button.module.css`, so that it weighs nothing), and follow the alignment
+  of the grid they stand in (`justify-items`): a lone button needs no
+  paragraph or `div` around it, and no `justify-self: start`. What gives
+  its buttons the room it has says so for its own items (`Actions` of the
+  layout `row`, the actions of a `Dialog` and of a `PageHeader`).
 - **What goes somewhere is a link, what does something is a button.**
   `ButtonLink` for 「新しい予約」 that opens another screen, `Button` for
   「予約を確定する」. This package does not know the router: an application

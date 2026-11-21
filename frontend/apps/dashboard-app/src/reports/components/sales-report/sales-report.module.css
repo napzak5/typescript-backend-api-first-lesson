@@ -9,15 +9,5 @@
 .part {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-}
-
-.note {
-  margin: 0;
-  color: var(--color-text-muted);
-}
-
-/* The way to the whole of what the card shows a part of */
-.more {
-  margin: 0;
+  gap: var(--space-content);
 }

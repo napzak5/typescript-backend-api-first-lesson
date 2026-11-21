@@ -180,11 +180,9 @@ const ResponseForbidden = ({ salon, reviewId }: ResponseForbiddenProps) => (
     <p>
       このアカウントでは、レビューに返信できません。返信を書けるのは、サロンのオーナーとマネージャーです。
     </p>
-    <p>
-      <ButtonLink href={reviewHrefOf(salon.id, reviewId)}>
-        レビューへ戻る
-      </ButtonLink>
-    </p>
+    <ButtonLink href={reviewHrefOf(salon.id, reviewId)}>
+      レビューへ戻る
+    </ButtonLink>
   </>
 )
 

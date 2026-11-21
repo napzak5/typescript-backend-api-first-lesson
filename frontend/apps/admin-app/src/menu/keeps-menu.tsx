@@ -20,8 +20,6 @@ export const MenuForbidden = ({ salon, title }: MenuForbiddenProps) => (
     <p>
       このアカウントでは、メニューを変えられません。メニューを変えられるのは、サロンのオーナーとマネージャーと、管理者です。
     </p>
-    <p>
-      <ButtonLink href={menuHrefOf(salon.id)}>メニューへ戻る</ButtonLink>
-    </p>
+    <ButtonLink href={menuHrefOf(salon.id)}>メニューへ戻る</ButtonLink>
   </>
 )

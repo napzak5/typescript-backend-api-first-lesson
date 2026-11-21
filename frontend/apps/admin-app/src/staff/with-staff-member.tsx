@@ -28,9 +28,7 @@ export const StaffLedgerForbidden = () => (
     <p>
       このサロンのスタッフ台帳は、扱えません。スタッフ台帳を扱えるのは、そのサロンのオーナーと、管理者です。
     </p>
-    <p>
-      <ButtonLink href='/'>トップへ戻る</ButtonLink>
-    </p>
+    <ButtonLink href='/'>トップへ戻る</ButtonLink>
   </>
 )
 
@@ -61,9 +59,7 @@ const StaffNotFound = ({ salon }: StaffNotFoundProps) => (
       title='スタッフが見つかりません'
       description='アドレスが正しいか、お確かめください。台帳から削除したスタッフは、表示できません。'
     />
-    <p>
-      <ButtonLink href={staffLedgerHrefOf(salon.id)}>スタッフ台帳へ</ButtonLink>
-    </p>
+    <ButtonLink href={staffLedgerHrefOf(salon.id)}>スタッフ台帳へ</ButtonLink>
   </>
 )
 

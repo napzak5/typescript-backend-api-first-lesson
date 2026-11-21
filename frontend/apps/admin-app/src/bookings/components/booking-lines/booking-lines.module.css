@@ -2,16 +2,13 @@
 .lines {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-fields);
 }
 
 .rows {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  gap: var(--space-fields);
 }
 
 /*
@@ -40,9 +37,4 @@
 .check,
 .remove {
   grid-column: 1 / -1;
-}
-
-.remove,
-.add {
-  justify-self: start;
 }

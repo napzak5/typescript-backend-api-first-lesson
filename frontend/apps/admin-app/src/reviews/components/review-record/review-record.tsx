@@ -7,6 +7,7 @@ import {
   type DescriptionListItem,
   Link,
   Rating,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { match } from 'ts-pattern'
@@ -147,7 +148,9 @@ export const ReviewRecord = ({
         {review.title !== null && (
           <p className={styles['title']}>{review.title}</p>
         )}
-        <p className={styles['text']}>{review.comment ?? 'コメントなし'}</p>
+        <WrittenText className={styles['text']}>
+          {review.comment ?? 'コメントなし'}
+        </WrittenText>
         <DescriptionList items={items} />
       </div>
     </Card>

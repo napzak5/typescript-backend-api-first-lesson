@@ -1,8 +1,10 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
 import {
   Alert,
+  BulletList,
   Button,
   Dialog,
+  FieldRow,
   Link,
   RadioGroup,
   Table,
@@ -102,7 +104,7 @@ export const CustomerMerge = ({
   return (
     <div className={styles['merge']}>
       {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
-      <div className={styles['choices']}>
+      <FieldRow>
         <RadioGroup
           label='残すお客様'
           name='kept'
@@ -130,7 +132,7 @@ export const CustomerMerge = ({
           }}
           description='片方だけが値を持つ項目は、その値を残します。'
         />
-      </div>
+      </FieldRow>
       {items.length === 0 ? (
         <p>2 人の台帳の項目は、すべて同じです。</p>
       ) : (
@@ -167,19 +169,17 @@ export const CustomerMerge = ({
       </p>
       {obstacles.length > 0 ? (
         <Alert tone='warning' title='まとめられません'>
-          <ul className={styles['obstacles']}>
+          <BulletList>
             {obstacles.map((obstacle) => {
               const text = obstacleTextOf(obstacle)
               return <li key={text}>{text}</li>
             })}
-          </ul>
+          </BulletList>
         </Alert>
       ) : (
-        <div className={styles['actions']}>
-          <Button variant='danger' onClick={onOpen}>
-            まとめる
-          </Button>
-        </div>
+        <Button variant='danger' onClick={onOpen}>
+          まとめる
+        </Button>
       )}
       <Dialog
         open={open}

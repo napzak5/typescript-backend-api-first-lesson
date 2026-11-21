@@ -261,11 +261,9 @@ const CheckoutOfBooking = ({ salon, booking }: CheckoutOfBookingProps) => {
             この予約には、会計が入っています。1 件の予約に入れる会計は、1
             件です。
           </p>
-          <p>
-            <ButtonLink href={saleHrefOf(salon.id, sale.id)}>
-              売上の内容へ
-            </ButtonLink>
-          </p>
+          <ButtonLink href={saleHrefOf(salon.id, sale.id)}>
+            売上の内容へ
+          </ButtonLink>
         </>
       )
     })

@@ -1,4 +1,10 @@
-import { Alert, Button, Checkbox, TextField } from '@beauty-salon-frontend/ui'
+import {
+  Actions,
+  Alert,
+  Button,
+  Checkbox,
+  TextField,
+} from '@beauty-salon-frontend/ui'
 import { type FormEvent, useLayoutEffect, useRef } from 'react'
 import styles from './sign-in-form.module.css'
 
@@ -114,7 +120,7 @@ export const SignInForm = ({
           error={errors.twoFactorCode}
         />
       )}
-      <div className={styles['actions']}>
+      <Actions layout='row'>
         <Button type='submit' variant='primary' pending={pending}>
           サインイン
         </Button>
@@ -123,7 +129,7 @@ export const SignInForm = ({
             メールアドレスの入力に戻る
           </Button>
         )}
-      </div>
+      </Actions>
     </form>
   )
 }

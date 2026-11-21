@@ -464,9 +464,7 @@ export const SalonScreen = () => {
             title='サロンが見つかりません'
             description='アドレスが正しいか、お確かめください。掲載を終えたサロンかもしれません。'
           />
-          <p>
-            <ButtonLink href='/'>サロンを探す</ButtonLink>
-          </p>
+          <ButtonLink href='/'>サロンを探す</ButtonLink>
         </>
       ))
       .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (

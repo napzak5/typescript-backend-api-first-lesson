@@ -5,6 +5,7 @@ import {
   Form,
   type FormErrors,
   FormPart,
+  Note,
   RadioGroup,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -243,15 +244,15 @@ export const HoursForm = ({
                   </>
                 )}
                 {part.more && (
-                  <p className={styles['note']}>
+                  <Note size='small'>
                     この曜日には、営業時間か休憩が 2
                     つ以上あります。毎週の営業時間を変えて保存すると、最初の営業時間と最初の休憩だけが残ります。
-                  </p>
+                  </Note>
                 )}
                 {part.effectivePeriod !== null && (
-                  <p className={styles['note']}>
+                  <Note size='small'>
                     {`この曜日の営業時間は、${periodNameOf(part.effectivePeriod, timezone)}です。期間は、この画面では変えません。`}
-                  </p>
+                  </Note>
                 )}
               </div>
             </fieldset>
@@ -336,7 +337,6 @@ export const HoursForm = ({
                   error={said[nameOf('notes')]}
                 />
                 <Button
-                  className={styles['remove']}
                   size='small'
                   aria-label={`${index + 1} 行目を外す`}
                   onClick={() => removeRow(row.key)}
@@ -347,13 +347,13 @@ export const HoursForm = ({
             </fieldset>
           )
         })}
-        <Button className={styles['add']} ref={add} onClick={addRow}>
+        <Button ref={add} onClick={addRow}>
           日付の行を足す
         </Button>
         {calendar.past.length > 0 && (
-          <p className={styles['note']}>
+          <Note size='small'>
             {`今日より前の日付（${calendar.past.length} 行）は、記録としてそのまま残ります。`}
-          </p>
+          </Note>
         )}
       </FormPart>
     </Form>

@@ -5,6 +5,7 @@ import {
   type FormErrors,
   Rating,
   TextArea,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { RESPONSE } from '../../review-actions'
@@ -56,7 +57,9 @@ export const ResponseForm = ({
         {review.title !== null && (
           <p className={styles['title']}>{review.title}</p>
         )}
-        <p className={styles['text']}>{review.comment ?? 'コメントなし'}</p>
+        <WrittenText className={styles['text']}>
+          {review.comment ?? 'コメントなし'}
+        </WrittenText>
       </div>
     </Card>
     <Form

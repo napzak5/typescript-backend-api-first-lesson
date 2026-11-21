@@ -26,9 +26,7 @@ export const ReportRefusal = ({ refusal, what }: ReportRefusalProps) =>
     .with('notFound', () => (
       <>
         <p>{`このサロンは削除されたため、${what}を見られません。`}</p>
-        <p>
-          <ButtonLink href='/'>トップへ戻る</ButtonLink>
-        </p>
+        <ButtonLink href='/'>トップへ戻る</ButtonLink>
       </>
     ))
     .exhaustive()

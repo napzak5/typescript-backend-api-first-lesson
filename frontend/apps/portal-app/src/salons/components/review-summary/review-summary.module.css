@@ -1,7 +1,7 @@
 .summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-content);
 }
 
 /* The ratings share three columns: the rating, its share, how many gave it */

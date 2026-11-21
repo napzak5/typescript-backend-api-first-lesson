@@ -1,4 +1,4 @@
-import { ButtonLink, Card } from '@beauty-salon-frontend/ui'
+import { Actions, ButtonLink, Card } from '@beauty-salon-frontend/ui'
 import styles from './sale-points.module.css'
 
 export type SalePointsProps = {
@@ -18,10 +18,10 @@ export const SalePoints = ({ usedHref, earnedHref }: SalePointsProps) => (
       <p>
         お会計で使ったポイントと、付与するポイントを、この売上に結びつけて、お客様のポイントに記録します。
       </p>
-      <div className={styles['actions']}>
+      <Actions>
         <ButtonLink href={usedHref}>使ったポイントを記録する</ButtonLink>
         <ButtonLink href={earnedHref}>ポイントを付与する</ButtonLink>
-      </div>
+      </Actions>
     </div>
   </Card>
 )

@@ -2,16 +2,12 @@
 .requests {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-parts);
 }
 
 /* The sentence, why no file was saved, and the button, one below the other */
 .export {
   display: grid;
   justify-items: start;
-  gap: var(--space-4);
-}
-
-.export > p {
-  margin: 0;
+  gap: var(--space-content);
 }

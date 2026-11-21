@@ -1,7 +1,0 @@
-/* A comment keeps the lines the customer wrote it in, and is not cut wider than a column of reading */
-.comment {
-  display: block;
-  min-width: 16rem;
-  max-width: 32rem;
-  white-space: pre-line;
-}

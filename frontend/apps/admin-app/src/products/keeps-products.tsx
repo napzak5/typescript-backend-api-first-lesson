@@ -23,9 +23,7 @@ export const ProductsForbidden = ({ salon, title }: ProductsForbiddenProps) => (
     <p>
       このアカウントでは、商品を変えられません。商品を変えられるのは、サロンのオーナーとマネージャーと、管理者です。
     </p>
-    <p>
-      <ButtonLink href={productsHrefOf(salon.id)}>商品台帳へ戻る</ButtonLink>
-    </p>
+    <ButtonLink href={productsHrefOf(salon.id)}>商品台帳へ戻る</ButtonLink>
   </>
 )
 
@@ -36,8 +34,6 @@ export const ProductNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
       title='商品が見つかりません'
       description='アドレスが正しいか、お確かめください。削除した商品は、表示できません。'
     />
-    <p>
-      <ButtonLink href={productsHrefOf(salon.id)}>商品台帳へ</ButtonLink>
-    </p>
+    <ButtonLink href={productsHrefOf(salon.id)}>商品台帳へ</ButtonLink>
   </>
 )

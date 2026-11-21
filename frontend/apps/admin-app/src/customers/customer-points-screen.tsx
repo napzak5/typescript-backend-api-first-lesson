@@ -138,11 +138,9 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
 
   return (
     <>
-      <p>
-        <ButtonLink href={customerHrefOf(salon.id, customer.id)}>
-          お客様の台帳へ
-        </ButtonLink>
-      </p>
+      <ButtonLink href={customerHrefOf(salon.id, customer.id)}>
+        お客様の台帳へ
+      </ButtonLink>
       {match(balance.data)
         .with(undefined, () => (
           <LoadingIndicator label='残高を読み込んでいます' />

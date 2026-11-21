@@ -1,5 +1,5 @@
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, Table } from '@beauty-salon-frontend/ui'
+import { Card, Note, Table } from '@beauty-salon-frontend/ui'
 import { countNameOf } from '../../sales-report'
 import {
   partNameOf,
@@ -64,9 +64,9 @@ export const SalesTrend = ({ parts, unit, currency }: SalesTrendProps) => {
           rowKey={({ label }) => label}
           emptyMessage='区切りはありません'
         />
-        <p className={styles['note']}>
+        <Note>
           {`売上は、消費税を含み、値引きを引いた額です。客単価は、売上を会計の件数で割った額です（1 円未満は切り捨て）。${TREND_PARTS}`}
-        </p>
+        </Note>
       </div>
     </Card>
   )

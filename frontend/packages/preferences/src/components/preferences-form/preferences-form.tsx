@@ -4,6 +4,7 @@ import {
   Form,
   FormPart,
   type FormProps,
+  Note,
   Select,
   TextArea,
   TextField,
@@ -69,9 +70,9 @@ export const PreferencesForm = ({
       <FormPart label='スタッフ'>
         {entered.preferredStaffId === undefined ||
         entered.avoidStaffIds === undefined ? (
-          <p className={styles['note']}>
+          <Note size='small'>
             指名したいスタッフと、避けたいスタッフは、サロンを予約すると選べるようになります。
-          </p>
+          </Note>
         ) : (
           <div className={styles['controls']}>
             <Select

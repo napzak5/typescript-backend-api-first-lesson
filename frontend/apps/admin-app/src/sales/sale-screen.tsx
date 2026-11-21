@@ -300,16 +300,14 @@ export const SaleScreen = () => {
                   <SaleDetails salon={salon} sale={sale} methods={methods} />
                 )}
               </WithPaymentMethods>
-              <p>
-                <ButtonLink
-                  href={`${salesHrefOf(salon.id)}?${ledgerQueryOf({
-                    from: sale.saleDate,
-                    to: sale.saleDate,
-                  }).toString()}`}
-                >
-                  この日の売上へ
-                </ButtonLink>
-              </p>
+              <ButtonLink
+                href={`${salesHrefOf(salon.id)}?${ledgerQueryOf({
+                  from: sale.saleDate,
+                  to: sale.saleDate,
+                }).toString()}`}
+              >
+                この日の売上へ
+              </ButtonLink>
             </>
           )}
         </WithSale>

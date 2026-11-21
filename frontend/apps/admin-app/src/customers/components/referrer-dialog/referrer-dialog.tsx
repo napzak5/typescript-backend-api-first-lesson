@@ -57,11 +57,9 @@ export const ReferrerDialog = ({
             defaultValue={keyword}
             description='お名前（カナでも）、メールアドレス、電話番号の一部。'
           />
-          <div className={styles['actions']}>
-            <Button type='submit' variant='primary'>
-              探す
-            </Button>
-          </div>
+          <Button type='submit' variant='primary'>
+            探す
+          </Button>
         </form>
       </search>
       {children}

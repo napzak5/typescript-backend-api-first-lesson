@@ -46,15 +46,13 @@ export const OperationRun = ({
 }: OperationRunProps) => (
   <Card title={copy.title}>
     <div className={styles['run']}>
-      <p className={styles['text']}>{copy.text}</p>
-      {result !== undefined && <p className={styles['text']}>{result}</p>}
+      <p>{copy.text}</p>
+      {result !== undefined && <p>{result}</p>}
       {children}
       {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
-      <p className={styles['text']}>
-        <Button variant='danger' onClick={onAsk}>
-          {copy.button}
-        </Button>
-      </p>
+      <Button variant='danger' onClick={onAsk}>
+        {copy.button}
+      </Button>
     </div>
     <Dialog
       open={asking}

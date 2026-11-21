@@ -1,4 +1,4 @@
-import { Badge, classNames } from '@beauty-salon-frontend/ui'
+import { Badge, BulletList, classNames } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { hoursOf } from '../../booking-format'
 import type { LineCheck } from '../../bookings-api'
@@ -36,7 +36,7 @@ export const LineCheckNote = ({
     ))
     .with({ type: 'free' }, { type: 'taken' }, ({ type, overlapping }) => (
       <div className={classNames(styles['note'], className)}>
-        <p className={styles['verdict']}>
+        <p>
           {type === 'taken' ? (
             <Badge tone='danger'>重なる予約があります</Badge>
           ) : (
@@ -47,13 +47,13 @@ export const LineCheckNote = ({
             '（同時に受けられる数の内で、重なる予約があります）'}
         </p>
         {overlapping.length > 0 && (
-          <ul className={styles['overlapping']}>
+          <BulletList>
             {overlapping.map((booking) => (
               <li key={booking.id}>
                 {`${booking.bookingNumber} ${hoursOf(booking, timezone)}`}
               </li>
             ))}
-          </ul>
+          </BulletList>
         )}
       </div>
     ))

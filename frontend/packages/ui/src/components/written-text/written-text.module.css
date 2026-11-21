@@ -1,0 +1,4 @@
+/* The lines and the spaces as they were written; a line longer than the room breaks where the room ends */
+.writtenText {
+  white-space: pre-wrap;
+}

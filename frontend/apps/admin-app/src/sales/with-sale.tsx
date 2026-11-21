@@ -86,9 +86,7 @@ export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
             title='売上が見つかりません'
             description='アドレスが正しいか、お確かめください。'
           />
-          <p>
-            <ButtonLink href={salesHrefOf(salon.id)}>今日の売上へ</ButtonLink>
-          </p>
+          <ButtonLink href={salesHrefOf(salon.id)}>今日の売上へ</ButtonLink>
         </>
       ))
       .with({ type: 'forbidden' }, () => (

@@ -2,7 +2,13 @@ import type {
   ModelsCustomerBookingResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import { Badge, DescriptionList, Link } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  DescriptionList,
+  Link,
+  Note,
+  WrittenText,
+} from '@beauty-salon-frontend/ui'
 import { durationOf } from '../../../salons/salon-format'
 import {
   statusNameOf,
@@ -56,7 +62,11 @@ export const BookingSummary = ({
               <Badge tone={statusToneOf(booking.status)}>
                 {statusNameOf(booking.status)}
               </Badge>
-              {note !== undefined && <p className={styles['note']}>{note}</p>}
+              {note !== undefined && (
+                <Note className={styles['note']} size='small'>
+                  {note}
+                </Note>
+              )}
             </>
           ),
         },
@@ -91,7 +101,7 @@ export const BookingSummary = ({
             booking.customerRequest === null ? (
               'なし'
             ) : (
-              <p className={styles['request']}>{booking.customerRequest}</p>
+              <WrittenText>{booking.customerRequest}</WrittenText>
             ),
         },
       ]}

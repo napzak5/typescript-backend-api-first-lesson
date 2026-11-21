@@ -2,15 +2,5 @@
 .record {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
-.note {
-  color: var(--color-text-muted);
-}
-
-.buttons {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, max-content));
-  gap: var(--space-3);
+  gap: var(--space-content);
 }

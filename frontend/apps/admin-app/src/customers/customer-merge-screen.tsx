@@ -136,9 +136,7 @@ const MergeWith = ({
         <p>
           選んだお客様は、台帳にいません。まとめる相手を選び直してください。
         </p>
-        <p>
-          <ButtonLink href={chooseAgainHref}>相手を選び直す</ButtonLink>
-        </p>
+        <ButtonLink href={chooseAgainHref}>相手を選び直す</ButtonLink>
       </>
     ))
     .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
@@ -156,9 +154,7 @@ const MergeWith = ({
       return (
         <>
           <p>{`${fullNameOf(found.other)} 様（${found.other.email}）`}</p>
-          <p>
-            <ButtonLink href={chooseAgainHref}>相手を選び直す</ButtonLink>
-          </p>
+          <ButtonLink href={chooseAgainHref}>相手を選び直す</ButtonLink>
           <CustomerMerge
             customer={customer}
             other={found.other}

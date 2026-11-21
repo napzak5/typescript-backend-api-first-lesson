@@ -1,4 +1,11 @@
-import { Alert, Button, ButtonLink, Link } from '@beauty-salon-frontend/ui'
+import {
+  Actions,
+  Alert,
+  Button,
+  ButtonLink,
+  Link,
+  Note,
+} from '@beauty-salon-frontend/ui'
 import { useLayoutEffect, useRef } from 'react'
 import { ReviewContent } from '../../../salons/components/review-content/review-content'
 import type { More } from '../../../salons/pages'
@@ -78,9 +85,7 @@ export const OwnReviewList = ({
 
   return (
     <div className={styles['list']}>
-      <p className={styles['count']} role='status'>
-        {countOf(total, reviews.length)}
-      </p>
+      <Note role='status'>{countOf(total, reviews.length)}</Note>
       <ul className={styles['reviews']} ref={list} aria-label='自分のレビュー'>
         {reviews.map((own) => {
           const { review, salon } = own
@@ -97,13 +102,13 @@ export const OwnReviewList = ({
                 )}
               </h2>
               {staff !== null && (
-                <p className={styles['staff']}>評価したスタッフ: {staff}</p>
+                <Note size='small'>評価したスタッフ: {staff}</Note>
               )}
               <ReviewContent
                 review={review}
                 timezone={timezoneOf(own, timezoneOfReader)}
               />
-              <div className={styles['actions']}>
+              <Actions>
                 <ButtonLink
                   href={changeHref(review.id)}
                   size='small'
@@ -119,7 +124,7 @@ export const OwnReviewList = ({
                 >
                   削除する
                 </Button>
-              </div>
+              </Actions>
             </li>
           )
         })}
@@ -130,11 +135,9 @@ export const OwnReviewList = ({
         </Alert>
       )}
       {more !== 'none' && (
-        <p>
-          <Button onClick={askForMore} pending={more === 'loading'}>
-            {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-          </Button>
-        </p>
+        <Button onClick={askForMore} pending={more === 'loading'}>
+          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
+        </Button>
       )}
     </div>
   )

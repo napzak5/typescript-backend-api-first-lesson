@@ -1,5 +1,5 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
-import { Card, DescriptionList } from '@beauty-salon-frontend/ui'
+import { Card, DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
 import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   carriedNameOf,
@@ -18,7 +18,7 @@ export type ProductRecordProps = {
 }
 
 const writtenOrNone = (text: string | null) =>
-  text === null ? NOT_RECORDED : <p className={styles['written']}>{text}</p>
+  text === null ? NOT_RECORDED : <WrittenText>{text}</WrittenText>
 
 const addressOrNone = (address: string | null) =>
   address === null ? NOT_RECORDED : address

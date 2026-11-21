@@ -139,9 +139,7 @@ const PaymentEntry = ({ salon, sale, methods }: PaymentEntryProps) => {
 const Unpayable = ({ why, back }: { why: string; back: string }) => (
   <>
     <p>{why}</p>
-    <p>
-      <ButtonLink href={back}>売上の内容へ</ButtonLink>
-    </p>
+    <ButtonLink href={back}>売上の内容へ</ButtonLink>
   </>
 )
 

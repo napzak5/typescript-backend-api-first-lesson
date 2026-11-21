@@ -1,5 +1,6 @@
 import { type ReactNode, useId } from 'react'
 import { classNames } from '../../class-names'
+import { Note } from '../note/note'
 import styles from './field.module.css'
 
 type FieldMessageProps = {
@@ -66,9 +67,9 @@ export const FieldMessages = ({
 }: FieldMessageProps & { id: string }) => (
   <>
     {description !== undefined && (
-      <p className={styles['description']} id={`${id}-description`}>
+      <Note size='small' id={`${id}-description`}>
         {description}
-      </p>
+      </Note>
     )}
     {error !== undefined && (
       <p className={styles['error']} id={`${id}-error`}>

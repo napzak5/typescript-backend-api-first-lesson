@@ -1,4 +1,4 @@
-import { Button, TextField } from '@beauty-salon-frontend/ui'
+import { Actions, Button, TextField } from '@beauty-salon-frontend/ui'
 import { useRef } from 'react'
 import {
   REFERRER,
@@ -50,7 +50,7 @@ export const ReferrerField = ({
         description='このお客様を紹介したお客様です。台帳から探して選びます。'
         error={error}
       />
-      <div className={styles['actions']}>
+      <Actions>
         <Button ref={choose} onClick={onChoose}>
           紹介元を選ぶ
         </Button>
@@ -59,7 +59,7 @@ export const ReferrerField = ({
             紹介元を外す
           </Button>
         )}
-      </div>
+      </Actions>
     </div>
   )
 }

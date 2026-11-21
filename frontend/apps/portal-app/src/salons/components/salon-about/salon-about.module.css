@@ -1,11 +1,10 @@
 .about {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-content);
 }
 
 /* What the salon wrote, with the line breaks it wrote */
 .description {
   max-inline-size: var(--size-text-column);
-  white-space: pre-line;
 }

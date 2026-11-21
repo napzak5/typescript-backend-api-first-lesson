@@ -19,11 +19,7 @@ const TITLE = 'パスワードの再設定'
 const LINK_REFUSED: { type: 'tokenRefused' } = { type: 'tokenRefused' }
 
 const AskAgain = () => (
-  <p>
-    <ButtonLink href='/forgot-password'>
-      再設定のメールをもう一度送る
-    </ButtonLink>
-  </p>
+  <ButtonLink href='/forgot-password'>再設定のメールをもう一度送る</ButtonLink>
 )
 
 const ResetWithToken = ({ token }: { token: string }) => {
@@ -67,9 +63,7 @@ const ResetWithToken = ({ token }: { token: string }) => {
           title='パスワードを変更しました'
           description='このアカウントは、すべての端末でサインアウトされました。新しいパスワードでサインインしてください。'
         />
-        <p>
-          <ButtonLink href='/sign-in'>サインインする</ButtonLink>
-        </p>
+        <ButtonLink href='/sign-in'>サインインする</ButtonLink>
       </>
     )
   }

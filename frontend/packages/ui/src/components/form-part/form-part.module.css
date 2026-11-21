@@ -24,11 +24,3 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-fields);
 }
-
-/* Said as the description of a control is: helper text has one look */
-.description {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  line-height: var(--line-height-tight);
-}

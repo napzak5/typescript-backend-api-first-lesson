@@ -4,6 +4,7 @@ import {
   Badge,
   type DescriptionListItem,
   TagList,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import {
@@ -18,7 +19,6 @@ import {
   UNRECORDED,
 } from '../../customer-format'
 import { customerKanaOf, customerNameOf } from '../../customers-api'
-import styles from './customer-record.module.css'
 
 /**
  * The values the ledger keeps of a customer and a version of them keeps
@@ -73,7 +73,7 @@ const NONE = 'なし'
 
 /** A text that was written in several lines, with its line breaks. */
 const written = (text: string | null) =>
-  text === null ? UNRECORDED : <p className={styles['written']}>{text}</p>
+  text === null ? UNRECORDED : <WrittenText>{text}</WrittenText>
 
 /** The items of the ledger, in the order the page of a customer shows them. */
 const ITEMS: readonly LedgerItemOf[] = [

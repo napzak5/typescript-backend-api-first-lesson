@@ -2,21 +2,17 @@
 .results {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-content);
 }
 
 .heading {
   font-size: var(--font-size-title);
 }
 
-.count {
-  color: var(--color-text-muted);
-}
-
 .salons {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-parts);
 }
 
 .salon {
@@ -31,9 +27,4 @@
 
 .name {
   font-size: var(--font-size-large);
-}
-
-.address {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
 }

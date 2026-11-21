@@ -84,7 +84,7 @@ describe('BookingSummary', () => {
 
     // Assert
     expect(screen.getByText(/^前回と同じ長さでお願いします。/)).toHaveClass(
-      'request',
+      'writtenText',
     )
     expect(
       screen.getByText(/^前回と同じ長さでお願いします。/).textContent,

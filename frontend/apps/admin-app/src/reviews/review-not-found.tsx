@@ -3,9 +3,7 @@ import { reviewsHrefOf } from '../navigation'
 
 /** The way back to the reviews of the salon */
 export const ToTheReviews = ({ salonId }: { salonId: string }) => (
-  <p>
-    <ButtonLink href={reviewsHrefOf(salonId)}>レビューへ</ButtonLink>
-  </p>
+  <ButtonLink href={reviewsHrefOf(salonId)}>レビューへ</ButtonLink>
 )
 
 /** What a screen of a review says when there is none to show: none at the address, one removed, or one of another salon. */

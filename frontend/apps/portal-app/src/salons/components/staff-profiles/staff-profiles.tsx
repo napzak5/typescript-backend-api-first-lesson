@@ -7,6 +7,7 @@ import {
   DescriptionList,
   Rating,
   TagList,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import { levelNameOf } from '../../salon-format'
 import styles from './staff-profiles.module.css'
@@ -85,7 +86,7 @@ const Person = ({ person, rating }: PersonProps) => {
           <Badge>予約の受け付けなし</Badge>
         </p>
       )}
-      {person.bio !== null && <p className={styles['bio']}>{person.bio}</p>}
+      {person.bio !== null && <WrittenText>{person.bio}</WrittenText>}
       {skills.length > 0 && <DescriptionList items={skills} />}
     </li>
   )

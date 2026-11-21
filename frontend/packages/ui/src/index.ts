@@ -1,4 +1,9 @@
 export { classNames } from './class-names'
+export {
+  Actions,
+  type ActionsLayout,
+  type ActionsProps,
+} from './components/actions/actions'
 export { Alert, type AlertProps } from './components/alert/alert'
 export {
   AppShell,
@@ -11,6 +16,10 @@ export {
   type BadgeProps,
   type BadgeTone,
 } from './components/badge/badge'
+export {
+  BulletList,
+  type BulletListProps,
+} from './components/bullet-list/bullet-list'
 export { Button, type ButtonProps } from './components/button/button'
 export {
   ButtonLink,
@@ -77,6 +86,7 @@ export {
   type NavigationItem,
   type NavigationProps,
 } from './components/navigation/navigation'
+export { Note, type NoteProps, type NoteSize } from './components/note/note'
 export {
   type Notification,
   NotificationProvider,
@@ -117,5 +127,9 @@ export {
   VisuallyHidden,
   type VisuallyHiddenProps,
 } from './components/visually-hidden/visually-hidden'
+export {
+  WrittenText,
+  type WrittenTextProps,
+} from './components/written-text/written-text'
 export type { Tone } from './tone'
 export { useWideScreen } from './wide-screen'

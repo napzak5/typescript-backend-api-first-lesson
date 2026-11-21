@@ -1,0 +1,9 @@
+.note {
+  color: var(--color-text-muted);
+}
+
+/* Beside a control or in a part of a form, as close to it as the description of a control */
+.small {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-tight);
+}

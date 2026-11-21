@@ -6,6 +6,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  Note,
   Select,
   TextArea,
   TextField,
@@ -19,7 +20,6 @@ import {
   type SalonShown,
   TIME_ZONE_CHOICES,
 } from '../../salon-form'
-import styles from './salon-form.module.css'
 
 /** What the form is opened for. */
 type SalonFormSubject =
@@ -246,9 +246,9 @@ export const SalonForm = ({
         />
         {match(subject)
           .with({ type: 'existing' }, () => (
-            <p className={styles['note']}>
+            <Note size='small'>
               {`タイムゾーン（${salon.timezone}）と通貨（${salon.currency}）は、変えられません。予約の日時と料金は、これらで読みます。`}
-            </p>
+            </Note>
           ))
           .with({ type: 'new' }, () => (
             <FieldRow>
