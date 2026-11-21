@@ -72,7 +72,7 @@
 | `io` | fetch ラッパー `customInstance`、ブラウザーに保存するセッション `sessionStore`、API が返したファイルの名前を読む `fileNameOf` と、画面が持つファイルをブラウザーに保存させる `saveFile` | `api-client`、`session`、admin-app |
 | `session` | アプリのセッション: 状態を返すフック `useSession`、`signIn`、`signOut`、ユーザーが替わったときに取得済みのデータを消す `keepQueriesOfOneUser`、サインインが要る画面を囲む `RequireSession`（サインインの画面を含む）、ヘッダーのアカウント欄 `SessionAccount`、アカウントの安全の画面（`AccountSecurityScreen`、`PasswordChangeScreen`、`TwoFactorSetupScreen`）と、選ぶパスワードの規則（`PASSWORD_RULE` など）、サインインしている人の所属するサロン（`useOwnSalon`）と、どのサロンにも属していないアカウントへの知らせ（`NoSalonNotice`） | 3つのアプリ（`src/main.tsx`、`src/App.tsx`、portal-app の `src/account/` と `src/security/`） |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
-| `theme` | デザイントークン（`src/tokens.css`）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
+| `theme` | デザイントークン（`src/tokens.css`）、フォント（Inter と Noto Sans JP、`src/styles.css` が読み込む）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
 | `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、読めなかったことの知らせの `UnreadNotice`、QR コードの `QrCode`、評価の星の `Rating`、言葉の一覧の `TagList`、リンクの `LinkProvider`・`Link`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` と、アプリのストーリーも表示する） | 3つのアプリ、`session` |
 | `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）と、画面が保存したファイル（`savedFiles`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`io`、`session`、3つのアプリのテスト、`frontend/e2e` |
 | `preferences` | 好み設定のフォーム（`PreferencesForm`、時間帯の行の `TimeSlotFields`）、フォームの読み取り（`readPreferencesChange`）と断られたときの言葉（`afterPreferencesChange`）、選べるスタッフの並びと名前（`staffChoicesOf`、`staffLabelOf`）、1 行に 1 つずつ書く一覧の読み取り（`linesOf`）。お客様がポータルで書くものと、サロンが台帳で書くものは、同じ好み設定 | portal-app（`src/preferences/`、`src/reviews/`）、admin-app（`src/customers/`） |
@@ -287,6 +287,7 @@ const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'staff', 'admin
 - **ヘッダーのリンク**の列が狭い画面に収まらないときは、列だけを横にスクロールして、いまの画面のリンクを列の中央に出す（`ui` の `Navigation`。列の端のリンクは、端まで）。列のリンクか、いまの画面のリンクが替わったときに動かす。画面が替わったときと、サインインした人のロールのリンクが加わったとき（admin-app の「スタッフ」と「プロフィール」）。ページは縦にスクロールしない。画面を描き直しただけでは動かさないので、利用者が動かした列はそのまま
 - **ダイアログ**（`ui` の `Dialog`）が開いている間は、後ろのページをスクロールさせない。ページのスクロールバーも消え、オーバーレイは画面の端まで覆う。スクロールバーが幅を取るブラウザー（マウスを使うデスクトップ）では、開くときにその幅を測り、開いている間、同じ幅の余白をページの終わりに置くので、ページは横に動かない（スクロールバーの場所をいつも空けておく `scrollbar-gutter` は使わない。空けた帯は、オーバーレイが覆わない）。オーバーレイは、押しても閉じない（先に答える問いか、入力したものを持っている）。幅 40rem 未満では、画面の下の端に付く幅いっぱいのシートになり、下から出て、ボタンは 1 行に 1 つ並ぶ。40rem からは、中央の箱で、ボタンは終わりに横に並ぶ。画面の高さを超えず、長い内容は中でスクロールし、ボタンはいつも下に見えている
 - **画面の幅**は、320px まで。どの画面も、ページが画面より広くならず、枠から出るものもない（WCAG 2.2 の 1.4.10）。スマートフォンのブラウザーは、画面より広いページを縮めて表示するので、そうなると、オーバーレイも画面の全体を覆わない。ボタンの文言は、置かれた行より長いと、語の区切りで次の行に続く（仕入先の名前のように、利用者が決めた名前を含むことがある）。フォームのボタンは、40rem 未満では 1 行に 1 つ、幅いっぱいに並ぶ。カードの見出しの下のボタンは、収まらないと次の行へ続く
+- **文字と余白**は、テーマ（`theme`）が決める。フォントは、欧文と数字が Inter、和文が Noto Sans JP で、テーマが `@fontsource-variable/*` のパッケージから読み込み、アプリと同じところから配る（外部のサービスは読みに行かない。ブラウザーは、画面に出る文字のファイルだけを読む）。一度に多くを見せるため、本文は 14px（行の高さ 1.6）、補助の文字は 12px、カードの見出しは 16px、節の見出しは 20px、画面の見出しは 24px。入力欄の文字は 16px のまま（iOS は、16px 未満の入力欄にフォーカスすると画面を拡大する）。入力欄とボタンの高さは、指で操作する端末で 40px、マウスなどの細かく指せる端末で 36px。枠（カード、検索の条件、ダイアログ）の内側の余白（`--space-frame`: 16px、40rem から 20px）、画面の部品の間（`--space-parts`: 16px）、フォームの欄の間（`--space-fields`: 12px）は、名前の付いたトークンで、どのスタイルシートも同じものを使う。項目と値の一覧（`DescriptionList`）は、どの幅でも、項目の名前と値を横に並べる
 
 ### アカウントの画面
 
@@ -1293,7 +1294,7 @@ const found = useInfiniteQuery({
 
 - `ui` のコンポーネント: ストーリー（`*.stories.tsx`）を `composeStories` で読み込み、jsdom に描画して検証する（`*.test.tsx`）。どのストーリーにも、アクセシビリティの検査（axe-core、WCAG 2.2 AA）がある
 - 各アプリの `src/App.test.tsx`: `MemoryRouter` で枠を描画し、サインインしていない人に見えるもの（admin-app と dashboard-app ではサインインの画面、portal-app では、存在しないパスのページと `/sign-in`。トップページは API を読むので、結合テストにある）、共有コンポーネントのリンクがページを読み込み直さずに移動すること、アクセシビリティを検証する。API は呼ばない
-- `theme` の `src/style-rules.test.ts`: すべてのパッケージとアプリのスタイルシートとコンポーネントが、スタイルの規則を守っていることを検証する。`src/tokens.test.ts`: 文字と背景、コントロールの縁に使う色のトークンの組が、必要なコントラスト比を満たすことを検証する
+- `theme` の `src/style-rules.test.ts`: すべてのパッケージとアプリのスタイルシートとコンポーネントが、スタイルの規則を守っていることを検証する。`src/tokens.test.ts`: 文字と背景、コントロールの縁に使う色のトークンの組が、必要なコントラスト比を満たすことを検証する。`src/typefaces.test.ts`: テーマが依存するフォントのパッケージ、`src/styles.css` の読み込み、`--font-family` の名前が合っていることを検証する（名前を書き間違えても、エラーにはならず、OS のフォントで表示される）
 - `config` と `testing` の各パッケージ: モジュールの隣に `*.test.ts`
 - `io` の `src/libs/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）。`fetcher.session.test.ts`: セッションがあるときの動作（トークンを付けること、期限切れのあとの再発行と送り直しが 1 回ずつであること、同時のリクエストで再発行が 1 回であること、ほかのタブが先に替えたセッションを通信せずに使うこと、断られた再発行と失敗した再発行の違い）。`src/libs/session/stored-session.test.ts`: 保存、購読、ほかのタブからの変更
 - `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）。`src/session.test.ts`: `io` が持つ再発行のパスとエラーコードが、生成されたものと同じであること
@@ -1397,6 +1398,7 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 - `src/navigation.e2e.test.ts`: スマートフォンの幅で、ヘッダーのリンクの列が収まらないとき、いまの画面のリンクが見えること。dashboard-app の最後のリンク（「区分別の売上」）の画面をアドレスから開いたとき、admin-app の「設定」の画面を開いてサインインし、ロールのリンクがその前後に加わったとき、ほかの画面から戻ったとき。ページは縦にスクロールしないこと
 - `src/dialog.e2e.test.ts`: 開いたダイアログのオーバーレイが、画面の四隅まで覆うこと、開いている間は後ろのページがスクロールせず、閉じるとスクロールすること。スマートフォンの幅では、下の端に付く幅いっぱいのシートで、ボタンが縦に並ぶこと、内容が長いときも画面の高さを超えず、ボタンが見えていること。幅のある画面では、中央にあり、ボタンが横に並ぶこと
 - `src/dialog-scrollbar.e2e.test.ts`: スクロールバーが幅を取るブラウザーで、ダイアログを開いている間はスクロールバーが消え、オーバーレイが画面の四隅まで覆い、後ろの内容が横に動かないこと、閉じるとスクロールバーが戻ること。このファイルだけ、スクロールバーを描くブラウザーで動く（ほかのテストのブラウザーは、スクロールバーを描かない）
+- `src/type-and-density.e2e.test.ts`: 画面が Inter と Noto Sans JP で描かれ、フォントのファイルはアプリからだけ読まれること。入力欄とボタンの高さが、マウスの端末で 36px、スマートフォンで 40px であること。フォームの区切りの名前が、前の欄から、自分の欄より離れていること。幅 320px で、項目と値の一覧が名前と値を横に並べ、名前の列が一覧の 4 割を超えないこと
 - `src/narrow-screens.e2e.test.ts`: 幅 320px で、3 つのアプリの主な画面（一覧、内容、フォーム）を 1 つずつ開き、ページが画面より広くならないこと、枠から出るものがないこと。フォームのボタンが、1 行に 1 つ、フォームの幅で並ぶこと。カードの見出しの下のボタンが、カードの中にあり、文言が 1 行であること
 - `src/account.e2e.test.ts`: 登録から、メールのリンク、メールアドレスの確認、サインインまで。admin-app のサインインの画面から、portal-app での再設定、新しいパスワードでの admin-app へのサインインまで。招待のメールのリンクからアカウントを作り、admin-app にサインインするまで。使用済みのリンク、パスワードの表示、スマートフォンの幅の登録の画面
 - `src/salons.e2e.test.ts`: サロンを探して、詳細を開くまで。戻る、進む、読み込み直しで、検索が保たれること。続きの表示とフォーカス、レビューの並び順、存在しないサロン、スマートフォンの幅の検索と詳細
