@@ -1,0 +1,29 @@
+/* The answer and its moment, then what can be done to it, then why something is not offered. */
+.answer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* What the salon wrote, with the line breaks it wrote */
+.text {
+  max-inline-size: var(--size-text-column);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.moment,
+.note {
+  color: var(--color-text-muted);
+}
+
+.moment {
+  font-size: var(--font-size-small);
+}
+
+/* The buttons in a row, and below each other when they do not fit */
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, max-content));
+  gap: var(--space-3);
+}
