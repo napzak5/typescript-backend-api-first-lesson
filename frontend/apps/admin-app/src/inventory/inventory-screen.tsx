@@ -17,8 +17,10 @@ import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import {
   inventoryHrefOf,
+  stockCountHrefOf,
   stockEntryHrefOf,
   stockRowHrefOf,
+  stockValueHrefOf,
 } from '../navigation'
 import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
 import { productsKeyOf, readProducts } from '../products/products-api'
@@ -139,6 +141,17 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
       在庫の行を足す
     </ButtonLink>
   ) : undefined
+  const actions = keeps ? (
+    <>
+      {entry}
+      <ButtonLink href={stockCountHrefOf(salon.id)} variant='secondary'>
+        棚卸しする
+      </ButtonLink>
+      <ButtonLink href={stockValueHrefOf(salon.id)} variant='secondary'>
+        在庫評価額
+      </ButtonLink>
+    </>
+  ) : undefined
 
   if (pages[0]?.type === 'forbidden') {
     return (
@@ -218,7 +231,7 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} actions={entry} />
+      <PageHeader title={TITLE} description={salon.name} actions={actions} />
       <Navigation
         label='在庫の見かた'
         items={viewItemsOf(view, inventoryHrefOf(salon.id))}

@@ -16,12 +16,14 @@ import {
   FAILED,
   type Forbidden,
   from,
+  LARGEST_PAGE,
   NOT_FOUND,
   type NotFound,
   type Page,
   pageOf,
   type RefusedValue,
   refusedValuesOf,
+  toTheEnd,
   type Unread,
   unreadOf,
 } from '../reading'
@@ -116,6 +118,29 @@ export const readStockPage = async (
       .catch(() => null),
   )
 }
+
+/** The key every row of a salon is read under at once: below the stock, so that dropping the stock drops it. */
+export const everyStockRowKeyOf = (salonId: string): string[] => [
+  ...stockKeyOf(salonId),
+  'every',
+]
+
+export type EveryStockRow =
+  | { type: 'found'; items: ModelsInventoryResponse[] }
+  | Forbidden
+  | Unread
+
+/** Every row of a salon, in the order of the codes of their products and their lots: what a count is entered for. */
+export const readEveryStockRow = (salonId: string): Promise<EveryStockRow> =>
+  toTheEnd(async (cursor) =>
+    pageFrom(
+      await inventoryCrudList({
+        salonId,
+        ...from(cursor),
+        limit: LARGEST_PAGE,
+      }).catch(() => null),
+    ),
+  )
 
 /** The key a stock row is read under. */
 export const stockRowKeyOf = (inventoryId: string): string[] => [

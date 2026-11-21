@@ -199,6 +199,14 @@ export const inventoryHrefOf = (salonId: string): string =>
 export const stockEntryHrefOf = (salonId: string): string =>
   `${inventoryHrefOf(salonId)}/new`
 
+/** The count of the stock of a salon. */
+export const stockCountHrefOf = (salonId: string): string =>
+  `${inventoryHrefOf(salonId)}/count`
+
+/** What the stock of a salon is worth, by the categories of its products. */
+export const stockValueHrefOf = (salonId: string): string =>
+  `${inventoryHrefOf(salonId)}/value`
+
 /** A stock row of a salon. */
 export const stockRowHrefOf = (salonId: string, inventoryId: string): string =>
   `${inventoryHrefOf(salonId)}/${inventoryId}`

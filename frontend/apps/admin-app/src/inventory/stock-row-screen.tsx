@@ -1,6 +1,8 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
+import { match } from 'ts-pattern'
 import {
   inventoryHrefOf,
   movementEntryHrefOf,
@@ -8,6 +10,7 @@ import {
   stockRowChangeHrefOf,
 } from '../navigation'
 import { dayAt } from '../salon-time'
+import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
 import { WithSalon } from '../salons/with-salon'
 import { StockRecord } from './components/stock-record/stock-record'
 import { useKeepsStock } from './keeps-stock'
@@ -24,10 +27,15 @@ type StockRowPartProps = {
 /**
  * A stock row of the salon, with the ways to its movements: everybody who
  * works at the salon records them and reads them. An account that keeps
- * the stock is offered to change the row.
+ * the stock is offered to change the row. Who counted the row last is
+ * named once the staff of the salon are read.
  */
 const StockRowPart = ({ salon, inventoryId }: StockRowPartProps) => {
   const keeps = useKeepsStock()
+  const staff = useQuery({
+    queryKey: staffProfilesKeyOf(salon.id),
+    queryFn: () => readStaffProfiles(salon.id),
+  })
 
   return (
     <WithStockRow
@@ -66,6 +74,9 @@ const StockRowPart = ({ salon, inventoryId }: StockRowPartProps) => {
             product={productOf(products, row.productId)}
             today={dayAt(new Date(), salon.timezone)}
             timezone={salon.timezone}
+            staff={match(staff.data)
+              .with({ type: 'found' }, ({ items }) => items)
+              .otherwise(() => undefined)}
           />
           <p>
             <ButtonLink href={inventoryHrefOf(salon.id)} variant='secondary'>

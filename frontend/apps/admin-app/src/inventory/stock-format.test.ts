@@ -86,12 +86,20 @@ describe('placeNameOf', () => {
 })
 
 describe('countedNameOf', () => {
-  it.each<[string | null, string]>([
-    ['2026-11-01T01:00:00.000Z', '2026年11月1日（日） 10:00'],
-    [null, '棚卸ししていません'],
-  ])('should say when the row was counted: %s', (counted, name) => {
-    expect(countedNameOf(counted, 'Asia/Tokyo')).toBe(name)
-  })
+  it.each<[string | null, string | undefined, string]>([
+    [
+      '2026-11-01T01:00:00.000Z',
+      '佐藤 健',
+      '2026年11月1日（日） 10:00（佐藤 健）',
+    ],
+    ['2026-11-01T01:00:00.000Z', undefined, '2026年11月1日（日） 10:00'],
+    [null, undefined, '棚卸ししていません'],
+  ])(
+    'should say when the row was counted: %s by %s',
+    (counted, counter, name) => {
+      expect(countedNameOf(counted, 'Asia/Tokyo', counter)).toBe(name)
+    },
+  )
 })
 
 describe('productOptionsOf', () => {
