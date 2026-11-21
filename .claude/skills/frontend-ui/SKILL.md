@@ -433,14 +433,42 @@ list, `salon-screen.tsx` for a record with its parts).
   the form, and `queryOf(conditions)` writes them in one order, so that its
   text is the key of the query as well. Sending the form sets the query of
   the address; sending the same search again reads again.
-- **The form of a search keeps its values itself.** It is the one form with
-  `value` and `onChange`: it shows the conditions of the address, also
-  after the address changed without it (back, forward, 「条件をなくす」),
-  and adopts them while it renders when they are others than the last time
-  (`components/salon-search-form/`). It is given no `key`: a form that is
-  built anew takes the focus from whoever sent it. It stands in a `search`
-  element that has the name (`<search aria-label='サロンを探す'>`); the
-  `form` inside has none.
+- **The form of a search is a `FilterForm`, and keeps its values itself.**
+  It is the one form with `value` and `onChange`: it shows the conditions
+  of the address, also after the address changed without it (back,
+  forward, 「条件を外す」), and adopts them while it renders when they are
+  others than the last time (`useFilterValues(query, () => valuesOf(conditions))`
+  of `ui`, `components/salon-search-form/`). It is given no `key`: a form
+  that is built anew takes the focus from whoever sent it. `FilterForm`
+  stands in a `search` element that has the name (`label`, 「サロンを探す」);
+  the `form` inside has none. Its frame, the columns of its controls and
+  its buttons are the same in every list, and the filter of a list gives
+  it the controls only:
+  - `children` are the controls in sight on every screen: the keyword, the
+    day or the period a list is of, the customer a list was opened for.
+    `conditions` are the others: in a row below on a wide screen, in a
+    sheet on the bottom edge of a narrow one, which the button 「条件」
+    opens. The button counts the conditions of the sheet that narrow the
+    list (`conditionCount`, `countNarrowing(valuesOf(conditions), COUNTED)`):
+    「条件（2）」. A search of one control has no `conditions`, and no sheet.
+  - The controls in sight are one row of columns, as many as there is room
+    for and each 12rem wide at least: a date or a choice is as wide as its
+    column, never stretched along the row, and the filters of every list
+    line up. The controls that stay in sight come first; a keyword, which
+    has a description, and a pair of dates take two columns when the row has
+    room for two (a container query, so that a narrow row keeps one).
+  - The button that sends it says what it does: 「探す」 for a search of what
+    was typed (`purpose='search'`, the default), 「表示する」 for a list that
+    the chosen conditions narrow (`purpose='view'`). The link that takes the
+    conditions away is 「条件を外す」 in every list, given as `clearHref`
+    while they narrow it.
+  - The sheet is part of the form. Closed, it still holds what was chosen,
+    and the button in sight sends that too; sending the form closes it. An
+    error of a control in it opens it again, with the focus on the control.
+    A press beside it does not close it.
+  - The names of the controls are the names of the conditions, and the
+    form sends them as `FormData` (`noValidate`: a control says its own
+    error).
 - **A list goes on with 「さらに表示」** (`useInfiniteQuery`, with the
   cursor of the API as the parameter of a page; the pure functions are in
   `pages.ts`). The next items are added below those that are there, and the
@@ -1145,8 +1173,8 @@ writes what it read" holds; this is what comes on top.
 - **A state changed elsewhere (409)** is said on the page, in one sentence
   (`CHANGED_ELSEWHERE`), the dialog closes, the lists are removed and the
   booking is read again; the focus goes to the heading 「状態」.
-- **A search by a keyword is `KeywordSearch`** (`salon-screens`):
-  a `search` landmark named after what it finds, the keyword (`keywordIn`
+- **A search by a keyword is `KeywordSearch`** (`salon-screens`), a
+  `FilterForm` with one control: a `search` landmark named after what it finds, the keyword (`keywordIn`
   of `keyword.ts` there: trimmed, at most 100 characters, none when blank) in
   a parameter of the address, and a link that clears it. Nothing is asked
   of the API without a keyword where the list would be the whole ledger
@@ -2323,6 +2351,7 @@ A share link opens a file for somebody who has no account
 | `EmptyState` | What is shown where content would be, while there is none |
 | `LoadingIndicator` | What is shown where content will be, while it loads |
 | `UnreadNotice` | What is shown where content could not be read: the message the application words (`unreadMessageOf(what, reason)`), and the button that reads again |
+| `FilterForm`, `useFilterValues` | The conditions of a list, above it: the controls in sight, the other conditions (in a sheet on a narrow screen), the button that sends them and the link that takes them away; and the values its controls show, which follow the address |
 | `Dialog` | A question or a small form that has to be dealt with first: a sheet on the bottom edge of a narrow screen, a box in the middle of a wider one; `size='wide'` for a table to choose from; `kind='menu'` for links and buttons to choose from, which asks nothing |
 | `NotificationProvider`, `useNotifications` | The result of what the user just did |
 
@@ -2352,11 +2381,12 @@ A share link opens a file for somebody who has no account
   of the screen a link opened. Without links (a visitor of the portal) the
   account stays in the header, beside the name: the way in.
 - **What is drawn differently on a narrow screen is drawn once.**
-  `AppShell` asks the browser whether the window is 40rem wide
-  (`useWideScreen` beside it, `matchMedia`, which hears when the window is
-  turned) and draws either the row of links or the menu. It does not draw
+  `AppShell` and `FilterForm` ask the browser whether the window is 40rem
+  wide (`useWideScreen` of `ui/src/wide-screen.ts`, `matchMedia`, which
+  hears when the window is turned) and draw either the row of links or the
+  menu, either the conditions in a row or their sheet. They do not draw
   both and hide one with a stylesheet: a screen reader would find the same
-  links twice, and so would a test. What only changes its look stays a
+  control twice, and so would a test. What only changes its look stays a
   media query of the stylesheet.
 - **A screen** is a `PageHeader`, then its content; the frame gives them their
   width and the gaps between them. One `h1` per screen, and headings go down
