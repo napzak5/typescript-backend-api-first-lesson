@@ -21,7 +21,7 @@ import {
 import type { Result } from '@beauty-salon-backend/utility'
 import { and, eq } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
-import { CLOCK } from '../database/clock'
+import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { heldSaleOf, within } from './held-sale'
 
@@ -99,12 +99,13 @@ export class PaymentRepository implements IPaymentRepository {
           // transaction began: a payment that waited for the sale is later
           // than the one it waited for.
           const [payment] = await tx
+            .with(CLOCK_ONCE)
             .insert(paymentTransactions)
             .values({
               ...plan.write.payment,
-              processedAt: CLOCK,
-              createdAt: CLOCK,
-              updatedAt: CLOCK,
+              processedAt: ONE_MOMENT,
+              createdAt: ONE_MOMENT,
+              updatedAt: ONE_MOMENT,
             })
             .onConflictDoNothing({
               target: paymentTransactions.transactionNumber,

@@ -60,7 +60,7 @@ import {
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
-import { CLOCK } from '../database/clock'
+import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { countMarksOf } from './review-marks'
 import { countReportsOf } from './review-report-count'
@@ -421,8 +421,13 @@ export class ReviewRepository implements IReviewRepository {
         // transaction began: a review that waited for the salon is
         // later than the one it waited for.
         const [review] = await tx
+          .with(CLOCK_ONCE)
           .insert(reviews)
-          .values({ ...plan.write, createdAt: CLOCK, updatedAt: CLOCK })
+          .values({
+            ...plan.write,
+            createdAt: ONE_MOMENT,
+            updatedAt: ONE_MOMENT,
+          })
           .onConflictDoNothing({ target: reviews.bookingId })
           .returning()
         if (review === undefined) {
@@ -550,14 +555,15 @@ export class ReviewRepository implements IReviewRepository {
 
         // A second report of the account is not written, and not counted.
         const [report] = await tx
+          .with(CLOCK_ONCE)
           .insert(reviewReports)
           .values({
             reviewId: id,
             reportedBy: reporter.userId,
             reason: request.reason,
             details: request.details,
-            createdAt: CLOCK,
-            updatedAt: CLOCK,
+            createdAt: ONE_MOMENT,
+            updatedAt: ONE_MOMENT,
           })
           .onConflictDoNothing({
             target: [reviewReports.reviewId, reviewReports.reportedBy],

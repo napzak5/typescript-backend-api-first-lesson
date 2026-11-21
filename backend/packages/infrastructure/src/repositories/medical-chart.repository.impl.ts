@@ -32,7 +32,7 @@ import {
 } from 'drizzle-orm'
 import type { AnyPgColumn, PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
-import { CLOCK } from '../database/clock'
+import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
 
@@ -120,8 +120,9 @@ export class MedicalChartRepository implements IMedicalChartRepository {
           }
 
           const [stored] = await tx
+            .with(CLOCK_ONCE)
             .insert(medicalCharts)
-            .values({ ...chart, createdAt: CLOCK, updatedAt: CLOCK })
+            .values({ ...chart, createdAt: ONE_MOMENT, updatedAt: ONE_MOMENT })
             .onConflictDoNothing({ target: medicalCharts.customerId })
             .returning()
 
