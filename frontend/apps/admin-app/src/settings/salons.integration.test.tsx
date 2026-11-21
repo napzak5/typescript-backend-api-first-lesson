@@ -195,7 +195,10 @@ describe('adding a salon, against the API', () => {
     expect(await listedSalons()).toEqual(expect.arrayContaining([TOKYO, OSAKA]))
     await user.click(screen.getByRole('link', { name: 'サロンを登録する' }))
     expect(await heading('サロンを登録する')).toHaveFocus()
-    expect(navigationItems()).toEqual([['サロンを選ぶ', '/', null]])
+    expect(navigationItems()).toEqual([
+      ['サロンを選ぶ', '/', null],
+      ['運用', '/operations', null],
+    ])
     await fillInSalon('shinjuku@example.com')
     await user.selectOptions(
       screen.getByRole('combobox', { name: 'タイムゾーン' }),
