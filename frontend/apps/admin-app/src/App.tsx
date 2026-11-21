@@ -90,6 +90,8 @@ import { SalesLedgerScreen } from './sales/sales-ledger-screen'
 import { HoursChangeScreen } from './settings/hours-change-screen'
 import { SalonChangeScreen } from './settings/salon-change-screen'
 import { SettingsScreen } from './settings/settings-screen'
+import { ShareLinkEntryScreen } from './share-links/share-link-entry-screen'
+import { ShareLinkScreen } from './share-links/share-link-screen'
 import { ScheduleChangeScreen } from './shifts/schedule-change-screen'
 import { ScheduleScreen } from './shifts/schedule-screen'
 import { ShiftsScreen } from './shifts/shifts-screen'
@@ -484,6 +486,14 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/files/:attachmentId'
                 element={<AttachmentScreen />}
+              />
+              <Route
+                path='/salons/:salonId/files/:attachmentId/share-links/new'
+                element={<ShareLinkEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/files/:attachmentId/share-links/:shareLinkId'
+                element={<ShareLinkScreen />}
               />
               <Route
                 path='/salons/:salonId/settings'

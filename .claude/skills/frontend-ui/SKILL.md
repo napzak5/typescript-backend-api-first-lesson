@@ -2040,6 +2040,26 @@ file:
   popup. The link that opens a file has `target='_blank'` and
   `rel='noopener noreferrer'`; an image is shown from the same URL.
 
+The share links of a file (`src/share-links/`) are listed below it, and
+issued and revoked on screens of their own:
+
+- **What the API gives once is shown once, to be copied**: the token of
+  a link is in the answer of the issue alone. The link that was issued
+  takes the place of the form, held in state, and its heading takes the
+  focus; the page says that it shows the address now alone. The address
+  is in a field that is read only and chosen whole when it takes the
+  focus, beside a button that writes it to the clipboard and says so in
+  a status. Where the browser does not let the page write there, the page
+  says to choose the field and copy it.
+- **A moment worked out on the device depends on its clock**: the end of
+  a link is the days chosen after now, cut to a whole minute. A refusal
+  of it is said at the period, with the clock of the device as what to
+  check.
+- **A state is worked out when it is drawn**: whether a link still opens
+  its file comes from its end and its count against the time of the
+  screen. What the API does not say (a link locked after wrong
+  passwords) is not shown.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
