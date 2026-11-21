@@ -2,9 +2,9 @@ import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation } from 'react-router'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import {
   afterEach,
   beforeEach,
@@ -39,9 +39,14 @@ const GUESSABLE_SAID =
 /** The address the application is at, as the router knows it */
 let address = ''
 
+/** Opens an address in the same tab, as the link of a mail opened in it does */
+let go: (to: string) => void = () => undefined
+
 const Address = () => {
   const { pathname, hash } = useLocation()
+  const navigate = useNavigate()
   address = `${pathname}${hash}`
+  go = (to) => void navigate(to)
 
   return null
 }
@@ -593,6 +598,24 @@ describe('the screens of an account, against the API', () => {
         type: 'wrongCredentials',
       })
       expect(await signInWith(CUSTOMER, PASSWORD)).toEqual({ type: 'signedIn' })
+    })
+
+    it('should take the link of a later mail opened in the same tab, and show nothing of the link before', async () => {
+      // Arrange
+      await askForResetThroughApi(CUSTOMER)
+      await openMailedLink(CUSTOMER)
+      await choose(PASSWORD)
+      await heading('パスワードを変更しました')
+      await askForResetThroughApi(CUSTOMER)
+      const later = await mailedPath(CUSTOMER)
+
+      // Act
+      act(() => go(later))
+
+      // Assert
+      expect(await screen.findByLabelText('新しいパスワード')).toBeRequired()
+      expect(screen.queryByText('パスワードを変更しました')).toBeNull()
+      expect(address).toBe('/reset-password')
     })
 
     it('should say at the password what the API says about one that is easy to guess, and take a better one with the same link', async () => {

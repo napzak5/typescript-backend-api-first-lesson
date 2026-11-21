@@ -328,7 +328,13 @@ describe('the session against the API', () => {
   refuses sets the user up with `applyAccept: false`, as a person who
   asks the dialog of the browser for every file. The `FormData` of a
   form in jsdom does not hold the file `user.upload` chose: a screen
-  keeps the file from the change of the control.
+  keeps the file from the change of the control. A share link is made as
+  the salon makes it: the test uploads a file through the API to the
+  storage and shares it (`src/share/__tests__/arrangements.ts` of the
+  portal); a link that expired, was used up or is locked is a change of
+  its row. What a page saved from an object URL is read with
+  `savedFiles()`. A link opened in the same tab is a `navigate` of the
+  router the test captures beside the address (`go`), in `act`.
 - The answer of the real API takes time. Wait for what appears (`findByRole`,
   `waitFor` of `@testing-library/react`); never for a duration. The setup
   lets them wait 5 seconds, not the 1 of Testing Library, and a test 30:

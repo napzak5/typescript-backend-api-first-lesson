@@ -2045,11 +2045,17 @@ file:
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
 `/reset-password` and `/accept-staff-invitation`, each with `#token=…`
 behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
+The share link that a salon gives has the same shape (`/share#token=…`,
+`src/share/`).
 
 - **The token is read once and taken out of the address**
   (`useMailedToken`): it stays neither in the address bar nor in the
   history. A page that is loaded again has none, and says that the link of
-  the mail opens it.
+  the mail opens it. A link opened in the same tab while the screen is
+  shown changes the fragment alone: its token takes the place of the one
+  before, and the screen keys what it shows by the token
+  (`<ResetWithToken key={token} token={token} />`), so that nothing of
+  the link before stays.
 - **Opening a link changes nothing.** Software opens the links of a mail
   ahead of its reader. A request that uses the token up is sent when a
   button is pressed. A check that uses nothing up may run when the screen
@@ -2064,6 +2070,24 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
   `VITE_ADMIN_APP_URL` in the portal, `VITE_PORTAL_APP_URL` in the admin and
   the dashboard application, in every `.env.<mode>` and in `vite-env.d.ts`.
   A link to it is an `a` with the whole address, not a link of the router.
+
+A share link opens a file for somebody who has no account
+(`src/share/`):
+
+- **What is counted is pressed for.** The link counts every download URL
+  it issues, so the screen reads only what is known of the file when it
+  opens, and a button loads the file: one URL, one `fetch` from the
+  storage, and the page holds the file at an object URL
+  (`URL.createObjectURL`, let go of when the screen closes). The image,
+  the tab of its own and the saved file are made from what the page
+  holds, and the button says that every load counts.
+- **A password is asked for when the API refuses without one** (403). The
+  screen keeps it while it is open, sends it again with the load, and
+  asks for it again when the load is refused. The API does not tell a
+  wrong password from a locked link, so neither does the screen; the
+  control has `autoComplete='off'`.
+- **A link that works no more** (404) is said once, with every reason it
+  may have, as the API tells none.
 
 ## The frame of a screen
 
