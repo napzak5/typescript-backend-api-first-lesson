@@ -44,8 +44,6 @@ import {
  * back, unless a test says otherwise.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** What a member of the staff is told where the ledger is kept */
 const KEPT =
   '台帳からの削除と統合、変更履歴は、オーナーとマネージャーができます。'
@@ -165,7 +163,6 @@ const askToRemove = async (
 
 describe('removing customers, bringing them back, and their history, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

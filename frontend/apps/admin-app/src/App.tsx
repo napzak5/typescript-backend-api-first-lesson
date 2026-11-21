@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { StartScreen } from '@beauty-salon-frontend/salon-screens'
 import {
   AccountSecurityScreen,
@@ -184,7 +185,7 @@ export const App = () => {
     <LinkProvider component={RouterLink}>
       <NotificationProvider>
         <AppShell
-          title={import.meta.env.VITE_APP_TITLE}
+          title={applications.admin.name}
           account={<SessionAccount securityHref={SECURITY_PATH} />}
           navigation={
             items.length > 0 ? (
@@ -199,7 +200,7 @@ export const App = () => {
                 path='/'
                 element={
                   <StartScreen
-                    title={import.meta.env.VITE_APP_TITLE}
+                    title={applications.admin.name}
                     choice='予約台帳を開くサロンを選びます。'
                     salonHref={bookingsHrefOf}
                     choiceActions={

@@ -1,22 +1,35 @@
 {
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
+    "@playwright/test": "^1.65.1",
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
   },
   "exports": {
     ".": {
+      "@beauty-salon-frontend/source": "./src/index.ts",
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./vite": {
+      "@beauty-salon-frontend/source": "./src/vite.ts",
+      "import": "./dist/vite.js",
+      "types": "./dist/vite.d.ts"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "public"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
-  "name": "@beauty-salon-frontend/assets",
+  "name": "@beauty-salon-frontend/brand",
   "sideEffects": false,
   "private": true,
   "scripts": {
@@ -27,7 +40,10 @@
     "build:prod": "NODE_ENV=production rslib build",
     "build:watch": "NODE_ENV=development rslib build --watch",
     "typecheck": "tsc --noEmit",
-    "dev": "NODE_ENV=development rslib build --watch"
+    "dev": "NODE_ENV=development rslib build --watch",
+    "render": "node scripts/render.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "type": "module",
   "types": "./dist/index.d.ts",

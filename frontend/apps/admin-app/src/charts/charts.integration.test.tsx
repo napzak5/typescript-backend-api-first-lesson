@@ -42,8 +42,6 @@ import {
  * meanwhile.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** A moment at the salon, as the screens show one: 「2026年11月18日（水） 14:30」 */
 const MOMENT = /^\d{4}年\d{1,2}月\d{1,2}日（.） \d{2}:\d{2}$/
 
@@ -128,7 +126,6 @@ const theForm = (): Promise<HTMLElement> =>
 
 describe('the charts of the customers, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

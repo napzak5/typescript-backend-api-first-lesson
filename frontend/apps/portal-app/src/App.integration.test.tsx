@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
@@ -8,7 +9,9 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 
-const TITLE = 'Beauty Salon Portal'
+const TITLE = applications.portal.name
+/** The heading of the first screen of the portal, the search of the salons */
+const START = 'サロンを探す'
 const CUSTOMER = 'customer1@example.com'
 
 const renderAt = (path: string) =>
@@ -54,7 +57,6 @@ const sessionCountOfTheApi = async (): Promise<unknown> =>
 
 describe('App, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 
@@ -70,8 +72,8 @@ describe('App, against the API', () => {
     await signInAs(CUSTOMER)
 
     // Assert
-    expect(await heading(TITLE)).toHaveFocus()
-    expect(document.title).toBe(TITLE)
+    expect(await heading(START)).toHaveFocus()
+    expect(document.title).toBe(`${START} | ${TITLE}`)
     expect(header().getByText(CUSTOMER)).toBeVisible()
     expect(
       header().queryByRole('link', { name: 'サインイン' }),
@@ -92,7 +94,7 @@ describe('App, against the API', () => {
     await signInAs(email)
 
     // Assert
-    expect(await heading(TITLE)).toBeVisible()
+    expect(await heading(START)).toBeVisible()
     expect(header().getByText(email)).toBeVisible()
   })
 
@@ -109,7 +111,7 @@ describe('App, against the API', () => {
     renderAt('/sign-in')
 
     // Assert
-    expect(await heading(TITLE)).toBeVisible()
+    expect(await heading(START)).toBeVisible()
     expect(
       screen.queryByRole('heading', { name: 'サインイン' }),
     ).not.toBeInTheDocument()
@@ -119,7 +121,7 @@ describe('App, against the API', () => {
     // Arrange
     renderAt('/sign-in')
     await signInAs(CUSTOMER)
-    await heading(TITLE)
+    await heading(START)
 
     // Act
     await userEvent.click(
@@ -130,7 +132,7 @@ describe('App, against the API', () => {
     expect(
       await header().findByRole('link', { name: 'サインイン' }),
     ).toBeVisible()
-    expect(screen.getByRole('heading', { level: 1, name: TITLE })).toBeVisible()
+    expect(screen.getByRole('heading', { level: 1, name: START })).toBeVisible()
     expect(screen.queryByText(CUSTOMER)).not.toBeInTheDocument()
     expect(statusMessages()).toContain('サインアウトしました。')
     expect(await sessionCountOfTheApi()).toEqual([{ count: 0 }])

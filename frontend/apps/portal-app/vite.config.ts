@@ -1,11 +1,13 @@
 import { resolve } from 'node:path'
+import { brand } from '@beauty-salon-frontend/brand/vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { defaultClientConditions, defineConfig } from 'vite'
 
 export default defineConfig(({ command, mode }) => {
   return {
-    plugins: [react()],
+    // The name of the application, its icons and what a link to it shows
+    plugins: [react(), brand('portal')],
     resolve: {
       alias: [
         { find: '@', replacement: resolve(import.meta.dirname, './src') },

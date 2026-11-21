@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import {
   RequireSession,
   SessionAccount,
@@ -97,7 +98,7 @@ export const App = () => {
     <LinkProvider component={RouterLink}>
       <NotificationProvider>
         <AppShell
-          title={import.meta.env.VITE_APP_TITLE}
+          title={applications.portal.name}
           account={<SessionAccount signInHref={SIGN_IN_PATH} />}
           navigation={
             items.length > 0 ? (

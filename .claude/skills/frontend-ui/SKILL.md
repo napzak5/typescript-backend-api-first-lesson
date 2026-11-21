@@ -48,6 +48,7 @@ this one: a component is not done without its stories and its test.
 | The links of the header of the dashboard, by the role and the salon of the address | `frontend/apps/dashboard-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
+| The brand: the name of the product and of each application, the icons and the image of a shared link (`public/`) with the drawings they are drawn from (`sources/`, `pnpm --filter @beauty-salon-frontend/brand render`), and the Vite plugin that each application runs (`brand('admin')` in its `vite.config.ts`) | `frontend/packages/brand/` (`@beauty-salon-frontend/brand`, `@beauty-salon-frontend/brand/vite`) |
 
 An application imports one stylesheet, in `src/main.tsx`:
 `@beauty-salon-frontend/theme/styles.css` (tokens, reset, bare elements). A
@@ -2281,6 +2282,10 @@ The share link that a salon gives has the same shape (`/share#token=…`,
   `VITE_ADMIN_APP_URL` in the portal, `VITE_PORTAL_APP_URL` in the admin and
   the dashboard application, in every `.env.<mode>` and in `vite-env.d.ts`.
   A link to it is an `a` with the whole address, not a link of the router.
+  Every application knows its own address under the same name
+  (`VITE_DASHBOARD_APP_URL` in the dashboard): the brand plugin makes the
+  image of a shared link a whole address with it, and a build without it
+  fails.
 
 A share link opens a file for somebody who has no account
 (`src/share/`):
@@ -2304,7 +2309,7 @@ A share link opens a file for somebody who has no account
 
 | Component | Use it for |
 |-----------|------------|
-| `AppShell` | The frame of an application: the link that skips to the content, the header (title, and `account` under it on a narrow screen, beside it from 40rem), the `navigation` (under the header, or beside the content with `navigationPlacement='side'`), the main content with the notification at its top |
+| `AppShell` | The frame of an application: the link that skips to the content, the header (the mark and the `title`, a link to the first screen of the application, and `account` under it on a narrow screen, beside it from 40rem), the `navigation` (under the header, or beside the content with `navigationPlacement='side'`), the main content with the notification at its top |
 | `Navigation` | The links to the screens. The application says which one is `current`; a row too long for the screen is scrolled to it |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (one below the other on a narrow screen, side by side from 40rem) |
@@ -2321,12 +2326,25 @@ A share link opens a file for somebody who has no account
 | `Dialog` | A question or a small form that has to be dealt with first: a sheet on the bottom edge of a narrow screen, a box in the middle of a wider one; `size='wide'` for a table to choose from |
 | `NotificationProvider`, `useNotifications` | The result of what the user just did |
 
+- **The name of an application** is that of `applications` in the brand
+  package (`<AppShell title={applications.admin.name}>`): 「Kushi」, 「Kushi
+  Admin」, 「Kushi Dashboard」. It is a name, so the screens in English carry
+  it as it is, and it names no environment: the badge in the corner
+  (`EnvironmentBanner`) does. A screen that does something is headed by
+  what it does, the first screen of the portal too (「サロンを探す」); only
+  the start of the admin and the dashboard application (`StartScreen`),
+  which leads on to the screens of a salon, shows the name while it reads
+  which salon that is.
+- **The head of the page** is written by the brand plugin, not by
+  `index.html`: the title, the description, the icons and what a shared
+  link shows (Open Graph). `index.html` holds what every page has and
+  nothing of the brand.
 - **A screen** is a `PageHeader`, then its content; the frame gives them their
   width and the gaps between them. One `h1` per screen, and headings go down
   one level at a time.
 - **The title of the document and the focus follow the screen.** Inside
   `AppShell`, `PageHeader` sets `document.title` to the title of the screen
-  and that of the application (「顧客台帳 | Beauty Salon Admin」; the title of
+  and that of the application (「顧客台帳 | Kushi Admin」; the title of
   the application alone on the screen that carries it). When another screen
   takes the place of one, the focus moves to its `h1`: a screen reader says
   where the user is now, and the keyboard goes on from the top. The first

@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -8,7 +9,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import { App } from '../App'
 
-const TITLE = 'Beauty Salon Portal'
+const TITLE = applications.portal.name
+/** The heading of the first screen of the portal, the search of the salons */
+const START = 'サロンを探す'
 
 /** The two salons of the seed data */
 const TOKYO = 'Beauty Studio Tokyo'
@@ -148,7 +151,6 @@ const reviewTitles = (reviews: HTMLElement): (string | null | undefined)[] =>
 
 describe('the screens of the salons, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 
@@ -163,9 +165,9 @@ describe('the screens of the salons, against the API', () => {
 
       // Assert
       expect(
-        screen.getByRole('heading', { level: 1, name: TITLE }),
+        screen.getByRole('heading', { level: 1, name: START }),
       ).toBeVisible()
-      expect(document.title).toBe(TITLE)
+      expect(document.title).toBe(`${START} | ${TITLE}`)
       expect(screen.getByText('サロンを探しています')).toHaveRole('status')
       const region = await results()
       expect(namesIn(region).toSorted()).toEqual([TOKYO, OSAKA])
@@ -214,7 +216,7 @@ describe('the screens of the salons, against the API', () => {
       expect(keyword()).toHaveValue('osaka')
       expect(send()).toHaveFocus()
       // The title is that of the application still: this is the same screen
-      expect(document.title).toBe(TITLE)
+      expect(document.title).toBe(`${START} | ${TITLE}`)
     })
 
     it('should find a place by the whole name the salon registered, and nothing by a part of it', async () => {
@@ -466,7 +468,7 @@ describe('the screens of the salons, against the API', () => {
       await user.click(screen.getByRole('link', { name: 'サロンを探す' }))
 
       // Assert
-      expect(await heading(TITLE)).toHaveFocus()
+      expect(await heading(START)).toHaveFocus()
       expect(address).toBe('/')
       expect(namesIn(await results())).toHaveLength(2)
     })
@@ -479,7 +481,7 @@ describe('the screens of the salons, against the API', () => {
       await userEvent.click(screen.getByRole('link', { name: 'トップへ戻る' }))
 
       // Assert
-      expect(await heading(TITLE)).toHaveFocus()
+      expect(await heading(START)).toHaveFocus()
       expect(namesIn(await results())).toHaveLength(2)
     })
 

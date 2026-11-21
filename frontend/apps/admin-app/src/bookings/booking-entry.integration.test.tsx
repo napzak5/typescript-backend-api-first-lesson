@@ -29,8 +29,6 @@ import {
   YUKI,
 } from './__tests__/arrangements'
 
-const TITLE = 'Beauty Salon Admin'
-
 const TAKEN =
   '担当の時間が、ほかの予約と重なっているため、予約を入れられませんでした。明細ごとに、担当の空きを確かめ直しました。'
 
@@ -208,7 +206,6 @@ const shownBookingId = (): string => address.split('/').at(-1) ?? ''
 
 describe('the bookings a salon puts in, changes and removes, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

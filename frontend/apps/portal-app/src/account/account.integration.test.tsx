@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
@@ -18,7 +19,7 @@ import * as z from 'zod'
 import { App } from '../App'
 import { accessTokenOf } from '../bookings/__tests__/arrangements'
 
-const TITLE = 'Beauty Salon Portal'
+const TITLE = applications.portal.name
 const ADMIN_APP = 'https://admin.salon.example'
 
 /** An address that has no account, and one of the seed data that has */
@@ -189,7 +190,6 @@ const signInWith = (email: string, password: string) =>
 
 describe('the screens of an account, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
     vi.stubEnv('VITE_ADMIN_APP_URL', ADMIN_APP)
   })

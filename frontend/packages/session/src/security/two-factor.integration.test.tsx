@@ -37,7 +37,7 @@ const renderApplication = (shown: ReactNode) =>
     >
       <NotificationProvider>
         <AppShell
-          title='Beauty Salon Admin'
+          title='Kushi Admin'
           account={<SessionAccount securityHref='/account/security' />}
         >
           <RequireSession

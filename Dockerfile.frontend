@@ -42,7 +42,7 @@ COPY backend/packages/utility/package.json ./backend/packages/utility/
 
 # Copy frontend packages
 COPY frontend/packages/api-client/package.json ./frontend/packages/api-client/
-COPY frontend/packages/assets/package.json ./frontend/packages/assets/
+COPY frontend/packages/brand/package.json ./frontend/packages/brand/
 COPY frontend/packages/config/package.json ./frontend/packages/config/
 COPY frontend/packages/io/package.json ./frontend/packages/io/
 COPY frontend/packages/preferences/package.json ./frontend/packages/preferences/

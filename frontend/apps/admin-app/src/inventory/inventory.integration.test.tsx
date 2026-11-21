@@ -49,8 +49,6 @@ import { expiryNameOf } from './stock-format'
  * reads them. Somebody did something meanwhile where a test says so.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The address a screen was opened at, and what the page showed in the commit that opened it */
 let firstSight: [string, string] = ['', '']
 
@@ -172,7 +170,6 @@ const LOT_TAKEN =
 
 describe('the stock screens', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

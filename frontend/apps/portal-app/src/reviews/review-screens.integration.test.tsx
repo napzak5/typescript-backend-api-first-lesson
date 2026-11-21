@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NOTHING, signedInAs } from '../bookings/__tests__/arrangements'
@@ -16,7 +17,7 @@ import {
  * and in `own-reviews.integration.test.tsx`.
  */
 
-const TITLE = 'Beauty Salon Portal'
+const TITLE = applications.portal.name
 
 const STYLIST = 'stylist1@beautysalon.jp'
 
@@ -64,7 +65,6 @@ const NOWHERE = { toReview: NOTHING, reviewId: NOTHING }
 
 describe.each(PLACES)('%s, against the API', (_screen, place) => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

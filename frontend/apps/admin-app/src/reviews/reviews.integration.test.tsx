@@ -36,8 +36,6 @@ import {
  * the seed data are in `__tests__/arrangements.ts`.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The address a screen was opened at, and what the page showed in the commit that opened it */
 let firstSight: [string, string] = ['', '']
 
@@ -130,7 +128,6 @@ const CHANGE = '返信を直す'
 
 describe('the reviews of a salon', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

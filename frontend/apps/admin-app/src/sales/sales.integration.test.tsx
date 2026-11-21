@@ -28,8 +28,6 @@ import {
   voidSale,
 } from './__tests__/arrangements'
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The kinds of payment of the seed data that take a total between 100 and 10,000 yen at once */
 const ONE_PAYMENT =
   '現金、クレジットカード、デビットカード、電子マネー、QR コード決済、ポイント'
@@ -121,7 +119,6 @@ const openAt = async (path: (tokyo: string) => string, email = OWNER) => {
 
 describe('the sales of a salon, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

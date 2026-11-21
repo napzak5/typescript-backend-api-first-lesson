@@ -298,10 +298,19 @@ pnpm --filter @beauty-salon-backend/config run test
 | 変数 | 用途 |
 |------|------|
 | `VITE_MODE` | 環境名。環境バナーの表示と、`production` 以外で React Query Devtools を出す判定に使う |
-| `VITE_APP_TITLE` | 画面に表示するアプリ名 |
 | `VITE_BACKEND_BASE_URL` | API サーバーのオリジン（パスは付けない。ローカルは `http://localhost:3000`） |
-| `VITE_ADMIN_APP_URL` | portal-app だけ。admin-app のオリジン（パスは付けない。ローカルは `http://localhost:3002`）。招待を受けたスタッフを、店舗向けの画面へ案内するリンクに使う |
-| `VITE_PORTAL_APP_URL` | admin-app と dashboard-app だけ。portal-app のオリジン（パスは付けない。ローカルは `http://localhost:3001`）。サインインの画面から、パスワードの再設定へ案内するリンクに使う |
+| `VITE_PORTAL_APP_URL` | 3 つのアプリすべて。portal-app のオリジン（パスは付けない。ローカルは `http://localhost:3001`）。portal-app では、リンクを共有したときに出る画像（OGP）のアドレスに使う。admin-app と dashboard-app では、サインインの画面から、パスワードの再設定へ案内するリンクに使う |
+| `VITE_ADMIN_APP_URL` | portal-app と admin-app。admin-app のオリジン（パスは付けない。ローカルは `http://localhost:3002`）。admin-app では OGP の画像のアドレスに、portal-app では、招待を受けたスタッフを店舗向けの画面へ案内するリンクに使う |
+| `VITE_DASHBOARD_APP_URL` | dashboard-app だけ。dashboard-app のオリジン（パスは付けない。ローカルは `http://localhost:3003`）。OGP の画像のアドレスに使う |
+
+アプリの名前（「Kushi」、「Kushi Admin」、「Kushi Dashboard」）は環境変数ではなく、
+`@beauty-salon-frontend/brand` パッケージの `applications` にあります。どの環境でも同じ名前で、
+環境は画面の隅のバッジが示します。
+
+各アプリは、自分のオリジンを、ほかのアプリと同じ名前の変数で持ちます。`vite.config.ts` の
+`brand('<アプリ>')`（ブランドのプラグイン）が、その値で OGP の画像を絶対 URL にします。値がないか、
+`http` か `https` の URL でないと、ビルドと開発サーバーの起動は失敗します。この変数は
+アプリのコードからは読まないので、`vite-env.d.ts` にはありません。
 
 | 各アプリのスクリプト | Vite のモード | 読まれるファイル |
 |----------------------|---------------|------------------|
@@ -329,7 +338,6 @@ pnpm --filter @beauty-salon-backend/config run test
 | `env` のキー | 読む値 |
 |--------------|--------|
 | `VITE_MODE` | `import.meta.env.MODE`（Vite のモード） |
-| `VITE_APP_TITLE` | `VITE_APP_TITLE` |
 | `VITE_BACKEND_BASE_URL` | `VITE_BACKEND_BASE_URL` |
 
 設定されていない変数の値は `undefined` です。
@@ -339,7 +347,7 @@ pnpm --filter @beauty-salon-backend/config run test
 - `VITE_BACKEND_BASE_URL` を使うのは `frontend/packages/api-client` の fetcher だけです。アプリのコードは、
   生成クライアントを通して API を呼びます。
 - `VITE_ADMIN_APP_URL` と `VITE_PORTAL_APP_URL` は、`config` パッケージを通さず、アプリが
-  `import.meta.env` から読みます。バックエンドの `PUBLIC_APP_URL`（メールのリンクが指すアプリ）と
+  `import.meta.env` から読みます（自分のオリジンは、ブランドのプラグインがビルドのときに読みます）。バックエンドの `PUBLIC_APP_URL`（メールのリンクが指すアプリ）と
   `VITE_PORTAL_APP_URL` は、同じ portal-app のオリジンです。
 - アプリの `.env.localhost`、`.env.development`、`.env.test` の `VITE_BACKEND_BASE_URL` は、
   ローカルのバックエンド（`http://localhost:3000`）を指しています。バックエンド側の

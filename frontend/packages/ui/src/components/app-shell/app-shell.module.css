@@ -25,8 +25,8 @@
 }
 
 /*
- * The title, and the account under it on a narrow screen: a long word of the
- * title has the whole width. From 40rem they stand side by side.
+ * The name, and the account under it on a narrow screen: a long word of the
+ * name has the whole width. From 40rem they stand side by side.
  */
 .headerContent {
   display: grid;
@@ -35,11 +35,32 @@
   gap: var(--space-2);
 }
 
-.title {
-  color: var(--color-accent-text);
+/* The mark and the name: a link as wide as they are, not as the row */
+.brand {
+  display: grid;
+  grid-auto-flow: column;
+  justify-self: start;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
   font-size: var(--font-size-large);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
+  text-decoration: none;
+}
+
+/* The mark is as high as a line of the name and a half */
+.mark {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+}
+
+.markTile {
+  fill: var(--color-accent);
+}
+
+.markComb {
+  fill: var(--color-on-accent);
 }
 
 .account {

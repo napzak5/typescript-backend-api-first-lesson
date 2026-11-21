@@ -55,8 +55,6 @@ import {
  * says so.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The address a screen was opened at, and what the page showed in the commit that opened it */
 let firstSight: [string, string] = ['', '']
 
@@ -143,7 +141,6 @@ const suggestedIn = (supplier: string): string[][] =>
 
 describe('the goods that come for a purchase order, and what to order', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

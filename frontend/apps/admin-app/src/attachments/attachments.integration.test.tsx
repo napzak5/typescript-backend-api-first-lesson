@@ -38,8 +38,6 @@ import {
  * files a test needs are in `__tests__/arrangements.ts`.
  */
 
-const TITLE = 'Beauty Salon Admin'
-
 /** The address a screen was opened at, and what the page showed in the commit that opened it */
 let firstSight: [string, string] = ['', '']
 
@@ -131,7 +129,6 @@ const MOMENT = /^\d{4}年\d+月\d+日（.） \d{2}:\d{2}$/
 
 describe('the files of a salon', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

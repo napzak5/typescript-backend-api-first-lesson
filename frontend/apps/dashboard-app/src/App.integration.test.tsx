@@ -1,3 +1,4 @@
+import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -7,7 +8,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 
-const TITLE = 'Beauty Salon Dashboard'
+const TITLE = applications.dashboard.name
 const OWNER = 'owner@beautysalon.jp'
 
 const renderAt = (path: string) =>
@@ -42,7 +43,6 @@ const sessionCountOfTheApi = async (): Promise<unknown> =>
 
 describe('App, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 

@@ -48,7 +48,7 @@ export const SalonSearchScreen = () => {
   return (
     <>
       <PageHeader
-        title={import.meta.env.VITE_APP_TITLE}
+        title='サロンを探す'
         description='サロンを探して、営業時間、メニュー、スタッフ、レビューを見られます。'
       />
       <SalonSearchForm

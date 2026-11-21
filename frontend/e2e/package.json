@@ -12,6 +12,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
     "@beauty-salon-frontend/api-client": "workspace:*",
+    "@beauty-salon-frontend/brand": "workspace:*",
     "@beauty-salon-frontend/testing": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
     "@playwright/test": "^1.65.1",

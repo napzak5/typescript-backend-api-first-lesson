@@ -139,7 +139,6 @@ const showDay = async (day: string): Promise<void> => {
 
 describe('the sales of one day, against the API', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_APP_TITLE', TITLE)
     vi.stubEnv('VITE_MODE', 'production')
   })
 
