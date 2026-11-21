@@ -1016,6 +1016,11 @@ adds:
   database in Tokyo too (`date_trunc` of the week or the month), so that
   the first week and the last month the test expects are those of the
   clock of the API.
+- **The sales by member of the staff and by kind of service are counted
+  from lines whose member is another than that of the sale** (and a line
+  of no member, a service on no menu, a product alone on a day:
+  `sellToBreakDown`), so that a line counted for the wrong member, or a
+  product counted as a service, fails.
 - **A chart hidden from assistive technology is tested from its story**
   (`trend-chart.test.tsx`: the height of a column, the amounts of the
   scale, the tip of a part, `aria-hidden`), and its table on the screen.
