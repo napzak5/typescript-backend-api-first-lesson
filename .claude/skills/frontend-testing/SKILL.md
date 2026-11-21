@@ -1155,9 +1155,10 @@ test.describe('the admin application', () => {
   `test.use({ viewport: { width: 390, height: 844 } })`, on the record with
   the longest values the seed data has (the salon whose hours have a break,
   not the one whose hours are one time).
-- What no screen does yet, a test asks of the API with the `request` fixture
-  of Playwright (`accessTokenOf` and `setUpTwoFactor` in `src/sign-in.ts`),
-  and checks the answer with a Zod schema. What neither a screen nor the API
+- What a test needs before the path it drives, and which another test
+  drives through its screens already, it asks of the API with the
+  `request` fixture of Playwright (`accessTokenOf` and `setUpTwoFactor` in
+  `src/sign-in.ts`), and checks the answer with a Zod schema. What neither a screen nor the API
   does, such as time having passed, is a statement with `api.query`.
 - A screen whose state is in its address is taken back, forward and
   through a reload (`page.goBack()`, `page.reload()`, a second page of the
