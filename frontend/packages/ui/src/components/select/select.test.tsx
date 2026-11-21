@@ -140,4 +140,24 @@ describe('Select', () => {
     expect(select).not.toHaveClass('in-form')
     expect(select.parentElement).toHaveClass('field', 'in-form')
   })
+
+  it('should make the select of short choices as wide as they are, and only the select', async () => {
+    // Act
+    await stories.Short.run()
+    const select = screen.getByRole('combobox', { name: '満足度' })
+
+    // Assert
+    expect(select).toHaveClass('control', 'short')
+    expect(select.parentElement).not.toHaveClass('short')
+  })
+
+  it('should make its select as wide as its column unless its choices are short', async () => {
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(
+      screen.getByRole('combobox', { name: '担当スタッフ' }),
+    ).not.toHaveClass('short')
+  })
 })

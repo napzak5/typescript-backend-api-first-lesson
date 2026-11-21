@@ -1,7 +1,24 @@
 import { type ReactNode, useId } from 'react'
 import { classNames } from '../../class-names'
 import { Note } from '../note/note'
+import controlStyles from './control.module.css'
 import styles from './field.module.css'
+
+/**
+ * How wide a control is: as wide as its column (`full`), or as its value
+ * (`short`), for a value of a few characters (a date, a time, a number, a
+ * code) that stands alone in a column of a form.
+ */
+export type ControlWidth = 'full' | 'short'
+
+const widthClass: Record<ControlWidth, string | undefined> = {
+  full: undefined,
+  short: controlStyles['short'],
+}
+
+/** The classes of a control of text of a width. */
+export const controlClassOf = (width: ControlWidth): string =>
+  classNames(controlStyles['control'], widthClass[width])
 
 type FieldMessageProps = {
   /** Help for the value: what to enter, or in which form */

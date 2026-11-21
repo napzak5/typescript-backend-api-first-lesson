@@ -158,6 +158,26 @@ describe('TextField', () => {
     expect(screen.getByLabelText('来店日')).toHaveValue('2026-12-03')
   })
 
+  it('should make the control of a short value as wide as its value, and leave the field the width of its column', async () => {
+    // Act
+    await stories.DateInput.run()
+    const date = screen.getByLabelText('来店日')
+
+    // Assert
+    expect(date).toHaveClass('control', 'short')
+    expect(date.parentElement).not.toHaveClass('short')
+  })
+
+  it('should make its control as wide as its column unless its value is short', async () => {
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(screen.getByRole('textbox', { name: 'お名前' })).not.toHaveClass(
+      'short',
+    )
+  })
+
   it('should show the value its caller keeps', async () => {
     // Arrange
     await stories.Default.run({

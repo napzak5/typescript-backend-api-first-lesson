@@ -1,7 +1,6 @@
 import type { ComponentProps } from 'react'
 import type { ChoiceOption } from '../field/choice'
-import controlStyles from '../field/control.module.css'
-import { Field } from '../field/field'
+import { type ControlWidth, controlClassOf, Field } from '../field/field'
 
 export type SelectProps = Omit<
   ComponentProps<'select'>,
@@ -18,6 +17,8 @@ export type SelectProps = Omit<
   description?: string | undefined
   /** What is wrong with the value */
   error?: string | undefined
+  /** `short` for choices of a few characters that stand alone in a column */
+  width?: ControlWidth | undefined
 }
 
 /**
@@ -31,6 +32,7 @@ export const Select = ({
   placeholder,
   description,
   error,
+  width = 'full',
   id,
   required,
   className,
@@ -48,7 +50,7 @@ export const Select = ({
       <select
         {...select}
         {...control}
-        className={controlStyles['control']}
+        className={controlClassOf(width)}
         required={required}
       >
         {placeholder !== undefined && <option value=''>{placeholder}</option>}

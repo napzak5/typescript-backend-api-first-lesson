@@ -61,11 +61,14 @@ export const Password: Story = {
   },
 }
 
+/** A short value: the control is as wide as the date, the label and the description as the column */
 export const DateInput: Story = {
   args: {
     label: '来店日',
     name: 'visitDate',
     type: 'date',
+    width: 'short',
     defaultValue: '2026-12-03',
+    description: 'ご来店の日を選んでください',
   },
 }

@@ -46,6 +46,7 @@ export {
   type EnvironmentBannerProps,
 } from './components/environment-banner/environment-banner'
 export type { ChoiceLayout, ChoiceOption } from './components/field/choice'
+export type { ControlWidth } from './components/field/field'
 export { FieldRow, type FieldRowProps } from './components/field-row/field-row'
 export {
   FileField,
