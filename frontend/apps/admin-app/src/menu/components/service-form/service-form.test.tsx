@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -57,6 +60,10 @@ const packagedOf = (): string[] =>
 
 describe('ServiceForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.New, () =>
+    screen.getByRole('textbox', { name: '名前' }),
+  )
 
   it('should open a new service of no category, switched on, given every day, booked online, last in the menu', async () => {
     // Act

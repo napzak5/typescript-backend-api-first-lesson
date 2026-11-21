@@ -3,7 +3,9 @@ import { EARLIEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Checkbox,
   CheckboxGroup,
+  FieldRow,
   Form,
+  FormPart,
   type FormProps,
   Select,
   TextArea,
@@ -27,7 +29,6 @@ import {
 } from '../../customer-format'
 import { tagsTextOf } from '../../customer-ledger'
 import { ReferrerField } from '../referrer-field/referrer-field'
-import styles from './customer-form.module.css'
 
 /** What the choice of a referrer is given by the form */
 export type ReferrerChoiceProps = {
@@ -84,156 +85,143 @@ export const CustomerForm = ({
   return (
     <>
       <Form {...form} errors={errors}>
-        <fieldset className={styles['part']}>
-          <legend className={styles['name']}>お名前</legend>
-          <div className={styles['controls']}>
-            <div className={styles['pair']}>
-              <TextField
-                label='姓'
-                name='lastName'
-                autoComplete='off'
-                required
-                defaultValue={customer?.lastName}
-                error={errors['lastName']}
-              />
-              <TextField
-                label='名'
-                name='firstName'
-                autoComplete='off'
-                required
-                defaultValue={customer?.firstName}
-                error={errors['firstName']}
-              />
-            </div>
-            <div className={styles['pair']}>
-              <TextField
-                label='姓（フリガナ）'
-                name='lastNameKana'
-                autoComplete='off'
-                defaultValue={customer?.lastNameKana ?? undefined}
-                error={errors['lastNameKana']}
-              />
-              <TextField
-                label='名（フリガナ）'
-                name='firstNameKana'
-                autoComplete='off'
-                defaultValue={customer?.firstNameKana ?? undefined}
-                error={errors['firstNameKana']}
-              />
-            </div>
-          </div>
-        </fieldset>
-        <fieldset className={styles['part']}>
-          <legend className={styles['name']}>連絡先</legend>
-          <div className={styles['controls']}>
+        <FormPart name='お名前'>
+          <FieldRow>
             <TextField
-              label='メールアドレス'
-              name='email'
-              type='email'
+              label='姓'
+              name='lastName'
               autoComplete='off'
               required
-              description='台帳のお客様の間で、同じアドレスは使えません。'
-              defaultValue={customer?.email}
-              error={errors['email']}
-            />
-            <div className={styles['pair']}>
-              <TextField
-                label='電話番号'
-                name='phoneNumber'
-                type='tel'
-                autoComplete='off'
-                required
-                defaultValue={customer?.phoneNumber}
-                error={errors['phoneNumber']}
-              />
-              <TextField
-                label='予備の電話番号'
-                name='alternativePhone'
-                type='tel'
-                autoComplete='off'
-                defaultValue={customer?.alternativePhone ?? undefined}
-                error={errors['alternativePhone']}
-              />
-            </div>
-          </div>
-        </fieldset>
-        <fieldset className={styles['part']}>
-          <legend className={styles['name']}>住所</legend>
-          <div className={styles['controls']}>
-            <TextField
-              label='郵便番号'
-              name='postalCode'
-              autoComplete='off'
-              defaultValue={customer?.postalCode ?? undefined}
-              error={errors['postalCode']}
-            />
-            <div className={styles['pair']}>
-              <TextField
-                label='都道府県'
-                name='prefecture'
-                autoComplete='off'
-                defaultValue={customer?.prefecture ?? undefined}
-                error={errors['prefecture']}
-              />
-              <TextField
-                label='市区町村'
-                name='city'
-                autoComplete='off'
-                defaultValue={customer?.city ?? undefined}
-                error={errors['city']}
-              />
-            </div>
-            <TextField
-              label='番地'
-              name='address'
-              autoComplete='off'
-              defaultValue={customer?.address ?? undefined}
-              error={errors['address']}
+              defaultValue={customer?.lastName}
+              error={errors['lastName']}
             />
             <TextField
-              label='建物名・部屋番号'
-              name='building'
+              label='名'
+              name='firstName'
               autoComplete='off'
-              defaultValue={customer?.building ?? undefined}
-              error={errors['building']}
+              required
+              defaultValue={customer?.firstName}
+              error={errors['firstName']}
             />
-          </div>
-        </fieldset>
-        <fieldset className={styles['part']}>
-          <legend className={styles['name']}>お客様について</legend>
-          <div className={styles['controls']}>
-            <div className={styles['pair']}>
-              <TextField
-                label='生年月日'
-                name='birthDate'
-                type='date'
-                autoComplete='off'
-                min={EARLIEST_DAY}
-                max={today}
-                defaultValue={customer?.birthDate ?? undefined}
-                error={errors['birthDate']}
-              />
-              <Select
-                label='性別'
-                name='gender'
-                placeholder='記録しない'
-                options={GENDER_OPTIONS}
-                defaultValue={customer?.gender ?? ''}
-                error={errors['gender']}
-              />
-            </div>
+          </FieldRow>
+          <FieldRow>
             <TextField
-              label='職業'
-              name='occupation'
+              label='姓（フリガナ）'
+              name='lastNameKana'
               autoComplete='off'
-              defaultValue={customer?.occupation ?? undefined}
-              error={errors['occupation']}
+              defaultValue={customer?.lastNameKana ?? undefined}
+              error={errors['lastNameKana']}
             />
-          </div>
-        </fieldset>
-        <fieldset className={styles['part']}>
-          <legend className={styles['name']}>髪と頭皮</legend>
-          <div className={styles['triple']}>
+            <TextField
+              label='名（フリガナ）'
+              name='firstNameKana'
+              autoComplete='off'
+              defaultValue={customer?.firstNameKana ?? undefined}
+              error={errors['firstNameKana']}
+            />
+          </FieldRow>
+        </FormPart>
+        <FormPart name='連絡先'>
+          <TextField
+            label='メールアドレス'
+            name='email'
+            type='email'
+            autoComplete='off'
+            required
+            description='台帳のお客様の間で、同じアドレスは使えません。'
+            defaultValue={customer?.email}
+            error={errors['email']}
+          />
+          <FieldRow>
+            <TextField
+              label='電話番号'
+              name='phoneNumber'
+              type='tel'
+              autoComplete='off'
+              required
+              defaultValue={customer?.phoneNumber}
+              error={errors['phoneNumber']}
+            />
+            <TextField
+              label='予備の電話番号'
+              name='alternativePhone'
+              type='tel'
+              autoComplete='off'
+              defaultValue={customer?.alternativePhone ?? undefined}
+              error={errors['alternativePhone']}
+            />
+          </FieldRow>
+        </FormPart>
+        <FormPart name='住所'>
+          <TextField
+            label='郵便番号'
+            name='postalCode'
+            autoComplete='off'
+            defaultValue={customer?.postalCode ?? undefined}
+            error={errors['postalCode']}
+          />
+          <FieldRow>
+            <TextField
+              label='都道府県'
+              name='prefecture'
+              autoComplete='off'
+              defaultValue={customer?.prefecture ?? undefined}
+              error={errors['prefecture']}
+            />
+            <TextField
+              label='市区町村'
+              name='city'
+              autoComplete='off'
+              defaultValue={customer?.city ?? undefined}
+              error={errors['city']}
+            />
+          </FieldRow>
+          <TextField
+            label='番地'
+            name='address'
+            autoComplete='off'
+            defaultValue={customer?.address ?? undefined}
+            error={errors['address']}
+          />
+          <TextField
+            label='建物名・部屋番号'
+            name='building'
+            autoComplete='off'
+            defaultValue={customer?.building ?? undefined}
+            error={errors['building']}
+          />
+        </FormPart>
+        <FormPart name='お客様について'>
+          <FieldRow>
+            <TextField
+              label='生年月日'
+              name='birthDate'
+              type='date'
+              autoComplete='off'
+              min={EARLIEST_DAY}
+              max={today}
+              defaultValue={customer?.birthDate ?? undefined}
+              error={errors['birthDate']}
+            />
+            <Select
+              label='性別'
+              name='gender'
+              placeholder='記録しない'
+              options={GENDER_OPTIONS}
+              defaultValue={customer?.gender ?? ''}
+              error={errors['gender']}
+            />
+          </FieldRow>
+          <TextField
+            label='職業'
+            name='occupation'
+            autoComplete='off'
+            defaultValue={customer?.occupation ?? undefined}
+            error={errors['occupation']}
+          />
+        </FormPart>
+        <FormPart name='髪と頭皮'>
+          <FieldRow columns={3}>
             <Select
               label='髪質'
               name='hairType'
@@ -258,131 +246,116 @@ export const CustomerForm = ({
               defaultValue={customer?.scalpCondition ?? ''}
               error={errors['scalpCondition']}
             />
-          </div>
-        </fieldset>
-        <fieldset className={styles['part']}>
-          <legend className={styles['name']}>好み</legend>
-          <div className={styles['controls']}>
-            <CheckboxGroup
-              label='好みのメニュー'
-              name={PREFERRED_SERVICES}
-              layout='columns'
-              options={CATEGORY_OPTIONS}
-              defaultValue={customer?.preferences?.preferredServices}
-              error={errors[PREFERRED_SERVICES]}
+          </FieldRow>
+        </FormPart>
+        <FormPart name='好み'>
+          <CheckboxGroup
+            label='好みのメニュー'
+            name={PREFERRED_SERVICES}
+            layout='columns'
+            options={CATEGORY_OPTIONS}
+            defaultValue={customer?.preferences?.preferredServices}
+            error={errors[PREFERRED_SERVICES]}
+          />
+          <TextArea
+            label='好みについてのメモ'
+            name={PREFERENCE_NOTES}
+            rows={3}
+            description='使ってほしい製品や、苦手なことなどです。お客様もプロフィールで書き換えられます。'
+            defaultValue={customer?.preferences?.notes ?? undefined}
+            error={errors[PREFERENCE_NOTES]}
+          />
+        </FormPart>
+        <FormPart name='サロンでの扱い'>
+          <FieldRow>
+            <Select
+              label='会員ランク'
+              name='membershipTier'
+              required
+              options={TIER_OPTIONS}
+              defaultValue={customer?.membershipTier ?? 'regular'}
+              error={errors['membershipTier']}
             />
-            <TextArea
-              label='好みについてのメモ'
-              name={PREFERENCE_NOTES}
-              rows={3}
-              description='使ってほしい製品や、苦手なことなどです。お客様もプロフィールで書き換えられます。'
-              defaultValue={customer?.preferences?.notes ?? undefined}
-              error={errors[PREFERENCE_NOTES]}
+            <Select
+              label='ステータス'
+              name='customerStatus'
+              required
+              options={STATUS_OPTIONS}
+              description='休眠と利用停止のお客様は、ご自分では予約を入れられません。'
+              defaultValue={customer?.customerStatus ?? 'active'}
+              error={errors['customerStatus']}
             />
-          </div>
-        </fieldset>
-        <fieldset className={styles['part']}>
-          <legend className={styles['name']}>サロンでの扱い</legend>
-          <div className={styles['controls']}>
-            <div className={styles['pair']}>
-              <Select
-                label='会員ランク'
-                name='membershipTier'
-                required
-                options={TIER_OPTIONS}
-                defaultValue={customer?.membershipTier ?? 'regular'}
-                error={errors['membershipTier']}
-              />
-              <Select
-                label='ステータス'
-                name='customerStatus'
-                required
-                options={STATUS_OPTIONS}
-                description='休眠と利用停止のお客様は、ご自分では予約を入れられません。'
-                defaultValue={customer?.customerStatus ?? 'active'}
-                error={errors['customerStatus']}
-              />
-            </div>
-            <Checkbox
-              label='有効なお客様'
-              name='isActive'
-              description='外すと、お客様はご自分では予約を入れたり、日時を変えたりできなくなります。サロンが入れる予約は、どちらでも入れられます。'
-              defaultChecked={customer?.isActive ?? true}
-              error={errors['isActive']}
-            />
-            <TextField
-              label='タグ'
-              name='tags'
-              autoComplete='off'
-              description='「、」か「,」で区切って、いくつでも付けられます。'
-              defaultValue={tagsTextOf(customer?.tags ?? [])}
-              error={errors['tags']}
-            />
-          </div>
-        </fieldset>
-        <fieldset className={styles['part']}>
-          <legend className={styles['name']}>紹介</legend>
-          <div className={styles['controls']}>
-            <ReferrerField
-              referrer={referrer}
-              error={errors[REFERRER]}
-              onChoose={() => setChoosing(true)}
-              onRemove={() => setReferrer({ type: 'none' })}
-            />
-            <TextField
-              label='紹介コード'
-              name='referralCode'
-              autoComplete='off'
-              description='このお客様が、ほかの方を紹介するときのコードです。台帳から削除したお客様のものも含めて、同じコードは使えません。'
-              defaultValue={customer?.referralCode ?? undefined}
-              error={errors['referralCode']}
-            />
-          </div>
-        </fieldset>
-        <fieldset className={styles['part']}>
-          <legend className={styles['name']}>送ってよい連絡</legend>
-          <div className={styles['controls']}>
-            <Checkbox
-              label='メールでの連絡'
-              name='allowEmail'
-              defaultChecked={customer?.allowEmail ?? false}
-              error={errors['allowEmail']}
-            />
-            <Checkbox
-              label='SMS での連絡'
-              name='allowSms'
-              defaultChecked={customer?.allowSms ?? false}
-              error={errors['allowSms']}
-            />
-            <Checkbox
-              label='キャンペーンなどのお知らせ'
-              name='allowMarketing'
-              defaultChecked={customer?.allowMarketing ?? false}
-              error={errors['allowMarketing']}
-            />
-          </div>
-        </fieldset>
-        <fieldset className={styles['part']}>
-          <legend className={styles['name']}>メモ</legend>
-          <div className={styles['controls']}>
-            <TextArea
-              label='備考'
-              name='notes'
-              rows={3}
-              description='お客様には見えません。'
-              defaultValue={customer?.notes ?? undefined}
-              error={errors['notes']}
-            />
-            <TextArea
-              label='スタッフ間の申し送り'
-              name='internalNotes'
-              rows={3}
-              description='お客様には見えません。'
-              defaultValue={customer?.internalNotes ?? undefined}
-              error={errors['internalNotes']}
-            />
-          </div>
-        </fieldset>
+          </FieldRow>
+          <Checkbox
+            label='有効なお客様'
+            name='isActive'
+            description='外すと、お客様はご自分では予約を入れたり、日時を変えたりできなくなります。サロンが入れる予約は、どちらでも入れられます。'
+            defaultChecked={customer?.isActive ?? true}
+            error={errors['isActive']}
+          />
+          <TextField
+            label='タグ'
+            name='tags'
+            autoComplete='off'
+            description='「、」か「,」で区切って、いくつでも付けられます。'
+            defaultValue={tagsTextOf(customer?.tags ?? [])}
+            error={errors['tags']}
+          />
+        </FormPart>
+        <FormPart name='紹介'>
+          <ReferrerField
+            referrer={referrer}
+            error={errors[REFERRER]}
+            onChoose={() => setChoosing(true)}
+            onRemove={() => setReferrer({ type: 'none' })}
+          />
+          <TextField
+            label='紹介コード'
+            name='referralCode'
+            autoComplete='off'
+            description='このお客様が、ほかの方を紹介するときのコードです。台帳から削除したお客様のものも含めて、同じコードは使えません。'
+            defaultValue={customer?.referralCode ?? undefined}
+            error={errors['referralCode']}
+          />
+        </FormPart>
+        <FormPart name='送ってよい連絡'>
+          <Checkbox
+            label='メールでの連絡'
+            name='allowEmail'
+            defaultChecked={customer?.allowEmail ?? false}
+            error={errors['allowEmail']}
+          />
+          <Checkbox
+            label='SMS での連絡'
+            name='allowSms'
+            defaultChecked={customer?.allowSms ?? false}
+            error={errors['allowSms']}
+          />
+          <Checkbox
+            label='キャンペーンなどのお知らせ'
+            name='allowMarketing'
+            defaultChecked={customer?.allowMarketing ?? false}
+            error={errors['allowMarketing']}
+          />
+        </FormPart>
+        <FormPart name='メモ'>
+          <TextArea
+            label='備考'
+            name='notes'
+            rows={3}
+            description='お客様には見えません。'
+            defaultValue={customer?.notes ?? undefined}
+            error={errors['notes']}
+          />
+          <TextArea
+            label='スタッフ間の申し送り'
+            name='internalNotes'
+            rows={3}
+            description='お客様には見えません。'
+            defaultValue={customer?.internalNotes ?? undefined}
+            error={errors['internalNotes']}
+          />
+        </FormPart>
       </Form>
       {chooseReferrer({
         open: choosing,

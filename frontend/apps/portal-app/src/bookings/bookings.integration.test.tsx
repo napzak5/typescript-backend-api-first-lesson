@@ -672,25 +672,20 @@ describe('the screens of a booking, against the API', () => {
         ]),
       ).toEqual([])
 
-      // Act
+      // Act: sent with the Enter key in the telephone number
       await user.type(lastName, '山田')
       await user.type(
         within(profile).getByRole('textbox', { name: '名' }),
         '花子',
-      )
-      await user.type(
-        within(profile).getByRole('textbox', { name: '電話番号' }),
-        '090-5550-0199',
       )
       await user.click(
         within(profile).getByRole('checkbox', {
           name: 'メールでの連絡を受け取る',
         }),
       )
-      await user.click(
-        within(profile).getByRole('button', {
-          name: '登録して、日時の選択へ進む',
-        }),
+      await user.type(
+        within(profile).getByRole('textbox', { name: '電話番号' }),
+        '090-5550-0199{Enter}',
       )
 
       // Assert

@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -25,6 +28,10 @@ const ofRow = (row: string, label: string): HTMLElement =>
 
 describe('OrderForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Rows, () =>
+    screen.getByRole('textbox', { name: '仕入先' }),
+  )
 
   it('should give every row a quantity, with its stock, and a price, at what its product is bought at', async () => {
     // Act

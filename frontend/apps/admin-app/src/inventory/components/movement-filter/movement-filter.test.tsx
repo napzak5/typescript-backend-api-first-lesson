@@ -1,5 +1,6 @@
 import {
   itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
@@ -15,6 +16,10 @@ const last = (): HTMLElement => screen.getByLabelText('記録した日（まで�
 
 describe('MovementFilter', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Everything, () =>
+    screen.getByLabelText('記録した日（から）'),
+  )
 
   it('should offer every kind, with nothing chosen', async () => {
     // Act

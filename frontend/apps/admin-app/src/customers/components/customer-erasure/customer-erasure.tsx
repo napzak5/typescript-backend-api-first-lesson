@@ -5,13 +5,13 @@ import {
   Card,
   DescriptionList,
   Dialog,
+  FormDialog,
   type FormErrors,
   LoadingIndicator,
   TextArea,
   UnreadNotice,
-  useErrorFocus,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, type Ref, useId } from 'react'
+import type { Ref } from 'react'
 import { match } from 'ts-pattern'
 import { erasureStateOf } from '../../customer-erasure'
 import type { ErasureRequest } from '../../customer-erasure-api'
@@ -91,15 +91,8 @@ export const CustomerErasure = ({
   onAsk,
   onCancel,
 }: CustomerErasureProps) => {
-  const formId = useId()
-  const form = useErrorFocus(errors)
   const pendingShown =
     shown.type === 'read' && shown.request?.status === 'pending'
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onAsk(new FormData(event.currentTarget))
-  }
 
   const asking = (
     <>
@@ -173,43 +166,27 @@ export const CustomerErasure = ({
           .exhaustive()}
       </div>
       {requestable && (
-        <Dialog
+        <FormDialog
           open={dialog === 'ask'}
           onClose={onClose}
           title='消去の依頼を受け付けますか？'
           description={`${name} 様のデータの消去の依頼を受け付けます。受け付けてから 14 日のあいだは、取り消せます。`}
-          actions={
-            <>
-              <Button onClick={onClose}>戻る</Button>
-              <Button
-                type='submit'
-                form={formId}
-                variant='danger'
-                pending={pending}
-              >
-                受け付ける
-              </Button>
-            </>
-          }
+          submitLabel='受け付ける'
+          tone='danger'
+          message={message}
+          errors={errors}
+          pending={pending}
+          onSubmit={onAsk}
         >
-          <form
-            className={styles['form']}
-            id={formId}
-            noValidate
-            onSubmit={submit}
-            ref={form}
-          >
-            {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-            <TextArea
-              label='依頼の理由'
-              name='reason'
-              rows={3}
-              required
-              description='ご本人が述べた理由や、依頼を受けた方法を書きます。依頼の記録に残ります。'
-              error={errors['reason']}
-            />
-          </form>
-        </Dialog>
+          <TextArea
+            label='依頼の理由'
+            name='reason'
+            rows={3}
+            required
+            description='ご本人が述べた理由や、依頼を受けた方法を書きます。依頼の記録に残ります。'
+            error={errors['reason']}
+          />
+        </FormDialog>
       )}
       {pendingShown && (
         <Dialog

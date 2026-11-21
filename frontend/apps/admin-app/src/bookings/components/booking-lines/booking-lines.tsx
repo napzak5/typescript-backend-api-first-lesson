@@ -141,6 +141,7 @@ export const BookingLines = ({
               <TextField
                 label={`${name} の開始`}
                 name={lineControlOf(index, 'startTime')}
+                autoComplete='off'
                 type='time'
                 required
                 error={said[lineControlOf(index, 'startTime')]}
@@ -149,6 +150,7 @@ export const BookingLines = ({
                 className={styles['wide']}
                 label={`${name} のメモ`}
                 name={lineControlOf(index, 'notes')}
+                autoComplete='off'
                 error={said[lineControlOf(index, 'notes')]}
               />
               {check !== undefined && (

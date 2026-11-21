@@ -3,7 +3,9 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  FieldRow,
   Form,
+  FormPart,
   type FormProps,
   Select,
   TextField,
@@ -15,7 +17,6 @@ import {
   staffOptionsOf,
 } from '../booking-lines/booking-lines'
 import { LineCheckNote } from '../line-check-note/line-check-note'
-import styles from './booking-line-form.module.css'
 
 export type BookingLineFormProps = Pick<
   FormProps,
@@ -51,41 +52,44 @@ export const BookingLineForm = ({
   ...form
 }: BookingLineFormProps) => (
   <Form {...form} errors={errors} submitLabel='施術明細を追加する'>
-    <fieldset className={styles['part']} onChange={onValuesChange}>
-      <legend className={styles['name']}>足す明細</legend>
-      <div className={styles['controls']}>
+    <FormPart name='足す明細' onChange={onValuesChange}>
+      <Select
+        label='メニュー'
+        name='serviceId'
+        options={serviceOptionsOf(services)}
+        placeholder='選んでください'
+        required
+        defaultValue=''
+        error={errors['serviceId']}
+      />
+      <FieldRow>
         <Select
-          label='メニュー'
-          name='serviceId'
-          options={serviceOptionsOf(services)}
-          placeholder='選んでください'
-          required
-          defaultValue=''
-          error={errors['serviceId']}
+          label='担当'
+          name='staffId'
+          options={staffOptionsOf(staff)}
+          defaultValue={SAME_STAFF}
+          description='「決めない」明細は、誰の時間も占有しません。'
+          error={errors['staffId']}
         />
-        <div className={styles['pair']}>
-          <Select
-            label='担当'
-            name='staffId'
-            options={staffOptionsOf(staff)}
-            defaultValue={SAME_STAFF}
-            description='「決めない」明細は、誰の時間も占有しません。'
-            error={errors['staffId']}
-          />
-          <TextField
-            label='開始の時刻'
-            name='startTime'
-            type='time'
-            required
-            description={`来店日（${day}）の、サロンの時計の時刻です。`}
-            error={errors['startTime']}
-          />
-        </div>
-        <TextField label='メモ' name='notes' error={errors['notes']} />
-        {check !== undefined && (
-          <LineCheckNote check={check} timezone={timezone} />
-        )}
-      </div>
-    </fieldset>
+        <TextField
+          label='開始の時刻'
+          name='startTime'
+          autoComplete='off'
+          type='time'
+          required
+          description={`来店日（${day}）の、サロンの時計の時刻です。`}
+          error={errors['startTime']}
+        />
+      </FieldRow>
+      <TextField
+        label='メモ'
+        name='notes'
+        autoComplete='off'
+        error={errors['notes']}
+      />
+      {check !== undefined && (
+        <LineCheckNote check={check} timezone={timezone} />
+      )}
+    </FormPart>
   </Form>
 )

@@ -1,14 +1,13 @@
 import type { ModelsPurchaseOrderResponse } from '@beauty-salon-frontend/api-client'
 import {
-  Alert,
   Badge,
   Button,
   ButtonLink,
   Card,
-  Dialog,
+  FormDialog,
   TextArea,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, type Ref, useId } from 'react'
+import type { Ref } from 'react'
 import type { OrderAction } from '../../order-actions'
 import { orderStatusNameOf, orderStatusToneOf } from '../../order-format'
 import styles from './order-status-actions.module.css'
@@ -71,15 +70,6 @@ export const OrderStatusActions = ({
   onClose,
   onCancel,
 }: OrderStatusActionsProps) => {
-  const cancellationId = useId()
-
-  // The form is sent by its button alone, which does nothing while the
-  // cancellation is on its way: its one control takes a line on Enter
-  const cancel = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onCancel(new FormData(event.currentTarget))
-  }
-
   return (
     <Card title='状態' headingRef={headingRef}>
       <div className={styles['statusActions']}>
@@ -117,7 +107,7 @@ export const OrderStatusActions = ({
         )}
         {note !== undefined && <p className={styles['note']}>{note}</p>}
       </div>
-      <Dialog
+      <FormDialog
         open={asking}
         onClose={onClose}
         title='発注を取り消しますか？'
@@ -126,36 +116,21 @@ export const OrderStatusActions = ({
             ? '出荷済みの発注です。返品の扱いを仕入先と決めてから取り消してください。'
             : ''
         }取り消した発注は、元に戻せません。`}
-        actions={
-          <>
-            <Button onClick={onClose}>戻る</Button>
-            <Button
-              type='submit'
-              form={cancellationId}
-              variant='danger'
-              pending={pending === 'cancel'}
-            >
-              取り消す
-            </Button>
-          </>
-        }
+        submitLabel='取り消す'
+        tone='danger'
+        message={message}
+        errors={cancellationErrors}
+        pending={pending === 'cancel'}
+        onSubmit={onCancel}
       >
-        <form
-          className={styles['form']}
-          id={cancellationId}
-          noValidate
-          onSubmit={cancel}
-        >
-          {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-          <TextArea
-            label='取り消す理由'
-            name='cancellationReason'
-            required
-            description='仕入先の在庫切れなど。理由は、発注の内容に残ります。'
-            error={cancellationErrors['cancellationReason']}
-          />
-        </form>
-      </Dialog>
+        <TextArea
+          label='取り消す理由'
+          name='cancellationReason'
+          required
+          description='仕入先の在庫切れなど。理由は、発注の内容に残ります。'
+          error={cancellationErrors['cancellationReason']}
+        />
+      </FormDialog>
     </Card>
   )
 }

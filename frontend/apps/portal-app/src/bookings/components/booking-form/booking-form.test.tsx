@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { type ReactNode, useLayoutEffect } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
@@ -47,6 +50,10 @@ const WITHOUT_A_CHOICE: [string, { run: () => Promise<void> }][] = [
 
 describe('BookingForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.WithTimes, () =>
+    screen.getByLabelText('日付'),
+  )
 
   describe('with whom', () => {
     it('should offer nobody in particular, then the members of the staff, and show that nobody is asked for', async () => {

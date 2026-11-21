@@ -58,6 +58,7 @@ export const IssuedShareLink = ({
       <Alert tone='warning'>{ISSUED_NOTE}</Alert>
       <TextField
         label='共有リンク'
+        autoComplete='off'
         value={address}
         readOnly
         onFocus={(event) => event.currentTarget.select()}

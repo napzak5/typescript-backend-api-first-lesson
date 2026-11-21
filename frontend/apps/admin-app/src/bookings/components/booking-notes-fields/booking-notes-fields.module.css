@@ -4,16 +4,3 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-fields);
 }
-
-/* The way and the deposit share a row from the width at which two of them fit */
-.pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-fields);
-}
-
-@media (min-width: 40rem) {
-  .pair {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}

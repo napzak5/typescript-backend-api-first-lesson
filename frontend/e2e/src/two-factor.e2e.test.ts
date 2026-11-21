@@ -156,9 +156,11 @@ test.describe('the second factor of the account of a customer, in a browser', ()
     await page.keyboard.type(codes[0] ?? '')
     await page.keyboard.press('Enter')
 
-    // Assert
+    // Assert: the focus is on the answer, which begins with what is said of the codes
     await expect(
-      issueDialog(page).getByText(/^新しいバックアップコードです。/),
+      issueDialog(page)
+        .getByText(/^新しいバックアップコードです。/)
+        .locator('..'),
     ).toBeFocused()
     const issued = await issueDialog(page).getByRole('code').allTextContents()
     expect(issued).toHaveLength(10)

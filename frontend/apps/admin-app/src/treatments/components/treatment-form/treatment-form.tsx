@@ -11,8 +11,10 @@ import {
   Button,
   CheckboxGroup,
   type CheckboxOption,
+  FieldRow,
   Form,
   type FormErrors,
+  FormPart,
   Select,
   type SelectOption,
   TextArea,
@@ -214,261 +216,250 @@ export const TreatmentForm = ({
       actions={actions}
       onSubmit={onSubmit}
     >
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>施術</legend>
-        <div className={styles['controls']}>
-          {record === undefined ? (
-            <Select
-              label='担当'
-              name='staffId'
-              options={staff.map(({ id, displayName }) => ({
-                value: id,
-                label: displayName,
-              }))}
-              placeholder='選んでください'
-              required
-              description='施術をしたスタッフ。予約の担当でなくても選べます。'
-              defaultValue={member?.id ?? ''}
-              error={errors['staffId']}
-            />
-          ) : (
-            <p className={styles['fixed']}>
-              <span className={styles['fixedName']}>担当</span>
-              <span>{member?.displayName ?? UNLISTED_STAFF}</span>
-            </p>
-          )}
-          <CheckboxGroup
-            label='提供したサービス'
-            name='services'
-            layout='columns'
-            options={serviceOptionsOf(services, chosenServices)}
-            defaultValue={chosenServices}
-            description='1 件から 20 件まで選びます。'
-            error={errors['services']}
-          />
-          <TextField
-            label='技法'
-            name='techniques'
-            autoComplete='off'
-            description='技法の名前を、「、」か「,」で区切って書きます。20 件までです。'
-            defaultValue={tagsTextOf(record?.techniques ?? [])}
-            error={errors['techniques']}
-          />
-          <TextField
-            label='施術時間（分）'
-            name='processingTime'
-            inputMode='numeric'
-            autoComplete='off'
-            className={styles['short']}
-            description='0 から 1440 までの分。'
-            defaultValue={
-              record?.processingTime === null ||
-              record?.processingTime === undefined
-                ? undefined
-                : String(record.processingTime)
-            }
-            error={errors['processingTime']}
-          />
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>カウンセリングと状態</legend>
-        <div className={styles['controls']}>
-          <TextArea
-            label='カウンセリングのメモ'
-            name='consultationNotes'
-            rows={3}
-            defaultValue={record?.consultationNotes ?? undefined}
-            error={errors['consultationNotes']}
-          />
-          <div className={styles['pair']}>
-            <TextField
-              label='頭皮の状態'
-              name='scalpCondition'
-              autoComplete='off'
-              defaultValue={record?.scalpCondition ?? undefined}
-              error={errors['scalpCondition']}
-            />
-            <TextField
-              label='毛髪の状態'
-              name='hairCondition'
-              autoComplete='off'
-              defaultValue={record?.hairCondition ?? undefined}
-              error={errors['hairCondition']}
-            />
-          </div>
-          <TextArea
-            label='カラー剤の配合'
-            name='colorFormula'
-            rows={2}
-            description='カラーをしない施術では、空のままにします。'
-            defaultValue={record?.colorFormula ?? undefined}
-            error={errors['colorFormula']}
-          />
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>使った商材</legend>
-        <div className={styles['controls']}>
-          <p className={styles['note']}>
-            記録しても在庫は減りません。在庫から出した分は、在庫の画面で記録します。
-          </p>
-          {rows.map((row, index) => (
-            <fieldset
-              key={row.key}
-              className={styles['row']}
-              ref={(group) => {
-                if (group === null) {
-                  groups.current.delete(row.key)
-                } else {
-                  groups.current.set(row.key, group)
-                }
-              }}
-            >
-              <legend className={styles['rowName']}>
-                {`${index + 1} 件目の商材`}
-              </legend>
-              <div className={styles['rowControls']}>
-                <Select
-                  label='商品'
-                  name={materialControlOf(index, 'productId')}
-                  options={productOptionsOf(products, row.shown?.productId)}
-                  placeholder='選んでください'
-                  required
-                  value={row.productId}
-                  onChange={(event) => choose(row.key, event.target.value)}
-                  error={said[materialControlOf(index, 'productId')]}
-                />
-                <div className={styles['pair']}>
-                  <TextField
-                    label='量'
-                    name={materialControlOf(index, 'quantity')}
-                    inputMode='decimal'
-                    autoComplete='off'
-                    required
-                    description='小数第 2 位まで。'
-                    defaultValue={
-                      row.shown === undefined
-                        ? undefined
-                        : String(row.shown.quantity)
-                    }
-                    error={said[materialControlOf(index, 'quantity')]}
-                  />
-                  <TextField
-                    label='単位'
-                    name={materialControlOf(index, 'unit')}
-                    autoComplete='off'
-                    required
-                    description='商品を選ぶと、商品の単位が入ります。'
-                    value={row.unit}
-                    onChange={(event) => write(row.key, event.target.value)}
-                    error={said[materialControlOf(index, 'unit')]}
-                  />
-                </div>
-                {takesLot(row) ? (
-                  <TextField
-                    label='ロット番号'
-                    name={materialControlOf(index, 'lotNumber')}
-                    autoComplete='off'
-                    required
-                    description='ロットで管理している商品です。使った商品のロット番号を書きます。'
-                    defaultValue={row.shown?.lotNumber ?? undefined}
-                    error={said[materialControlOf(index, 'lotNumber')]}
-                  />
-                ) : null}
-                <TextField
-                  label='商材のメモ'
-                  name={materialControlOf(index, 'notes')}
-                  autoComplete='off'
-                  defaultValue={row.shown?.notes ?? undefined}
-                />
-                <Button
-                  className={styles['remove']}
-                  size='small'
-                  aria-label={`${index + 1} 件目の商材を外す`}
-                  onClick={() => removeRow(row.key)}
-                >
-                  外す
-                </Button>
-              </div>
-            </fieldset>
-          ))}
-          {rows.length < MOST_MATERIALS ? (
-            <Button className={styles['add']} ref={add} onClick={addRow}>
-              商材を足す
-            </Button>
-          ) : (
-            <p className={styles['note']}>
-              {`使った商材は、${MOST_MATERIALS} 件まで書けます。`}
-            </p>
-          )}
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>結果と次回</legend>
-        <div className={styles['controls']}>
-          <TextArea
-            label='結果のメモ'
-            name='resultNotes'
-            rows={3}
-            description='いつもと違うことがなければ、空のままにします。'
-            defaultValue={record?.resultNotes ?? undefined}
-            error={errors['resultNotes']}
-          />
+      <FormPart name='施術'>
+        {record === undefined ? (
           <Select
-            label='お客様の満足度'
-            name='customerSatisfaction'
-            className={styles['short']}
-            options={SATISFACTION_OPTIONS}
-            placeholder='記録しない'
-            defaultValue={
-              record?.customerSatisfaction === null ||
-              record?.customerSatisfaction === undefined
-                ? ''
-                : String(record.customerSatisfaction)
-            }
-            error={errors['customerSatisfaction']}
+            label='担当'
+            name='staffId'
+            options={staff.map(({ id, displayName }) => ({
+              value: id,
+              label: displayName,
+            }))}
+            placeholder='選んでください'
+            required
+            description='施術をしたスタッフ。予約の担当でなくても選べます。'
+            defaultValue={member?.id ?? ''}
+            error={errors['staffId']}
+          />
+        ) : (
+          <p className={styles['fixed']}>
+            <span className={styles['fixedName']}>担当</span>
+            <span>{member?.displayName ?? UNLISTED_STAFF}</span>
+          </p>
+        )}
+        <CheckboxGroup
+          label='提供したサービス'
+          name='services'
+          layout='columns'
+          options={serviceOptionsOf(services, chosenServices)}
+          defaultValue={chosenServices}
+          description='1 件から 20 件まで選びます。'
+          error={errors['services']}
+        />
+        <TextField
+          label='技法'
+          name='techniques'
+          autoComplete='off'
+          description='技法の名前を、「、」か「,」で区切って書きます。20 件までです。'
+          defaultValue={tagsTextOf(record?.techniques ?? [])}
+          error={errors['techniques']}
+        />
+        <TextField
+          label='施術時間（分）'
+          name='processingTime'
+          inputMode='numeric'
+          autoComplete='off'
+          className={styles['short']}
+          description='0 から 1440 までの分。'
+          defaultValue={
+            record?.processingTime === null ||
+            record?.processingTime === undefined
+              ? undefined
+              : String(record.processingTime)
+          }
+          error={errors['processingTime']}
+        />
+      </FormPart>
+      <FormPart name='カウンセリングと状態'>
+        <TextArea
+          label='カウンセリングのメモ'
+          name='consultationNotes'
+          rows={3}
+          defaultValue={record?.consultationNotes ?? undefined}
+          error={errors['consultationNotes']}
+        />
+        <FieldRow>
+          <TextField
+            label='頭皮の状態'
+            name='scalpCondition'
+            autoComplete='off'
+            defaultValue={record?.scalpCondition ?? undefined}
+            error={errors['scalpCondition']}
           />
           <TextField
-            label='次に勧める日'
-            name='nextRecommendedDate'
-            type='date'
-            className={styles['short']}
-            min={booking.bookingDate}
-            max={LATEST_DAY}
-            description='予約の日から後の日。勧めることがなければ、空のままにします。'
-            defaultValue={record?.nextRecommendedDate ?? undefined}
-            error={errors['nextRecommendedDate']}
+            label='毛髪の状態'
+            name='hairCondition'
+            autoComplete='off'
+            defaultValue={record?.hairCondition ?? undefined}
+            error={errors['hairCondition']}
           />
-          <CheckboxGroup
-            label='次に勧めるサービス'
-            name='nextRecommendedServices'
-            layout='columns'
-            options={serviceOptionsOf(
-              services,
-              record?.nextRecommendedServices ?? [],
-            )}
-            defaultValue={record?.nextRecommendedServices ?? []}
-            description='20 件まで選べます。'
-            error={errors['nextRecommendedServices']}
-          />
-          <TextArea
-            label='ホームケアの提案'
-            name='homeCareSuggestions'
-            rows={2}
-            defaultValue={record?.homeCareSuggestions ?? undefined}
-            error={errors['homeCareSuggestions']}
-          />
-          <TextArea
-            label='申し送り'
-            name='staffEvaluation'
-            rows={3}
-            description='施術の振り返りや、次に担当するスタッフへ伝えること。'
-            defaultValue={record?.staffEvaluation ?? undefined}
-            error={errors['staffEvaluation']}
-          />
-        </div>
-      </fieldset>
+        </FieldRow>
+        <TextArea
+          label='カラー剤の配合'
+          name='colorFormula'
+          rows={2}
+          description='カラーをしない施術では、空のままにします。'
+          defaultValue={record?.colorFormula ?? undefined}
+          error={errors['colorFormula']}
+        />
+      </FormPart>
+      <FormPart
+        name='使った商材'
+        note='記録しても在庫は減りません。在庫から出した分は、在庫の画面で記録します。'
+      >
+        {rows.map((row, index) => (
+          <fieldset
+            key={row.key}
+            className={styles['row']}
+            ref={(group) => {
+              if (group === null) {
+                groups.current.delete(row.key)
+              } else {
+                groups.current.set(row.key, group)
+              }
+            }}
+          >
+            <legend className={styles['rowName']}>
+              {`${index + 1} 件目の商材`}
+            </legend>
+            <div className={styles['rowControls']}>
+              <Select
+                label='商品'
+                name={materialControlOf(index, 'productId')}
+                options={productOptionsOf(products, row.shown?.productId)}
+                placeholder='選んでください'
+                required
+                value={row.productId}
+                onChange={(event) => choose(row.key, event.target.value)}
+                error={said[materialControlOf(index, 'productId')]}
+              />
+              <FieldRow>
+                <TextField
+                  label='量'
+                  name={materialControlOf(index, 'quantity')}
+                  inputMode='decimal'
+                  autoComplete='off'
+                  required
+                  description='小数第 2 位まで。'
+                  defaultValue={
+                    row.shown === undefined
+                      ? undefined
+                      : String(row.shown.quantity)
+                  }
+                  error={said[materialControlOf(index, 'quantity')]}
+                />
+                <TextField
+                  label='単位'
+                  name={materialControlOf(index, 'unit')}
+                  autoComplete='off'
+                  required
+                  description='商品を選ぶと、商品の単位が入ります。'
+                  value={row.unit}
+                  onChange={(event) => write(row.key, event.target.value)}
+                  error={said[materialControlOf(index, 'unit')]}
+                />
+              </FieldRow>
+              {takesLot(row) ? (
+                <TextField
+                  label='ロット番号'
+                  name={materialControlOf(index, 'lotNumber')}
+                  autoComplete='off'
+                  required
+                  description='ロットで管理している商品です。使った商品のロット番号を書きます。'
+                  defaultValue={row.shown?.lotNumber ?? undefined}
+                  error={said[materialControlOf(index, 'lotNumber')]}
+                />
+              ) : null}
+              <TextField
+                label='商材のメモ'
+                name={materialControlOf(index, 'notes')}
+                autoComplete='off'
+                defaultValue={row.shown?.notes ?? undefined}
+              />
+              <Button
+                className={styles['remove']}
+                size='small'
+                aria-label={`${index + 1} 件目の商材を外す`}
+                onClick={() => removeRow(row.key)}
+              >
+                外す
+              </Button>
+            </div>
+          </fieldset>
+        ))}
+        {rows.length < MOST_MATERIALS ? (
+          <Button className={styles['add']} ref={add} onClick={addRow}>
+            商材を足す
+          </Button>
+        ) : (
+          <p className={styles['note']}>
+            {`使った商材は、${MOST_MATERIALS} 件まで書けます。`}
+          </p>
+        )}
+      </FormPart>
+      <FormPart name='結果と次回'>
+        <TextArea
+          label='結果のメモ'
+          name='resultNotes'
+          rows={3}
+          description='いつもと違うことがなければ、空のままにします。'
+          defaultValue={record?.resultNotes ?? undefined}
+          error={errors['resultNotes']}
+        />
+        <Select
+          label='お客様の満足度'
+          name='customerSatisfaction'
+          className={styles['short']}
+          options={SATISFACTION_OPTIONS}
+          placeholder='記録しない'
+          defaultValue={
+            record?.customerSatisfaction === null ||
+            record?.customerSatisfaction === undefined
+              ? ''
+              : String(record.customerSatisfaction)
+          }
+          error={errors['customerSatisfaction']}
+        />
+        <TextField
+          label='次に勧める日'
+          name='nextRecommendedDate'
+          autoComplete='off'
+          type='date'
+          className={styles['short']}
+          min={booking.bookingDate}
+          max={LATEST_DAY}
+          description='予約の日から後の日。勧めることがなければ、空のままにします。'
+          defaultValue={record?.nextRecommendedDate ?? undefined}
+          error={errors['nextRecommendedDate']}
+        />
+        <CheckboxGroup
+          label='次に勧めるサービス'
+          name='nextRecommendedServices'
+          layout='columns'
+          options={serviceOptionsOf(
+            services,
+            record?.nextRecommendedServices ?? [],
+          )}
+          defaultValue={record?.nextRecommendedServices ?? []}
+          description='20 件まで選べます。'
+          error={errors['nextRecommendedServices']}
+        />
+        <TextArea
+          label='ホームケアの提案'
+          name='homeCareSuggestions'
+          rows={2}
+          defaultValue={record?.homeCareSuggestions ?? undefined}
+          error={errors['homeCareSuggestions']}
+        />
+        <TextArea
+          label='申し送り'
+          name='staffEvaluation'
+          rows={3}
+          description='施術の振り返りや、次に担当するスタッフへ伝えること。'
+          defaultValue={record?.staffEvaluation ?? undefined}
+          error={errors['staffEvaluation']}
+        />
+      </FormPart>
     </Form>
   )
 }

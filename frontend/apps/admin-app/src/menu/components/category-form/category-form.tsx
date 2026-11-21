@@ -1,6 +1,7 @@
 import type { ModelsServiceCategoryResponse } from '@beauty-salon-frontend/api-client'
 import {
   Checkbox,
+  FieldRow,
   Form,
   type FormProps,
   Select,
@@ -68,7 +69,7 @@ export const CategoryForm = ({
         defaultValue={category?.parentId ?? ''}
         error={errors['parentId']}
       />
-      <div className={styles['pair']}>
+      <FieldRow>
         <Select
           label='種類'
           name='category'
@@ -88,7 +89,7 @@ export const CategoryForm = ({
           defaultValue={String(category?.displayOrder ?? displayOrder)}
           error={errors['displayOrder']}
         />
-      </div>
+      </FieldRow>
       <TextArea
         label='説明'
         name='description'

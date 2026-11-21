@@ -10,9 +10,3 @@
   grid-template-columns: repeat(auto-fill, minmax(12rem, max-content));
   gap: var(--space-3);
 }
-
-.form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}

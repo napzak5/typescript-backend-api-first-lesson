@@ -6,13 +6,19 @@ import styles from './password-field.module.css'
 
 export type PasswordFieldProps = Omit<
   ComponentProps<'input'>,
-  'type' | 'children'
+  'type' | 'children' | 'autoComplete'
 > & {
   label: string
   /** Help for the value: what the password has to be */
   description?: string | undefined
   /** What is wrong with the value */
   error?: string | undefined
+  /**
+   * `new-password` for one that is chosen, `current-password` for the one
+   * the account has: a password manager offers to keep or to fill it. `off`
+   * for one that belongs to no account (that of a shared file)
+   */
+  autoComplete: 'new-password' | 'current-password' | 'off'
 }
 
 /**

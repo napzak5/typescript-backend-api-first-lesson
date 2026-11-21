@@ -5,8 +5,10 @@ import type {
 import { EARLIEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Button,
+  FieldRow,
   Form,
   type FormErrors,
+  FormPart,
   Select,
   TextArea,
   TextField,
@@ -111,114 +113,109 @@ export const ChartForm = ({
       actions={actions}
       onSubmit={onSubmit}
     >
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>施術の前に確かめること</legend>
-        <div className={styles['controls']}>
-          <TextArea
-            label='持病や体調'
-            name='medicalConditions'
-            rows={3}
-            description='施術の前に注意が必要な持病や体調を書きます。'
-            defaultValue={chart?.medicalConditions ?? undefined}
-            error={errors['medicalConditions']}
-          />
-          <TextField
-            label='好みの商材'
-            name='preferredProducts'
-            autoComplete='off'
-            description='商材やブランドの名前を、「、」か「,」で区切って書きます。'
-            defaultValue={tagsTextOf(chart?.preferredProducts ?? [])}
-            error={errors['preferredProducts']}
-          />
-          <TextField
-            label='避ける商材'
-            name='avoidProducts'
-            autoComplete='off'
-            description='商材やブランドの名前を、「、」か「,」で区切って書きます。'
-            defaultValue={tagsTextOf(chart?.avoidProducts ?? [])}
-            error={errors['avoidProducts']}
-          />
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>過去の施術</legend>
-        <div className={styles['controls']}>
-          <p className={styles['note']}>
-            ほかのサロンで受けた施術や、カルテを始める前の施術を書きます。
-          </p>
-          {rows.map((row, index) => (
-            <fieldset
-              key={row.key}
-              className={styles['row']}
-              ref={(group) => {
-                if (group === null) {
-                  groups.current.delete(row.key)
-                } else {
-                  groups.current.set(row.key, group)
-                }
-              }}
-            >
-              <legend className={styles['rowName']}>
-                {`${index + 1} 件目の施術`}
-              </legend>
-              <div className={styles['rowControls']}>
-                <div className={styles['pair']}>
-                  <Select
-                    label='施術'
-                    name={rowControlOf(index, 'treatment')}
-                    options={TREATMENT_OPTIONS}
-                    placeholder='選んでください'
-                    required
-                    defaultValue={row.shown?.treatment ?? ''}
-                    error={said[rowControlOf(index, 'treatment')]}
-                  />
-                  <TextField
-                    label='施術日'
-                    name={rowControlOf(index, 'date')}
-                    type='date'
-                    required
-                    min={EARLIEST_DAY}
-                    max={today}
-                    defaultValue={row.shown?.date}
-                    error={said[rowControlOf(index, 'date')]}
-                  />
-                </div>
+      <FormPart name='施術の前に確かめること'>
+        <TextArea
+          label='持病や体調'
+          name='medicalConditions'
+          rows={3}
+          description='施術の前に注意が必要な持病や体調を書きます。'
+          defaultValue={chart?.medicalConditions ?? undefined}
+          error={errors['medicalConditions']}
+        />
+        <TextField
+          label='好みの商材'
+          name='preferredProducts'
+          autoComplete='off'
+          description='商材やブランドの名前を、「、」か「,」で区切って書きます。'
+          defaultValue={tagsTextOf(chart?.preferredProducts ?? [])}
+          error={errors['preferredProducts']}
+        />
+        <TextField
+          label='避ける商材'
+          name='avoidProducts'
+          autoComplete='off'
+          description='商材やブランドの名前を、「、」か「,」で区切って書きます。'
+          defaultValue={tagsTextOf(chart?.avoidProducts ?? [])}
+          error={errors['avoidProducts']}
+        />
+      </FormPart>
+      <FormPart
+        name='過去の施術'
+        note='ほかのサロンで受けた施術や、カルテを始める前の施術を書きます。'
+      >
+        {rows.map((row, index) => (
+          <fieldset
+            key={row.key}
+            className={styles['row']}
+            ref={(group) => {
+              if (group === null) {
+                groups.current.delete(row.key)
+              } else {
+                groups.current.set(row.key, group)
+              }
+            }}
+          >
+            <legend className={styles['rowName']}>
+              {`${index + 1} 件目の施術`}
+            </legend>
+            <div className={styles['rowControls']}>
+              <FieldRow>
+                <Select
+                  label='施術'
+                  name={rowControlOf(index, 'treatment')}
+                  options={TREATMENT_OPTIONS}
+                  placeholder='選んでください'
+                  required
+                  defaultValue={row.shown?.treatment ?? ''}
+                  error={said[rowControlOf(index, 'treatment')]}
+                />
                 <TextField
-                  label='サロン'
-                  name={rowControlOf(index, 'salonName')}
+                  label='施術日'
+                  name={rowControlOf(index, 'date')}
                   autoComplete='off'
-                  description='施術を受けたサロンの名前。分からなければ空のままにします。'
-                  defaultValue={row.shown?.salonName ?? undefined}
-                  error={said[rowControlOf(index, 'salonName')]}
+                  type='date'
+                  required
+                  min={EARLIEST_DAY}
+                  max={today}
+                  defaultValue={row.shown?.date}
+                  error={said[rowControlOf(index, 'date')]}
                 />
-                <TextArea
-                  label='施術のメモ'
-                  name={rowControlOf(index, 'notes')}
-                  rows={2}
-                  defaultValue={row.shown?.notes ?? undefined}
-                />
-                <Button
-                  className={styles['remove']}
-                  size='small'
-                  aria-label={`${index + 1} 件目の施術を外す`}
-                  onClick={() => removeRow(row.key)}
-                >
-                  外す
-                </Button>
-              </div>
-            </fieldset>
-          ))}
-          {rows.length < MOST_TREATMENTS ? (
-            <Button className={styles['add']} ref={add} onClick={addRow}>
-              施術を足す
-            </Button>
-          ) : (
-            <p className={styles['note']}>
-              {`過去の施術は、${MOST_TREATMENTS} 件まで書けます。`}
-            </p>
-          )}
-        </div>
-      </fieldset>
+              </FieldRow>
+              <TextField
+                label='サロン'
+                name={rowControlOf(index, 'salonName')}
+                autoComplete='off'
+                description='施術を受けたサロンの名前。分からなければ空のままにします。'
+                defaultValue={row.shown?.salonName ?? undefined}
+                error={said[rowControlOf(index, 'salonName')]}
+              />
+              <TextArea
+                label='施術のメモ'
+                name={rowControlOf(index, 'notes')}
+                rows={2}
+                defaultValue={row.shown?.notes ?? undefined}
+              />
+              <Button
+                className={styles['remove']}
+                size='small'
+                aria-label={`${index + 1} 件目の施術を外す`}
+                onClick={() => removeRow(row.key)}
+              >
+                外す
+              </Button>
+            </div>
+          </fieldset>
+        ))}
+        {rows.length < MOST_TREATMENTS ? (
+          <Button className={styles['add']} ref={add} onClick={addRow}>
+            施術を足す
+          </Button>
+        ) : (
+          <p className={styles['note']}>
+            {`過去の施術は、${MOST_TREATMENTS} 件まで書けます。`}
+          </p>
+        )}
+      </FormPart>
       <TextArea
         label='メモ'
         name='notes'

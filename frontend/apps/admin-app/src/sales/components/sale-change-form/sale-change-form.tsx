@@ -4,6 +4,7 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
+  FieldRow,
   Form,
   type FormProps,
   Select,
@@ -12,7 +13,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { NO_CASHIER } from '../../checkout'
 import { saleMomentOf } from '../../sale-changes'
-import styles from './sale-change-form.module.css'
 
 export type SaleChangeFormProps = Pick<
   FormProps,
@@ -65,10 +65,11 @@ export const SaleChangeForm = ({
         description='支払いを受けたスタッフです。'
         error={errors['staffId']}
       />
-      <div className={styles['moment']}>
+      <FieldRow>
         <TextField
           label='会計日'
           name='saleDate'
+          autoComplete='off'
           type='date'
           required
           defaultValue={date}
@@ -80,13 +81,14 @@ export const SaleChangeForm = ({
         <TextField
           label='会計の時刻'
           name='saleTime'
+          autoComplete='off'
           type='time'
           required
           defaultValue={time}
           description='支払いを受けた時刻です。いまより後にはできません。'
           error={errors['saleTime']}
         />
-      </div>
+      </FieldRow>
       <TextArea
         label='メモ'
         name='notes'

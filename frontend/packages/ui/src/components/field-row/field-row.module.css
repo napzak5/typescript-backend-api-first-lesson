@@ -1,5 +1,5 @@
-/* The day and the time: one below the other, side by side where there is room */
-.moment {
+/* One below the other on a narrow screen */
+.row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
@@ -7,7 +7,11 @@
 }
 
 @media (min-width: 40rem) {
-  .moment {
+  .two {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

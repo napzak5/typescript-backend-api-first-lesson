@@ -84,6 +84,7 @@ export const PointEntryForm = ({
           <TextField
             label='有効期限'
             name='expiryDate'
+            autoComplete='off'
             type='date'
             min={today}
             max={LATEST_DAY}

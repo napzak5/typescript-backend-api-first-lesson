@@ -193,9 +193,9 @@ test.describe('the bookings of a salon, in a browser', () => {
     await expect(completion).toBeVisible()
     await expect(completion.getByLabel('実際の開始')).toBeFocused()
     await expectSoundPage(page)
-    await pressWithTheKeyboard(
-      completion.getByRole('button', { name: '完了にする' }),
-    )
+    // The Enter key in one of its two controls: the button that sends the
+    // form is among the actions of the dialog, tied to it by `form`
+    await page.keyboard.press('Enter')
 
     // Assert
     await expect(completion).toBeHidden()

@@ -1,6 +1,7 @@
 import {
   Button,
   Checkbox,
+  FieldRow,
   Form,
   type FormErrors,
   Select,
@@ -113,7 +114,7 @@ export const PhotoForm = ({
             className={styles['rowName']}
           >{`${index + 1} 枚目の写真`}</legend>
           <div className={styles['controls']}>
-            <div className={styles['pair']}>
+            <FieldRow>
               <Select
                 label='区分'
                 name={photoControlOf(index, 'photoType')}
@@ -130,7 +131,7 @@ export const PhotoForm = ({
                 description='正面、側面、後ろなど。50 文字まで。'
                 error={said[photoControlOf(index, 'angle')]}
               />
-            </div>
+            </FieldRow>
             <TextField
               label='写真の URL'
               name={photoControlOf(index, 'photoUrl')}

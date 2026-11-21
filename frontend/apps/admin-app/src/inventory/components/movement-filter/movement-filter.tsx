@@ -72,6 +72,7 @@ export const MovementFilter = ({
           <TextField
             label='記録した日（から）'
             name='from'
+            autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
@@ -82,6 +83,7 @@ export const MovementFilter = ({
           <TextField
             label='記録した日（まで）'
             name='to'
+            autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}

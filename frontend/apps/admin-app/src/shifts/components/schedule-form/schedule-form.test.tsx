@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -31,6 +34,10 @@ const sentBy = async (
 
 describe('ScheduleForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Whole, () =>
+    within(group('月曜日')).getByLabelText('始まり'),
+  )
 
   it('should open every day of the week with its row: the hours of a day of work, the note of a day off', async () => {
     // Act

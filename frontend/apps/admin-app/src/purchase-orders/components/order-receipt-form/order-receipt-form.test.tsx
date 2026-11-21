@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -14,6 +17,8 @@ const box = (name: string): HTMLElement => screen.getByRole('textbox', { name })
 
 describe('OrderReceiptForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Shipped, () => box(COLOUR))
 
   it('should give every item whose row is there the quantity ordered, and name the item whose row was removed', async () => {
     // Act

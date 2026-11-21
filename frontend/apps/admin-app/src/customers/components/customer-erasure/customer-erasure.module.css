@@ -14,10 +14,3 @@
 .details {
   justify-self: stretch;
 }
-
-/* What went wrong, and the reason */
-.form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}

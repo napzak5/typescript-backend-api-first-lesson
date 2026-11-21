@@ -1,5 +1,6 @@
 import {
   Form,
+  FormPart,
   type FormProps,
   RadioGroup,
   Select,
@@ -93,93 +94,88 @@ export const ReviewForm = ({
       <p className={styles['note']}>
         レビューは、サロンのページに掲載され、誰でも読めます。
       </p>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>評価</legend>
-        <div className={styles['controls']}>
-          <RadioGroup
-            label='総合の評価'
-            name={OVERALL_RATING}
-            options={RATINGS}
-            defaultValue={entered.overallRating}
-            required
-            error={errors[OVERALL_RATING]}
-          />
-          {match(staff)
-            .with({ type: 'choice' }, ({ options }) =>
-              options.length === 0 ? (
-                <p className={styles['note']}>
-                  この来店を担当したスタッフは、いまサロンのページに掲載されていないため、スタッフの評価はできません。
-                </p>
-              ) : (
-                <Select
-                  label='評価するスタッフ'
-                  name={STAFF}
-                  placeholder='スタッフを評価しない'
-                  options={options}
-                  value={staffId}
-                  onChange={(event) => setChosen(event.target.value)}
-                  description='選んだスタッフへのレビューとしても、集計されます。'
-                  error={errors[STAFF]}
-                />
-              ),
-            )
-            .with({ type: 'fixed' }, ({ name }) => (
+      <FormPart name='評価'>
+        <RadioGroup
+          label='総合の評価'
+          name={OVERALL_RATING}
+          options={RATINGS}
+          defaultValue={entered.overallRating}
+          required
+          error={errors[OVERALL_RATING]}
+        />
+        {match(staff)
+          .with({ type: 'choice' }, ({ options }) =>
+            options.length === 0 ? (
               <p className={styles['note']}>
-                評価するスタッフ: {name ?? NO_STAFF}
-                。評価するスタッフは、変更できません。
+                この来店を担当したスタッフは、いまサロンのページに掲載されていないため、スタッフの評価はできません。
               </p>
-            ))
-            .with({ type: 'nobody' }, () => (
-              <p className={styles['note']}>
-                このレビューは、スタッフを評価していません。評価するスタッフは、あとから追加できません。
-              </p>
-            ))
-            .exhaustive()}
-          <div className={styles['details']}>
-            {DETAIL_RATINGS.filter(
-              ({ name }) => name !== STAFF_RATING || rated,
-            ).map(({ name, label }) => (
+            ) : (
               <Select
-                key={name}
-                label={label}
-                name={name}
-                placeholder={NOT_RATED}
-                options={RATINGS}
-                defaultValue={entered[name] ?? ''}
-                error={errors[name]}
+                label='評価するスタッフ'
+                name={STAFF}
+                placeholder='スタッフを評価しない'
+                options={options}
+                value={staffId}
+                onChange={(event) => setChosen(event.target.value)}
+                description='選んだスタッフへのレビューとしても、集計されます。'
+                error={errors[STAFF]}
               />
-            ))}
-          </div>
+            ),
+          )
+          .with({ type: 'fixed' }, ({ name }) => (
+            <p className={styles['note']}>
+              評価するスタッフ: {name ?? NO_STAFF}
+              。評価するスタッフは、変更できません。
+            </p>
+          ))
+          .with({ type: 'nobody' }, () => (
+            <p className={styles['note']}>
+              このレビューは、スタッフを評価していません。評価するスタッフは、あとから追加できません。
+            </p>
+          ))
+          .exhaustive()}
+        <div className={styles['details']}>
+          {DETAIL_RATINGS.filter(
+            ({ name }) => name !== STAFF_RATING || rated,
+          ).map(({ name, label }) => (
+            <Select
+              key={name}
+              label={label}
+              name={name}
+              placeholder={NOT_RATED}
+              options={RATINGS}
+              defaultValue={entered[name] ?? ''}
+              error={errors[name]}
+            />
+          ))}
         </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>感想</legend>
-        <div className={styles['controls']}>
-          <TextField
-            label='タイトル'
-            name={TITLE}
-            description={`${MAX_TITLE_LENGTH} 文字以内で書いてください。空欄のままでも、かまいません。`}
-            defaultValue={entered.title}
-            error={errors[TITLE]}
-          />
-          <TextArea
-            label='本文'
-            name={COMMENT}
-            rows={6}
-            description='空欄のままでも、かまいません。'
-            defaultValue={entered.comment}
-            error={errors[COMMENT]}
-          />
-          <TextArea
-            label='写真の URL'
-            name={IMAGES}
-            rows={3}
-            description={`写真のアドレスを、1 行に 1 つずつ、${MAX_IMAGES} 個まで書けます。`}
-            defaultValue={entered.imageUrls}
-            error={errors[IMAGES]}
-          />
-        </div>
-      </fieldset>
+      </FormPart>
+      <FormPart name='感想'>
+        <TextField
+          label='タイトル'
+          name={TITLE}
+          autoComplete='off'
+          description={`${MAX_TITLE_LENGTH} 文字以内で書いてください。空欄のままでも、かまいません。`}
+          defaultValue={entered.title}
+          error={errors[TITLE]}
+        />
+        <TextArea
+          label='本文'
+          name={COMMENT}
+          rows={6}
+          description='空欄のままでも、かまいません。'
+          defaultValue={entered.comment}
+          error={errors[COMMENT]}
+        />
+        <TextArea
+          label='写真の URL'
+          name={IMAGES}
+          rows={3}
+          description={`写真のアドレスを、1 行に 1 つずつ、${MAX_IMAGES} 個まで書けます。`}
+          defaultValue={entered.imageUrls}
+          error={errors[IMAGES]}
+        />
+      </FormPart>
     </Form>
   )
 }

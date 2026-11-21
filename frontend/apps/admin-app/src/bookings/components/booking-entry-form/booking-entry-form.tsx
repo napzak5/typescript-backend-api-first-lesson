@@ -5,7 +5,9 @@ import type {
 import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Button,
+  FieldRow,
   Form,
+  FormPart,
   type FormProps,
   Select,
   TextField,
@@ -63,64 +65,61 @@ export const BookingEntryForm = ({
   ...form
 }: BookingEntryFormProps) => (
   <Form {...form} errors={errors} submitLabel='予約を入れる'>
-    <fieldset className={styles['part']} onChange={onLinesChange}>
-      <legend className={styles['name']}>担当と日時</legend>
-      <div className={styles['controls']}>
-        <div className={styles['pair']}>
-          <Select
-            label='担当スタッフ'
-            name='staffId'
-            options={staff.map(({ id, displayName }) => ({
-              value: id,
-              label: displayName,
-            }))}
-            placeholder='選んでください'
-            required
-            defaultValue=''
-            description='予約の担当です。明細の担当が「予約の担当と同じ」なら、この人が施術します。'
-            error={errors['staffId']}
-          />
-          <TextField
-            label='来店日'
-            name='date'
-            type='date'
-            required
-            defaultValue={date}
-            min={EARLIEST_DAY}
-            max={LATEST_DAY}
-            description='サロンの時計の日付です。明細は、この日の時刻に始まります。'
-            error={errors['date']}
-          />
-        </div>
-        <BookingLines
-          staff={staff}
-          services={services}
-          errors={errors}
-          checks={checks}
-          timezone={timezone}
-          onRowsChange={onLinesChange}
+    <FormPart name='担当と日時' onChange={onLinesChange}>
+      <FieldRow>
+        <Select
+          label='担当スタッフ'
+          name='staffId'
+          options={staff.map(({ id, displayName }) => ({
+            value: id,
+            label: displayName,
+          }))}
+          placeholder='選んでください'
+          required
+          defaultValue=''
+          description='予約の担当です。明細の担当が「予約の担当と同じ」なら、この人が施術します。'
+          error={errors['staffId']}
         />
-        <div className={styles['check']}>
-          <Button
-            pending={checking}
-            onClick={(event) => {
-              const { form: values } = event.currentTarget
-              if (values !== null) {
-                onCheck(new FormData(values))
-              }
-            }}
-          >
-            担当の空きを確かめる
-          </Button>
-          <p className={styles['checked']} role='status'>
-            {checked}
-          </p>
-        </div>
+        <TextField
+          label='来店日'
+          name='date'
+          autoComplete='off'
+          type='date'
+          required
+          defaultValue={date}
+          min={EARLIEST_DAY}
+          max={LATEST_DAY}
+          description='サロンの時計の日付です。明細は、この日の時刻に始まります。'
+          error={errors['date']}
+        />
+      </FieldRow>
+      <BookingLines
+        staff={staff}
+        services={services}
+        errors={errors}
+        checks={checks}
+        timezone={timezone}
+        onRowsChange={onLinesChange}
+      />
+      <div className={styles['check']}>
+        <Button
+          pending={checking}
+          onClick={(event) => {
+            const { form: values } = event.currentTarget
+            if (values !== null) {
+              onCheck(new FormData(values))
+            }
+          }}
+        >
+          担当の空きを確かめる
+        </Button>
+        <p className={styles['checked']} role='status'>
+          {checked}
+        </p>
       </div>
-    </fieldset>
-    <fieldset className={styles['part']}>
-      <legend className={styles['name']}>受付の記録</legend>
+    </FormPart>
+    <FormPart name='受付の記録'>
       <BookingNotesFields errors={errors} />
-    </fieldset>
+    </FormPart>
   </Form>
 )

@@ -1,5 +1,6 @@
 import {
   Button,
+  FieldRow,
   type FormErrors,
   TextField,
   useErrorFocus,
@@ -57,10 +58,11 @@ export const StatisticsPeriod = ({
       onSubmit={submit}
       ref={form}
     >
-      <div className={styles['days']}>
+      <FieldRow>
         <TextField
           label='集計する期間（から）'
           name='from'
+          autoComplete='off'
           type='date'
           min={EARLIEST_DAY}
           max={LATEST_DAY}
@@ -72,6 +74,7 @@ export const StatisticsPeriod = ({
         <TextField
           label='集計する期間（まで）'
           name='to'
+          autoComplete='off'
           type='date'
           min={EARLIEST_DAY}
           max={LATEST_DAY}
@@ -81,7 +84,7 @@ export const StatisticsPeriod = ({
           error={errors['to']}
           onChange={(event) => hold('to', event.target.value)}
         />
-      </div>
+      </FieldRow>
       {children}
       <div className={styles['actions']}>
         <Button type='submit'>集計する</Button>

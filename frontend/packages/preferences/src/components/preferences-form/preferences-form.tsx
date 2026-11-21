@@ -2,6 +2,7 @@ import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/a
 import {
   CheckboxGroup,
   Form,
+  FormPart,
   type FormProps,
   Select,
   TextArea,
@@ -65,8 +66,7 @@ export const PreferencesForm = ({
 
   return (
     <Form {...form} errors={errors}>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>スタッフ</legend>
+      <FormPart name='スタッフ'>
         {entered.preferredStaffId === undefined ||
         entered.avoidStaffIds === undefined ? (
           <p className={styles['note']}>
@@ -91,73 +91,66 @@ export const PreferencesForm = ({
             />
           </div>
         )}
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>希望する時間帯</legend>
-        <div className={styles['controls']}>
-          <p className={styles['note']}>
-            来店しやすい時間帯を、いくつでも登録できます。曜日は選べません。
-          </p>
-          <TimeSlotFields
-            name={TIME_SLOTS}
-            defaultValue={entered.timeSlots}
-            errors={errors}
-          />
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>スタイルの好み</legend>
-        <div className={styles['controls']}>
-          <TextField
-            label='希望の長さ'
-            name={PREFERRED_LENGTH}
-            defaultValue={entered.preferredLength}
-            error={errors[PREFERRED_LENGTH]}
-          />
-          <TextArea
-            label='好きな色'
-            name={PREFERRED_COLORS}
-            rows={3}
-            description={ONE_A_LINE}
-            defaultValue={entered.preferredColors}
-            error={errors[PREFERRED_COLORS]}
-          />
-          <TextArea
-            label='避けたいスタイル'
-            name={AVOIDED_STYLES}
-            rows={3}
-            description={ONE_A_LINE}
-            defaultValue={entered.avoidStyles}
-            error={errors[AVOIDED_STYLES]}
-          />
-          <TextArea
-            label='参考の画像の URL'
-            name={INSPIRATION_IMAGES}
-            rows={3}
-            description='参考にしてほしい画像のアドレスを、1 行に 1 つずつ書いてください。'
-            defaultValue={entered.inspirationImages}
-            error={errors[INSPIRATION_IMAGES]}
-          />
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>接客</legend>
-        <div className={styles['controls']}>
-          <TextField
-            label='接客の好み'
-            name={COMMUNICATION_STYLE}
-            description={`会話の多さなどを、${MAX_COMMUNICATION_STYLE_LENGTH} 文字以内で書いてください。`}
-            defaultValue={entered.communicationStyle}
-            error={errors[COMMUNICATION_STYLE]}
-          />
-          <TextArea
-            label='特別な要望'
-            name={SPECIAL_REQUESTS}
-            defaultValue={entered.specialRequests}
-            error={errors[SPECIAL_REQUESTS]}
-          />
-        </div>
-      </fieldset>
+      </FormPart>
+      <FormPart
+        name='希望する時間帯'
+        note='来店しやすい時間帯を、いくつでも登録できます。曜日は選べません。'
+      >
+        <TimeSlotFields
+          name={TIME_SLOTS}
+          defaultValue={entered.timeSlots}
+          errors={errors}
+        />
+      </FormPart>
+      <FormPart name='スタイルの好み'>
+        <TextField
+          label='希望の長さ'
+          name={PREFERRED_LENGTH}
+          autoComplete='off'
+          defaultValue={entered.preferredLength}
+          error={errors[PREFERRED_LENGTH]}
+        />
+        <TextArea
+          label='好きな色'
+          name={PREFERRED_COLORS}
+          rows={3}
+          description={ONE_A_LINE}
+          defaultValue={entered.preferredColors}
+          error={errors[PREFERRED_COLORS]}
+        />
+        <TextArea
+          label='避けたいスタイル'
+          name={AVOIDED_STYLES}
+          rows={3}
+          description={ONE_A_LINE}
+          defaultValue={entered.avoidStyles}
+          error={errors[AVOIDED_STYLES]}
+        />
+        <TextArea
+          label='参考の画像の URL'
+          name={INSPIRATION_IMAGES}
+          rows={3}
+          description='参考にしてほしい画像のアドレスを、1 行に 1 つずつ書いてください。'
+          defaultValue={entered.inspirationImages}
+          error={errors[INSPIRATION_IMAGES]}
+        />
+      </FormPart>
+      <FormPart name='接客'>
+        <TextField
+          label='接客の好み'
+          name={COMMUNICATION_STYLE}
+          autoComplete='off'
+          description={`会話の多さなどを、${MAX_COMMUNICATION_STYLE_LENGTH} 文字以内で書いてください。`}
+          defaultValue={entered.communicationStyle}
+          error={errors[COMMUNICATION_STYLE]}
+        />
+        <TextArea
+          label='特別な要望'
+          name={SPECIAL_REQUESTS}
+          defaultValue={entered.specialRequests}
+          error={errors[SPECIAL_REQUESTS]}
+        />
+      </FormPart>
     </Form>
   )
 }

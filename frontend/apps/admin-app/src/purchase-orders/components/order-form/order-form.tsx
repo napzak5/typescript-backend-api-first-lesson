@@ -8,8 +8,10 @@ import {
   LATEST_DAY,
 } from '@beauty-salon-frontend/salon-screens'
 import {
+  FieldRow,
   Form,
   type FormErrors,
+  FormPart,
   type FormProps,
   TextArea,
   TextField,
@@ -119,50 +121,47 @@ export const OrderForm = ({
         description='発注を探すときも、この名前で探します。'
         error={errors['supplier']}
       />
-      <fieldset className={styles['part']} onInput={tally}>
-        <legend className={styles['name']}>明細</legend>
-        <div className={styles['controls']}>
-          <p className={styles['note']}>
-            発注する行に、数量を入力します。空のままの行は発注しません。単価のはじめの値は、商品の仕入価格です。数量の小数は
-            2 桁まで。
-          </p>
-          {rows.map((row) => {
-            const product = productOf(products, row.productId)
-            const quantity = quantityControlOf(row.id)
-            const unitPrice = unitPriceControlOf(row.id)
+      <FormPart
+        name='明細'
+        note='発注する行に、数量を入力します。空のままの行は発注しません。単価のはじめの値は、商品の仕入価格です。数量の小数は 2 桁まで。'
+        onInput={tally}
+      >
+        {rows.map((row) => {
+          const product = productOf(products, row.productId)
+          const quantity = quantityControlOf(row.id)
+          const unitPrice = unitPriceControlOf(row.id)
 
-            return (
-              <fieldset key={row.id} className={styles['row']}>
-                <legend className={styles['rowName']}>
-                  {stockRowNameOf(row, product)}
-                </legend>
-                <div className={styles['amounts']}>
-                  <TextField
-                    label='数量'
-                    name={quantity}
-                    inputMode='decimal'
-                    autoComplete='off'
-                    defaultValue={starting.quantities[row.id]}
-                    description={`在庫数 ${quantityNameOf(row.currentStock, product)}`}
-                    error={errors[quantity]}
-                  />
-                  <TextField
-                    label='単価（円）'
-                    name={unitPrice}
-                    inputMode='numeric'
-                    autoComplete='off'
-                    defaultValue={priceOf(product)}
-                    error={errors[unitPrice]}
-                  />
-                </div>
-              </fieldset>
-            )
-          })}
-          <p className={styles['subtotal']}>
-            {`小計 ${amountOf(subtotal, salon.currency)}`}
-          </p>
-        </div>
-      </fieldset>
+          return (
+            <fieldset key={row.id} className={styles['row']}>
+              <legend className={styles['rowName']}>
+                {stockRowNameOf(row, product)}
+              </legend>
+              <FieldRow>
+                <TextField
+                  label='数量'
+                  name={quantity}
+                  inputMode='decimal'
+                  autoComplete='off'
+                  defaultValue={starting.quantities[row.id]}
+                  description={`在庫数 ${quantityNameOf(row.currentStock, product)}`}
+                  error={errors[quantity]}
+                />
+                <TextField
+                  label='単価（円）'
+                  name={unitPrice}
+                  inputMode='numeric'
+                  autoComplete='off'
+                  defaultValue={priceOf(product)}
+                  error={errors[unitPrice]}
+                />
+              </FieldRow>
+            </fieldset>
+          )
+        })}
+        <p className={styles['subtotal']}>
+          {`小計 ${amountOf(subtotal, salon.currency)}`}
+        </p>
+      </FormPart>
       <TextField
         label='税額（円）'
         name='taxAmount'
@@ -182,6 +181,7 @@ export const OrderForm = ({
       <TextField
         label='納品予定日'
         name='expectedDelivery'
+        autoComplete='off'
         type='date'
         min={EARLIEST_DAY}
         max={LATEST_DAY}
