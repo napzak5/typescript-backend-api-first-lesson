@@ -133,10 +133,13 @@ test.describe('exporting customers, on a screen as narrow as a phone', () => {
     await enterCredentials(page, OWNER, api.seedPassword)
     await expect(page.getByText('条件に合うお客様はいません')).toBeVisible()
 
-    // Act
-    await page.getByRole('button', { name: 'CSV に出力する' }).click()
+    // Act: the export is one of the other actions, in their sheet
+    await page.getByRole('button', { name: 'ほかの操作' }).click()
+    const sheet = page.getByRole('dialog', { name: 'ほかの操作' })
+    await sheet.getByRole('button', { name: 'CSV に出力する' }).click()
 
     // Assert
+    await expect(sheet).toBeHidden()
     await expect(
       page.getByText('条件に合うお客様がいないため、出力しませんでした。'),
     ).toBeVisible()

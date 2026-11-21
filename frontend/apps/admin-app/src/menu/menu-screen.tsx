@@ -60,10 +60,14 @@ const MenuPart = ({ salon }: MenuPartProps) => {
         description={salon.name}
         actions={
           keeps ? (
+            <ButtonLink href={serviceEntryHrefOf(salon.id)} variant='primary'>
+              サービスを足す
+            </ButtonLink>
+          ) : undefined
+        }
+        otherActions={
+          keeps ? (
             <>
-              <ButtonLink href={serviceEntryHrefOf(salon.id)} variant='primary'>
-                サービスを足す
-              </ButtonLink>
               <ButtonLink
                 href={categoryEntryHrefOf(salon.id)}
                 variant='secondary'

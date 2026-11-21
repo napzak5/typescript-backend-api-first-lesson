@@ -155,20 +155,24 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
       在庫のアラート
     </ButtonLink>
   )
-  const actions = keeps ? (
-    <>
-      {entry}
-      {alerts}
-      <ButtonLink href={stockCountHrefOf(salon.id)} variant='secondary'>
-        棚卸しする
-      </ButtonLink>
-      <ButtonLink href={stockValueHrefOf(salon.id)} variant='secondary'>
-        在庫評価額
-      </ButtonLink>
-    </>
-  ) : (
-    alerts
-  )
+  // Who keeps the stock adds rows to it, and has the alerts, the count and
+  // the value as other actions
+  const header = keeps
+    ? {
+        actions: entry,
+        otherActions: (
+          <>
+            {alerts}
+            <ButtonLink href={stockCountHrefOf(salon.id)} variant='secondary'>
+              棚卸しする
+            </ButtonLink>
+            <ButtonLink href={stockValueHrefOf(salon.id)} variant='secondary'>
+              在庫評価額
+            </ButtonLink>
+          </>
+        ),
+      }
+    : { actions: alerts, otherActions: undefined }
 
   if (pages[0]?.type === 'forbidden') {
     return (
@@ -248,7 +252,12 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} actions={actions} />
+      <PageHeader
+        title={TITLE}
+        description={salon.name}
+        actions={header.actions}
+        otherActions={header.otherActions}
+      />
       <Navigation
         label='在庫の見かた'
         items={viewItemsOf(view, inventoryHrefOf(salon.id))}

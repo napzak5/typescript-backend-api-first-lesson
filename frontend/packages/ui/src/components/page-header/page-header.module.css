@@ -1,7 +1,8 @@
 /*
- * On a narrow screen the actions are below the text, one below the other:
- * three of them side by side are wider than a phone. On a wide screen they
- * are side by side, at the end of the row of the text.
+ * On a narrow screen the actions are below the text, side by side in
+ * columns 10rem wide at least: two of them on a phone. A button is as wide
+ * as its column, and a long name breaks its line inside it. On a wide
+ * screen they are side by side, at the end of the row of the text.
  */
 .pageHeader {
   display: grid;
@@ -25,7 +26,14 @@
 
 .actions {
   display: grid;
-  justify-items: start;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
+  gap: var(--space-3);
+}
+
+/* In the sheet of a narrow screen, one below the other */
+.otherActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
 }
 
@@ -35,6 +43,7 @@
   }
 
   .actions {
+    grid-template-columns: none;
     grid-auto-flow: column;
     justify-content: start;
   }
