@@ -334,7 +334,16 @@ describe('the session against the API', () => {
   portal); a link that expired, was used up or is locked is a change of
   its row. What a page saved from an object URL is read with
   `savedFiles()`. A link opened in the same tab is a `navigate` of the
-  router the test captures beside the address (`go`), in `act`.
+  router the test captures beside the address (`go`), in `act`. A test
+  of the share links of the admin application puts the links it needs
+  into the database (`src/share-links/__tests__/arrangements.ts`), whose
+  token nobody knows, or issues one through the screen and opens the
+  address it gave through the API.
+- **The clipboard** of jsdom is the one `userEvent.setup()` puts on
+  `navigator`: a test reads what the page wrote with
+  `navigator.clipboard.readText()`, and a clipboard that refuses is
+  `vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(…)`. The
+  direct API (`userEvent.click` without a setup) puts none there.
 - The answer of the real API takes time. Wait for what appears (`findByRole`,
   `waitFor` of `@testing-library/react`); never for a duration. The setup
   lets them wait 5 seconds, not the 1 of Testing Library, and a test 30:
@@ -1086,7 +1095,13 @@ test.describe('the admin application', () => {
   `signOutButton`, and `registerNewcomer` for an account the seed data
   does not have: registered and confirmed through the API, without a
   profile); the applications, their origins and their titles in
-  `src/applications.ts`.
+  `src/applications.ts`; a file the owner uploads through the API and the
+  storage, in `src/files.ts`. A test that reads the clipboard grants
+  `clipboard-read` and `clipboard-write` to the origin of the application
+  (`page.context().grantPermissions`). A link of the portal is opened in
+  a page of its own (`page.context().newPage()`): opened again in the
+  tab that holds it, only its fragment changes, and the page keeps what
+  it showed.
 - Assertions on the page are the ones that wait:
   `await expect(locator).toBeVisible()`, `toBeFocused()`, `toHaveURL()`. A
   test never waits for an amount of time.

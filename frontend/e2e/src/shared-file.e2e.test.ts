@@ -2,10 +2,10 @@ import { readFile } from 'node:fs/promises'
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { PORTAL } from './applications'
-import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
+import { asTheOwner, PDF, PNG, uploadThroughApi } from './files'
 import { expect, type TestApi, test } from './fixtures'
-import { accessTokenOf, heading, OWNER } from './sign-in'
+import { heading } from './sign-in'
 
 /*
  * A share link, in a browser: the owner of the salon in Tokyo uploads a
@@ -22,25 +22,6 @@ const PHOTO = '施術後のスタイル_正面から見たところ.png'
 
 /** The password of the link of the consent: the owner tells it apart from the link */
 const PASSWORD = 'umi no mieru heya'
-
-/** A PDF of one empty page */
-const PDF = Buffer.from(
-  '%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n',
-)
-
-/** A PNG image of one pixel */
-const PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-  'base64',
-)
-
-const issuedSchema = z.object({
-  data: z.object({
-    attachment: z.object({ id: z.string() }),
-    uploadUrl: z.string(),
-    uploadHeaders: z.record(z.string(), z.string()),
-  }),
-})
 
 const sharedSchema = z.object({
   data: z.object({
@@ -60,39 +41,11 @@ const shareThroughApi = async (
   file: { name: string; mimeType: string; buffer: Buffer },
   password: string | null,
 ): Promise<{ id: string; address: string }> => {
-  const headers = {
-    Authorization: `Bearer ${await accessTokenOf(request, api, OWNER)}`,
-  }
-  const issued = await request.post(
-    `${api.origin}/api/v1/attachments/upload-url`,
-    {
-      headers,
-      data: {
-        filename: file.name,
-        contentType: file.mimeType,
-        size: file.buffer.length,
-        salonId: await salonId(api),
-      },
-    },
-  )
-  expect(issued.status()).toBe(201)
-  const { attachment, uploadUrl, uploadHeaders } = issuedSchema.parse(
-    await issued.json(),
-  ).data
-  const stored = await request.put(uploadUrl, {
-    headers: uploadHeaders,
-    data: file.buffer,
-  })
-  expect(stored.ok()).toBe(true)
-  const completed = await request.post(
-    `${api.origin}/api/v1/attachments/${attachment.id}/complete`,
-    { headers },
-  )
-  expect(completed.status()).toBe(200)
+  const attachmentId = await uploadThroughApi(request, api, file)
   const shared = await request.post(
-    `${api.origin}/api/v1/attachments/${attachment.id}/share-links`,
+    `${api.origin}/api/v1/attachments/${attachmentId}/share-links`,
     {
-      headers,
+      headers: await asTheOwner(request, api),
       data: {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
         maxDownloads: 3,

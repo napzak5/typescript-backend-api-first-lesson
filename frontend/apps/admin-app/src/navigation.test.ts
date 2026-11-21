@@ -52,6 +52,8 @@ import {
   serviceHrefOf,
   servicesChangeHrefOf,
   settingsHrefOf,
+  shareLinkEntryHrefOf,
+  shareLinkHrefOf,
   shiftsHrefOf,
   shiftWeekHrefOf,
   staffAccountHrefOf,
@@ -639,6 +641,8 @@ describe('navigationFor', () => {
   it.each<[string, string]>([
     ['the files', FILES],
     ['a file', attachmentHrefOf(SALON_ID, 'x')],
+    ['the issue of a share link', shareLinkEntryHrefOf(SALON_ID, 'x')],
+    ['a share link', shareLinkHrefOf(SALON_ID, 'x', 'y')],
   ])('should mark the files as the screen of %s', (_case, pathname) => {
     expect(navigationFor('staff', pathname)).toEqual([
       { href: BOOKINGS, label: '予約', current: false },
@@ -661,7 +665,14 @@ describe('navigationFor', () => {
     expect([
       attachmentsHrefOf(SALON_ID),
       attachmentHrefOf(SALON_ID, 'file'),
-    ]).toEqual([FILES, `${FILES}/file`])
+      shareLinkEntryHrefOf(SALON_ID, 'file'),
+      shareLinkHrefOf(SALON_ID, 'file', 'link'),
+    ]).toEqual([
+      FILES,
+      `${FILES}/file`,
+      `${FILES}/file/share-links/new`,
+      `${FILES}/file/share-links/link`,
+    ])
   })
 
   it('should write the addresses of the menu', () => {
