@@ -1363,6 +1363,15 @@ beforeAll(annotations.beforeAll)
 A test that renders with `@testing-library/react` directly, as `App.test.tsx`
 does, needs `afterEach(cleanup)` in its `vitest.setup.ts`.
 
+Where setting up the DOM for every file takes most of the run, the unit
+tests run in the `vmThreads` pool (`pool: 'vmThreads'` in `test`; `admin-app`,
+`portal-app` and `ui`): the DOM is set up once per worker, and every file
+still runs in a context of its own. `isolate: false` does not do for these
+tests: the document is shared, and what one file rendered is still there in
+the next. `vitest doctor` in the package measures the pools against each
+other and says whether the files still pass; a package changes its pool where
+the gain is large, and the integration tests keep the default.
+
 A package with tests against the real API has a second configuration,
 `vitest.integration.config.ts`, and the script
 `"test:integration": "vitest run --config vitest.integration.config.ts"`

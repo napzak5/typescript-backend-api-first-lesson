@@ -15,6 +15,10 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // The DOM is set up once per worker, and every file still runs in a
+    // context of its own: without one, what another file rendered would stay
+    // in the document
+    pool: 'vmThreads',
     setupFiles: ['@beauty-salon-frontend/testing/setup', './vitest.setup.ts'],
     // The tests that need the API are run by `test:integration`
     exclude: [...configDefaults.exclude, '**/*.integration.test.*'],
