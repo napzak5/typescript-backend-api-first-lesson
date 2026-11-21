@@ -23,7 +23,9 @@ const convertedColumnsSchema = z.object({
   expiresAt: timestampSchema,
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiShareLinkResponse, 'expiresAt' | 'createdAt' | 'updatedAt'>
+>
 
 const toApiShareLink = (
   shareLink: DbShareLink,

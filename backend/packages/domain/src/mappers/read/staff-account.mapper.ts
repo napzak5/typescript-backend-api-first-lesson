@@ -25,7 +25,12 @@ const convertedColumnsSchema = z.object({
   lastLoginAt: timestampSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiStaffAccountResponse,
+    'role' | 'lastLoginAt' | 'createdAt' | 'updatedAt'
+  >
+>
 
 export const StaffAccountReadMapper = {
   toApiStaffAccount(

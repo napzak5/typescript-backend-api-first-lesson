@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type {
   ApiCustomerPreferencesUpdateRequest,
   ApiStylePreference,
+  ApiTimeSlot,
 } from '../models/customer-preferences'
 import { staffIdSchema } from '../models/staff'
 import {
@@ -26,7 +27,9 @@ import {
  * against it when they are read, because the database only keeps them an
  * array.
  */
-export const storedTimeSlotsSchema = z.array(timeSlot)
+export const storedTimeSlotsSchema = z.array(timeSlot) satisfies z.ZodType<
+  ApiTimeSlot[]
+>
 
 /**
  * Shape of the `stylePreferences` JSON column. Stored values are checked

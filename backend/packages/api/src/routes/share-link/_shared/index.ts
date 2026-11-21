@@ -1,9 +1,8 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
+import type { ApiShareLinkSearchRequest } from '@beauty-salon-backend/domain'
 import type { operations } from '@beauty-salon-backend/generated'
-import type { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import type { JsonBody } from '../../../shared/operation-types'
-import { numberParameter } from '../../../shared/query-parameters'
+import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
 /** The attachment of a request to `/attachments/:attachmentId/share-links`. */
 export type SharedAttachmentParams = { attachmentId: string }
@@ -35,11 +34,9 @@ export const shareLinkLinks = (
 })
 
 /** The parameter of the list of share links that is not text, as its type. */
-const shareLinkSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
-
-export const decodeShareLinkSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(shareLinkSearchQuerySchema, query, 'Invalid share link search')
+export const decodeShareLinkSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiShareLinkSearchRequest, 'limit'>>,
+  'Invalid share link search',
+)

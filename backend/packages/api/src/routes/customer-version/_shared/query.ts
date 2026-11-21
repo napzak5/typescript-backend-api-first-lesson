@@ -1,18 +1,11 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type { ApiCustomerVersionSearchRequest } from '@beauty-salon-backend/domain'
 import { z } from 'zod'
-import { numberParameter } from '../../../shared/query-parameters'
+import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
 /** The parameter of the history of a customer that is not text, as its type. */
-const customerHistoryQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
-
-export const decodeCustomerHistoryQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(
-    customerHistoryQuerySchema,
-    query,
-    'Invalid customer history search',
-  )
+export const decodeCustomerHistoryQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiCustomerVersionSearchRequest, 'limit'>>,
+  'Invalid customer history search',
+)

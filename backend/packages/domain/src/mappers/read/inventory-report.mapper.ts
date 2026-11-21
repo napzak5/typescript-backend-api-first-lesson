@@ -24,7 +24,12 @@ const discrepancySchema = z.object({
   expected: numericSchema,
   counted: numericSchema,
   difference: numericSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiInventoryStockCountResponse['discrepancies'][number],
+    'expected' | 'counted' | 'difference'
+  >
+>
 
 const MOST_EXACT = BigInt(Number.MAX_SAFE_INTEGER)
 
@@ -35,11 +40,19 @@ const yenSchema = z
   .transform((text) => BigInt(text))
   .refine((yen) => yen <= MOST_EXACT, 'Must be held exactly by a number')
 
+type ValueCategory = ApiInventoryValueReportResponse['categories'][number]
+
+/**
+ * A category of the value report as the API shows it, but for its value: a
+ * whole number of yen, summed exactly before it becomes a number.
+ */
 const valueCategorySchema = z.object({
   category: z.string().nullable(),
   value: yenSchema,
   itemCount: z.number().int().min(1),
-})
+}) satisfies z.ZodType<
+  Pick<ValueCategory, 'category' | 'itemCount'> & { value: bigint }
+>
 
 export const InventoryReportReadMapper = {
   /** The adjustments of a count and the rows that differed, in the order of the count. */

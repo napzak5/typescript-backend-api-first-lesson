@@ -23,7 +23,12 @@ const convertedColumnsSchema = z.object({
   balanceBefore: numericSchema,
   balanceAfter: numericSchema,
   createdAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiInventoryTransactionResponse,
+    'quantity' | 'balanceBefore' | 'balanceAfter' | 'createdAt'
+  >
+>
 
 const toApiInventoryTransaction = (
   row: DbInventoryTransaction,

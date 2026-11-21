@@ -16,7 +16,9 @@ import { timestampSchema } from './columns'
 const convertedColumnsSchema = z.object({
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiServiceCategoryResponse, 'createdAt' | 'updatedAt'>
+>
 
 const toApiServiceCategory = (
   category: DbServiceCategory,

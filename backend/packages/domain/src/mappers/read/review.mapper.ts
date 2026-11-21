@@ -22,7 +22,12 @@ const convertedColumnsSchema = z.object({
   ownerRespondedAt: timestampSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiReviewResponse,
+    'imageUrls' | 'ownerRespondedAt' | 'createdAt' | 'updatedAt'
+  >
+>
 
 const toApiReview = (
   review: DbReview,

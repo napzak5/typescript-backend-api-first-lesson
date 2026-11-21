@@ -1,14 +1,11 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type { ApiStaffSearchRequest } from '@beauty-salon-backend/domain'
 import { z } from 'zod'
-import { numberParameter } from '../../../shared/query-parameters'
+import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
 /** The parameter of the staff list that is not text, as its type. */
-const staffSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
-
-export const decodeStaffSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(staffSearchQuerySchema, query, 'Invalid staff search')
+export const decodeStaffSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiStaffSearchRequest, 'limit'>>,
+  'Invalid staff search',
+)

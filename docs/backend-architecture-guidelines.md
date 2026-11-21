@@ -212,7 +212,18 @@ const convertedColumnsSchema = z.object({
   businessHours: businessHoursSchema,
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiSalonResponse,
+    | 'latitude'
+    | 'longitude'
+    | 'rating'
+    | 'taxRate'
+    | 'businessHours'
+    | 'createdAt'
+    | 'updatedAt'
+  >
+>
 
 const toApiSalon = (
   salon: DbSalon,
@@ -408,7 +419,7 @@ export const getSalonHandler = (
 - ハンドラーは、依存を受け取って `RequestHandler` を返す関数です。ユースケースは最初に一度だけ生成します。
 - `RequestHandler` の型引数で、パスパラメータとレスポンス本文の型を決めます。レスポンスの型は `_shared/types.ts` で生成型の `operations` から取り出します。リクエスト本文の型は `unknown` です。
 - ハンドラーは検証しません。`req.body` と `req.params.id` をそのままユースケースに渡します。
-- クエリ文字列だけは例外です。文字列しか運べないので、一覧のハンドラーは `decodeSalonSearchQuery`（`_shared/query.ts`）で数値・真偽値・配列に直してから渡します。変換の部品はどの一覧でも同じで、`backend/packages/api/src/shared/query-parameters.ts` にあります。値のルールを判定するのはユースケースです。
+- クエリ文字列だけは例外です。文字列しか運べないので、一覧のハンドラーは `decodeSalonSearchQuery`（`_shared/query.ts`）で数値・真偽値・配列に直してから渡します。変換の部品（`numberParameter`、`booleanParameter`、`listParameter` と、スキーマからデコーダーを作る `queryDecoder`）はどの一覧でも同じで、`backend/packages/api/src/shared/query-parameters.ts` にあります。変換のスキーマは、変換するパラメーターについて検索のリクエストの型を満たします（`satisfies z.ZodType<Pick<ApiSalonSearchRequest, 'limit' | …>>`）。契約でパラメーターの名前や型が変わると、ビルドが失敗します。値のルールを判定するのはユースケースです。
 - 権限の判定がある一覧では、直せなかったクエリのエラーも、権限を判定したあとで返します。顧客の一覧のハンドラー（`backend/packages/api/src/routes/customer/list-customers.handler.ts`）は、`decodeCustomerSearchQuery` の結果を `Result` のままユースケースに渡します。`ListCustomersUseCase` の `execute(actor, query)` は、権限を判定してから、その `Result` がエラーならそれを返します。スタッフの一覧のハンドラー（`backend/packages/api/src/routes/staff/list-staff.handler.ts`）も同じで、`ListStaffUseCase` の `execute(actor, salon, query)` に `decodeStaffSearchQuery` の結果を渡します。Salon の一覧とスタッフのプロフィールの一覧は公開で権限の判定がないので、ハンドラーがユースケースを呼ばずに変換のエラーを返します。
 - 結果は `match(result)…exhaustive()` で分岐します。成功は `{ data, meta: responseMeta(req), links }`、失敗は必ず `sendProblem(req, res, error)` です。ハンドラーでステータスコードとエラーの対応を書きません。
 - リンクは `req.baseUrl` から組み立てます。マウント先のパスをハンドラーに書きません。一覧のページのリンクは、どの一覧でも `pageLinks`（`backend/packages/api/src/shared/page-links.ts`）で作ります。
@@ -913,7 +924,7 @@ async execute(
 
 - [ ] TypeSpec を変更したら `pnpm generate` を実行し、生成ファイルを一緒にコミットした
 - [ ] 型を手で宣言していない（DB 型は Drizzle スキーマから、API 型は生成型から取っている）
-- [ ] スキーマに `satisfies z.ZodType<…>` を付け、検証はユースケースで一度だけ行っている
+- [ ] スキーマに `satisfies z.ZodType<…>` を付け、検証はユースケースで一度だけ行っている。クエリ文字列の変換と、読み取りマッパーが直す列のスキーマも、生成された型の、扱うプロパティだけを `Pick` で選んで満たしている
 - [ ] ハンドラーは本文を `unknown` のままユースケースに渡している
 - [ ] 公開でないオペレーションは、ハンドラーを `authenticated` で包み、ユースケースが `actor` から最初に権限を判定している（TypeSpec では `SessionErrors` または `CommonErrors`）
 - [ ] 公開のオペレーションは、TypeSpec に `@useAuth(NoAuth)` と `PublicErrors` がある

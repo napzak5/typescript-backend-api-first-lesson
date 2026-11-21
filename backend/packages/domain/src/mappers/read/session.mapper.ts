@@ -18,7 +18,12 @@ const convertedColumnsSchema = z.object({
   refreshExpiresAt: timestampSchema,
   lastActivityAt: timestampSchema,
   createdAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiSessionResponse,
+    'expiresAt' | 'refreshExpiresAt' | 'lastActivityAt' | 'createdAt'
+  >
+>
 
 /** `current`: whether the session is the one of the request that asks. */
 const toApiSession = (

@@ -23,7 +23,12 @@ const convertedChartSchema = z.object({
   previousTreatments: z.array(previousTreatmentSchema),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiMedicalChartResponse,
+    'previousTreatments' | 'createdAt' | 'updatedAt'
+  >
+>
 
 const toApiMedicalChart = (
   chart: DbMedicalChart,

@@ -26,12 +26,16 @@ const MESSAGE = 'Stored inventory alert does not match the API model'
 const convertedAlertSchema = z.object({
   currentStock: numericSchema,
   threshold: numericSchema.nullable(),
-})
+}) satisfies z.ZodType<
+  Pick<ApiInventoryAlertResponse, 'currentStock' | 'threshold'>
+>
 
 const convertedAcknowledgementSchema = z.object({
   threshold: numericSchema.nullable(),
   acknowledgedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiInventoryAlertAcknowledgementResponse, 'threshold' | 'acknowledgedAt'>
+>
 
 const toApiAcknowledgement = (
   acknowledgement: DbInventoryAlertAcknowledgement,

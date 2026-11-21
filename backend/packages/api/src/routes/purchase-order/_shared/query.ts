@@ -1,32 +1,22 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type {
+  ApiPurchaseOrderSearchRequest,
+  ApiReorderSuggestionSearchRequest,
+} from '@beauty-salon-backend/domain'
 import { z } from 'zod'
-import { numberParameter } from '../../../shared/query-parameters'
+import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
 /** The parameter of the list of purchase orders that is not text, as its type. */
-const purchaseOrderSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
+export const decodePurchaseOrderSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiPurchaseOrderSearchRequest, 'limit'>>,
+  'Invalid purchase order search',
+)
 
 /** The parameter of the suggestions that is not text, as its type. */
-const reorderSuggestionSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
-
-export const decodeReorderSuggestionSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(
-    reorderSuggestionSearchQuerySchema,
-    query,
-    'Invalid reorder suggestion search',
-  )
-
-export const decodePurchaseOrderSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(
-    purchaseOrderSearchQuerySchema,
-    query,
-    'Invalid purchase order search',
-  )
+export const decodeReorderSuggestionSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiReorderSuggestionSearchRequest, 'limit'>>,
+  'Invalid reorder suggestion search',
+)

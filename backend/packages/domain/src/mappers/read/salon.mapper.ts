@@ -30,7 +30,18 @@ const convertedColumnsSchema = z.object({
   businessHours: businessHoursSchema,
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiSalonResponse,
+    | 'latitude'
+    | 'longitude'
+    | 'rating'
+    | 'taxRate'
+    | 'businessHours'
+    | 'createdAt'
+    | 'updatedAt'
+  >
+>
 
 const toApiOpeningHours = ({
   dayOfWeek,

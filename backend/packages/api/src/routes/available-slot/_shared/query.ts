@@ -1,19 +1,14 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type { ApiAvailableSlotSearchRequest } from '@beauty-salon-backend/domain'
 import { z } from 'zod'
-import { numberParameter } from '../../../shared/query-parameters'
+import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
 /** The parameters of the slot list that are not text, as their type. */
-const availableSlotSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-  duration: numberParameter.exactOptional(),
-})
-
-export const decodeAvailableSlotSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(
-    availableSlotSearchQuerySchema,
-    query,
-    'Invalid available slot search',
-  )
+export const decodeAvailableSlotSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+    duration: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<
+    Pick<ApiAvailableSlotSearchRequest, 'limit' | 'duration'>
+  >,
+  'Invalid available slot search',
+)

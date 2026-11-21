@@ -1,3 +1,5 @@
+import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
+import type { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 
 /**
@@ -20,3 +22,15 @@ export const listParameter = z.union([
   z.string().transform((value) => [value]),
   z.array(z.string()),
 ])
+
+/**
+ * The decoder of the query string of an operation: it gives the parameters
+ * that are not text their types and leaves the others as they are. Its schema
+ * satisfies the search request of the operation for those parameters, so a
+ * parameter that the contract renames or drops breaks the build. What it
+ * answers is checked as a whole by the schema of the use case.
+ */
+export const queryDecoder =
+  (schema: z.ZodType, message: string) =>
+  (query: unknown): Result<unknown, DomainError> =>
+    parseWith(schema, query, message)

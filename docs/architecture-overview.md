@@ -1168,7 +1168,8 @@ Five things differ from create:
 - **Query string.** A query string carries text only, so the list handler
   first gives the parameters their types (`decodeSalonSearchQuery` in
   `routes/salon/_shared/query.ts`, built from the converters in
-  `shared/query-parameters.ts`). The rules for the values are still the
+  `shared/query-parameters.ts`, whose schema satisfies the search request
+  for the parameters it decodes). The rules for the values are still the
   use case's.
 - **Pagination.** Lists use keyset pagination; the salon list is newest
   first. `cursor` is the ID of the last salon of the previous page, returned
@@ -2349,10 +2350,10 @@ for the sales reports. Each has the security of the account that is signed in.
 `frontend/packages` holds what they share (UI components, theme,
 configuration, assets, what the screens of a salon share in the admin and the
 dashboard, the form of what a customer wishes for, what the tests share), the
-API client that orval generates into `frontend/packages/api-client`, its fetch
-function (`frontend/packages/io`) and the session of an application
-(`frontend/packages/session`). The fetch function keeps the tokens of the
-session in the browser, sends the access token with every request and renews
+API client that orval generates into `frontend/packages/api-client` with its
+fetch function, the tokens the browser keeps (`frontend/packages/io`) and the
+session of an application (`frontend/packages/session`). The fetch function
+reads the tokens of the session the browser keeps, sends the access token with every request and renews
 it when it has expired. The session package says who is signed in, has the
 sign-in screen with its step for the code of two-factor authentication, and
 shows it in place of a screen that needs a session: every screen of the admin

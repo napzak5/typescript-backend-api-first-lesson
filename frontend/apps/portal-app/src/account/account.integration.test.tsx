@@ -16,6 +16,7 @@ import {
 } from 'vitest'
 import * as z from 'zod'
 import { App } from '../App'
+import { accessTokenOf } from '../bookings/__tests__/arrangements'
 
 const TITLE = 'Beauty Salon Portal'
 const ADMIN_APP = 'https://admin.salon.example'
@@ -126,19 +127,6 @@ const askForResetThroughApi = async (email: string): Promise<void> => {
 
 const tokenOf = async (to: string): Promise<string> =>
   new URL(await testApi().mailedLink(to)).hash.replace('#token=', '')
-
-const signedInSchema = z.object({ data: z.object({ accessToken: z.string() }) })
-
-const accessTokenOf = async (email: string): Promise<string> => {
-  const answer = await ask('/auth/login', {
-    email,
-    password: testApi().seedPassword,
-    rememberMe: false,
-    twoFactorCode: null,
-  })
-
-  return signedInSchema.parse(await answer.json()).data.accessToken
-}
 
 const staffSchema = z.tuple([z.object({ id: z.string(), salonId: z.string() })])
 

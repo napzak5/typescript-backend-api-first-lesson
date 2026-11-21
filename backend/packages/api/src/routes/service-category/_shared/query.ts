@@ -1,22 +1,18 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type { ApiServiceCategorySearchRequest } from '@beauty-salon-backend/domain'
 import { z } from 'zod'
 import {
   booleanParameter,
   numberParameter,
+  queryDecoder,
 } from '../../../shared/query-parameters'
 
 /** The parameters of the category list that are not text, as their types. */
-const serviceCategorySearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-  isActive: booleanParameter.exactOptional(),
-})
-
-export const decodeServiceCategorySearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(
-    serviceCategorySearchQuerySchema,
-    query,
-    'Invalid service category search',
-  )
+export const decodeServiceCategorySearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+    isActive: booleanParameter.exactOptional(),
+  }) satisfies z.ZodType<
+    Pick<ApiServiceCategorySearchRequest, 'limit' | 'isActive'>
+  >,
+  'Invalid service category search',
+)

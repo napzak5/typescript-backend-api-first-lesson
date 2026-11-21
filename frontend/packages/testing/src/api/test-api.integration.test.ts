@@ -24,6 +24,16 @@ const signIn = (
     }),
   })
 
+/*
+ * What these tests read of the answers of the API is not checked against the
+ * types generated from the contract: this package cannot depend on the API
+ * client, whose own packages are tested with this one (pnpm refuses the
+ * cycle). The tests read what the test server needs and nothing more.
+ */
+const signedInSchema = z.object({
+  data: z.object({ accessToken: z.string() }),
+})
+
 const countSchema = z.tuple([z.object({ count: z.number() })])
 
 const sessionCount = async (): Promise<number> => {
@@ -392,9 +402,6 @@ describe('the mails of an API', () => {
 })
 
 describe('the code of an authenticator app', () => {
-  const signedInSchema = z.object({
-    data: z.object({ accessToken: z.string() }),
-  })
   const setUpSchema = z.object({ data: z.object({ secret: z.string() }) })
 
   /**
@@ -458,9 +465,6 @@ describe('the code of an authenticator app', () => {
 
 describe('the files of an API', () => {
   const SEEDED_ADMINISTRATOR = 'admin@beautysalon.jp'
-  const signedInSchema = z.object({
-    data: z.object({ accessToken: z.string() }),
-  })
   const issuedSchema = z.object({
     data: z.object({
       attachment: z.object({ id: z.string() }),

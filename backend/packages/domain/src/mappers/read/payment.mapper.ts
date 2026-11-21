@@ -23,7 +23,12 @@ const convertedColumnsSchema = z.object({
   refundedAt: timestampSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiPaymentResponse,
+    'processedAt' | 'failedAt' | 'refundedAt' | 'createdAt' | 'updatedAt'
+  >
+>
 
 /**
  * The payment as a response shows it. A row that does not match is
