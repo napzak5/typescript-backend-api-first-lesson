@@ -1,6 +1,6 @@
 import { savedFiles } from '@beauty-salon-frontend/testing'
 import { describe, expect, it } from 'vitest'
-import { fileNameOf, saveFile } from './save-file'
+import { fileNameOf, fileOfAnswer, saveFile } from './save-file'
 
 describe('fileNameOf', () => {
   it.each<[string, string]>([
@@ -43,6 +43,32 @@ describe('fileNameOf', () => {
 
     // Assert
     expect(read).toBeUndefined()
+  })
+})
+
+describe('fileOfAnswer', () => {
+  it('should hold the content under the name and of the type of the answer', () => {
+    // Arrange
+    const headers = new Headers({
+      'Content-Disposition':
+        'attachment; filename=sales-report-2026-11-01-2026-11-21.csv',
+      'Content-Type': 'text/csv; charset=utf-8',
+    })
+
+    // Act
+    const file = fileOfAnswer(headers, 'date,sales\r\n')
+
+    // Assert
+    expect(file).toEqual({
+      name: 'sales-report-2026-11-01-2026-11-21.csv',
+      type: 'text/csv; charset=utf-8',
+      content: 'date,sales\r\n',
+    })
+  })
+
+  it('should hold nothing when the answer names no file', () => {
+    // Act, Assert
+    expect(fileOfAnswer(new Headers(), 'date,sales\r\n')).toBeUndefined()
   })
 })
 

@@ -28,6 +28,21 @@ export const fileNameOf = (headers: Headers): string | undefined => {
 }
 
 /**
+ * The file an answer of the API holds, under the name and of the type the
+ * answer gives; `undefined` when it names none.
+ */
+export const fileOfAnswer = (
+  headers: Headers,
+  content: string,
+): FileToSave | undefined => {
+  const name = fileNameOf(headers)
+
+  return name === undefined
+    ? undefined
+    : { name, type: headers.get('content-type') ?? '', content }
+}
+
+/**
  * Saves a file the page holds, as the browser saves a file it downloads:
  * a link to the file in memory, with the name to save it under, is
  * pressed. The browser asks where, or puts it among the downloads, as it

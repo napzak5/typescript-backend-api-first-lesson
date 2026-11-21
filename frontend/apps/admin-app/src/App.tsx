@@ -1,3 +1,4 @@
+import { StartScreen } from '@beauty-salon-frontend/salon-screens'
 import {
   AccountSecurityScreen,
   PasswordChangeScreen,
@@ -44,7 +45,6 @@ import { CustomerPreferencesScreen } from './customers/customer-preferences-scre
 import { CustomerScreen } from './customers/customer-screen'
 import { CustomerVersionScreen } from './customers/customer-version-screen'
 import { PointEntryScreen } from './customers/point-entry-screen'
-import { HomeScreen } from './home-screen'
 import { InventoryScreen } from './inventory/inventory-screen'
 import { MovementEntryScreen } from './inventory/movement-entry-screen'
 import { MovementsScreen } from './inventory/movements-screen'
@@ -61,7 +61,7 @@ import { ServiceChangeScreen } from './menu/service-change-screen'
 import { ServiceEntryScreen } from './menu/service-entry-screen'
 import { ServiceScreen } from './menu/service-screen'
 import { ServicesChangeScreen } from './menu/services-change-screen'
-import { navigationFor, OWN_PROFILE_PATH } from './navigation'
+import { bookingsHrefOf, navigationFor, OWN_PROFILE_PATH } from './navigation'
 import { OwnProfileScreen } from './own-profile/own-profile-screen'
 import { PaymentMethodChangeScreen } from './payment-methods/payment-method-change-screen'
 import { PaymentMethodEntryScreen } from './payment-methods/payment-method-entry-screen'
@@ -185,7 +185,16 @@ export const App = () => {
           {/* Every screen needs a session: who is not signed in signs in here, at the address they asked for */}
           <RequireSession roles={ROLES} signInHelp={<SignInHelp />}>
             <Routes>
-              <Route path='/' element={<HomeScreen />} />
+              <Route
+                path='/'
+                element={
+                  <StartScreen
+                    title={import.meta.env.VITE_APP_TITLE}
+                    choice='予約台帳を開くサロンを選びます。'
+                    salonHref={bookingsHrefOf}
+                  />
+                }
+              />
               <Route
                 path='/salons/:salonId/bookings'
                 element={<DayBookingsScreen />}

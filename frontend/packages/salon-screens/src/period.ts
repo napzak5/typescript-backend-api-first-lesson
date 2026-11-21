@@ -26,10 +26,11 @@ export const lastYearUntil = (today: string): Period => ({
 })
 
 /**
- * The period in the query of an address: the year up to today, unless the
- * address names one the API counts over.
+ * The period in the query of an address, unless it names none the API
+ * counts over: then the one a screen starts with (the year or the month up
+ * to today).
  */
-export const periodIn = (query: URLSearchParams, today: string): Period => {
+export const periodIn = (query: URLSearchParams, initial: Period): Period => {
   const from = query.get('from') ?? ''
   const to = query.get('to') ?? ''
 
@@ -38,7 +39,7 @@ export const periodIn = (query: URLSearchParams, today: string): Period => {
     from <= to &&
     daysOf({ from, to }) <= MOST_DAYS
     ? { from, to }
-    : lastYearUntil(today)
+    : initial
 }
 
 const DAY_ERROR = '日付を入力してください。'
