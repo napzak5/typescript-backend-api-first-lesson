@@ -1053,7 +1053,7 @@ whole path:
 | In a browser test | In an integration test in jsdom |
 |-------------------|---------------------------------|
 | A critical path, once, from the address bar to the database | Every state of a screen: each message, each refusal, each role |
-| What the browser lays out and paints: nothing sticks out of a narrow window or out of the element it is in, nothing is laid out with flex, the contrast of what is on the page | The accessibility rules that need no layout |
+| What the browser lays out and paints: nothing sticks out of a narrow window or out of the element it is in, nothing is laid out with flex, the contrast of what is on the page, what is scrolled into sight (`toBeInViewport`: the current link of a narrow header, `navigation.e2e.test.ts`) | The accessibility rules that need no layout |
 | The focus as the browser moves it: the Tab key through a form, the heading after the screen changed | Which element has the focus after an action |
 | A reload, a second tab, the address bar, the way back and forward | — |
 | A link that leaves the page: from a mail to the portal, from one application to another | The screen such a link opens, rendered at its path |
