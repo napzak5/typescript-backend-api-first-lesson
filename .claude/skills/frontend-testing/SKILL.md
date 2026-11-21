@@ -319,7 +319,16 @@ describe('the session against the API', () => {
   send. `testApi().mails()` are the mails of this test (`to`, `subject`,
   `text`), oldest first. `testApi().mailedLink(to)` is the link in the last
   mail to an address, and fails the test when there is none.
-- Files are kept in memory: the API of a test has no object storage.
+- **Files** go to an object storage: the test server starts a SeaweedFS
+  container, which its APIs share, and an API signs URLs to it. A screen
+  test uploads a file through the screen (`user.upload` with a `File` of
+  real bytes: the API looks at the first bytes) and reads it back with
+  `fetch` from the `href` of a link. `user.upload` drops a file the
+  `accept` of the control does not name: a test of a kind the API
+  refuses sets the user up with `applyAccept: false`, as a person who
+  asks the dialog of the browser for every file. The `FormData` of a
+  form in jsdom does not hold the file `user.upload` chose: a screen
+  keeps the file from the change of the control.
 - The answer of the real API takes time. Wait for what appears (`findByRole`,
   `waitFor` of `@testing-library/react`); never for a duration. The setup
   lets them wait 5 seconds, not the 1 of Testing Library, and a test 30:
@@ -971,8 +980,9 @@ is not signed in sees. Everything behind the sign-in is in
 API as soon as it opens (the root of the portal).
 
 The test server needs a PostgreSQL: the one at `TEST_DATABASE_URL` when it is
-set (its user creates databases), otherwise a container, and so a running
-Docker daemon. When it cannot start, the run fails before the first test and
+set (its user creates databases), otherwise a container. It always starts a
+SeaweedFS container for the files of its APIs, and so needs a running Docker
+daemon. When it cannot start, the run fails before the first test and
 the reason is printed above the error.
 
 ## In a browser
@@ -1050,7 +1060,11 @@ test.describe('the admin application', () => {
   `./fixtures`, never from `@playwright/test`: the `test` of the fixtures is
   what gives the API a fresh database after every test, and it keeps the
   browser from reaching anything outside this machine (the seed data has
-  photos at addresses of example.com). A test that needs an image at an
+  photos at addresses of example.com): the applications and the API, on
+  127.0.0.1, and the storage of the test server, at `localhost`. A test
+  chooses a file with the keyboard by pressing Space on the control and
+  answering `page.waitForEvent('filechooser')`
+  (`src/admin-attachments.e2e.test.ts`). A test that needs an image at an
   address of the web answers it in the browser
   (`page.route(address, (route) => route.fulfill(…))`,
   `src/admin-treatment-photos.e2e.test.ts`): the API takes addresses of

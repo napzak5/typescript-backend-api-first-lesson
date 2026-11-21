@@ -2015,6 +2015,31 @@ by its role, as the API decides it:
   shows the review the API answered with and moves the focus to the
   heading of the answer, as an operation of a booking does.
 
+The files of a salon (`src/attachments/`) go between the browser and the
+object storage, at URLs the API signs; the API keeps what is known of a
+file:
+
+- **A file is checked when the form is sent, as the API checks it**: the
+  screen keeps the file the control tells as it is chosen (`onChoose`),
+  and says at the control what the API would refuse (the kind by the
+  ending of the name, the size, the name). The control offers only the
+  kinds the API takes (`accept`), which a person can still overrule in
+  the dialog of the browser.
+- **An upload is three requests, one of them to the storage**: the URL is
+  asked for, the file is sent to it with `fetch` and the headers the API
+  answered with (and no token of the session: the storage is not the
+  API), and the upload is finished. A file the storage did not take can
+  be sent again; one that is not what its ending says is said at the
+  control. After an upload the form is drawn anew, empty (a `key`), and
+  its heading takes the focus for the next file.
+- **A link to the storage is a plain `<a>`**: the `Link` of `ui` goes
+  through the router. The URLs that open and save a file last five
+  minutes: the screen reads both when it opens and every four minutes,
+  and never shows one read on a screen before (`gcTime: 0`). A URL read
+  when the link is pressed would open a tab that the browser blocks as a
+  popup. The link that opens a file has `target='_blank'` and
+  `rel='noopener noreferrer'`; an image is shown from the same URL.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
