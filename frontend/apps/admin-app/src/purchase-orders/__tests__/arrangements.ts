@@ -118,3 +118,62 @@ export const daysOf = async (orderNumber: string) =>
       [orderNumber],
     ),
   )[0]
+
+/**
+ * Puts an order into a status as somebody else would have, with what the
+ * database asks of the status: a moment of approval from `approved` on,
+ * and a moment and a reason of the cancellation for `cancelled`.
+ */
+export const orderMovedTo = async (
+  orderNumber: string,
+  status: 'draft' | 'approved' | 'delivered' | 'cancelled',
+): Promise<void> => {
+  await testApi().query(
+    `update purchase_orders
+     set status = $2::order_status,
+         "approvedBy" = case when $2 = 'draft' then null else "approvedBy" end,
+         "approvedAt" = case when $2 = 'draft' then null
+                             when $2 = 'cancelled' then "approvedAt"
+                             else coalesce("approvedAt", now()) end,
+         "actualDelivery" = case when $2 = 'delivered' then now() end,
+         "cancelledAt" = case when $2 = 'cancelled' then now() end,
+         "cancellationReason" = case when $2 = 'cancelled' then '仕入先の在庫切れ' end,
+         "updatedAt" = now()
+     where "orderNumber" = $1`,
+    [orderNumber, status],
+  )
+}
+
+const statusSchema = z.tuple([
+  z.object({
+    status: z.string(),
+    approvedBy: z.string().nullable(),
+    approved: z.boolean(),
+    cancellationReason: z.string().nullable(),
+    expectedDelivery: z.iso.date().nullable(),
+    deliveryNotes: z.string().nullable(),
+    notes: z.string().nullable(),
+    updatedAt: z.string(),
+  }),
+])
+
+/**
+ * An order as the database keeps it: its status, who approved it by the
+ * name the salon shows, whether it was approved, the reason it was
+ * cancelled for, the day of delivery at the salon, its notes and when it
+ * was last changed.
+ */
+export const storedOrderOf = async (orderNumber: string) =>
+  statusSchema.parse(
+    await testApi().query(
+      `select po.status::text, st."displayName" as "approvedBy",
+              po."approvedAt" is not null as approved, po."cancellationReason",
+              to_char(po."expectedDelivery" at time zone s.timezone, 'YYYY-MM-DD') as "expectedDelivery",
+              po."deliveryNotes", po.notes, po."updatedAt"::text as "updatedAt"
+       from purchase_orders po
+         join salons s on s.id = po."salonId"
+         left join staff st on st.id = po."approvedBy"
+       where po."orderNumber" = $1`,
+      [orderNumber],
+    ),
+  )[0]

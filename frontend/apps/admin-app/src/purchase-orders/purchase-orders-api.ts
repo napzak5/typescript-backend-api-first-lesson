@@ -1,10 +1,16 @@
 import {
+  type ModelsOrderStatusType,
+  type ModelsPurchaseOrderCancelRequest,
   type ModelsPurchaseOrderCreateRequest,
   type ModelsPurchaseOrderResponse,
+  type ModelsPurchaseOrderUpdateRequest,
   type PurchaseOrderCrudListParams,
+  purchaseOrderCrudApprove,
+  purchaseOrderCrudCancel,
   purchaseOrderCrudCreate,
   purchaseOrderCrudGet,
   purchaseOrderCrudList,
+  purchaseOrderCrudUpdate,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import { outsideTheContract } from '../outside-the-contract'
@@ -145,6 +151,102 @@ export const makeOrder = async (
           ? FAILED
           : { type: 'invalid', values }
     })
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+const CONFLICT: { type: 'conflict' } = { type: 'conflict' }
+
+/** What came of an operation on the status of an order. */
+export type OrderStep =
+  | { type: 'changed'; order: ModelsPurchaseOrderResponse }
+  /** The order is no longer in a status the operation is for: it changed elsewhere */
+  | { type: 'conflict' }
+  | NotFound
+  | Forbidden
+  | Unread
+
+type StepAnswer =
+  | Awaited<ReturnType<typeof purchaseOrderCrudUpdate>>
+  | Awaited<ReturnType<typeof purchaseOrderCrudApprove>>
+  | Awaited<ReturnType<typeof purchaseOrderCrudCancel>>
+
+/**
+ * What an operation on the status answered. A refused body or ID says
+ * nothing a person could act on: the screens send what the API takes.
+ */
+const orderStepOf = (answer: StepAnswer | null): OrderStep =>
+  match(answer)
+    .returnType<OrderStep>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'changed',
+      order: data.data,
+    }))
+    .with({ status: 409 }, () => CONFLICT)
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(400, 413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+
+/** Moves an order one status on: a draft to approval, an approved order to ordered, an ordered one to shipped. */
+export const moveOrder = async (
+  purchaseOrderId: string,
+  status: ModelsOrderStatusType,
+): Promise<OrderStep> =>
+  orderStepOf(
+    await purchaseOrderCrudUpdate(purchaseOrderId, { status }).catch(
+      () => null,
+    ),
+  )
+
+/** Approves an order that waits for it. */
+export const approveOrder = async (
+  purchaseOrderId: string,
+): Promise<OrderStep> =>
+  orderStepOf(await purchaseOrderCrudApprove(purchaseOrderId).catch(() => null))
+
+/** Cancels an order that was not delivered, with the reason. */
+export const cancelOrder = async (
+  purchaseOrderId: string,
+  request: ModelsPurchaseOrderCancelRequest,
+): Promise<OrderStep> =>
+  orderStepOf(
+    await purchaseOrderCrudCancel(purchaseOrderId, request).catch(() => null),
+  )
+
+export type OrderUpdate =
+  | { type: 'changed'; order: ModelsPurchaseOrderResponse }
+  | { type: 'invalid'; values: RefusedValue[] }
+  /** The order was delivered or cancelled meanwhile: it does not change any more */
+  | { type: 'conflict' }
+  | NotFound
+  | Forbidden
+  | Unread
+
+/** Changes the day an order is to be delivered on and its notes. */
+export const changeOrder = async (
+  purchaseOrderId: string,
+  request: ModelsPurchaseOrderUpdateRequest,
+): Promise<OrderUpdate> => {
+  const answer = await purchaseOrderCrudUpdate(purchaseOrderId, request).catch(
+    () => null,
+  )
+
+  return match(answer)
+    .returnType<OrderUpdate>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'changed',
+      order: data.data,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => CONFLICT)
+    .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
     .with(UNANSWERED, unreadOf)
