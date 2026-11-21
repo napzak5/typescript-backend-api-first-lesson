@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
@@ -68,7 +71,7 @@ describe('BookingFilter', () => {
         .getAllByRole('option')
         .map((option) => option.textContent),
     ).toEqual(['すべて', '田中 美咲', '佐藤 健'])
-    expect(screen.queryByRole('link', { name: '条件をなくす' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
   })
 
   it('should show the conditions that narrow the list, and the way to the whole day', async () => {
@@ -78,7 +81,7 @@ describe('BookingFilter', () => {
     // Assert
     expect(status()).toHaveValue('confirmed')
     expect(member()).toHaveValue(staff[1]?.id)
-    expect(screen.getByRole('link', { name: '条件をなくす' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
       'href',
       `?date=${DAY}`,
     )
@@ -134,5 +137,19 @@ describe('BookingFilter', () => {
     expect(date()).toHaveValue('2026-11-21')
     expect(status()).toHaveValue('')
     expect(member()).toHaveValue('')
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the bookings, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（2）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
   })
 })

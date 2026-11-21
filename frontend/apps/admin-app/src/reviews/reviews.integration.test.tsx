@@ -224,7 +224,7 @@ describe('the reviews of a salon', () => {
     await waitFor(() => expect(listed()).toEqual([GOOD]))
 
     // Act
-    await user.click(screen.getByRole('link', { name: '条件をすべて外す' }))
+    await user.click(screen.getByRole('link', { name: '条件を外す' }))
 
     // Assert
     expect(await screen.findByRole('table', { name: 'レビュー' })).toBeVisible()

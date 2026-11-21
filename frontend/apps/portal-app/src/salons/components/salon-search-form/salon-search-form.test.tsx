@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
@@ -124,7 +127,7 @@ describe('SalonSearchForm', () => {
     await userEvent.selectOptions(minRating(), '4.5 以上')
 
     // Act
-    await userEvent.click(screen.getByRole('button', { name: '検索する' }))
+    await userEvent.click(screen.getByRole('button', { name: '探す' }))
 
     // Assert
     expect(received).toEqual([
@@ -140,7 +143,7 @@ describe('SalonSearchForm', () => {
   it('should keep the focus on its button after it is sent', async () => {
     // Arrange
     await stories.WithoutConditions.run()
-    const send = screen.getByRole('button', { name: '検索する' })
+    const send = screen.getByRole('button', { name: '探す' })
 
     // Act
     await userEvent.click(send)
@@ -201,7 +204,7 @@ describe('SalonSearchForm', () => {
     await stories.WithoutConditions.run()
 
     // Assert
-    expect(screen.queryByRole('link', { name: '条件をなくす' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
   })
 
   it('should lead to the search without a condition', async () => {
@@ -209,9 +212,23 @@ describe('SalonSearchForm', () => {
     await stories.WithConditions.run()
 
     // Assert
-    expect(screen.getByRole('link', { name: '条件をなくす' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
       'href',
       '/',
+    )
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the salons, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.WithConditions.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（3）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
     )
   })
 })

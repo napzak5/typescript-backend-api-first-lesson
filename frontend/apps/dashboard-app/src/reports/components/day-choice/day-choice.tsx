@@ -4,8 +4,9 @@ import {
   type FormErrors,
   TextField,
   useErrorFocus,
+  useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
+import type { FormEvent } from 'react'
 import styles from './day-choice.module.css'
 
 export type DayChoiceProps = {
@@ -30,10 +31,7 @@ export const DayChoice = ({
   onSubmit,
 }: DayChoiceProps) => {
   const form = useErrorFocus(errors)
-  const [shown, setShown] = useState({ day, value: day })
-  if (shown.day !== day) {
-    setShown({ day, value: day })
-  }
+  const [values, hold] = useFilterValues(day, () => ({ date: day }))
 
   const submit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
@@ -56,9 +54,9 @@ export const DayChoice = ({
         max={LATEST_DAY}
         required
         description='会計した日（サロンの日付）で数えます。'
-        value={shown.value}
+        value={values.date}
         error={errors['date']}
-        onChange={(event) => setShown({ day, value: event.target.value })}
+        onChange={(event) => hold('date', event.target.value)}
       />
       <div className={styles['actions']}>
         <Button type='submit'>表示する</Button>

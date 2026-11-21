@@ -256,7 +256,7 @@ describe('the treatment records, against the API', () => {
     expect(rowsOf(table)).toEqual([
       [`${SAKURA.name} 様`, 'Yui Watanabe', 'Mens Cut', '45 分', '未回答'],
     ])
-    expect(screen.getByRole('link', { name: '条件をすべて外す' })).toBeVisible()
+    expect(screen.getByRole('link', { name: '条件を外す' })).toBeVisible()
   })
 
   it('should narrow the records to the days they were written on at the salon, and refuse a last day before the first', async () => {

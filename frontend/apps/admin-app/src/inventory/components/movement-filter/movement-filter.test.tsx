@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -43,7 +46,7 @@ describe('MovementFilter', () => {
     expect(first()).toHaveAttribute('min', '1900-01-01')
     expect(last()).toHaveAttribute('max', '2999-12-31')
     // A link without an address would be no link: nothing of it is there
-    expect(screen.queryByText('条件をすべて外す')).toBeNull()
+    expect(screen.queryByText('条件を外す')).toBeNull()
   })
 
   it('should show the conditions that narrow the movements, and the way back to all of them', async () => {
@@ -54,9 +57,10 @@ describe('MovementFilter', () => {
     expect(kind()).toHaveValue('use')
     expect(first()).toHaveValue('2026-11-01')
     expect(last()).toHaveValue('2026-11-30')
-    expect(
-      screen.getByRole('link', { name: '条件をすべて外す' }),
-    ).toHaveAttribute('href', '?')
+    expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
+      'href',
+      '?',
+    )
   })
 
   it('should send the conditions chosen', async () => {
@@ -95,5 +99,19 @@ describe('MovementFilter', () => {
       '終わりの日は、始まりの日と同じか、その後にしてください。',
     )
     expect(last()).toHaveFocus()
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the movements, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（3）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
   })
 })

@@ -395,7 +395,7 @@ describe('the screens of the movements of the stock', () => {
     ).toBeVisible()
 
     // Act
-    await user.click(screen.getByRole('link', { name: '条件をすべて外す' }))
+    await user.click(screen.getByRole('link', { name: '条件を外す' }))
 
     // Assert
     await openedHistory()

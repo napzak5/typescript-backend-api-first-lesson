@@ -1,7 +1,9 @@
-import { Button, ButtonLink, TextField } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
+import {
+  FilterForm,
+  TextField,
+  useFilterValues,
+} from '@beauty-salon-frontend/ui'
 import { LONGEST_KEYWORD } from '../../keyword'
-import styles from './keyword-search.module.css'
 
 export type KeywordSearchProps = {
   /** What is searched for, as the landmark of the search names it: 「サロンを探す」 */
@@ -29,41 +31,25 @@ export const KeywordSearch = ({
   onSubmit,
 }: KeywordSearchProps) => {
   const searched = keyword ?? ''
-  const [shown, setShown] = useState({ searched, value: searched })
-  if (shown.searched !== searched) {
-    setShown({ searched, value: searched })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(searched, () => ({
+    keyword: searched,
+  }))
 
   return (
-    <search aria-label={label}>
-      <form className={styles['form']} onSubmit={submit}>
-        <TextField
-          label='キーワード'
-          name='keyword'
-          type='search'
-          value={shown.value}
-          onChange={(event) =>
-            setShown({ searched, value: event.target.value })
-          }
-          maxLength={LONGEST_KEYWORD}
-          description={description}
-        />
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            検索する
-          </Button>
-          {keyword !== undefined && (
-            <ButtonLink href={clearHref} variant='quiet'>
-              条件をなくす
-            </ButtonLink>
-          )}
-        </div>
-      </form>
-    </search>
+    <FilterForm
+      label={label}
+      clearHref={keyword === undefined ? undefined : clearHref}
+      onSubmit={onSubmit}
+    >
+      <TextField
+        label='キーワード'
+        name='keyword'
+        type='search'
+        value={values.keyword}
+        onChange={(event) => hold('keyword', event.target.value)}
+        maxLength={LONGEST_KEYWORD}
+        description={description}
+      />
+    </FilterForm>
   )
 }

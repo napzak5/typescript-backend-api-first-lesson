@@ -59,7 +59,7 @@ export const ReferrerDialog = ({
           />
           <div className={styles['actions']}>
             <Button type='submit' variant='primary'>
-              検索する
+              探す
             </Button>
           </div>
         </form>

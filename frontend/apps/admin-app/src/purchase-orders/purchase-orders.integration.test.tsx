@@ -367,7 +367,7 @@ describe('the screens of the purchase orders', () => {
     expect(await screen.findByText('条件に合う発注はありません')).toBeVisible()
 
     // Act
-    await user.click(screen.getByRole('link', { name: '条件をすべて外す' }))
+    await user.click(screen.getByRole('link', { name: '条件を外す' }))
 
     // Assert
     await openedOrders()

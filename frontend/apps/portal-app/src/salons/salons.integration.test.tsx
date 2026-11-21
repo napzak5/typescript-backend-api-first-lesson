@@ -91,7 +91,7 @@ const keyword = () => screen.getByRole('searchbox', { name: 'キーワード' })
 const prefecture = () => screen.getByRole('textbox', { name: '都道府県' })
 const city = () => screen.getByRole('textbox', { name: '市区町村' })
 const minRating = () => screen.getByRole('combobox', { name: '評価' })
-const send = () => screen.getByRole('button', { name: '検索する' })
+const send = () => screen.getByRole('button', { name: '探す' })
 
 const results = () => screen.findByRole('region', { name: '検索結果' })
 
@@ -293,13 +293,13 @@ describe('the screens of the salons, against the API', () => {
       await screen.findByText('1 件のサロンが見つかりました')
 
       // Act
-      await userEvent.click(screen.getByRole('link', { name: '条件をなくす' }))
+      await userEvent.click(screen.getByRole('link', { name: '条件を外す' }))
 
       // Assert
       await screen.findByText('2 件のサロンが見つかりました')
       expect(address).toBe('/')
       expect(keyword()).toHaveValue('')
-      expect(screen.queryByRole('link', { name: '条件をなくす' })).toBeNull()
+      expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
     })
 
     it('should show a search it has read before at once, and not take its salons for added ones', async () => {
@@ -312,7 +312,7 @@ describe('the screens of the salons, against the API', () => {
       await screen.findByText('1 件のサロンが見つかりました')
 
       // Act
-      await user.click(screen.getByRole('link', { name: '条件をなくす' }))
+      await user.click(screen.getByRole('link', { name: '条件を外す' }))
 
       // Assert: two salons where one was, and the focus on neither
       await screen.findByText('2 件のサロンが見つかりました')
