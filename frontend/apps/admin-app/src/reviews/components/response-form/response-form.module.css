@@ -1,0 +1,33 @@
+/* What the customer wrote, then the answer. */
+.parts,
+.review {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.parts {
+  gap: var(--space-6);
+}
+
+.review {
+  gap: var(--space-2);
+}
+
+/* The rating and the day follow each other like words */
+.date {
+  margin-inline-start: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+.title {
+  font-weight: var(--font-weight-bold);
+  overflow-wrap: anywhere;
+}
+
+/* What the customer wrote, with the line breaks they wrote */
+.text {
+  max-inline-size: var(--size-text-column);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
