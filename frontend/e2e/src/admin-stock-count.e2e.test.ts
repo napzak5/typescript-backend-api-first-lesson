@@ -128,6 +128,15 @@ test.describe('the count and the value of the stock, in a browser', () => {
   })
 })
 
+/** The value of the stock, from the sheet of the other actions of the stock */
+const openTheValue = async (page: Page): Promise<void> => {
+  await page.getByRole('button', { name: 'ほかの操作' }).click()
+  await page
+    .getByRole('dialog', { name: 'ほかの操作' })
+    .getByRole('link', { name: '在庫評価額' })
+    .click()
+}
+
 test.describe('the count and the value of the stock, on a screen as narrow as a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
@@ -151,9 +160,9 @@ test.describe('the count and the value of the stock, on a screen as narrow as a 
     )
     await expectSoundPage(page)
 
-    // Act
+    // Act: the value is one of the other actions of the stock, in their sheet
     await page.getByRole('link', { name: 'やめる' }).click()
-    await page.getByRole('link', { name: '在庫評価額' }).click()
+    await openTheValue(page)
 
     // Assert
     await expect(rowsOf(page, 'カテゴリーごとの在庫評価額')).toHaveCount(3)
@@ -162,7 +171,7 @@ test.describe('the count and the value of the stock, on a screen as narrow as a 
     // Act
     await usedMeanwhile(api)
     await page.getByRole('link', { name: '在庫へ' }).click()
-    await page.getByRole('link', { name: '在庫評価額' }).click()
+    await openTheValue(page)
 
     // Assert: read anew, 10 tubes of the colour less, ￥8,000
     await expect(
