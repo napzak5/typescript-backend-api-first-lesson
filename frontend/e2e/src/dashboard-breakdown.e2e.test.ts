@@ -85,9 +85,9 @@ test.describe('the sales of the staff and of the kinds of service, in a browser'
 test.describe('the sales of the staff and of the kinds of service, on a screen as narrow as a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  for (const [screen, row] of [
-    [STAFF, 'Hiroshi Tanaka'],
-    [KINDS, 'カット'],
+  for (const { screen, row } of [
+    { screen: STAFF, row: 'Hiroshi Tanaka' },
+    { screen: KINDS, row: 'カット' },
   ]) {
     test(`should fit ${screen} and its bars into the width`, async ({
       page,
