@@ -1,0 +1,48 @@
+/*
+ * Side by side, each as wide as its label, and on in the next line where
+ * the room ends: the buttons follow each other like words, in the flow of
+ * the text. A grid would keep them on one line, which can be longer than a
+ * narrow screen. The gap is a margin, so the last line is drawn up by it.
+ */
+.flow {
+  display: block;
+  margin-block-end: calc(var(--space-3) * -1);
+}
+
+.flow > * {
+  margin-block-end: var(--space-3);
+  vertical-align: top;
+}
+
+.flow > :not(:last-child) {
+  margin-inline-end: var(--space-3);
+}
+
+/*
+ * On a narrow screen one below the other and as wide as the room: two
+ * buttons do not always fit in a line. From 40rem side by side, as high as
+ * each other.
+ */
+.row {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* Here a button takes the room it is given, which it does not elsewhere (`button.module.css`) */
+.row > * {
+  inline-size: auto;
+  block-size: auto;
+}
+
+.stack {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+@media (min-width: 40rem) {
+  .row {
+    grid-auto-flow: column;
+    justify-content: start;
+  }
+}

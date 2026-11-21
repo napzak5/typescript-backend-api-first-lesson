@@ -32,7 +32,7 @@ describe('FormPart', () => {
     const note = screen.getByText(
       'どちらか一つは入れてください。予約の確認に使います。',
     )
-    expect(note).toHaveClass('description')
+    expect(note).toHaveClass('note', 'small')
     expect(
       screen.getByRole('group', { name: '連絡先' }),
     ).toHaveAccessibleDescription(

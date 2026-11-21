@@ -6,6 +6,7 @@ import {
   useRef,
 } from 'react'
 import { classNames } from '../../class-names'
+import { Note } from '../note/note'
 import styles from './dialog.module.css'
 
 export type DialogProps = {
@@ -161,9 +162,7 @@ export const Dialog = ({
           {title}
         </h2>
         {description !== undefined && (
-          <p className={styles['description']} id={descriptionId}>
-            {description}
-          </p>
+          <Note id={descriptionId}>{description}</Note>
         )}
         {children}
       </div>

@@ -1,4 +1,5 @@
 import type { FormEvent, ReactNode } from 'react'
+import { Actions } from '../actions/actions'
 import { Alert } from '../alert/alert'
 import { Button } from '../button/button'
 import { type FormErrors, useErrorFocus } from './error-focus'
@@ -65,12 +66,13 @@ export const Form = ({
     <form className={styles['form']} noValidate onSubmit={submit} ref={form}>
       {message !== undefined && <Alert tone='danger'>{message}</Alert>}
       {children}
-      <div className={styles['actions']}>
+      {/* On a narrow screen one below the other and as wide as the form: two buttons do not always fit in a line */}
+      <Actions layout='row'>
         <Button type='submit' variant='primary' pending={pending}>
           {submitLabel}
         </Button>
         {actions}
-      </div>
+      </Actions>
     </form>
   )
 }

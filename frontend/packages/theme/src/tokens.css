@@ -88,13 +88,16 @@
   --space-10: 2.5rem;
 
   /*
-   * Three uses of the steps that many stylesheets have to agree on: the
+   * Four uses of the steps that many stylesheets have to agree on: the
    * room inside a frame (a card, the conditions of a search, a sheet),
    * which is wider on a wide screen (below), the gap between the parts of a
-   * screen, and the gap between the fields of a form
+   * screen (its cards, its lists of cards), the gap between what a part
+   * holds one below the other (its heading, its sentences, its table, its
+   * buttons), and the gap between the fields of a form
    */
   --space-frame: var(--space-4);
   --space-parts: var(--space-4);
+  --space-content: var(--space-3);
   --space-fields: var(--space-3);
 
   /*

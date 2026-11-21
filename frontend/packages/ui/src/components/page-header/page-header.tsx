@@ -3,6 +3,7 @@ import { useWideScreen } from '../../wide-screen'
 import { useScreen } from '../app-shell/screens'
 import { Button } from '../button/button'
 import { Dialog } from '../dialog/dialog'
+import { Note } from '../note/note'
 import styles from './page-header.module.css'
 
 export type PageHeaderProps = {
@@ -53,9 +54,7 @@ export const PageHeader = ({
         <h1 className={styles['title']} ref={heading} tabIndex={-1}>
           {title}
         </h1>
-        {description !== undefined && (
-          <p className={styles['description']}>{description}</p>
-        )}
+        {description !== undefined && <Note>{description}</Note>}
       </div>
       {(actions !== undefined || otherActions !== undefined) && (
         <div className={styles['actions']}>

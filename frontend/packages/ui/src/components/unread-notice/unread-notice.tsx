@@ -22,10 +22,8 @@ export const UnreadNotice = ({
 }: UnreadNoticeProps) => (
   <>
     <Alert tone='danger'>{message}</Alert>
-    <p>
-      <Button onClick={onRetry} pending={pending}>
-        もう一度読み込む
-      </Button>
-    </p>
+    <Button onClick={onRetry} pending={pending}>
+      もう一度読み込む
+    </Button>
   </>
 )

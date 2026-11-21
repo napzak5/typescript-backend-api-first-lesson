@@ -1,7 +1,18 @@
 /*
- * As wide as its label: a grid item stretches by default, so the container
- * decides the width (`justify-items`, or a column of its own).
- *
+ * As wide and as high as its label wherever it stands, also as an item of
+ * a grid, which stretches what it holds: a button that stands alone is no
+ * wider than its words. What lines buttons up and gives them the room
+ * (`Actions`, the actions of a `Dialog`) says so for its own items, and
+ * wins over this rule, which weighs nothing (`:where`), in whatever order
+ * the stylesheets load. Where the grid places it follows the grid
+ * (`justify-items: center` centres it).
+ */
+:where(.button) {
+  inline-size: fit-content;
+  block-size: fit-content;
+}
+
+/*
  * Its label stays on one line while there is room, and a Japanese label is
  * not broken between two characters. A label that is longer than the line
  * the button stands in (it may hold a name somebody chose) goes on in a

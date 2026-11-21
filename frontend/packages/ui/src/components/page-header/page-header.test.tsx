@@ -34,9 +34,7 @@ describe('PageHeader', () => {
     await stories.WithDescription.run()
 
     // Assert
-    expect(screen.getByText('今日の予約は 12 件です。')).toHaveClass(
-      'description',
-    )
+    expect(screen.getByText('今日の予約は 12 件です。')).toHaveClass('note')
   })
 
   it('should show its actions', async () => {
