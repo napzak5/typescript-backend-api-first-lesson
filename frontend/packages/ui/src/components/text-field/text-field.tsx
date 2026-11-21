@@ -2,6 +2,9 @@ import type { ComponentProps } from 'react'
 import controlStyles from '../field/control.module.css'
 import { Field } from '../field/field'
 
+/** What a browser may fill a control in with: a name of HTML, or `off` */
+type AutoFill = NonNullable<ComponentProps<'input'>['autoComplete']>
+
 /** The kinds of input that are one line of text. */
 type TextFieldType =
   | 'text'
@@ -17,7 +20,7 @@ type TextFieldType =
 
 export type TextFieldProps = Omit<
   ComponentProps<'input'>,
-  'type' | 'children'
+  'type' | 'children' | 'autoComplete'
 > & {
   label: string
   /** Help for the value: what to enter, or in which form */
@@ -25,6 +28,13 @@ export type TextFieldProps = Omit<
   /** What is wrong with the value */
   error?: string | undefined
   type?: TextFieldType | undefined
+  /**
+   * What the browser may fill in: the name HTML gives the value (`email`,
+   * `tel`, `family-name`, `bday`), or `off` for a value it knows nothing of
+   * (a tag, a note, the day of a booking). Never left to the browser to
+   * guess from the name of the control
+   */
+  autoComplete: AutoFill
 }
 
 /**
