@@ -1952,8 +1952,9 @@ works at the salon:
   takes the focus. A refusal is said under the heading.
 
 The purchase orders of a salon (`src/purchase-orders/`) are searched,
-read, drafted and moved on by everybody who works at the salon, and
-approved and cancelled by its owner, its managers and an administrator:
+read, drafted, moved on and received by everybody who works at the
+salon, and approved and cancelled by its owner, its managers and an
+administrator:
 
 - **Items as a count enters them**: every stock row of the salon has a
   quantity and a unit price, and only the rows given a quantity are
@@ -1983,6 +1984,19 @@ approved and cancelled by its owner, its managers and an administrator:
   delivery, the notes) is changed on a screen of its own that sends
   what was changed; an order that does not change any more is offered
   no link to it, and its address says so.
+- **The goods that came** are entered over what was ordered: each item
+  whose stock row is still there starts at the quantity ordered, and an
+  item left empty is not received. A value that the API keeps when it
+  is not sent (the notes, for null) is sent only when it was changed,
+  and what the API cannot clear is refused at its control. A receipt
+  changes the stock, so the keys of the stock of the salon are dropped
+  with those of the orders.
+- **Suggestions that start a form**: the suggestions of a supplier
+  lead to the form of a new order with the supplier in its address
+  (`?suggested=`). The form reads them as well and starts with their
+  quantities, each put on a row the form shows (a suggestion names a
+  product, an item a stock row), says above itself how many rows it
+  filled, and works its subtotal out from what it starts with.
 
 ## Screens that a mailed link opens
 
