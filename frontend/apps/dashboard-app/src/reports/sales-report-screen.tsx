@@ -134,7 +134,7 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             <UnreadNotice
               message={unreadMessageOf('売上レポート', reason)}
               onRetry={() => void read.refetch()}
-              retrying={read.isFetching}
+              pending={read.isFetching}
             />
           ))
           .exhaustive()}

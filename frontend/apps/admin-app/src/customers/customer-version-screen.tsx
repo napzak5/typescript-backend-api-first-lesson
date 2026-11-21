@@ -68,7 +68,7 @@ const ComparedVersion = ({ salon, version, changer }: ComparedVersionProps) => {
         <UnreadNotice
           message={unreadMessageOf('前の版', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
         {record(undefined)}
       </>
@@ -107,10 +107,7 @@ const VersionPart = ({
   return (
     <>
       <p>
-        <ButtonLink
-          href={customerHistoryHrefOf(salon.id, customerId)}
-          variant='secondary'
-        >
+        <ButtonLink href={customerHistoryHrefOf(salon.id, customerId)}>
           変更履歴へ
         </ButtonLink>
       </p>
@@ -155,7 +152,7 @@ const VersionPart = ({
             <UnreadNotice
               message={unreadMessageOf('版', reason)}
               onRetry={() => void read.refetch()}
-              retrying={read.isFetching}
+              pending={read.isFetching}
             />
           ))
           .exhaustive()

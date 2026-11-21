@@ -58,9 +58,7 @@ export const UserRecord = ({
         items={[
           {
             term: 'メールアドレス',
-            description: (
-              <span className={styles['address']}>{user.email}</span>
-            ),
+            description: user.email,
           },
           { term: 'ロール', description: userRoleNameOf(user.role) },
           { term: '状態', description: statusNameOf(user.status) },

@@ -77,6 +77,7 @@ export const ReviewReport = ({
     <TextArea
       label='詳しい内容'
       name={DETAILS}
+      rows={4}
       maxLength={MAX_DETAILS_LENGTH}
       description={`どこが問題かを、${MAX_DETAILS_LENGTH} 文字以内でご記入ください。理由が「その他」のときは、必ずご記入ください。`}
       error={errors[DETAILS]}

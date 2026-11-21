@@ -246,6 +246,7 @@ const TimeStep = ({ salon, service, staff }: TimeStepProps) => {
         <TextArea
           label='ご要望'
           name='customerRequest'
+          rows={4}
           description='サロンに伝えておきたいことがあれば、ご記入ください。'
           error={says.errors['customerRequest']}
         />
@@ -301,14 +302,14 @@ const BookingSteps = ({ salon, service }: OfServiceProps) => {
           <UnreadNotice
             message={unreadMessageOf('スタッフ', reason)}
             onRetry={() => void staff.refetch()}
-            retrying={staff.isFetching}
+            pending={staff.isFetching}
           />
         ))
         .with([P._, { type: UNREAD }], ([, reason]) => (
           <UnreadNotice
             message={unreadMessageOf('お客様の情報', reason)}
             onRetry={() => void profile.refetch()}
-            retrying={profile.isFetching}
+            pending={profile.isFetching}
           />
         ))
         .with([{ type: 'found' }, { type: 'none' }], () => <ProfileStep />)
@@ -359,7 +360,7 @@ const BookingPage = () => {
         <UnreadNotice
           message={unreadMessageOf('サロン', reason)}
           onRetry={() => void salon.refetch()}
-          retrying={salon.isFetching}
+          pending={salon.isFetching}
         />
       </>
     ))
@@ -369,7 +370,7 @@ const BookingPage = () => {
         <UnreadNotice
           message={unreadMessageOf('メニュー', reason)}
           onRetry={() => void service.refetch()}
-          retrying={service.isFetching}
+          pending={service.isFetching}
         />
       </>
     ))
@@ -378,10 +379,7 @@ const BookingPage = () => {
         <PageHeader
           title={TITLE}
           actions={
-            <ButtonLink
-              href={`/salons/${foundSalon.salon.id}`}
-              variant='secondary'
-            >
+            <ButtonLink href={`/salons/${foundSalon.salon.id}`}>
               サロンのページへ戻る
             </ButtonLink>
           }

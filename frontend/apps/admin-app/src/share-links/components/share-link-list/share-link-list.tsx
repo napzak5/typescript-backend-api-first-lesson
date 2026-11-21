@@ -79,9 +79,7 @@ export const ShareLinkList = ({
     title='共有リンク'
     actions={
       listing.type === 'notShared' ? undefined : (
-        <ButtonLink href={entryHref} variant='secondary'>
-          共有リンクを発行する
-        </ButtonLink>
+        <ButtonLink href={entryHref}>共有リンクを発行する</ButtonLink>
       )
     }
   >
@@ -98,7 +96,7 @@ export const ShareLinkList = ({
           <UnreadNotice
             message={message}
             onRetry={onRetry}
-            retrying={retrying}
+            pending={retrying}
           />
         ))
         .with({ type: 'listed', shareLinks: [] }, () => (

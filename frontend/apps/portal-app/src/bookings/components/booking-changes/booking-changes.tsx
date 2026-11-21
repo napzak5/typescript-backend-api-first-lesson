@@ -54,9 +54,7 @@ export const BookingChanges = ({
           この予約の日時の変更は、サロンにお問い合わせください。
         </p>
       ) : (
-        <ButtonLink href={moveHref} variant='secondary'>
-          日時を変更する
-        </ButtonLink>
+        <ButtonLink href={moveHref}>日時を変更する</ButtonLink>
       )}
       <Button variant='danger' onClick={onOpen}>
         予約をキャンセルする
@@ -67,7 +65,7 @@ export const BookingChanges = ({
         title='予約をキャンセルしますか？'
         description={`${when}の予約をキャンセルします。キャンセルした予約は、元に戻せません。`}
         submitLabel='キャンセルを確定する'
-        tone='danger'
+        submitVariant='danger'
         message={message}
         pending={pending}
         onSubmit={onCancel}
@@ -75,6 +73,7 @@ export const BookingChanges = ({
         <TextArea
           label='キャンセルの理由'
           name='cancellationReason'
+          rows={4}
           description='サロンに伝えたいことがあれば、ご記入ください。空欄のままでも、キャンセルできます。'
         />
       </FormDialog>

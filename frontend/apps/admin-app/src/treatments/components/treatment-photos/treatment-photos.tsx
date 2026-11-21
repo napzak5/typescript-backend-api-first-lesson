@@ -5,6 +5,7 @@ import {
   ButtonLink,
   Card,
   Dialog,
+  EmptyState,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import {
@@ -74,16 +75,14 @@ export const TreatmentPhotos = ({
     headingRef={headingRef}
     actions={
       roomOf({ photos }) > 0 ? (
-        <ButtonLink href={addHref} variant='secondary'>
-          写真を足す
-        </ButtonLink>
+        <ButtonLink href={addHref}>写真を足す</ButtonLink>
       ) : undefined
     }
   >
     <div className={styles['part']}>
       {refusal !== undefined && <Alert tone='warning'>{refusal}</Alert>}
       {photos.length === 0 ? (
-        <p className={styles['note']}>施術写真はありません。</p>
+        <EmptyState kind='part' title='施術写真はありません。' />
       ) : (
         <ul className={styles['photos']} aria-label='施術写真の一覧'>
           {photos.map((photo, index) => (

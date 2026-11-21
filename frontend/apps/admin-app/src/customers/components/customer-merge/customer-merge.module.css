@@ -13,17 +13,6 @@
   gap: var(--space-5);
 }
 
-/*
- * The values break their lines, unlike the cells of other tables: notes
- * and addresses are long, and the value after the merge is the column
- * that must be seen. On a narrow screen the table scrolls sideways.
- */
-.value {
-  min-inline-size: 10rem;
-  white-space: normal;
-  overflow-wrap: break-word;
-}
-
 .obstacles {
   display: grid;
   gap: var(--space-1);

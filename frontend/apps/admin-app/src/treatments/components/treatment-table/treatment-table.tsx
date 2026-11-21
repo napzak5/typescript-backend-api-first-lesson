@@ -19,7 +19,6 @@ import {
   satisfactionNameOf,
 } from '../../treatment-format'
 import type { FoundTreatment } from '../../treatments-api'
-import styles from './treatment-table.module.css'
 
 export type TreatmentTableProps = {
   /** What the table lists: 「施術記録」, or 「条件に合う施術記録」 */
@@ -94,13 +93,11 @@ export const TreatmentTable = ({
       {
         key: 'services',
         header: 'サービス',
-        cell: ({ record }) => (
-          <span className={styles['text']}>
-            {record.services
-              .map((serviceId) => serviceNameOf(serviceId, services))
-              .join('、')}
-          </span>
-        ),
+        wrap: 'words',
+        cell: ({ record }) =>
+          record.services
+            .map((serviceId) => serviceNameOf(serviceId, services))
+            .join('、'),
       },
       {
         key: 'processingTime',

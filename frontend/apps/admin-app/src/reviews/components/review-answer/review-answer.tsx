@@ -6,6 +6,7 @@ import {
   ButtonLink,
   Card,
   Dialog,
+  EmptyState,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import styles from './review-answer.module.css'
@@ -63,7 +64,7 @@ export const ReviewAnswer = ({
     <Card title='サロンからの返信' headingRef={headingRef}>
       <div className={styles['answer']}>
         {review.ownerResponse === null ? (
-          <p>まだ返信していません。</p>
+          <EmptyState kind='part' title='まだ返信していません。' />
         ) : (
           <>
             <p className={styles['text']}>{review.ownerResponse}</p>

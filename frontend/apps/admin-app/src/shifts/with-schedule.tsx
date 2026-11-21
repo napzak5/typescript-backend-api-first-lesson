@@ -167,9 +167,7 @@ const ScheduleNotFound = ({ salon }: ScheduleNotFoundProps) => (
       description='アドレスが正しいか、お確かめください。削除したスタッフは、表示できません。無効なスタッフの勤務スケジュールは、オーナーと管理者が、スタッフ台帳から開けます。'
     />
     <p>
-      <ButtonLink href={shiftsHrefOf(salon.id)} variant='secondary'>
-        シフトへ
-      </ButtonLink>
+      <ButtonLink href={shiftsHrefOf(salon.id)}>シフトへ</ButtonLink>
     </p>
   </>
 )
@@ -181,9 +179,7 @@ const ScheduleForbidden = () => (
       この勤務スケジュールは、見られません。勤務スケジュールを見られるのは、そのサロンのオーナー、マネージャー、管理者と、そのスタッフ自身です。
     </p>
     <p>
-      <ButtonLink href='/' variant='secondary'>
-        トップへ戻る
-      </ButtonLink>
+      <ButtonLink href='/'>トップへ戻る</ButtonLink>
     </p>
   </>
 )
@@ -273,7 +269,7 @@ export const WithSchedule = ({
             member.again()
             void schedule.refetch()
           }}
-          retrying={member.reading || schedule.isFetching}
+          pending={member.reading || schedule.isFetching}
         />
       </>
     ))

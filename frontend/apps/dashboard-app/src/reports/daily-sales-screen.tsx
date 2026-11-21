@@ -82,7 +82,6 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 {before !== undefined && (
                   <ButtonLink
                     href={`${pathname}?${dayQueryOf(before).toString()}`}
-                    variant='secondary'
                   >
                     前の日
                   </ButtonLink>
@@ -90,7 +89,6 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 {after !== undefined && (
                   <ButtonLink
                     href={`${pathname}?${dayQueryOf(after).toString()}`}
-                    variant='secondary'
                   >
                     次の日
                   </ButtonLink>
@@ -107,7 +105,7 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                   <UnreadNotice
                     message={unreadMessageOf('売上', reason)}
                     onRetry={() => void read.refetch()}
-                    retrying={read.isFetching}
+                    pending={read.isFetching}
                   />
                 ))
                 .exhaustive()}

@@ -168,10 +168,7 @@ const PreferencesPart = ({ salon, customer }: PartProps) => {
     <Card
       title='好み設定'
       actions={
-        <ButtonLink
-          href={customerPreferencesHrefOf(salon.id, customer.id)}
-          variant='secondary'
-        >
+        <ButtonLink href={customerPreferencesHrefOf(salon.id, customer.id)}>
           好み設定を直す
         </ButtonLink>
       }
@@ -188,7 +185,7 @@ const PreferencesPart = ({ salon, customer }: PartProps) => {
           <UnreadNotice
             message={unreadMessageOf('好み設定', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}
@@ -206,10 +203,7 @@ const AccountPart = ({ customer }: Pick<PartProps, 'customer'>) => (
     title='ログインアカウント'
     actions={
       customer.userId === null ? undefined : (
-        <ButtonLink
-          href={userAccountHrefOf(customer.userId)}
-          variant='secondary'
-        >
+        <ButtonLink href={userAccountHrefOf(customer.userId)}>
           アカウントの状態を見る
         </ButtonLink>
       )
@@ -260,10 +254,7 @@ const UsePart = ({ salon, customer }: PartProps) => {
     <Card
       title='このサロンでの利用'
       actions={
-        <ButtonLink
-          href={treatmentsOfCustomerHrefOf(salon.id, customer.id)}
-          variant='secondary'
-        >
+        <ButtonLink href={treatmentsOfCustomerHrefOf(salon.id, customer.id)}>
           施術記録を見る
         </ButtonLink>
       }
@@ -294,7 +285,7 @@ const UsePart = ({ salon, customer }: PartProps) => {
           <UnreadNotice
             message={unreadMessageOf('利用の集計', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}

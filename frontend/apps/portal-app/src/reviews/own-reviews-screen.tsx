@@ -47,7 +47,7 @@ const NO_REVIEWS = (
   <EmptyState
     title='レビューは、まだありません'
     description='来店が済んだ予約の内容の画面から、レビューを書けます。'
-    action={
+    actions={
       <ButtonLink href={listHrefOf('past')}>これまでの予約を見る</ButtonLink>
     }
   />
@@ -58,7 +58,7 @@ const NO_PROFILE = (
   <EmptyState
     title='レビューは、お客様の情報を登録すると書けます'
     description='お名前と電話番号を登録して、サロンに来店すると、その来店のレビューを書けます。'
-    action={
+    actions={
       <ButtonLink href='/mypage/profile'>お客様の情報を登録する</ButtonLink>
     }
   />
@@ -138,7 +138,7 @@ const Reviews = ({ customerId }: ReviewsProps) => {
       <UnreadNotice
         message={unreadMessageOf('レビュー', reason)}
         onRetry={() => void read.refetch()}
-        retrying={read.isFetching}
+        pending={read.isFetching}
       />
     ))
     .with({ type: 'listed', items: [] }, () => NO_REVIEWS)
@@ -184,11 +184,7 @@ const OwnReviews = () => {
       <PageHeader
         title={TITLE}
         description='来店したサロンに書いたレビューです。サロンのページに掲載され、誰でも読めます。'
-        actions={
-          <ButtonLink href='/mypage' variant='secondary'>
-            マイページへ戻る
-          </ButtonLink>
-        }
+        actions={<ButtonLink href='/mypage'>マイページへ戻る</ButtonLink>}
       />
       {match(profile.data)
         .with(undefined, () => (
@@ -202,7 +198,7 @@ const OwnReviews = () => {
           <UnreadNotice
             message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void profile.refetch()}
-            retrying={profile.isFetching}
+            pending={profile.isFetching}
           />
         ))
         .exhaustive()}

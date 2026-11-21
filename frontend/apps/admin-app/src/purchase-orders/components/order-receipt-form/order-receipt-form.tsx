@@ -36,8 +36,8 @@ export const OrderReceiptForm = ({
 }: OrderReceiptFormProps) => (
   <Form {...form} errors={errors}>
     <FormPart
-      name='届いた数量'
-      note='届いた数量を、明細ごとに入力します。はじめの値は、発注した数量です。届かなかった明細は空にします。入荷を記録すると、発注は納品済みになり、空の明細は受け取りません。あとから届いた分と、発注より多く届いた分は、在庫の移動（仕入れ）で記録します。'
+      label='届いた数量'
+      description='届いた数量を、明細ごとに入力します。はじめの値は、発注した数量です。届かなかった明細は空にします。入荷を記録すると、発注は納品済みになり、空の明細は受け取りません。あとから届いた分と、発注より多く届いた分は、在庫の移動（仕入れ）で記録します。'
     >
       {order.items.map((item) =>
         item.inventoryId === null ? (
@@ -61,7 +61,6 @@ export const OrderReceiptForm = ({
     <TextArea
       label='納品のメモ'
       name='deliveryNotes'
-      rows={3}
       defaultValue={order.deliveryNotes ?? ''}
       description='任意。届いたときのこと（欠品や破損など）。書き換えると、発注の納品のメモが変わります。'
       error={errors['deliveryNotes']}

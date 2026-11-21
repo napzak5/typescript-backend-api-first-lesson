@@ -164,7 +164,7 @@ const MovementHistory = ({
             <UnreadNotice
               message={unreadMessageOf('在庫の移動', reason)}
               onRetry={() => void read.refetch()}
-              retrying={read.isFetching}
+              pending={read.isFetching}
             />
           ))
           .with({ type: 'listed', items: [] }, () =>
@@ -177,7 +177,7 @@ const MovementHistory = ({
               <EmptyState
                 title='在庫の移動はありません'
                 description='仕入れ、販売、施術での使用などを記録すると、ここに出ます。'
-                action={<RecordMovement salon={salon} row={row} />}
+                actions={<RecordMovement salon={salon} row={row} />}
               />
             ),
           )
@@ -203,10 +203,7 @@ const MovementHistory = ({
           ))
           .exhaustive()}
         <p>
-          <ButtonLink
-            href={stockRowHrefOf(salon.id, row.id)}
-            variant='secondary'
-          >
+          <ButtonLink href={stockRowHrefOf(salon.id, row.id)}>
             在庫の行へ
           </ButtonLink>
         </p>
@@ -242,7 +239,7 @@ const MovementsPart = ({ salon, inventoryId }: MovementsPartProps) => {
             <UnreadNotice
               message={unreadMessageOf('スタッフ', reason)}
               onRetry={() => void staff.refetch()}
-              retrying={staff.isFetching}
+              pending={staff.isFetching}
             />
           ))
           .with({ type: 'found' }, ({ items }) => (

@@ -4,9 +4,7 @@ import { purchaseOrdersHrefOf } from '../navigation'
 /** The way back to the orders of the salon */
 export const ToTheOrders = ({ salonId }: { salonId: string }) => (
   <p>
-    <ButtonLink href={purchaseOrdersHrefOf(salonId)} variant='secondary'>
-      発注へ
-    </ButtonLink>
+    <ButtonLink href={purchaseOrdersHrefOf(salonId)}>発注へ</ButtonLink>
   </p>
 )
 

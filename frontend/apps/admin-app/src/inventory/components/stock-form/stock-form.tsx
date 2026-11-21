@@ -60,8 +60,8 @@ export const StockForm = ({
   return (
     <Form {...form} errors={errors}>
       <FormPart
-        name='在庫の行'
-        note={
+        label='在庫の行'
+        description={
           row === null
             ? '在庫数 0 の行として足します。在庫数は、入庫と棚卸しで変わります。'
             : undefined
@@ -136,7 +136,6 @@ export const StockForm = ({
         <TextArea
           label='メモ'
           name='notes'
-          rows={3}
           defaultValue={row?.notes ?? undefined}
           error={errors['notes']}
         />

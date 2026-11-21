@@ -45,7 +45,7 @@ const StateWords = ({ state, member }: StateWordsProps) =>
     .with('elsewhere', () => (
       <p className={styles['note']}>
         招待したあとで、台帳のメールアドレスが変わりました（いまは
-        <span className={styles['address']}>{member.email}</span>
+        {member.email}
         ）。この招待のリンクは使えません。招待し直すと、いまのメールアドレスに送ります。
       </p>
     ))
@@ -86,9 +86,7 @@ export const InvitationRecord = ({
           { term: '状態', description: BADGES[state] },
           {
             term: '宛先',
-            description: (
-              <span className={styles['address']}>{invitation.email}</span>
-            ),
+            description: invitation.email,
           },
           { term: 'ロール', description: roleNameOf(invitation.role) },
           {

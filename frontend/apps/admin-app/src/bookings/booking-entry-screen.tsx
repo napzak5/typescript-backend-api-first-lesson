@@ -114,18 +114,14 @@ const CustomerResults = ({
       <UnreadNotice
         message={unreadMessageOf('お客様', reason)}
         onRetry={() => void found.refetch()}
-        retrying={found.isFetching}
+        pending={found.isFetching}
       />
     ))
     .with({ type: 'listed', items: [] }, () => (
       <EmptyState
         title='キーワードに合うお客様が見つかりませんでした'
         description='キーワードを変えて、もう一度お探しください。台帳にないお客様は、先に台帳に登録してください。登録したお客様の台帳から、予約を入れられます。'
-        action={
-          <ButtonLink href={entryHref} variant='secondary'>
-            お客様を登録する
-          </ButtonLink>
-        }
+        actions={<ButtonLink href={entryHref}>お客様を登録する</ButtonLink>}
       />
     ))
     .with({ type: 'listed' }, ({ items, total, rest }) => (
@@ -339,9 +335,7 @@ const EntryStep = ({
           お客様が見つかりません。台帳から削除されたか、アドレスが正しくありません。
         </Alert>
         <p>
-          <ButtonLink href={againHref} variant='secondary'>
-            お客様を選び直す
-          </ButtonLink>
+          <ButtonLink href={againHref}>お客様を選び直す</ButtonLink>
         </p>
       </>
     ))
@@ -375,7 +369,7 @@ const EntryStep = ({
             void staff.refetch()
             void services.refetch()
           }}
-          retrying={
+          pending={
             customer.isFetching || staff.isFetching || services.isFetching
           }
         />

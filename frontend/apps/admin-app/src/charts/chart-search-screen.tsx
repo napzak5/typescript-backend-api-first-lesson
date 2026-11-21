@@ -74,9 +74,7 @@ const ChartSearch = ({ salon }: ChartSearchProps) => {
   }
 
   const ledger = (
-    <ButtonLink href={customersHrefOf(salon.id)} variant='secondary'>
-      顧客台帳へ
-    </ButtonLink>
+    <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
   )
 
   return (
@@ -96,7 +94,7 @@ const ChartSearch = ({ salon }: ChartSearchProps) => {
           <UnreadNotice
             message={unreadMessageOf('カルテ', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () =>
@@ -109,7 +107,7 @@ const ChartSearch = ({ salon }: ChartSearchProps) => {
             <EmptyState
               title='カルテはありません'
               description='カルテは、お客様の台帳から作ります。'
-              action={ledger}
+              actions={ledger}
             />
           ),
         )

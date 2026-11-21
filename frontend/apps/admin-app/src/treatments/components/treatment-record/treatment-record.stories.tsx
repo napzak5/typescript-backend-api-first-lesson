@@ -25,9 +25,7 @@ const meta: Meta<typeof TreatmentRecord> = {
     products,
     actions: (
       <>
-        <ButtonLink href='/' variant='secondary'>
-          施術記録を直す
-        </ButtonLink>
+        <ButtonLink href='/'>施術記録を直す</ButtonLink>
         <Button variant='danger'>削除</Button>
       </>
     ),

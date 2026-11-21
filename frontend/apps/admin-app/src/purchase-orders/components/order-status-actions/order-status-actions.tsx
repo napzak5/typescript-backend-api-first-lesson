@@ -117,7 +117,7 @@ export const OrderStatusActions = ({
             : ''
         }取り消した発注は、元に戻せません。`}
         submitLabel='取り消す'
-        tone='danger'
+        submitVariant='danger'
         message={message}
         errors={cancellationErrors}
         pending={pending === 'cancel'}
@@ -126,6 +126,7 @@ export const OrderStatusActions = ({
         <TextArea
           label='取り消す理由'
           name='cancellationReason'
+          rows={4}
           required
           description='仕入先の在庫切れなど。理由は、発注の内容に残ります。'
           error={cancellationErrors['cancellationReason']}

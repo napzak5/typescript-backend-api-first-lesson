@@ -142,10 +142,7 @@ export const ScheduleChangeScreen = () => {
               このアカウントでは、勤務スケジュールを直せません。勤務スケジュールを直せるのは、サロンのオーナー、マネージャーと、管理者です。
             </p>
             <p>
-              <ButtonLink
-                href={scheduleHrefOf(salon.id, staffId)}
-                variant='secondary'
-              >
+              <ButtonLink href={scheduleHrefOf(salon.id, staffId)}>
                 勤務スケジュールへ
               </ButtonLink>
             </p>

@@ -6,7 +6,7 @@ import type {
   ModelsTwoFactorStatusType,
   ModelsUserAccountStatusType,
 } from '@beauty-salon-frontend/api-client'
-import type { RadioOption } from '@beauty-salon-frontend/ui'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import type { AccountRead, InvitationRead } from './accounts-api'
 
@@ -41,7 +41,7 @@ export const roleDescriptionFor = (role: string): string =>
 /** The roles an account may give, as the choices of a form. */
 export const roleOptionsOf = (
   roles: readonly ModelsSalonRoleType[],
-): RadioOption[] =>
+): ChoiceOption[] =>
   roles.map((role) => ({ value: role, label: roleNameOf(role) }))
 
 const STATUS_NAMES: Record<ModelsUserAccountStatusType, string> = {

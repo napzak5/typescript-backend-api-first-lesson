@@ -6,7 +6,7 @@ import type {
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import type { BadgeProps } from '@beauty-salon-frontend/ui'
+import type { BadgeTone } from '@beauty-salon-frontend/ui'
 
 /*
  * A sale and its payments in the words of the salon, and what follows from
@@ -27,10 +27,7 @@ const PAYMENT_STATUS_NAMES: Record<ModelsPaymentStatusType, string> = {
 export const paymentStatusNameOf = (status: ModelsPaymentStatusType): string =>
   PAYMENT_STATUS_NAMES[status]
 
-const PAYMENT_STATUS_TONES: Record<
-  ModelsPaymentStatusType,
-  NonNullable<BadgeProps['tone']>
-> = {
+const PAYMENT_STATUS_TONES: Record<ModelsPaymentStatusType, BadgeTone> = {
   pending: 'warning',
   processing: 'info',
   completed: 'success',
@@ -42,7 +39,7 @@ const PAYMENT_STATUS_TONES: Record<
 /** The group the state belongs to: the colour of its badge. */
 export const paymentStatusToneOf = (
   status: ModelsPaymentStatusType,
-): NonNullable<BadgeProps['tone']> => PAYMENT_STATUS_TONES[status]
+): BadgeTone => PAYMENT_STATUS_TONES[status]
 
 const PAYMENT_NAMES: Record<ModelsPaymentStatusType, string> = {
   pending: '処理待ち',

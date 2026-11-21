@@ -394,7 +394,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
             void staff.refetch()
             void services.refetch()
           }}
-          retrying={
+          pending={
             customer.isFetching || staff.isFetching || services.isFetching
           }
         />
@@ -433,10 +433,7 @@ const BookingOfSalon = ({ salon }: BookingOfSalonProps) => {
             <PageHeader title={TITLE} description={salon.name} />
             <BookingDetails salon={salon} booking={booking} />
             <p>
-              <ButtonLink
-                href={`${bookings}?date=${booking.bookingDate}`}
-                variant='secondary'
-              >
+              <ButtonLink href={`${bookings}?date=${booking.bookingDate}`}>
                 この日の予約へ
               </ButtonLink>
             </p>
@@ -451,9 +448,7 @@ const BookingOfSalon = ({ salon }: BookingOfSalonProps) => {
             description='アドレスが正しいか、お確かめください。削除された予約は、表示できません。'
           />
           <p>
-            <ButtonLink href={bookings} variant='secondary'>
-              今日の予約へ
-            </ButtonLink>
+            <ButtonLink href={bookings}>今日の予約へ</ButtonLink>
           </p>
         </>
       ))
@@ -469,7 +464,7 @@ const BookingOfSalon = ({ salon }: BookingOfSalonProps) => {
           <UnreadNotice
             message={unreadMessageOf('予約', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         </>
       ))

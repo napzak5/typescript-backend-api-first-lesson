@@ -20,14 +20,12 @@
 
 .title {
   font-weight: var(--font-weight-bold);
-  overflow-wrap: anywhere;
 }
 
 /* What somebody wrote, with the line breaks they wrote */
 .text {
   max-inline-size: var(--size-text-column);
   white-space: pre-line;
-  overflow-wrap: anywhere;
 }
 
 .aside {
@@ -41,7 +39,6 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1);
   font-size: var(--font-size-small);
-  overflow-wrap: anywhere;
 }
 
 .response {

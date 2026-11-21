@@ -85,7 +85,7 @@ export const CustomerForm = ({
   return (
     <>
       <Form {...form} errors={errors}>
-        <FormPart name='お名前'>
+        <FormPart label='お名前'>
           <FieldRow>
             <TextField
               label='姓'
@@ -121,7 +121,7 @@ export const CustomerForm = ({
             />
           </FieldRow>
         </FormPart>
-        <FormPart name='連絡先'>
+        <FormPart label='連絡先'>
           <TextField
             label='メールアドレス'
             name='email'
@@ -152,7 +152,7 @@ export const CustomerForm = ({
             />
           </FieldRow>
         </FormPart>
-        <FormPart name='住所'>
+        <FormPart label='住所'>
           <TextField
             label='郵便番号'
             name='postalCode'
@@ -191,7 +191,7 @@ export const CustomerForm = ({
             error={errors['building']}
           />
         </FormPart>
-        <FormPart name='お客様について'>
+        <FormPart label='お客様について'>
           <FieldRow>
             <TextField
               label='生年月日'
@@ -220,7 +220,7 @@ export const CustomerForm = ({
             error={errors['occupation']}
           />
         </FormPart>
-        <FormPart name='髪と頭皮'>
+        <FormPart label='髪と頭皮'>
           <FieldRow columns={3}>
             <Select
               label='髪質'
@@ -248,7 +248,7 @@ export const CustomerForm = ({
             />
           </FieldRow>
         </FormPart>
-        <FormPart name='好み'>
+        <FormPart label='好み'>
           <CheckboxGroup
             label='好みのメニュー'
             name={PREFERRED_SERVICES}
@@ -260,13 +260,12 @@ export const CustomerForm = ({
           <TextArea
             label='好みについてのメモ'
             name={PREFERENCE_NOTES}
-            rows={3}
             description='使ってほしい製品や、苦手なことなどです。お客様もプロフィールで書き換えられます。'
             defaultValue={customer?.preferences?.notes ?? undefined}
             error={errors[PREFERENCE_NOTES]}
           />
         </FormPart>
-        <FormPart name='サロンでの扱い'>
+        <FormPart label='サロンでの扱い'>
           <FieldRow>
             <Select
               label='会員ランク'
@@ -302,7 +301,7 @@ export const CustomerForm = ({
             error={errors['tags']}
           />
         </FormPart>
-        <FormPart name='紹介'>
+        <FormPart label='紹介'>
           <ReferrerField
             referrer={referrer}
             error={errors[REFERRER]}
@@ -318,7 +317,7 @@ export const CustomerForm = ({
             error={errors['referralCode']}
           />
         </FormPart>
-        <FormPart name='送ってよい連絡'>
+        <FormPart label='送ってよい連絡'>
           <Checkbox
             label='メールでの連絡'
             name='allowEmail'
@@ -338,11 +337,10 @@ export const CustomerForm = ({
             error={errors['allowMarketing']}
           />
         </FormPart>
-        <FormPart name='メモ'>
+        <FormPart label='メモ'>
           <TextArea
             label='備考'
             name='notes'
-            rows={3}
             description='お客様には見えません。'
             defaultValue={customer?.notes ?? undefined}
             error={errors['notes']}
@@ -350,7 +348,6 @@ export const CustomerForm = ({
           <TextArea
             label='スタッフ間の申し送り'
             name='internalNotes'
-            rows={3}
             description='お客様には見えません。'
             defaultValue={customer?.internalNotes ?? undefined}
             error={errors['internalNotes']}

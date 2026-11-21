@@ -65,12 +65,8 @@ export const CustomerKeeping = ({
         </p>
         {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
         <div className={styles['actions']}>
-          <ButtonLink href={historyHref} variant='secondary'>
-            変更履歴
-          </ButtonLink>
-          <ButtonLink href={mergeHref} variant='secondary'>
-            ほかのお客様とまとめる
-          </ButtonLink>
+          <ButtonLink href={historyHref}>変更履歴</ButtonLink>
+          <ButtonLink href={mergeHref}>ほかのお客様とまとめる</ButtonLink>
           <Button variant='danger' onClick={onOpen}>
             台帳から削除する
           </Button>

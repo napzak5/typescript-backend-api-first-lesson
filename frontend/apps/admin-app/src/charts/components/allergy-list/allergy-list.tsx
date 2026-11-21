@@ -72,11 +72,6 @@ export type AllergyListProps = {
   onRemove: () => void
 }
 
-/** A text of several words, which breaks its lines in its cell */
-const textCell = (text: string) => (
-  <span className={styles['text']}>{text}</span>
-)
-
 /**
  * The allergies of a customer, as a member of the staff makes sure of them
  * before a treatment: the heaviest first, the severity in a word and, for
@@ -103,11 +98,7 @@ export const AllergyList = ({
   <Card
     title='アレルギー'
     headingRef={headingRef}
-    actions={
-      <ButtonLink href={entryHref} variant='secondary'>
-        アレルギーを記録する
-      </ButtonLink>
-    }
+    actions={<ButtonLink href={entryHref}>アレルギーを記録する</ButtonLink>}
   >
     <div className={styles['allergies']}>
       {refusal !== undefined && <Alert tone='warning'>{refusal}</Alert>}
@@ -116,11 +107,7 @@ export const AllergyList = ({
           <LoadingIndicator label='アレルギーを読み込んでいます' />
         ))
         .with({ type: 'unread' }, ({ message: unread, retrying }) => (
-          <UnreadNotice
-            message={unread}
-            onRetry={onRetry}
-            retrying={retrying}
-          />
+          <UnreadNotice message={unread} onRetry={onRetry} pending={retrying} />
         ))
         .with({ type: 'listed' }, ({ allergies, total, more }) => (
           <PagedTable
@@ -130,9 +117,8 @@ export const AllergyList = ({
               {
                 key: 'allergenName',
                 header: 'アレルゲン',
-                cell: ({ allergenName }) => (
-                  <span className={styles['allergen']}>{allergenName}</span>
-                ),
+                wrap: 'words',
+                cell: ({ allergenName }) => allergenName,
               },
               {
                 key: 'severityType',
@@ -151,13 +137,14 @@ export const AllergyList = ({
               {
                 key: 'symptoms',
                 header: '症状',
-                cell: ({ symptoms }) =>
-                  symptoms === null ? UNRECORDED : textCell(symptoms),
+                wrap: 'lines',
+                cell: ({ symptoms }) => symptoms ?? UNRECORDED,
               },
               {
                 key: 'notes',
                 header: '施術のときの注意',
-                cell: ({ notes }) => (notes === null ? '' : textCell(notes)),
+                wrap: 'lines',
+                cell: ({ notes }) => notes ?? '',
               },
               {
                 key: 'confirmedDate',

@@ -33,7 +33,7 @@ export const ChosenCustomer = ({
     <Card
       title='お客様'
       actions={
-        <ButtonLink href={againHref} variant='secondary' size='small'>
+        <ButtonLink href={againHref} size='small'>
           お客様を選び直す
         </ButtonLink>
       }

@@ -82,7 +82,7 @@ export const AttachmentRecord = ({
           <UnreadNotice
             message={why}
             onRetry={onRetryLinks}
-            retrying={retryingLinks}
+            pending={retryingLinks}
           />
         ))
         .with({ type: 'issued' }, ({ open, save }) => (

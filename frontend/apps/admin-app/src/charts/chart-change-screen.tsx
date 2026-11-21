@@ -9,7 +9,11 @@ import {
   NOT_FOUND,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  EmptyState,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -124,17 +128,16 @@ export const ChartChangeScreen = () => {
             <WithChart key={customer.id} customerId={customer.id} fresh>
               {(chart) =>
                 chart === null ? (
-                  <>
-                    <p>このお客様のカルテは、まだありません。</p>
-                    <p>
+                  <EmptyState
+                    title='このお客様のカルテは、まだありません。'
+                    actions={
                       <ButtonLink
                         href={chartEntryHrefOf(salon.id, customer.id)}
-                        variant='secondary'
                       >
                         カルテを作る
                       </ButtonLink>
-                    </p>
-                  </>
+                    }
+                  />
                 ) : (
                   <ChartChange
                     salon={salon}

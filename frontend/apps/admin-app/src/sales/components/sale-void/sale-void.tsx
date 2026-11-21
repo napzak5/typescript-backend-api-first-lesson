@@ -72,7 +72,7 @@ export const SaleVoid = ({
         title='売上を取り消しますか？'
         description={`${subject}を取り消します。取り消した売上は、取り消しの記録として売上台帳に残り、直すことも支払いを受けることもできません。予約の会計は、入れ直せます。取り消しは、元に戻せません。`}
         submitLabel='取り消す'
-        tone='danger'
+        submitVariant='danger'
         message={message}
         errors={errors}
         pending={pending}
@@ -81,7 +81,6 @@ export const SaleVoid = ({
         <TextArea
           label='取り消しの理由'
           name='voidReason'
-          rows={3}
           required
           description='取り消した売上に残ります。あとで見る人に分かるように書きます。'
           error={errors['voidReason']}

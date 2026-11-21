@@ -78,10 +78,7 @@ const WithAllergy = ({
           このアレルギーの記録は、ありません。ほかのアカウントが削除したのかもしれません。
         </p>
         <p>
-          <ButtonLink
-            href={chartHrefOf(salon.id, customer.id)}
-            variant='secondary'
-          >
+          <ButtonLink href={chartHrefOf(salon.id, customer.id)}>
             カルテへ
           </ButtonLink>
         </p>
@@ -91,7 +88,7 @@ const WithAllergy = ({
       <UnreadNotice
         message={unreadMessageOf('アレルギー', reason)}
         onRetry={() => void read.refetch()}
-        retrying={read.isFetching}
+        pending={read.isFetching}
       />
     ))
     .exhaustive()

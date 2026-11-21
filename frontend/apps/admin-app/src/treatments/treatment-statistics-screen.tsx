@@ -101,7 +101,7 @@ const StatisticsPart = ({ salon, services }: StatisticsPartProps) => {
           <UnreadNotice
             message={unreadMessageOf('施術の統計', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}
@@ -121,7 +121,7 @@ export const TreatmentStatisticsScreen = () => {
             title={TITLE}
             description={salon.name}
             actions={
-              <ButtonLink href={treatmentsHrefOf(salon.id)} variant='secondary'>
+              <ButtonLink href={treatmentsHrefOf(salon.id)}>
                 施術記録の一覧へ
               </ButtonLink>
             }

@@ -171,7 +171,7 @@ const CustomerToChange = ({ salon, customer }: CustomerToChangeProps) => {
       <UnreadNotice
         message={unreadMessageOf('紹介元', reason)}
         onRetry={() => void read.refetch()}
-        retrying={read.isFetching}
+        pending={read.isFetching}
       />
     ))
     .exhaustive()

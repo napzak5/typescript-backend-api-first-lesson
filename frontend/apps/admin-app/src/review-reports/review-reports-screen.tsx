@@ -130,7 +130,7 @@ const ReportList = ({ salon }: { salon: ModelsSalonResponse }) => {
           <UnreadNotice
             message={unreadMessageOf('通報', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
@@ -177,9 +177,7 @@ const ReportsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         <>
           <p>{HANDLERS_ONLY}</p>
           <p>
-            <ButtonLink href={reviewsHrefOf(salon.id)} variant='secondary'>
-              レビューへ
-            </ButtonLink>
+            <ButtonLink href={reviewsHrefOf(salon.id)}>レビューへ</ButtonLink>
           </p>
         </>
       )}

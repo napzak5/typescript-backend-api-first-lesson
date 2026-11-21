@@ -177,7 +177,7 @@ const OwnPreferencesToChange = () => {
             <EmptyState
               title='好みの設定は、お客様の情報を登録すると使えます'
               description='お名前と電話番号を登録してから、もう一度お試しください。'
-              action={
+              actions={
                 <ButtonLink href='/mypage/profile'>
                   お客様の情報を登録する
                 </ButtonLink>
@@ -189,7 +189,7 @@ const OwnPreferencesToChange = () => {
           <UnreadNotice
             message={unreadMessageOf('好みの設定', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}

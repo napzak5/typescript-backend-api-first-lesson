@@ -1,10 +1,10 @@
 import type { ModelsStaffProfileResponse } from '@beauty-salon-frontend/api-client'
 import {
+  type ChoiceOption,
   countNarrowing,
   FilterForm,
   type FormErrors,
   Select,
-  type SelectOption,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
 import {
@@ -41,12 +41,12 @@ const valuesOf = ({
   sort: order ?? '',
 })
 
-const RATING_OPTIONS: readonly SelectOption[] = RATINGS.map((rating) => ({
+const RATING_OPTIONS: readonly ChoiceOption[] = RATINGS.map((rating) => ({
   value: `${rating}`,
   label: `${rating}`,
 }))
 
-const ORDER_OPTIONS: readonly SelectOption[] = [
+const ORDER_OPTIONS: readonly ChoiceOption[] = [
   { value: 'rating', label: '評価の高い順' },
   { value: 'helpful', label: '参考になった順' },
 ]

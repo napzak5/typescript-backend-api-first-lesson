@@ -12,7 +12,7 @@ import {
   type RefusedValue,
   textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import type { SelectOption } from '@beauty-salon-frontend/ui'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { tagsIn } from '../customers/customer-ledger'
@@ -46,7 +46,7 @@ export const treatmentNameOf = (treatment: ModelsTreatmentType): string =>
   TREATMENT_NAMES[treatment]
 
 /** The treatments a row offers, in the order of the contract. */
-export const TREATMENT_OPTIONS: readonly SelectOption[] = TREATMENTS.map(
+export const TREATMENT_OPTIONS: readonly ChoiceOption[] = TREATMENTS.map(
   (treatment) => ({ value: treatment, label: TREATMENT_NAMES[treatment] }),
 )
 

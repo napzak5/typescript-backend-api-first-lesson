@@ -68,7 +68,7 @@ const PaymentMethodsPart = ({ salon }: PaymentMethodsPartProps) => {
             <UnreadNotice
               message={unreadMessageOf('支払い方法', reason)}
               onRetry={() => void methods.refetch()}
-              retrying={methods.isFetching}
+              pending={methods.isFetching}
             />
           ),
         )
@@ -86,9 +86,7 @@ const PaymentMethodsPart = ({ salon }: PaymentMethodsPartProps) => {
         ))
         .exhaustive()}
       <p>
-        <ButtonLink href={settingsHrefOf(salon.id)} variant='secondary'>
-          設定へ
-        </ButtonLink>
+        <ButtonLink href={settingsHrefOf(salon.id)}>設定へ</ButtonLink>
       </p>
     </>
   )

@@ -13,9 +13,7 @@ const meta: Meta<typeof StaffRecord> = {
     currency: salon.currency,
     actions: (
       <>
-        <ButtonLink href='/' variant='secondary'>
-          スタッフ情報を直す
-        </ButtonLink>
+        <ButtonLink href='/'>スタッフ情報を直す</ButtonLink>
         <Button variant='danger'>削除</Button>
       </>
     ),

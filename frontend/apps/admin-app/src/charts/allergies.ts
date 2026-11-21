@@ -12,11 +12,7 @@ import {
   type RefusedValue,
   textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import type {
-  BadgeProps,
-  RadioOption,
-  SelectOption,
-} from '@beauty-salon-frontend/ui'
+import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { mayKeepCustomers } from '../customers/customer-history'
@@ -44,10 +40,7 @@ const SEVERITY_NAMES: Record<ModelsAllergySeverityType, string> = {
   life_threatening: '命に関わる',
 }
 
-const SEVERITY_TONES: Record<
-  ModelsAllergySeverityType,
-  NonNullable<BadgeProps['tone']>
-> = {
+const SEVERITY_TONES: Record<ModelsAllergySeverityType, BadgeTone> = {
   mild: 'neutral',
   moderate: 'neutral',
   severe: 'warning',
@@ -72,15 +65,15 @@ export const severityNameOf = (severity: ModelsAllergySeverityType): string =>
 /** The colour of a severity: the two heaviest stand out. The word says which it is. */
 export const severityToneOf = (
   severity: ModelsAllergySeverityType,
-): NonNullable<BadgeProps['tone']> => SEVERITY_TONES[severity]
+): BadgeTone => SEVERITY_TONES[severity]
 
 /** The kinds a form offers, in the order of the contract. */
-export const ALLERGY_TYPE_OPTIONS: readonly SelectOption[] = TYPES.map(
+export const ALLERGY_TYPE_OPTIONS: readonly ChoiceOption[] = TYPES.map(
   (type) => ({ value: type, label: TYPE_NAMES[type] }),
 )
 
 /** The severities a form offers, the heaviest first. */
-export const SEVERITY_OPTIONS: readonly RadioOption[] = SEVERITIES.map(
+export const SEVERITY_OPTIONS: readonly ChoiceOption[] = SEVERITIES.map(
   (severity) => ({ value: severity, label: SEVERITY_NAMES[severity] }),
 )
 

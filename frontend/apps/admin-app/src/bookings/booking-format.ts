@@ -3,7 +3,7 @@ import type {
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
 import { timeOfDayAt } from '@beauty-salon-frontend/salon-screens'
-import type { BadgeProps } from '@beauty-salon-frontend/ui'
+import type { BadgeTone } from '@beauty-salon-frontend/ui'
 
 const STATUS_NAMES: Record<ModelsBookingStatusType, string> = {
   draft: '下書き',
@@ -19,10 +19,7 @@ const STATUS_NAMES: Record<ModelsBookingStatusType, string> = {
 export const statusNameOf = (status: ModelsBookingStatusType): string =>
   STATUS_NAMES[status]
 
-const STATUS_TONES: Record<
-  ModelsBookingStatusType,
-  NonNullable<BadgeProps['tone']>
-> = {
+const STATUS_TONES: Record<ModelsBookingStatusType, BadgeTone> = {
   draft: 'neutral',
   pending: 'warning',
   confirmed: 'success',
@@ -33,9 +30,8 @@ const STATUS_TONES: Record<
 }
 
 /** The group the state belongs to: the colour of its badge. */
-export const statusToneOf = (
-  status: ModelsBookingStatusType,
-): NonNullable<BadgeProps['tone']> => STATUS_TONES[status]
+export const statusToneOf = (status: ModelsBookingStatusType): BadgeTone =>
+  STATUS_TONES[status]
 
 /** From when until when, on the clock of the salon: 「10:00〜11:00」. */
 export const hoursOf = (

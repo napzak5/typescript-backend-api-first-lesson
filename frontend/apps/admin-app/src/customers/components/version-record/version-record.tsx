@@ -1,6 +1,12 @@
 import type { ModelsCustomerVersionResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
+import {
+  Card,
+  DescriptionList,
+  EmptyState,
+  Link,
+  Table,
+} from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { operationNameOf } from '../../customer-history'
 import {
@@ -57,7 +63,7 @@ export const VersionRecord = ({
       </p>
       {previous !== undefined &&
         (changed.length === 0 ? (
-          <p>前の版から、値は変わっていません。</p>
+          <EmptyState kind='part' title='前の版から、値は変わっていません。' />
         ) : (
           <Table
             caption='前の版から変えた項目'

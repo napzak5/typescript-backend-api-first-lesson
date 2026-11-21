@@ -116,9 +116,7 @@ const PhotosEntry = ({
             {`この施術記録の写真は、${MOST_PHOTOS} 枚になりました。写真を外してから足してください。`}
           </Alert>
           <p>
-            <ButtonLink href={back} variant='secondary'>
-              施術記録に戻る
-            </ButtonLink>
+            <ButtonLink href={back}>施術記録に戻る</ButtonLink>
           </p>
         </>
       ) : (

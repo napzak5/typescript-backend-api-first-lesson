@@ -48,7 +48,7 @@ export const ProductForm = ({
   ...form
 }: ProductFormProps) => (
   <Form {...form} errors={errors}>
-    <FormPart name='商品'>
+    <FormPart label='商品'>
       <FieldRow>
         <TextField
           label='商品コード'
@@ -81,7 +81,6 @@ export const ProductForm = ({
       <TextArea
         label='説明'
         name='description'
-        rows={3}
         defaultValue={textOf(product?.description)}
         error={errors['description']}
       />
@@ -125,8 +124,8 @@ export const ProductForm = ({
       />
     </FormPart>
     <FormPart
-      name='価格'
-      note='円の整数で入力します。空にすると、記録しません（0 は 0 円です）。'
+      label='価格'
+      description='円の整数で入力します。空にすると、記録しません（0 は 0 円です）。'
     >
       <FieldRow columns={3}>
         <TextField
@@ -158,8 +157,8 @@ export const ProductForm = ({
       </FieldRow>
     </FormPart>
     <FormPart
-      name='在庫の水準'
-      note='単位の数で、小数は 2 桁まで。最低在庫数、発注点、最大在庫数の順に、同じか大きくします。発注点と最大在庫数は、空にすると決めません。'
+      label='在庫の水準'
+      description='単位の数で、小数は 2 桁まで。最低在庫数、発注点、最大在庫数の順に、同じか大きくします。発注点と最大在庫数は、空にすると決めません。'
     >
       <FieldRow columns={3}>
         <TextField
@@ -192,7 +191,7 @@ export const ProductForm = ({
         />
       </FieldRow>
     </FormPart>
-    <FormPart name='仕入れ'>
+    <FormPart label='仕入れ'>
       <FieldRow>
         <TextField
           label='仕入先'
@@ -222,7 +221,7 @@ export const ProductForm = ({
         error={errors['leadTimeDays']}
       />
     </FormPart>
-    <FormPart name='管理'>
+    <FormPart label='管理'>
       <FieldRow>
         <TextField
           label='バーコード'

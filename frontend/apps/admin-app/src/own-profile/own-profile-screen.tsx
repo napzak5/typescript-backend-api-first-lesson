@@ -140,7 +140,7 @@ const ProfilePart = () => {
       <UnreadNotice
         message={unreadMessageOf('プロフィール', unread)}
         onRetry={() => void read.refetch()}
-        retrying={read.isFetching}
+        pending={read.isFetching}
       />
     ))
     .with({ type: 'found' }, ({ profile }) => <Loaded profile={profile} />)

@@ -49,17 +49,11 @@ const StockRowPart = ({ salon, inventoryId }: StockRowPartProps) => {
           >
             在庫の移動を記録する
           </ButtonLink>
-          <ButtonLink
-            href={stockMovementsHrefOf(salon.id, row.id)}
-            variant='secondary'
-          >
+          <ButtonLink href={stockMovementsHrefOf(salon.id, row.id)}>
             在庫の移動の履歴
           </ButtonLink>
           {keeps && (
-            <ButtonLink
-              href={stockRowChangeHrefOf(salon.id, row.id)}
-              variant='secondary'
-            >
+            <ButtonLink href={stockRowChangeHrefOf(salon.id, row.id)}>
               在庫の行を直す
             </ButtonLink>
           )}
@@ -78,9 +72,7 @@ const StockRowPart = ({ salon, inventoryId }: StockRowPartProps) => {
               .otherwise(() => undefined)}
           />
           <p>
-            <ButtonLink href={inventoryHrefOf(salon.id)} variant='secondary'>
-              在庫へ
-            </ButtonLink>
+            <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
           </p>
         </>
       )}

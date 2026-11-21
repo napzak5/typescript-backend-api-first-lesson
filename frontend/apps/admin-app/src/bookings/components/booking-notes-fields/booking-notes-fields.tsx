@@ -62,12 +62,14 @@ export const BookingNotesFields = ({
     <TextArea
       label='お客様の要望'
       name='customerRequest'
+      rows={4}
       defaultValue={notes?.customerRequest ?? ''}
       error={errors['customerRequest']}
     />
     <TextArea
       label='サロン内のメモ'
       name='internalNotes'
+      rows={4}
       defaultValue={notes?.internalNotes ?? ''}
       description='お客様には見えません。'
       error={errors['internalNotes']}

@@ -62,10 +62,7 @@ const HistoryPart = ({
   return (
     <>
       <p>
-        <ButtonLink
-          href={customerHrefOf(salon.id, customerId)}
-          variant='secondary'
-        >
+        <ButtonLink href={customerHrefOf(salon.id, customerId)}>
           お客様の台帳へ
         </ButtonLink>
       </p>
@@ -78,7 +75,7 @@ const HistoryPart = ({
             <UnreadNotice
               message={unreadMessageOf('変更履歴', reason)}
               onRetry={() => void read.refetch()}
-              retrying={read.isFetching}
+              pending={read.isFetching}
             />
           ))
           .with({ type: 'listed' }, ({ items, total, rest }) => (

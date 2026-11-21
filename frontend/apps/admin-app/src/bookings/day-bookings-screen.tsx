@@ -183,7 +183,7 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
                 void staff.refetch()
                 void services.refetch()
               }}
-              retrying={staff.isFetching || services.isFetching}
+              pending={staff.isFetching || services.isFetching}
             />
           ),
         )
@@ -214,7 +214,7 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
                   <UnreadNotice
                     message={unreadMessageOf('予約', reason)}
                     onRetry={() => void read.refetch()}
-                    retrying={read.isFetching}
+                    pending={read.isFetching}
                   />
                 ))
                 .with({ type: 'listed', items: [] }, () => (
@@ -238,7 +238,7 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
                       <UnreadNotice
                         message={unreadMessageOf('予約のお客様', reason)}
                         onRetry={readCustomersAgain}
-                        retrying={readingCustomersAgain}
+                        pending={readingCustomersAgain}
                       />
                     ))
                     .with([[], P._], () => (

@@ -58,7 +58,7 @@ const ProductPart = ({ salon, productId }: ProductPartProps) => {
         <UnreadNotice
           message={unreadMessageOf('商品', reason)}
           onRetry={() => void product.refetch()}
-          retrying={product.isFetching}
+          pending={product.isFetching}
         />
       </>
     ))
@@ -80,9 +80,7 @@ const ProductPart = ({ salon, productId }: ProductPartProps) => {
         />
         <ProductRecord product={found.product} currency={salon.currency} />
         <p>
-          <ButtonLink href={productsHrefOf(salon.id)} variant='secondary'>
-            商品台帳へ
-          </ButtonLink>
+          <ButtonLink href={productsHrefOf(salon.id)}>商品台帳へ</ButtonLink>
         </p>
       </>
     ))

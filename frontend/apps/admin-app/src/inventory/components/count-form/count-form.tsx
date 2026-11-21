@@ -62,8 +62,8 @@ export const CountForm = ({
 }: CountFormProps) => (
   <Form {...form} errors={errors}>
     <FormPart
-      name='数えた数'
-      note='数えた行に、数えた数を入力します。空のままの行は数えず、在庫数も変わりません。小数は 2 桁まで。'
+      label='数えた数'
+      description='数えた行に、数えた数を入力します。空のままの行は数えず、在庫数も変わりません。小数は 2 桁まで。'
     >
       {rows.map((row) => {
         const product = productOf(products, row.productId)
@@ -84,7 +84,6 @@ export const CountForm = ({
       <TextArea
         label='理由'
         name='reason'
-        rows={3}
         description='任意。帳簿の在庫数との差を直す、在庫の調整の理由になります。空のときは「棚卸しの差異」と記録します。'
         error={errors['reason']}
       />

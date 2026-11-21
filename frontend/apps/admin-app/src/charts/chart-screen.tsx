@@ -185,10 +185,7 @@ export const ChartScreen = () => {
           {(customer) => (
             <>
               <p>
-                <ButtonLink
-                  href={customerHrefOf(salon.id, customer.id)}
-                  variant='secondary'
-                >
+                <ButtonLink href={customerHrefOf(salon.id, customer.id)}>
                   お客様の台帳へ
                 </ButtonLink>
               </p>

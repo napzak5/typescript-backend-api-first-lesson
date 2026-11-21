@@ -278,7 +278,7 @@ const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
         <UnreadNotice
           message={unreadMessageOf('サービス', reason)}
           onRetry={retry}
-          retrying={retrying}
+          pending={retrying}
         />
       </>
     ))
@@ -304,7 +304,7 @@ const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
               <UnreadNotice
                 message={unreadMessageOf('メニュー', reason)}
                 onRetry={retry}
-                retrying={retrying}
+                pending={retrying}
               />
             </>
           ),

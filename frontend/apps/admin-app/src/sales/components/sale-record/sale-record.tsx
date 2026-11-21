@@ -73,9 +73,7 @@ export const SaleRecord = ({
         headingRef={headingRef}
         actions={
           changeHref !== undefined && (
-            <ButtonLink href={changeHref} variant='secondary'>
-              売上を直す
-            </ButtonLink>
+            <ButtonLink href={changeHref}>売上を直す</ButtonLink>
           )
         }
       >
@@ -110,7 +108,7 @@ export const SaleRecord = ({
             {
               term: '支払い',
               description: sale.isVoid ? (
-                <Badge tone='neutral'>取り消し</Badge>
+                <Badge>取り消し</Badge>
               ) : (
                 <Badge tone={paymentStatusToneOf(sale.paymentStatus)}>
                   {paymentStatusNameOf(sale.paymentStatus)}

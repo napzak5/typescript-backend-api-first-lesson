@@ -56,9 +56,7 @@ export const AccountRecord = ({
         items={[
           {
             term: 'メールアドレス',
-            description: (
-              <span className={styles['address']}>{account.email}</span>
-            ),
+            description: account.email,
           },
           { term: 'ロール', description: roleNameOf(account.role) },
           { term: '状態', description: statusNameOf(account.status) },
@@ -83,7 +81,7 @@ export const AccountRecord = ({
       {!sameAddress(account.email, member.email) && (
         <p className={styles['note']}>
           ログインには、このメールアドレスを使います。台帳のメールアドレス（
-          <span className={styles['address']}>{member.email}</span>
+          {member.email}
           ）とは違います。招待を受け入れたあとで台帳を直しても、ログインのメールアドレスは変わりません。
         </p>
       )}

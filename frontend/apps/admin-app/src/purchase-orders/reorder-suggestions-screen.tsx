@@ -51,18 +51,15 @@ const SuggestionsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <UnreadNotice
             message={unreadMessageOf('発注の提案', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'found', items: [] }, () => (
           <EmptyState
             title='発注の提案はありません'
             description='在庫と発注中の数の和が、発注点以下になった商品はありません。'
-            action={
-              <ButtonLink
-                href={purchaseOrdersHrefOf(salon.id)}
-                variant='secondary'
-              >
+            actions={
+              <ButtonLink href={purchaseOrdersHrefOf(salon.id)}>
                 発注へ
               </ButtonLink>
             }

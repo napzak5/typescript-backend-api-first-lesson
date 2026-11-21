@@ -36,9 +36,7 @@ export const ServiceNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
       description='アドレスが正しいか、お確かめください。メニューから削除したサービスは、表示できません。'
     />
     <p>
-      <ButtonLink href={menuHrefOf(salon.id)} variant='secondary'>
-        メニューへ
-      </ButtonLink>
+      <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
     </p>
   </>
 )
@@ -80,7 +78,7 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
         <UnreadNotice
           message={unreadMessageOf('サービス', reason)}
           onRetry={retry}
-          retrying={retrying}
+          pending={retrying}
         />
       </>
     ))
@@ -92,7 +90,7 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
           <UnreadNotice
             message={unreadMessageOf('メニュー', reason)}
             onRetry={retry}
-            retrying={retrying}
+            pending={retrying}
           />
         </>
       ),
@@ -127,9 +125,7 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
           serviceHref={(id) => serviceHrefOf(salon.id, id)}
         />
         <p>
-          <ButtonLink href={menuHrefOf(salon.id)} variant='secondary'>
-            メニューへ
-          </ButtonLink>
+          <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
         </p>
       </>
     ))

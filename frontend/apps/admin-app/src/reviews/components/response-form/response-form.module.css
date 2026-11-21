@@ -22,12 +22,10 @@
 
 .title {
   font-weight: var(--font-weight-bold);
-  overflow-wrap: anywhere;
 }
 
 /* What the customer wrote, with the line breaks they wrote */
 .text {
   max-inline-size: var(--size-text-column);
   white-space: pre-line;
-  overflow-wrap: anywhere;
 }

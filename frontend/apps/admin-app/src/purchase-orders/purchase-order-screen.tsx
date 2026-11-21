@@ -272,7 +272,7 @@ const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
           <UnreadNotice
             message={unreadMessageOf('発注', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         </>
       ))
@@ -283,10 +283,7 @@ const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
             description={salon.name}
             actions={
               !isClosedOrder(order.status) && (
-                <ButtonLink
-                  href={orderChangeHrefOf(salon.id, order.id)}
-                  variant='secondary'
-                >
+                <ButtonLink href={orderChangeHrefOf(salon.id, order.id)}>
                   納品予定日とメモを直す
                 </ButtonLink>
               )

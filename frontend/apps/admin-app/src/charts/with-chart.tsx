@@ -40,7 +40,7 @@ export const WithChart = ({ customerId, fresh, children }: WithChartProps) => {
       <UnreadNotice
         message={unreadMessageOf('カルテ', reason)}
         onRetry={() => void read.refetch()}
-        retrying={read.isFetching}
+        pending={read.isFetching}
       />
     ))
     .exhaustive()

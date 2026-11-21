@@ -29,11 +29,7 @@ const writtenOrNone = (text: string | null) =>
   text === null ? NOT_RECORDED : <p className={styles['written']}>{text}</p>
 
 const addressOrNone = (address: string | null) =>
-  address === null ? (
-    NOT_RECORDED
-  ) : (
-    <span className={styles['address']}>{address}</span>
-  )
+  address === null ? NOT_RECORDED : address
 
 const namesOrNone = (label: string, names: readonly string[]) =>
   names.length === 0 ? 'なし' : <TagList label={label} items={names} />

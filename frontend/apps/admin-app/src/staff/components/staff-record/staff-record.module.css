@@ -10,8 +10,3 @@
   margin: 0;
   white-space: pre-wrap;
 }
-
-/* An address has no spaces to break a line at: it breaks anywhere rather than run out of the card */
-.address {
-  overflow-wrap: anywhere;
-}

@@ -70,8 +70,8 @@ export const MovementForm = ({
   return (
     <Form {...form} errors={errors}>
       <FormPart
-        name='在庫の移動'
-        note={`${stockRowNameOf(row, product)}。いまの在庫数は ${quantityNameOf(row.currentStock, product)}、そのうち使える数は ${quantityNameOf(available, product)} です。`}
+        label='在庫の移動'
+        description={`${stockRowNameOf(row, product)}。いまの在庫数は ${quantityNameOf(row.currentStock, product)}、そのうち使える数は ${quantityNameOf(available, product)} です。`}
       >
         <RadioGroup
           label='区分'
@@ -129,7 +129,6 @@ export const MovementForm = ({
         <TextArea
           label='理由'
           name='reason'
-          rows={3}
           required={type !== undefined && needsReason(type)}
           description={
             type !== undefined && needsReason(type)

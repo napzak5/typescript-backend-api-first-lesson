@@ -242,12 +242,12 @@ export const CheckoutForm = ({
             <UnreadNotice
               message={message}
               onRetry={onRecalculate}
-              retrying={recalculating}
+              pending={recalculating}
             />
           ))
           .exhaustive()}
       </section>
-      <FormPart name='会計の記録'>
+      <FormPart label='会計の記録'>
         <Select
           label='会計の担当'
           name='staffId'
@@ -265,7 +265,6 @@ export const CheckoutForm = ({
         <TextArea
           label='メモ'
           name='notes'
-          rows={3}
           description='サロンの中で見る、この会計のメモです。お客様には見えません。'
           error={errors['notes']}
         />

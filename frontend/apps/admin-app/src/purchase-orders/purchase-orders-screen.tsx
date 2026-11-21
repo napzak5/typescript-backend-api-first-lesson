@@ -45,9 +45,7 @@ const OrderLinks = ({ salonId }: { salonId: string }) => (
     <ButtonLink href={purchaseOrderEntryHrefOf(salonId)} variant='primary'>
       発注を作る
     </ButtonLink>
-    <ButtonLink href={reorderSuggestionsHrefOf(salonId)} variant='secondary'>
-      発注の提案
-    </ButtonLink>
+    <ButtonLink href={reorderSuggestionsHrefOf(salonId)}>発注の提案</ButtonLink>
   </>
 )
 
@@ -131,7 +129,7 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <UnreadNotice
             message={unreadMessageOf('発注', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () =>

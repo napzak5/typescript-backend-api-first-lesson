@@ -65,11 +65,7 @@ export const ChartRecord = ({
     <div className={styles['record']}>
       <Card
         title='カルテ'
-        actions={
-          <ButtonLink href={changeHref} variant='secondary'>
-            カルテを直す
-          </ButtonLink>
-        }
+        actions={<ButtonLink href={changeHref}>カルテを直す</ButtonLink>}
       >
         <DescriptionList
           items={[
@@ -120,12 +116,8 @@ export const ChartRecord = ({
             {
               key: 'notes',
               header: 'メモ',
-              cell: ({ treatment: { notes } }) =>
-                notes === null ? (
-                  ''
-                ) : (
-                  <span className={styles['notes']}>{notes}</span>
-                ),
+              wrap: 'lines',
+              cell: ({ treatment: { notes } }) => notes ?? '',
             },
           ]}
           rows={chart.previousTreatments.map((treatment, place) => ({

@@ -95,9 +95,7 @@ export const IssuedShareLink = ({
         <p className={styles['note']}>{PASSWORD_APART_NOTE}</p>
       )}
       <div className={styles['links']}>
-        <ButtonLink href={shareLinkHref} variant='secondary'>
-          共有リンクを見る
-        </ButtonLink>
+        <ButtonLink href={shareLinkHref}>共有リンクを見る</ButtonLink>
         <ButtonLink href={fileHref} variant='quiet'>
           ファイルへ戻る
         </ButtonLink>

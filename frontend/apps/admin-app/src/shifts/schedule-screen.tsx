@@ -28,7 +28,6 @@ export const ScheduleScreen = () => {
             plans ? (
               <ButtonLink
                 href={scheduleChangeHrefOf(salon.id, schedule.staffId)}
-                variant='secondary'
               >
                 勤務スケジュールを直す
               </ButtonLink>
@@ -42,9 +41,7 @@ export const ScheduleScreen = () => {
                 today={dayAt(new Date(), salon.timezone)}
               />
               <p>
-                <ButtonLink href={shiftsHrefOf(salon.id)} variant='secondary'>
-                  シフトへ
-                </ButtonLink>
+                <ButtonLink href={shiftsHrefOf(salon.id)}>シフトへ</ButtonLink>
               </p>
             </>
           )}

@@ -3,7 +3,7 @@ import type {
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import type { NavigationItem, SelectOption } from '@beauty-salon-frontend/ui'
+import type { ChoiceOption, NavigationItem } from '@beauty-salon-frontend/ui'
 import { NOT_RECORDED } from '../staff/staff-format'
 import { EXPIRY_WINDOWS, type StockView, stockQueryOf } from './stock-view'
 
@@ -88,7 +88,7 @@ export const countedNameOf = (
 export const productOptionsOf = (
   products: readonly ModelsProductResponse[],
   chosen: string | undefined,
-): SelectOption[] => [
+): ChoiceOption[] => [
   ...products.map(({ id, name, productCode, isActive }) => ({
     value: id,
     label: `${name}（${productCode}）${isActive ? '' : '・取り扱いをやめた'}`,
@@ -99,7 +99,7 @@ export const productOptionsOf = (
 ]
 
 /** The windows of the rows that expire soon, to choose from */
-export const EXPIRY_OPTIONS: readonly SelectOption[] = EXPIRY_WINDOWS.map(
+export const EXPIRY_OPTIONS: readonly ChoiceOption[] = EXPIRY_WINDOWS.map(
   (days) => ({
     value: String(days),
     label: days === 0 ? '今日まで' : `${days} 日後まで`,
