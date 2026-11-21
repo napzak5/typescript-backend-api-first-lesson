@@ -60,8 +60,45 @@ jobs:
           path: specs/tsp-output/@typespec/openapi3/generated/openapi.yaml
           retention-days: 30
 
+  # The packages whose unit and integration tests run: on a pull request
+  # that changes nothing but the frontend, the docs and the skills, those it
+  # changed and those that depend on them (pnpm's --filter "...[<base>]");
+  # otherwise every package. The screen tests start the backend's test server
+  # as a process of their own, which no package.json names, so a change of
+  # the backend runs them all; a file at the root is no package's
+  scope:
+    name: Test Scope
+    runs-on: ubuntu-latest
+    outputs:
+      filter: ${{ steps.scope.outputs.filter }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # The merge commit of a pull request and its first parent, the base
+          fetch-depth: 2
+
+      - name: Choose the packages
+        id: scope
+        run: |
+          outside='^(frontend|docs|\.claude)/|\.md$'
+          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then
+            echo "Every package: a push"
+            echo "filter=" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only HEAD^1 HEAD | grep -qvE "$outside"; then
+            echo "Every package: the pull request changes these files"
+            git diff --name-only HEAD^1 HEAD | grep -vE "$outside"
+            echo "filter=" >> "$GITHUB_OUTPUT"
+          else
+            base=$(git rev-parse HEAD^1)
+            echo "The packages changed since $base, and those that depend on them"
+            echo "filter=--filter=...[$base]" >> "$GITHUB_OUTPUT"
+          fi
+
   unit:
     name: Unit Test
+    needs: scope
     runs-on: ubuntu-latest
     env:
       CI: true
@@ -70,6 +107,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # The merge commit of a pull request and its first parent, the base
+          fetch-depth: 2
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
@@ -87,10 +127,11 @@ jobs:
         run: pnpm build:prod
 
       - name: Run unit tests
-        run: pnpm test
+        run: pnpm -r ${{ needs.scope.outputs.filter }} run test
 
   test:
     name: Test (${{ matrix.database }} database, part ${{ matrix.part }} of 4)
+    needs: scope
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -123,6 +164,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # The merge commit of a pull request and its first parent, the base
+          fetch-depth: 2
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
@@ -140,8 +184,9 @@ jobs:
         run: pnpm build:prod
 
       - name: Run integration tests
-        # A package with fewer test files than parts has parts without any
-        run: pnpm test:integration --shard=${{ matrix.part }}/4 --passWithNoTests
+        # pnpm test:integration, for the packages of the scope. A package with
+        # fewer test files than parts has parts without any
+        run: pnpm -r --no-sort ${{ needs.scope.outputs.filter }} run test:integration --shard=${{ matrix.part }}/4 --passWithNoTests
         env:
           TEST_DATABASE_URL: ${{ matrix.database == 'external' && 'postgres://postgres:postgres@localhost:5432/beauty_salon_test' || '' }}
 

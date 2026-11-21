@@ -167,7 +167,10 @@ run by four jobs side by side: every package's test files are split by
 Vitest's `--shard` (`pnpm test:integration --shard=<part>/4
 --passWithNoTests`). `pnpm test:integration` does not wait for the tests of
 a package's dependencies (`pnpm -r --no-sort`), so the API tests do not
-wait for those of the database package.
+wait for those of the database package. A pull request that changes nothing
+but the frontend, the docs and the skills runs the unit and integration
+tests of the packages it changed and of those that depend on them only
+(the `scope` job of `ci.yml`); any other change runs them all.
 
 The integration tests of the `infrastructure` package send mail to a real
 SMTP server and use no database. They always start a Mailpit container
