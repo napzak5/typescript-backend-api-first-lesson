@@ -44,6 +44,8 @@ import { CustomerVersionScreen } from './customers/customer-version-screen'
 import { PointEntryScreen } from './customers/point-entry-screen'
 import { HomeScreen } from './home-screen'
 import { InventoryScreen } from './inventory/inventory-screen'
+import { MovementEntryScreen } from './inventory/movement-entry-screen'
+import { MovementsScreen } from './inventory/movements-screen'
 import { StockChangeScreen } from './inventory/stock-change-screen'
 import { StockEntryScreen } from './inventory/stock-entry-screen'
 import { StockRowScreen } from './inventory/stock-row-screen'
@@ -404,6 +406,14 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/inventory/:inventoryId/edit'
                 element={<StockChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/inventory/:inventoryId/movements'
+                element={<MovementsScreen />}
+              />
+              <Route
+                path='/salons/:salonId/inventory/:inventoryId/movements/new'
+                element={<MovementEntryScreen />}
               />
               <Route
                 path='/salons/:salonId/settings'
