@@ -1,0 +1,23 @@
+/*
+ * The colours of a state, for whatever shows one (an alert, a badge, a
+ * notification): the surface, and the text and the edge on it
+ */
+.info {
+  background-color: var(--color-info-subtle);
+  color: var(--color-info-text);
+}
+
+.success {
+  background-color: var(--color-success-subtle);
+  color: var(--color-success-text);
+}
+
+.warning {
+  background-color: var(--color-warning-subtle);
+  color: var(--color-warning-text);
+}
+
+.danger {
+  background-color: var(--color-danger-subtle);
+  color: var(--color-danger-text);
+}

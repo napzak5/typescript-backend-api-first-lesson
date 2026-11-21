@@ -1,19 +1,14 @@
 import type { ComponentProps } from 'react'
+import type { ChoiceOption } from '../field/choice'
 import controlStyles from '../field/control.module.css'
 import { Field } from '../field/field'
-
-export type SelectOption = {
-  value: string
-  label: string
-  disabled?: boolean | undefined
-}
 
 export type SelectProps = Omit<
   ComponentProps<'select'>,
   'children' | 'multiple'
 > & {
   label: string
-  options: readonly SelectOption[]
+  options: readonly ChoiceOption[]
   /**
    * The text of a first option without a value, shown while nothing is
    * chosen. With `required`, the form is not sent until something is.
@@ -58,11 +53,7 @@ export const Select = ({
       >
         {placeholder !== undefined && <option value=''>{placeholder}</option>}
         {options.map((option) => (
-          <option
-            key={option.value}
-            value={option.value}
-            disabled={option.disabled}
-          >
+          <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}

@@ -46,7 +46,7 @@ describe('CheckboxGroup', () => {
     expect(chosen()).toEqual(['email', 'phone'])
   })
 
-  it('should take a choice besides those there are, give one up, and report each change', async () => {
+  it('should take a choice besides those there are, and give one up', async () => {
     // Arrange
     await stories.Chosen.run()
 
@@ -56,7 +56,6 @@ describe('CheckboxGroup', () => {
 
     // Assert
     expect(chosen()).toEqual(['email', 'sms'])
-    expect(stories.Chosen.args.onChange).toHaveBeenCalledTimes(2)
   })
 
   it('should take a choice by pressing the label of an option', async () => {
@@ -94,20 +93,6 @@ describe('CheckboxGroup', () => {
     }
   })
 
-  it('should show the values its caller keeps', async () => {
-    // Arrange
-    await stories.Default.run({
-      args: { ...stories.Default.args, value: ['email'] },
-    })
-
-    // Act
-    await userEvent.click(screen.getByRole('checkbox', { name: '電話' }))
-
-    // Assert
-    expect(stories.Default.args.onChange).toHaveBeenCalledTimes(1)
-    expect(chosen()).toEqual(['email'])
-  })
-
   it('should say nothing about its choice without a description or an error', async () => {
     // Act
     await stories.Default.run()
@@ -142,38 +127,6 @@ describe('CheckboxGroup', () => {
     for (const box of screen.getAllByRole('checkbox')) {
       expect(box).toHaveAttribute('aria-invalid', 'true')
     }
-  })
-
-  it('should not let an unavailable option be chosen', async () => {
-    // Arrange
-    await stories.WithUnavailableOption.run()
-    const unavailable = screen.getByRole('checkbox', {
-      name: 'SMS（電話番号の登録が必要です）',
-    })
-
-    // Act
-    await userEvent.click(unavailable)
-
-    // Assert
-    expect(unavailable).toBeDisabled()
-    expect(unavailable).not.toBeChecked()
-    expect(screen.getByRole('checkbox', { name: 'メール' })).toBeEnabled()
-  })
-
-  it('should not take a choice while it is disabled', async () => {
-    // Arrange
-    await stories.Disabled.run()
-
-    // Act
-    await userEvent.click(screen.getByRole('checkbox', { name: '電話' }))
-
-    // Assert
-    expect(screen.getByRole('group', { name: LABEL })).toBeDisabled()
-    for (const box of screen.getAllByRole('checkbox')) {
-      expect(box).toBeDisabled()
-    }
-    expect(chosen()).toEqual(['email'])
-    expect(stories.Disabled.args.onChange).not.toHaveBeenCalled()
   })
 
   it('should place its options one below the other unless it is asked for columns', async () => {

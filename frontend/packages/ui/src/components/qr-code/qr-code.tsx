@@ -1,5 +1,4 @@
 import { encode } from 'uqr'
-import { classNames } from '../../class-names'
 import styles from './qr-code.module.css'
 
 export type QrCodeProps = {
@@ -7,7 +6,6 @@ export type QrCodeProps = {
   value: string
   /** What the code is, as it is read out: 「認証アプリで読み取る QR コード」 */
   label: string
-  className?: string | undefined
 }
 
 /** The light modules a reader needs around the code (ISO/IEC 18004) */
@@ -31,12 +29,12 @@ export const darkModulesOf = (modules: readonly (readonly boolean[])[]) =>
  * `label`, and the page says what it holds in words beside it for those who
  * cannot read the code.
  */
-export const QrCode = ({ value, label, className }: QrCodeProps) => {
+export const QrCode = ({ value, label }: QrCodeProps) => {
   const { size, data } = encode(value, { ecc: 'M', border: QUIET_ZONE })
 
   return (
     <svg
-      className={classNames(styles['code'], className)}
+      className={styles['code']}
       viewBox={`0 0 ${size} ${size}`}
       role='img'
       aria-label={label}

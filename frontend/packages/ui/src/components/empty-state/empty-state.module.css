@@ -1,19 +1,29 @@
 .emptyState {
   display: grid;
-  justify-items: center;
   gap: var(--space-2);
+}
+
+.description {
+  max-inline-size: var(--size-text-column);
+  color: var(--color-text-muted);
+}
+
+/* Where the content of a page would be: a frame, and the words in its middle */
+.page {
+  justify-items: center;
   padding: var(--space-8) var(--space-4);
   border: 1px dashed var(--color-border-control);
   border-radius: var(--radius-large);
   text-align: center;
 }
 
-.title {
+.page .title {
   font-size: var(--font-size-large);
   font-weight: var(--font-weight-bold);
 }
 
-.description {
-  max-inline-size: var(--size-text-column);
+/* Where the content of a part would be: a quiet sentence at its start */
+.part {
+  justify-items: start;
   color: var(--color-text-muted);
 }

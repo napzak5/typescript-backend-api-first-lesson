@@ -119,9 +119,7 @@ describe('PageHeader', () => {
         ...stories.OtherActionsInTheSheet.args,
         otherActions: (
           <>
-            <ButtonLink href='/customers/import' variant='secondary'>
-              CSV から登録する
-            </ButtonLink>
+            <ButtonLink href='/customers/import'>CSV から登録する</ButtonLink>
             <Button onClick={onExport}>CSV に出力する</Button>
           </>
         ),

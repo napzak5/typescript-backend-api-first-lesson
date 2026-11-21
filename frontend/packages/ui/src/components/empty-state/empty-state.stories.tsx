@@ -20,13 +20,18 @@ export const WithDescription: Story = {
   args: { description: '予約すると、ここに表示されます。' },
 }
 
-export const WithAction: Story = {
+export const WithActions: Story = {
   args: {
     description: '予約すると、ここに表示されます。',
-    action: (
+    actions: (
       <ButtonLink href='/salons' variant='primary'>
         サロンを探す
       </ButtonLink>
     ),
   },
+}
+
+/** Inside a card: the photos of a treatment, while there are none */
+export const InAPart: Story = {
+  args: { title: '施術写真はありません。', kind: 'part' },
 }

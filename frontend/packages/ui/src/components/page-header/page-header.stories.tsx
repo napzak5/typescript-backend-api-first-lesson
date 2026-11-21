@@ -43,9 +43,7 @@ export const WithTwoActions: Story = {
         <ButtonLink href='/settings/salon' variant='primary'>
           サロンの情報を直す
         </ButtonLink>
-        <ButtonLink href='/settings/hours' variant='secondary'>
-          営業時間を直す
-        </ButtonLink>
+        <ButtonLink href='/settings/hours'>営業時間を直す</ButtonLink>
       </>
     ),
   },
@@ -63,12 +61,8 @@ export const WithOtherActions: Story = {
     ),
     otherActions: (
       <>
-        <ButtonLink href='/customers/import' variant='secondary'>
-          CSV から登録する
-        </ButtonLink>
-        <ButtonLink href='/customers/charts' variant='secondary'>
-          カルテを探す
-        </ButtonLink>
+        <ButtonLink href='/customers/import'>CSV から登録する</ButtonLink>
+        <ButtonLink href='/customers/charts'>カルテを探す</ButtonLink>
         <Button onClick={fn()}>CSV に出力する</Button>
       </>
     ),

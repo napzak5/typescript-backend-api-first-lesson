@@ -1,8 +1,19 @@
-import { type ReactNode, useId } from 'react'
+import { type ReactNode, useId, useRef } from 'react'
 import { classNames } from '../../class-names'
+import { visuallyHiddenClass } from '../visually-hidden/visually-hidden'
+import { useScrollsSideways } from './scrolls-sideways'
 import styles from './table.module.css'
 
 type ColumnAlignment = 'start' | 'end'
+
+/**
+ * `words` for a column of sentences (a reason, a list of names): its cells
+ * break their lines between words. `lines` for what somebody wrote in lines
+ * (notes, what a customer reported): its cells keep those lines and break
+ * long ones. Either is never narrower than a few words, nor wider than a
+ * column that is easy to read.
+ */
+type ColumnWrap = 'words' | 'lines'
 
 export type TableColumn<Row> = {
   /** Tells the columns apart; it is not shown */
@@ -11,6 +22,8 @@ export type TableColumn<Row> = {
   cell: (row: Row) => ReactNode
   /** `end` for numbers and amounts, so that their digits line up */
   align?: ColumnAlignment | undefined
+  /** How the cells of a column of text break their lines; by default they keep one */
+  wrap?: ColumnWrap | undefined
 }
 
 export type TableProps<Row> = {
@@ -26,7 +39,6 @@ export type TableProps<Row> = {
   rowKey: (row: Row) => string
   /** Said in place of the rows when there are none */
   emptyMessage: string
-  className?: string | undefined
 }
 
 const alignmentClass: Record<ColumnAlignment, string | undefined> = {
@@ -34,9 +46,24 @@ const alignmentClass: Record<ColumnAlignment, string | undefined> = {
   end: styles['end'],
 }
 
+const wrapClass: Record<ColumnWrap, string | undefined> = {
+  words: styles['words'],
+  lines: styles['lines'],
+}
+
+/** What a cell holds, in the room its column gives text */
+const contentOf = <Row,>(column: TableColumn<Row>, row: Row): ReactNode =>
+  column.wrap === undefined ? (
+    column.cell(row)
+  ) : (
+    <span className={wrapClass[column.wrap]}>{column.cell(row)}</span>
+  )
+
 /**
- * A list of records, one row each. A table that is wider than the screen
- * scrolls sideways inside its own frame, which the keyboard can reach.
+ * A list of records, one row each. A table that is wider than its room
+ * scrolls sideways inside its own frame, which is then a region of the
+ * name of the table that the keyboard can reach; one that fits is neither,
+ * so that a page of tables adds no stops to the Tab key.
  */
 export const Table = <Row,>({
   caption,
@@ -46,23 +73,26 @@ export const Table = <Row,>({
   rows,
   rowKey,
   emptyMessage,
-  className,
 }: TableProps<Row>) => {
   const captionId = useId()
   const header = rowHeader ?? columns[0]?.key
+  const frame = useRef<HTMLElement>(null)
+  const scrolls = useScrollsSideways(frame)
 
   return (
     <section
-      className={classNames(styles['frame'], className)}
-      aria-labelledby={captionId}
-      // biome-ignore lint/a11y/noNoninteractiveTabindex: what scrolls has to be reachable with the keyboard, or its far columns cannot be read without a pointer (WCAG 2.1.1)
-      tabIndex={0}
+      className={styles['frame']}
+      ref={frame}
+      aria-labelledby={scrolls ? captionId : undefined}
+      // What scrolls has to be reachable with the keyboard, or its far
+      // columns cannot be read without a pointer (WCAG 2.1.1)
+      tabIndex={scrolls ? 0 : undefined}
     >
       <table className={styles['table']}>
         <caption
           className={classNames(
             styles['caption'],
-            captionHidden && styles['captionHidden'],
+            captionHidden && visuallyHiddenClass,
           )}
           id={captionId}
         >
@@ -98,14 +128,14 @@ export const Table = <Row,>({
                     className={alignmentClass[column.align ?? 'start']}
                     scope='row'
                   >
-                    {column.cell(row)}
+                    {contentOf(column, row)}
                   </th>
                 ) : (
                   <td
                     key={column.key}
                     className={alignmentClass[column.align ?? 'start']}
                   >
-                    {column.cell(row)}
+                    {contentOf(column, row)}
                   </td>
                 ),
               )}

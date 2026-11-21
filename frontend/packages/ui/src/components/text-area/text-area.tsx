@@ -20,7 +20,7 @@ export const TextArea = ({
   label,
   description,
   error,
-  rows = 4,
+  rows = 3,
   id,
   required,
   className,

@@ -7,7 +7,6 @@ export type RatingProps = {
   value: number | null
   /** How many ratings `value` is the mean of */
   count?: number | undefined
-  className?: string | undefined
 }
 
 const HIGHEST = 5
@@ -24,12 +23,12 @@ const STARS = Array.from({ length: HIGHEST }, (_, index) => index * STAR_WIDTH)
  * for the eye; the number is what is read out, in one piece with what it is
  * out of (「5 段階中 4.5（128 件）」).
  */
-export const Rating = ({ value, count, className }: RatingProps) => {
+export const Rating = ({ value, count }: RatingProps) => {
   const clipId = useId()
 
   if (value === null) {
     return (
-      <span className={classNames(styles['rating'], styles['none'], className)}>
+      <span className={classNames(styles['rating'], styles['none'])}>
         評価なし
       </span>
     )
@@ -40,7 +39,7 @@ export const Rating = ({ value, count, className }: RatingProps) => {
 
   return (
     <span
-      className={classNames(styles['rating'], className)}
+      className={styles['rating']}
       role='img'
       aria-label={`${HIGHEST} 段階中 ${shown}${counted}`}
     >

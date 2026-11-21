@@ -80,17 +80,4 @@ describe('Card', () => {
       expect(heading).toHaveAttribute('tabindex', '-1')
     },
   )
-
-  it('should keep a class its container gives it', async () => {
-    // Act
-    await stories.Default.run({
-      args: { ...stories.Default.args, className: 'in-page' },
-    })
-
-    // Assert
-    expect(screen.getByRole('region', { name: '基本情報' })).toHaveClass(
-      'card',
-      'in-page',
-    )
-  })
 })

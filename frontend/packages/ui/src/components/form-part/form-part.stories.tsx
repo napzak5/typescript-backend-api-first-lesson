@@ -9,7 +9,7 @@ const meta: Meta<typeof FormPart> = {
   title: 'Components/FormPart',
   component: FormPart,
   args: {
-    name: '連絡先',
+    label: '連絡先',
     children: (
       <>
         <TextField
@@ -36,9 +36,9 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {}
 
 /** What the part says of all its controls stands before them */
-export const WithNote: Story = {
+export const WithDescription: Story = {
   args: {
-    note: 'どちらか一つは入れてください。予約の確認に使います。',
+    description: 'どちらか一つは入れてください。予約の確認に使います。',
   },
 }
 
@@ -51,7 +51,7 @@ export const Disabled: Story = {
 export const InAForm: Story = {
   render: (part) => (
     <Form submitLabel='登録する' onSubmit={fn()}>
-      <FormPart name='お名前'>
+      <FormPart label='お名前'>
         <FieldRow>
           <TextField
             label='姓'

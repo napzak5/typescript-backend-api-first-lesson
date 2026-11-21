@@ -20,10 +20,11 @@ export type FormDialogProps = Pick<
   /** What the button that sends the form says */
   submitLabel: string
   /**
-   * `danger` when what is sent cannot be undone (a cancellation, a voiding):
-   * the button says so with its colour too
+   * The look of the button that sends the form: `danger` when what is sent
+   * cannot be undone (a cancellation, a voiding), so that its colour says so
+   * too
    */
-  tone?: 'primary' | 'danger' | undefined
+  submitVariant?: 'primary' | 'danger' | undefined
   /** What went wrong with the attempt as a whole */
   message?: string | undefined
   /**
@@ -66,7 +67,7 @@ export const FormDialog = ({
   size,
   children,
   submitLabel,
-  tone = 'primary',
+  submitVariant = 'primary',
   message,
   errors = NO_ERRORS,
   pending = false,
@@ -115,7 +116,7 @@ export const FormDialog = ({
               key='send'
               type='submit'
               form={formId}
-              variant={tone}
+              variant={submitVariant}
               pending={pending}
             >
               {submitLabel}
