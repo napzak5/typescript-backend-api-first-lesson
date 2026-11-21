@@ -120,8 +120,9 @@ make docker-check-frontend   # フロントエンド 3 つだけ
 
 Dockerfile やソースを変更するプルリクエストで、4 つのイメージをビルドし、コンテナを起動して確認します。
 バックエンドは、`.env` ファイルなしで環境変数だけを渡して起動し、`/api/system/ready` が応答すること、
-停止時に終了コード 0 で終わることを確認します。フロントエンドは、アプリのタイトル（`VITE_APP_TITLE`）が
-その環境の `.env` の値でバンドルに入っていることを確認します。本番向けは 3 つのアプリすべて、
+停止時に終了コード 0 で終わることを確認します。フロントエンドは、API のオリジン（`VITE_BACKEND_BASE_URL`）が
+その環境の `.env` の値でバンドルに入っていること、アイコンと OGP の画像（`/favicon.ico`、
+`/apple-touch-icon.png`、`/og-image.png`）が画像として配られることを確認します。本番向けは 3 つのアプリすべて、
 staging 向け（`BUILD_SCRIPT=build:stg`）は admin で確認します。イメージは push しません。
 
 ### Publish Images（`.github/workflows/publish-images.yml`）
