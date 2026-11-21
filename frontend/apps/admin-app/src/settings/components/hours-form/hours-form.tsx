@@ -284,7 +284,7 @@ export const HoursForm = ({
               </legend>
               <div className={styles['rowControls']}>
                 <TextField
-                  className={styles['short']}
+                  width='short'
                   label='日付'
                   type='date'
                   name={nameOf('date')}

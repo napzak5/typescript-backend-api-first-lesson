@@ -64,6 +64,7 @@ export const RefundForm = ({
     </Card>
     <Form {...form} errors={errors} submitLabel='返金を記録する'>
       <TextField
+        width='short'
         label='返金する金額'
         name='refundAmount'
         inputMode='numeric'

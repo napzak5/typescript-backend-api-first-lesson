@@ -1,7 +1,6 @@
 import { type FormErrors, TextArea, TextField } from '@beauty-salon-frontend/ui'
 import { tagsTextOf } from '../../../customers/customer-ledger'
 import type { Introduced } from '../../introduction'
-import styles from './introduction-fields.module.css'
 
 export type IntroductionFieldsProps = {
   /** The introduction the controls open with; `null` for a new member, whose controls are empty */
@@ -42,7 +41,7 @@ export const IntroductionFields = ({
       name='yearsOfExperience'
       inputMode='numeric'
       autoComplete='off'
-      className={styles['short']}
+      width='short'
       description='0 から 100 までの整数。'
       defaultValue={
         shown === null || shown.yearsOfExperience === null

@@ -259,7 +259,7 @@ export const TreatmentForm = ({
           name='processingTime'
           inputMode='numeric'
           autoComplete='off'
-          className={styles['short']}
+          width='short'
           description='0 から 1440 までの分。'
           defaultValue={
             record?.processingTime === null ||
@@ -406,7 +406,7 @@ export const TreatmentForm = ({
         <Select
           label='お客様の満足度'
           name='customerSatisfaction'
-          className={styles['short']}
+          width='short'
           options={SATISFACTION_OPTIONS}
           placeholder='記録しない'
           defaultValue={
@@ -422,7 +422,7 @@ export const TreatmentForm = ({
           name='nextRecommendedDate'
           autoComplete='off'
           type='date'
-          className={styles['short']}
+          width='short'
           min={booking.bookingDate}
           max={LATEST_DAY}
           description='予約の日から後の日。勧めることがなければ、空のままにします。'

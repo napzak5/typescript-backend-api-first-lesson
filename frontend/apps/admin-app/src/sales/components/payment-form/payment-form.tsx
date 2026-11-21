@@ -54,6 +54,7 @@ export const PaymentForm = ({
         error={errors['paymentMethodId']}
       />
       <TextField
+        width='short'
         label='金額'
         name='amount'
         inputMode='numeric'

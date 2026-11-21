@@ -10,7 +10,6 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { KIND_OPTIONS } from '../../payment-method-format'
-import styles from './payment-method-form.module.css'
 
 export type PaymentMethodFormProps = Pick<
   FormProps,
@@ -133,7 +132,7 @@ export const PaymentMethodForm = ({
       inputMode='numeric'
       autoComplete='off'
       required
-      className={styles['short']}
+      width='short'
       description='0 以上の整数。小さいものから並びます。同じ数でもかまいません。'
       defaultValue={String(method?.sortOrder ?? sortOrder)}
       error={errors['sortOrder']}

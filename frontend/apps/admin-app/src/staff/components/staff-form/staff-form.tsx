@@ -11,7 +11,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { LEVEL_OPTIONS } from '../../staff-format'
 import { IntroductionFields } from '../introduction-fields/introduction-fields'
-import styles from './staff-form.module.css'
 
 export type StaffFormProps = Pick<
   FormProps,
@@ -162,7 +161,7 @@ export const StaffForm = ({ member, errors = {}, ...form }: StaffFormProps) => (
         autoComplete='off'
         min={EARLIEST_DAY}
         max={LATEST_DAY}
-        className={styles['short']}
+        width='short'
         description='これから入社するスタッフも、先に登録できます。'
         defaultValue={member?.hireDate ?? undefined}
         error={errors['hireDate']}
@@ -208,7 +207,7 @@ export const StaffForm = ({ member, errors = {}, ...form }: StaffFormProps) => (
         inputMode='numeric'
         autoComplete='off'
         required
-        className={styles['short']}
+        width='short'
         description='1 から 10 まで。'
         defaultValue={numberText(member?.maxConcurrentBookings ?? 1)}
         error={errors['maxConcurrentBookings']}

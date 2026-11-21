@@ -104,7 +104,7 @@ export const StockForm = ({
           />
         )}
         <TextField
-          className={styles['short']}
+          width='short'
           label='使用期限'
           name='expiryDate'
           type='date'

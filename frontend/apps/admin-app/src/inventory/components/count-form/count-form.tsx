@@ -71,6 +71,7 @@ export const CountForm = ({
 
         return (
           <TextField
+            width='short'
             key={row.id}
             label={stockRowNameOf(row, product)}
             name={control}

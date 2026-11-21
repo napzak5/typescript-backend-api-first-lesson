@@ -163,6 +163,7 @@ export const OrderForm = ({
         </p>
       </FormPart>
       <TextField
+        width='short'
         label='税額（円）'
         name='taxAmount'
         inputMode='numeric'
@@ -171,6 +172,7 @@ export const OrderForm = ({
         error={errors['taxAmount']}
       />
       <TextField
+        width='short'
         label='送料（円）'
         name='shippingCost'
         inputMode='numeric'
@@ -179,6 +181,7 @@ export const OrderForm = ({
         error={errors['shippingCost']}
       />
       <TextField
+        width='short'
         label='納品予定日'
         name='expectedDelivery'
         autoComplete='off'

@@ -8,9 +8,3 @@
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-bold);
 }
-
-/* The control of a day is as wide as its values */
-.short {
-  justify-self: start;
-  min-inline-size: 12rem;
-}

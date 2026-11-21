@@ -9,7 +9,6 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import styles from './product-form.module.css'
 
 export type ProductFormProps = Pick<
   FormProps,
@@ -215,7 +214,7 @@ export const ProductForm = ({
         name='leadTimeDays'
         inputMode='numeric'
         autoComplete='off'
-        className={styles['short']}
+        width='short'
         description='0 以上の整数。発注してから届くまでの日数です。'
         defaultValue={numberText(product?.leadTimeDays)}
         error={errors['leadTimeDays']}

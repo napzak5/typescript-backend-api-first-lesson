@@ -16,12 +16,6 @@
   gap: var(--space-fields);
 }
 
-/* The controls of a short value are as wide as their values */
-.short {
-  justify-self: start;
-  min-inline-size: 12rem;
-}
-
 /* The member of the staff of a record, who is named and not changed */
 .fixed {
   display: grid;

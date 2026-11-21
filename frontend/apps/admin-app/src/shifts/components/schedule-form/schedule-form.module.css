@@ -15,9 +15,3 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-fields);
 }
-
-/* The date is as wide as its value */
-.short {
-  justify-self: start;
-  min-inline-size: 12rem;
-}
