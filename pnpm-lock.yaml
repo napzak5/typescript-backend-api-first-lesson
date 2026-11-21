@@ -908,9 +908,6 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
     devDependencies:
-      '@beauty-salon-frontend/testing':
-        specifier: workspace:*
-        version: link:../testing
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
