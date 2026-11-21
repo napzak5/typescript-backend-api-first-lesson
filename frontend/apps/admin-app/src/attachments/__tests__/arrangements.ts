@@ -1,0 +1,90 @@
+import { testApi } from '@beauty-salon-frontend/testing/api'
+import * as z from 'zod'
+
+/*
+ * What the screen tests of the files arrange in the database, and read
+ * back from it. The seed data has no file: a test uploads its own through
+ * the screen, to the storage of the test server, or puts one into the
+ * database, which the storage then does not have.
+ */
+
+/** The bytes of a PNG image: its signature, and the start of its header */
+export const PNG_BYTES = new Uint8Array([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49,
+  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+])
+
+/** The bytes of a PDF: its header, and an end */
+export const PDF_BYTES = new TextEncoder().encode(
+  '%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n',
+)
+
+const idsSchema = z.tuple([z.object({ id: z.uuid() })])
+
+/**
+ * Puts a file whose upload was finished so many minutes ago into the
+ * database, as an account uploaded it to a salon.
+ */
+export const arrangeFile = async ({
+  salonId,
+  filename,
+  contentType = 'application/pdf',
+  size = 348_160,
+  uploadedBy,
+  minutesAgo = 10,
+}: {
+  salonId: string
+  filename: string
+  contentType?: string
+  size?: number
+  /** The address of mail of the account that uploaded it */
+  uploadedBy: string
+  minutesAgo?: number
+}): Promise<string> =>
+  idsSchema.parse(
+    await testApi().query(
+      `insert into attachments
+         ("salonId", filename, "contentType", size, status, "uploadedBy",
+          "uploadExpiresAt", "uploadedAt", "createdAt", "updatedAt")
+       select $1, $2, $3::attachment_content_type, $4, 'uploaded', u.id,
+         now() - ($6 - 15) * interval '1 minute',
+         now() - $6 * interval '1 minute',
+         now() - ($6 + 1) * interval '1 minute',
+         now() - $6 * interval '1 minute'
+       from users u where u.email = $5
+       returning id::text`,
+      [salonId, filename, contentType, size, uploadedBy, minutesAgo],
+    ),
+  )[0].id
+
+const storedSchema = z.array(
+  z.object({
+    filename: z.string(),
+    contentType: z.string(),
+    size: z.number(),
+    status: z.string(),
+    uploadedBy: z.string(),
+    removed: z.boolean(),
+  }),
+)
+
+/** The files of a salon as the database keeps them, the first made first, with the address of mail of the account that uploaded each */
+export const storedFilesOf = async (salonId: string) =>
+  storedSchema.parse(
+    await testApi().query(
+      `select a.filename, a."contentType"::text, a.size, a.status::text,
+         u.email as "uploadedBy", a."deletedAt" is not null as removed
+       from attachments a join users u on u.id = a."uploadedBy"
+       where a."salonId" = $1
+       order by a."createdAt", a.id`,
+      [salonId],
+    ),
+  )
+
+/** Removes a file, as another member of the staff does meanwhile. */
+export const fileRemovedMeanwhile = async (id: string): Promise<void> => {
+  await testApi().query(
+    'update attachments set "deletedAt" = now() where id = $1',
+    [id],
+  )
+}

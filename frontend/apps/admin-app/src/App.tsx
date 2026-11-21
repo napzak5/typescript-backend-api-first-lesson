@@ -18,6 +18,8 @@ import {
   PageHeader,
 } from '@beauty-salon-frontend/ui'
 import { Link, Route, Routes, useLocation, useNavigate } from 'react-router'
+import { AttachmentScreen } from './attachments/attachment-screen'
+import { AttachmentsScreen } from './attachments/attachments-screen'
 import { BookingEntryScreen } from './bookings/booking-entry-screen'
 import { BookingLineEntryScreen } from './bookings/booking-line-entry-screen'
 import { BookingLineScreen } from './bookings/booking-line-screen'
@@ -474,6 +476,14 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/reviews/:reviewId/response'
                 element={<ReviewResponseScreen />}
+              />
+              <Route
+                path='/salons/:salonId/files'
+                element={<AttachmentsScreen />}
+              />
+              <Route
+                path='/salons/:salonId/files/:attachmentId'
+                element={<AttachmentScreen />}
               />
               <Route
                 path='/salons/:salonId/settings'

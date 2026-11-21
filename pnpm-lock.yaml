@@ -325,6 +325,9 @@ importers:
       supertest:
         specifier: ^7.3.2
         version: 7.3.2(supports-color@10.2.2)
+      testcontainers:
+        specifier: ^12.2.1
+        version: 12.2.1(bare-buffer@3.7.3)(supports-color@10.2.2)
       tsx:
         specifier: ^4.23.15
         version: 4.23.15

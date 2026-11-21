@@ -59,6 +59,13 @@ TEST_SERVER_TOKEN=<any value> pnpm --filter @beauty-salon-backend/api run test:s
   setup of the integration tests does. With `openTestDatabases` it builds one
   template that has the schema and the seed data (`seedDatabase` of the
   database package: the rows of `pnpm db:seed`).
+- It starts a SeaweedFS container through testcontainers whatever
+  `TEST_DATABASE_URL` says (`test-server/test-storage.ts`): the object
+  storage that all its APIs keep their files in. A test sends a file to it
+  at the URL an API signed and reads it back from a URL of a download, as a
+  browser does; the files of one API are never those of another, since
+  every file is stored under the ID of its attachment. So the test server
+  always needs Docker.
 - It answers on the loopback address, and only requests that carry
   `Authorization: Bearer <TEST_SERVER_TOKEN>`; the process that starts it
   chooses the token. Every other request is answered with 401.
@@ -95,7 +102,7 @@ in with the code of the next 30 seconds, which the API takes as well, or
 with a backup code.
 
 The APIs are created like `createTestApp` creates the application of a test:
-the same rate limit, a file storage in memory, the real `TotpAuthenticator`,
+the same rate limit, the object storage of the test server, the real `TotpAuthenticator`,
 and a mailer that keeps the mails for the test to read. No origin is allowed
 by CORS unless the API is started with one: the tests
 that call an API run in jsdom, where `fetch` is that of Node.js and applies
@@ -103,7 +110,7 @@ no same-origin policy.
 
 The program stops when its standard input ends, so it does not outlive the
 process that started it, and on `SIGINT` or `SIGTERM`. It then stops the APIs,
-drops their databases and the template, and removes the container it started.
+drops their databases and the template, and removes the containers it started.
 
 How a test of the frontend uses it is in the skill
 [frontend-testing](../.claude/skills/frontend-testing/SKILL.md).
