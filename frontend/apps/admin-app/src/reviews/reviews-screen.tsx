@@ -11,6 +11,7 @@ import {
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
+  ButtonLink,
   EmptyState,
   type FormErrors,
   LoadingIndicator,
@@ -21,7 +22,8 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { reviewHrefOf, reviewsHrefOf } from '../navigation'
+import { reviewHrefOf, reviewReportsHrefOf, reviewsHrefOf } from '../navigation'
+import { useHandlesReports } from '../review-reports/review-handling'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
 import { ReviewFilter } from './components/review-filter/review-filter'
 import { ReviewSummary } from './components/review-summary/review-summary'
@@ -165,9 +167,11 @@ const ReviewList = ({ salon, staff }: ReviewListProps) => {
 /**
  * The reviews of a salon: what they come to, and the reviews themselves,
  * which lead to their answers and reports. The members of the staff name
- * those the reviews rate once they are read.
+ * those the reviews rate once they are read. An administrator goes from
+ * here to the reports of the reviews.
  */
 const ReviewsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const handles = useHandlesReports()
   const staff = useQuery({
     queryKey: staffProfilesKeyOf(salon.id),
     queryFn: () => readStaffProfiles(salon.id),
@@ -175,7 +179,20 @@ const ReviewsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader
+        title={TITLE}
+        description={salon.name}
+        actions={
+          handles ? (
+            <ButtonLink
+              href={reviewReportsHrefOf(salon.id)}
+              variant='secondary'
+            >
+              通報を見る
+            </ButtonLink>
+          ) : undefined
+        }
+      />
       <SummaryPart salonId={salon.id} />
       <ReviewList
         salon={salon}

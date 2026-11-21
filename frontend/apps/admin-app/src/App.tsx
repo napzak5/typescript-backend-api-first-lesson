@@ -82,6 +82,7 @@ import { PurchaseOrderReceiptScreen } from './purchase-orders/purchase-order-rec
 import { PurchaseOrderScreen } from './purchase-orders/purchase-order-screen'
 import { PurchaseOrdersScreen } from './purchase-orders/purchase-orders-screen'
 import { ReorderSuggestionsScreen } from './purchase-orders/reorder-suggestions-screen'
+import { ReviewReportsScreen } from './review-reports/review-reports-screen'
 import { ReviewResponseScreen } from './reviews/review-response-screen'
 import { ReviewScreen } from './reviews/review-screen'
 import { ReviewsScreen } from './reviews/reviews-screen'
@@ -491,6 +492,10 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/reviews'
                 element={<ReviewsScreen />}
+              />
+              <Route
+                path='/salons/:salonId/reviews/reports'
+                element={<ReviewReportsScreen />}
               />
               <Route
                 path='/salons/:salonId/reviews/:reviewId'

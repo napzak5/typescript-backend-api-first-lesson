@@ -325,6 +325,10 @@ export const reviewResponseHrefOf = (
   reviewId: string,
 ): string => `${reviewHrefOf(salonId, reviewId)}/response`
 
+/** The reports of the reviews of a salon, for an administrator: those that wait, unless the query asks for others. */
+export const reviewReportsHrefOf = (salonId: string): string =>
+  `${reviewsHrefOf(salonId)}/reports`
+
 /** The files of a salon, with the form that uploads one. */
 export const attachmentsHrefOf = (salonId: string): string =>
   `/salons/${salonId}/files`
