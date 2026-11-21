@@ -4,7 +4,7 @@ import {
   summarizeViolations,
   WCAG_2_2_AA,
 } from '@beauty-salon-frontend/testing/accessibility'
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 /**
  * What of the page breaks WCAG 2.2 AA; an empty array when nothing does, so
@@ -58,15 +58,44 @@ const measureLayout = (
     }
   })
 
+/** The layout of a page that does none of it */
+const SOUND_LAYOUT = { overflow: 0, spilling: [], flex: 0 }
+
 /**
  * The page is accessible, nothing of it sticks out of the window or out of
  * the element it is in, and nothing is laid out with flex.
  */
 export const expectSoundPage = async (page: Page): Promise<void> => {
   expect(await findAccessibilityViolations(page)).toEqual([])
-  expect(await measureLayout(page)).toEqual({
-    overflow: 0,
-    spilling: [],
-    flex: 0,
-  })
+  expect(await measureLayout(page)).toEqual(SOUND_LAYOUT)
 }
+
+/**
+ * The layout alone, for a test that goes through many screens: a screen
+ * that fails is named in the report, and the test goes on to the next.
+ */
+export const expectSoundLayout = async (
+  page: Page,
+  screen: string,
+): Promise<void> => {
+  expect.soft(await measureLayout(page), screen).toEqual(SOUND_LAYOUT)
+}
+
+/** Where an element is in the window, in whole pixels */
+export type Edges = { left: number; top: number; right: number; bottom: number }
+
+/**
+ * The edges of an element in the window: for what a stylesheet alone
+ * decides, where things stand and how wide they are.
+ */
+export const edgesOf = (element: Locator): Promise<Edges> =>
+  element.evaluate((shown) => {
+    const { left, top, right, bottom } = shown.getBoundingClientRect()
+
+    return {
+      left: Math.round(left),
+      top: Math.round(top),
+      right: Math.round(right),
+      bottom: Math.round(bottom),
+    }
+  })

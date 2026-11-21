@@ -64,7 +64,7 @@ describe('Dialog', () => {
     ).toEqual(['戻る', '予約を取り消す'])
   })
 
-  it('should hold its content between its text and its actions', async () => {
+  it('should hold its content below its text, and its actions after both', async () => {
     // Act
     await stories.WithContent.run()
     const content = screen.getByText(
@@ -73,7 +73,8 @@ describe('Dialog', () => {
 
     // Assert
     expect(content.previousElementSibling).toHaveTextContent('予約の内容')
-    expect(content.nextElementSibling).toContainElement(
+    expect(content.nextElementSibling).toBeNull()
+    expect(content.parentElement?.nextElementSibling).toContainElement(
       screen.getByRole('button', { name: '閉じる' }),
     )
   })

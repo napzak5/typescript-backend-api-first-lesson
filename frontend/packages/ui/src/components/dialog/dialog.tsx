@@ -22,8 +22,9 @@ export type DialogProps = {
    */
   actions: ReactNode
   /**
-   * How wide it may grow: `medium` for a question or a small form, `wide`
-   * for a table to choose from. Never wider than the screen
+   * How wide it may grow on a wide screen: `medium` for a question or a
+   * small form, `wide` for a table to choose from. On a narrow screen it is
+   * as wide as the screen
    */
   size?: 'medium' | 'wide' | undefined
 }
@@ -40,7 +41,13 @@ const sizeClass: Record<
  * A question or a small form that has to be dealt with before anything else.
  * It is the `dialog` element of the browser, opened as a modal: the browser
  * keeps the focus inside, makes the rest of the page inert, closes it on the
- * Escape key and gives the focus back to what opened it.
+ * Escape key and gives the focus back to what opened it. While it is open
+ * the page behind it does not scroll.
+ *
+ * On a narrow screen it is a sheet on the bottom edge with its actions one
+ * below the other; on a wider one a box in the middle, with its actions in a
+ * row at its end. It is never higher than the screen: content that is
+ * longer scrolls inside, and the actions stay in sight.
  *
  * It opens and closes in the commit that changes `open`, before the layout
  * effects of the components around it run. The rest of the page is inert
@@ -110,8 +117,8 @@ export const Dialog = ({
           </p>
         )}
         {children}
-        <div className={styles['actions']}>{actions}</div>
       </div>
+      <div className={styles['actions']}>{actions}</div>
     </dialog>
   )
 }
