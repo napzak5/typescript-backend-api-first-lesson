@@ -5,7 +5,8 @@
 
 /*
  * In a row. A grid does not wrap items of different widths, so a row that is
- * longer than the screen scrolls; the padding leaves room for the focus ring.
+ * longer than the screen scrolls, with the current link in its middle
+ * (navigation.tsx); the padding leaves room for the focus ring.
  */
 .horizontal {
   grid-auto-flow: column;

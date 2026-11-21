@@ -43,6 +43,17 @@ describe('Navigation', () => {
     )
   })
 
+  it('should mark the current link of a row longer than the screen, which the browser brings into sight', async () => {
+    // Act
+    await stories.CurrentFarAlong.run()
+
+    // Assert
+    expect(screen.getByRole('link', { current: 'page' })).toHaveTextContent(
+      '商品',
+    )
+    expect(screen.getAllByRole('link')).toHaveLength(12)
+  })
+
   it('should mark no link when no screen of the navigation is shown', async () => {
     // Act
     await stories.NoCurrentScreen.run()

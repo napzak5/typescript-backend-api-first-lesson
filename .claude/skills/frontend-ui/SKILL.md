@@ -79,7 +79,10 @@ is broken.
    Write `minmax(0, 1fr)`, not `1fr`, for a track whose content may be long:
    a bare `1fr` grows with its content and overflows. A grid does not wrap
    items of different widths: a row that may not fit scrolls sideways
-   (`navigation.module.css`), or becomes a column below a width. What
+   (`navigation.module.css`), or becomes a column below a width. A row
+   of links that scrolls is scrolled, by itself and alone, to put its
+   current link in its middle whenever its links or the current one
+   change, and not when it is drawn again (`navigation.tsx`). What
    follows each other like words (the tags of a salon, a rating with its
    date and a badge) is no layout: it stays in the flow of the text,
    `display: inline-block` with a margin, and goes on in the next line where
@@ -2262,7 +2265,7 @@ A share link opens a file for somebody who has no account
 | Component | Use it for |
 |-----------|------------|
 | `AppShell` | The frame of an application: the link that skips to the content, the header (title, and `account` under it on a narrow screen, beside it from 40rem), the `navigation` (under the header, or beside the content with `navigationPlacement='side'`), the main content with the notification at its top |
-| `Navigation` | The links to the screens. The application says which one is `current` |
+| `Navigation` | The links to the screens. The application says which one is `current`; a row too long for the screen is scrolled to it |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (one below the other on a narrow screen, side by side from 40rem) |
 | `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
