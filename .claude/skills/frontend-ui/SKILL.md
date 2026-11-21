@@ -1935,6 +1935,22 @@ owner, a manager and an administrator:
   the key of the stock, so that a movement or a count drops it with the
   rest.
 
+The alerts of the stock (`src/inventory/`) are seen to by everybody who
+works at the salon:
+
+- **Worked out, never kept**: the API works the alerts out from the
+  products and the rows whenever they are read, and an alert has no ID.
+  The alerts and how many there are are read under the key of the stock,
+  so a movement or a count drops them with the rest.
+- **A table that fits a laptop**: four columns, of which what an alert
+  is of and who saw to it break their lines; what a stock row expires on
+  is said below its name, and what a product is held against below its
+  stock.
+- **Read before the dialog closes**: once an alert is acknowledged, or
+  refused because it went (404) or somebody saw to it meanwhile (409),
+  the alerts are read anew before the dialog closes, and the heading
+  takes the focus. A refusal is said under the heading.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
