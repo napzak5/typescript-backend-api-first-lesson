@@ -1,20 +1,54 @@
+/*
+ * While a dialog is open as a modal, the page behind it stays where it is:
+ * it cannot be used, so it does not scroll either. Its scrollbar goes, and
+ * the window is the dialog's to its edge: a strip kept free for the
+ * scrollbar (`scrollbar-gutter`) is one the overlay does not cover. Where
+ * the scrollbar took room, the page keeps as much at its end (dialog.tsx
+ * notes how much), so it does not move sideways.
+ */
+:global(html):has(.dialog:modal) {
+  padding-inline-end: var(--scrollbar-room, 0);
+  overflow: hidden;
+}
+
+/*
+ * On a narrow screen a sheet that stands on the bottom edge, where a thumb
+ * reaches its buttons, and comes up from below. It is never higher than the
+ * screen: what is longer scrolls inside, behind the actions.
+ */
 .dialog {
-  inline-size: min(100% - var(--space-8), var(--size-dialog));
+  --dialog-entry: 0 100%;
+
+  inline-size: 100%;
+  max-inline-size: none;
+  max-block-size: calc(100dvb - var(--space-10));
+  margin-block: auto 0;
+  margin-inline: 0;
   padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
+  border: 0;
+  border-block-start: 1px solid var(--color-border);
+  border-radius: var(--radius-large) var(--radius-large) 0 0;
   background-color: var(--color-surface);
   box-shadow: var(--shadow-overlay);
   color: var(--color-text);
-}
-
-/* A table to choose from: its columns fit beside each other on a wide screen */
-.wide {
-  inline-size: min(100% - var(--space-8), var(--size-dialog-wide));
+  overscroll-behavior: contain;
+  transition: translate var(--duration-medium) ease-out;
 }
 
 .dialog::backdrop {
   background-color: var(--color-overlay);
+  transition: opacity var(--duration-medium) ease-out;
+}
+
+/* Where it comes from when it opens. Closing takes no time */
+@starting-style {
+  .dialog[open] {
+    translate: var(--dialog-entry);
+  }
+
+  .dialog[open]::backdrop {
+    opacity: 0;
+  }
 }
 
 /* The grid is on the content, not on the dialog: a closed dialog has to stay `display: none` */
@@ -22,7 +56,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
-  padding: var(--space-6);
+  padding: var(--space-6) var(--space-6) 0;
 }
 
 .title {
@@ -35,9 +69,39 @@
   overflow-wrap: anywhere;
 }
 
+/*
+ * Always in sight, at the bottom: content that is longer than the screen
+ * scrolls behind them. One below the other and as wide as the sheet, so
+ * that each is easy to hit and none is cut off, whatever it says.
+ */
 .actions {
+  position: sticky;
+  inset-block-end: 0;
   display: grid;
-  grid-auto-flow: column;
-  justify-content: end;
   gap: var(--space-3);
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  background-color: var(--color-surface);
+}
+
+/* From here on a box in the middle of the screen, its actions at its end */
+@media (min-width: 40rem) {
+  .dialog {
+    --dialog-entry: 0 0;
+
+    inline-size: min(100% - var(--space-8), var(--size-dialog));
+    max-block-size: calc(100dvb - var(--space-8));
+    margin: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-large);
+  }
+
+  /* A table to choose from: its columns fit beside each other */
+  .wide {
+    inline-size: min(100% - var(--space-8), var(--size-dialog-wide));
+  }
+
+  .actions {
+    grid-auto-flow: column;
+    justify-content: end;
+  }
 }

@@ -49,3 +49,16 @@ export const Pressed: Story = {
 export const NotPressed: Story = {
   args: { 'aria-pressed': false, children: '参考になった' },
 }
+
+/**
+ * A label that is longer than the line the button stands in, on a screen as
+ * narrow as a phone: it goes on in a second line, between its words, and
+ * the button is no wider than the screen.
+ */
+export const LongLabel: Story = {
+  globals: { viewport: { value: 'mobile1', isRotated: false } },
+  args: {
+    variant: 'primary',
+    children: 'ビューティーサプライ 関東営業所 への発注を作る',
+  },
+}

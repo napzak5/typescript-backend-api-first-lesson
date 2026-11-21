@@ -24,16 +24,35 @@
   font-size: var(--font-size-large);
 }
 
-/* The buttons side by side, each as wide as its words */
+/*
+ * Below the heading the buttons follow each other like words: side by side,
+ * each as wide as its words, and on in the next line where the card ends. A
+ * grid would keep them on one line, which can be longer than a narrow card.
+ */
 .actions {
-  display: grid;
-  grid-auto-flow: column;
-  justify-content: start;
-  gap: var(--space-2);
+  display: block;
+  margin-block-end: calc(var(--space-2) * -1);
+}
+
+.actions > * {
+  margin-inline-end: var(--space-2);
+  margin-block-end: var(--space-2);
 }
 
 @media (min-width: 40rem) {
   .head {
     grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  /* Beside the heading, on one line */
+  .actions {
+    display: grid;
+    grid-auto-flow: column;
+    gap: var(--space-2);
+    margin-block-end: 0;
+  }
+
+  .actions > * {
+    margin: 0;
   }
 }

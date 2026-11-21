@@ -96,6 +96,54 @@ export const Wide: Story = {
   },
 }
 
+/**
+ * On a screen as narrow as a phone: a sheet on the bottom edge, as wide as
+ * the screen, its actions one below the other.
+ */
+export const OnANarrowScreen: Story = {
+  globals: { viewport: { value: 'mobile1', isRotated: false } },
+}
+
+const CHOSEN_BOOKINGS = [
+  '12 月 3 日（木）10:00 カット（山田 花子 様）',
+  '12 月 3 日（木）11:30 カラー（佐藤 美咲 様）',
+  '12 月 3 日（木）13:00 パーマ（鈴木 一郎 様）',
+  '12 月 3 日（木）14:30 カット（高橋 直子 様）',
+  '12 月 3 日（木）16:00 トリートメント（田中 恵 様）',
+  '12 月 4 日（金）10:00 カット（伊藤 健 様）',
+  '12 月 4 日（金）11:00 ヘッドスパ（渡辺 彩 様）',
+  '12 月 4 日（金）13:30 カラー（中村 翔 様）',
+  '12 月 4 日（金）15:00 カット（小林 優子 様）',
+  '12 月 4 日（金）16:30 縮毛矯正（加藤 真理 様）',
+  '12 月 5 日（土）10:00 カット（吉田 大輔 様）',
+  '12 月 5 日（土）11:30 カラー（山本 由美 様）',
+]
+
+/**
+ * Content that is longer than the screen: the dialog is no higher than the
+ * screen and scrolls inside, and its actions stay in sight.
+ */
+export const LongContent: Story = {
+  globals: { viewport: { value: 'mobile1', isRotated: false } },
+  args: {
+    title: '選んだ 12 件の予約を取り消しますか？',
+    description: 'お客様には、取り消したことをメールで知らせます。',
+    children: (
+      <ul>
+        {CHOSEN_BOOKINGS.map((booking) => (
+          <li key={booking}>{booking}</li>
+        ))}
+      </ul>
+    ),
+    actions: (
+      <>
+        <Button>戻る</Button>
+        <Button variant='danger'>12 件の予約を取り消す</Button>
+      </>
+    ),
+  },
+}
+
 export const Closed: Story = {
   args: { open: false },
 }

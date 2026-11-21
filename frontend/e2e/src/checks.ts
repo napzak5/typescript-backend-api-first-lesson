@@ -4,7 +4,7 @@ import {
   summarizeViolations,
   WCAG_2_2_AA,
 } from '@beauty-salon-frontend/testing/accessibility'
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 /**
  * What of the page breaks WCAG 2.2 AA; an empty array when nothing does, so
@@ -26,7 +26,8 @@ export const findAccessibilityViolations = async (
 
 /**
  * What a layout must not do, measured on the page as the browser laid it out:
- * `overflow` is by how many pixels the page is wider than the window,
+ * `overflow` is by how many pixels the page is wider than the window has
+ * room for it (a scrollbar that takes room is not part of that),
  * `spilling` names the elements that hold something wider than they are and
  * neither scroll it nor cut it off (a line that does not wrap sticks out of
  * its card long before it makes the page wider), and `flex` is how many
@@ -39,7 +40,9 @@ const measureLayout = (
     const elements = [...document.querySelectorAll('body *')]
 
     return {
-      overflow: document.documentElement.scrollWidth - window.innerWidth,
+      overflow:
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
       spilling: elements
         .filter(
           (element) =>
@@ -58,15 +61,62 @@ const measureLayout = (
     }
   })
 
+/** The layout of a page that does none of it */
+const SOUND_LAYOUT = { overflow: 0, spilling: [], flex: 0 }
+
 /**
  * The page is accessible, nothing of it sticks out of the window or out of
  * the element it is in, and nothing is laid out with flex.
  */
 export const expectSoundPage = async (page: Page): Promise<void> => {
   expect(await findAccessibilityViolations(page)).toEqual([])
-  expect(await measureLayout(page)).toEqual({
-    overflow: 0,
-    spilling: [],
-    flex: 0,
-  })
+  expect(await measureLayout(page)).toEqual(SOUND_LAYOUT)
 }
+
+/**
+ * The layout alone, for a test that goes through many screens: a screen
+ * that fails is named in the report, and the test goes on to the next.
+ */
+export const expectSoundLayout = async (
+  page: Page,
+  screen: string,
+): Promise<void> => {
+  expect.soft(await measureLayout(page), screen).toEqual(SOUND_LAYOUT)
+}
+
+/** Where an element is in the window, in whole pixels */
+export type Edges = { left: number; top: number; right: number; bottom: number }
+
+/**
+ * The edges of an element in the window: for what a stylesheet alone
+ * decides, where things stand and how wide they are.
+ */
+export const edgesOf = (element: Locator): Promise<Edges> =>
+  element.evaluate((shown) => {
+    const { left, top, right, bottom } = shown.getBoundingClientRect()
+
+    return {
+      left: Math.round(left),
+      top: Math.round(top),
+      right: Math.round(right),
+      bottom: Math.round(bottom),
+    }
+  })
+
+/** Whether each corner of the window, a pixel inside it, is under the open dialog or its overlay */
+export const cornersUnderTheDialog = (page: Page): Promise<boolean[]> =>
+  page.evaluate(() => {
+    const right = window.innerWidth - 2
+    const bottom = window.innerHeight - 2
+
+    return [
+      { x: 1, y: 1 },
+      { x: right, y: 1 },
+      { x: 1, y: bottom },
+      { x: right, y: bottom },
+    ].map(
+      ({ x, y }) =>
+        document.elementFromPoint(x, y)?.closest('dialog[open]') instanceof
+        HTMLDialogElement,
+    )
+  })
