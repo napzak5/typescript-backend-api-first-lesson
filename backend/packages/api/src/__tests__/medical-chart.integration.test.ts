@@ -287,6 +287,15 @@ describe('Medical chart API', () => {
       const response = await create(body)
 
       expect(response.status).toBe(201)
+      // One reading of the clock stamps the new row, to the microsecond
+      const [stamps] = await db
+        .select({
+          createdAt: medicalCharts.createdAt,
+          updatedAt: medicalCharts.updatedAt,
+        })
+        .from(medicalCharts)
+        .where(eq(medicalCharts.id, response.body.data.id))
+      expect(stamps?.updatedAt).toBe(stamps?.createdAt)
       expect(response.headers['location']).toBe(chartPathOf(customerId))
       expect(response.body).toEqual({
         data: {

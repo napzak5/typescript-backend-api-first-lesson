@@ -540,6 +540,15 @@ describe('Treatment record API', () => {
       )
 
       expect(response.status).toBe(201)
+      // One reading of the clock stamps the new row, to the microsecond
+      const [stamps] = await db
+        .select({
+          createdAt: treatmentRecords.createdAt,
+          updatedAt: treatmentRecords.updatedAt,
+        })
+        .from(treatmentRecords)
+        .where(eq(treatmentRecords.id, response.body.data.id))
+      expect(stamps?.updatedAt).toBe(stamps?.createdAt)
       const { data } = response.body
       expect(Object.keys(data).toSorted()).toEqual(RECORD_PROPERTIES)
       expect(response.body).toEqual({

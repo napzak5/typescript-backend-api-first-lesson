@@ -456,6 +456,12 @@ describe('Reviews API', () => {
       const response = await create(review(bookingId))
 
       expect(response.status).toBe(201)
+      // One reading of the clock stamps the new row, to the microsecond
+      const [stamps] = await db
+        .select({ createdAt: reviews.createdAt, updatedAt: reviews.updatedAt })
+        .from(reviews)
+        .where(eq(reviews.id, response.body.data.id))
+      expect(stamps?.updatedAt).toBe(stamps?.createdAt)
       expect(response.headers['content-type']).toBe(JSON_UTF8)
       const { data } = response.body
       expect(Object.keys(data).sort()).toEqual(PROPERTIES)

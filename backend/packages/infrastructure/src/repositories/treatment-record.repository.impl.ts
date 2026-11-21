@@ -55,7 +55,7 @@ import {
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
-import { CLOCK } from '../database/clock'
+import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { detailsOf } from './treatment-details'
 
@@ -424,8 +424,9 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
           }
 
           const [stored] = await tx
+            .with(CLOCK_ONCE)
             .insert(treatmentRecords)
-            .values({ ...record, createdAt: CLOCK, updatedAt: CLOCK })
+            .values({ ...record, createdAt: ONE_MOMENT, updatedAt: ONE_MOMENT })
             .onConflictDoNothing({ target: treatmentRecords.bookingId })
             .returning()
           if (stored === undefined) {

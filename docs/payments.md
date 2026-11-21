@@ -240,7 +240,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 - カードの項目は、カードの支払いでも、null にできます（記録しない）
 - 支払い方法の金額の範囲は、1 回の支払いの金額に対するものです。売上の最後の支払い（残額の支払い）にも、下限を適用します
 - `isOnlineEnabled` と `isOfflineEnabled` は、確かめません
-- 決済取引の `status` は `completed`、`processedAt`、`createdAt`、`updatedAt` は、書いた時点のデータベースの時計です。売上の `paymentStatus` と `updatedAt` も、同じトランザクションで書きます
+- 決済取引の `status` は `completed`、`processedAt`、`createdAt`、`updatedAt` は、書いた時点のデータベースの時計です（時計を 1 回読んだ、同じ時刻）。売上の `paymentStatus` と `updatedAt` も、同じトランザクションで書きます
 - **取引番号（`transactionNumber`）は、システムが採番します**。`PT-XXXX-XXXX` の形で、売上番号と同じ作り方です（[売上台帳](./sales.md#売上番号)）。すでにある番号と重なったら、別の番号で採り直します（3 回まで）
 
 ### 支払いの記録の確認の順序
