@@ -3,6 +3,7 @@ import {
   type ModelsReviewResponse,
   type ModelsReviewSummaryResponse,
   type ReviewCrudListParams,
+  reviewCrudDelete,
   reviewCrudGet,
   reviewCrudList,
   reviewCrudReport,
@@ -29,7 +30,7 @@ import { match, P } from 'ts-pattern'
  * The reviews of a salon: what its customers wrote after a visit. Anybody
  * reads them; the owner and a manager answer them for the salon and report
  * them to the platform, and an administrator withdraws an answer that
- * breaks the rules.
+ * breaks the rules, and removes a review that does.
  */
 
 /** No answer, or one that says nothing a person could act on */
@@ -202,5 +203,28 @@ export const reportReview = async (
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
     .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+export type ReviewRemoval =
+  | { type: 'removed' }
+  /** The review was removed meanwhile */
+  | NotFound
+  /** The account removes no reviews: only their customers and an administrator do */
+  | Forbidden
+  | Unread
+
+/** Removes a review that breaks the rules of the platform, and the reports of it. */
+export const removeReview = async (
+  reviewId: string,
+): Promise<ReviewRemoval> => {
+  const answer = await reviewCrudDelete(reviewId).catch(() => null)
+
+  return match(answer)
+    .returnType<ReviewRemoval>()
+    .with({ status: 204 }, () => ({ type: 'removed' }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
     .exhaustive(outsideTheContract)
 }

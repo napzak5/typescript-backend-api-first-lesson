@@ -1,0 +1,27 @@
+/*
+ * What an account wrote keeps its lines. Unlike the other cells it breaks
+ * them, and is never narrower than a few words nor wider than a column of
+ * reading: the table fits the page of a laptop
+ */
+.details {
+  display: block;
+  min-inline-size: 12rem;
+  max-inline-size: 28rem;
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}
+
+/* The state, above when a dismissed report was dismissed; it breaks its lines like what was written */
+.state {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  min-inline-size: 8rem;
+  white-space: normal;
+}
+
+/* When a report was dismissed, below its state */
+.note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}

@@ -15,6 +15,7 @@ import {
   readReview,
   readReviewPage,
   readReviewSummary,
+  removeReview,
   reportReview,
   respondToReview,
   reviewKeyOf,
@@ -309,5 +310,37 @@ describe('reportReview', () => {
 
     // Assert
     expect(reporting).toEqual({ type })
+  })
+})
+
+describe('removeReview', () => {
+  it('should remove the review by its ID', async () => {
+    // Arrange
+    const fetched = answering(() => new Response(null, { status: 204 }))
+
+    // Act
+    const removal = await removeReview(answeredReview.id)
+
+    // Assert
+    expect(removal).toEqual({ type: 'removed' })
+    expect(await askedOf(fetched)).toEqual([
+      ['DELETE', `/api/v1/reviews/${answeredReview.id}`, {}, null],
+    ])
+  })
+
+  it.each<[string, Answer, string]>([
+    ['a review removed meanwhile', () => problem(404), 'notFound'],
+    ['the account', () => problem(403), 'forbidden'],
+    ['an ID that is none', () => problem(400), 'failed'],
+    ...UNREAD,
+  ])('should remove nothing after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const removal = await removeReview(answeredReview.id)
+
+    // Assert
+    expect(removal).toEqual({ type })
   })
 })
