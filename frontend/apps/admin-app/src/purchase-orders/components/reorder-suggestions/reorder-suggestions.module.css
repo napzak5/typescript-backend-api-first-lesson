@@ -1,0 +1,6 @@
+/* The suppliers one below the other */
+.groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+}

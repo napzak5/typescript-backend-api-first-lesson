@@ -5,6 +5,7 @@ import { salon } from '../../../bookings/components/examples'
 import {
   colourLot,
   STOCK_OF_THE_SALON,
+  shampooRow,
 } from '../../../inventory/components/examples'
 import { PRODUCTS_OF_THE_SALON } from '../../../products/components/examples'
 import { quantityControlOf, unitPriceControlOf } from '../../order-entry'
@@ -33,6 +34,16 @@ type Story = StoryObj<typeof meta>
 
 /** Every row of the salon, priced at what its product is bought at */
 export const Rows: Story = {}
+
+/** A new order of the products suggested of a supplier: the newest lot of the colour, and the shampoo */
+export const FromSuggestions: Story = {
+  args: {
+    starting: {
+      supplier: 'ビューティーサプライ東京',
+      quantities: { [colourLot.id]: '30', [shampooRow.id]: '12.5' },
+    },
+  },
+}
 
 /** What the form checked before sending: no supplier, a quantity that is none, and a price too large for it */
 export const WithErrors: Story = {

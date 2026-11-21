@@ -37,15 +37,43 @@ export type OrderFormProps = Pick<
   salon: { taxRate: number; currency: string }
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
   errors?: FormErrors | undefined
+  /** What the form starts with besides the prices: a supplier, and quantities by the IDs of the rows */
+  starting?: OrderStart | undefined
+}
+
+/** What a new order starts with: the suggestions of a supplier, or nothing */
+type OrderStart = {
+  supplier: string
+  quantities: Readonly<Record<string, string>>
 }
 
 const NO_ERRORS: FormErrors = {}
+
+const EMPTY: OrderStart = { supplier: '', quantities: {} }
 
 /** The price a row is ordered at first: what the product is bought at, when it has one */
 const priceOf = (product: ModelsProductResponse | undefined): string =>
   product === undefined || product.purchasePrice === null
     ? ''
     : `${product.purchasePrice}`
+
+/** The quantities and the prices of the rows as the form opens: what its subtotal starts from */
+const openedWith = (
+  rows: readonly ModelsInventoryResponse[],
+  products: readonly ModelsProductResponse[],
+  quantities: Readonly<Record<string, string>>,
+): FormData => {
+  const values = new FormData()
+  for (const row of rows) {
+    values.set(quantityControlOf(row.id), quantities[row.id] ?? '')
+    values.set(
+      unitPriceControlOf(row.id),
+      priceOf(productOf(products, row.productId)),
+    )
+  }
+
+  return values
+}
 
 /**
  * A new purchase order: its supplier; a quantity and a unit price for
@@ -59,13 +87,17 @@ export const OrderForm = ({
   products,
   salon,
   errors = NO_ERRORS,
+  starting = EMPTY,
   ...form
 }: OrderFormProps) => {
-  // What was entered when a quantity or a price last changed. The subtotal
-  // is worked out from it over the rows there are now: a row removed
-  // meanwhile, and read anew, adds nothing
-  const [entered, setEntered] = useState<FormData>()
-  const subtotal = entered === undefined ? 0 : subtotalOf(entered, rows)
+  // What was entered when a quantity or a price last changed, and what the
+  // form opened with before. The subtotal is worked out from it over the
+  // rows there are now: a row removed meanwhile, and read anew, adds
+  // nothing
+  const [entered, setEntered] = useState(() =>
+    openedWith(rows, products, starting.quantities),
+  )
+  const subtotal = subtotalOf(entered, rows)
 
   const tally = (event: FormEvent<HTMLFieldSetElement>): void => {
     const form = event.currentTarget.form
@@ -80,6 +112,7 @@ export const OrderForm = ({
         label='仕入先'
         name='supplier'
         autoComplete='organization'
+        defaultValue={starting.supplier}
         description='発注を探すときも、この名前で探します。'
         error={errors['supplier']}
       />
@@ -106,6 +139,7 @@ export const OrderForm = ({
                     name={quantity}
                     inputMode='decimal'
                     autoComplete='off'
+                    defaultValue={starting.quantities[row.id]}
                     description={`在庫数 ${quantityNameOf(row.currentStock, product)}`}
                     error={errors[quantity]}
                   />
