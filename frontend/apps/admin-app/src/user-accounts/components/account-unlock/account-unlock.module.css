@@ -1,0 +1,10 @@
+/* What the lifting does, what went wrong with the last attempt, then its button */
+.unlock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.text {
+  margin: 0;
+}
