@@ -15,7 +15,10 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    setupFiles: ['@beauty-salon-frontend/testing/setup', './vitest.setup.ts'],
+    setupFiles: [
+      '@beauty-salon-frontend/testing/setup',
+      '@beauty-salon-frontend/testing/stories',
+    ],
     css: {
       // The class names of the CSS Modules, as they are written
       modules: { classNameStrategy: 'non-scoped' },

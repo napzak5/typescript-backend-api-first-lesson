@@ -4,6 +4,7 @@ import { ADMIN } from './applications'
 import { salonId, TOKYO } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
 import { enterCredentials, heading, STAFF } from './sign-in'
 
 /*
@@ -86,12 +87,6 @@ const writeInto = async (control: Locator, value: string): Promise<void> => {
   await control.fill(value)
 }
 
-/** A link of the navigation of the application */
-const navigationLink = (page: Page, name: string): Locator =>
-  page
-    .getByRole('navigation', { name: 'メインメニュー' })
-    .getByRole('link', { name, exact: true })
-
 test.describe('the movements of the stock, in a browser', () => {
   test('should let the stylist record a purchase from the row, with the keyboard, and show it in the history and the stock', async ({
     page,
@@ -134,7 +129,7 @@ test.describe('the movements of the stock, in a browser', () => {
     })
 
     // Act
-    await pressWithTheKeyboard(navigationLink(page, '在庫'))
+    await pressWithTheKeyboard(mainMenuLink(page, '在庫'))
 
     // Assert: read anew, the row has the stock the purchase left
     await expect(heading(page, '在庫')).toBeFocused()

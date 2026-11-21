@@ -4,6 +4,7 @@ import { ADMIN } from './applications'
 import { MIKA, salonId, staffId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
 import { enterCredentials, heading, MANAGER } from './sign-in'
 
 /*
@@ -170,11 +171,7 @@ test.describe('the shifts, in a browser', () => {
     ])
 
     // Act: the week, through the header
-    await pressWithTheKeyboard(
-      page
-        .getByRole('navigation', { name: 'メインメニュー' })
-        .getByRole('link', { name: 'シフト' }),
-    )
+    await pressWithTheKeyboard(mainMenuLink(page, 'シフト'))
     // The link is pressed again once the week it led to is shown: the address changes before the screen does
     for (const shown of [dayAfter(monday, -7), monday]) {
       await pressWithTheKeyboard(page.getByRole('link', { name: '次の週' }))

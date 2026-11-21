@@ -1,6 +1,10 @@
 export { classNames } from './class-names'
 export { Alert, type AlertProps } from './components/alert/alert'
-export { AppShell, type AppShellProps } from './components/app-shell/app-shell'
+export {
+  AppShell,
+  type AppShellProps,
+  useInMenu,
+} from './components/app-shell/app-shell'
 export { useScreenHeadingFocus } from './components/app-shell/screens'
 export { Badge, type BadgeProps } from './components/badge/badge'
 export { Button, type ButtonProps } from './components/button/button'

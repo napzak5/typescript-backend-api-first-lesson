@@ -1,4 +1,4 @@
-import { Button, ButtonLink } from '@beauty-salon-frontend/ui'
+import { Button, ButtonLink, useInMenu } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { Session } from '../../use-session'
 import styles from './account-menu.module.css'
@@ -23,23 +23,32 @@ export type AccountMenuProps = {
 /**
  * What the header of an application says about the account: who is signed
  * in, with the way out, or the way in. It goes into `account` of `AppShell`.
+ *
+ * In the menu of a narrow screen it has the width of the screen: the
+ * address is shown whole, and the buttons are as high as the links above
+ * them, for a finger.
  */
 export const AccountMenu = ({
   session,
   signInHref,
   securityHref,
   onSignOut,
-}: AccountMenuProps) =>
-  match(session)
+}: AccountMenuProps) => {
+  const inMenu = useInMenu()
+  const size = inMenu ? 'medium' : 'small'
+
+  return match(session)
     .with({ type: 'signedIn' }, ({ user }) => (
       <>
-        <span className={styles['user']}>{user.email}</span>
+        <span className={inMenu ? styles['userInMenu'] : styles['user']}>
+          {user.email}
+        </span>
         {securityHref !== undefined && (
-          <ButtonLink href={securityHref} variant='quiet' size='small'>
+          <ButtonLink href={securityHref} variant='quiet' size={size}>
             アカウントの安全
           </ButtonLink>
         )}
-        <Button variant='quiet' size='small' onClick={onSignOut}>
+        <Button variant='quiet' size={size} onClick={onSignOut}>
           サインアウト
         </Button>
       </>
@@ -53,3 +62,4 @@ export const AccountMenu = ({
     )
     .with({ type: 'loading' }, { type: 'unavailable' }, () => null)
     .exhaustive()
+}

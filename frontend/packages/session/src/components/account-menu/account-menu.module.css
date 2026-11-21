@@ -1,5 +1,5 @@
 /*
- * A narrow header has room for the title and for the way out: there the
+ * A narrow header has room for the name and for the way out: there the
  * address is out of sight, and still read.
  */
 .user {
@@ -23,4 +23,15 @@
     font-size: var(--font-size-small);
     text-overflow: ellipsis;
   }
+}
+
+/*
+ * In the menu of a narrow screen, above its buttons: a long address breaks,
+ * and its words begin where those of the buttons do.
+ */
+.userInMenu {
+  padding-inline: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  overflow-wrap: anywhere;
 }

@@ -4,6 +4,7 @@ import { ADMIN } from './applications'
 import { salonId, TOKYO } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
 import { enterCredentials, heading, OWNER } from './sign-in'
 
 /*
@@ -76,12 +77,6 @@ const writeInto = async (control: Locator, value: string): Promise<void> => {
   await control.fill(value)
 }
 
-/** A link of the navigation of the application */
-const navigationLink = (page: Page, name: string): Locator =>
-  page
-    .getByRole('navigation', { name: 'メインメニュー' })
-    .getByRole('link', { name, exact: true })
-
 /** The products the form of a treatment record offers for its material of a number */
 const offeredMaterials = (page: Page, number: number): Locator =>
   page
@@ -91,7 +86,7 @@ const offeredMaterials = (page: Page, number: number): Locator =>
 
 /** Opens the form of the first treatment record of the salon, the colour, and adds a third material to it. */
 const openTheColourAndAddAMaterial = async (page: Page): Promise<void> => {
-  await navigationLink(page, '施術記録').click()
+  await mainMenuLink(page, '施術記録').click()
   await page
     .getByRole('table', { name: '施術記録', exact: true })
     .getByRole('rowheader')
@@ -113,7 +108,7 @@ test.describe('the product ledger of a salon, in a browser', () => {
     await expect(heading(page, '予約台帳')).toBeVisible()
 
     // Act
-    await pressWithTheKeyboard(navigationLink(page, '商品'))
+    await pressWithTheKeyboard(mainMenuLink(page, '商品'))
     await expect(heading(page, '商品台帳')).toBeFocused()
     await pressWithTheKeyboard(page.getByRole('link', { name: '商品を足す' }))
     await expect(heading(page, '商品を足す')).toBeFocused()
@@ -172,7 +167,7 @@ test.describe('the product ledger of a salon, in a browser', () => {
 
     // Act
     await droppedMeanwhile(api, 'WAX001')
-    await navigationLink(page, '商品').click()
+    await mainMenuLink(page, '商品').click()
     // The ledger is read anew: it has what another account changed meanwhile
     await expect(ledgerRow(page, 'WAX001')).toContainText('取り扱いをやめた')
     await page.getByRole('link', { name: CONDITIONER }).click()

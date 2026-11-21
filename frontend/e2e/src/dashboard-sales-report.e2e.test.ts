@@ -4,6 +4,7 @@ import { DASHBOARD } from './applications'
 import { TOKYO } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
 import { dayFromToday, pressWithTheKeyboard, sellACutToday } from './sales'
 import {
   DASHBOARD_START,
@@ -134,11 +135,10 @@ test.describe('the sales report, in a browser', () => {
     await expect(heading(page, DASHBOARD_START)).toBeFocused()
     await expect(page.getByText(TOKYO)).toBeVisible()
     await expect(sumsOf(page)).toHaveText(SUMS_OF_THE_CUT)
-    await expect(
-      page
-        .getByRole('navigation', { name: 'メインメニュー' })
-        .getByRole('link', { name: DASHBOARD_START }),
-    ).toHaveAttribute('aria-current', 'page')
+    await expect(mainMenuLink(page, DASHBOARD_START)).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   })
 })
 

@@ -16,6 +16,10 @@ export type NavigationProps = {
   /** What these links are, for assistive technology: 「メインメニュー」 */
   label: string
   items: readonly NavigationItem[]
+  /**
+   * `horizontal`: in a row, which scrolls when it is longer than its place.
+   * `vertical`: below each other, in as many columns as there is room for
+   */
   orientation?: NavigationOrientation
   className?: string | undefined
 }

@@ -1,4 +1,10 @@
-import { type ReactNode, useId, useLayoutEffect, useRef } from 'react'
+import {
+  type MouseEvent,
+  type ReactNode,
+  useId,
+  useLayoutEffect,
+  useRef,
+} from 'react'
 import { classNames } from '../../class-names'
 import styles from './dialog.module.css'
 
@@ -27,7 +33,20 @@ export type DialogProps = {
    * as wide as the screen
    */
   size?: 'medium' | 'wide' | undefined
+  /**
+   * What it holds. A `question` (the default) has to be answered, or holds
+   * what somebody typed: a press beside it does not close it. A `menu`
+   * asks nothing: a press on the overlay closes it, and so does a press on
+   * one of its links or buttons, once that has done what it does
+   */
+  kind?: DialogKind | undefined
 }
+
+type DialogKind = 'question' | 'menu'
+
+/** Whether a press inside a menu was one on a link or a button */
+const isChoice = (target: EventTarget): boolean =>
+  target instanceof Element && target.closest('a[href], button') !== null
 
 /**
  * Notes how much of the window the scrollbar of the page takes, for the
@@ -80,6 +99,7 @@ export const Dialog = ({
   children,
   actions,
   size = 'medium',
+  kind = 'question',
 }: DialogProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null)
   /** Whether the caller was told that the dialog closed, since it last opened */
@@ -112,13 +132,24 @@ export const Dialog = ({
     }
   }
 
+  // A press on the overlay is one on the dialog itself: its content covers
+  // the whole of it. The Escape key closes it already, and the press of a
+  // link or a button with a key is a click as well
+  const closeMenu = (event: MouseEvent<HTMLDialogElement>): void => {
+    if (event.target === event.currentTarget || isChoice(event.target)) {
+      event.currentTarget.close()
+    }
+  }
+
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: what a press on a menu closes, a key closes too (see closeMenu)
     <dialog
       ref={dialogRef}
       className={classNames(styles['dialog'], sizeClass[size])}
       aria-labelledby={titleId}
       aria-describedby={description === undefined ? undefined : descriptionId}
       onCancel={tell}
+      onClick={kind === 'menu' ? closeMenu : undefined}
       onClose={(event) => {
         if (!event.currentTarget.open) {
           tell()

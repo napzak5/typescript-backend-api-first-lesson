@@ -27,7 +27,7 @@ export default defineConfig({
     setupFiles: [
       '@beauty-salon-frontend/testing/setup',
       '@beauty-salon-frontend/testing/api/setup',
-      './vitest.setup.ts',
+      '@beauty-salon-frontend/testing/stories',
     ],
     css: {
       // The class names of the CSS Modules, as they are written

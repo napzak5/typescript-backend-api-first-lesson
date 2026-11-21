@@ -15,7 +15,6 @@ import {
   EnvironmentBanner,
   type LinkComponent,
   LinkProvider,
-  Navigation,
   NotificationProvider,
   PageHeader,
 } from '@beauty-salon-frontend/ui'
@@ -91,11 +90,7 @@ export const App = () => {
         <AppShell
           title={applications.dashboard.name}
           account={<SessionAccount securityHref={SECURITY_PATH} />}
-          navigation={
-            items.length > 0 ? (
-              <Navigation label='メインメニュー' items={items} />
-            ) : undefined
-          }
+          navigation={items}
         >
           {/* Every screen needs a session: who is not signed in signs in here, at the address they asked for */}
           <RequireSession roles={ROLES} signInHelp={<SignInHelp />}>
