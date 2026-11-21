@@ -71,8 +71,10 @@ import { ProductScreen } from './products/product-screen'
 import { ProductsScreen } from './products/products-screen'
 import { PurchaseOrderChangeScreen } from './purchase-orders/purchase-order-change-screen'
 import { PurchaseOrderEntryScreen } from './purchase-orders/purchase-order-entry-screen'
+import { PurchaseOrderReceiptScreen } from './purchase-orders/purchase-order-receipt-screen'
 import { PurchaseOrderScreen } from './purchase-orders/purchase-order-screen'
 import { PurchaseOrdersScreen } from './purchase-orders/purchase-orders-screen'
+import { ReorderSuggestionsScreen } from './purchase-orders/reorder-suggestions-screen'
 import { CheckoutScreen } from './sales/checkout-screen'
 import { PaymentEntryScreen } from './sales/payment-entry-screen'
 import { ReceiptScreen } from './sales/receipt-screen'
@@ -447,8 +449,16 @@ export const App = () => {
                 element={<PurchaseOrderScreen />}
               />
               <Route
+                path='/salons/:salonId/purchase-orders/suggestions'
+                element={<ReorderSuggestionsScreen />}
+              />
+              <Route
                 path='/salons/:salonId/purchase-orders/:purchaseOrderId/edit'
                 element={<PurchaseOrderChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/purchase-orders/:purchaseOrderId/receive'
+                element={<PurchaseOrderReceiptScreen />}
               />
               <Route
                 path='/salons/:salonId/settings'

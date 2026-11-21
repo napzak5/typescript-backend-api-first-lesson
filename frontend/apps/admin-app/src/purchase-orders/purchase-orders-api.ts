@@ -2,14 +2,18 @@ import {
   type ModelsOrderStatusType,
   type ModelsPurchaseOrderCancelRequest,
   type ModelsPurchaseOrderCreateRequest,
+  type ModelsPurchaseOrderReceiveRequest,
   type ModelsPurchaseOrderResponse,
   type ModelsPurchaseOrderUpdateRequest,
+  type ModelsReorderSuggestionResponse,
   type PurchaseOrderCrudListParams,
   purchaseOrderCrudApprove,
   purchaseOrderCrudCancel,
   purchaseOrderCrudCreate,
   purchaseOrderCrudGet,
   purchaseOrderCrudList,
+  purchaseOrderCrudListReorderSuggestions,
+  purchaseOrderCrudReceive,
   purchaseOrderCrudUpdate,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
@@ -18,12 +22,14 @@ import {
   FAILED,
   type Forbidden,
   from,
+  LARGEST_PAGE,
   NOT_FOUND,
   type NotFound,
   type Page,
   pageOf,
   type RefusedValue,
   refusedValuesOf,
+  toTheEnd,
   type Unread,
   unreadOf,
 } from '../reading'
@@ -252,3 +258,89 @@ export const changeOrder = async (
     .with(UNANSWERED, unreadOf)
     .exhaustive(outsideTheContract)
 }
+
+export type OrderReceipt =
+  | { type: 'received'; order: ModelsPurchaseOrderResponse }
+  | { type: 'invalid'; values: RefusedValue[] }
+  /** The stock row of an item was removed meanwhile: nothing was received */
+  | { type: 'rowsChanged' }
+  /**
+   * The order is no longer ordered or shipped, or the stock of a row
+   * would go above what a row holds: nothing was received
+   */
+  | { type: 'conflict' }
+  | NotFound
+  | Forbidden
+  | Unread
+
+/** Puts the goods that came into the stock rows of the items of an order, and closes it as delivered. */
+export const receiveOrder = async (
+  purchaseOrderId: string,
+  request: ModelsPurchaseOrderReceiveRequest,
+): Promise<OrderReceipt> => {
+  const answer = await purchaseOrderCrudReceive(purchaseOrderId, request).catch(
+    () => null,
+  )
+
+  return match(answer)
+    .returnType<OrderReceipt>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'received',
+      order: data.data,
+    }))
+    .with({ status: 400 }, ({ data }) => {
+      const values = refusedValuesOf(data)
+
+      return values.some(isRemovedRow)
+        ? { type: 'rowsChanged' }
+        : { type: 'invalid', values }
+    })
+    .with({ status: 409 }, () => CONFLICT)
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * The key the reorder suggestions of a salon are read under: below its
+ * orders, which every order that is made or moved on drops, as what is on
+ * order changes with it.
+ */
+export const suggestionsKeyOf = (salonId: string): string[] => [
+  ...purchaseOrdersKeyOf(salonId),
+  'suggestions',
+]
+
+export type EverySuggestion =
+  | { type: 'found'; items: ModelsReorderSuggestionResponse[] }
+  /** The account reads no suggestions of the salon */
+  | Forbidden
+  | Unread
+
+/**
+ * Every product of a salon whose stock and what is on order come to its
+ * reorder point or less, with how many to order, in the order of the
+ * codes of the products.
+ */
+export const readEverySuggestion = (
+  salonId: string,
+): Promise<EverySuggestion> =>
+  toTheEnd(async (cursor) => {
+    const answer = await purchaseOrderCrudListReorderSuggestions({
+      salonId,
+      ...from(cursor),
+      limit: LARGEST_PAGE,
+    }).catch(() => null)
+
+    // A 400 says that the salon was removed after it was read, or the
+    // product of the cursor meanwhile
+    return match(answer)
+      .returnType<Page<ModelsReorderSuggestionResponse> | Forbidden | Unread>()
+      .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
+      .with({ status: 403 }, () => FORBIDDEN)
+      .with({ status: 400 }, () => FAILED)
+      .with(UNANSWERED, unreadOf)
+      .exhaustive(outsideTheContract)
+  })

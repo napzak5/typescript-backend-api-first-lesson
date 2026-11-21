@@ -15,6 +15,7 @@ import {
   purchaseOrderEntryHrefOf,
   purchaseOrderHrefOf,
   purchaseOrdersHrefOf,
+  reorderSuggestionsHrefOf,
 } from '../navigation'
 import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
 import { FAILED, unreadMessageOf } from '../reading'
@@ -31,11 +32,16 @@ import { purchaseOrdersKeyOf, readOrderPage } from './purchase-orders-api'
 
 const TITLE = '発注'
 
-/** What is done from the list: a new order */
-const NewOrder = ({ salonId }: { salonId: string }) => (
-  <ButtonLink href={purchaseOrderEntryHrefOf(salonId)} variant='primary'>
-    発注を作る
-  </ButtonLink>
+/** What is done from the list: a new order, or the products the salon had better order */
+const OrderLinks = ({ salonId }: { salonId: string }) => (
+  <>
+    <ButtonLink href={purchaseOrderEntryHrefOf(salonId)} variant='primary'>
+      発注を作る
+    </ButtonLink>
+    <ButtonLink href={reorderSuggestionsHrefOf(salonId)} variant='secondary'>
+      発注の提案
+    </ButtonLink>
+  </>
 )
 
 /**
@@ -94,7 +100,7 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
       <PageHeader
         title={TITLE}
         description={salon.name}
-        actions={<NewOrder salonId={salon.id} />}
+        actions={<OrderLinks salonId={salon.id} />}
       />
       <OrderFilter
         conditions={conditions}

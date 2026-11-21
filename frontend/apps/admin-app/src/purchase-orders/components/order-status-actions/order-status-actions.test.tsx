@@ -66,6 +66,53 @@ describe('OrderStatusActions', () => {
     ).toBeVisible()
   })
 
+  it('should lead to the receipt of an order placed with the supplier, beside its other operations', async () => {
+    // Act
+    await stories.Ordered.run()
+
+    // Assert
+    expect(within(part()).getByText('発注済み')).toBeVisible()
+    expect(buttonsOf()).toEqual(['出荷済みにする', '発注を取り消す'])
+    expect(
+      within(part()).getByRole('link', { name: '入荷を記録する' }),
+    ).toHaveAttribute('href', '/salons/salon/purchase-orders/order/receive')
+    // The cancellation, which cannot be undone, comes last
+    const [link] = within(part()).getAllByRole('link')
+    const [ship, cancel] = within(part()).getAllByRole('button')
+    expect(ship?.compareDocumentPosition(link ?? part())).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
+    expect(link?.compareDocumentPosition(cancel ?? part())).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
+  })
+
+  it('should lead a stylist to the receipt of a shipped order, and tell who cancels it', async () => {
+    // Act
+    await stories.ShippedForAStylist.run()
+
+    // Assert
+    expect(buttonsOf()).toEqual([])
+    expect(
+      within(part()).getByRole('link', { name: '入荷を記録する' }),
+    ).toBeVisible()
+    expect(
+      within(part()).getByText(
+        '発注を取り消せるのは、サロンのオーナーとマネージャーと、管理者です。',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should not lead to a receipt for an order whose goods are not received now', async () => {
+    // Act
+    await stories.Pending.run()
+
+    // Assert
+    expect(
+      within(part()).queryByRole('link', { name: '入荷を記録する' }),
+    ).toBeNull()
+  })
+
   it('should say that a delivered order does not change', async () => {
     // Act
     await stories.Delivered.run()

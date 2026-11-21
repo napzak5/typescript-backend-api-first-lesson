@@ -42,6 +42,13 @@ const NEXT: Record<ModelsOrderStatusType, readonly OrderAction[]> = {
 export const isClosedOrder = (status: ModelsOrderStatusType): boolean =>
   NEXT[status].length === 0
 
+/** The statuses of an order whose goods are received: placed with the supplier, or shipped by it */
+const RECEIVABLE: readonly ModelsOrderStatusType[] = ['ordered', 'shipped']
+
+/** Whether the goods of an order are received now: everybody who works at the salon records them. */
+export const isReceivableOrder = (status: ModelsOrderStatusType): boolean =>
+  RECEIVABLE.includes(status)
+
 /** The roles that approve and cancel orders: approving one decides to spend the money */
 const APPROVERS: readonly string[] = ['owner', 'manager', 'admin']
 

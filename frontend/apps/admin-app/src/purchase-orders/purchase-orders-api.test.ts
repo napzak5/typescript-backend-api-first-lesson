@@ -1,8 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { salon } from '../bookings/components/examples'
-import { colourLot, glovesRow } from '../inventory/components/examples'
-import { ORDERS_OF_THE_SALON, pendingOrder } from './components/examples'
+import {
+  colourLot,
+  glovesRow,
+  shampooRow,
+} from '../inventory/components/examples'
+import {
+  ORDERS_OF_THE_SALON,
+  pendingOrder,
+  SUGGESTIONS_OF_THE_SALON,
+  shippedOrder,
+} from './components/examples'
 import {
   approveOrder,
   cancelOrder,
@@ -12,8 +21,11 @@ import {
   type OrderStep,
   purchaseOrderKeyOf,
   purchaseOrdersKeyOf,
+  readEverySuggestion,
   readOrder,
   readOrderPage,
+  receiveOrder,
+  suggestionsKeyOf,
 } from './purchase-orders-api'
 
 /*
@@ -367,5 +379,139 @@ describe('changeOrder', () => {
 
     // Assert
     expect(changed).toEqual(outcome)
+  })
+})
+
+describe('receiveOrder', () => {
+  const RECEIPT = {
+    items: [
+      { inventoryId: colourLot.id, quantity: 12 },
+      { inventoryId: shampooRow.id, quantity: 2 },
+    ],
+    deliveryNotes: '2 本は後日',
+  }
+
+  it('should send the goods that came, and hand over the order it delivered', async () => {
+    // Arrange
+    const delivered = { ...shippedOrder, status: 'delivered' }
+    const fetched = answering(() =>
+      json(200, { data: delivered, meta: null, links: null }),
+    )
+
+    // Act
+    const received = await receiveOrder(shippedOrder.id, RECEIPT)
+
+    // Assert
+    expect(received).toEqual({ type: 'received', order: delivered })
+    expect(await sentOf(fetched)).toEqual([
+      'POST',
+      `/api/v1/purchase-orders/${shippedOrder.id}/receive`,
+      RECEIPT,
+    ])
+  })
+
+  it.each<[string, Answer, unknown]>([
+    [
+      'a row removed meanwhile',
+      () =>
+        problem(400, [
+          { field: 'items.0.quantity', rule: 'too_big' },
+          { field: 'items.1.inventoryId', rule: 'not_found' },
+        ]),
+      { type: 'rowsChanged' },
+    ],
+    [
+      'values the API does not take',
+      () => problem(400, [{ field: 'items.0.quantity', rule: 'too_big' }]),
+      {
+        type: 'invalid',
+        values: [{ field: 'items.0.quantity', rule: 'too_big' }],
+      },
+    ],
+    [
+      'an order no longer ordered or shipped, or a stock too large',
+      () => problem(409),
+      { type: 'conflict' },
+    ],
+    ['an order that is not there', () => problem(404), { type: 'notFound' }],
+    ['the account', () => problem(403), { type: 'forbidden' }],
+    ['a body that is too large', () => problem(413), { type: 'failed' }],
+    ['a body of another type', () => problem(415), { type: 'failed' }],
+    ...UNREAD.map(([name, answer, type]): [string, Answer, unknown] => [
+      name,
+      answer,
+      { type },
+    ]),
+  ])('should receive nothing after %s', async (_name, given, outcome) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const received = await receiveOrder(shippedOrder.id, RECEIPT)
+
+    // Assert
+    expect(received).toEqual(outcome)
+  })
+})
+
+describe('suggestionsKeyOf', () => {
+  it('should read the suggestions below the orders of the salon', () => {
+    expect(suggestionsKeyOf(salon.id)).toEqual([
+      'salons',
+      salon.id,
+      'purchaseOrders',
+      'suggestions',
+    ])
+  })
+})
+
+describe('readEverySuggestion', () => {
+  it('should read the suggestions of the salon to their end, in the largest pages', async () => {
+    // Arrange
+    const [colour, shampoo, gloves] = SUGGESTIONS_OF_THE_SALON
+    const fetched = answering((request) =>
+      new URL(request.url).searchParams.has('cursor')
+        ? json(200, {
+            data: [gloves],
+            meta: { total: 3, nextCursor: null, prevCursor: null },
+            links: null,
+          })
+        : json(200, {
+            data: [colour, shampoo],
+            meta: { total: 3, nextCursor: 'next', prevCursor: null },
+            links: null,
+          }),
+    )
+
+    // Act
+    const read = await readEverySuggestion(salon.id)
+
+    // Assert
+    expect(read).toEqual({ type: 'found', items: SUGGESTIONS_OF_THE_SALON })
+    expect(askedOf(fetched)).toEqual([
+      [
+        '/api/v1/purchase-orders/reorder-suggestions',
+        { salonId: salon.id, limit: '100' },
+      ],
+      [
+        '/api/v1/purchase-orders/reorder-suggestions',
+        { salonId: salon.id, cursor: 'next', limit: '100' },
+      ],
+    ])
+  })
+
+  it.each<[string, Answer, string]>([
+    ['the account', () => problem(403), 'forbidden'],
+    ['a salon removed meanwhile', () => problem(400), 'failed'],
+    ...UNREAD,
+  ])('should read no suggestions after %s', async (_, given, type) => {
+    // Arrange
+    answering(given)
+
+    // Act
+    const read = await readEverySuggestion(salon.id)
+
+    // Assert
+    expect(read).toEqual({ type })
   })
 })
