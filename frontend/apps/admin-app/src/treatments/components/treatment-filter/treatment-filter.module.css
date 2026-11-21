@@ -1,39 +1,7 @@
-/* The conditions, then what is done with them. */
-.form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-fields);
-  padding: var(--space-frame);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-large);
-  background-color: var(--color-surface);
-}
-
 /* The customer the list is of, and the way to every customer */
 .customer {
   display: grid;
   justify-content: start;
   gap: var(--space-2);
   margin: 0;
-}
-
-/* One below the other on a narrow screen, then three in a row */
-.conditions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  gap: var(--space-fields);
-}
-
-.actions {
-  display: grid;
-  grid-auto-flow: column;
-  justify-content: start;
-  gap: var(--space-3);
-}
-
-@media (min-width: 48rem) {
-  .conditions {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }

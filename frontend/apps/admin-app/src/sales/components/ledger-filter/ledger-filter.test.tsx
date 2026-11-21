@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
@@ -60,7 +63,7 @@ describe('LedgerFilter', () => {
       '一部返金',
       '返金済み',
     ])
-    expect(screen.queryByRole('link', { name: '今日の売上に戻す' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
   })
 
   it('should show the conditions that narrow the ledger, and the way back to today', async () => {
@@ -71,9 +74,10 @@ describe('LedgerFilter', () => {
     expect(from()).toHaveValue('2026-11-01')
     expect(to()).toHaveValue('2026-11-30')
     expect(status()).toHaveValue('processing')
-    expect(
-      screen.getByRole('link', { name: '今日の売上に戻す' }),
-    ).toHaveAttribute('href', '?')
+    expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
+      'href',
+      '?',
+    )
   })
 
   it('should hand over what its controls hold, under the names of the conditions', async () => {
@@ -142,5 +146,19 @@ describe('LedgerFilter', () => {
     expect(from()).toHaveValue('2026-11-21')
     expect(to()).toHaveValue('2026-11-22')
     expect(status()).toHaveValue('')
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the sales, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（1）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
   })
 })

@@ -1,15 +1,14 @@
 import type { ModelsStaffProfileResponse } from '@beauty-salon-frontend/api-client'
 import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
-  Button,
-  ButtonLink,
+  countNarrowing,
+  FilterForm,
   type FormErrors,
   Link,
   Select,
   TextField,
-  useErrorFocus,
+  useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
 import { treatmentQueryOf } from '../../treatment-search'
 import type { TreatmentConditions } from '../../treatments-api'
 import styles from './treatment-filter.module.css'
@@ -45,6 +44,9 @@ const valuesOf = ({ staff, from, to }: TreatmentConditions): Values => ({
 
 const NO_ERRORS: FormErrors = {}
 
+/** The conditions of the sheet that narrow the list: its button counts them */
+const COUNTED: readonly (keyof Values)[] = ['staff', 'from', 'to']
+
 /**
  * Which treatment records the list shows: the member of the staff who did
  * the treatment, and the days the record was written on. The customer is
@@ -61,38 +63,21 @@ export const TreatmentFilter = ({
   clearHref,
   onSubmit,
 }: TreatmentFilterProps) => {
-  const form = useErrorFocus(errors)
-  const shownQuery = treatmentQueryOf(conditions).toString()
-  const [shown, setShown] = useState({
-    shownQuery,
-    values: valuesOf(conditions),
-  })
-  if (shown.shownQuery !== shownQuery) {
-    setShown({ shownQuery, values: valuesOf(conditions) })
-  }
-
-  const hold = (name: keyof Values, value: string): void => {
-    setShown({ shownQuery, values: { ...shown.values, [name]: value } })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(
+    treatmentQueryOf(conditions).toString(),
+    () => valuesOf(conditions),
+  )
 
   return (
-    <search aria-label='施術記録を絞り込む'>
-      <form className={styles['form']} noValidate onSubmit={submit} ref={form}>
-        {conditions.customer === undefined ? null : (
-          <p className={styles['customer']}>
-            <span>{`お客様：${customerName ?? 'このお客様'}`}</span>
-            {withoutCustomerHref === undefined ? null : (
-              <Link href={withoutCustomerHref}>すべてのお客様にする</Link>
-            )}
-            <input type='hidden' name='customer' value={conditions.customer} />
-          </p>
-        )}
-        <div className={styles['conditions']}>
+    <FilterForm
+      label='施術記録を絞り込む'
+      purpose='view'
+      errors={errors}
+      clearHref={clearHref}
+      onSubmit={onSubmit}
+      conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
+      conditions={
+        <>
           <Select
             label='担当'
             name='staff'
@@ -101,7 +86,7 @@ export const TreatmentFilter = ({
               label: displayName,
             }))}
             placeholder='すべて'
-            value={shown.values.staff}
+            value={values.staff}
             onChange={(event) => hold('staff', event.target.value)}
           />
           <TextField
@@ -110,7 +95,7 @@ export const TreatmentFilter = ({
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
-            value={shown.values.from}
+            value={values.from}
             error={errors['from']}
             onChange={(event) => hold('from', event.target.value)}
           />
@@ -120,22 +105,22 @@ export const TreatmentFilter = ({
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
-            value={shown.values.to}
+            value={values.to}
             error={errors['to']}
             onChange={(event) => hold('to', event.target.value)}
           />
-        </div>
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            表示する
-          </Button>
-          {clearHref !== undefined && (
-            <ButtonLink href={clearHref} variant='quiet'>
-              条件をすべて外す
-            </ButtonLink>
+        </>
+      }
+    >
+      {conditions.customer === undefined ? undefined : (
+        <p className={styles['customer']}>
+          <span>{`お客様：${customerName ?? 'このお客様'}`}</span>
+          {withoutCustomerHref === undefined ? null : (
+            <Link href={withoutCustomerHref}>すべてのお客様にする</Link>
           )}
-        </div>
-      </form>
-    </search>
+          <input type='hidden' name='customer' value={conditions.customer} />
+        </p>
+      )}
+    </FilterForm>
   )
 }

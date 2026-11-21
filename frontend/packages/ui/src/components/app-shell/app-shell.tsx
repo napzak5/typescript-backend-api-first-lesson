@@ -1,4 +1,5 @@
 import { createContext, type ReactNode, useContext, useState } from 'react'
+import { useWideScreen } from '../../wide-screen'
 import { Button } from '../button/button'
 import { Dialog } from '../dialog/dialog'
 import { Link } from '../link/link'
@@ -6,7 +7,6 @@ import { Navigation, type NavigationItem } from '../navigation/navigation'
 import { NotificationOutlet } from '../notifications/notifications'
 import styles from './app-shell.module.css'
 import { ScreensProvider } from './screens'
-import { useWideScreen } from './wide-screen'
 
 export type AppShellProps = {
   /** The name of the application: in the header, beside the mark, as the link to its first screen */

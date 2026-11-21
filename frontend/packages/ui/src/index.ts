@@ -39,6 +39,15 @@ export {
   type FileFieldProps,
 } from './components/file-field/file-field'
 export {
+  FilterForm,
+  type FilterFormProps,
+} from './components/filter-form/filter-form'
+export {
+  countNarrowing,
+  type FilterValues,
+  useFilterValues,
+} from './components/filter-form/filter-values'
+export {
   type FormErrors,
   useErrorFocus,
 } from './components/form/error-focus'

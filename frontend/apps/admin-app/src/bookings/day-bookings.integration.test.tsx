@@ -417,7 +417,7 @@ describe('the bookings of a salon, against the API', () => {
       expect(address).toMatch(/&status=confirmed&staffId=[0-9a-f-]{36}$/)
 
       // Act
-      await user.click(screen.getByRole('link', { name: '条件をなくす' }))
+      await user.click(screen.getByRole('link', { name: '条件を外す' }))
 
       // Assert
       await waitFor(async () => expect(await rowsOf(today)).toHaveLength(3))
@@ -552,9 +552,10 @@ describe('the bookings of a salon, against the API', () => {
           `${dayNameOf(later)}の予約のうち、条件に合うものはありません`,
         ),
       ).toBeVisible()
-      expect(
-        screen.getByRole('link', { name: '条件をなくす' }),
-      ).toHaveAttribute('href', `/salons/${tokyo}/bookings?date=${later}`)
+      expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
+        'href',
+        `/salons/${tokyo}/bookings?date=${later}`,
+      )
     })
 
     it('should show a day that was chosen in the address, and today for one that is no day', async () => {

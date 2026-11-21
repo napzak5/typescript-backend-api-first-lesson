@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
@@ -62,7 +65,7 @@ describe('OrderFilter', () => {
     )
     expect(from()).toHaveValue('')
     expect(to()).toHaveValue('')
-    expect(screen.queryByRole('link', { name: '条件をすべて外す' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
   })
 
   it('should show the conditions that narrow the list, and the way to every order', async () => {
@@ -74,9 +77,10 @@ describe('OrderFilter', () => {
     expect(supplier()).toHaveValue('Beauty Supply Tokyo')
     expect(from()).toHaveValue('2026-11-01')
     expect(to()).toHaveValue('2026-11-20')
-    expect(
-      screen.getByRole('link', { name: '条件をすべて外す' }),
-    ).toHaveAttribute('href', `/salons/${salon.id}/purchase-orders`)
+    expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
+      'href',
+      `/salons/${salon.id}/purchase-orders`,
+    )
   })
 
   it('should send the conditions that were chosen', async () => {
@@ -144,5 +148,19 @@ describe('OrderFilter', () => {
     expect(supplier()).toHaveValue('')
     expect(from()).toHaveValue('')
     expect(to()).toHaveValue('')
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the orders, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（4）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
   })
 })

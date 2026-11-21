@@ -119,9 +119,11 @@ test.describe('the alerts of the stock, on a screen as narrow as a phone', () =>
     await enterCredentials(page, MANAGER, api.seedPassword)
     await expect(heading(page, '在庫のアラート')).toBeFocused()
 
-    // Act
-    await page.getByRole('combobox', { name: '確認' }).selectOption('未確認')
-    await page.getByRole('button', { name: '表示する' }).click()
+    // Act: the conditions are in the sheet that the button 「条件」 opens
+    await page.getByRole('button', { name: '条件', exact: true }).click()
+    const sheet = page.getByRole('dialog', { name: '在庫のアラートを絞り込む' })
+    await sheet.getByRole('combobox', { name: '確認' }).selectOption('未確認')
+    await sheet.getByRole('button', { name: '表示する' }).click()
 
     // Assert
     const table = page.getByRole('table', {
@@ -132,6 +134,10 @@ test.describe('the alerts of the stock, on a screen as narrow as a phone', () =>
       table.getByRole('row').filter({ has: page.getByRole('rowheader') }),
     ).toHaveCount(6)
     expect(new URL(page.url()).search).toBe('?acknowledged=false')
+    await expect(sheet).toBeHidden()
+    await expect(
+      page.getByRole('button', { name: '条件（1）', exact: true }),
+    ).toBeVisible()
     await expectSoundPage(page)
 
     // Act

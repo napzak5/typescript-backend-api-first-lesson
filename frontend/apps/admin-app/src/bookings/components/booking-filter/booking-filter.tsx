@@ -1,14 +1,13 @@
 import type { ModelsStaffProfileResponse } from '@beauty-salon-frontend/api-client'
 import {
-  Button,
-  ButtonLink,
+  countNarrowing,
+  FilterForm,
   Select,
   TextField,
+  useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
 import { type DayConditions, queryOf, STATUSES } from '../../booking-day'
 import { statusNameOf } from '../../booking-format'
-import styles from './booking-filter.module.css'
 
 export type BookingFilterProps = {
   /** The conditions that are shown: those of the address */
@@ -35,6 +34,9 @@ const valuesOf = (conditions: DayConditions): Values => ({
   staffId: conditions.staffId ?? '',
 })
 
+/** The conditions of the sheet that narrow the list: its button counts them */
+const COUNTED: readonly (keyof Values)[] = ['status', 'staffId']
+
 /**
  * Which bookings the list shows: a day, a state, a member of the staff.
  * The names of its controls are the names of the conditions. Like the
@@ -47,43 +49,25 @@ export const BookingFilter = ({
   clearHref,
   onSubmit,
 }: BookingFilterProps) => {
-  const shownQuery = queryOf(conditions).toString()
-  const [shown, setShown] = useState({
-    shownQuery,
-    values: valuesOf(conditions),
-  })
-  if (shown.shownQuery !== shownQuery) {
-    setShown({ shownQuery, values: valuesOf(conditions) })
-  }
-
-  const hold = (name: keyof Values, value: string): void => {
-    setShown({ shownQuery, values: { ...shown.values, [name]: value } })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(queryOf(conditions).toString(), () =>
+    valuesOf(conditions),
+  )
 
   return (
-    <search aria-label='予約を絞り込む'>
-      <form className={styles['form']} onSubmit={submit}>
-        <div className={styles['conditions']}>
-          <TextField
-            label='日付'
-            name='date'
-            type='date'
-            min='1900-01-01'
-            max='2999-12-31'
-            value={shown.values.date}
-            onChange={(event) => hold('date', event.target.value)}
-          />
+    <FilterForm
+      label='予約を絞り込む'
+      purpose='view'
+      clearHref={clearHref}
+      onSubmit={onSubmit}
+      conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
+      conditions={
+        <>
           <Select
             label='状態'
             name='status'
             options={STATUS_OPTIONS}
             placeholder='すべて'
-            value={shown.values.status}
+            value={values.status}
             onChange={(event) => hold('status', event.target.value)}
           />
           <Select
@@ -94,21 +78,21 @@ export const BookingFilter = ({
               label: displayName,
             }))}
             placeholder='すべて'
-            value={shown.values.staffId}
+            value={values.staffId}
             onChange={(event) => hold('staffId', event.target.value)}
           />
-        </div>
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            表示する
-          </Button>
-          {clearHref !== undefined && (
-            <ButtonLink href={clearHref} variant='quiet'>
-              条件をなくす
-            </ButtonLink>
-          )}
-        </div>
-      </form>
-    </search>
+        </>
+      }
+    >
+      <TextField
+        label='日付'
+        name='date'
+        type='date'
+        min='1900-01-01'
+        max='2999-12-31'
+        value={values.date}
+        onChange={(event) => hold('date', event.target.value)}
+      />
+    </FilterForm>
   )
 }

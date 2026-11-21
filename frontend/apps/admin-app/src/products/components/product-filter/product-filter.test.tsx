@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
@@ -159,5 +162,19 @@ describe('ProductFilter', () => {
     expect(category()).toHaveValue('スタイリング')
     expect(carried()).toHaveValue('')
     expect(use()).toHaveValue('')
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the products, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（4）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
   })
 })

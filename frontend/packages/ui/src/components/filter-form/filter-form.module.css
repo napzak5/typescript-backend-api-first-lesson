@@ -1,0 +1,52 @@
+/* The controls in sight, the other conditions, then the buttons. */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-fields);
+  padding: var(--space-frame);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background-color: var(--color-surface);
+}
+
+/*
+ * The controls in sight are in one row of columns, as many as there is room
+ * for, each at least 12rem wide: a date or a choice is as wide as its column
+ * and is not stretched along the row. The controls that stay in sight on a
+ * narrow screen come first. A keyword, which has a description, and a pair
+ * of dates take two columns, when the row has room for two.
+ */
+.controls {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  align-items: start;
+  gap: var(--space-fields);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  align-items: start;
+  gap: var(--space-fields);
+}
+
+@container (min-width: 25rem) {
+  .fields:has(input[type="search"], > :nth-child(2)) {
+    grid-column: span 2;
+  }
+}
+
+/* In the sheet of a narrow screen, one below the other */
+.sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-fields);
+}
+
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: var(--space-3);
+}

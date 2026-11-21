@@ -1,10 +1,10 @@
 import {
-  Button,
-  ButtonLink,
+  countNarrowing,
+  FilterForm,
   Select,
   TextField,
+  useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
 import {
   LONGEST,
   MIN_RATINGS,
@@ -12,7 +12,6 @@ import {
   queryOf,
   type SalonConditions,
 } from '../../salon-search'
-import styles from './salon-search-form.module.css'
 
 export type SalonSearchFormProps = {
   /** The conditions that are searched for: those of the address */
@@ -39,6 +38,9 @@ const valuesOf = (conditions: SalonConditions): Values => ({
     conditions.minRating === undefined ? '' : String(conditions.minRating),
 })
 
+/** The conditions of the sheet that narrow the list: its button counts them */
+const COUNTED: readonly (keyof Values)[] = ['prefecture', 'city', 'minRating']
+
 /**
  * The conditions of a search for salons. The names of its controls are the
  * names of the conditions.
@@ -46,49 +48,30 @@ const valuesOf = (conditions: SalonConditions): Values => ({
  * The form mirrors the address. Its controls show the conditions that are
  * searched for; when those change under it (the visitor went back, or
  * followed a link), the controls show the other conditions, and what was
- * typed and not sent is gone. So the form holds the values itself, unlike a
- * form that is filled in once and sent to the API.
+ * typed and not sent is gone (`useFilterValues`). So the form holds the
+ * values itself, unlike a form that is filled in once and sent to the API.
  */
 export const SalonSearchForm = ({
   conditions,
   clearHref,
   onSubmit,
 }: SalonSearchFormProps) => {
-  const searched = queryOf(conditions).toString()
-  const [shown, setShown] = useState({
-    searched,
-    values: valuesOf(conditions),
-  })
-  if (shown.searched !== searched) {
-    setShown({ searched, values: valuesOf(conditions) })
-  }
-
-  const hold = (name: keyof Values, value: string): void => {
-    setShown({ searched, values: { ...shown.values, [name]: value } })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(queryOf(conditions).toString(), () =>
+    valuesOf(conditions),
+  )
 
   return (
-    <search aria-label='サロンを探す'>
-      <form className={styles['form']} onSubmit={submit}>
-        <div className={styles['conditions']}>
-          <TextField
-            label='キーワード'
-            name='keyword'
-            type='search'
-            value={shown.values.keyword}
-            onChange={(event) => hold('keyword', event.target.value)}
-            maxLength={LONGEST.keyword}
-            description='サロンの名前か紹介文にある言葉'
-          />
+    <FilterForm
+      label='サロンを探す'
+      clearHref={narrows(conditions) ? clearHref : undefined}
+      onSubmit={onSubmit}
+      conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
+      conditions={
+        <>
           <TextField
             label='都道府県'
             name='prefecture'
-            value={shown.values.prefecture}
+            value={values.prefecture}
             onChange={(event) => hold('prefecture', event.target.value)}
             maxLength={LONGEST.prefecture}
             autoComplete='address-level1'
@@ -97,7 +80,7 @@ export const SalonSearchForm = ({
           <TextField
             label='市区町村'
             name='city'
-            value={shown.values.city}
+            value={values.city}
             onChange={(event) => hold('city', event.target.value)}
             maxLength={LONGEST.city}
             autoComplete='address-level2'
@@ -108,21 +91,21 @@ export const SalonSearchForm = ({
             name='minRating'
             options={RATINGS}
             placeholder='指定なし'
-            value={shown.values.minRating}
+            value={values.minRating}
             onChange={(event) => hold('minRating', event.target.value)}
           />
-        </div>
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            検索する
-          </Button>
-          {narrows(conditions) && (
-            <ButtonLink href={clearHref} variant='quiet'>
-              条件をなくす
-            </ButtonLink>
-          )}
-        </div>
-      </form>
-    </search>
+        </>
+      }
+    >
+      <TextField
+        label='キーワード'
+        name='keyword'
+        type='search'
+        value={values.keyword}
+        onChange={(event) => hold('keyword', event.target.value)}
+        maxLength={LONGEST.keyword}
+        description='サロンの名前か紹介文にある言葉'
+      />
+    </FilterForm>
   )
 }

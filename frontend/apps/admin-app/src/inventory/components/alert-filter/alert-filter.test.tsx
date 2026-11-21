@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -40,7 +43,7 @@ describe('AlertFilter', () => {
     expect(choice('重要度')).toHaveValue('')
     expect(choice('確認')).toHaveValue('')
     // A link without an address would be no link: nothing of it is there
-    expect(screen.queryByText('条件をすべて外す')).toBeNull()
+    expect(screen.queryByText('条件を外す')).toBeNull()
   })
 
   it('should show the conditions that narrow the alerts, and the way back to all of them', async () => {
@@ -51,9 +54,10 @@ describe('AlertFilter', () => {
     expect(choice('種類')).toHaveValue('expired')
     expect(choice('重要度')).toHaveValue('critical')
     expect(choice('確認')).toHaveValue('false')
-    expect(
-      screen.getByRole('link', { name: '条件をすべて外す' }),
-    ).toHaveAttribute('href', '?')
+    expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
+      'href',
+      '?',
+    )
   })
 
   it('should send the conditions chosen', async () => {
@@ -81,5 +85,19 @@ describe('AlertFilter', () => {
         ['acknowledged', 'true'],
       ],
     ])
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the alerts, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（3）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
   })
 })

@@ -1,16 +1,14 @@
 import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
-  Button,
-  ButtonLink,
+  countNarrowing,
+  FilterForm,
   type FormErrors,
   Select,
   TextField,
-  useErrorFocus,
+  useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
 import { MOVEMENT_TYPE_OPTIONS } from '../../movement-format'
 import { type MovementConditions, movementQueryOf } from '../../movement-search'
-import styles from './movement-filter.module.css'
 
 export type MovementFilterProps = {
   /** The conditions that are shown: those of the address */
@@ -34,6 +32,9 @@ const valuesOf = ({ type, from, to }: MovementConditions): Values => ({
 
 const NO_ERRORS: FormErrors = {}
 
+/** The conditions of the sheet that narrow the list: its button counts them */
+const COUNTED: readonly (keyof Values)[] = ['type', 'from', 'to']
+
 /**
  * Which movements of a row the history shows: their kind, and the days
  * they were recorded on, at the salon. Like the filter of the treatment
@@ -45,35 +46,27 @@ export const MovementFilter = ({
   clearHref,
   onSubmit,
 }: MovementFilterProps) => {
-  const form = useErrorFocus(errors)
-  const shownQuery = movementQueryOf(conditions).toString()
-  const [shown, setShown] = useState({
-    shownQuery,
-    values: valuesOf(conditions),
-  })
-  if (shown.shownQuery !== shownQuery) {
-    setShown({ shownQuery, values: valuesOf(conditions) })
-  }
-
-  const hold = (name: keyof Values, value: string): void => {
-    setShown({ shownQuery, values: { ...shown.values, [name]: value } })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(
+    movementQueryOf(conditions).toString(),
+    () => valuesOf(conditions),
+  )
 
   return (
-    <search aria-label='在庫の移動を絞り込む'>
-      <form className={styles['form']} noValidate onSubmit={submit} ref={form}>
-        <div className={styles['conditions']}>
+    <FilterForm
+      label='在庫の移動を絞り込む'
+      purpose='view'
+      errors={errors}
+      clearHref={clearHref}
+      onSubmit={onSubmit}
+      conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
+      conditions={
+        <>
           <Select
             label='区分'
             name='type'
             options={MOVEMENT_TYPE_OPTIONS}
             placeholder='すべて'
-            value={shown.values.type}
+            value={values.type}
             onChange={(event) => hold('type', event.target.value)}
           />
           <TextField
@@ -82,7 +75,7 @@ export const MovementFilter = ({
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
-            value={shown.values.from}
+            value={values.from}
             error={errors['from']}
             onChange={(event) => hold('from', event.target.value)}
           />
@@ -92,22 +85,12 @@ export const MovementFilter = ({
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
-            value={shown.values.to}
+            value={values.to}
             error={errors['to']}
             onChange={(event) => hold('to', event.target.value)}
           />
-        </div>
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            表示する
-          </Button>
-          {clearHref !== undefined && (
-            <ButtonLink href={clearHref} variant='quiet'>
-              条件をすべて外す
-            </ButtonLink>
-          )}
-        </div>
-      </form>
-    </search>
+        </>
+      }
+    />
   )
 }

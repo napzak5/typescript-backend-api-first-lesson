@@ -481,7 +481,7 @@ describe('the ledger of the customers, against the API', () => {
       // Act: the same keyword, once somebody was registered meanwhile
       await arrangeCustomers(1, 'walk-in')
       await user.click(
-        within(referrerDialog()).getByRole('button', { name: '検索する' }),
+        within(referrerDialog()).getByRole('button', { name: '探す' }),
       )
 
       // Assert

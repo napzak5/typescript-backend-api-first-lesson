@@ -1,19 +1,17 @@
 import type { ModelsStaffProfileResponse } from '@beauty-salon-frontend/api-client'
 import {
-  Button,
-  ButtonLink,
+  countNarrowing,
+  FilterForm,
   type FormErrors,
   Select,
   type SelectOption,
-  useErrorFocus,
+  useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
 import {
   RATINGS,
   type ReviewConditions,
   reviewQueryOf,
 } from '../../review-search'
-import styles from './review-filter.module.css'
 
 export type ReviewFilterProps = {
   /** The conditions that are shown: those of the address */
@@ -56,6 +54,12 @@ const ORDER_OPTIONS: readonly SelectOption[] = [
 const NO_ERRORS: FormErrors = {}
 
 /**
+ * The conditions of the sheet that narrow the list: its button counts
+ * them. The order is in the sheet too, and narrows nothing
+ */
+const COUNTED: readonly (keyof Values)[] = ['min', 'max', 'staff']
+
+/**
  * Which reviews of a salon the list shows, and in what order: the lowest
  * and the highest overall rating, the member of the staff they rate, and
  * the latest first, the highest rated first or the most helpful first.
@@ -68,35 +72,27 @@ export const ReviewFilter = ({
   clearHref,
   onSubmit,
 }: ReviewFilterProps) => {
-  const form = useErrorFocus(errors)
-  const shownQuery = reviewQueryOf(conditions).toString()
-  const [shown, setShown] = useState({
-    shownQuery,
-    values: valuesOf(conditions),
-  })
-  if (shown.shownQuery !== shownQuery) {
-    setShown({ shownQuery, values: valuesOf(conditions) })
-  }
-
-  const hold = (name: keyof Values, value: string): void => {
-    setShown({ shownQuery, values: { ...shown.values, [name]: value } })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(
+    reviewQueryOf(conditions).toString(),
+    () => valuesOf(conditions),
+  )
 
   return (
-    <search aria-label='レビューを絞り込む'>
-      <form className={styles['form']} noValidate onSubmit={submit} ref={form}>
-        <div className={styles['conditions']}>
+    <FilterForm
+      label='レビューを絞り込む'
+      purpose='view'
+      errors={errors}
+      clearHref={clearHref}
+      onSubmit={onSubmit}
+      conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
+      conditions={
+        <>
           <Select
             label='評価の下限'
             name='min'
             options={RATING_OPTIONS}
             placeholder='指定しない'
-            value={shown.values.min}
+            value={values.min}
             onChange={(event) => hold('min', event.target.value)}
           />
           <Select
@@ -104,7 +100,7 @@ export const ReviewFilter = ({
             name='max'
             options={RATING_OPTIONS}
             placeholder='指定しない'
-            value={shown.values.max}
+            value={values.max}
             error={errors['max']}
             onChange={(event) => hold('max', event.target.value)}
           />
@@ -116,7 +112,7 @@ export const ReviewFilter = ({
               label: displayName,
             }))}
             placeholder='すべて'
-            value={shown.values.staff}
+            value={values.staff}
             onChange={(event) => hold('staff', event.target.value)}
           />
           <Select
@@ -124,21 +120,11 @@ export const ReviewFilter = ({
             name='sort'
             options={ORDER_OPTIONS}
             placeholder='新しい順'
-            value={shown.values.sort}
+            value={values.sort}
             onChange={(event) => hold('sort', event.target.value)}
           />
-        </div>
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            表示する
-          </Button>
-          {clearHref !== undefined && (
-            <ButtonLink href={clearHref} variant='quiet'>
-              条件をすべて外す
-            </ButtonLink>
-          )}
-        </div>
-      </form>
-    </search>
+        </>
+      }
+    />
   )
 }

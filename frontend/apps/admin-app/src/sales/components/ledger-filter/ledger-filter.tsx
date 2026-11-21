@@ -1,19 +1,17 @@
 import {
-  Button,
-  ButtonLink,
+  countNarrowing,
+  FilterForm,
   type FormErrors,
   Select,
   TextField,
-  useErrorFocus,
+  useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
 import { paymentStatusNameOf } from '../../sale-format'
 import {
   type LedgerConditions,
   ledgerQueryOf,
   PAYMENT_STATUSES,
 } from '../../sales-ledger'
-import styles from './ledger-filter.module.css'
 
 export type LedgerFilterProps = {
   /** The conditions that are shown: those of the address */
@@ -42,6 +40,9 @@ const valuesOf = (conditions: LedgerConditions): Values => ({
 
 const NO_ERRORS: FormErrors = {}
 
+/** The conditions of the sheet that narrow the list: its button counts them */
+const COUNTED: readonly (keyof Values)[] = ['paymentStatus']
+
 /**
  * Which sales the ledger shows: the days they were entered on, and how far
  * they were paid. The names of its controls are the names of the
@@ -54,71 +55,52 @@ export const LedgerFilter = ({
   clearHref,
   onSubmit,
 }: LedgerFilterProps) => {
-  const form = useErrorFocus(errors)
-  const shownQuery = ledgerQueryOf(conditions).toString()
-  const [shown, setShown] = useState({
-    shownQuery,
-    values: valuesOf(conditions),
-  })
-  if (shown.shownQuery !== shownQuery) {
-    setShown({ shownQuery, values: valuesOf(conditions) })
-  }
-
-  const hold = (name: keyof Values, value: string): void => {
-    setShown({ shownQuery, values: { ...shown.values, [name]: value } })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(
+    ledgerQueryOf(conditions).toString(),
+    () => valuesOf(conditions),
+  )
 
   return (
-    <search aria-label='売上を絞り込む'>
-      <form className={styles['form']} noValidate onSubmit={submit} ref={form}>
-        <div className={styles['conditions']}>
-          <TextField
-            label='会計日（から）'
-            name='from'
-            type='date'
-            min='1900-01-01'
-            max='2999-12-31'
-            required
-            value={shown.values.from}
-            error={errors['from']}
-            onChange={(event) => hold('from', event.target.value)}
-          />
-          <TextField
-            label='会計日（まで）'
-            name='to'
-            type='date'
-            min='1900-01-01'
-            max='2999-12-31'
-            required
-            value={shown.values.to}
-            error={errors['to']}
-            onChange={(event) => hold('to', event.target.value)}
-          />
-          <Select
-            label='支払い'
-            name='paymentStatus'
-            options={STATUS_OPTIONS}
-            placeholder='すべて'
-            value={shown.values.paymentStatus}
-            onChange={(event) => hold('paymentStatus', event.target.value)}
-          />
-        </div>
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            表示する
-          </Button>
-          {clearHref !== undefined && (
-            <ButtonLink href={clearHref} variant='quiet'>
-              今日の売上に戻す
-            </ButtonLink>
-          )}
-        </div>
-      </form>
-    </search>
+    <FilterForm
+      label='売上を絞り込む'
+      purpose='view'
+      errors={errors}
+      clearHref={clearHref}
+      onSubmit={onSubmit}
+      conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
+      conditions={
+        <Select
+          label='支払い'
+          name='paymentStatus'
+          options={STATUS_OPTIONS}
+          placeholder='すべて'
+          value={values.paymentStatus}
+          onChange={(event) => hold('paymentStatus', event.target.value)}
+        />
+      }
+    >
+      <TextField
+        label='会計日（から）'
+        name='from'
+        type='date'
+        min='1900-01-01'
+        max='2999-12-31'
+        required
+        value={values.from}
+        error={errors['from']}
+        onChange={(event) => hold('from', event.target.value)}
+      />
+      <TextField
+        label='会計日（まで）'
+        name='to'
+        type='date'
+        min='1900-01-01'
+        max='2999-12-31'
+        required
+        value={values.to}
+        error={errors['to']}
+        onChange={(event) => hold('to', event.target.value)}
+      />
+    </FilterForm>
   )
 }

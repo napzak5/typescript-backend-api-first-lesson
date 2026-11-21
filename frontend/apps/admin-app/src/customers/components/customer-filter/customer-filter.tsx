@@ -1,19 +1,17 @@
 import {
-  Button,
-  ButtonLink,
+  countNarrowing,
+  FilterForm,
   type FormErrors,
   Select,
   TextField,
-  useErrorFocus,
+  useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
 import { STATUS_OPTIONS, TIER_OPTIONS } from '../../customer-format'
 import {
   type CustomerConditions,
   customerQueryOf,
   tagsTextOf,
 } from '../../customer-ledger'
-import styles from './customer-filter.module.css'
 
 export type CustomerFilterProps = {
   /** The conditions that are shown: those of the address */
@@ -40,12 +38,19 @@ const valuesOf = (conditions: CustomerConditions): Values => ({
 
 const NO_ERRORS: FormErrors = {}
 
+/** The conditions of the sheet that narrow the list: its button counts them */
+const COUNTED: readonly (keyof Values)[] = [
+  'tags',
+  'from',
+  'to',
+  'customerStatus',
+  'membershipTier',
+]
+
 /**
  * Which customers the ledger shows: a keyword, tags, the days they were
  * registered on, their state and their rank. The names of its controls
- * are the names of the conditions. Like the filters of the bookings and
- * the sales, it mirrors the address: when that changes under it, the
- * controls show the other conditions.
+ * are the names of the conditions, and it mirrors the address.
  */
 export const CustomerFilter = ({
   conditions,
@@ -53,55 +58,35 @@ export const CustomerFilter = ({
   clearHref,
   onSubmit,
 }: CustomerFilterProps) => {
-  const form = useErrorFocus(errors)
-  const shownQuery = customerQueryOf(conditions).toString()
-  const [shown, setShown] = useState({
-    shownQuery,
-    values: valuesOf(conditions),
-  })
-  if (shown.shownQuery !== shownQuery) {
-    setShown({ shownQuery, values: valuesOf(conditions) })
-  }
-
-  const hold = (name: keyof Values, value: string): void => {
-    setShown({ shownQuery, values: { ...shown.values, [name]: value } })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(
+    customerQueryOf(conditions).toString(),
+    () => valuesOf(conditions),
+  )
 
   return (
-    <search aria-label='お客様を探す'>
-      <form className={styles['form']} noValidate onSubmit={submit} ref={form}>
-        <div className={styles['keywords']}>
-          <TextField
-            label='キーワード'
-            name='search'
-            type='search'
-            description='お名前（カナでも）、メールアドレス、電話番号の一部。'
-            value={shown.values.search}
-            error={errors['search']}
-            onChange={(event) => hold('search', event.target.value)}
-          />
+    <FilterForm
+      label='お客様を探す'
+      errors={errors}
+      clearHref={clearHref}
+      onSubmit={onSubmit}
+      conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
+      conditions={
+        <>
           <TextField
             label='タグ'
             name='tags'
             description='「、」か「,」で区切ると、すべてのタグを持つお客様を探します。'
-            value={shown.values.tags}
+            value={values.tags}
             error={errors['tags']}
             onChange={(event) => hold('tags', event.target.value)}
           />
-        </div>
-        <div className={styles['conditions']}>
           <TextField
             label='登録日（から）'
             name='from'
             type='date'
             min='1900-01-01'
             max='2999-12-31'
-            value={shown.values.from}
+            value={values.from}
             error={errors['from']}
             onChange={(event) => hold('from', event.target.value)}
           />
@@ -111,7 +96,7 @@ export const CustomerFilter = ({
             type='date'
             min='1900-01-01'
             max='2999-12-31'
-            value={shown.values.to}
+            value={values.to}
             error={errors['to']}
             onChange={(event) => hold('to', event.target.value)}
           />
@@ -120,7 +105,7 @@ export const CustomerFilter = ({
             name='customerStatus'
             options={STATUS_OPTIONS}
             placeholder='すべて'
-            value={shown.values.customerStatus}
+            value={values.customerStatus}
             onChange={(event) => hold('customerStatus', event.target.value)}
           />
           <Select
@@ -128,21 +113,21 @@ export const CustomerFilter = ({
             name='membershipTier'
             options={TIER_OPTIONS}
             placeholder='すべて'
-            value={shown.values.membershipTier}
+            value={values.membershipTier}
             onChange={(event) => hold('membershipTier', event.target.value)}
           />
-        </div>
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            探す
-          </Button>
-          {clearHref !== undefined && (
-            <ButtonLink href={clearHref} variant='quiet'>
-              条件を外す
-            </ButtonLink>
-          )}
-        </div>
-      </form>
-    </search>
+        </>
+      }
+    >
+      <TextField
+        label='キーワード'
+        name='search'
+        type='search'
+        description='お名前（カナでも）、メールアドレス、電話番号の一部。'
+        value={values.search}
+        error={errors['search']}
+        onChange={(event) => hold('search', event.target.value)}
+      />
+    </FilterForm>
   )
 }

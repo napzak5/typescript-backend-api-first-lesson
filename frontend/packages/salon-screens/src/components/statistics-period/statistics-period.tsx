@@ -3,8 +3,9 @@ import {
   type FormErrors,
   TextField,
   useErrorFocus,
+  useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, type ReactNode, useState } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { type Period, periodQueryOf } from '../../period'
 import { EARLIEST_DAY, LATEST_DAY } from '../../salon-time'
 import styles from './statistics-period.module.css'
@@ -38,15 +39,10 @@ export const StatisticsPeriod = ({
   children,
 }: StatisticsPeriodProps) => {
   const form = useErrorFocus(errors)
-  const shownQuery = periodQueryOf(period).toString()
-  const [shown, setShown] = useState({ shownQuery, values: period })
-  if (shown.shownQuery !== shownQuery) {
-    setShown({ shownQuery, values: period })
-  }
-
-  const hold = (name: keyof Period, value: string): void => {
-    setShown({ shownQuery, values: { ...shown.values, [name]: value } })
-  }
+  const [values, hold] = useFilterValues(
+    periodQueryOf(period).toString(),
+    () => period,
+  )
 
   const submit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
@@ -69,7 +65,7 @@ export const StatisticsPeriod = ({
           min={EARLIEST_DAY}
           max={LATEST_DAY}
           required
-          value={shown.values.from}
+          value={values.from}
           error={errors['from']}
           onChange={(event) => hold('from', event.target.value)}
         />
@@ -81,7 +77,7 @@ export const StatisticsPeriod = ({
           max={LATEST_DAY}
           required
           description={description}
-          value={shown.values.to}
+          value={values.to}
           error={errors['to']}
           onChange={(event) => hold('to', event.target.value)}
         />

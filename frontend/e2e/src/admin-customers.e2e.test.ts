@@ -490,7 +490,7 @@ test.describe('the ledger of the customers, on a screen as narrow as a phone', (
     await page.getByRole('button', { name: '紹介元を選ぶ' }).click()
     const dialog = page.getByRole('dialog', { name: '紹介元を選ぶ' })
     await dialog.getByRole('searchbox', { name: 'キーワード' }).fill('example')
-    await dialog.getByRole('button', { name: '検索する' }).click()
+    await dialog.getByRole('button', { name: '探す' }).click()
     await expect(
       dialog.getByRole('table', { name: '見つかったお客様' }).getByRole('row'),
     ).toHaveCount(5)
