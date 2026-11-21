@@ -124,7 +124,18 @@ const convertedColumnsSchema = z.object({
   businessHours: businessHoursSchema,
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiSalonResponse,
+    | 'latitude'
+    | 'longitude'
+    | 'rating'
+    | 'taxRate'
+    | 'businessHours'
+    | 'createdAt'
+    | 'updatedAt'
+  >
+>
 ```
 
 保存されている行がこのスキーマに合わない場合、`toApiSalon` は `validation` ではなく `database` エラーを返す（リクエストではなく保存データの問題なので、レスポンスは 500 になる）。

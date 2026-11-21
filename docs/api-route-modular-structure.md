@@ -554,22 +554,23 @@ A query string carries text only, so the list handler gives the parameters their
 `routes/salon/_shared/query.ts`:
 
 ```typescript
-const salonSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-  minRating: numberParameter.exactOptional(),
-  isActive: booleanParameter.exactOptional(),
-  features: listParameter.exactOptional(),
-})
-
-export const decodeSalonSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(salonSearchQuerySchema, query, 'Invalid salon search')
+export const decodeSalonSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+    minRating: numberParameter.exactOptional(),
+    isActive: booleanParameter.exactOptional(),
+    features: listParameter.exactOptional(),
+  }) satisfies z.ZodType<
+    Pick<ApiSalonSearchRequest, 'limit' | 'minRating' | 'isActive' | 'features'>
+  >,
+  'Invalid salon search',
+)
 ```
 
 - Decoding changes the representation and nothing else: `limit=10` becomes the number 10, `isActive=false` the boolean, `features=color` the list `['color']`. Which values are allowed is decided by the use case.
 - The object is loose on purpose. A parameter the API does not define (`page=2`) is passed on, and the strict schema of the use case rejects it by name, so the list of parameters exists in one place.
 - The result is still `unknown`. A parameter that cannot be decoded (`limit=ten`) is a `validation` error and is answered like every other one.
+- The schema `satisfies` the search request of the operation for the parameters it decodes (`Pick<ApiSalonSearchRequest, …>`). A parameter that the contract renames or drops breaks the build at the `Pick`, and one whose type changes at the `satisfies`. `queryDecoder` (`shared/query-parameters.ts`) turns the schema into the decoder, so every decoder answers in the same way.
 - `numberParameter`, `booleanParameter` and `listParameter` are the converters of `shared/query-parameters.ts`, which every list uses. The session list decodes its `limit` with the same `numberParameter` (`decodeSessionSearchQuery` in `routes/auth/_shared/query.ts`), and the list of service categories and the list of services their `limit` and `isActive` (`decodeServiceCategorySearchQuery` in `routes/service-category/_shared/query.ts`, `decodeServiceSearchQuery` in `routes/service/_shared/query.ts`). The customer list decodes its `limit` and its `tags` (`decodeCustomerSearchQuery` in `routes/customer/_shared/query.ts`), and the staff list its `limit` (`decodeStaffSearchQuery` in `routes/staff/_shared/query.ts`), as does the list of staff profiles (`decodeStaffProfileSearchQuery` in `routes/staff-profile/_shared/query.ts`), whose filters are text. The booking list decodes its `limit` (`decodeBookingSearchQuery` in `routes/booking/_shared/query.ts`); its filters, IDs, a status and dates, are text. So does the sale list (`decodeSaleSearchQuery` in `routes/sale/_shared/query.ts`). The list of payment methods decodes its `limit` and its `isActive` (`decodePaymentMethodSearchQuery` in `routes/payment-method/_shared/query.ts`). The product list decodes its `limit` and its three flags, `isActive`, `isForSale` and `isForTreatment` (`decodeProductSearchQuery` in `routes/product/_shared/query.ts`). The stock lists decode their `limit`, and the low stock its `threshold` and what expires soon its `days` (`routes/inventory/_shared/query.ts`). The list of purchase orders decodes its `limit` (`decodePurchaseOrderSearchQuery` in `routes/purchase-order/_shared/query.ts`); its filters are text. The list of the inventory alerts decodes its `limit` and its `acknowledged` (`decodeInventoryAlertSearchQuery` in `routes/inventory-alert/_shared/query.ts`).
 
 The salon list is public, so its handler answers a query that cannot be decoded itself. The customer list is not public, and a user who may not list customers is told that and nothing about the request. Its handler therefore passes the outcome of the decoding on as it is, and the use case, which takes the decoded query as a `Result`, returns a decoding error only after it has decided the permission (`routes/customer/list-customers.handler.ts`):
@@ -999,7 +1000,7 @@ The order matters. Every request gets its ID and logger first. The probes are an
 - `authentication.ts` exports `createAuthenticated(dependencies)`, which `createApp` calls once, and the type `Authenticated`. The wrapper runs `AuthenticateUseCase` on `req.headers.authorization` and either calls the handler with the actor or sends the error with `sendProblem`. Before it calls the handler, it notes the user ID of the actor for the request log (`noteSignedInUser`).
 - `signed-in-user.ts` keeps, for as long as a request lives, which user it was authenticated as: `noteSignedInUser(req, userId)` writes it and `signedInUserOf(req)` reads it, `undefined` for a request that was not authenticated. The request logging reads it (see [Middleware](#middleware)).
 - `page-links.ts` holds `pageLinks`, the links of a page of any list, and `queryOf`, the query of a request URL, for the links that repeat it (see [Links](#links)).
-- `query-parameters.ts` holds `numberParameter`, `booleanParameter` and `listParameter`, from which a domain's `_shared/query.ts` builds the schema that decodes its query string (see [Query parameters](#query-parameters)).
+- `query-parameters.ts` holds `numberParameter`, `booleanParameter` and `listParameter`, from which a domain's `_shared/query.ts` builds the schema that decodes its query string, and `queryDecoder`, which turns that schema into the decoder (see [Query parameters](#query-parameters)).
 - `operation-types.ts` holds `JsonBody` (see [Response types](#response-types)).
 - `api-version.ts` holds `API_VERSION` (`v1`), `API_BASE_PATH` (`/api/v1`) and `SYSTEM_BASE_PATH` (`/api/system`).
 
@@ -1073,7 +1074,7 @@ How the tests are written is described in the [API Testing Guide](./api-testing-
 For the routes of a new domain, with `<domain>` as its name. The operations must already be defined in TypeSpec and the use cases must exist.
 
 - [ ] `routes/<domain>/_shared/types.ts`: response body types taken from the generated `operations`
-- [ ] `routes/<domain>/_shared/links.ts` for the links of one resource, and `query.ts` if an operation has query parameters, each with unit tests. The links of a page come from `pageLinks` (`shared/page-links.ts`), and `query.ts` builds its schema from the converters of `shared/query-parameters.ts`; neither is written again
+- [ ] `routes/<domain>/_shared/links.ts` for the links of one resource, and `query.ts` if an operation has query parameters, each with unit tests. The links of a page come from `pageLinks` (`shared/page-links.ts`), and `query.ts` builds its decoders with `queryDecoder` from the converters of `shared/query-parameters.ts`, each schema satisfying the search request for the parameters it decodes; neither is written again
 - [ ] One `<action>-<domain>.handler.ts` per operation: a factory over the dependencies that passes the raw input to the use case and matches the `Result` exhaustively
 - [ ] The handler of every operation that is not `@useAuth(NoAuth)` in the contract takes `authenticated`, is wrapped with it and passes the `actor` to the use case
 - [ ] The handler of a list that only some users may read passes the outcome of decoding the query to the use case as it is (`routes/customer/list-customers.handler.ts`), so that a query that cannot be decoded is answered only after the permission is decided

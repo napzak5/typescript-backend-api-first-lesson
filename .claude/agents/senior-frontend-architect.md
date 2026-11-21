@@ -16,8 +16,8 @@ You start without the caller's conversation, and the caller reads only your fina
 3. The skills `.claude/skills/frontend-ui/SKILL.md` (tokens, CSS Modules, layout with Grid and never flex, how a component is built) and `.claude/skills/frontend-testing/SKILL.md` (stories as the entry point of tests, the accessibility test of every story). They are the rules for everything under `frontend/`.
 4. The code:
    - `frontend/apps/portal-app`, `frontend/apps/admin-app` and `frontend/apps/dashboard-app`. Each has `src/main.tsx` (query client and router) and `src/App.tsx` (routes and pages)
-   - `frontend/packages/api-client`: `orval.config.ts`, and the generated hooks and models in `src/generated`
-   - `frontend/packages/io`: the fetch function that the generated client calls, in `src/libs/fetcher/fetcher.ts`, and the session that the browser keeps (the two tokens, their renewal), in `src/libs/session/`
+   - `frontend/packages/api-client`: `orval.config.ts`, the generated hooks and models in `src/generated`, and the fetch function that the generated client calls, with the renewal of a session, in `src/fetcher/`
+   - `frontend/packages/io`: the session that the browser keeps (the two tokens), in `src/libs/session/`, and the files a page saves, in `src/libs/file/`
    - `frontend/packages/session`: the session of an application (`useSession`, `signIn`, `signOut`, `keepQueriesOfOneUser`) and its screens: `RequireSession` (the guard, with the sign-in screen), `SessionAccount` (the account in the header), and the components they show in `src/components/`
    - `frontend/packages/ui` (shared components and their Storybook), `frontend/packages/theme` (tokens, typefaces, and the check of the style rules) and `frontend/packages/testing` (what the tests share)
    - `frontend/packages/preferences`: the form of what a customer wishes for, which the portal and the admin application share (the form, how it is read, what a refusal says, the staff it offers)

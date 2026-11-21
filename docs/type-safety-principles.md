@@ -135,6 +135,22 @@ export const salonCreateRequestSchema = z.strictObject({
 
 型アサーションや型注釈と違い、`satisfies` は式の型を変えません。スキーマは `ZodObject` のままなので、更新用のスキーマを `salonCreateRequestSchema.exactPartial()` で派生できます。
 
+API の入出力を表すスキーマは、どこにあっても生成された型に結びつけます。スキーマが API の値の一部だけを扱うときは、その部分を `Pick` で選びます。契約からプロパティの名前がなくなると `Pick` の制約で、型が変わると `satisfies` で、ビルドが失敗します。
+
+| スキーマ | 満たす型 | 例 |
+|---|---|---|
+| リクエストの本文と検索のパラメーター（ドメイン） | リクエストの型の全体 | `salonCreateRequestSchema`（`schemas/salon.schema.ts`） |
+| クエリ文字列を型に直す前段（API 層） | 検索のリクエストの、直すパラメーターだけ | `satisfies z.ZodType<Pick<ApiSalonSearchRequest, 'limit' \| …>>`（`routes/salon/_shared/query.ts`） |
+| 数に直すパスのパラメーター | オペレーションの `parameters.path` の、そのパラメーター | `customerVersionNumberSchema`（`schemas/customer-version.schema.ts`） |
+| 読み取りマッパーが直す列（`jsonb`、`numeric`、`timestamptz`） | 返す API の値の、その列だけ。直したあとでもう一度変える値は、その型を足す | `convertedColumnsSchema`（`mappers/read/salon.mapper.ts`）、在庫の評価額の区分（`mappers/read/inventory-report.mapper.ts`。金額は、合計してから数にするので `bigint`） |
+| `jsonb` に保存する API の値 | その API の型 | `storedTimeSlotsSchema satisfies z.ZodType<ApiTimeSlot[]>`（`schemas/customer-preferences.schema.ts`） |
+| フロントエンドが API の応答を読むところ | 生成された応答の型の、読むところだけ | problem details の `code`（`api-client` の `src/fetcher/fetcher.ts`）、セッションの更新の応答（同じく `src/fetcher/renew-session.ts`）、顧客の CSV の好みとタグ（admin-app の `src/customers/customer-file.ts`） |
+| テストが API の応答を読むところ | 同じ | サインインの応答（portal-app の `src/bookings/__tests__/arrangements.ts`、`frontend/e2e/src/sign-in.ts`） |
+
+`zod/mini` のスキーマには `z.ZodType` がないので、`satisfies z.ZodMiniType<…>` で結びつけます。
+
+結びつけないのは、API の値でないものです。設定（`parseAppConfig`）、DB から読んだ行、ID のパスパラメーター（ブランド型の UUID で、生成された `string` をそのまま満たす）、テストのサーバーとのやりとりです。例外が 1 つあります。`@beauty-salon-frontend/testing` の自分のテスト（`src/api/test-api.integration.test.ts`）は、API の応答を生成された型に結びつけません。このパッケージは、それを使ってテストされる `api-client` に依存できない（pnpm が循環を拒む）からです。理由はそのファイルにも書いています。
+
 ## ブランド型の ID
 
 エンティティの ID は、検証済みであることを型で区別します。

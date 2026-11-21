@@ -209,8 +209,9 @@ describe('Button', () => {
 
 ## Code that calls the API
 
-The fetch function (`io`), the session (`session`) and the generated client
-are tested together, as they run. The test replaces `fetch` alone
+The fetch function (`api-client`), the stored session (`io`), the session of
+an application (`session`) and the generated client are tested together, as
+they run. The test replaces `fetch` alone
 (`vi.stubGlobal('fetch', …)`) and asserts on the requests that were sent: what
 they carried, their order and their number.
 
@@ -231,8 +232,14 @@ they carried, their order and their number.
 - The module of the fetch function holds the renewal that is under way. A test
   that needs a fresh one loads the package anew (`vi.resetModules()` and a
   dynamic `import`).
-- `frontend/packages/api-client/src/session.test.ts` compares what `io` knows
-  of the API (a path and two codes) with what is generated from the contract.
+- `frontend/packages/api-client/src/fetcher/renew-session.test.ts` compares
+  the path the fetch function renews a session at with the one generated from
+  the contract. What it reads of the answers is checked by the types.
+- A schema with which a test reads an answer of the API satisfies the
+  generated type for what it reads (`satisfies z.ZodType<{ data:
+  Pick<AuthCrudLogin200['data'], 'accessToken'> }>`), so a contract change
+  breaks the build of the tests too. The tests of `testing` itself are the
+  exception: that package cannot depend on the API client.
 
 This is how the code that sends the requests is tested, and nothing else:
 the order and the number of requests, and answers the real API gives only
