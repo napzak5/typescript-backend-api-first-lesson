@@ -20,17 +20,22 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@beauty-salon-frontend/api-client": "workspace:*",
+    "@beauty-salon-frontend/io": "workspace:*",
+    "@beauty-salon-frontend/salon-screens": "workspace:*",
     "@beauty-salon-frontend/session": "workspace:*",
     "@beauty-salon-frontend/theme": "workspace:*",
     "@beauty-salon-frontend/ui": "workspace:*",
     "@tanstack/react-query": "^5.108.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-router": "^8.5.1"
+    "react-router": "^8.5.1",
+    "ts-pattern": "^5.9.2"
   },
   "devDependencies": {
     "@beauty-salon-frontend/testing": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
+    "@storybook/react-vite": "^10.6.7",
     "@tanstack/react-query-devtools": "^5.108.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
@@ -42,8 +47,10 @@
     "@vitest/ui": "^5.1.0",
     "jsdom": "^31.0.1",
     "rollup-plugin-visualizer": "^7.1.3",
+    "storybook": "^10.6.7",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "zod": "^4.6.7"
   }
 }

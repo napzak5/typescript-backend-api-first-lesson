@@ -1,0 +1,18 @@
+/* The cards one below the other. */
+.report {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+/* What a card shows, and how it is counted below it */
+.part {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}

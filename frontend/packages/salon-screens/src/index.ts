@@ -93,7 +93,12 @@ export {
   salonKeyOf,
 } from './salons-api'
 export {
+  StartScreen,
+  type StartScreenProps,
+} from './start-screen'
+export {
   OtherSalonNotice,
+  type OtherSalonNoticeProps,
   WithSalon,
   type WithSalonProps,
 } from './with-salon'

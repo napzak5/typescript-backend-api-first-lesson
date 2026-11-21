@@ -7,6 +7,7 @@ import type {
 import { saveFile } from '@beauty-salon-frontend/io'
 import {
   dayAt,
+  lastYearUntil,
   NOT_FOUND,
   OtherSalonNotice,
   type Period,
@@ -201,7 +202,10 @@ const PreferencesPart = ({ salon, customer }: PartProps) => {
 const UsePart = ({ salon, customer }: PartProps) => {
   const [query, setQuery] = useSearchParams()
   const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
-  const period = periodIn(query, dayAt(new Date(), salon.timezone))
+  const period = periodIn(
+    query,
+    lastYearUntil(dayAt(new Date(), salon.timezone)),
+  )
   const read = useQuery({
     queryKey: statisticsKeyOf(customer.id, salon.id, period),
     queryFn: () => readStatistics(customer.id, salon.id, period),
