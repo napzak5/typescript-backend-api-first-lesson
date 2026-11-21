@@ -1,11 +1,13 @@
 import type { ModelsBookingStatusType } from '@beauty-salon-frontend/api-client'
 import {
+  Actions,
   Alert,
   Badge,
   Button,
   Card,
   Dialog,
   FormDialog,
+  Note,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -86,11 +88,11 @@ export const StatusActions = ({
           <Badge tone={statusToneOf(status)}>{statusNameOf(status)}</Badge>
         </p>
         {actions.length === 0 ? (
-          <p className={styles['note']}>
+          <Note>
             この予約の状態は、もう変えられません。誤って記録したときは、予約を削除して入れ直してください。
-          </p>
+          </Note>
         ) : (
-          <div className={styles['buttons']}>
+          <Actions>
             {actions.map((action) =>
               action === 'confirm' || action === 'start' ? (
                 <Button
@@ -111,7 +113,7 @@ export const StatusActions = ({
                 </Button>
               ),
             )}
-          </div>
+          </Actions>
         )}
       </div>
       <FormDialog

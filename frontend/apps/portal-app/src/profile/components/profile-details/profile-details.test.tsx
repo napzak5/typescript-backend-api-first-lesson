@@ -89,7 +89,7 @@ describe('ProfileDetails', () => {
 
     // Assert
     const notes = screen.getByText(/^頭皮が敏感なので/)
-    expect(notes).toHaveClass('notes')
+    expect(notes).toHaveClass('writtenText')
     expect(notes.textContent).toContain('\n\n香りの強い製品は苦手です。')
   })
 

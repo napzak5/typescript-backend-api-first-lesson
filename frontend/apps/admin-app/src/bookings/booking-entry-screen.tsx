@@ -334,9 +334,7 @@ const EntryStep = ({
         <Alert tone='warning'>
           お客様が見つかりません。台帳から削除されたか、アドレスが正しくありません。
         </Alert>
-        <p>
-          <ButtonLink href={againHref}>お客様を選び直す</ButtonLink>
-        </p>
+        <ButtonLink href={againHref}>お客様を選び直す</ButtonLink>
       </>
     ))
     .with(

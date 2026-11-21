@@ -1,6 +1,6 @@
 import type { ModelsSalesByStaffResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, Table } from '@beauty-salon-frontend/ui'
+import { Card, Note, Table } from '@beauty-salon-frontend/ui'
 import { percentOfMost } from '../../sales-breakdown'
 import { countNameOf, rankNameOf, STAFF_SALES_NOTE } from '../../sales-report'
 import { ShareBar } from '../share-bar/share-bar'
@@ -72,7 +72,7 @@ export const StaffSales = ({ staff, currency }: StaffSalesProps) => {
           rowKey={({ counted }) => counted.staffId}
           emptyMessage='担当したスタッフのいる売上はありません'
         />
-        <p className={styles['note']}>{STAFF_SALES_NOTE}</p>
+        <Note>{STAFF_SALES_NOTE}</Note>
       </div>
     </Card>
   )

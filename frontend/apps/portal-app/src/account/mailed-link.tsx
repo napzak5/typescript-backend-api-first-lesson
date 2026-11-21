@@ -36,9 +36,7 @@ export const LinkNotChecked = ({
   <>
     <PageHeader title={title} />
     <Alert tone='danger'>{messageAfter(refusal)}</Alert>
-    <p>
-      <Button onClick={onRetry}>もう一度確かめる</Button>
-    </p>
+    <Button onClick={onRetry}>もう一度確かめる</Button>
   </>
 )
 

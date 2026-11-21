@@ -118,7 +118,7 @@ export const BookingMoveForm = ({
           動かしたあとの明細
         </h2>
         {moved === undefined ? (
-          <p className={styles['unread']}>
+          <p>
             担当スタッフ、来店日、開始の時刻を入れると、動かしたあとの明細を出します。
           </p>
         ) : (

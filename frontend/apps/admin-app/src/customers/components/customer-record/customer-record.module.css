@@ -4,12 +4,3 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-parts);
 }
-
-/*
- * The list breaks a word that is longer than a line (`DescriptionList`), so
- * a value needs a class only for what it does besides: what was written in
- * several lines keeps its line breaks.
- */
-.written {
-  white-space: pre-wrap;
-}

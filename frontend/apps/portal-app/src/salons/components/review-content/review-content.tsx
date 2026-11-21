@@ -1,5 +1,5 @@
 import type { ModelsReviewResponse } from '@beauty-salon-frontend/api-client'
-import { Badge, Rating } from '@beauty-salon-frontend/ui'
+import { Badge, Note, Rating, WrittenText } from '@beauty-salon-frontend/ui'
 import { dayOf, detailRatingsOf, webAddressOf } from '../../salon-format'
 import styles from './review-content.module.css'
 
@@ -38,9 +38,9 @@ export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
         <p className={styles['title']}>{review.title}</p>
       )}
       {review.comment !== null && (
-        <p className={styles['text']}>{review.comment}</p>
+        <WrittenText className={styles['text']}>{review.comment}</WrittenText>
       )}
-      {details !== null && <p className={styles['aside']}>{details}</p>}
+      {details !== null && <Note size='small'>{details}</Note>}
       {review.imageUrls.length > 0 && (
         <ul className={styles['pictures']} aria-label='写真'>
           {review.imageUrls.map((image) => {
@@ -61,9 +61,9 @@ export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
         </ul>
       )}
       {review.helpfulCount > 0 && (
-        <p className={styles['aside']}>
+        <Note size='small'>
           {review.helpfulCount} 人が「参考になった」と答えています
-        </p>
+        </Note>
       )}
       {review.ownerResponse !== null && (
         <div className={styles['response']}>
@@ -72,7 +72,9 @@ export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
             {review.ownerRespondedAt !== null &&
               `（${dayOf(review.ownerRespondedAt, timezone)}）`}
           </p>
-          <p className={styles['text']}>{review.ownerResponse}</p>
+          <WrittenText className={styles['text']}>
+            {review.ownerResponse}
+          </WrittenText>
         </div>
       )}
     </div>

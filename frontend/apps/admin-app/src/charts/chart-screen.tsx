@@ -184,11 +184,9 @@ export const ChartScreen = () => {
         <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh={false}>
           {(customer) => (
             <>
-              <p>
-                <ButtonLink href={customerHrefOf(salon.id, customer.id)}>
-                  お客様の台帳へ
-                </ButtonLink>
-              </p>
+              <ButtonLink href={customerHrefOf(salon.id, customer.id)}>
+                お客様の台帳へ
+              </ButtonLink>
               <AllergiesPart
                 key={customer.id}
                 salon={salon}

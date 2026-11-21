@@ -2,9 +2,5 @@
 .pagedTable {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-}
-
-.count {
-  color: var(--color-text-muted);
+  gap: var(--space-content);
 }

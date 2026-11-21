@@ -2,10 +2,7 @@
 .lines {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  gap: var(--space-content);
 }
 
 .line {
@@ -17,12 +14,7 @@
 }
 
 .service {
-  margin: 0;
   font-weight: var(--font-weight-bold);
-}
-
-.when {
-  margin: 0;
 }
 
 .check {

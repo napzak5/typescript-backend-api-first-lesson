@@ -164,9 +164,7 @@ const NotFoundPage = () => (
       title='ページが見つかりません'
       description='アドレスが正しいか、お確かめください。'
     />
-    <p>
-      <ButtonLink href='/'>トップへ戻る</ButtonLink>
-    </p>
+    <ButtonLink href='/'>トップへ戻る</ButtonLink>
   </>
 )
 

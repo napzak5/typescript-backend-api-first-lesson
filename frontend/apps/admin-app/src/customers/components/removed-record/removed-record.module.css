@@ -2,19 +2,5 @@
 .removed {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
-/* The buttons one below the other, side by side where there is room */
-.actions {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-3);
-}
-
-@media (min-width: 40rem) {
-  .actions {
-    grid-auto-flow: column;
-    justify-content: start;
-  }
+  gap: var(--space-parts);
 }

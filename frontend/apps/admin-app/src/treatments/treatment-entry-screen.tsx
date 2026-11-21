@@ -256,11 +256,9 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
       ([, { record }]) => (
         <>
           <p>この予約の施術記録は、書いてあります。</p>
-          <p>
-            <ButtonLink href={treatmentHrefOf(salon.id, record.id)}>
-              施術記録を見る
-            </ButtonLink>
-          </p>
+          <ButtonLink href={treatmentHrefOf(salon.id, record.id)}>
+            施術記録を見る
+          </ButtonLink>
         </>
       ),
     )

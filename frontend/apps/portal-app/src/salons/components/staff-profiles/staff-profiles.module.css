@@ -24,7 +24,3 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
 }
-
-.bio {
-  white-space: pre-line;
-}

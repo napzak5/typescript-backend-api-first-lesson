@@ -1,5 +1,5 @@
 import type { ModelsServiceResponse } from '@beauty-salon-frontend/api-client'
-import { Badge, Link } from '@beauty-salon-frontend/ui'
+import { Badge, Link, Note } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
 import { match } from 'ts-pattern'
 import { durationOf } from '../../salon-format'
@@ -50,7 +50,7 @@ const ServiceRow = ({ service, currency, bookingHref }: ServiceRowProps) => {
     <li className={styles['service']}>
       <div className={styles['what']}>
         <p className={styles['name']}>{service.name}</p>
-        {said !== null && <p className={styles['said']}>{said}</p>}
+        {said !== null && <Note size='small'>{said}</Note>}
         {(service.requiresConsultation || !service.allowOnlineBooking) && (
           <p>
             {service.requiresConsultation && (
@@ -98,7 +98,7 @@ const MenuPart = ({ group, currency, bookingHref }: MenuPartProps) => {
         {group.name}
       </h3>
       {group.description !== null && (
-        <p className={styles['said']}>{group.description}</p>
+        <Note size='small'>{group.description}</Note>
       )}
       <ul className={styles['services']} aria-labelledby={headingId}>
         {group.services.map((service) => (

@@ -106,11 +106,9 @@ const VersionPart = ({
 
   return (
     <>
-      <p>
-        <ButtonLink href={customerHistoryHrefOf(salon.id, customerId)}>
-          変更履歴へ
-        </ButtonLink>
-      </p>
+      <ButtonLink href={customerHistoryHrefOf(salon.id, customerId)}>
+        変更履歴へ
+      </ButtonLink>
       {keeper ? (
         match(read.data)
           .with(undefined, () => (

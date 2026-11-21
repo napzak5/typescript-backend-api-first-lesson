@@ -307,9 +307,7 @@ const MovePage = () => {
           title='予約が見つかりません'
           description='アドレスが正しいか、お確かめください。ほかのアカウントで入れた予約は、表示できません。'
         />
-        <p>
-          <ButtonLink href='/bookings'>予約の一覧へ</ButtonLink>
-        </p>
+        <ButtonLink href='/bookings'>予約の一覧へ</ButtonLink>
       </>
     ))
     .with({ type: UNREAD }, (reason) => (

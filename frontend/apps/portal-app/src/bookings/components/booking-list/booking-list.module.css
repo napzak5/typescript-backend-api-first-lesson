@@ -2,21 +2,17 @@
 .list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-content);
 }
 
 .heading {
   font-size: var(--font-size-title);
 }
 
-.count {
-  color: var(--color-text-muted);
-}
-
 .bookings {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-parts);
 }
 
 /* A booking: when it is, then where, what, and where it stands */

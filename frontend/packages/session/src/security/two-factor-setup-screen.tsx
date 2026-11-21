@@ -150,11 +150,9 @@ const Setup = ({ user, securityHref }: SetupProps) => {
             バックアップコードの発行し直しと、2
             要素認証を無効にすることは、アカウントの安全の画面でできます。
           </p>
-          <p>
-            <ButtonLink href={securityHref} variant='primary'>
-              アカウントの安全へ戻る
-            </ButtonLink>
-          </p>
+          <ButtonLink href={securityHref} variant='primary'>
+            アカウントの安全へ戻る
+          </ButtonLink>
         </Card>
       ) : (
         <Card title='パスワードを確かめる' headingRef={heading}>
@@ -190,11 +188,9 @@ const Setup = ({ user, securityHref }: SetupProps) => {
           回だけ、認証アプリのコードの代わりに使えます。この画面を離れると、二度と表示されません。印刷するか、パスワードマネージャーなどの安全な場所に控えてください。控えをなくしたときは、認証アプリのコードで、アカウントの安全の画面から発行し直せます。
         </p>
         <BackupCodeList codes={backupCodes} />
-        <p>
-          <ButtonLink href={securityHref} variant='primary'>
-            アカウントの安全へ戻る
-          </ButtonLink>
-        </p>
+        <ButtonLink href={securityHref} variant='primary'>
+          アカウントの安全へ戻る
+        </ButtonLink>
       </Card>
     ))
     .exhaustive()

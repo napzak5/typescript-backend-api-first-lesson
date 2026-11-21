@@ -1,6 +1,7 @@
 import {
   Form,
   type FormErrors,
+  Note,
   PasswordField,
   Select,
   TextField,
@@ -13,7 +14,6 @@ import {
   PERIOD,
   PERIODS,
 } from '../../share-link'
-import styles from './share-link-form.module.css'
 
 export type ShareLinkFormProps = {
   /** The name of the file the link shows */
@@ -53,9 +53,9 @@ export const ShareLinkForm = ({
     actions={actions}
     onSubmit={onSubmit}
   >
-    <p className={styles['lead']}>
+    <Note>
       「{filename}」を、アカウントを持たない人に見せるリンクを発行します。
-    </p>
+    </Note>
     <Select
       label='有効期間'
       name={PERIOD}

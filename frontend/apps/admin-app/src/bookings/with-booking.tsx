@@ -87,11 +87,7 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
             title='予約が見つかりません'
             description='アドレスが正しいか、お確かめください。削除された予約は、表示できません。'
           />
-          <p>
-            <ButtonLink href={bookingsHrefOf(salon.id)}>
-              今日の予約へ
-            </ButtonLink>
-          </p>
+          <ButtonLink href={bookingsHrefOf(salon.id)}>今日の予約へ</ButtonLink>
         </>
       ))
       .with({ type: 'forbidden' }, () => (
@@ -118,9 +114,7 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
 export const Unchangeable = ({ why, back }: { why: string; back: string }) => (
   <>
     <p>{why}</p>
-    <p>
-      <ButtonLink href={back}>予約の内容へ</ButtonLink>
-    </p>
+    <ButtonLink href={back}>予約の内容へ</ButtonLink>
   </>
 )
 

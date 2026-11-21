@@ -3,9 +3,5 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   justify-items: start;
-  gap: var(--space-3);
-}
-
-.said {
-  margin: 0;
+  gap: var(--space-content);
 }

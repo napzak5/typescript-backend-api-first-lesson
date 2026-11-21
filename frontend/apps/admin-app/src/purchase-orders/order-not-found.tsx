@@ -3,9 +3,7 @@ import { purchaseOrdersHrefOf } from '../navigation'
 
 /** The way back to the orders of the salon */
 export const ToTheOrders = ({ salonId }: { salonId: string }) => (
-  <p>
-    <ButtonLink href={purchaseOrdersHrefOf(salonId)}>発注へ</ButtonLink>
-  </p>
+  <ButtonLink href={purchaseOrdersHrefOf(salonId)}>発注へ</ButtonLink>
 )
 
 /** What a screen of a purchase order says when there is none to show: none at the address, or one of another salon. */

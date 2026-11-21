@@ -212,9 +212,7 @@ const CategoryNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
       title='カテゴリーが見つかりません'
       description='アドレスが正しいか、お確かめください。削除したカテゴリーは、表示できません。'
     />
-    <p>
-      <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
-    </p>
+    <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
   </>
 )
 

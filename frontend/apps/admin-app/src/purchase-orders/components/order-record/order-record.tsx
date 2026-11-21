@@ -10,6 +10,7 @@ import {
   type DescriptionListItem,
   Link,
   Table,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { NOT_RECORDED } from '../../../staff/staff-format'
@@ -38,7 +39,7 @@ export type OrderRecordProps = {
 
 /** What was written, in the lines it was written in; 「記録なし」 when nothing was. */
 const writtenOf = (text: string | null): ReactNode =>
-  text === null ? NOT_RECORDED : <p className={styles['written']}>{text}</p>
+  text === null ? NOT_RECORDED : <WrittenText>{text}</WrittenText>
 
 /** What happened to the order after it was made: its approval, its delivery, its cancellation, each once it happened */
 const eventsOf = (

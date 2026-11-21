@@ -9,9 +9,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-fields);
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 /*
@@ -26,9 +23,4 @@
 
 .remove {
   grid-column: 1 / -1;
-  justify-self: start;
-}
-
-.add {
-  justify-self: start;
 }

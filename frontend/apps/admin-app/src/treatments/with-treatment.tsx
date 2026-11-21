@@ -62,9 +62,7 @@ const TreatmentNotFound = ({ salonId }: { salonId: string }) => (
       title='施術記録が見つかりません'
       description='アドレスが正しいか、お確かめください。削除された施術記録は、表示できません。'
     />
-    <p>
-      <ButtonLink href={treatmentsHrefOf(salonId)}>施術記録の一覧へ</ButtonLink>
-    </p>
+    <ButtonLink href={treatmentsHrefOf(salonId)}>施術記録の一覧へ</ButtonLink>
   </>
 )
 

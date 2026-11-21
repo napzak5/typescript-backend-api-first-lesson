@@ -13,6 +13,7 @@ import {
   Link,
   Table,
   TagList,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { UNLISTED_STAFF } from '../../../bookings/booking-format'
@@ -57,7 +58,7 @@ export type TreatmentRecordProps = {
 type Row = { place: number; material: ModelsTreatmentMaterial }
 
 const writtenOrNone = (text: string | null) =>
-  text === null ? NOT_RECORDED : <p className={styles['written']}>{text}</p>
+  text === null ? NOT_RECORDED : <WrittenText>{text}</WrittenText>
 
 const namesOrNone = (label: string, names: readonly string[]) =>
   names.length === 0 ? NOT_RECORDED : <TagList label={label} items={names} />

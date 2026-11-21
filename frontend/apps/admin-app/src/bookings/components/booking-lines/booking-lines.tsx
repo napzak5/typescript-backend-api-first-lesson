@@ -174,7 +174,7 @@ export const BookingLines = ({
         })}
       </ol>
       {rows.length < MOST_LINES ? (
-        <Button ref={adding} className={styles['add']} onClick={add}>
+        <Button ref={adding} onClick={add}>
           明細を追加する
         </Button>
       ) : (

@@ -2,12 +2,7 @@
 .part {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
-.note {
-  margin: 0;
-  color: var(--color-text-muted);
+  gap: var(--space-content);
 }
 
 /* The photos side by side: two on a phone, and as many as there is room for, of 12rem at least, on a wider screen */
@@ -18,9 +13,6 @@
       minmax(min(calc(50% - var(--space-2)), 12rem), 1fr)
     );
   gap: var(--space-4);
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 /* A photo, with its caption and what can be done with it below */
@@ -35,7 +27,6 @@
   grid-row: span 2;
   grid-template-rows: subgrid;
   gap: var(--space-2);
-  margin: 0;
 }
 
 /* The images in frames of one shape: what does not load leaves an empty frame and the caption says what it was */
@@ -57,11 +48,6 @@
 
 .name {
   font-weight: var(--font-weight-bold);
-}
-
-/* What was written of a photo keeps its line breaks */
-.description {
-  white-space: pre-wrap;
 }
 
 .use {

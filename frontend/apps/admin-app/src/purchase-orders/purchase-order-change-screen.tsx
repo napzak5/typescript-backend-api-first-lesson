@@ -179,11 +179,9 @@ const ChangePart = ({ salon, purchaseOrderId }: ChangePartProps) => {
         <>
           {header}
           <p>{CLOSED_ORDERS[order.status]}</p>
-          <p>
-            <ButtonLink href={purchaseOrderHrefOf(salon.id, order.id)}>
-              発注へ戻る
-            </ButtonLink>
-          </p>
+          <ButtonLink href={purchaseOrderHrefOf(salon.id, order.id)}>
+            発注へ戻る
+          </ButtonLink>
         </>
       ),
     )

@@ -2,12 +2,7 @@
 .allergies {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
-.note {
-  margin: 0;
-  color: var(--color-text-muted);
+  gap: var(--space-content);
 }
 
 /* The link that changes an allergy above the button that removes it */

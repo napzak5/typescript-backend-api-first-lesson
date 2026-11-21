@@ -30,7 +30,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  gap: var(--space-3);
+  gap: var(--space-fields);
 }
 
 @media (min-width: 40rem) {
@@ -38,11 +38,6 @@
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: end;
   }
-}
-
-.changed {
-  margin: 0;
-  color: var(--color-text-muted);
 }
 
 .changed:empty {

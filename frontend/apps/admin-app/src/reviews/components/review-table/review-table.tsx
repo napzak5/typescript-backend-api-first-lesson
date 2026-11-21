@@ -9,7 +9,6 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import { Badge, Link, Rating } from '@beauty-salon-frontend/ui'
 import { reviewDayNameOf, reviewNameOf } from '../../review-format'
-import styles from './review-table.module.css'
 
 export type ReviewTableProps = {
   /** What the table lists: 「レビュー」 or 「条件に合うレビュー」 */
@@ -87,9 +86,8 @@ export const ReviewTable = ({
       {
         key: 'comment',
         header: 'コメント',
-        cell: ({ comment }) => (
-          <span className={styles['comment']}>{comment ?? 'なし'}</span>
-        ),
+        wrap: 'lines',
+        cell: ({ comment }) => comment ?? 'なし',
       },
       {
         key: 'staffId',

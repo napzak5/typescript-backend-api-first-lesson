@@ -56,9 +56,7 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
     refetchOnReconnect: false,
   })
   const toTheSale = (
-    <p>
-      <ButtonLink href={saleHrefOf(salon.id, saleId)}>売上の内容へ</ButtonLink>
-    </p>
+    <ButtonLink href={saleHrefOf(salon.id, saleId)}>売上の内容へ</ButtonLink>
   )
 
   return (
@@ -114,9 +112,7 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
             title='売上が見つかりません'
             description='アドレスが正しいか、お確かめください。'
           />
-          <p>
-            <ButtonLink href={salesHrefOf(salon.id)}>今日の売上へ</ButtonLink>
-          </p>
+          <ButtonLink href={salesHrefOf(salon.id)}>今日の売上へ</ButtonLink>
         </>
       ))
       .with({ type: 'forbidden' }, () => (

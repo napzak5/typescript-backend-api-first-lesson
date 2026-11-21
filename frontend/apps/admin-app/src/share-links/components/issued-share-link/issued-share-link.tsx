@@ -1,11 +1,13 @@
 import type { ModelsShareLinkResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
+  Actions,
   Alert,
   Button,
   ButtonLink,
   Card,
   DescriptionList,
+  Note,
   TextField,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
@@ -66,9 +68,9 @@ export const IssuedShareLink = ({
       />
       <div className={styles['copy']}>
         <Button onClick={onCopy}>リンクをコピーする</Button>
-        <p className={styles['copied']} role='status'>
+        <Note role='status'>
           {copying === 'copied' ? 'リンクをコピーしました。' : ''}
-        </p>
+        </Note>
       </div>
       {copying === 'failed' && (
         <Alert tone='danger'>
@@ -91,15 +93,13 @@ export const IssuedShareLink = ({
           },
         ]}
       />
-      {shareLink.hasPassword && (
-        <p className={styles['note']}>{PASSWORD_APART_NOTE}</p>
-      )}
-      <div className={styles['links']}>
+      {shareLink.hasPassword && <Note>{PASSWORD_APART_NOTE}</Note>}
+      <Actions>
         <ButtonLink href={shareLinkHref}>共有リンクを見る</ButtonLink>
         <ButtonLink href={fileHref} variant='quiet'>
           ファイルへ戻る
         </ButtonLink>
-      </div>
+      </Actions>
     </div>
   </Card>
 )

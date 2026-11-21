@@ -23,16 +23,14 @@ export const AccountUnlock = ({
 }: AccountUnlockProps) => (
   <Card title='ロックの解除'>
     <div className={styles['unlock']}>
-      <p className={styles['text']}>
+      <p>
         解除すると、利用者は、いまのパスワードですぐにログインできます。パスワードの誤りの回数は
         0 に戻ります。パスワードと、ログインしている端末は変わりません。
       </p>
       {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-      <p className={styles['text']}>
-        <Button variant='primary' pending={pending} onClick={onUnlock}>
-          ロックを解除する
-        </Button>
-      </p>
+      <Button variant='primary' pending={pending} onClick={onUnlock}>
+        ロックを解除する
+      </Button>
     </div>
   </Card>
 )

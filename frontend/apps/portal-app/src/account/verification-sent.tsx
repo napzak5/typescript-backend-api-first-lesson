@@ -55,14 +55,9 @@ export const VerificationSent = ({ email }: VerificationSentProps) => {
         <Link to='/forgot-password'>パスワードを再設定</Link>
         してください。
       </p>
-      <p>
-        <Button
-          pending={sending.isPending}
-          onClick={() => sending.mutate(email)}
-        >
-          確認メールをもう一度送る
-        </Button>
-      </p>
+      <Button pending={sending.isPending} onClick={() => sending.mutate(email)}>
+        確認メールをもう一度送る
+      </Button>
       <p>続けて送れるのは、1 分に 1 回までです。</p>
     </>
   )

@@ -1,6 +1,6 @@
 import type { ModelsSalesByCategoryResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, categoryNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, Table } from '@beauty-salon-frontend/ui'
+import { Card, Note, Table } from '@beauty-salon-frontend/ui'
 import { perServiceOf } from '../../sales-breakdown'
 import {
   CATEGORY_SALES_NOTE,
@@ -71,9 +71,9 @@ export const CategorySales = ({ categories, currency }: CategorySalesProps) => {
           rowKey={({ category }) => category}
           emptyMessage='メニューの売上はありません'
         />
-        <p className={styles['note']}>
+        <Note>
           {`${CATEGORY_SALES_NOTE}1 件あたりは、売上を施術の数で割った額です（1 円未満は切り捨て）。`}
-        </p>
+        </Note>
       </div>
     </Card>
   )

@@ -7,8 +7,3 @@
 .line {
   display: block;
 }
-
-/* What was written in several lines, with the line breaks it was written with */
-.written {
-  white-space: pre-wrap;
-}

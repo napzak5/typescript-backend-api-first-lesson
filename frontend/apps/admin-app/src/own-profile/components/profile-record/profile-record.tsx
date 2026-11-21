@@ -1,12 +1,17 @@
 import type { ModelsStaffProfileResponse } from '@beauty-salon-frontend/api-client'
-import { Card, DescriptionList, TagList } from '@beauty-salon-frontend/ui'
+import {
+  Card,
+  DescriptionList,
+  Note,
+  TagList,
+  WrittenText,
+} from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import {
   bookingsNameOf,
   levelNameOf,
   NOT_RECORDED,
 } from '../../../staff/staff-format'
-import styles from './profile-record.module.css'
 
 export type ProfileRecordProps = {
   profile: ModelsStaffProfileResponse
@@ -57,7 +62,7 @@ export const ProfileRecord = ({
             profile.bio === null ? (
               NOT_RECORDED
             ) : (
-              <p className={styles['written']}>{profile.bio}</p>
+              <WrittenText>{profile.bio}</WrittenText>
             ),
         },
         {
@@ -67,9 +72,9 @@ export const ProfileRecord = ({
         },
       ]}
     />
-    <p className={styles['note']}>
+    <Note>
       表示名、レベル、役職、予約の受け方は、サロンがスタッフ台帳で決めます。変えたいときは、サロンのオーナーに伝えてください。
-    </p>
+    </Note>
     <p>
       <a href={customerView}>お客様からの見え方を、サロンのページで見る</a>
     </p>

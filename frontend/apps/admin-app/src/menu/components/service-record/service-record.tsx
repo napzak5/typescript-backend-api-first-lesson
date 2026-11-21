@@ -4,11 +4,13 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
+  BulletList,
   Card,
   DescriptionList,
   Link,
   Table,
   TagList,
+  WrittenText,
 } from '@beauty-salon-frontend/ui'
 import { levelNameOf, NOT_RECORDED } from '../../../staff/staff-format'
 import { minutesNameOf } from '../../../treatments/treatment-format'
@@ -39,7 +41,7 @@ export type ServiceRecordProps = {
 const UNLISTED_SERVICE = 'メニューにないサービス'
 
 const writtenOrNone = (text: string | null) =>
-  text === null ? NOT_RECORDED : <p className={styles['written']}>{text}</p>
+  text === null ? NOT_RECORDED : <WrittenText>{text}</WrittenText>
 
 const addressOrNone = (address: string | null) =>
   address === null ? NOT_RECORDED : address
@@ -151,7 +153,7 @@ export const ServiceRecord = ({
       </Card>
       {service.isPackage && (
         <Card title='パッケージのサービス'>
-          <ul className={styles['package']}>
+          <BulletList>
             {service.packageServiceIds.map((id) => {
               const packaged = services.find((one) => one.id === id)
 
@@ -165,7 +167,7 @@ export const ServiceRecord = ({
                 </li>
               )
             })}
-          </ul>
+          </BulletList>
         </Card>
       )}
       <Table

@@ -1,5 +1,5 @@
 import type { ModelsCustomerBookingResponse } from '@beauty-salon-frontend/api-client'
-import { Alert, Badge, Button, Link } from '@beauty-salon-frontend/ui'
+import { Alert, Badge, Button, Link, Note } from '@beauty-salon-frontend/ui'
 import { useId, useLayoutEffect, useRef } from 'react'
 import type { More } from '../../../salons/pages'
 import { statusNameOf, statusToneOf, whenKnownOf } from '../../booking-format'
@@ -83,9 +83,7 @@ export const BookingList = ({
       <h2 className={styles['heading']} id={headingId}>
         {title}
       </h2>
-      <p className={styles['count']} role='status'>
-        {countOf(total, rows.length)}
-      </p>
+      <Note role='status'>{countOf(total, rows.length)}</Note>
       <ul className={styles['bookings']} ref={list}>
         {rows.map(({ booking, salon, serviceName }) => {
           const when = whenKnownOf(booking, salon?.timezone ?? null)
@@ -120,11 +118,9 @@ export const BookingList = ({
         </Alert>
       )}
       {more !== 'none' && (
-        <p>
-          <Button onClick={askForMore} pending={more === 'loading'}>
-            {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-          </Button>
-        </p>
+        <Button onClick={askForMore} pending={more === 'loading'}>
+          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
+        </Button>
       )}
     </section>
   )

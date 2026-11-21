@@ -114,7 +114,7 @@ export const TimeSlotFields = ({
           ))}
         </ol>
       )}
-      <Button ref={adding} className={styles['add']} onClick={add}>
+      <Button ref={adding} onClick={add}>
         時間帯を追加する
       </Button>
     </div>

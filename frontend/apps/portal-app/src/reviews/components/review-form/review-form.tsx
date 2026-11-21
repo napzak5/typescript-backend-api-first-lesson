@@ -3,6 +3,7 @@ import {
   Form,
   FormPart,
   type FormProps,
+  Note,
   RadioGroup,
   Select,
   TextArea,
@@ -91,9 +92,9 @@ export const ReviewForm = ({
 
   return (
     <Form {...form} errors={errors}>
-      <p className={styles['note']}>
+      <Note size='small'>
         レビューは、サロンのページに掲載され、誰でも読めます。
-      </p>
+      </Note>
       <FormPart label='評価'>
         <RadioGroup
           label='総合の評価'
@@ -106,9 +107,9 @@ export const ReviewForm = ({
         {match(staff)
           .with({ type: 'choice' }, ({ options }) =>
             options.length === 0 ? (
-              <p className={styles['note']}>
+              <Note size='small'>
                 この来店を担当したスタッフは、いまサロンのページに掲載されていないため、スタッフの評価はできません。
-              </p>
+              </Note>
             ) : (
               <Select
                 label='評価するスタッフ'
@@ -123,15 +124,15 @@ export const ReviewForm = ({
             ),
           )
           .with({ type: 'fixed' }, ({ name }) => (
-            <p className={styles['note']}>
+            <Note size='small'>
               評価するスタッフ: {name ?? NO_STAFF}
               。評価するスタッフは、変更できません。
-            </p>
+            </Note>
           ))
           .with({ type: 'nobody' }, () => (
-            <p className={styles['note']}>
+            <Note size='small'>
               このレビューは、スタッフを評価していません。評価するスタッフは、あとから追加できません。
-            </p>
+            </Note>
           ))
           .exhaustive()}
         <div className={styles['details']}>

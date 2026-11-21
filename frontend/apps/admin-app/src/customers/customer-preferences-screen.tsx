@@ -165,9 +165,7 @@ const PreferencesToChange = ({ salon, customer }: PreferencesToChangeProps) => {
       .with({ type: 'notFound' }, () => (
         <>
           <p>このお客様は、台帳から削除されました。</p>
-          <p>
-            <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
-          </p>
+          <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
         </>
       ))
       .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (

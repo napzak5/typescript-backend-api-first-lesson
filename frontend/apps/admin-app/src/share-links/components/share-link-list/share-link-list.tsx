@@ -12,6 +12,7 @@ import {
   EmptyState,
   Link,
   LoadingIndicator,
+  Note,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -84,9 +85,9 @@ export const ShareLinkList = ({
     }
   >
     <div className={styles['list']}>
-      <p className={styles['note']}>
+      <Note>
         {listing.type === 'notShared' ? listing.note : SHARE_LINKS_NOTE}
-      </p>
+      </Note>
       {match(listing)
         .with({ type: 'notShared' }, () => null)
         .with({ type: 'reading' }, () => (

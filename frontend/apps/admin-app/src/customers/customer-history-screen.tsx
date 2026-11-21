@@ -61,11 +61,9 @@ const HistoryPart = ({
 
   return (
     <>
-      <p>
-        <ButtonLink href={customerHrefOf(salon.id, customerId)}>
-          お客様の台帳へ
-        </ButtonLink>
-      </p>
+      <ButtonLink href={customerHrefOf(salon.id, customerId)}>
+        お客様の台帳へ
+      </ButtonLink>
       {keeper ? (
         match(read.data === undefined ? undefined : listingOf(read.data.pages))
           .with(undefined, () => (

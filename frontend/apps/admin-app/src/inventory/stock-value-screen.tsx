@@ -47,9 +47,7 @@ const ValuePart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <ValueReport report={found} currency={salon.currency} />
         ))
         .exhaustive()}
-      <p>
-        <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
-      </p>
+      <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
     </>
   )
 }

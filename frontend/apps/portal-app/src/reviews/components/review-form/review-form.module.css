@@ -5,13 +5,6 @@
   gap: var(--space-fields);
 }
 
-/* What the form cannot ask, and who reads what it is sent with: said as the description of a control is */
-.note {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-  line-height: var(--line-height-tight);
-}
-
 @media (min-width: 40rem) {
   .details {
     grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));

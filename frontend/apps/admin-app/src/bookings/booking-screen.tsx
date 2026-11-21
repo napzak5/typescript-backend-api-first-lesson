@@ -432,11 +432,9 @@ const BookingOfSalon = ({ salon }: BookingOfSalonProps) => {
           <>
             <PageHeader title={TITLE} description={salon.name} />
             <BookingDetails salon={salon} booking={booking} />
-            <p>
-              <ButtonLink href={`${bookings}?date=${booking.bookingDate}`}>
-                この日の予約へ
-              </ButtonLink>
-            </p>
+            <ButtonLink href={`${bookings}?date=${booking.bookingDate}`}>
+              この日の予約へ
+            </ButtonLink>
           </>
         ),
       )
@@ -447,9 +445,7 @@ const BookingOfSalon = ({ salon }: BookingOfSalonProps) => {
             title='予約が見つかりません'
             description='アドレスが正しいか、お確かめください。削除された予約は、表示できません。'
           />
-          <p>
-            <ButtonLink href={bookings}>今日の予約へ</ButtonLink>
-          </p>
+          <ButtonLink href={bookings}>今日の予約へ</ButtonLink>
         </>
       ))
       .with({ type: 'forbidden' }, () => (

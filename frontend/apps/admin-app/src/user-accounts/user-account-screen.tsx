@@ -39,11 +39,7 @@ import {
 const TITLE = 'ログインアカウント'
 
 /** The way out of a screen that shows no account */
-const ToTheStart = () => (
-  <p>
-    <ButtonLink href='/'>トップへ戻る</ButtonLink>
-  </p>
-)
+const ToTheStart = () => <ButtonLink href='/'>トップへ戻る</ButtonLink>
 
 type AccountPartsProps = {
   user: ModelsUserResponse

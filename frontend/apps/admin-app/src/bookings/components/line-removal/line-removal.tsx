@@ -41,7 +41,7 @@ export const LineRemoval = ({
 }: LineRemovalProps) =>
   why === undefined ? (
     <div className={styles['removal']}>
-      <p className={styles['said']}>
+      <p>
         明細の担当や開始の時刻は、変えられません。新しい明細を足してから、この明細を外してください。
       </p>
       <Button variant='danger' onClick={onOpen}>
@@ -65,5 +65,5 @@ export const LineRemoval = ({
       </Dialog>
     </div>
   ) : (
-    <p className={styles['said']}>{why}</p>
+    <p>{why}</p>
   )

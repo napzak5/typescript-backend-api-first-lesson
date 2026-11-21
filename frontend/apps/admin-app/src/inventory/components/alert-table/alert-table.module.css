@@ -37,8 +37,7 @@
   gap: var(--space-2);
 }
 
-/* The notes keep the lines they were written in */
+/* The notes are said quietly, below who saw to the alert */
 .notes {
-  white-space: pre-wrap;
   color: var(--color-text-muted);
 }

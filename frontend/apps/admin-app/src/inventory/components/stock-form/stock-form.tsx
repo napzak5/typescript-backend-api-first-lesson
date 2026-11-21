@@ -85,7 +85,7 @@ export const StockForm = ({
         ) : (
           <dl className={styles['product']}>
             <dt className={styles['term']}>商品</dt>
-            <dd className={styles['named']}>
+            <dd>
               {product === undefined
                 ? REMOVED_PRODUCT
                 : `${product.name}（${product.productCode}）`}

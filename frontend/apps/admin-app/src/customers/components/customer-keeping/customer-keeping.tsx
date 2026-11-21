@@ -1,4 +1,5 @@
 import {
+  Actions,
   Alert,
   Button,
   ButtonLink,
@@ -64,13 +65,13 @@ export const CustomerKeeping = ({
           つにまとめ、来なくなったお客様を台帳から削除します。
         </p>
         {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
-        <div className={styles['actions']}>
+        <Actions>
           <ButtonLink href={historyHref}>変更履歴</ButtonLink>
           <ButtonLink href={mergeHref}>ほかのお客様とまとめる</ButtonLink>
           <Button variant='danger' onClick={onOpen}>
             台帳から削除する
           </Button>
-        </div>
+        </Actions>
         <Dialog
           open={open}
           onClose={onClose}

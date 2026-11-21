@@ -2,24 +2,20 @@
 .list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
-.count {
-  color: var(--color-text-muted);
+  gap: var(--space-content);
 }
 
 .reviews {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-parts);
 }
 
 /* A review: where it is of, whom it rates, what it says, and what can be done with it */
 .review {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
+  gap: var(--space-content);
   padding: var(--space-frame);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
@@ -28,17 +24,4 @@
 
 .salon {
   font-size: var(--font-size-large);
-}
-
-.staff {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-}
-
-/* The way to change the review, then the way to remove it, side by side */
-.actions {
-  display: grid;
-  grid-auto-flow: column;
-  justify-content: start;
-  gap: var(--space-3);
 }
