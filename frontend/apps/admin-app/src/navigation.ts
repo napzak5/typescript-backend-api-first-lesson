@@ -241,6 +241,30 @@ export const orderChangeHrefOf = (
   purchaseOrderId: string,
 ): string => `${purchaseOrderHrefOf(salonId, purchaseOrderId)}/edit`
 
+/** The screen that records the goods that came for a purchase order. */
+export const orderReceiptHrefOf = (
+  salonId: string,
+  purchaseOrderId: string,
+): string => `${purchaseOrderHrefOf(salonId, purchaseOrderId)}/receive`
+
+/** The products a salon had better order, by supplier. */
+export const reorderSuggestionsHrefOf = (salonId: string): string =>
+  `${purchaseOrdersHrefOf(salonId)}/suggestions`
+
+/**
+ * The parameter of the address of a new purchase order that starts it
+ * with the suggestions of a supplier: the name of the supplier, or
+ * nothing for the products that name none.
+ */
+export const SUGGESTED_PARAMETER = 'suggested'
+
+/** A new purchase order of a supplier, which starts with the quantities suggested for its products. */
+export const suggestedOrderHrefOf = (
+  salonId: string,
+  supplier: string | null,
+): string =>
+  `${purchaseOrderEntryHrefOf(salonId)}?${new URLSearchParams({ [SUGGESTED_PARAMETER]: supplier ?? '' })}`
+
 /** The movements of a stock row, the latest first. */
 export const stockMovementsHrefOf = (
   salonId: string,

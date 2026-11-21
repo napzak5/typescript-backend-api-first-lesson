@@ -1,10 +1,14 @@
-import type { ModelsPurchaseOrderResponse } from '@beauty-salon-frontend/api-client'
+import type {
+  ModelsPurchaseOrderResponse,
+  ModelsReorderSuggestionResponse,
+} from '@beauty-salon-frontend/api-client'
 import { salon, staff } from '../../bookings/components/examples'
 import {
   colourLot,
   glovesRow,
   shampooRow,
 } from '../../inventory/components/examples'
+import { colour, gloves, shampoo } from '../../products/components/examples'
 
 /*
  * The purchase orders of the stories, of the salon of the stories: a draft
@@ -132,9 +136,87 @@ export const cancelledOrder: ModelsPurchaseOrderResponse = anOrder({
   createdBy: staff[0]?.id ?? null,
 })
 
+/**
+ * The colour and the shampoo, shipped by the supplier, with the wax of a
+ * stock row removed since, and notes of the delivery.
+ */
+export const shippedOrder: ModelsPurchaseOrderResponse = anOrder({
+  ...pendingOrder,
+  id: 'd4e5f6a7-b8c9-4d0e-9f1a-3b4c5d6e7f83',
+  orderNumber: 'PO-4F6G-T2LX',
+  status: 'shipped',
+  items: [
+    ...pendingOrder.items,
+    {
+      inventoryId: null,
+      productCode: 'WAX001',
+      productName: 'スタイリングワックス 80g',
+      unit: '個',
+      quantity: 6,
+      unitPrice: 600,
+      totalPrice: 3600,
+      notes: null,
+    },
+  ],
+  subtotal: 16948,
+  taxAmount: 1694,
+  totalAmount: 18642,
+  approvedAt: '2026-11-20T02:00:00.000Z',
+  deliveryNotes: '午前中に、裏口へ',
+})
+
 /** The orders of the salon of the stories, the latest made first */
 export const ORDERS_OF_THE_SALON: ModelsPurchaseOrderResponse[] = [
   pendingOrder,
   orderedGloves,
   cancelledOrder,
+]
+
+/**
+ * The reorder suggestions of the salon of the stories, in the order of
+ * the codes of the products: the colour of its supplier, last ordered
+ * with the pending order; the shampoo of another, a part of it on order;
+ * and the gloves, which name no supplier, keep no maximum and were never
+ * ordered.
+ */
+export const SUGGESTIONS_OF_THE_SALON: ModelsReorderSuggestionResponse[] = [
+  {
+    productId: colour.id,
+    productCode: colour.productCode,
+    productName: colour.name,
+    unit: colour.unit,
+    supplier: 'カラーテック・ジャパン',
+    currentStock: 8,
+    onOrderQuantity: 0,
+    reorderPoint: 20,
+    maximumStock: 100,
+    suggestedQuantity: 92,
+    lastOrderDate: '2026-11-02T02:00:00.000Z',
+  },
+  {
+    productId: shampoo.id,
+    productCode: shampoo.productCode,
+    productName: shampoo.name,
+    unit: shampoo.unit,
+    supplier: '東京ビューティーサプライ',
+    currentStock: 4.5,
+    onOrderQuantity: 2.5,
+    reorderPoint: 10,
+    maximumStock: 50,
+    suggestedQuantity: 43,
+    lastOrderDate: '2026-11-20T01:00:00.000Z',
+  },
+  {
+    productId: gloves.id,
+    productCode: gloves.productCode,
+    productName: gloves.name,
+    unit: gloves.unit,
+    supplier: null,
+    currentStock: 0.5,
+    onOrderQuantity: 0,
+    reorderPoint: 2,
+    maximumStock: null,
+    suggestedQuantity: 1.5,
+    lastOrderDate: null,
+  },
 ]

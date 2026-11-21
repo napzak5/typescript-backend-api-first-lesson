@@ -47,6 +47,26 @@ describe('OrderForm', () => {
     expect(screen.getByText('小計 ￥0')).toBeVisible()
   })
 
+  it('should start with the supplier and the quantities suggested, and what they come to', async () => {
+    // Act
+    await stories.FromSuggestions.run()
+
+    // Assert: 30 × 800 + 12.5 × 1,500
+    expect(screen.getByRole('textbox', { name: '仕入先' })).toHaveValue(
+      'ビューティーサプライ東京',
+    )
+    expect(ofRow(COLOUR_LOT, '数量')).toHaveValue('30')
+    expect(ofRow(EXPIRED_COLOUR, '数量')).toHaveValue('')
+    expect(ofRow(SHAMPOO, '数量')).toHaveValue('12.5')
+    expect(ofRow(GLOVES, '数量')).toHaveValue('')
+    expect(screen.getByText('小計 ￥42,750')).toBeVisible()
+    expect(
+      screen.getByRole('textbox', { name: '税額（円）' }),
+    ).toHaveAccessibleDescription(
+      '仕入先の請求に合わせて入力します。小計の 10% は ￥4,275 です（円未満切り捨て）。',
+    )
+  })
+
   it('should work out what the items come to as they are entered, and the tax at the rate of the salon', async () => {
     // Arrange
     await stories.Rows.run()

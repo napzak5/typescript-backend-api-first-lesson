@@ -126,7 +126,13 @@ export const daysOf = async (orderNumber: string) =>
  */
 export const orderMovedTo = async (
   orderNumber: string,
-  status: 'draft' | 'approved' | 'delivered' | 'cancelled',
+  status:
+    | 'draft'
+    | 'approved'
+    | 'ordered'
+    | 'shipped'
+    | 'delivered'
+    | 'cancelled',
 ): Promise<void> => {
   await testApi().query(
     `update purchase_orders
@@ -177,3 +183,53 @@ export const storedOrderOf = async (orderNumber: string) =>
       [orderNumber],
     ),
   )[0]
+
+/** Lets an order hold notes of its delivery, as somebody wrote them on it earlier. */
+export const deliveryNotedOn = async (
+  orderNumber: string,
+  deliveryNotes: string,
+): Promise<void> => {
+  await testApi().query(
+    `update purchase_orders set "deliveryNotes" = $2, "updatedAt" = now()
+     where "orderNumber" = $1`,
+    [orderNumber, deliveryNotes],
+  )
+}
+
+/** Lets a product of a salon be ordered at another point, or from no supplier, as its ledger was changed earlier. */
+export const productOrderedAt = async (
+  salon: string,
+  productCode: string,
+  {
+    reorderPoint,
+    supplier,
+  }: { reorderPoint?: number; supplier?: string | null },
+): Promise<void> => {
+  await testApi().query(
+    `update products p
+     set "reorderPoint" = coalesce($3::numeric, p."reorderPoint"),
+         supplier = case when $4::boolean then $5 else p.supplier end,
+         "updatedAt" = now()
+     from salons s
+     where s.id = p."salonId" and s.name = $1 and p."productCode" = $2`,
+    [
+      salon,
+      productCode,
+      reorderPoint ?? null,
+      supplier !== undefined,
+      supplier ?? null,
+    ],
+  )
+}
+
+/** Lets a stock row hold as many as it is given, as movements recorded earlier left it. */
+export const stockOfRow = async (
+  inventoryId: string,
+  stock: number,
+): Promise<void> => {
+  await testApi().query(
+    `update inventory set "currentStock" = $2, "availableStock" = $2, "updatedAt" = now()
+     where id = $1`,
+    [inventoryId, stock],
+  )
+}

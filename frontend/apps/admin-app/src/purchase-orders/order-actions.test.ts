@@ -4,6 +4,7 @@ import { pendingOrder } from './components/examples'
 import {
   afterOrderStep,
   isClosedOrder,
+  isReceivableOrder,
   MOVED_TO,
   mayApproveOrders,
   type OrderAction,
@@ -78,6 +79,23 @@ describe('isClosedOrder', () => {
   ])('should tell whether a %s order is closed: %s', (status, closed) => {
     expect(isClosedOrder(status)).toBe(closed)
   })
+})
+
+describe('isReceivableOrder', () => {
+  it.each<[ModelsOrderStatusType, boolean]>([
+    ['draft', false],
+    ['pending', false],
+    ['approved', false],
+    ['ordered', true],
+    ['shipped', true],
+    ['delivered', false],
+    ['cancelled', false],
+  ])(
+    'should tell whether the goods of a %s order are received: %s',
+    (status, receivable) => {
+      expect(isReceivableOrder(status)).toBe(receivable)
+    },
+  )
 })
 
 describe('mayApproveOrders', () => {

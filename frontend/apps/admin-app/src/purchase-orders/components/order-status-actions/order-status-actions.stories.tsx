@@ -48,6 +48,25 @@ export const ApprovedForAStylist: Story = {
   },
 }
 
+/** An order placed with the supplier, seen by a manager: its goods are received on a screen of their own */
+export const Ordered: Story = {
+  args: {
+    order: { status: 'ordered', orderNumber: 'PO-2H8R-W4VN' },
+    actions: ['ship', 'cancel'],
+    receiveHref: '/salons/salon/purchase-orders/order/receive',
+  },
+}
+
+/** A shipped order, seen by a stylist: they record the goods that came */
+export const ShippedForAStylist: Story = {
+  args: {
+    order: { status: 'shipped', orderNumber: 'PO-2H8R-W4VN' },
+    actions: [],
+    note: '発注を取り消せるのは、サロンのオーナーとマネージャーと、管理者です。',
+    receiveHref: '/salons/salon/purchase-orders/order/receive',
+  },
+}
+
 /** The approval is on its way */
 export const Approving: Story = {
   args: { ...Pending.args, pending: 'approve' },

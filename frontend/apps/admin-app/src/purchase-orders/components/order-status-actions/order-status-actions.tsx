@@ -3,6 +3,7 @@ import {
   Alert,
   Badge,
   Button,
+  ButtonLink,
   Card,
   Dialog,
   TextArea,
@@ -21,6 +22,8 @@ export type OrderStatusActionsProps = {
   actions: readonly OrderAction[]
   /** Why an operation is not offered: the order does not change any more, or the account may not */
   note?: string | undefined
+  /** The screen that records the goods that came, for an order whose goods are received now */
+  receiveHref?: string | undefined
   /** The heading of the part: the focus goes there after an operation */
   headingRef?: Ref<HTMLHeadingElement> | undefined
   /** The operation that is on its way */
@@ -49,13 +52,15 @@ const LABELS: Record<OrderAction, string> = {
 
 /**
  * The status of a purchase order, and what can be done to it. Moving it
- * on is done at once; a cancellation cannot be undone, so a dialog asks
- * for its reason first.
+ * on is done at once; the goods that came are recorded on a screen of
+ * their own; a cancellation cannot be undone, so a dialog asks for its
+ * reason first.
  */
 export const OrderStatusActions = ({
   order,
   actions,
   note,
+  receiveHref,
   headingRef,
   pending,
   asking = false,
@@ -83,23 +88,30 @@ export const OrderStatusActions = ({
             {orderStatusNameOf(order.status)}
           </Badge>
         </p>
-        {actions.length > 0 && (
+        {(actions.length > 0 || receiveHref !== undefined) && (
           <div className={styles['buttons']}>
-            {actions.map((action) =>
-              action === 'cancel' ? (
-                <Button key={action} variant='danger' onClick={onAsk}>
-                  {LABELS[action]}
-                </Button>
-              ) : (
-                <Button
-                  key={action}
-                  variant='primary'
-                  pending={pending === action}
-                  onClick={() => onAct(action)}
-                >
-                  {LABELS[action]}
-                </Button>
-              ),
+            {actions.map(
+              (action) =>
+                action !== 'cancel' && (
+                  <Button
+                    key={action}
+                    variant='primary'
+                    pending={pending === action}
+                    onClick={() => onAct(action)}
+                  >
+                    {LABELS[action]}
+                  </Button>
+                ),
+            )}
+            {receiveHref !== undefined && (
+              <ButtonLink href={receiveHref} variant='primary'>
+                入荷を記録する
+              </ButtonLink>
+            )}
+            {actions.includes('cancel') && (
+              <Button variant='danger' onClick={onAsk}>
+                {LABELS.cancel}
+              </Button>
             )}
           </div>
         )}
