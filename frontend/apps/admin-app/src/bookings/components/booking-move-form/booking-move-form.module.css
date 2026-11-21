@@ -1,6 +1,10 @@
-/* A part of the form, under its name: further from the part before it than its controls are from each other */
-.part {
-  padding-block-start: var(--space-2);
+/*
+ * A part of the form, under its name: further from what stands before it
+ * than its controls are from each other. The name of a fieldset stands on
+ * its upper edge, so the room above it is outside the fieldset.
+ */
+.part:not(:first-child) {
+  margin-block-start: var(--space-3);
 }
 
 /*
@@ -18,14 +22,14 @@
 .controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-fields);
 }
 
 /* The day and the time: side by side where there is room */
 .pair {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-fields);
 }
 
 @media (min-width: 40rem) {

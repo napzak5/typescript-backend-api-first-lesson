@@ -2,9 +2,9 @@
 .receipt {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6);
+  gap: var(--space-parts);
   max-inline-size: 40rem;
-  padding: var(--space-6);
+  padding: var(--space-frame);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
   background-color: var(--color-surface);

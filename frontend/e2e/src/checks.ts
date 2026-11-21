@@ -32,11 +32,15 @@ export const findAccessibilityViolations = async (
  * neither scroll it nor cut it off (a line that does not wrap sticks out of
  * its card long before it makes the page wider), and `flex` is how many
  * elements are laid out with flex (the layout of this project is CSS Grid).
+ *
+ * The page is measured in its typefaces: until they have come, the text is
+ * drawn in those of the system, whose letters are of other widths.
  */
 const measureLayout = (
   page: Page,
 ): Promise<{ overflow: number; spilling: string[]; flex: number }> =>
-  page.evaluate(() => {
+  page.evaluate(async () => {
+    await document.fonts.ready
     const elements = [...document.querySelectorAll('body *')]
 
     return {
@@ -89,10 +93,12 @@ export type Edges = { left: number; top: number; right: number; bottom: number }
 
 /**
  * The edges of an element in the window: for what a stylesheet alone
- * decides, where things stand and how wide they are.
+ * decides, where things stand and how wide they are. Like the layout, they
+ * are measured once the typefaces of the page have come.
  */
 export const edgesOf = (element: Locator): Promise<Edges> =>
-  element.evaluate((shown) => {
+  element.evaluate(async (shown) => {
+    await document.fonts.ready
     const { left, top, right, bottom } = shown.getBoundingClientRect()
 
     return {

@@ -2,14 +2,14 @@
 .import {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-fields);
 }
 
 /* The control and what is wrong with the file, as narrow as any form */
 .form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-fields);
   max-inline-size: var(--size-form-column);
 }
 

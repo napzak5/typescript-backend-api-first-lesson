@@ -2,7 +2,7 @@
 .statistics {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-6);
+  gap: var(--space-parts);
 }
 
 /* The table, and what it is said to count below it */

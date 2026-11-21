@@ -2,14 +2,14 @@
 .form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
+  gap: var(--space-fields);
   max-inline-size: var(--size-form-column);
 }
 
 /*
  * The button that sends the form, then what else can be done. On a narrow
  * screen one below the other and as wide as the form: two buttons do not
- * always fit in a line, and a button does not break its text.
+ * always fit in a line.
  */
 .actions {
   display: grid;
