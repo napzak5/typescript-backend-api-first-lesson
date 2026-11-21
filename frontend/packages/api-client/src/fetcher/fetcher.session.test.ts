@@ -1,5 +1,5 @@
+import type { StoredSession } from '@beauty-salon-frontend/io'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { StoredSession } from '../session'
 
 const API_ORIGIN = 'http://localhost:3000'
 const RESOURCE = '/api/v1/customers/me'
@@ -113,10 +113,13 @@ const stubApi = ({
   return sent
 }
 
-/** A fresh copy of the package: no renewal under way, no listeners. */
-const loadIo = async () => {
+/** Fresh copies of the fetch function and of the stored session: no renewal under way, no listeners. */
+const loadFresh = async () => {
   vi.resetModules()
-  const { customInstance, sessionStore } = await import('..')
+  const [{ customInstance }, { sessionStore }] = await Promise.all([
+    import('./fetcher'),
+    import('@beauty-salon-frontend/io'),
+  ])
 
   return { call: customInstance<HttpResponse>, sessionStore }
 }
@@ -149,7 +152,7 @@ describe('customInstance with a session', () => {
     it('should send no Authorization header while nobody is signed in', async () => {
       // Arrange
       const sent = stubApi()
-      const { call } = await loadIo()
+      const { call } = await loadFresh()
 
       // Act
       const response = await call(RESOURCE, { method: 'GET' })
@@ -164,7 +167,7 @@ describe('customInstance with a session', () => {
     it('should send the request without a token in a browser that refuses access to its storage', async () => {
       // Arrange
       const sent = stubApi({ answer: () => json(200, PROFILE) })
-      const { call } = await loadIo()
+      const { call } = await loadFresh()
       vi.spyOn(globalThis, 'localStorage', 'get').mockImplementation(() => {
         throw new DOMException(
           'Access is denied for this document.',
@@ -185,7 +188,7 @@ describe('customInstance with a session', () => {
     it('should send the access token of the stored session as a bearer token', async () => {
       // Arrange
       const sent = stubApi()
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(SECOND)
 
       // Act
@@ -207,7 +210,7 @@ describe('customInstance with a session', () => {
       // Arrange
       const fetchMock = vi.fn<typeof fetch>(async () => json(200, PROFILE))
       vi.stubGlobal('fetch', fetchMock)
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(SECOND)
 
       // Act
@@ -231,7 +234,7 @@ describe('customInstance with a session', () => {
     it('should renew the session once, store it, and send the request again with the new token', async () => {
       // Arrange
       const sent = stubApi()
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -265,7 +268,7 @@ describe('customInstance with a session', () => {
     it('should send the body of the request again as it was', async () => {
       // Arrange
       const sent = stubApi()
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -300,7 +303,7 @@ describe('customInstance with a session', () => {
           return issued(SECOND)
         },
       })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -334,7 +337,7 @@ describe('customInstance with a session', () => {
         renew: (refreshToken) =>
           issued(refreshToken === 'refresh-1' ? SECOND : third),
       })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -354,7 +357,7 @@ describe('customInstance with a session', () => {
     it('should send the request again once only, and return the second answer whatever it is', async () => {
       // Arrange
       const sent = stubApi({ answer: () => problem(401, '1003') })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -376,7 +379,7 @@ describe('customInstance with a session', () => {
           return answerOfTheApi(authorization)
         },
       })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -399,7 +402,7 @@ describe('customInstance with a session', () => {
           return answerOfTheApi(authorization)
         },
       })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -416,7 +419,7 @@ describe('customInstance with a session', () => {
     it('should remove the session, tell the listeners, and return the 401 of the request', async () => {
       // Arrange
       const sent = stubApi({ renew: () => problem(401, '1004') })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
       const listener = vi.fn()
       sessionStore.subscribe(listener)
@@ -439,7 +442,7 @@ describe('customInstance with a session', () => {
           return problem(401, '1004')
         },
       })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -492,7 +495,7 @@ describe('customInstance with a session', () => {
       async (_case, renew) => {
         // Arrange
         const sent = stubApi({ renew })
-        const { call, sessionStore } = await loadIo()
+        const { call, sessionStore } = await loadFresh()
         sessionStore.write(FIRST)
 
         // Act
@@ -512,7 +515,7 @@ describe('customInstance with a session', () => {
         .mockReturnValueOnce(problem(500, '5001'))
         .mockReturnValue(issued(SECOND))
       stubApi({ renew })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -530,7 +533,7 @@ describe('customInstance with a session', () => {
     it('should remove the session without trying to renew it', async () => {
       // Arrange
       const sent = stubApi({ answer: () => problem(401, '1004') })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
       const listener = vi.fn()
       sessionStore.subscribe(listener)
@@ -557,7 +560,7 @@ describe('customInstance with a session', () => {
           return json(200, PROFILE)
         },
       })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -583,7 +586,7 @@ describe('customInstance with a session', () => {
       async (code) => {
         // Arrange
         const sent = stubApi({ answer: () => problem(401, code) })
-        const { call, sessionStore } = await loadIo()
+        const { call, sessionStore } = await loadFresh()
         sessionStore.write(SECOND)
 
         // Act
@@ -604,7 +607,7 @@ describe('customInstance with a session', () => {
       const sent = stubApi({
         answer: () => new Response('Unauthorized', { status: 401 }),
       })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(SECOND)
 
       // Act
@@ -619,7 +622,7 @@ describe('customInstance with a session', () => {
     it('should not try to renew for somebody who is not signed in', async () => {
       // Arrange
       const sent = stubApi({ answer: () => problem(401, '1003') })
-      const { call } = await loadIo()
+      const { call } = await loadFresh()
 
       // Act
       const response = await call(RESOURCE, { method: 'GET' })
@@ -658,7 +661,7 @@ describe('customInstance with a session', () => {
         order.push('lock released')
         return result
       })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act
@@ -683,7 +686,7 @@ describe('customInstance with a session', () => {
         storeInAnotherTab(SECOND)
         return task()
       })
-      const { call, sessionStore } = await loadIo()
+      const { call, sessionStore } = await loadFresh()
       sessionStore.write(FIRST)
 
       // Act

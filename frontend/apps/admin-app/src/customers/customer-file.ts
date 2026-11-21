@@ -1,6 +1,8 @@
-import type {
-  ModelsCustomerCreateRequest,
-  ModelsCustomerResponse,
+import {
+  type ModelsCustomerBasicPreferences,
+  type ModelsCustomerCreateRequest,
+  type ModelsCustomerResponse,
+  ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
 import type { RefusedValue } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
@@ -350,12 +352,16 @@ const NOT_JSON = Symbol('not JSON')
 const jsonOf = (text: string): Promise<unknown> =>
   new Response(text).json().catch(() => NOT_JSON)
 
+/** A cell of the preferences: the JSON the ledger exports them as */
 const preferencesSchema = z.object({
-  preferredServices: z.array(z.string()),
+  preferredServices: z.array(z.enum(ModelsServiceCategoryType)),
   notes: z.nullable(z.string()),
-})
+}) satisfies z.ZodMiniType<ModelsCustomerBasicPreferences>
 
-const tagsSchema = z.array(z.string())
+/** A cell of the tags, where it is the JSON the ledger exports them as */
+const tagsSchema = z.array(z.string()) satisfies z.ZodMiniType<
+  ModelsCustomerCreateRequest['tags']
+>
 
 const PREFERENCES_MALFORMED = `好みは、台帳の出力と同じ JSON（{"preferredServices":["cut"],"notes":null}）で書くか、空にしてください。preferredServices は、${oneOf(CATEGORIES)}です。`
 
@@ -465,10 +471,7 @@ const valuesOf = async (
         text === ''
           ? undefined
           : preferencesSchema.safeParse(await jsonOf(text))
-      const unknown = preferences?.data?.preferredServices.some(
-        (service) => !CATEGORIES.some((category) => category === service),
-      )
-      if (preferences?.success === false || unknown === true) {
+      if (preferences?.success === false) {
         problems.push({
           row,
           column: labelOf(column),

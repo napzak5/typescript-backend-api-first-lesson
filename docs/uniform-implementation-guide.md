@@ -181,22 +181,25 @@ A query string carries text only, so a list request is read in two steps.
 
    ```typescript
    // backend/packages/api/src/routes/salon/_shared/query.ts
-   const salonSearchQuerySchema = z.looseObject({
-     limit: numberParameter.exactOptional(),
-     minRating: numberParameter.exactOptional(),
-     isActive: booleanParameter.exactOptional(),
-     features: listParameter.exactOptional(),
-   })
-
-   export const decodeSalonSearchQuery = (
-     query: unknown,
-   ): Result<unknown, DomainError> =>
-     parseWith(salonSearchQuerySchema, query, 'Invalid salon search')
+   export const decodeSalonSearchQuery = queryDecoder(
+     z.looseObject({
+       limit: numberParameter.exactOptional(),
+       minRating: numberParameter.exactOptional(),
+       isActive: booleanParameter.exactOptional(),
+       features: listParameter.exactOptional(),
+     }) satisfies z.ZodType<
+       Pick<ApiSalonSearchRequest, 'limit' | 'minRating' | 'isActive' | 'features'>
+     >,
+     'Invalid salon search',
+   )
    ```
 
-   `numberParameter`, `booleanParameter` and `listParameter` are defined
-   once, in `backend/packages/api/src/shared/query-parameters.ts`; the
-   decoding schema of every list is built from them.
+   `numberParameter`, `booleanParameter`, `listParameter` and
+   `queryDecoder` are defined once, in
+   `backend/packages/api/src/shared/query-parameters.ts`; the decoder of
+   every list is built from them. The schema satisfies the search request
+   for the parameters it decodes, so a parameter that the contract renames,
+   drops or retypes breaks the build.
 
 2. The use case validates the result with `salonSearchRequestSchema`
    (`backend/packages/domain/src/schemas/salon.schema.ts`), which holds the

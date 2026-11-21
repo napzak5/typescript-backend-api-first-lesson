@@ -24,14 +24,16 @@ import { toApiPayment } from './payment.mapper'
 
 const convertedDetailColumnsSchema = z.object({
   commissionRate: numericSchema.nullable(),
-})
+}) satisfies z.ZodType<Pick<ApiSalesDetail, 'commissionRate'>>
 
 const convertedSaleColumnsSchema = z.object({
   saleTime: timestampSchema,
   voidedAt: timestampSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiSaleResponse, 'saleTime' | 'voidedAt' | 'createdAt' | 'updatedAt'>
+>
 
 const toApiSalesDetail = (
   detail: DbSalesDetail,

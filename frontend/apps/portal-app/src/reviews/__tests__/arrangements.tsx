@@ -2,6 +2,7 @@ import type {
   ModelsReviewCreateRequest,
   ModelsReviewReportRequest,
   ModelsReviewUpdateRequest,
+  ReviewCrudCreate201,
 } from '@beauty-salon-frontend/api-client'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -316,7 +317,10 @@ const send = async (
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   })
 
-const writtenSchema = z.object({ data: z.object({ id: z.uuid() }) })
+/** What a test reads of a review it wrote: its ID */
+const writtenSchema = z.object({
+  data: z.object({ id: z.uuid() }),
+}) satisfies z.ZodType<{ data: Pick<ReviewCrudCreate201['data'], 'id'> }>
 
 /** What a customer wrote about a visit somewhere else: in another tab, or a while ago. */
 export const writes = async (

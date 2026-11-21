@@ -1,28 +1,22 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type {
+  ApiPointExpiringSearchRequest,
+  ApiPointTransactionSearchRequest,
+} from '@beauty-salon-backend/domain'
 import { z } from 'zod'
-import { numberParameter } from '../../../shared/query-parameters'
+import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
 /** The parameter of the history of points that is not text, as its type. */
-const pointTransactionSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
-
-export const decodePointTransactionSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(
-    pointTransactionSearchQuerySchema,
-    query,
-    'Invalid point transaction search',
-  )
+export const decodePointTransactionSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiPointTransactionSearchRequest, 'limit'>>,
+  'Invalid point transaction search',
+)
 
 /** The parameter of the expiring points, as its type. */
-const expiringPointsQuerySchema = z.looseObject({
-  days: numberParameter.exactOptional(),
-})
-
-export const decodeExpiringPointsQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(expiringPointsQuerySchema, query, 'Invalid expiring points search')
+export const decodeExpiringPointsQuery = queryDecoder(
+  z.looseObject({
+    days: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiPointExpiringSearchRequest, 'days'>>,
+  'Invalid expiring points search',
+)

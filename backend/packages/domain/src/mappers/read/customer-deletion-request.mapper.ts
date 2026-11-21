@@ -17,7 +17,12 @@ const convertedColumnsSchema = z.object({
   scheduledAt: timestampSchema,
   cancelledAt: timestampSchema.nullable(),
   completedAt: timestampSchema.nullable(),
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiCustomerDeletionRequestResponse,
+    'requestedAt' | 'scheduledAt' | 'cancelledAt' | 'completedAt'
+  >
+>
 
 const toApiCustomerDeletionRequest = (
   request: DbCustomerDeletionRequest,

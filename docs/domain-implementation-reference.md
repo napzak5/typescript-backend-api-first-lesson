@@ -392,7 +392,18 @@ const convertedColumnsSchema = z.object({
   businessHours: businessHoursSchema,
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiSalonResponse,
+    | 'latitude'
+    | 'longitude'
+    | 'rating'
+    | 'taxRate'
+    | 'businessHours'
+    | 'createdAt'
+    | 'updatedAt'
+  >
+>
 
 // ...
 
@@ -1441,7 +1452,7 @@ Domain package (`backend/packages/domain/src/`):
 
 - [ ] `models/<domain>.ts`: branded ID with its parser, API types, database types
 - [ ] `schemas/<domain>.schema.ts`: one strict schema per request, each with `satisfies z.ZodType<...>`; the rules that more than one domain needs (`nonBlankText`, `lowerCaseEmail`, `phoneNumber`, `timeSlot`, `timeZoneName`, `MAX_INTEGER`, `noRepeatedEntries`, `atLeastOneProperty`, and `calendarDate`, `momentOfRequest` and `momentInUtc` for every date and moment) come from `schemas/rules.ts`
-- [ ] `mappers/read/<domain>.mapper.ts`, and `mappers/write/<domain>.mapper.ts` when a column needs converting on the way in or a request holds the rows of more than one table; when neither is the case the request is the row, and a write mapper only states that (`mappers/write/customer.mapper.ts`; the service categories have none): no renaming; the read mapper returns a `Result`
+- [ ] `mappers/read/<domain>.mapper.ts` (the schema of the columns it converts satisfies the API model for those columns: `Pick<ApiXResponse, …>`), and `mappers/write/<domain>.mapper.ts` when a column needs converting on the way in or a request holds the rows of more than one table; when neither is the case the request is the row, and a write mapper only states that (`mappers/write/customer.mapper.ts`; the service categories have none): no renaming; the read mapper returns a `Result`
 - [ ] `repositories/<domain>.repository.ts`: the interface
 - [ ] `business-logic/<domain>/`: `_shared/dependencies.ts`, one `<action>-<domain>.usecase.ts` per operation with `execute` taking `unknown`, and `index.ts`
 - [ ] `business-logic/<domain>/_shared/authorization.ts`: one pure function per permission rule; the use case of every operation that is not public takes `actor: Actor` first and returns `DomainErrors.forbidden()` when the rule refuses

@@ -22,7 +22,17 @@ const convertedColumnsSchema = z.object({
   lastCountedAt: timestampSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiInventoryResponse,
+    | 'currentStock'
+    | 'availableStock'
+    | 'reservedStock'
+    | 'lastCountedAt'
+    | 'createdAt'
+    | 'updatedAt'
+  >
+>
 
 const toApiInventory = (
   row: DbInventory,

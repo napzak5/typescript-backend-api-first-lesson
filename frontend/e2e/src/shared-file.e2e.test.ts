@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import type { ShareLinkCrudCreate201 } from '@beauty-salon-frontend/api-client'
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { PORTAL } from './applications'
@@ -23,12 +24,17 @@ const PHOTO = '施術後のスタイル_正面から見たところ.png'
 /** The password of the link of the consent: the owner tells it apart from the link */
 const PASSWORD = 'umi no mieru heya'
 
+type Shared = ShareLinkCrudCreate201['data']
+
+/** What a test reads of a link it made: the link and its token */
 const sharedSchema = z.object({
   data: z.object({
     shareLink: z.object({ id: z.string() }),
     token: z.string(),
   }),
-})
+}) satisfies z.ZodType<{
+  data: Pick<Shared, 'token'> & { shareLink: Pick<Shared['shareLink'], 'id'> }
+}>
 
 /**
  * A file the owner of the salon in Tokyo uploads and shares for a day, as

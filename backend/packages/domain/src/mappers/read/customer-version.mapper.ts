@@ -22,7 +22,9 @@ const convertedColumnsSchema = z.object({
   gender: CustomerGenderTypeSchema.nullable(),
   preferences: storedCustomerPreferencesSchema.nullable(),
   changedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiCustomerVersionResponse, 'gender' | 'preferences' | 'changedAt'>
+>
 
 const toApiCustomerVersion = (
   version: DbCustomerVersion,

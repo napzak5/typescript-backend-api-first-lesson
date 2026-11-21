@@ -15,6 +15,7 @@ export type ApiCustomerPreferencesResponse =
 export type ApiCustomerPreferencesUpdateRequest =
   components['schemas']['Models.CustomerPreferencesUpdateRequest']
 export type ApiStylePreference = components['schemas']['Models.StylePreference']
+export type ApiTimeSlot = components['schemas']['Models.TimeSlot']
 
 // Database types, inferred from the Drizzle schema
 type DbCustomerPreferencesRow = DeepRequired<

@@ -20,7 +20,12 @@ const convertedColumnsSchema = z.object({
   reorderPoint: numericSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiProductResponse,
+    'minimumStock' | 'maximumStock' | 'reorderPoint' | 'createdAt' | 'updatedAt'
+  >
+>
 
 const toApiProduct = (
   product: DbProduct,

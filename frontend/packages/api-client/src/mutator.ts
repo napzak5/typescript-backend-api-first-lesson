@@ -1,1 +1,1 @@
-export { customInstance } from '@beauty-salon-frontend/io'
+export { customInstance } from './fetcher/fetcher'

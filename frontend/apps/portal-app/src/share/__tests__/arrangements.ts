@@ -1,3 +1,7 @@
+import type {
+  AttachmentCrudGetUploadUrl201,
+  ShareLinkCrudCreate201,
+} from '@beauty-salon-frontend/api-client'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { expect } from 'vitest'
 import * as z from 'zod'
@@ -50,13 +54,20 @@ const asOwner = async (
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   })
 
+type Issued = AttachmentCrudGetUploadUrl201['data']
+
+/** What a test reads of the URL it is given for an upload: where to send what, and the file */
 const issuedSchema = z.object({
   data: z.object({
     attachment: z.object({ id: z.uuid() }),
     uploadUrl: z.string(),
     uploadHeaders: z.record(z.string(), z.string()),
   }),
-})
+}) satisfies z.ZodType<{
+  data: Pick<Issued, 'uploadUrl' | 'uploadHeaders'> & {
+    attachment: Pick<Issued['attachment'], 'id'>
+  }
+}>
 
 /**
  * A file of the salon in Tokyo that its owner uploaded, as the screen of
@@ -112,12 +123,17 @@ export const fileNotStored = async (filename: string): Promise<string> =>
     ),
   )[0].id
 
+type Shared = ShareLinkCrudCreate201['data']
+
+/** What a test reads of a link it made: the link and its token */
 const sharedSchema = z.object({
   data: z.object({
     shareLink: z.object({ id: z.uuid() }),
     token: z.string(),
   }),
-})
+}) satisfies z.ZodType<{
+  data: Pick<Shared, 'token'> & { shareLink: Pick<Shared['shareLink'], 'id'> }
+}>
 
 /** Shares a file as the owner does, for a day: the ID of the link, and its token. */
 export const share = async (

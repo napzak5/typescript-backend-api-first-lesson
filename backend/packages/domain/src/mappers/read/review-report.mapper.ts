@@ -17,7 +17,9 @@ const convertedColumnsSchema = z.object({
   resolvedAt: timestampSchema.nullable(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<ApiReviewReportResponse, 'resolvedAt' | 'createdAt' | 'updatedAt'>
+>
 
 const toApiReviewReport = (
   report: DbReviewReport,

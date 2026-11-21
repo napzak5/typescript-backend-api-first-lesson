@@ -20,7 +20,12 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 const convertedColumnsSchema = z.object({
   preferredTimeSlots: storedTimeSlotsSchema,
   stylePreferences: storedStylePreferenceSchema.nullable(),
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiCustomerPreferencesResponse,
+    'preferredTimeSlots' | 'stylePreferences'
+  >
+>
 
 export const CustomerPreferencesReadMapper = {
   toApiPreferences(

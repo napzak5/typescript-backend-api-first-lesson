@@ -1,3 +1,4 @@
+import type { AttachmentCrudGetUploadUrl201 } from '@beauty-salon-frontend/api-client'
 import type { APIRequestContext } from '@playwright/test'
 import * as z from 'zod'
 import { salonId } from './bookings'
@@ -30,13 +31,20 @@ export const asTheOwner = async (
   Authorization: `Bearer ${await accessTokenOf(request, api, OWNER)}`,
 })
 
+type Issued = AttachmentCrudGetUploadUrl201['data']
+
+/** What a test reads of the URL it is given for an upload: where to send what, and the file */
 const issuedSchema = z.object({
   data: z.object({
     attachment: z.object({ id: z.string() }),
     uploadUrl: z.string(),
     uploadHeaders: z.record(z.string(), z.string()),
   }),
-})
+}) satisfies z.ZodType<{
+  data: Pick<Issued, 'uploadUrl' | 'uploadHeaders'> & {
+    attachment: Pick<Issued['attachment'], 'id'>
+  }
+}>
 
 /**
  * A file of the salon in Tokyo that its owner uploads: the URL is asked

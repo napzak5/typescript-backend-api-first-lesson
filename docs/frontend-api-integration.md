@@ -9,8 +9,8 @@
 あるもの:
 
 - OpenAPI ドキュメントから Orval が生成した API クライアント（`@beauty-salon-frontend/api-client`）。型、fetch 関数、TanStack Query のフックを含む
-- そのクライアントが HTTP 呼び出しに使う fetch ラッパー（`@beauty-salon-frontend/io` の `customInstance`）。生成コードが期待するとおりに動くことを、テストと実際のサーバーへの呼び出しで確認している
-- セッション: ブラウザーに保存したトークンをリクエストに付け、期限が切れたら再発行して送り直す仕組み（`io`）と、サインインしているのがだれかを返すフック、サインインとサインアウト、サインインの画面、サインインが要る画面の出し分け、ヘッダーのアカウント欄（`@beauty-salon-frontend/session`）。[セッション](#セッション)を参照
+- そのクライアントが HTTP 呼び出しに使う fetch ラッパー（`api-client` の `customInstance`）。生成コードが期待するとおりに動くことを、テストと実際のサーバーへの呼び出しで確認している
+- セッション: ブラウザーに保存したトークンをリクエストに付け、期限が切れたら再発行して送り直す仕組み（保存は `io`、再発行と送り直しは `api-client`）と、サインインしているのがだれかを返すフック、サインインとサインアウト、サインインの画面、サインインが要る画面の出し分け、ヘッダーのアカウント欄（`@beauty-salon-frontend/session`）。[セッション](#セッション)を参照
 - 各アプリの TanStack Query の初期設定（`QueryClientProvider`）
 - UI の土台: デザイントークン（`@beauty-salon-frontend/theme`）、CSS Modules で書いた共有コンポーネントとそのカタログ（`@beauty-salon-frontend/ui`、Storybook）、テストが共有する道具（`@beauty-salon-frontend/testing`）。[UI とテストの規則](#ui-とテストの規則)を参照
 - アカウントの画面（portal-app の `src/account/`）: 登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ。[アカウントの画面](#アカウントの画面)を参照
@@ -68,10 +68,10 @@
 
 | パッケージ | 役割 | 使っているもの |
 |------------|------|----------------|
-| `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート | `session`、portal-app、admin-app |
-| `io` | fetch ラッパー `customInstance`、ブラウザーに保存するセッション `sessionStore`、API が返したファイルの名前を読む `fileNameOf` と、画面が持つファイルをブラウザーに保存させる `saveFile` | `api-client`、`session`、admin-app |
+| `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート。生成コードが呼ぶ fetch ラッパー `customInstance` と、期限の切れたセッションの再発行（`src/fetcher/`）。API の応答を読むのは、ここだけで、生成された型で確かめる | `session`、portal-app、admin-app |
+| `io` | ブラウザーに保存するセッション `sessionStore`、API が返したファイルの名前を読む `fileNameOf` と、画面が持つファイルをブラウザーに保存させる `saveFile`。API を知らない | `api-client`、`session`、admin-app、dashboard-app |
 | `session` | アプリのセッション: 状態を返すフック `useSession`、`signIn`、`signOut`、ユーザーが替わったときに取得済みのデータを消す `keepQueriesOfOneUser`、サインインが要る画面を囲む `RequireSession`（サインインの画面を含む）、ヘッダーのアカウント欄 `SessionAccount`、アカウントの安全の画面（`AccountSecurityScreen`、`PasswordChangeScreen`、`TwoFactorSetupScreen`）と、選ぶパスワードの規則（`PASSWORD_RULE` など）、サインインしている人の所属するサロン（`useOwnSalon`）と、どのサロンにも属していないアカウントへの知らせ（`NoSalonNotice`） | 3つのアプリ（`src/main.tsx`、`src/App.tsx`、portal-app の `src/account/` と `src/security/`） |
-| `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
+| `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `api-client`、`ui`（型のみ） |
 | `theme` | デザイントークン（`src/tokens.css`）、フォント（Inter と Noto Sans JP、`src/styles.css` が読み込む）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
 | `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、読めなかったことの知らせの `UnreadNotice`、QR コードの `QrCode`、評価の星の `Rating`、言葉の一覧の `TagList`、リンクの `LinkProvider`・`Link`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` と、アプリのストーリーも表示する） | 3つのアプリ、`session` |
 | `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）と、画面が保存したファイル（`savedFiles`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`io`、`session`、3つのアプリのテスト、`frontend/e2e` |
@@ -119,7 +119,7 @@ frontend/packages/api-client/src/generated/
 | `output.clean` | `true` | 生成前に出力先を消す |
 | `output.override.mutator` | `./src/mutator.ts` の `customInstance` | HTTP 呼び出しをこの関数に任せる |
 
-`frontend/packages/api-client/src/mutator.ts` は `@beauty-salon-frontend/io` の `customInstance` を再エクスポートしているだけです。
+`frontend/packages/api-client/src/mutator.ts` は、同じパッケージの `src/fetcher/fetcher.ts` の `customInstance` を再エクスポートしているだけです。
 
 ### 生成されるもの（Salon の例）
 
@@ -163,10 +163,10 @@ export type salonCrudListResponse400 = {
 
 ## fetch ラッパー（`customInstance`）
 
-実装は `frontend/packages/io/src/libs/fetcher/fetcher.ts` です。生成コードは、すべてのリクエストでこの関数を呼びます。
+実装は `frontend/packages/api-client/src/fetcher/fetcher.ts` です。生成コードは、すべてのリクエストでこの関数を呼びます。API の応答の形を知っているコードなので、生成された型と同じパッケージに置いています。
 
 ```typescript
-// frontend/packages/io/src/libs/fetcher/fetcher.ts
+// frontend/packages/api-client/src/fetcher/fetcher.ts
 export function customInstance<T>(url: string, options: RequestInit): Promise<T>
 ```
 
@@ -204,7 +204,7 @@ export function customInstance<T>(url: string, options: RequestInit): Promise<T>
 
 `localStorage` に置く理由: API は、トークンを本文で受け渡しします（Cookie は使いません）。ページを読み込み直してもサインインが続くには、リフレッシュトークンを、スクリプトから読める場所に置く必要があります。そこに置く以上、アクセストークンをメモリだけに置いても、守れるものは増えません。備えは、トークンの側にあります。アクセストークンは 15 分で切れ、リフレッシュトークンは 1 回しか使えず、セッションは一覧から無効にできます。`rememberMe` で保存先を変えることはしません。セッションの長さは、サーバーが決めます。
 
-### 401 の扱い（`io` の `customInstance`）
+### 401 の扱い（`api-client` の `customInstance`）
 
 | API の応答 | すること |
 |---|---|
@@ -212,15 +212,15 @@ export function customInstance<T>(url: string, options: RequestInit): Promise<T>
 | 401、コード `1004`（トークンに対応するセッションがない） | 保存されているトークンが、送ったものと同じなら、セッションを消す（サインアウトの状態になる）。違っていれば、送ったあとに再発行で替わったトークンなので、新しいトークンで 1 回だけ送り直す |
 | そのほかの 401（ヘッダーなしの `1001`、サインインの失敗の `1002`、2 要素認証のコードの要求の `1007` など） | そのまま返す |
 
-再発行（`frontend/packages/io/src/libs/session/renew-session.ts`）:
+再発行（`frontend/packages/api-client/src/fetcher/renew-session.ts`）:
 
 - **同時に 1 つだけ行う。** API は、リフレッシュトークンを 1 回しか受け付けず、再発行すると、それまでのトークンは使えなくなるため。同じページの中では、期限切れを受け取ったリクエストが、1 つの再発行を共有する。タブの間では、Web Locks API（`navigator.locks`）で順番に行う
 - 再発行の前に、保存されているセッションを読み直す。ほかのリクエストやタブがすでに替えていれば、通信せずにそれを使う
 - API が断ったら（401）、セッションを消す。呼び出し側には、元の 401 が返る。ただし、その時点で、保存されているセッションが別のものに替わっていれば（Web Locks のないブラウザーで、ほかのタブが先に再発行した）、消さずに、それで送り直す
 - 通信の失敗、401 以外のステータス、読めない応答では、セッションを消さない。呼び出し側には、元の 401 が返る。次のリクエストが、もう一度再発行を試みる
 - 期限の前に、先回りして再発行することはしない。期限切れの 401 を受けてから行う
-- 再発行のリクエストは、`customInstance` が自分で送る（生成クライアントが `customInstance` を呼ぶので、その逆はできない）。再発行のパスと、2 つのエラーコードは `io` が持ち、`api-client` の `src/session.test.ts` が、生成されたものと同じであることを確かめる
-- 応答から読むのは、エラーコードと、再発行の応答の 2 つのトークンとユーザーの ID だけ。形は `zod/mini` で確かめる（`zod` の全体は、アプリのバンドルに入れない）
+- 再発行のリクエストは、`customInstance` が自分で送る（生成クライアントが `customInstance` を呼ぶので、その逆はできない）。2 つのエラーコードは、生成された `ModelsErrorCodeType` の値を使う。再発行のパスは定数で持ち、`src/fetcher/renew-session.test.ts` が、生成された URL（`getAuthCrudRefreshTokenUrl()`）と同じであることを確かめる（生成された関数を呼ぶと、モジュールが循環する）
+- 応答から読むのは、エラーコードと、再発行の応答の 2 つのトークンとユーザーの ID だけ。形は `zod/mini` で確かめる（`zod` の全体は、アプリのバンドルに入れない）。スキーマは、生成された型の、読むところだけを満たす（`satisfies z.ZodMiniType<Pick<ModelsProblemDetails, 'code'>>` など）。契約が変わると、ビルドが失敗する
 
 ### アプリのセッション（`@beauty-salon-frontend/session`）
 
@@ -1296,8 +1296,9 @@ const found = useInfiniteQuery({
 - 各アプリの `src/App.test.tsx`: `MemoryRouter` で枠を描画し、サインインしていない人に見えるもの（admin-app と dashboard-app ではサインインの画面、portal-app では、存在しないパスのページと `/sign-in`。トップページは API を読むので、結合テストにある）、共有コンポーネントのリンクがページを読み込み直さずに移動すること、アクセシビリティを検証する。API は呼ばない
 - `theme` の `src/style-rules.test.ts`: すべてのパッケージとアプリのスタイルシートとコンポーネントが、スタイルの規則を守っていることを検証する。`src/tokens.test.ts`: 文字と背景、コントロールの縁に使う色のトークンの組が、必要なコントラスト比を満たすことを検証する。`src/typefaces.test.ts`: テーマが依存するフォントのパッケージ、`src/styles.css` の読み込み、`--font-family` の名前が合っていることを検証する（名前を書き間違えても、エラーにはならず、OS のフォントで表示される）
 - `config` と `testing` の各パッケージ: モジュールの隣に `*.test.ts`
-- `io` の `src/libs/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）。`fetcher.session.test.ts`: セッションがあるときの動作（トークンを付けること、期限切れのあとの再発行と送り直しが 1 回ずつであること、同時のリクエストで再発行が 1 回であること、ほかのタブが先に替えたセッションを通信せずに使うこと、断られた再発行と失敗した再発行の違い）。`src/libs/session/stored-session.test.ts`: 保存、購読、ほかのタブからの変更
-- `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）。`src/session.test.ts`: `io` が持つ再発行のパスとエラーコードが、生成されたものと同じであること
+- `api-client` の `src/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）。`fetcher.session.test.ts`: セッションがあるときの動作（トークンを付けること、期限切れのあとの再発行と送り直しが 1 回ずつであること、同時のリクエストで再発行が 1 回であること、ほかのタブが先に替えたセッションを通信せずに使うこと、断られた再発行と失敗した再発行の違い）。`src/fetcher/renew-session.test.ts`: 再発行のパスが、生成されたものと同じであること
+- `io` の `src/libs/session/stored-session.test.ts`: 保存、購読、ほかのタブからの変更。`src/libs/file/save-file.test.ts`: ファイルの名前と保存
+- `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）
 - `session` の `src/session.test.tsx`: `useSession` を `renderHook` で描画し、`signIn`、`signOut`、`keepQueriesOfOneUser` と一緒に、実際の生成クライアントと `customInstance` を通して、スタブにした `fetch` に対して検証する。`src/components/` の部品（`SignInForm`、`SessionGate`、`AccountMenu`）は、`ui` と同じく、ストーリーから検証する。`sign-in-screen/sign-in-flow.test.ts`: フォームの値の確かめと、API の応答ごとのフォームの状態
 - `session` の `src/security/`: 純粋な関数のテスト（`password-rule.test.ts`: 選ぶパスワードの規則。`security-flow.test.ts`: 変更のフォームの値の確かめ、API の応答ごとの表示、一覧のページの組み立て、サインアウトさせた端末を除くこと。`security-format.test.ts`: 日時と端末の言葉）、`security-api.test.ts`（実際の API では起こせない応答、送るパラメーター、続きの起点が断られたとき、すべての端末でのサインアウトでブラウザーのセッションを消すこと）。`components/` の部品は、ストーリーから検証する
 - portal-app の `src/account/`: `account-flow.test.ts`（フォームの値の確かめと、API が断った値ごとの表示）、`mailed-token.test.tsx`（フラグメントのトークンと、同じタブで開いた後のリンクのトークン）、`account-api.test.ts`（実際の API では起こせない応答（429、500、応答なし）と、どのオペレーションも応答を同じように読むことを、スタブにした `fetch` に対して検証する）

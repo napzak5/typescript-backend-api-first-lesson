@@ -1,22 +1,18 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type { ApiPaymentMethodSearchRequest } from '@beauty-salon-backend/domain'
 import { z } from 'zod'
 import {
   booleanParameter,
   numberParameter,
+  queryDecoder,
 } from '../../../shared/query-parameters'
 
 /** The parameters of the payment method list that are not text, as their types. */
-const paymentMethodSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-  isActive: booleanParameter.exactOptional(),
-})
-
-export const decodePaymentMethodSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(
-    paymentMethodSearchQuerySchema,
-    query,
-    'Invalid payment method search',
-  )
+export const decodePaymentMethodSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+    isActive: booleanParameter.exactOptional(),
+  }) satisfies z.ZodType<
+    Pick<ApiPaymentMethodSearchRequest, 'limit' | 'isActive'>
+  >,
+  'Invalid payment method search',
+)

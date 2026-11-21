@@ -34,9 +34,20 @@ const convertedRecordSchema = z.object({
   nextRecommendedServices: z.array(z.string()),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
-})
+}) satisfies z.ZodType<
+  Pick<
+    ApiTreatmentRecordResponse,
+    | 'services'
+    | 'techniques'
+    | 'nextRecommendedServices'
+    | 'createdAt'
+    | 'updatedAt'
+  >
+>
 
-const convertedMaterialSchema = z.object({ quantity: numericSchema })
+const convertedMaterialSchema = z.object({
+  quantity: numericSchema,
+}) satisfies z.ZodType<Pick<ApiTreatmentMaterial, 'quantity'>>
 
 const MESSAGE = 'Invalid stored treatment record'
 

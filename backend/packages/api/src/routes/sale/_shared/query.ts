@@ -1,14 +1,11 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type { ApiSaleSearchRequest } from '@beauty-salon-backend/domain'
 import { z } from 'zod'
-import { numberParameter } from '../../../shared/query-parameters'
+import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
 /** The parameter of the sale list that is not text, as its type. */
-const saleSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
-
-export const decodeSaleSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(saleSearchQuerySchema, query, 'Invalid sale search')
+export const decodeSaleSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiSaleSearchRequest, 'limit'>>,
+  'Invalid sale search',
+)

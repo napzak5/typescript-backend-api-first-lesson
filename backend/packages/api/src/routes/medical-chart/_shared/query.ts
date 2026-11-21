@@ -1,36 +1,29 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
+import type {
+  ApiCustomerAllergySearchRequest,
+  ApiMedicalChartSearchRequest,
+} from '@beauty-salon-backend/domain'
 import { z } from 'zod'
 import {
   booleanParameter,
   numberParameter,
+  queryDecoder,
 } from '../../../shared/query-parameters'
 
 /** The parameters of the list of medical charts that are not text, as their types. */
-const medicalChartSearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-  hasAllergies: booleanParameter.exactOptional(),
-})
-
-export const decodeMedicalChartSearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(
-    medicalChartSearchQuerySchema,
-    query,
-    'Invalid medical chart search',
-  )
+export const decodeMedicalChartSearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+    hasAllergies: booleanParameter.exactOptional(),
+  }) satisfies z.ZodType<
+    Pick<ApiMedicalChartSearchRequest, 'limit' | 'hasAllergies'>
+  >,
+  'Invalid medical chart search',
+)
 
 /** The parameter of the list of the allergies of a customer that is no text, as its type. */
-const customerAllergySearchQuerySchema = z.looseObject({
-  limit: numberParameter.exactOptional(),
-})
-
-export const decodeCustomerAllergySearchQuery = (
-  query: unknown,
-): Result<unknown, DomainError> =>
-  parseWith(
-    customerAllergySearchQuerySchema,
-    query,
-    'Invalid customer allergy search',
-  )
+export const decodeCustomerAllergySearchQuery = queryDecoder(
+  z.looseObject({
+    limit: numberParameter.exactOptional(),
+  }) satisfies z.ZodType<Pick<ApiCustomerAllergySearchRequest, 'limit'>>,
+  'Invalid customer allergy search',
+)

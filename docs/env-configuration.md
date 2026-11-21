@@ -336,7 +336,7 @@ pnpm --filter @beauty-salon-backend/config run test
 
 現状について:
 
-- `VITE_BACKEND_BASE_URL` を使うのは `frontend/packages/io` の fetcher だけです。アプリのコードは、
+- `VITE_BACKEND_BASE_URL` を使うのは `frontend/packages/api-client` の fetcher だけです。アプリのコードは、
   生成クライアントを通して API を呼びます。
 - `VITE_ADMIN_APP_URL` と `VITE_PORTAL_APP_URL` は、`config` パッケージを通さず、アプリが
   `import.meta.env` から読みます。バックエンドの `PUBLIC_APP_URL`（メールのリンクが指すアプリ）と

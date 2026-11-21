@@ -1,3 +1,4 @@
+import type { CustomerBookingsCreate201 } from '@beauty-salon-frontend/api-client'
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import type { TestApi } from './fixtures'
@@ -94,9 +95,12 @@ export const openDay = async (
   return date
 }
 
+/** What a test reads of a booking it made: its ID and its number */
 const bookedSchema = z.object({
   data: z.object({ id: z.uuid(), bookingNumber: z.string() }),
-})
+}) satisfies z.ZodType<{
+  data: Pick<CustomerBookingsCreate201['data'], 'id' | 'bookingNumber'>
+}>
 
 /**
  * A booking that the customer of the seed data made before the test
