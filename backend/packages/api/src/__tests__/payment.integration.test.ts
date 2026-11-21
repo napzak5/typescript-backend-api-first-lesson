@@ -599,6 +599,17 @@ describe('Payments API', () => {
       const after = await databaseClock()
 
       expect(response.status).toBe(200)
+      // One reading of the clock stamps the new row, to the microsecond
+      const [stamps] = await db
+        .select({
+          processedAt: paymentTransactions.processedAt,
+          createdAt: paymentTransactions.createdAt,
+          updatedAt: paymentTransactions.updatedAt,
+        })
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.id, response.body.data.id))
+      expect(stamps?.createdAt).toBe(stamps?.processedAt)
+      expect(stamps?.updatedAt).toBe(stamps?.processedAt)
       expect(response.headers['content-type']).toBe(JSON_UTF8)
       expect(response.body).toEqual({
         data: {

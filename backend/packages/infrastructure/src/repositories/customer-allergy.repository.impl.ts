@@ -18,7 +18,7 @@ import { and, asc, count, desc, eq, exists, isNull, sql } from 'drizzle-orm'
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match, P } from 'ts-pattern'
 import { attempt } from '../database/attempt'
-import { CLOCK } from '../database/clock'
+import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 
@@ -122,12 +122,13 @@ export class CustomerAllergyRepository implements ICustomerAllergyRepository {
           // An allergy of the same allergen being written at this moment is
           // waited for; once it is there, nothing is written.
           const [stored] = await tx
+            .with(CLOCK_ONCE)
             .insert(customerAllergies)
             .values({
               ...allergy,
               customerId,
-              createdAt: CLOCK,
-              updatedAt: CLOCK,
+              createdAt: ONE_MOMENT,
+              updatedAt: ONE_MOMENT,
             })
             .onConflictDoNothing({
               target: [

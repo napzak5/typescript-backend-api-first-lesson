@@ -668,6 +668,15 @@ describe('Booking service lines API', () => {
       )
 
       expect(response.status).toBe(201)
+      // One reading of the clock stamps the new row, to the microsecond
+      const [stamps] = await db
+        .select({
+          createdAt: bookingServices.createdAt,
+          updatedAt: bookingServices.updatedAt,
+        })
+        .from(bookingServices)
+        .where(eq(bookingServices.id, response.body.data.id))
+      expect(stamps?.updatedAt).toBe(stamps?.createdAt)
       expect(response.headers['content-type']).toBe(JSON_UTF8)
       const self = `${BOOKINGS}/${id}/services/${response.body.data.id}`
       expect(response.headers['location']).toBe(self)

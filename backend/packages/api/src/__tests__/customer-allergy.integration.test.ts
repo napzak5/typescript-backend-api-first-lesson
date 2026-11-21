@@ -285,6 +285,15 @@ describe('Customer allergy API', () => {
       const response = await add(customerId, body)
 
       expect(response.status).toBe(201)
+      // One reading of the clock stamps the new row, to the microsecond
+      const [stamps] = await db
+        .select({
+          createdAt: customerAllergies.createdAt,
+          updatedAt: customerAllergies.updatedAt,
+        })
+        .from(customerAllergies)
+        .where(eq(customerAllergies.id, response.body.data.id))
+      expect(stamps?.updatedAt).toBe(stamps?.createdAt)
       expect(response.headers['location']).toBeUndefined()
       expect(response.body).toEqual({
         data: {

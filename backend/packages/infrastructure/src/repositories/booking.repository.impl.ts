@@ -85,7 +85,7 @@ import {
 import type { PgColumn } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
-import { CLOCK } from '../database/clock'
+import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { bookingsWithServices } from './booking-services'
 import { countBookingsOf } from './customer-counters'
@@ -1105,12 +1105,13 @@ export class BookingRepository implements IBookingRepository {
           }
 
           const [line] = await tx
+            .with(CLOCK_ONCE)
             .insert(bookingServices)
             .values({
               ...plan.service,
               bookingId: id,
-              createdAt: CLOCK,
-              updatedAt: CLOCK,
+              createdAt: ONE_MOMENT,
+              updatedAt: ONE_MOMENT,
             })
             .returning()
           await tx
