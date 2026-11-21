@@ -20,6 +20,14 @@ export const trendsHrefOf = (salonId: string): string =>
 export const dailyHrefOf = (salonId: string): string =>
   `${reportsHrefOf(salonId)}/daily`
 
+/** The sales of every member of the staff of a salon. */
+export const staffSalesHrefOf = (salonId: string): string =>
+  `${reportsHrefOf(salonId)}/staff`
+
+/** The sales of every kind of service of a salon. */
+export const categorySalesHrefOf = (salonId: string): string =>
+  `${reportsHrefOf(salonId)}/categories`
+
 /** Whether an address is that of a screen, or of one below it. */
 const isAtOrBelow = (pathname: string, screen: string): boolean =>
   pathname === screen || pathname.startsWith(`${screen}/`)
@@ -45,6 +53,8 @@ export const navigationFor = (
     const reports = reportsHrefOf(salonId)
     const trends = trendsHrefOf(salonId)
     const daily = dailyHrefOf(salonId)
+    const staff = staffSalesHrefOf(salonId)
+    const categories = categorySalesHrefOf(salonId)
 
     return [
       ...choice,
@@ -58,6 +68,16 @@ export const navigationFor = (
         href: daily,
         label: '1 日の売上',
         current: isAtOrBelow(pathname, daily),
+      },
+      {
+        href: staff,
+        label: 'スタッフ別の売上',
+        current: isAtOrBelow(pathname, staff),
+      },
+      {
+        href: categories,
+        label: '区分別の売上',
+        current: isAtOrBelow(pathname, categories),
       },
     ]
   }

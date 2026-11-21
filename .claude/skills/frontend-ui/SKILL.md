@@ -43,7 +43,7 @@ this one: a component is not done without its stories and its test.
 | The treatment records in the admin application: the list, a record with its removal, the form with the rows of the products used, the part of the page of a booking, the photos of a record with their form and their removal, the statistics over a period; the products of a salon, read to the end | `frontend/apps/admin-app/src/treatments/`, `src/products/products-api.ts` |
 | A file the API answers with, saved by the browser: its name, the file of an answer, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `fileOfAnswer`, `saveFile`) |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
-| The sales report of a salon in the dashboard: the screen with its period and its export as a CSV file, the four parts of a report, the words of its counts; the trends of the sales with their chart, and the sales of one day | `frontend/apps/dashboard-app/src/reports/` |
+| The sales report of a salon in the dashboard: the screen with its period and its export as a CSV file, the four parts of a report, the words of its counts; the trends of the sales with their chart, the sales of one day, and the sales of every member of the staff and of every kind of service with a bar under an amount | `frontend/apps/dashboard-app/src/reports/` |
 | The links of the header of the dashboard, by the role and the salon of the address | `frontend/apps/dashboard-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
@@ -1685,7 +1685,15 @@ salon: `reports/sales-report-screen.tsx` with `components/sales-report/`,
   header, for the days it was asked for: other days take it away.
 - **What was wrong with a form is said for what the address showed when
   it was sent**: a link to another day, or the header, changes what is
-  shown, and the error goes with it (`Refused` of the three screens).
+  shown, and the error goes with it (`usePeriodCount` of the report, the
+  staff and the kinds of service; `Refused` of the trends and the day).
+- **A part of a report leads to the whole of it over the same days**:
+  the five who sold the most link to every member of the staff, the kinds
+  of service to their own screen, the period of the report in the query.
+- **A bar under an amount of a table** (`ShareBar`) compares the rows at a
+  glance: as long as its share of the most, or of the whole, in the one
+  colour of the accent on a track of `--color-surface-sunken`. It holds no
+  text; the amount above it is what is read.
 - **Further choices of what is counted are children of
   `StatisticsPeriod`**, below the days and above the button: the parts a
   trend is cut into are a `RadioGroup` whose value is in the address
