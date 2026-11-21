@@ -1053,7 +1053,7 @@ whole path:
 | In a browser test | In an integration test in jsdom |
 |-------------------|---------------------------------|
 | A critical path, once, from the address bar to the database | Every state of a screen: each message, each refusal, each role |
-| What the browser lays out and paints: nothing sticks out of a narrow window or out of the element it is in, nothing is laid out with flex, the contrast of what is on the page, what is scrolled into sight (`toBeInViewport`: the current link of a narrow header, `navigation.e2e.test.ts`) | The accessibility rules that need no layout |
+| What the browser lays out and paints: nothing sticks out of a narrow window or out of the element it is in, nothing is laid out with flex, the contrast of what is on the page, what is scrolled into sight (`toBeInViewport`: the current link of a narrow header, `navigation.e2e.test.ts`), every screen in a window 320 pixels wide (`narrow-screens.e2e.test.ts`), a dialog over its page (`dialog.e2e.test.ts`) | The accessibility rules that need no layout |
 | The focus as the browser moves it: the Tab key through a form, the heading after the screen changed | Which element has the focus after an action |
 | A reload, a second tab, the address bar, the way back and forward | — |
 | A link that leaves the page: from a mail to the portal, from one application to another | The screen such a link opens, rendered at its path |
@@ -1155,6 +1155,31 @@ test.describe('the admin application', () => {
   `test.use({ viewport: { width: 390, height: 844 } })`, on the record with
   the longest values the seed data has (the salon whose hours have a break,
   not the one whose hours are one time).
+- **Every screen is opened once in a window 320 pixels wide**
+  (`src/narrow-screens.e2e.test.ts`), the narrowest it is made for, and
+  its layout alone is measured: `expectSoundLayout(page, screen)` names
+  the screen that fails and goes on to the next. A new screen is added to
+  its list, with its heading. The test knows nothing of what a screen
+  shows, so it waits for the heading and then until the page asks the API
+  for nothing more (`waitForLoadState('networkidle')`): the one place
+  where a browser test waits for the network and not for what is shown.
+- **A layout that gives way is asserted by where things stand.** A button
+  puts its label on a second line before it sticks out, so a row of
+  buttons that has no room does not make the page wider, and the measure
+  of the layout does not see it. What the shared parts do with their
+  buttons on a narrow screen is asserted by the edges of the buttons
+  (`edgesOf` in `src/checks.ts`: one below the other and as wide as the
+  form) and by the lines of a label (`Range.getClientRects()`: one), in
+  the same file.
+- **What a stylesheet alone does to a dialog** is asserted by where things
+  are and by what the browser worked out (`src/dialog.e2e.test.ts`): the
+  edges of the dialog in the window (`edgesOf`, polled until the sheet has
+  come up), the element at each corner of the window
+  (`document.elementFromPoint`, which answers the dialog for its
+  overlay), the `overflow` of the root while the dialog is open, and how
+  far the page is scrolled after the wheel was turned. A page that does
+  not move proves little by itself, so the same test closes the dialog
+  and sees the page scroll.
 - What a test needs before the path it drives, and which another test
   drives through its screens already, it asks of the API with the
   `request` fixture of Playwright (`accessTokenOf` and `setUpTwoFactor` in
