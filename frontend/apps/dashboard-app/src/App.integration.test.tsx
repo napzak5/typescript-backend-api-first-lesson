@@ -51,10 +51,10 @@ describe('App, against the API', () => {
   })
 
   it.each([
-    ['the owner of a salon', 'owner@beautysalon.jp'],
-    ['a manager', 'manager@beautysalon.jp'],
-    ['the operator of the platform', 'admin@beautysalon.jp'],
-  ])('should let %s in: %s', async (_, email) => {
+    ['the owner of a salon', 'owner@beautysalon.jp', '売上レポート'],
+    ['a manager', 'manager@beautysalon.jp', '売上レポート'],
+    ['the operator of the platform', 'admin@beautysalon.jp', 'サロンを選ぶ'],
+  ])('should let %s in: %s, at %s', async (_, email, start) => {
     // Arrange
     renderAt('/')
 
@@ -62,9 +62,9 @@ describe('App, against the API', () => {
     await signInAs(email)
 
     // Assert
-    expect(await heading(TITLE)).toHaveFocus()
+    expect(await heading(start)).toHaveFocus()
     expect(within(screen.getByRole('banner')).getByText(email)).toBeVisible()
-    expect(document.title).toBe(TITLE)
+    expect(document.title).toBe(`${start} | ${TITLE}`)
   })
 
   it.each([
@@ -112,7 +112,7 @@ describe('App, against the API', () => {
     await userEvent.click(screen.getByRole('link', { name: 'トップへ戻る' }))
 
     // Assert
-    expect(await heading(TITLE)).toHaveFocus()
+    expect(await heading('売上レポート')).toHaveFocus()
     expect(within(screen.getByRole('banner')).getByText(OWNER)).toBeVisible()
   })
 
@@ -121,7 +121,7 @@ describe('App, against the API', () => {
     const user = userEvent.setup()
     renderAt('/')
     await signInAs(OWNER)
-    await heading(TITLE)
+    await heading('売上レポート')
 
     // Act
     await user.click(
@@ -216,7 +216,7 @@ describe('App, against the API', () => {
     // Arrange
     renderAt('/')
     await signInAs(OWNER)
-    await heading(TITLE)
+    await heading('売上レポート')
 
     // Act
     await userEvent.click(screen.getByRole('button', { name: 'サインアウト' }))

@@ -1,3 +1,4 @@
+import { StartScreen } from '@beauty-salon-frontend/salon-screens'
 import {
   AccountSecurityScreen,
   PasswordChangeScreen,
@@ -5,6 +6,7 @@ import {
   type RequireSessionProps,
   SessionAccount,
   TwoFactorSetupScreen,
+  useSession,
 } from '@beauty-salon-frontend/session'
 import {
   AppShell,
@@ -12,10 +14,13 @@ import {
   EnvironmentBanner,
   type LinkComponent,
   LinkProvider,
+  Navigation,
   NotificationProvider,
   PageHeader,
 } from '@beauty-salon-frontend/ui'
-import { Link, Route, Routes, useNavigate } from 'react-router'
+import { Link, Route, Routes, useLocation, useNavigate } from 'react-router'
+import { navigationFor, reportsHrefOf } from './navigation'
+import { SalesReportScreen } from './reports/sales-report-screen'
 
 /** Who this application is for: those who run a salon, and the operator of the platform */
 const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'admin']
@@ -23,13 +28,6 @@ const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'admin']
 /** The links that the shared components draw move within the application */
 const RouterLink: LinkComponent = ({ href, ...rest }) => (
   <Link {...rest} to={href} />
-)
-
-const HomePage = () => (
-  <>
-    <PageHeader title={import.meta.env.VITE_APP_TITLE} />
-    <p>画面は準備中です。</p>
-  </>
 )
 
 /**
@@ -74,36 +72,63 @@ const NotFoundPage = () => (
   </>
 )
 
-export const App = () => (
-  <LinkProvider component={RouterLink}>
-    <NotificationProvider>
-      <AppShell
-        title={import.meta.env.VITE_APP_TITLE}
-        account={<SessionAccount securityHref={SECURITY_PATH} />}
-      >
-        {/* Every screen needs a session: who is not signed in signs in here, at the address they asked for */}
-        <RequireSession roles={ROLES} signInHelp={<SignInHelp />}>
-          <Routes>
-            <Route path='/' element={<HomePage />} />
-            <Route
-              path={SECURITY_PATH}
-              element={
-                <AccountSecurityScreen
-                  passwordHref={PASSWORD_PATH}
-                  twoFactorHref={TWO_FACTOR_PATH}
-                />
-              }
-            />
-            <Route path={PASSWORD_PATH} element={<PasswordPage />} />
-            <Route
-              path={TWO_FACTOR_PATH}
-              element={<TwoFactorSetupScreen securityHref={SECURITY_PATH} />}
-            />
-            <Route path='*' element={<NotFoundPage />} />
-          </Routes>
-        </RequireSession>
-      </AppShell>
-    </NotificationProvider>
-    <EnvironmentBanner environment={import.meta.env.VITE_MODE} />
-  </LinkProvider>
-)
+export const App = () => {
+  const session = useSession()
+  const { pathname } = useLocation()
+  const items = navigationFor(
+    session.type === 'signedIn' ? session.user.role : undefined,
+    pathname,
+  )
+
+  return (
+    <LinkProvider component={RouterLink}>
+      <NotificationProvider>
+        <AppShell
+          title={import.meta.env.VITE_APP_TITLE}
+          account={<SessionAccount securityHref={SECURITY_PATH} />}
+          navigation={
+            items.length > 0 ? (
+              <Navigation label='メインメニュー' items={items} />
+            ) : undefined
+          }
+        >
+          {/* Every screen needs a session: who is not signed in signs in here, at the address they asked for */}
+          <RequireSession roles={ROLES} signInHelp={<SignInHelp />}>
+            <Routes>
+              <Route
+                path='/'
+                element={
+                  <StartScreen
+                    title={import.meta.env.VITE_APP_TITLE}
+                    choice='売上レポートを開くサロンを選びます。'
+                    salonHref={reportsHrefOf}
+                  />
+                }
+              />
+              <Route
+                path='/salons/:salonId/reports'
+                element={<SalesReportScreen />}
+              />
+              <Route
+                path={SECURITY_PATH}
+                element={
+                  <AccountSecurityScreen
+                    passwordHref={PASSWORD_PATH}
+                    twoFactorHref={TWO_FACTOR_PATH}
+                  />
+                }
+              />
+              <Route path={PASSWORD_PATH} element={<PasswordPage />} />
+              <Route
+                path={TWO_FACTOR_PATH}
+                element={<TwoFactorSetupScreen securityHref={SECURITY_PATH} />}
+              />
+              <Route path='*' element={<NotFoundPage />} />
+            </Routes>
+          </RequireSession>
+        </AppShell>
+      </NotificationProvider>
+      <EnvironmentBanner environment={import.meta.env.VITE_MODE} />
+    </LinkProvider>
+  )
+}
