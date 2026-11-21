@@ -123,6 +123,11 @@ export {
   PasswordField,
   type PasswordFieldProps,
 } from './components/password-field/password-field'
+export {
+  PeriodSwitch,
+  type PeriodSwitchProps,
+  type PeriodUnit,
+} from './components/period-switch/period-switch'
 export { QrCode, type QrCodeProps } from './components/qr-code/qr-code'
 export {
   RadioGroup,
