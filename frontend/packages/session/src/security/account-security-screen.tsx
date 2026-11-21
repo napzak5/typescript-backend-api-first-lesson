@@ -1,7 +1,9 @@
+import { firstCursor, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
 import {
   Card,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -37,11 +39,8 @@ import {
   cursorAfter,
   endsWithGoneCursor,
   type FormSays,
-  firstCursor,
   listingOf,
-  moreOf,
   NOTHING_TO_SAY,
-  unreadMessageOf,
   withoutSession,
 } from './security-flow'
 import {

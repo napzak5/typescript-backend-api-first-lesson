@@ -1,10 +1,11 @@
+import type { RefusedValue, Unsent } from '@beauty-salon-frontend/answers'
 import type {
   ModelsAuthTwoFactorDisableRequest,
   ModelsUserResponse,
 } from '@beauty-salon-frontend/api-client'
 import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { AccountRead, RefusedValue, Unsent } from './security-api'
+import type { AccountRead } from './security-api'
 import type { FormSays, Read } from './security-flow'
 
 /*

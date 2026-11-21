@@ -1,17 +1,15 @@
+import { FAILED, TOO_MANY_REQUESTS } from '@beauty-salon-frontend/answers'
 import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
-import type { More } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
 import { phone, thisDevice, unrecorded } from './components/examples'
-import type { SessionPage, Unsent } from './security-api'
+import type { SessionPage } from './security-api'
 import {
   afterPasswordChange,
   afterUnsent,
   cursorAfter,
   endsWithGoneCursor,
   listingOf,
-  moreOf,
   readPasswordChange,
-  unreadMessageOf,
   withoutSession,
 } from './security-flow'
 
@@ -34,9 +32,6 @@ const TOO_MANY =
   'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
 const NOT_SENT =
   '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
-
-const TOO_MANY_REQUESTS: Unsent = { type: 'tooManyRequests' }
-const FAILED: Unsent = { type: 'failed' }
 
 describe('readPasswordChange', () => {
   it('should take both passwords as they were typed, spaces and all', () => {
@@ -188,17 +183,6 @@ describe('afterUnsent', () => {
   })
 })
 
-describe('unreadMessageOf', () => {
-  it('should name what could not be read, or say that there were too many requests', () => {
-    expect(unreadMessageOf('アカウント', { type: 'failed' })).toBe(
-      'アカウントを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-    )
-    expect(unreadMessageOf('アカウント', { type: 'tooManyRequests' })).toBe(
-      TOO_MANY,
-    )
-  })
-})
-
 const GONE: SessionPage = { type: 'cursorGone' }
 
 const page = (
@@ -304,22 +288,5 @@ describe('the pages of the sessions', () => {
     expect(
       withoutSession([page([thisDevice, phone], null, null)], phone.id),
     ).toEqual([page([thisDevice], null, null)])
-  })
-})
-
-type Rest = Parameters<typeof moreOf>[0]
-type Fetching = Parameters<typeof moreOf>[1]
-
-const MORE: [Rest, Fetching, More][] = [
-  ['none', { nextPage: false, again: false }, 'none'],
-  ['more', { nextPage: false, again: false }, 'available'],
-  ['more', { nextPage: true, again: false }, 'loading'],
-  ['unread', { nextPage: false, again: false }, 'failed'],
-  ['unread', { nextPage: false, again: true }, 'loading'],
-]
-
-describe('moreOf', () => {
-  it.each(MORE)('should make of %s, while %o, %s', (rest, fetching, more) => {
-    expect(moreOf(rest, fetching)).toBe(more)
   })
 })

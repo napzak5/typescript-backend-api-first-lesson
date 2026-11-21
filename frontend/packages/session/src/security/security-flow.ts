@@ -1,16 +1,13 @@
+import type { RefusedValue, Unsent } from '@beauty-salon-frontend/answers'
+import { FAILED } from '@beauty-salon-frontend/answers'
 import type {
   ModelsAuthPasswordChangeRequest,
   ModelsSessionResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { FormErrors, More } from '@beauty-salon-frontend/ui'
+import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { newPasswordError, refusedPasswordMessage } from './password-rule'
-import type {
-  PasswordChange,
-  RefusedValue,
-  SessionPage,
-  Unsent,
-} from './security-api'
+import type { PasswordChange, SessionPage } from './security-api'
 
 /*
  * What the screens of the security of an account make of what a person
@@ -123,12 +120,6 @@ export const afterUnsent = (outcome: Unsent): string =>
     .with({ type: 'failed' }, () => NOT_SENT)
     .exhaustive()
 
-/** What the screen says when it could not read something. */
-export const unreadMessageOf = (what: string, reason: Unsent): string =>
-  reason.type === 'tooManyRequests'
-    ? TOO_MANY_REQUESTS
-    : `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`
-
 /** What the pages of the sessions that were read so far amount to. */
 export type SessionListing =
   /** Nothing is there to show: the first page was not read */
@@ -146,8 +137,6 @@ export type SessionListing =
        */
       rest: 'none' | 'more' | 'unread'
     }
-
-const FAILED: Unsent = { type: 'failed' }
 
 /**
  * Puts the pages that were read together. A page that was not read ends the
@@ -185,31 +174,9 @@ export const listingOf = (pages: readonly SessionPage[]): SessionListing => {
 export const cursorAfter = (page: SessionPage): string | undefined =>
   page.type === 'found' ? (page.nextCursor ?? undefined) : undefined
 
-/** The cursor of the first page: there is none. */
-export const firstCursor = (): string | undefined => undefined
-
 /** Whether the page that was read last could not be read because its cursor had gone. */
 export const endsWithGoneCursor = (pages: readonly SessionPage[]): boolean =>
   pages.at(-1)?.type === 'cursorGone'
-
-/**
- * What the button below the list does, and whether there is one. A page
- * that was not read is asked for again by reading the list again, so it is
- * on its way while the list is.
- */
-export const moreOf = (
-  rest: 'none' | 'more' | 'unread',
-  fetching: { nextPage: boolean; again: boolean },
-): More => {
-  if (rest === 'none') {
-    return 'none'
-  }
-  if (fetching.nextPage || (rest === 'unread' && fetching.again)) {
-    return 'loading'
-  }
-
-  return rest === 'unread' ? 'failed' : 'available'
-}
 
 /**
  * The pages without a session that was ended: it leaves the list at once,

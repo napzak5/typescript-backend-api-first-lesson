@@ -1191,6 +1191,9 @@ importers:
 
   frontend/packages/session:
     dependencies:
+      '@beauty-salon-frontend/answers':
+        specifier: workspace:*
+        version: link:../answers
       '@beauty-salon-frontend/api-client':
         specifier: workspace:*
         version: link:../api-client

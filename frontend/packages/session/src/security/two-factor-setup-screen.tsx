@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsAuthTwoFactorSetupResponse,
   ModelsUserResponse,
@@ -23,7 +24,7 @@ import {
   readOwnAccount,
   startTwoFactor,
 } from './security-api'
-import { type FormSays, NOTHING_TO_SAY, unreadMessageOf } from './security-flow'
+import { type FormSays, NOTHING_TO_SAY } from './security-flow'
 import {
   afterRefusal,
   CHANGED_ELSEWHERE,
