@@ -2077,7 +2077,8 @@ by its role, as the API decides it:
 
 - **What a role may not do is said where it would do it**: the owner
   and a manager write the answer of the salon and report a review, an
-  administrator only withdraws an answer, a stylist reads. The part of
+  administrator withdraws an answer and handles the reports, a stylist
+  reads. The part of
   the answer says under its buttons who does what is not offered, and
   the address of the form of the answer says it in place of the form.
 - **A refusal the API cannot be asked about first**: the API does not
@@ -2087,6 +2088,30 @@ by its role, as the API decides it:
 - **A withdrawal is a write of null**: it asks first in a dialog,
   shows the review the API answered with and moves the focus to the
   heading of the answer, as an operation of a booking does.
+
+The reports of reviews (`src/review-reports/`) are handled by the
+platform alone, below the salon of the reviews:
+
+- **An operation of the platform is put where its record is shown**: an
+  administrator dismisses the reports of a review, or removes the review,
+  on the page of the review (`review-handling.tsx`), and the reports of
+  the reviews of a salon are a list below its reviews
+  (`/salons/:salonId/reviews/reports`), reached from their heading.
+  Other roles are offered neither, and the address of the list tells
+  them who handles the reports without asking the API.
+- **A list that is worked down starts at what waits**: the reports that
+  wait are the list without a query, the first received first, as the
+  API gives them; the other states are a choice kept in the address
+  (`reportsShownIn`).
+- **A row names its record by reading it under the key of its page**:
+  the review of a report is read with `useQueries` under `reviewKeyOf`,
+  so the page of the review opens from what the list read; a review
+  that went meanwhile is named so.
+- **What another administrator did meanwhile is said in the part**: a
+  report dismissed already (409) closes the dialog, is said above the
+  reports, and the reports and the review are read anew. A review
+  removed is put as not found, the lists of the salon are dropped, and
+  the screen goes to the reviews.
 
 The files of a salon (`src/attachments/`) go between the browser and the
 object storage, at URLs the API signs; the API keeps what is known of a

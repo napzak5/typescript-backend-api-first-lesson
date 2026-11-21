@@ -1,0 +1,10 @@
+/* What the reports are, why the last dismissal changed nothing, then the reports */
+.reports {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.text {
+  margin: 0;
+}

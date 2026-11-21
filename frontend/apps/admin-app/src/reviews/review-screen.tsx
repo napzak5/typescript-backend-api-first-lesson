@@ -30,6 +30,11 @@ import {
   customerHrefOf,
   reviewResponseHrefOf,
 } from '../navigation'
+import {
+  RemovalOfReview,
+  ReportsOfReview,
+  useHandlesReports,
+} from '../review-reports/review-handling'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
 import { ReviewAnswer } from './components/review-answer/review-answer'
 import {
@@ -270,9 +275,11 @@ type ReviewPartProps = {
  *
  * The heading stays the one element while the screen reads what it shows
  * below it, so that the focus the heading took when the screen opened
- * stays on it.
+ * stays on it. An administrator also handles the reports of the review
+ * there: dismisses them, or removes the review.
  */
 const ReviewPart = ({ salon, reviewId }: ReviewPartProps) => {
+  const handles = useHandlesReports()
   const read = useQuery({
     queryKey: reviewKeyOf(reviewId),
     queryFn: () => readReview(reviewId),
@@ -321,6 +328,12 @@ const ReviewPart = ({ salon, reviewId }: ReviewPartProps) => {
               .with({ type: 'found' }, ({ items }) => items)
               .otherwise(() => undefined)}
           />
+          {handles && (
+            <>
+              <ReportsOfReview salon={salon} review={review} />
+              <RemovalOfReview salon={salon} review={review} />
+            </>
+          )}
           <ToTheReviews salonId={salon.id} />
         </>
       ))
