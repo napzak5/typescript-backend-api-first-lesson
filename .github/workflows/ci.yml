@@ -132,15 +132,12 @@ jobs:
         run: pnpm -r ${{ needs.scope.outputs.filter }} run test
 
   test:
-    name: Test (${{ matrix.database }} database, part ${{ matrix.part }} of 4)
+    name: Integration Test (part ${{ matrix.part }} of 4)
     needs: scope
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # external: the PostgreSQL service below, through TEST_DATABASE_URL
-        # testcontainers: a container started by the test setup itself
-        database: [external, testcontainers]
         # The test files of every package are cut into four parts (Vitest's
         # --shard), each run by a job of its own
         part: [1, 2, 3, 4]
@@ -190,10 +187,14 @@ jobs:
         # fewer test files than parts has parts without any
         run: pnpm -r --no-sort ${{ needs.scope.outputs.filter }} run test:integration --shard=${{ matrix.part }}/4 --passWithNoTests
         env:
-          TEST_DATABASE_URL: ${{ matrix.database == 'external' && 'postgres://postgres:postgres@localhost:5432/beauty_salon_test' || '' }}
+          # The PostgreSQL service above. Without it the tests start a
+          # PostgreSQL container of their own (testcontainers), as they do on
+          # a developer's machine; the mail and the file storage tests start
+          # their containers here as well
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/beauty_salon_test
 
       - name: Check the database schema files are up to date
-        if: matrix.database == 'external' && matrix.part == 1
+        if: matrix.part == 1
         run: pnpm check:db-schema
 
   # A browser on the built applications, the production API and PostgreSQL.
