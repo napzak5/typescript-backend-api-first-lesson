@@ -2,8 +2,11 @@ import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import type { NavigationItem } from '@beauty-salon-frontend/ui'
 import { mayKeepStaffLedger } from './staff/staff-format'
 
-/** The start of the addresses of the screens of one salon. */
-const SALON_PATH = /^\/salons\/([^/]+)(?:\/|$)/
+/** The start of the addresses of the screens of one salon: of any but the salon to be added. */
+const SALON_PATH = /^\/salons\/(?!new(?:\/|$))([^/]+)(?:\/|$)/
+
+/** The screen that adds a salon, for an administrator. */
+export const SALON_ENTRY_PATH = '/salons/new'
 
 /** The salon whose screens an address is of, if it is one of them. */
 export const salonIdIn = (pathname: string): string | undefined =>

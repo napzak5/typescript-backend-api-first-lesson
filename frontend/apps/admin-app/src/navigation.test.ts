@@ -117,6 +117,13 @@ describe('salonIdIn', () => {
     ['a booking', `${BOOKINGS}/0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c02`, SALON_ID],
     ['the address of the salon itself', `/salons/${SALON_ID}`, SALON_ID],
     ['the start', '/', undefined],
+    ['the salon to be added', '/salons/new', undefined],
+    ['what the salon to be added would lead to', '/salons/new/x', undefined],
+    [
+      'a salon whose address begins with the same letters',
+      '/salons/newer/bookings',
+      'newer',
+    ],
     ['the security of the account', '/account/security', undefined],
     [
       'an address that only begins with the same letters',

@@ -1,9 +1,11 @@
 import type {
+  ModelsSalonCreateRequest,
   ModelsSalonResponse,
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { linesOf } from '@beauty-salon-frontend/preferences'
 import { textOf } from '@beauty-salon-frontend/salon-screens'
+import type { SelectOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
 import {
@@ -19,8 +21,9 @@ import type { SalonChange } from './settings-api'
 /*
  * The form of the information of a salon: what it sends, and what it says
  * about the answers. Its controls are named as the properties of the
- * salon. The time zone and the currency are not in it: a salon is given
- * them when it is added.
+ * salon. The time zone and the currency are chosen when a salon is added,
+ * and are not changed after: the times of its bookings and its prices are
+ * read at them. Its hours are not in it: they have a form of their own.
  */
 
 const LONGEST_NAME = 255
@@ -52,6 +55,62 @@ const FORBIDDEN_MESSAGE =
   'このサロンの設定は、変えられません。設定を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。'
 const FAILED =
   'サロンの情報を直せませんでした。通信の状態を確かめて、もう一度お試しください。'
+const TIME_ZONE_ERROR = 'タイムゾーンを選んでください。'
+const CURRENCY_ERROR = '通貨を選んでください。'
+const ADD_FORBIDDEN =
+  'このアカウントでは、サロンを登録できません。サロンを登録できるのは、管理者です。'
+const NOT_ADDED =
+  'サロンを登録できませんでした。通信の状態を確かめて、もう一度お試しください。'
+
+/** What the form shows of a salon: the values it opens with. */
+export type SalonShown = Omit<
+  ModelsSalonCreateRequest,
+  'businessHours' | 'openingHours'
+>
+
+/**
+ * What the form of a salon to be added opens with: nothing written, the
+ * time zone and the currency of Japan and its consumption tax, and no
+ * bookings online until the hours and the menu are in.
+ */
+export const NEW_SALON: SalonShown = {
+  name: '',
+  nameKana: null,
+  description: null,
+  postalCode: null,
+  prefecture: '',
+  city: '',
+  address: '',
+  building: null,
+  latitude: null,
+  longitude: null,
+  phoneNumber: '',
+  alternativePhone: null,
+  email: '',
+  websiteUrl: null,
+  logoUrl: null,
+  imageUrls: [],
+  features: [],
+  amenities: [],
+  timezone: 'Asia/Tokyo',
+  currency: 'JPY',
+  taxRate: 10,
+  isActive: false,
+}
+
+const TIME_ZONES: readonly string[] = Intl.supportedValuesOf('timeZone')
+const CURRENCIES: readonly string[] = Intl.supportedValuesOf('currency')
+const currencyNames = new Intl.DisplayNames('ja', { type: 'currency' })
+
+/** The time zones a salon may be given: those the browser knows, by their names (「Asia/Tokyo」). */
+export const TIME_ZONE_CHOICES: readonly SelectOption[] = TIME_ZONES.map(
+  (zone) => ({ value: zone, label: zone }),
+)
+
+/** The currencies a salon may be given: those the browser knows, by their codes and names (「JPY（日本円）」). */
+export const CURRENCY_CHOICES: readonly SelectOption[] = CURRENCIES.map(
+  (code) => ({ value: code, label: `${code}（${currencyNames.of(code)}）` }),
+)
 
 const addressSchema = z.httpUrl()
 const linkSchema = addressSchema.check(z.maxLength(LONGEST_URL))
@@ -333,24 +392,72 @@ export const readSalonChange = (
     : { type: 'valid', request }
 }
 
+/** What a salon to be added asks for, or what is wrong with the form. */
+export type SalonEntryRead =
+  | { type: 'valid'; request: ModelsSalonCreateRequest }
+  | { type: 'invalid'; errors: Record<string, string> }
+
+/**
+ * The salon the form adds, with the time zone and the currency chosen. It
+ * has no hours yet: they are given on the screen of the hours, after.
+ */
+export const readSalonEntry = (values: FormData): SalonEntryRead => {
+  const read = readWhole(values)
+  const timezone = textOf(values, 'timezone')
+  const currency = textOf(values, 'currency')
+  const errors: Record<string, string> = {
+    ...(read.type === 'invalid' ? read.errors : {}),
+    ...Object.fromEntries([
+      ...errorAt(
+        'timezone',
+        TIME_ZONES.includes(timezone) ? undefined : TIME_ZONE_ERROR,
+      ),
+      ...errorAt(
+        'currency',
+        CURRENCIES.includes(currency) ? undefined : CURRENCY_ERROR,
+      ),
+    ]),
+  }
+  if (read.type === 'invalid' || Object.keys(errors).length > 0) {
+    return { type: 'invalid', errors }
+  }
+
+  return {
+    type: 'valid',
+    request: {
+      ...read.values,
+      timezone,
+      currency,
+      businessHours: null,
+      openingHours: [],
+    },
+  }
+}
+
+/** What the API refused of a salon, added or changed. */
+type SalonRefused =
+  | Extract<SalonChange, { type: 'invalid' | 'emailTaken' | 'forbidden' }>
+  | { type: 'tooManyRequests' }
+  | { type: 'failed' }
+
+/** What the form says after the API refused a salon, with the words of the attempt for what went wrong and for a role that may not. */
+const saysAfter =
+  (failed: string, forbidden: string) =>
+  (outcome: SalonRefused): FormSays =>
+    match(outcome)
+      .returnType<FormSays>()
+      .with({ type: 'emailTaken' }, () => ({
+        message: undefined,
+        errors: { email: EMAIL_TAKEN },
+      }))
+      .with({ type: 'invalid' }, () => ({ message: CHECK_AGAIN, errors: {} }))
+      .with({ type: 'forbidden' }, () => ({ message: forbidden, errors: {} }))
+      .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
+      .with({ type: 'failed' }, () => ({ message: failed, errors: {} }))
+      .exhaustive()
+
 /** What the form says after the API did not change the salon. */
-export const afterSalonChange = (
-  outcome:
-    | Extract<SalonChange, { type: 'invalid' | 'emailTaken' | 'forbidden' }>
-    | { type: 'tooManyRequests' }
-    | { type: 'failed' },
-): FormSays =>
-  match(outcome)
-    .returnType<FormSays>()
-    .with({ type: 'emailTaken' }, () => ({
-      message: undefined,
-      errors: { email: EMAIL_TAKEN },
-    }))
-    .with({ type: 'invalid' }, () => ({ message: CHECK_AGAIN, errors: {} }))
-    .with({ type: 'forbidden' }, () => ({
-      message: FORBIDDEN_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({ message: FAILED, errors: {} }))
-    .exhaustive()
+export const afterSalonChange = saysAfter(FAILED, FORBIDDEN_MESSAGE)
+
+/** What the form says after the API did not add the salon. */
+export const afterSalonEntry = saysAfter(NOT_ADDED, ADD_FORBIDDEN)

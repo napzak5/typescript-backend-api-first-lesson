@@ -2,6 +2,7 @@ export { NoSalonNotice } from './components/no-salon-notice/no-salon-notice'
 export { keepQueriesOfOneUser } from './keep-queries-of-one-user'
 export { RequireSession, type RequireSessionProps } from './require-session'
 export {
+  OWN_SALON,
   type OwnSalon,
   type OwnSalonState,
   useOwnSalon,
