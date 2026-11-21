@@ -1,4 +1,14 @@
 import {
+  FAILED,
+  type Forbidden,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  refusedValuesOf,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsDailySalesResponse,
   type ModelsProblemDetails,
   type ModelsSalesByCategoryResponse,
@@ -14,17 +24,7 @@ import {
   salesReportCrudGetTrends,
 } from '@beauty-salon-frontend/api-client'
 import { type FileToSave, fileOfAnswer } from '@beauty-salon-frontend/io'
-import {
-  FAILED,
-  type Forbidden,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type Period,
-  refusedValuesOf,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+import type { Period } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 
 /*

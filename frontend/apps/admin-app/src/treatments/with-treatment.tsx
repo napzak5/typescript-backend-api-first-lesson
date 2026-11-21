@@ -1,3 +1,4 @@
+import { unreadMessageOf, whyUnread } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsCustomerResponse,
@@ -7,10 +8,6 @@ import type {
   ModelsStaffProfileResponse,
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  unreadMessageOf,
-  whyUnread,
-} from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   LoadingIndicator,

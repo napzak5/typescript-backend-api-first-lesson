@@ -1,9 +1,9 @@
+import type { Forbidden, Unread } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerMergeConflictResolutionType,
   ModelsCustomerResponse,
   ModelsMedicalChartResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { Forbidden, Unread } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import type { LedgerValues } from './components/customer-record/ledger-items'
 import { countNameOf } from './customer-format'

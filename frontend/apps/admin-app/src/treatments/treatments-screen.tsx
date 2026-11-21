@@ -1,21 +1,21 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsServiceResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  cursorAfter,
-  firstCursor,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
   type FormErrors,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'

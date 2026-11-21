@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsServiceResponse,
@@ -9,7 +10,6 @@ import {
   periodQueryOf,
   readDays,
   StatisticsPeriod,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {

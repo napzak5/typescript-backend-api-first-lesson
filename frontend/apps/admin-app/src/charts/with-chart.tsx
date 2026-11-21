@@ -1,5 +1,5 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsMedicalChartResponse } from '@beauty-salon-frontend/api-client'
-import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import { LoadingIndicator, UnreadNotice } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'

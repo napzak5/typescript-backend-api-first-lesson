@@ -10,6 +10,25 @@ import { Button } from '../button/button'
  */
 export type More = 'none' | 'available' | 'loading' | 'failed'
 
+/**
+ * What comes after the items of a list, for the component that shows them.
+ * A page that was not read is asked for again by reading the list again,
+ * so it is on its way while the list is.
+ */
+export const moreOf = (
+  rest: 'none' | 'more' | 'unread',
+  fetching: { nextPage: boolean; again: boolean },
+): More => {
+  if (rest === 'none') {
+    return 'none'
+  }
+  if (fetching.nextPage || (rest === 'unread' && fetching.again)) {
+    return 'loading'
+  }
+
+  return rest === 'unread' ? 'failed' : 'available'
+}
+
 export type LoadMoreProps = {
   more: More
   /** Asks for the items that come next */

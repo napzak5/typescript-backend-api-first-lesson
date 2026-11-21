@@ -1,17 +1,17 @@
 import {
-  type ModelsStaffProfileResponse,
-  type ModelsStaffProfileUpdateRequest,
-  staffOwnProfileGet,
-  staffOwnProfileUpdate,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   outsideTheContract,
   type RefusedValue,
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsStaffProfileResponse,
+  type ModelsStaffProfileUpdateRequest,
+  staffOwnProfileGet,
+  staffOwnProfileUpdate,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 
 /*

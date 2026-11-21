@@ -1,4 +1,11 @@
 import {
+  FAILED,
+  type Forbidden,
+  outsideTheContract,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   attachmentCrudPurge,
   customerCrudExecuteDeletionRequests,
   type ModelsCustomerDeletionRequestResponse,
@@ -8,13 +15,6 @@ import {
   systemOperationsHealth,
   systemOperationsReady,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  type Forbidden,
-  outsideTheContract,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 
 /*

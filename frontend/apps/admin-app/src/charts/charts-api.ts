@@ -1,15 +1,4 @@
 import {
-  type MedicalChartCrudListParams,
-  type ModelsCustomerResponse,
-  type ModelsMedicalChartCreateRequest,
-  type ModelsMedicalChartResponse,
-  type ModelsMedicalChartUpdateRequest,
-  medicalChartCrudCreate,
-  medicalChartCrudGetByCustomer,
-  medicalChartCrudList,
-  medicalChartCrudUpdate,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -22,7 +11,18 @@ import {
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type MedicalChartCrudListParams,
+  type ModelsCustomerResponse,
+  type ModelsMedicalChartCreateRequest,
+  type ModelsMedicalChartResponse,
+  type ModelsMedicalChartUpdateRequest,
+  medicalChartCrudCreate,
+  medicalChartCrudGetByCustomer,
+  medicalChartCrudList,
+  medicalChartCrudUpdate,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import { customerKeyOf, readCustomers } from '../customers/customers-api'
 

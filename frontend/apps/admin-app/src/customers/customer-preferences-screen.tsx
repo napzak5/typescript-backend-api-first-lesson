@@ -1,3 +1,4 @@
+import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerPreferencesResponse,
   ModelsCustomerPreferencesUpdateRequest,
@@ -10,11 +11,7 @@ import {
   readPreferencesChange,
   type StaffChoice,
 } from '@beauty-salon-frontend/preferences'
-import {
-  NOT_FOUND,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   LoadingIndicator,

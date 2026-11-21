@@ -1,11 +1,9 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerVersionResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,

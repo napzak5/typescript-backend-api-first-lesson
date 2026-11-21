@@ -1,5 +1,6 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsBookingResponse } from '@beauty-salon-frontend/api-client'
-import { amountOf, unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   ButtonLink,

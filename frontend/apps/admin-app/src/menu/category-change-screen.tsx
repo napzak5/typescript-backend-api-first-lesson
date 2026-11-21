@@ -1,13 +1,10 @@
+import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsServiceCategoryResponse,
   ModelsServiceCategoryUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import {
-  NOT_FOUND,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   Button,

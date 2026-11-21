@@ -1,3 +1,4 @@
+import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerResponse,
   ModelsSalonResponse,
@@ -6,8 +7,6 @@ import {
   KeywordSearch,
   keywordIn,
   keywordOf,
-  NOT_FOUND,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'

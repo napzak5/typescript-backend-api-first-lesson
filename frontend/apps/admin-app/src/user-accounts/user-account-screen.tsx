@@ -1,8 +1,5 @@
+import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
-import {
-  NOT_FOUND,
-  unreadMessageOf,
-} from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   LoadingIndicator,

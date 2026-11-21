@@ -1,4 +1,20 @@
 import {
+  FAILED,
+  type Forbidden,
+  from,
+  LARGEST_PAGE,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  type RefusedValue,
+  refusedValuesOf,
+  toTheEnd,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsPaymentMethodResponse,
   type ModelsPaymentRefundRequest,
   type ModelsPaymentResponse,
@@ -21,22 +37,6 @@ import {
   saleCrudUpdate,
   saleCrudVoidSale,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  type Forbidden,
-  from,
-  LARGEST_PAGE,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type Page,
-  pageOf,
-  type RefusedValue,
-  refusedValuesOf,
-  toTheEnd,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import { type CheckoutAttempt, saleOfBooking } from './checkout'

@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import type {
   ModelsPaymentRefundRequest,
   ModelsPaymentResponse,
@@ -6,7 +7,6 @@ import type {
 import {
   amountOf,
   type Read,
-  type RefusedValue,
   textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'

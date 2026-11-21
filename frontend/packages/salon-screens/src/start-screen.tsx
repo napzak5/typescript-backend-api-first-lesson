@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { NoSalonNotice, useOwnSalon } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,
@@ -7,7 +8,6 @@ import {
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { unreadMessageOf } from './reading'
 import { SalonChoiceScreen } from './salon-choice-screen'
 
 export type StartScreenProps = {

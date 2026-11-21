@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsSaleBreakdownResponse,
@@ -7,7 +8,7 @@ import type {
   ModelsSalesDetail,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type RefusedValue, textOf } from '@beauty-salon-frontend/salon-screens'
+import { textOf } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import { nullIfBlank } from '../bookings/booking-entry'
 import { GONE_SERVICE } from '../bookings/booking-format'

@@ -1,12 +1,10 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryResponse,
   ModelsProductResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  OtherSalonNotice,
-  unreadMessageOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { OtherSalonNotice } from '@beauty-salon-frontend/salon-screens'
 import {
   LoadingIndicator,
   PageHeader,

@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
@@ -8,7 +9,6 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
-import { unreadMessageOf } from './reading'
 import { readSalon, salonKeyOf } from './salons-api'
 
 export type WithSalonProps = {

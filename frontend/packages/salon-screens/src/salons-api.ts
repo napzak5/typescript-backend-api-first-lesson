@@ -1,20 +1,20 @@
 import {
+  from,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsSalonResponse,
   salonCrudGet,
   salonCrudList,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
-import { outsideTheContract } from './outside-the-contract'
-import {
-  from,
-  NOT_FOUND,
-  type NotFound,
-  type Page,
-  pageOf,
-  type Unread,
-  unreadOf,
-} from './reading'
 
 /** The answers of `Refused`, as a pattern */
 const REFUSED = P.union(

@@ -1,14 +1,10 @@
+import { NOT_FOUND, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerResponse,
   ModelsCustomerUpdateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  dayAt,
-  NOT_FOUND,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   LoadingIndicator,

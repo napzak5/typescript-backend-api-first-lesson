@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
 import {
@@ -5,7 +6,6 @@ import {
   periodNameOf,
   periodQueryOf,
   StatisticsPeriod,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {

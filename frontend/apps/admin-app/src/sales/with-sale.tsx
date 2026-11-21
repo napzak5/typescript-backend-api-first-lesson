@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsPaymentMethodResponse,
   ModelsSaleResponse,
@@ -6,7 +7,6 @@ import type {
 import {
   momentNameAt,
   OtherSalonNotice,
-  unreadMessageOf,
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,

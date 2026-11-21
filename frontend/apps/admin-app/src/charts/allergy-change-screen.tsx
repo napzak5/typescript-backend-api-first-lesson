@@ -1,14 +1,11 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerAllergyResponse,
   ModelsCustomerAllergyUpdateRequest,
   ModelsCustomerResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  dayAt,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   LoadingIndicator,

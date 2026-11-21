@@ -1,25 +1,27 @@
+import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
-  cursorAfter,
   dayAfter,
   dayAt,
   dayNameOf,
-  FAILED,
-  firstCursor,
-  listingOf,
-  moreOf,
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
-  whyUnread,
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   PeriodSwitch,
   UnreadNotice,

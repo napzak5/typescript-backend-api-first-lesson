@@ -1,15 +1,11 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryCreateRequest,
   ModelsInventoryResponse,
   ModelsInventoryUpdateRequest,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  isDay,
-  type Read,
-  type RefusedValue,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import {
   type FormSays,

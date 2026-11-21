@@ -88,6 +88,7 @@ export {
   LoadMore,
   type LoadMoreProps,
   type More,
+  moreOf,
   useFocusOnMore,
 } from './components/load-more/load-more'
 export {

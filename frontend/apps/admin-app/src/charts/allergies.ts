@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import {
   ModelsAllergySeverityType,
   ModelsAllergyType,
@@ -9,7 +10,6 @@ import {
   EARLIEST_DAY,
   isDay,
   type Read,
-  type RefusedValue,
   textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'

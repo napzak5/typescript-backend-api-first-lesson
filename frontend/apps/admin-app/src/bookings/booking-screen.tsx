@@ -1,3 +1,8 @@
+import {
+  NOT_FOUND,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingCancelRequest,
   ModelsBookingCompleteRequest,
@@ -7,11 +12,8 @@ import type {
 import {
   dayNameOf,
   momentNameAt,
-  NOT_FOUND,
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
-  whyUnread,
 } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {

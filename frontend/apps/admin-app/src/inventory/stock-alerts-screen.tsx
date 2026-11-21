@@ -1,15 +1,16 @@
-import type {
-  ModelsInventoryAlertResponse,
-  ModelsSalonResponse,
-} from '@beauty-salon-frontend/api-client'
 import {
   cursorAfter,
   FAILED,
   firstCursor,
   listingOf,
-  moreOf,
-  OtherSalonNotice,
   unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
+import type {
+  ModelsInventoryAlertResponse,
+  ModelsSalonResponse,
+} from '@beauty-salon-frontend/api-client'
+import {
+  OtherSalonNotice,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -17,6 +18,7 @@ import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,

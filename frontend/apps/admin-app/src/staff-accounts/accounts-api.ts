@@ -1,4 +1,13 @@
 import {
+  FAILED,
+  type Forbidden,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsSalonRoleType,
   type ModelsStaffAccountResponse,
   type ModelsStaffInvitationResponse,
@@ -10,15 +19,6 @@ import {
   staffInvitationsDelete,
   staffInvitationsGet,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  type Forbidden,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import { readStaffMember } from '../staff/staff-api'
 

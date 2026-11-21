@@ -1,4 +1,9 @@
 import type {
+  Forbidden,
+  RefusedValue,
+  Unread,
+} from '@beauty-salon-frontend/answers'
+import type {
   ModelsPointAdjustRequest,
   ModelsPointEarnRequest,
   ModelsPointTransactionResponse,
@@ -9,14 +14,11 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   amountOf,
-  type Forbidden,
   isDay,
   LATEST_DAY,
   momentNameAt,
   type Read,
-  type RefusedValue,
   textOf,
-  type Unread,
 } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import {

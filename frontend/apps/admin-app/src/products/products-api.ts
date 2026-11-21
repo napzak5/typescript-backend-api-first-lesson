@@ -1,14 +1,4 @@
 import {
-  type ModelsProductCreateRequest,
-  type ModelsProductResponse,
-  type ModelsProductUpdateRequest,
-  productCrudCreate,
-  productCrudDelete,
-  productCrudGet,
-  productCrudList,
-  productCrudUpdate,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -23,7 +13,17 @@ import {
   toTheEnd,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsProductCreateRequest,
+  type ModelsProductResponse,
+  type ModelsProductUpdateRequest,
+  productCrudCreate,
+  productCrudDelete,
+  productCrudGet,
+  productCrudList,
+  productCrudUpdate,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import { type ProductConditions, productListParamsOf } from './product-ledger'
 

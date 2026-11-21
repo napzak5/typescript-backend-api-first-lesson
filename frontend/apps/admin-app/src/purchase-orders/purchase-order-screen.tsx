@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsPurchaseOrderCancelRequest,
   ModelsPurchaseOrderResponse,
@@ -6,7 +7,6 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'

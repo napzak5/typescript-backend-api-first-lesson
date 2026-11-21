@@ -1,9 +1,4 @@
 import {
-  customerCrudMerge,
-  type ModelsCustomerResponse,
-  type ModelsMedicalChartResponse,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   type NotFound,
@@ -12,7 +7,12 @@ import {
   type Unread,
   unreadOf,
   whyUnread,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  customerCrudMerge,
+  type ModelsCustomerResponse,
+  type ModelsMedicalChartResponse,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import { readChart } from '../charts/charts-api'
 import { readErasureRequest } from './customer-erasure-api'

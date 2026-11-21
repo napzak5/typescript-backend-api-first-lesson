@@ -1,7 +1,14 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   EmptyState,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
@@ -12,8 +19,6 @@ import { match } from 'ts-pattern'
 import { KeywordSearch } from './components/keyword-search/keyword-search'
 import { SalonChoices } from './components/salon-choices/salon-choices'
 import { keywordIn, keywordOf } from './keyword'
-import { cursorAfter, firstCursor, listingOf, moreOf } from './pages'
-import { unreadMessageOf } from './reading'
 import { KEYWORD, queryOfKeyword } from './salon-choice'
 import { findSalons } from './salons-api'
 

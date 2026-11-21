@@ -1,13 +1,4 @@
 import {
-  type ModelsPaymentMethodCreateRequest,
-  type ModelsPaymentMethodResponse,
-  type ModelsPaymentMethodUpdateRequest,
-  paymentMethodCrudCreate,
-  paymentMethodCrudDelete,
-  paymentMethodCrudGet,
-  paymentMethodCrudUpdate,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   NOT_FOUND,
@@ -17,7 +8,16 @@ import {
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsPaymentMethodCreateRequest,
+  type ModelsPaymentMethodResponse,
+  type ModelsPaymentMethodUpdateRequest,
+  paymentMethodCrudCreate,
+  paymentMethodCrudDelete,
+  paymentMethodCrudGet,
+  paymentMethodCrudUpdate,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 
 /*

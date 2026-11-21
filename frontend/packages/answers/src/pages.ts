@@ -1,8 +1,7 @@
-import type { More } from '@beauty-salon-frontend/ui'
 import type { Page, Unread } from './reading'
 
 /** What the pages of a list that were read so far amount to. */
-type Listing<Item> =
+export type Listing<Item> =
   /** Nothing is there to show: the first page was not read */
   | { type: 'unread'; reason: Unread }
   | {
@@ -58,22 +57,3 @@ export const cursorAfter = <Item>(
 
 /** The cursor of the first page of a list: there is none. */
 export const firstCursor = (): string | undefined => undefined
-
-/**
- * What comes after the items of a list, for the component that shows them.
- * A page that was not read is asked for again by reading the list again,
- * so it is on its way while the list is.
- */
-export const moreOf = (
-  rest: 'none' | 'more' | 'unread',
-  fetching: { nextPage: boolean; again: boolean },
-): More => {
-  if (rest === 'none') {
-    return 'none'
-  }
-  if (fetching.nextPage || (rest === 'unread' && fetching.again)) {
-    return 'loading'
-  }
-
-  return rest === 'unread' ? 'failed' : 'available'
-}

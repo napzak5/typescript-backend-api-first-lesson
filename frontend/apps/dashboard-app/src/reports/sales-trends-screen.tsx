@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   dayAt,
@@ -5,7 +6,6 @@ import {
   periodNameOf,
   readPeriod,
   StatisticsPeriod,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {

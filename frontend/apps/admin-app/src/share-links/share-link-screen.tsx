@@ -1,13 +1,10 @@
+import { unreadMessageOf, whyUnread } from '@beauty-salon-frontend/answers'
 import type {
   ModelsAttachmentResponse,
   ModelsSalonResponse,
   ModelsShareLinkResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  unreadMessageOf,
-  WithSalon,
-  whyUnread,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,

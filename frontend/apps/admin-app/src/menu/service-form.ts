@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import type {
   ModelsServiceCreateRequest,
   ModelsServiceOption,
@@ -8,11 +9,7 @@ import {
   linesOf,
   pictureAddressesError,
 } from '@beauty-salon-frontend/preferences'
-import {
-  type Read,
-  type RefusedValue,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
 import {

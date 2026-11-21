@@ -1,12 +1,4 @@
 import {
-  inventoryAlertCrudAcknowledge,
-  inventoryAlertCrudGetSummary,
-  inventoryAlertCrudList,
-  type ModelsInventoryAlertAcknowledgeRequest,
-  type ModelsInventoryAlertResponse,
-  type ModelsInventoryAlertSummaryResponse,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -15,7 +7,15 @@ import {
   pageOf,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  inventoryAlertCrudAcknowledge,
+  inventoryAlertCrudGetSummary,
+  inventoryAlertCrudList,
+  type ModelsInventoryAlertAcknowledgeRequest,
+  type ModelsInventoryAlertResponse,
+  type ModelsInventoryAlertSummaryResponse,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import type { AlertConditions } from './alert-search'
 import { stockKeyOf } from './inventory-api'

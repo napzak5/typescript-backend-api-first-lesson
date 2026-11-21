@@ -1,13 +1,10 @@
+import { NOT_FOUND } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsTreatmentPhotoResponse,
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  dayNameOf,
-  NOT_FOUND,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { dayNameOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   Alert,

@@ -1,4 +1,18 @@
 import {
+  FAILED,
+  from,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  type RefusedValue,
+  refusedValuesOf,
+  type Unread,
+  unreadOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
+import {
   availableSlotCrudCheck,
   bookingCrudCancel,
   bookingCrudComplete,
@@ -24,20 +38,6 @@ import {
   type ModelsBookingServiceResponse,
   type ModelsBookingUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  from,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type Page,
-  pageOf,
-  type RefusedValue,
-  refusedValuesOf,
-  type Unread,
-  unreadOf,
-  whyUnread,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import type { DayConditions } from './booking-day'

@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import {
   type ModelsTreatmentPhotoBulkCreateRequest,
   type ModelsTreatmentPhotoCreateRequest,
@@ -5,11 +6,7 @@ import {
   ModelsTreatmentPhotoType,
   type ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  type Read,
-  type RefusedValue,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'

@@ -1,8 +1,6 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsBookingResponse } from '@beauty-salon-frontend/api-client'
-import {
-  momentNameAt,
-  unreadMessageOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   Card,

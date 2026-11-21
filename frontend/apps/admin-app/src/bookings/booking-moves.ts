@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingRescheduleRequest,
   ModelsBookingResponse,
@@ -9,7 +10,6 @@ import {
   isDay,
   momentOf,
   type Read,
-  type RefusedValue,
   textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'

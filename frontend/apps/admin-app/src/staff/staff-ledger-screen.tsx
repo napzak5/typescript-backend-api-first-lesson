@@ -1,16 +1,16 @@
-import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   FAILED,
   firstCursor,
   listingOf,
-  moreOf,
   unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'

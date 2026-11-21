@@ -1,11 +1,4 @@
 import {
-  inventoryCrudGetValueReport,
-  inventoryCrudPerformStockCount,
-  type ModelsInventoryStockCountRequest,
-  type ModelsInventoryStockCountResponse,
-  type ModelsInventoryValueReportResponse,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   outsideTheContract,
@@ -13,7 +6,14 @@ import {
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  inventoryCrudGetValueReport,
+  inventoryCrudPerformStockCount,
+  type ModelsInventoryStockCountRequest,
+  type ModelsInventoryStockCountResponse,
+  type ModelsInventoryValueReportResponse,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import { stockKeyOf } from './inventory-api'
 

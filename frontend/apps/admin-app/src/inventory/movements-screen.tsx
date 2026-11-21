@@ -1,3 +1,11 @@
+import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  NOT_FOUND,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryResponse,
   ModelsProductResponse,
@@ -5,14 +13,7 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
-  cursorAfter,
-  FAILED,
-  firstCursor,
-  listingOf,
-  moreOf,
-  NOT_FOUND,
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -20,6 +21,7 @@ import {
   EmptyState,
   type FormErrors,
   LoadingIndicator,
+  moreOf,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import {

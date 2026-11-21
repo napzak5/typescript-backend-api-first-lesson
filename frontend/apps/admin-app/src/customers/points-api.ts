@@ -1,14 +1,4 @@
 import {
-  type ModelsPointExpiringResponse,
-  type ModelsPointTransactionResponse,
-  pointCrudAdjust,
-  pointCrudEarn,
-  pointCrudGetBalance,
-  pointCrudGetExpiring,
-  pointCrudListTransactions,
-  pointCrudUse,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -18,7 +8,17 @@ import {
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsPointExpiringResponse,
+  type ModelsPointTransactionResponse,
+  pointCrudAdjust,
+  pointCrudEarn,
+  pointCrudGetBalance,
+  pointCrudGetExpiring,
+  pointCrudListTransactions,
+  pointCrudUse,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import { readSale } from '../sales/sales-api'

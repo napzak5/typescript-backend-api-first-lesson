@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerBasicPreferences,
   ModelsCustomerCreateRequest,
@@ -8,7 +9,6 @@ import {
   EARLIEST_DAY,
   isDay,
   type Read,
-  type RefusedValue,
   textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'

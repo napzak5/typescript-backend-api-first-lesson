@@ -1,3 +1,4 @@
+import { unreadMessageOf, whyUnread } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsSalonResponse,
@@ -7,8 +8,6 @@ import type {
 import {
   dayNameOf,
   OtherSalonNotice,
-  unreadMessageOf,
-  whyUnread,
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,

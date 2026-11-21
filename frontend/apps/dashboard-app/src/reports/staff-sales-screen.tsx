@@ -1,8 +1,8 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   periodNameOf,
   StatisticsPeriod,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
