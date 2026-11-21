@@ -1,11 +1,9 @@
 import {
   countOf,
-  type More,
   momentNameAt,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
-import { Link } from '@beauty-salon-frontend/ui'
-import { UNRECORDED } from '../../../customers/customer-format'
+import { Link, type More } from '@beauty-salon-frontend/ui'
 import { tagsTextOf } from '../../../customers/customer-ledger'
 import { customerNameOf } from '../../../customers/customers-api'
 import type { FoundChart } from '../../charts-api'
@@ -28,7 +26,7 @@ export type ChartTableProps = {
 
 /** The names of products, as the form takes them */
 const productsOrNone = (names: readonly string[]) =>
-  names.length === 0 ? UNRECORDED : tagsTextOf(names)
+  names.length === 0 ? 'なし' : tagsTextOf(names)
 
 /**
  * The charts that were found: each by the name of its customer, which
@@ -64,7 +62,7 @@ export const ChartTable = ({
         key: 'medicalConditions',
         header: '持病や体調',
         wrap: 'lines',
-        cell: ({ chart }) => chart.medicalConditions ?? UNRECORDED,
+        cell: ({ chart }) => chart.medicalConditions,
       },
       {
         key: 'preferredProducts',

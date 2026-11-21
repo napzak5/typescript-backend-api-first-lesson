@@ -73,7 +73,7 @@ export const ExpiringPoints = ({
               {
                 key: 'description',
                 header: '説明',
-                cell: ({ description }) => description ?? '',
+                cell: ({ description }) => description,
               },
             ]}
             rows={expiring.transactions}

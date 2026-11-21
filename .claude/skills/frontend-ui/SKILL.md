@@ -260,10 +260,10 @@ nobody reads is removed.
 
 | Component | Use it for |
 |-----------|------------|
-| `TextField` | One line. `type` is `text` (the default), `email`, `password`, `tel`, `url`, `search`, `number`, `date`, `time` or `datetime-local`. `autoComplete` is required: the name HTML gives the value (`email`, `tel`, `family-name`, `bday`), or `off` for a value the browser knows nothing of (a tag, a note, the day of a booking) |
+| `TextField` | One line. `type` is `text` (the default), `email`, `password`, `tel`, `url`, `search`, `number`, `date`, `time` or `datetime-local`. `autoComplete` is required: the name HTML gives the value (`email`, `tel`, `family-name`, `bday`), or `off` for a value the browser knows nothing of (a tag, a note, the day of a booking). `width='short'` for a short value that stands alone in the column of a form (a date, a number, a code): the control is as wide as such a value, and its label and messages keep the width of the column. A control of a `FieldRow`, a `FormRow` or a `FilterForm` stands in a narrow column already, and keeps the default |
 | `PasswordField` | A password that a person chooses. Its owner may look at it (「パスワードを表示する」). `autoComplete` is required: `new-password`, `current-password`, or `off` for one that belongs to no account |
 | `TextArea` | Several lines: three in sight, `rows` for more |
-| `Select` | One of a list. `placeholder` adds a first option without a value |
+| `Select` | One of a list. `placeholder` adds a first option without a value. `width='short'` as for `TextField` |
 | `RadioGroup` | One of a few choices that should all be in sight. `layout='columns'` for many short ones (the times of a day): as many columns as fit, and the arrow keys go through them in the order they are read. Choices with long labels (the payment methods with what they take) stay one below the other: a label does not fit a column at 390px |
 | `Checkbox` | One thing that is so or not so. `labelHidden` keeps the label for a screen reader alone: the checkbox of a row of a table, whose row says what it is about (「山田 花子 様を選ぶ」) |
 | `CheckboxGroup` | Several of a few choices. The chosen values are sent under one name (`formData.getAll(name)`). `layout='columns'` for many short ones. It is a `fieldset`, where `RadioGroup` is a `radiogroup`: a group of checkboxes is never required as a whole, and one of radio buttons says so (`aria-required`) |
@@ -271,6 +271,7 @@ nobody reads is removed.
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
 | `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it and what else can be done (`actions`): one below the other and as wide as the form below 40rem, in a row from there (an `Actions` of the layout `row`) |
 | `FormPart` | A part of a long form under its name (`label`: a `fieldset` and its `legend`), with what it says of all its controls (`description`, which the `fieldset` is described by) before them, in the look of a description. What else a `fieldset` takes (`disabled`, `onChange`) is handed to it |
+| `FormRow` | One of the rows a form repeats (a past treatment of a chart, an option of a service, a line of an order, a day of the opening hours, a photo, a product of a treatment): a frame with its name on its upper edge (`label`: a `fieldset` and its `legend`), and its controls one below the other. `ref` reaches the `fieldset`, for the form that moves the focus into a row it added |
 | `FieldRow` | Two controls that are read together (a name and its kana, the start and the end), or three (`columns={3}`: the prices of a product), side by side from 40rem and one below the other below it. Each keeps its height, so their upper edges stay in line when one has a description |
 | `FormDialog` | A question answered with a form (a cancellation and its reason, a tag for the chosen customers): a `Dialog` whose content is the form, with 「戻る」 and the button that sends it (`submitLabel`, `submitVariant='danger'` for what cannot be undone) among its actions. Enter in a control sends it, nothing is sent again while `pending`, and the focus goes to the first control with an error. `answer` is what the form brought when it is to be read before the dialog closes (the codes issued, the report made before): it takes the place of the form, with 「閉じる」 alone, and takes the focus |
 
@@ -376,11 +377,21 @@ shortest).
   as its children, `errors` (a message under the name of each control), a
   `message` about the whole attempt, `pending`, the `submitLabel` and
   `onSubmit`, and its stories are those states. The screen around it calls
-  the API and decides what the form says. A form with steps or a layout of
-  its own is a component of its own that takes the same properties and has
-  its own stories: the sign-in form
+  the API and decides what the form says. A form with steps is a component
+  of its own around a `Form`, with its own stories: the sign-in form
   (`frontend/packages/session/src/components/sign-in-form/`, with
-  `sign-in-screen/` around it).
+  `sign-in-screen/` around it), which moves the focus to the code when the
+  second step begins.
+- **Every form is a `Form`, a `FilterForm` or a `FormDialog`**, so that
+  Enter sends it, the first control with an error takes the focus and its
+  buttons stand alike. The conditions of a list, the days of a count and
+  the day of a report are a `FilterForm`, also in a dialog (the search of
+  the customer who referred another). Two are neither, and say why in
+  their description: the booking form of the portal (choosing the staff
+  or the day reads other times at once, and its button is there only
+  while the day has a free time) and the file of customers to register
+  (its button comes after the table of the file). They send and move the
+  focus as `Form` does.
 - **The browser keeps the values.** The controls have a `name` and no
   `value`; the form hands over `new FormData(form)` when it is sent. Nothing
   is rendered again while a person types, and what the browser or a password
@@ -502,12 +513,18 @@ list, `salon-screen.tsx` for a record with its parts).
     error).
 - **A list goes on with 「さらに表示」** (`useInfiniteQuery`, with the
   cursor of the API as the parameter of a page; the pure functions are in
-  `pages.ts`). The next items are added below those that are there, and the
-  focus moves to the first of them, in `useLayoutEffect`: the button that
-  was pressed is gone, or further down. It moves once, and after a press:
-  the button sets a ref, and the effect that sees more items moves the
-  focus when the ref is set. Items that no press asked for (the list was
-  read again, the rest of a page came later) leave the focus where it is.
+  `pages.ts`). A list of cards is a `PagedList` of `ui`, a table a
+  `PagedTable` of `salon-screens`; both are built on `LoadMore` and
+  `useFocusOnMore`, so a screen writes none of what follows. The next
+  items are added below those that are there, and the focus moves to the
+  first of them, in a layout effect: the button that was pressed is gone,
+  or further down. It moves once, and after a press: the button sets a
+  ref, and the effect that sees more items moves the focus when the ref
+  is set. Items that no press asked for (the list was read again, the rest
+  of a page came later) leave the focus where it is. The focus goes to the
+  first link of the item, or to the item itself (`focus='item'`) when it
+  is to be read from its beginning: a review whose buttons come after its
+  text, a device whose name is no link.
   A page that could not be read is a
   page of the query like the others: the items stay, an `Alert` below them
   says so, and the button reads again. How many there are, and how many of
@@ -740,8 +757,15 @@ none).
   phone number, a day of birth from 1900 until today. Today is the day
   it is where the browser is (`localDateOf`); it is the `max` of the date
   control as well.
-- **A value nobody gave is said in words** on the page that shows the
-  record (「未登録」, 「未発行」, 「なし」): a name without a value looks
+- **A value the record does not hold is `null`, and is given as it is**:
+  a `DescriptionList` and a `Table` say 「記録なし」 for it, quietly
+  (`NotRecorded`), and a sentence that needs the words takes
+  `NOT_RECORDED` of `ui`. A function that names a value returns `null`
+  when there is none, and the screen writes no words of its own. 「なし」
+  is for what is none as a fact: an empty list, zero, no booking, no
+  refund, no visit. A `null` the contract names as a state is said as that
+  state: the referral code that is 「未発行」, and 「なし」 for the referrer
+  of a customer who came without a referral. A name without a value looks
   like a fault.
 - **What the user cannot change is said where it would be asked for.**
   The address of a customer is that of the account, and then what the
@@ -773,7 +797,10 @@ have.
 - **Rows that are added and taken away** are a component that keeps which
   rows there are (`components/time-slot-fields/` of the package, and the
   treatments of `ChartForm` in the admin application, whose rows are
-  groups of four controls); the browser keeps what
+  groups of four controls). A row that is a group of controls under its
+  name is a `FormRow`; the times of the package and the lines of a booking
+  are numbered rows of two columns, whose labels carry the number, and
+  draw their own rows. The browser keeps what
   was typed, as in every control. A row has a `key` that stays with it (a
   counter, never its index), so a row that is taken away takes its values
   with it and the others keep theirs. The controls are named by the number
@@ -1190,7 +1217,8 @@ writes what it read" holds; this is what comes on top.
   time, 「さらに表示」 below it, and the focus on the link of the first row
   that was added, or on its header when the row has no link (the header
   takes the focus with `tabIndex` -1: a row of the history of the points
-  made for no record).
+  made for no record). It is built on `LoadMore` and `useFocusOnMore`, as
+  a `PagedList` is.
 - **What a state allows is a button of the part 「状態」**
   (`booking-actions.ts`: `actionsOf(booking, now)`). What leaves the
   booking open is done at once (確定, 施術の開始); what closes it for good
@@ -1763,7 +1791,8 @@ with `components/treatment-statistics/`.
   the next attempt against what it read.
 - **A count over a period is read whenever it is shown**
   (`staleTime: 0`), its days are in the query of the address
-  (`StatisticsPeriod` of `salon-screens`, shared with the statistics of a customer), and a
+  (`StatisticsPeriod` of `salon-screens`, shared with the statistics of a
+  customer: a `FilterForm` whose button is 「集計する」), and a
   period in which nothing was written says so instead of a table of
   zeros. What a count counts twice (a record of two categories counts in
   both) is said under the table.
@@ -1800,9 +1829,15 @@ salon: `reports/sales-report-screen.tsx` with `components/sales-report/`,
   colour of the accent on a track of `--color-surface-sunken`. It holds no
   text; the amount above it is what is read.
 - **Further choices of what is counted are children of
-  `StatisticsPeriod`**, below the days and above the button: the parts a
+  `StatisticsPeriod`**, the other conditions of its `FilterForm`: after
+  the days on a wide screen, in the sheet of a narrow one. The parts a
   trend is cut into are a `RadioGroup` whose value is in the address
   beside the days (`period`), sent with them.
+- **The days before and after are a `PeriodSwitch`** of `ui`: the links
+  to the period before, to the one that holds today and to the one after,
+  in that order (「前の日」「今日」「次の日」, 「前の週」「今週」「次の週」).
+  A period that cannot be shown (before the first day the API counts,
+  after today for the sales) has no link.
 
 A chart is a picture of a table (`components/trend-chart/` with
 `components/sales-trend/`):
@@ -2378,18 +2413,23 @@ A share link opens a file for somebody who has no account
 | `Actions` | Buttons and links that stand together in the body of a part, in the order they are read. `flow` (the default) lets them follow each other like words and go on in the next line where the part ends: what can be done with a part, each on its own (「変更履歴」, 「ほかのお客様とまとめる」 and 「台帳から削除する」 of a customer); `row` puts them one below the other and as wide as the part below 40rem, and in a row from there, as a `Form` does: the button that sends what was entered and the way back from it, where they stand outside a `Form` (「登録する」 and 「やめる」 of a file of customers); `stack` puts them one below the other, each as wide as its label. A lone button needs none: it is as wide as its label wherever it stands |
 | `Note` | A sentence said more quietly than the text around it: what a part, a list or a screen leaves out or adds (`size='medium'`, the default), or what goes with a control or a part of a form, as close to it as its description (`size='small'`). The descriptions of `Field`, `FormPart`, `Dialog`, `PageHeader` and `EmptyState` are `Note`s |
 | `WrittenText` | What somebody wrote in several lines (a note, a request, a review), shown with its line breaks and its spaces: it is a paragraph, and a cell of a `Table` keeps its lines with `wrap: 'lines'` |
-| `BulletList` | A short list of sentences with their bullets: what stands in the way of a merge, the rows of a file that were refused. A list of records is a `Table`, a list of cards a `ul` of `Card`s |
-| `DescriptionList` | The names and values of one record, side by side on every screen, one line for a value. The names share a column as wide as the longest of them, and never more than two fifths of the list: a longer name goes on in a second line |
+| `BulletList` | A short list of sentences with their bullets: what stands in the way of a merge, the rows of a file that were refused. A list of records is a `Table`, a list of cards a `CardList` |
+| `CardList` | Records that are read one by one (bookings, reviews, salons, devices), each in the frame of a card: `--space-frame` inside the frame, `--space-content` between what an item holds, `--space-parts` between the items. `layout='tiles'` sets as many side by side as the width holds (the people of a salon) |
+| `PagedList` | A `CardList` that is read a page at a time: how many there are (`count`, a status), the items, and `LoadMore`. The focus moves into the first item that 「さらに表示」 added: its first link, or the item (`focus='item'`) |
+| `LoadMore`, `useFocusOnMore`, `More` | Below a list that is read a page at a time: 「さらに表示」, 「もう一度読み込む」 and why the page did not come (`More`: `none`, `available`, `loading`, `failed`); and the hook that moves the focus into the first item the button added, for a list that is no `PagedList` (`PagedTable`) |
+| `PeriodSwitch` | The links from the period that is shown to the one before, to the one that holds today and to the one after, by the day or the week (`unit`): the words are its own. A link that `beforeHref` or `afterHref` does not give is left out |
+| `NotRecorded`, `NOT_RECORDED` | 「記録なし」, quietly: what a `DescriptionList` and a `Table` show for a `null`, and the words for a sentence |
+| `DescriptionList` | The names and values of one record, side by side on every screen, one line for a value. The names share a column as wide as the longest of them, and never more than two fifths of the list: a longer name goes on in a second line. A description that is `null` says 「記録なし」 |
 | `Badge` | The state of a record, in a word, in the colours of a `Tone`, or `neutral` (`BadgeTone`) |
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends |
 | `Rating` | A rating out of five: the stars, the number, and how many gave it |
 | `QrCode` | A QR code drawn from its text, as an image with a name: what an authenticator app reads. The text stays in the browser |
-| `Table` | A list of records. Its first column heads each row, or the one `rowHeader` names: the name of a customer, when a column of checkboxes comes first |
+| `Table` | A list of records. Its first column heads each row, or the one `rowHeader` names: the name of a customer, when a column of checkboxes comes first. A cell that is `null` says 「記録なし」 |
 | `EmptyState` | What is shown where content would be, while there is none: a frame of its own in the place of the content of a page, and `kind='part'` quietly inside a card, with no frame (the photos of a treatment, the bill of a booking). `actions` lead on from there |
 | `LoadingIndicator` | What is shown where content will be, while it loads. Its `label` says what is read |
 | `UnreadNotice` | What is shown where content could not be read: the message the application words (`unreadMessageOf(what, reason)`), and the button that reads again (`pending` while it reads) |
 | `VisuallyHidden` | Words that assistive technology reads and the eye does not see, where what is around them shows the same (the address of the account, in a narrow header). Its stylesheet holds the one rule of the frontend that hides from the eye; the components of `ui` use its class (the caption of a table, the label of a checkbox, the link that skips to the content) |
-| `FilterForm`, `useFilterValues` | The conditions of a list, above it: the controls in sight, the other conditions (in a sheet on a narrow screen), the button that sends them and the link that takes them away; and the values its controls show, which follow the address |
+| `FilterForm`, `useFilterValues` | The conditions of a list, above it: the controls in sight, the other conditions (in a sheet on a narrow screen), the button that sends them (`purpose`: 「探す」, 「表示する」, 「集計する」) and the link that takes them away; and the values its controls show, which follow the address |
 | `Dialog` | A question or a small form that has to be dealt with first: a sheet on the bottom edge of a narrow screen, a box in the middle of a wider one; `size='wide'` for a table to choose from; `kind='menu'` for links and buttons to choose from, which asks nothing |
 | `NotificationProvider`, `useNotifications` | The result of what the user just did |
 

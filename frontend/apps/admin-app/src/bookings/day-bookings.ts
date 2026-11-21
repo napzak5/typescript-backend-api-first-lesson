@@ -4,7 +4,8 @@ import type {
   ModelsServiceResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { More, Unread } from '@beauty-salon-frontend/salon-screens'
+import type { Unread } from '@beauty-salon-frontend/salon-screens'
+import type { More } from '@beauty-salon-frontend/ui'
 import type { CustomersRead } from '../customers/customers-api'
 import { GONE_SERVICE, NO_MEMBER, UNLISTED_STAFF } from './booking-format'
 

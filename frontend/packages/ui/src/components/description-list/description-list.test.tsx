@@ -35,6 +35,16 @@ describe('DescriptionList', () => {
     }
   })
 
+  it('should say quietly of a value that was not recorded that it was not', async () => {
+    // Act
+    await stories.WithOtherContent.run()
+
+    // Assert
+    const notRecorded = screen.getByText('記録なし')
+    expect(notRecorded).toHaveClass('notRecorded')
+    expect(notRecorded.closest('dd')).not.toBeNull()
+  })
+
   it('should show a value that is more than text', async () => {
     // Act
     await stories.WithOtherContent.run()

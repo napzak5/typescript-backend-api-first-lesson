@@ -1,6 +1,5 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
 import { Card, DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
-import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   carriedNameOf,
   expiryNameOf,
@@ -18,10 +17,10 @@ export type ProductRecordProps = {
 }
 
 const writtenOrNone = (text: string | null) =>
-  text === null ? NOT_RECORDED : <WrittenText>{text}</WrittenText>
+  text === null ? null : <WrittenText>{text}</WrittenText>
 
 const addressOrNone = (address: string | null) =>
-  address === null ? NOT_RECORDED : address
+  address === null ? null : address
 
 /**
  * Everything the ledger keeps of a product: what it is and what it is
@@ -39,9 +38,9 @@ export const ProductRecord = ({ product, currency }: ProductRecordProps) => (
           { term: '説明', description: writtenOrNone(product.description) },
           {
             term: 'カテゴリー',
-            description: product.category ?? NOT_RECORDED,
+            description: product.category,
           },
-          { term: 'ブランド', description: product.brand ?? NOT_RECORDED },
+          { term: 'ブランド', description: product.brand },
           { term: '単位', description: product.unit },
           { term: '用途', description: usesNameOf(product) },
           { term: '状態', description: carriedNameOf(product.isActive) },
@@ -87,10 +86,10 @@ export const ProductRecord = ({ product, currency }: ProductRecordProps) => (
     <Card title='仕入れ'>
       <DescriptionList
         items={[
-          { term: '仕入先', description: product.supplier ?? NOT_RECORDED },
+          { term: '仕入先', description: product.supplier },
           {
             term: '仕入先の商品コード',
-            description: product.supplierProductCode ?? NOT_RECORDED,
+            description: product.supplierProductCode,
           },
           {
             term: '納品までの日数',
@@ -102,7 +101,7 @@ export const ProductRecord = ({ product, currency }: ProductRecordProps) => (
     <Card title='管理'>
       <DescriptionList
         items={[
-          { term: 'バーコード', description: product.barcode ?? NOT_RECORDED },
+          { term: 'バーコード', description: product.barcode },
           {
             term: 'ロット番号',
             description: lotsNameOf(product.requiresLotTracking),

@@ -70,6 +70,7 @@ export const AuthenticatorRegistration = ({
         onSubmit={onSubmit}
       >
         <TextField
+          width='short'
           label='認証アプリのコード'
           name={CODE}
           inputMode='numeric'

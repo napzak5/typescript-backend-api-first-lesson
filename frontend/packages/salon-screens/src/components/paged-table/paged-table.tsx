@@ -1,12 +1,12 @@
 import {
-  Alert,
-  Button,
+  LoadMore,
+  type More,
   Note,
   Table,
   type TableProps,
+  useFocusOnMore,
 } from '@beauty-salon-frontend/ui'
-import { useLayoutEffect, useRef } from 'react'
-import type { More } from '../../pages'
+import { useRef } from 'react'
 import styles from './paged-table.module.css'
 
 export type PagedTableProps<Row> = Omit<TableProps<Row>, 'className'> & {
@@ -37,49 +37,30 @@ export const PagedTable = <Row,>({
   ...table
 }: PagedTableProps<Row>) => {
   const frame = useRef<HTMLDivElement>(null)
-  const shown = useRef(rows.length)
-  // Whether the button was pressed and what it asked for is yet to be shown
-  const asked = useRef(false)
-
-  // In the commit that shows the added rows, before they are painted
-  useLayoutEffect(() => {
-    if (asked.current && rows.length > shown.current) {
-      const added = frame.current
-        ?.querySelectorAll('tbody tr')
-        .item(shown.current)
-      const link = added?.querySelector<HTMLAnchorElement>('a')
-      const header = added?.querySelector<HTMLTableCellElement>('th')
-      if (link !== null && link !== undefined) {
-        link.focus()
-      } else if (header !== null && header !== undefined) {
-        // Out of the order of the keyboard: the focus is put there, and it is no control
-        header.tabIndex = -1
-        header.focus()
-      }
-      asked.current = false
+  const ask = useFocusOnMore(rows.length, (index) => {
+    const added = frame.current?.querySelectorAll('tbody tr').item(index)
+    const link = added?.querySelector<HTMLAnchorElement>('a')
+    const header = added?.querySelector<HTMLTableCellElement>('th')
+    if (link !== null && link !== undefined) {
+      link.focus()
+    } else if (header !== null && header !== undefined) {
+      // Out of the order of the keyboard: the focus is put there, and it is no control
+      header.tabIndex = -1
+      header.focus()
     }
-    shown.current = rows.length
-  }, [rows.length])
-
-  const askForMore = (): void => {
-    asked.current = true
-    onMore()
-  }
+  })
 
   return (
     <div className={styles['pagedTable']} ref={frame}>
       <Note role='status'>{count}</Note>
       <Table {...table} rows={rows} />
-      {more === 'failed' && (
-        <Alert tone='danger'>
-          続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。
-        </Alert>
-      )}
-      {more !== 'none' && (
-        <Button onClick={askForMore} pending={more === 'loading'}>
-          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-        </Button>
-      )}
+      <LoadMore
+        more={more}
+        onMore={() => {
+          ask()
+          onMore()
+        }}
+      />
     </div>
   )
 }

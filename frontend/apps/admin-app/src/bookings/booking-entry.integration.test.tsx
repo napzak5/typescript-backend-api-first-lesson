@@ -636,7 +636,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       ])
       expect(recordTerms()).toEqual(
         expect.arrayContaining([
-          ['お客様の要望', 'なし'],
+          ['お客様の要望', '記録なし'],
           ['サロン内のメモ', '次回はカラーも'],
           ['受付の経路', '店頭'],
           ['予約金', '￥3,000'],

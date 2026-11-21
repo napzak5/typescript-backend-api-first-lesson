@@ -13,7 +13,6 @@ import {
   WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   deliveryDayNameOf,
   doneNameOf,
@@ -39,7 +38,7 @@ export type OrderRecordProps = {
 
 /** What was written, in the lines it was written in; 「記録なし」 when nothing was. */
 const writtenOf = (text: string | null): ReactNode =>
-  text === null ? NOT_RECORDED : <WrittenText>{text}</WrittenText>
+  text === null ? null : <WrittenText>{text}</WrittenText>
 
 /** What happened to the order after it was made: its approval, its delivery, its cancellation, each once it happened */
 const eventsOf = (
@@ -125,7 +124,7 @@ export const OrderRecord = ({
           ...eventsOf(order, timezone, staff),
           {
             term: '支払条件',
-            description: order.paymentTerms ?? NOT_RECORDED,
+            description: order.paymentTerms,
           },
           { term: 'メモ', description: writtenOf(order.notes) },
           { term: '納品のメモ', description: writtenOf(order.deliveryNotes) },
@@ -174,7 +173,7 @@ export const OrderRecord = ({
           {
             key: 'notes',
             header: 'メモ',
-            cell: ({ notes }) => notes ?? '',
+            cell: ({ notes }) => notes,
           },
         ]}
         rows={order.items}
@@ -194,7 +193,7 @@ export const OrderRecord = ({
             term: '送料',
             description:
               order.shippingCost === null
-                ? 'なし'
+                ? null
                 : amountOf(order.shippingCost, currency),
           },
           { term: '合計', description: amountOf(order.totalAmount, currency) },

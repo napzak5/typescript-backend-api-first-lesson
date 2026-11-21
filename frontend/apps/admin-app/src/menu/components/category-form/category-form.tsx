@@ -10,7 +10,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { CATEGORY_OPTIONS } from '../../../customers/customer-format'
 import { categoriesById, categoryPathOf } from '../../menu-format'
-import styles from './category-form.module.css'
 
 export type CategoryFormProps = Pick<
   FormProps,
@@ -100,7 +99,7 @@ export const CategoryForm = ({
         label='色'
         name='color'
         autoComplete='off'
-        className={styles['short']}
+        width='short'
         description='#C8A2C8 のように、# と 16 進数 6 桁で。'
         defaultValue={category?.color ?? undefined}
         error={errors['color']}

@@ -70,12 +70,12 @@ describe('BookingSummary', () => {
     expect(details()).toMatchObject({ 料金: '￥6,050（うち消費税 ￥550）' })
   })
 
-  it('should say that nothing was asked for', async () => {
+  it('should say that no request was recorded', async () => {
     // Act
     await stories.WithoutRequest.run()
 
     // Assert
-    expect(details()).toMatchObject({ ご要望: 'なし' })
+    expect(details()).toMatchObject({ ご要望: '記録なし' })
   })
 
   it('should show a request with the lines it was written in', async () => {

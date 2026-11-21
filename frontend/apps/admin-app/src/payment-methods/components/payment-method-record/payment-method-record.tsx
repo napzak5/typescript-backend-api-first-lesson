@@ -1,7 +1,6 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
 import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
-import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   amountsNameOf,
   feeNameOf,
@@ -31,9 +30,7 @@ export const PaymentMethodRecord = ({
         {
           term: '説明',
           description:
-            method.description === null ? (
-              NOT_RECORDED
-            ) : (
+            method.description === null ? null : (
               <WrittenText>{method.description}</WrittenText>
             ),
         },
@@ -41,7 +38,7 @@ export const PaymentMethodRecord = ({
         { term: '手数料率', description: feeNameOf(method.fee) },
         {
           term: '決済代行会社',
-          description: method.processorName ?? NOT_RECORDED,
+          description: method.processorName,
         },
         { term: '使う場所', description: placesNameOf(method) },
         { term: '状態', description: usedNameOf(method.isActive) },

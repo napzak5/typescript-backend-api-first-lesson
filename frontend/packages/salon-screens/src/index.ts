@@ -34,7 +34,6 @@ export {
   cursorAfter,
   firstCursor,
   listingOf,
-  type More,
   moreOf,
 } from './pages'
 export {

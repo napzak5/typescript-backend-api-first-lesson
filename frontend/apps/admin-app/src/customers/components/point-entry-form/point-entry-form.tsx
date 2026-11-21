@@ -68,6 +68,7 @@ export const PointEntryForm = ({
           error={errors['kind']}
         />
         <TextField
+          width='short'
           label='ポイント数'
           name='points'
           inputMode='numeric'
@@ -82,6 +83,7 @@ export const PointEntryForm = ({
         />
         {kind === 'earned' && (
           <TextField
+            width='short'
             label='有効期限'
             name='expiryDate'
             autoComplete='off'

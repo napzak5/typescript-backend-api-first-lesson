@@ -43,3 +43,17 @@ export const WithError: Story = {
 export const Disabled: Story = {
   args: { disabled: true, defaultValue: 'sato' },
 }
+
+/** Choices of a few characters: the select is as wide as the longest of them */
+export const Short: Story = {
+  args: {
+    label: '満足度',
+    name: 'satisfaction',
+    width: 'short',
+    options: [
+      { value: '5', label: '5（とても満足）' },
+      { value: '3', label: '3（ふつう）' },
+      { value: '1', label: '1（不満）' },
+    ],
+  },
+}

@@ -52,6 +52,8 @@ const NO_ERRORS: FormErrors = {}
  * of the customers takes the width of the page, which its columns need,
  * and the button that registers them comes after it, so that they are
  * read before it is pressed. The button belongs to the form by its `form`.
+ * That is why it is no `Form` of the package, whose button ends the column
+ * of the form; it sends and moves the focus as one does.
  */
 export const CustomerImportForm = ({
   chosen,

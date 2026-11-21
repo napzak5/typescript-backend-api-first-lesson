@@ -320,7 +320,7 @@ describe('the reports of reviews', () => {
           received,
           EXCELLENT,
           '宣伝や、来店と関係のない内容',
-          'なし',
+          '記録なし',
           dismissed,
         ],
       ]),
@@ -334,7 +334,13 @@ describe('the reports of reviews', () => {
     await screen.findByRole('table', { name: '却下した通報' })
     expect(firstSight[0]).toBe(`${address}?status=dismissed`)
     expect(rowsOf('却下した通報')).toEqual([
-      [received, EXCELLENT, '宣伝や、来店と関係のない内容', 'なし', dismissed],
+      [
+        received,
+        EXCELLENT,
+        '宣伝や、来店と関係のない内容',
+        '記録なし',
+        dismissed,
+      ],
     ])
 
     // Act

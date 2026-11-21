@@ -5,10 +5,10 @@ import {
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
-  ButtonLink,
   type FormErrors,
   LoadingIndicator,
   PageHeader,
+  PeriodSwitch,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
@@ -18,7 +18,6 @@ import { match, P } from 'ts-pattern'
 import { DailySales } from './components/daily-sales/daily-sales'
 import { DayChoice } from './components/day-choice/day-choice'
 import { dayIn, dayQueryOf, neighboursOf, readDay } from './daily-sales'
-import styles from './daily-sales-screen.module.css'
 import { ReportRefusal } from './report-refusal'
 import { dailySalesKeyOf, readDailySales } from './sales-report-api'
 
@@ -44,6 +43,10 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   const day = dayIn(query, today)
   const errors = refused?.asked === day ? refused.errors : undefined
   const { before, after } = neighboursOf(day, today)
+  const hrefOf = (other: string | undefined): string | undefined =>
+    other === undefined
+      ? undefined
+      : `${pathname}?${dayQueryOf(other).toString()}`
   const read = useQuery({
     queryKey: dailySalesKeyOf(salon.id, day),
     queryFn: () => readDailySales(salon.id, day),
@@ -78,22 +81,13 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           (counted) => (
             <>
               <DayChoice day={day} errors={errors} onSubmit={show} />
-              <nav className={styles['days']} aria-label='ほかの日'>
-                {before !== undefined && (
-                  <ButtonLink
-                    href={`${pathname}?${dayQueryOf(before).toString()}`}
-                  >
-                    前の日
-                  </ButtonLink>
-                )}
-                {after !== undefined && (
-                  <ButtonLink
-                    href={`${pathname}?${dayQueryOf(after).toString()}`}
-                  >
-                    次の日
-                  </ButtonLink>
-                )}
-              </nav>
+              <PeriodSwitch
+                label='ほかの日'
+                unit='day'
+                beforeHref={hrefOf(before)}
+                currentHref={pathname}
+                afterHref={hrefOf(after)}
+              />
               {match(counted)
                 .with(undefined, () => (
                   <LoadingIndicator label='売上を集計しています' />

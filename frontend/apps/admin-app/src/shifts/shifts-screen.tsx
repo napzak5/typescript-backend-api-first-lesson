@@ -14,6 +14,7 @@ import {
   EmptyState,
   LoadingIndicator,
   PageHeader,
+  PeriodSwitch,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { useQueries, useQuery } from '@tanstack/react-query'
@@ -25,7 +26,6 @@ import {
   type ShiftMember,
   ShiftTable,
 } from './components/shift-table/shift-table'
-import { WeekSwitch } from './components/week-switch/week-switch'
 import { readSchedule, type ScheduleRead, scheduleKeyOf } from './schedules-api'
 import { weekIn } from './shift-week'
 
@@ -122,10 +122,12 @@ const Shifts = ({ salon }: ShiftsProps) => {
   return (
     <>
       <PageHeader title={TITLE} description={salon.name} />
-      <WeekSwitch
-        weekBeforeHref={shiftWeekHrefOf(salon.id, dayAfter(monday, -7))}
-        thisWeekHref={shiftsHrefOf(salon.id)}
-        weekAfterHref={shiftWeekHrefOf(salon.id, dayAfter(monday, 7))}
+      <PeriodSwitch
+        label='シフトの週'
+        unit='week'
+        beforeHref={shiftWeekHrefOf(salon.id, dayAfter(monday, -7))}
+        currentHref={shiftsHrefOf(salon.id)}
+        afterHref={shiftWeekHrefOf(salon.id, dayAfter(monday, 7))}
       />
       {match(profiles.data)
         .with(undefined, () => (

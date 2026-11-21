@@ -4,6 +4,7 @@ import {
   FieldRow,
   Form,
   type FormErrors,
+  FormRow,
   Note,
   Select,
   TextArea,
@@ -100,9 +101,8 @@ export const PhotoForm = ({
         URL を書きます。施術記録は、写真のファイルを預かりません。
       </Note>
       {rows.map((key, index) => (
-        <fieldset
+        <FormRow
           key={key}
-          className={styles['row']}
           ref={(group) => {
             if (group === null) {
               groups.current.delete(key)
@@ -110,74 +110,70 @@ export const PhotoForm = ({
               groups.current.set(key, group)
             }
           }}
+          label={`${index + 1} 枚目の写真`}
         >
-          <legend
-            className={styles['rowName']}
-          >{`${index + 1} 枚目の写真`}</legend>
-          <div className={styles['controls']}>
-            <FieldRow>
-              <Select
-                label='区分'
-                name={photoControlOf(index, 'photoType')}
-                options={PHOTO_TYPE_OPTIONS}
-                placeholder='選んでください'
-                required
-                defaultValue=''
-                error={said[photoControlOf(index, 'photoType')]}
-              />
-              <TextField
-                label='撮った向き'
-                name={photoControlOf(index, 'angle')}
-                autoComplete='off'
-                description='正面、側面、後ろなど。50 文字まで。'
-                error={said[photoControlOf(index, 'angle')]}
-              />
-            </FieldRow>
-            <TextField
-              label='写真の URL'
-              name={photoControlOf(index, 'photoUrl')}
-              type='url'
-              autoComplete='off'
+          <FieldRow>
+            <Select
+              label='区分'
+              name={photoControlOf(index, 'photoType')}
+              options={PHOTO_TYPE_OPTIONS}
+              placeholder='選んでください'
               required
-              description='http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL。500 文字まで。'
-              error={said[photoControlOf(index, 'photoUrl')]}
+              defaultValue=''
+              error={said[photoControlOf(index, 'photoType')]}
             />
             <TextField
-              label='縮小した写真の URL'
-              name={photoControlOf(index, 'thumbnailUrl')}
-              type='url'
+              label='撮った向き'
+              name={photoControlOf(index, 'angle')}
               autoComplete='off'
-              description='小さくした写真があれば、その URL。施術記録の写真の一覧に出します。'
-              error={said[photoControlOf(index, 'thumbnailUrl')]}
+              description='正面、側面、後ろなど。50 文字まで。'
+              error={said[photoControlOf(index, 'angle')]}
             />
-            <TextArea
-              label='写真の説明'
-              name={photoControlOf(index, 'description')}
-              rows={2}
+          </FieldRow>
+          <TextField
+            label='写真の URL'
+            name={photoControlOf(index, 'photoUrl')}
+            type='url'
+            autoComplete='off'
+            required
+            description='http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL。500 文字まで。'
+            error={said[photoControlOf(index, 'photoUrl')]}
+          />
+          <TextField
+            label='縮小した写真の URL'
+            name={photoControlOf(index, 'thumbnailUrl')}
+            type='url'
+            autoComplete='off'
+            description='小さくした写真があれば、その URL。施術記録の写真の一覧に出します。'
+            error={said[photoControlOf(index, 'thumbnailUrl')]}
+          />
+          <TextArea
+            label='写真の説明'
+            name={photoControlOf(index, 'description')}
+            rows={2}
+          />
+          <div className={styles['choices']}>
+            <Checkbox
+              label='お客様が、写真の撮影と利用に同意している'
+              name={photoControlOf(index, 'customerConsent')}
             />
-            <div className={styles['choices']}>
-              <Checkbox
-                label='お客様が、写真の撮影と利用に同意している'
-                name={photoControlOf(index, 'customerConsent')}
-              />
-              <Checkbox
-                label='サロンの外（サロンのページなど）に見せてよい'
-                name={photoControlOf(index, 'isPublic')}
-                description='お客様の同意がある写真だけ、サロンの外に見せられます。'
-                error={said[photoControlOf(index, 'isPublic')]}
-              />
-            </div>
-            {rows.length > 1 && (
-              <Button
-                size='small'
-                aria-label={`${index + 1} 枚目の写真の欄を外す`}
-                onClick={() => removeRow(key)}
-              >
-                外す
-              </Button>
-            )}
+            <Checkbox
+              label='サロンの外（サロンのページなど）に見せてよい'
+              name={photoControlOf(index, 'isPublic')}
+              description='お客様の同意がある写真だけ、サロンの外に見せられます。'
+              error={said[photoControlOf(index, 'isPublic')]}
+            />
           </div>
-        </fieldset>
+          {rows.length > 1 && (
+            <Button
+              size='small'
+              aria-label={`${index + 1} 枚目の写真の欄を外す`}
+              onClick={() => removeRow(key)}
+            >
+              外す
+            </Button>
+          )}
+        </FormRow>
       ))}
       {rows.length < room ? (
         <Button ref={add} onClick={addRow}>

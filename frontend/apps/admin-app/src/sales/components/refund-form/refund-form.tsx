@@ -58,12 +58,13 @@ export const RefundForm = ({
             description: methodNameOf(payment.paymentMethodId, methods),
           },
           { term: '金額', description: amountOf(payment.amount, currency) },
-          { term: 'カード', description: cardNameOf(payment) ?? 'なし' },
+          { term: 'カード', description: cardNameOf(payment) },
         ]}
       />
     </Card>
     <Form {...form} errors={errors} submitLabel='返金を記録する'>
       <TextField
+        width='short'
         label='返金する金額'
         name='refundAmount'
         inputMode='numeric'

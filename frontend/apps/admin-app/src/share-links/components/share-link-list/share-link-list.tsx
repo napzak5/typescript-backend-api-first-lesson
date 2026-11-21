@@ -1,7 +1,6 @@
 import type { ModelsShareLinkResponse } from '@beauty-salon-frontend/api-client'
 import {
   countOf,
-  type More,
   momentNameAt,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
@@ -12,6 +11,7 @@ import {
   EmptyState,
   Link,
   LoadingIndicator,
+  type More,
   Note,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'

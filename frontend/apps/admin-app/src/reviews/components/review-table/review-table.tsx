@@ -2,12 +2,8 @@ import type {
   ModelsReviewResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  countOf,
-  type More,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
-import { Badge, Link, Rating } from '@beauty-salon-frontend/ui'
+import { countOf, PagedTable } from '@beauty-salon-frontend/salon-screens'
+import { Badge, Link, type More, Rating } from '@beauty-salon-frontend/ui'
 import { reviewDayNameOf, reviewNameOf } from '../../review-format'
 
 export type ReviewTableProps = {
@@ -87,7 +83,7 @@ export const ReviewTable = ({
         key: 'comment',
         header: 'コメント',
         wrap: 'lines',
-        cell: ({ comment }) => comment ?? 'なし',
+        cell: ({ comment }) => comment,
       },
       {
         key: 'staffId',

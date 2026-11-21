@@ -2,9 +2,15 @@ import type {
   ModelsReviewResponse,
   ModelsReviewSortType,
 } from '@beauty-salon-frontend/api-client'
-import { Actions, Alert, Button, Link, Select } from '@beauty-salon-frontend/ui'
-import { type ChangeEvent, useLayoutEffect, useRef } from 'react'
-import type { More } from '../../pages'
+import {
+  Actions,
+  Button,
+  Link,
+  type More,
+  PagedList,
+  Select,
+} from '@beauty-salon-frontend/ui'
+import type { ChangeEvent } from 'react'
 import { postedOf } from '../../salon-format'
 import { ReviewContent } from '../review-content/review-content'
 import styles from './review-list.module.css'
@@ -109,10 +115,11 @@ const ReviewActions = ({ review, timezone, customer }: ReviewActionsProps) => {
 }
 
 /**
- * The reviews of a salon, in an order the reader chooses. When reviews are
- * added to the list, the focus moves to the first of them; reviews that
- * come in another order are no added ones, and the focus stays on the
- * control that chose the order.
+ * The reviews of a salon, in an order the reader chooses. When 「さらに表示」
+ * added reviews to the list, the focus moves to the first of them, to the
+ * review and not one of its buttons, so that it is read from its
+ * beginning; reviews that come in another order are no added ones, and the
+ * focus stays on the control that chose the order.
  */
 export const ReviewList = ({
   reviews,
@@ -123,23 +130,6 @@ export const ReviewList = ({
   onMore,
   customer,
 }: ReviewListProps) => {
-  const list = useRef<HTMLUListElement>(null)
-  const shown = useRef({ sortBy, count: reviews.length })
-
-  // In the commit that shows the added reviews, before they are painted
-  useLayoutEffect(() => {
-    if (
-      shown.current.sortBy === sortBy &&
-      reviews.length > shown.current.count
-    ) {
-      list.current
-        ?.querySelectorAll<HTMLLIElement>(':scope > li')
-        .item(shown.current.count)
-        ?.focus()
-    }
-    shown.current = { sortBy, count: reviews.length }
-  }, [sortBy, reviews.length])
-
   const choose = (event: ChangeEvent<HTMLSelectElement>): void => {
     const chosen = ORDERS.find((order) => order.value === event.target.value)
     if (chosen !== undefined) {
@@ -156,11 +146,16 @@ export const ReviewList = ({
         value={sortBy}
         onChange={choose}
       />
-      <ul className={styles['list']} ref={list} aria-label='レビュー'>
-        {reviews.map((review) => (
-          // What the focus moves to when the review was added: the review, not
-          // one of its buttons, so that it is read from its beginning
-          <li key={review.id} className={styles['review']} tabIndex={-1}>
+      <PagedList
+        items={reviews}
+        itemKey={({ id }) => id}
+        label='レビュー'
+        focus='item'
+        more={more}
+        onMore={onMore}
+      >
+        {(review) => (
+          <>
             <ReviewContent review={review} timezone={timezone} />
             {customer !== undefined && (
               <ReviewActions
@@ -169,19 +164,9 @@ export const ReviewList = ({
                 customer={customer}
               />
             )}
-          </li>
-        ))}
-      </ul>
-      {more === 'failed' && (
-        <Alert tone='danger'>
-          続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。
-        </Alert>
-      )}
-      {more !== 'none' && (
-        <Button onClick={onMore} pending={more === 'loading'}>
-          {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-        </Button>
-      )}
+          </>
+        )}
+      </PagedList>
     </div>
   )
 }

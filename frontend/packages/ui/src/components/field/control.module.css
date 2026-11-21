@@ -12,6 +12,18 @@
   transition: border-color var(--duration-short) ease;
 }
 
+/*
+ * A control of a short value (a date, a number, a code): as wide as its
+ * value and never narrower than a date, at the start of the column, whose
+ * label and messages keep its width.
+ */
+.short {
+  justify-self: start;
+  inline-size: auto;
+  min-inline-size: 12rem;
+  max-inline-size: 100%;
+}
+
 .control::placeholder {
   color: var(--color-text-muted);
   opacity: 1;

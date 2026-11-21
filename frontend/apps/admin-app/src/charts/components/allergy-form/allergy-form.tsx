@@ -97,6 +97,7 @@ export const AllergyForm = ({
       error={errors['notes']}
     />
     <TextField
+      width='short'
       label='確かめた日'
       name='confirmedDate'
       autoComplete='off'

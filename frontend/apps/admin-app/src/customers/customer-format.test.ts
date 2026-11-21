@@ -62,10 +62,10 @@ describe('the names of the values', () => {
 })
 
 describe('genderNameOf', () => {
-  it.each<[string, ModelsCustomerResponse['gender'], string]>([
+  it.each<[string, ModelsCustomerResponse['gender'], string | null]>([
     ['a gender that was given', 'female', '女性'],
     ['an answer withheld', 'prefer_not_to_say', '回答しない'],
-    ['nothing given', null, '未登録'],
+    ['nothing given', null, null],
   ])('should name %s', (_case, gender, name) => {
     // Act, Assert
     expect(genderNameOf(gender)).toBe(name)
@@ -75,7 +75,7 @@ describe('genderNameOf', () => {
 describe('categoriesNameOf', () => {
   it.each<[string, ModelsServiceCategoryType[], string]>([
     ['kinds in the order of the contract', ['spa', 'cut'], 'カット、スパ'],
-    ['no kind', [], '未登録'],
+    ['no kind', [], 'なし'],
   ])('should name %s', (_case, categories, name) => {
     // Act, Assert
     expect(categoriesNameOf(categories)).toBe(name)
@@ -83,14 +83,14 @@ describe('categoriesNameOf', () => {
 })
 
 describe('hairNameOf', () => {
-  it.each<[string, Partial<ModelsCustomerResponse>, string]>([
+  it.each<[string, Partial<ModelsCustomerResponse>, string | null]>([
     [
       'all that was recorded',
       { hairType: 'wavy', hairThickness: 'thin', scalpCondition: 'dry' },
       'ウェーブ、細い髪、頭皮は乾燥',
     ],
     ['the scalp alone', { scalpCondition: 'sensitive' }, '頭皮は敏感'],
-    ['nothing recorded', {}, '未登録'],
+    ['nothing recorded', {}, null],
   ])('should name %s', (_case, hair, name) => {
     // Act, Assert
     expect(hairNameOf(aCustomer(hair))).toBe(name)
@@ -98,7 +98,7 @@ describe('hairNameOf', () => {
 })
 
 describe('addressNameOf', () => {
-  it.each<[string, Partial<ModelsCustomerResponse>, string]>([
+  it.each<[string, Partial<ModelsCustomerResponse>, string | null]>([
     [
       'the whole address',
       {
@@ -112,7 +112,7 @@ describe('addressNameOf', () => {
     ],
     ['the city alone', { city: '渋谷区' }, '渋谷区'],
     ['the postal code alone', { postalCode: '150-0001' }, '〒150-0001'],
-    ['no address', {}, '未登録'],
+    ['no address', {}, null],
   ])('should write %s', (_case, address, name) => {
     // Act, Assert
     expect(addressNameOf(aCustomer(address))).toBe(name)

@@ -35,6 +35,6 @@ describe('ChosenCustomer', () => {
     await stories.WithoutKana.run()
 
     // Assert
-    expect(terms()).toContainEqual(['フリガナ', '未登録'])
+    expect(terms()).toContainEqual(['フリガナ', '記録なし'])
   })
 })

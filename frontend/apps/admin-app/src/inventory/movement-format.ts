@@ -7,7 +7,6 @@ import type {
 import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { UNLISTED_STAFF } from '../bookings/booking-format'
-import { NOT_RECORDED } from '../staff/staff-format'
 import { quantityNameOf } from './stock-format'
 
 /*
@@ -119,25 +118,20 @@ export const changeNameOf = (
 export const movementReasonOf = ({
   reason,
   referenceType,
-}: Pick<
-  ModelsInventoryTransactionResponse,
-  'reason' | 'referenceType'
->): string =>
+}: Pick<ModelsInventoryTransactionResponse, 'reason' | 'referenceType'>):
+  | string
+  | null =>
   reason ??
   match(referenceType)
     .with('purchase_order', () => '発注の入荷')
-    .otherwise(() => NOT_RECORDED)
+    .otherwise(() => null)
 
 /**
- * Who recorded a movement, by the name the salon shows: nobody is named
- * for an administrator, nor for the movement that began the records of a
- * row; a member who left is not in the list.
+ * The member who recorded something, by the name the salon shows; a member
+ * who left is not in the list.
  */
 export const performerNameOf = (
-  performedBy: string | null,
+  performedBy: string,
   staff: readonly Pick<ModelsStaffProfileResponse, 'id' | 'displayName'>[],
 ): string =>
-  performedBy === null
-    ? NOT_RECORDED
-    : (staff.find(({ id }) => id === performedBy)?.displayName ??
-      UNLISTED_STAFF)
+  staff.find(({ id }) => id === performedBy)?.displayName ?? UNLISTED_STAFF

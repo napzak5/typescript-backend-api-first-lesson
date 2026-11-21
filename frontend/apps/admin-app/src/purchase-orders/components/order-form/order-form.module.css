@@ -1,14 +1,3 @@
-/* A stock row, set apart from the next by a line */
-.row {
-  padding-block-start: var(--space-3);
-  border-block-start: 1px solid var(--color-border);
-}
-
-.rowName {
-  margin-block-end: var(--space-2);
-  font-weight: var(--font-weight-medium);
-}
-
 /* What the items come to, below them */
 .subtotal {
   padding-block-start: var(--space-3);

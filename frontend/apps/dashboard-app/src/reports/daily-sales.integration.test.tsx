@@ -215,6 +215,24 @@ describe('the sales of one day, against the API', () => {
     expect(screen.getByRole('link', { name: '次の日' })).toBeVisible()
   })
 
+  it('should go back to today from a day long ago', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellTwoDays()
+    const today = await dayFromToday(0)
+    renderAt(`${dailyHrefOf(await salonIdOf(TOKYO))}?date=2020-01-01`)
+    await signInAs(OWNER)
+    await termsOf(salesOf('2020-01-01'))
+
+    // Act
+    await user.click(screen.getByRole('link', { name: '今日' }))
+
+    // Assert
+    expect(await termsOf(salesOf(today))).toEqual(SUMS_OF_TODAY)
+    expect(screen.getByLabelText('日付')).toHaveValue(today)
+    expect(screen.queryByRole('link', { name: '次の日' })).toBeNull()
+  })
+
   it('should say that a day is needed, give the field the focus and show the day it showed', async () => {
     // Arrange
     await sellTwoDays()

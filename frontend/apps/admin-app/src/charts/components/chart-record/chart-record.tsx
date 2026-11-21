@@ -11,7 +11,6 @@ import {
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { UNRECORDED } from '../../../customers/customer-format'
 import { treatmentNameOf } from '../../chart-form'
 import styles from './chart-record.module.css'
 
@@ -30,10 +29,10 @@ export type ChartRecordProps = {
 type Row = { place: number; treatment: ModelsPreviousTreatment }
 
 const writtenOrNone = (text: string | null) =>
-  text === null ? UNRECORDED : <WrittenText>{text}</WrittenText>
+  text === null ? null : <WrittenText>{text}</WrittenText>
 
 const productsOrNone = (label: string, names: readonly string[]) =>
-  names.length === 0 ? UNRECORDED : <TagList label={label} items={names} />
+  names.length === 0 ? 'なし' : <TagList label={label} items={names} />
 
 /**
  * The chart of a customer, as a member of the staff reads it before a
@@ -112,13 +111,13 @@ export const ChartRecord = ({
             {
               key: 'salonName',
               header: 'サロン',
-              cell: ({ treatment: { salonName } }) => salonName ?? UNRECORDED,
+              cell: ({ treatment: { salonName } }) => salonName,
             },
             {
               key: 'notes',
               header: 'メモ',
               wrap: 'lines',
-              cell: ({ treatment: { notes } }) => notes ?? '',
+              cell: ({ treatment: { notes } }) => notes,
             },
           ]}
           rows={chart.previousTreatments.map((treatment, place) => ({

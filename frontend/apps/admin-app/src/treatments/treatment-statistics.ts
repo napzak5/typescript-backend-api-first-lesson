@@ -3,7 +3,6 @@ import {
   monthUntil,
   type Period,
 } from '@beauty-salon-frontend/salon-screens'
-import { NOT_RECORDED } from './treatment-format'
 
 /*
  * The statistics of the treatment records of a salon: the days they are
@@ -32,6 +31,6 @@ export const countNameOf = (count: number): string => `${count} 件`
 
 const MINUTES = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 1 })
 
-/** How long the treatments took on average: 「72.5 分」, or that no time was recorded. */
-export const averageNameOf = (minutes: number | null): string =>
-  minutes === null ? NOT_RECORDED : `${MINUTES.format(minutes)} 分`
+/** How long the treatments took on average: 「72.5 分」, or `null` when no time was recorded. */
+export const averageNameOf = (minutes: number | null): string | null =>
+  minutes === null ? null : `${MINUTES.format(minutes)} 分`

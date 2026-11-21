@@ -2,10 +2,9 @@ import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
 import {
   countOf,
   dayNameOf,
-  type More,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
-import { Badge, Checkbox, Link } from '@beauty-salon-frontend/ui'
+import { Badge, Checkbox, Link, type More } from '@beauty-salon-frontend/ui'
 import {
   countNameOf,
   customerStatusNameOf,

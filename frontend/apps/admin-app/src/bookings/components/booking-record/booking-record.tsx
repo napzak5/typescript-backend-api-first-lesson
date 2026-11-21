@@ -9,7 +9,7 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
 import { customerNameOf } from '../../../customers/customers-api'
-import { NO_RECORD, sourceNameOf } from '../../booking-entry'
+import { sourceNameOf } from '../../booking-entry'
 import { GONE_CUSTOMER, hoursOf, UNLISTED_STAFF } from '../../booking-format'
 import {
   memberNameOf,
@@ -38,8 +38,6 @@ export type BookingRecordProps = {
   lineHrefOf: (lineId: string) => string
 }
 
-const NONE = 'なし'
-
 /**
  * What the salon keeps of a booking: who comes when, for what, with whom,
  * what it comes to, and what happened to it. What the salon leaves empty
@@ -66,7 +64,7 @@ export const BookingRecord = ({
           },
           {
             term: 'キャンセルの理由',
-            description: booking.cancellationReason ?? NO_RECORD,
+            description: booking.cancellationReason,
           },
         ]),
     ...(booking.actualStartTime === null
@@ -127,24 +125,22 @@ export const BookingRecord = ({
             },
             {
               term: 'お客様の要望',
-              description: booking.customerRequest ?? NONE,
+              description: booking.customerRequest,
             },
             {
               term: 'サロン内のメモ',
-              description: booking.internalNotes ?? NONE,
+              description: booking.internalNotes,
             },
             {
               term: '受付の経路',
               description:
-                booking.source === null
-                  ? NO_RECORD
-                  : sourceNameOf(booking.source),
+                booking.source === null ? null : sourceNameOf(booking.source),
             },
             {
               term: '予約金',
               description:
                 booking.depositAmount === null
-                  ? NO_RECORD
+                  ? null
                   : amountOf(booking.depositAmount, currency),
             },
             ...happened,

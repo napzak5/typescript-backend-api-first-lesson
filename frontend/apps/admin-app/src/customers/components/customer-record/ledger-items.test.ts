@@ -53,7 +53,7 @@ describe('changedItemsOf', () => {
     // Assert
     expect(changed).toEqual([
       { term: '電話番号', before: '090-1234-5678', after: '080-3333-4444' },
-      { term: '予備の電話番号', before: '未登録', after: '03-1234-5678' },
+      { term: '予備の電話番号', before: null, after: '03-1234-5678' },
     ])
   })
 

@@ -21,7 +21,8 @@ export type FilterFormProps = {
   label: string
   /**
    * What sending it does. A `search` looks for what was typed: 「探す」. A
-   * `view` shows the list as the chosen conditions narrow it: 「表示する」
+   * `view` shows the list as the chosen conditions narrow it: 「表示する」.
+   * A `count` counts over the chosen days: 「集計する」
    */
   purpose?: FilterPurpose | undefined
   /** The controls in sight on every screen: the keyword, the day of a list */
@@ -45,11 +46,12 @@ export type FilterFormProps = {
   onSubmit: (values: FormData) => void
 }
 
-type FilterPurpose = 'search' | 'view'
+type FilterPurpose = 'search' | 'view' | 'count'
 
 const SUBMIT_LABEL: Record<FilterPurpose, string> = {
   search: '探す',
   view: '表示する',
+  count: '集計する',
 }
 
 const NO_ERRORS: FormErrors = {}

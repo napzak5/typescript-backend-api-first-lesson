@@ -1,12 +1,5 @@
-import {
-  Actions,
-  Alert,
-  Button,
-  Checkbox,
-  TextField,
-} from '@beauty-salon-frontend/ui'
-import { type FormEvent, useLayoutEffect, useRef } from 'react'
-import styles from './sign-in-form.module.css'
+import { Button, Checkbox, Form, TextField } from '@beauty-salon-frontend/ui'
+import { useLayoutEffect, useRef } from 'react'
 
 /** What is wrong with a value, under the name of its control. */
 export type SignInFormErrors = {
@@ -35,22 +28,15 @@ export type SignInFormProps = {
 
 const NO_ERRORS: SignInFormErrors = {}
 
-/** The controls, in the order the form shows them */
-const CONTROLS: (keyof SignInFormErrors)[] = [
-  'email',
-  'password',
-  'twoFactorCode',
-]
-
 /**
  * The form a person signs in with: what it asks for, and what it says about
  * the last attempt. It keeps no state and calls no API; the browser keeps
  * the values, and the form hands them over when it is sent.
  *
- * The focus goes to the first control that has an error, and to the code
- * when the second step begins: the form changes without a page load, so it
- * says itself where to go on. It does so in the commit that shows the change,
- * before the browser paints it.
+ * Like every `Form`, it moves the focus to the first control that has an
+ * error. When the second step begins, the focus goes to the code: the form
+ * changes without a page load, so it says itself where to go on. It does so
+ * in the commit that shows the change, before the browser paints it.
  */
 export const SignInForm = ({
   step,
@@ -60,32 +46,31 @@ export const SignInForm = ({
   onSubmit,
   onBack,
 }: SignInFormProps) => {
-  const form = useRef<HTMLFormElement>(null)
+  const code = useRef<HTMLInputElement>(null)
 
-  // A new set of errors is another attempt, also when it says the same
+  // After the error of the code, if there is one, has taken the focus
   useLayoutEffect(() => {
-    const invalid = CONTROLS.find((name) => errors[name] !== undefined)
-    const next = invalid ?? (step === 'twoFactorCode' ? step : undefined)
-
-    if (next !== undefined) {
-      form.current?.querySelector<HTMLElement>(`[name="${next}"]`)?.focus()
+    if (step === 'twoFactorCode' && errors.twoFactorCode === undefined) {
+      code.current?.focus()
     }
   }, [errors, step])
 
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    // The button ignores a press while an attempt is on its way. A form can
-    // also be sent without one, by a script
-    if (!pending) {
-      onSubmit(new FormData(event.currentTarget))
-    }
-  }
-
   return (
-    // The messages of the fields replace those of the browser, which are
-    // shown one at a time and not to everyone
-    <form className={styles['form']} noValidate onSubmit={submit} ref={form}>
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+    <Form
+      submitLabel='サインイン'
+      message={message}
+      errors={errors}
+      pending={pending}
+      actions={
+        step === 'twoFactorCode' &&
+        onBack !== undefined && (
+          <Button variant='quiet' onClick={onBack}>
+            メールアドレスの入力に戻る
+          </Button>
+        )
+      }
+      onSubmit={onSubmit}
+    >
       {step === 'credentials' ? (
         <>
           <TextField
@@ -112,6 +97,7 @@ export const SignInForm = ({
         </>
       ) : (
         <TextField
+          ref={code}
           label='認証コード'
           name='twoFactorCode'
           autoComplete='one-time-code'
@@ -120,16 +106,6 @@ export const SignInForm = ({
           error={errors.twoFactorCode}
         />
       )}
-      <Actions layout='row'>
-        <Button type='submit' variant='primary' pending={pending}>
-          サインイン
-        </Button>
-        {step === 'twoFactorCode' && onBack !== undefined && (
-          <Button variant='quiet' onClick={onBack}>
-            メールアドレスの入力に戻る
-          </Button>
-        )}
-      </Actions>
-    </form>
+    </Form>
   )
 }

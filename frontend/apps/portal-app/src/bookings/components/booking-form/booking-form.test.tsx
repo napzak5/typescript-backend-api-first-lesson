@@ -114,6 +114,8 @@ describe('BookingForm', () => {
       expect(dateControl()).toHaveValue(DAY)
       expect(dateControl()).toHaveAttribute('min', TODAY)
       expect(dateControl()).toBeRequired()
+      // A date is no wider than it needs, in the column of the form
+      expect(dateControl()).toHaveClass('short')
     })
 
     it.each([

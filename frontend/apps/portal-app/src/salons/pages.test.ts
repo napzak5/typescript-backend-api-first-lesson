@@ -1,9 +1,9 @@
+import type { More } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
 import {
   cursorAfter,
   firstCursor,
   listingOf,
-  type More,
   moreOf,
   unreadMessageOf,
 } from './pages'

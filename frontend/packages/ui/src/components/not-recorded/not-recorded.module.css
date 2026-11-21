@@ -1,0 +1,4 @@
+/* Quieter than a recorded value beside it */
+.notRecorded {
+  color: var(--color-text-muted);
+}

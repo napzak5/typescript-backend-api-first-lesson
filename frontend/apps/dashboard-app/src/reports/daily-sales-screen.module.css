@@ -1,7 +1,0 @@
-/* The days before and after, beside each other */
-.days {
-  display: grid;
-  grid-auto-flow: column;
-  justify-content: start;
-  gap: var(--space-3);
-}

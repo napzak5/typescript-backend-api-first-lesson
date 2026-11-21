@@ -69,7 +69,7 @@ export const ScheduleRecord = ({ rows, today }: ScheduleRecordProps) => {
           },
           { key: 'work', header: '勤務', cell: ({ shift }) => workOf(shift) },
           { key: 'rest', header: '休憩', cell: ({ shift }) => restOf(shift) },
-          { key: 'notes', header: '備考', cell: ({ notes }) => notes ?? '' },
+          { key: 'notes', header: '備考', cell: ({ notes }) => notes },
         ]}
         rows={weekly}
         rowKey={({ weekday }) => weekday}
@@ -85,7 +85,7 @@ export const ScheduleRecord = ({ rows, today }: ScheduleRecordProps) => {
           },
           { key: 'work', header: '勤務', cell: ({ shift }) => workOf(shift) },
           { key: 'rest', header: '休憩', cell: ({ shift }) => restOf(shift) },
-          { key: 'notes', header: '備考', cell: ({ notes }) => notes ?? '' },
+          { key: 'notes', header: '備考', cell: ({ notes }) => notes },
         ]}
         rows={dated}
         rowKey={({ date }) => date}

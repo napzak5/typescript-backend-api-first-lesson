@@ -12,6 +12,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  FormRow,
   Note,
   Select,
   TextArea,
@@ -37,7 +38,6 @@ import {
   optionControlOf,
   packagedControlOf,
 } from '../../service-form'
-import styles from './service-form.module.css'
 
 export type ServiceFormProps = Pick<
   FormProps,
@@ -405,33 +405,28 @@ export const ServiceForm = ({
         )}
         {isPackage &&
           packaged.map((row, index) => (
-            <fieldset
+            <FormRow
               key={row.key}
-              className={styles['row']}
               ref={groupRef(row.key)}
+              label={`構成サービス ${index + 1}`}
             >
-              <legend className={styles['rowName']}>
-                {`構成サービス ${index + 1}`}
-              </legend>
-              <div className={styles['rowControls']}>
-                <Select
-                  label='サービス'
-                  name={packagedControlOf(index)}
-                  placeholder='選んでください'
-                  required
-                  options={choices}
-                  defaultValue={row.shown ?? ''}
-                  error={said[packagedControlOf(index)]}
-                />
-                <Button
-                  size='small'
-                  aria-label={`構成サービス ${index + 1} を外す`}
-                  onClick={() => takeAway(row.key, { type: 'addPackaged' })}
-                >
-                  外す
-                </Button>
-              </div>
-            </fieldset>
+              <Select
+                label='サービス'
+                name={packagedControlOf(index)}
+                placeholder='選んでください'
+                required
+                options={choices}
+                defaultValue={row.shown ?? ''}
+                error={said[packagedControlOf(index)]}
+              />
+              <Button
+                size='small'
+                aria-label={`構成サービス ${index + 1} を外す`}
+                onClick={() => takeAway(row.key, { type: 'addPackaged' })}
+              >
+                外す
+              </Button>
+            </FormRow>
           ))}
         {isPackage && packaged.length < MOST_PACKAGED && (
           <Button ref={addPackaged} onClick={() => add('packaged')}>
@@ -444,88 +439,83 @@ export const ServiceForm = ({
         description='お客様が予約のときに足せるものです。並びの順に、お客様に出ます。'
       >
         {options.map((row, index) => (
-          <fieldset
+          <FormRow
             key={row.key}
-            className={styles['row']}
             ref={groupRef(row.key)}
+            label={`オプション ${index + 1}`}
           >
-            <legend className={styles['rowName']}>
-              {`オプション ${index + 1}`}
-            </legend>
-            <div className={styles['rowControls']}>
+            <TextField
+              label='名前'
+              name={optionControlOf(index, 'name')}
+              autoComplete='off'
+              required
+              defaultValue={row.shown?.name}
+              error={said[optionControlOf(index, 'name')]}
+            />
+            <FieldRow>
+              <Select
+                label='種類'
+                name={optionControlOf(index, 'optionType')}
+                required
+                options={OPTION_TYPE_OPTIONS}
+                defaultValue={row.shown?.optionType ?? 'addon'}
+                error={said[optionControlOf(index, 'optionType')]}
+              />
               <TextField
-                label='名前'
-                name={optionControlOf(index, 'name')}
+                label='選べる数'
+                name={optionControlOf(index, 'maxQuantity')}
+                inputMode='numeric'
                 autoComplete='off'
                 required
-                defaultValue={row.shown?.name}
-                error={said[optionControlOf(index, 'name')]}
+                defaultValue={String(row.shown?.maxQuantity ?? 1)}
+                error={said[optionControlOf(index, 'maxQuantity')]}
               />
-              <FieldRow>
-                <Select
-                  label='種類'
-                  name={optionControlOf(index, 'optionType')}
-                  required
-                  options={OPTION_TYPE_OPTIONS}
-                  defaultValue={row.shown?.optionType ?? 'addon'}
-                  error={said[optionControlOf(index, 'optionType')]}
-                />
-                <TextField
-                  label='選べる数'
-                  name={optionControlOf(index, 'maxQuantity')}
-                  inputMode='numeric'
-                  autoComplete='off'
-                  required
-                  defaultValue={String(row.shown?.maxQuantity ?? 1)}
-                  error={said[optionControlOf(index, 'maxQuantity')]}
-                />
-              </FieldRow>
-              <FieldRow>
-                <TextField
-                  label='追加の時間（分）'
-                  name={optionControlOf(index, 'additionalTime')}
-                  inputMode='numeric'
-                  autoComplete='off'
-                  required
-                  defaultValue={String(row.shown?.additionalTime ?? 0)}
-                  error={said[optionControlOf(index, 'additionalTime')]}
-                />
-                <TextField
-                  label='追加の料金'
-                  name={optionControlOf(index, 'additionalPrice')}
-                  inputMode='numeric'
-                  autoComplete='off'
-                  required
-                  defaultValue={String(row.shown?.additionalPrice ?? 0)}
-                  error={said[optionControlOf(index, 'additionalPrice')]}
-                />
-              </FieldRow>
-              <TextArea
-                label='説明'
-                name={optionControlOf(index, 'description')}
-                rows={2}
-                defaultValue={row.shown?.description ?? undefined}
+            </FieldRow>
+            <FieldRow>
+              <TextField
+                label='追加の時間（分）'
+                name={optionControlOf(index, 'additionalTime')}
+                inputMode='numeric'
+                autoComplete='off'
+                required
+                defaultValue={String(row.shown?.additionalTime ?? 0)}
+                error={said[optionControlOf(index, 'additionalTime')]}
               />
-              <Checkbox
-                label='必須'
-                name={optionControlOf(index, 'isRequired')}
-                description='予約のときに、かならず付きます。'
-                defaultChecked={row.shown?.isRequired ?? false}
+              <TextField
+                label='追加の料金'
+                name={optionControlOf(index, 'additionalPrice')}
+                inputMode='numeric'
+                autoComplete='off'
+                required
+                defaultValue={String(row.shown?.additionalPrice ?? 0)}
+                error={said[optionControlOf(index, 'additionalPrice')]}
               />
-              <Checkbox
-                label='有効'
-                name={optionControlOf(index, 'isActive')}
-                defaultChecked={row.shown?.isActive ?? true}
-              />
-              <Button
-                size='small'
-                aria-label={`オプション ${index + 1} を外す`}
-                onClick={() => takeAway(row.key, { type: 'addOption' })}
-              >
-                外す
-              </Button>
-            </div>
-          </fieldset>
+            </FieldRow>
+            <TextArea
+              label='説明'
+              name={optionControlOf(index, 'description')}
+              rows={2}
+              defaultValue={row.shown?.description ?? undefined}
+            />
+            <Checkbox
+              label='必須'
+              name={optionControlOf(index, 'isRequired')}
+              description='予約のときに、かならず付きます。'
+              defaultChecked={row.shown?.isRequired ?? false}
+            />
+            <Checkbox
+              label='有効'
+              name={optionControlOf(index, 'isActive')}
+              defaultChecked={row.shown?.isActive ?? true}
+            />
+            <Button
+              size='small'
+              aria-label={`オプション ${index + 1} を外す`}
+              onClick={() => takeAway(row.key, { type: 'addOption' })}
+            >
+              外す
+            </Button>
+          </FormRow>
         ))}
         <Button ref={addOption} onClick={() => add('options')}>
           オプションを足す

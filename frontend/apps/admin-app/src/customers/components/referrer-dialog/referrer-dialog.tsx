@@ -2,9 +2,13 @@ import {
   keywordOf,
   LONGEST_KEYWORD,
 } from '@beauty-salon-frontend/salon-screens'
-import { Button, Dialog, TextField } from '@beauty-salon-frontend/ui'
-import type { FormEvent, ReactNode } from 'react'
-import styles from './referrer-dialog.module.css'
+import {
+  Button,
+  Dialog,
+  FilterForm,
+  TextField,
+} from '@beauty-salon-frontend/ui'
+import type { ReactNode } from 'react'
 
 export type ReferrerDialogProps = {
   open: boolean
@@ -32,11 +36,6 @@ export const ReferrerDialog = ({
   onSearch,
   children,
 }: ReferrerDialogProps) => {
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSearch(keywordOf(new FormData(event.currentTarget)))
-  }
-
   return (
     <Dialog
       open={open}
@@ -46,22 +45,20 @@ export const ReferrerDialog = ({
       size='wide'
       actions={<Button onClick={onClose}>やめる</Button>}
     >
-      <search aria-label='紹介元を探す'>
-        <form className={styles['search']} onSubmit={submit}>
-          <TextField
-            label='キーワード'
-            name='keyword'
-            type='search'
-            autoComplete='off'
-            maxLength={LONGEST_KEYWORD}
-            defaultValue={keyword}
-            description='お名前（カナでも）、メールアドレス、電話番号の一部。'
-          />
-          <Button type='submit' variant='primary'>
-            探す
-          </Button>
-        </form>
-      </search>
+      <FilterForm
+        label='紹介元を探す'
+        onSubmit={(values) => onSearch(keywordOf(values))}
+      >
+        <TextField
+          label='キーワード'
+          name='keyword'
+          type='search'
+          autoComplete='off'
+          maxLength={LONGEST_KEYWORD}
+          defaultValue={keyword}
+          description='お名前（カナでも）、メールアドレス、電話番号の一部。'
+        />
+      </FilterForm>
       {children}
     </Dialog>
   )

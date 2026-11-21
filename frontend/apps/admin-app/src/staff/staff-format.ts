@@ -33,9 +33,6 @@ export const LEVEL_OPTIONS: readonly Option[] = LEVELS.map((level) => ({
   label: LEVEL_NAMES[level],
 }))
 
-/** What is said of a value the ledger does not have */
-export const NOT_RECORDED = '記録なし'
-
 /** The name of a member as the ledger keeps it, family name first: 「Tanaka Hiroshi」. */
 export const staffNameOf = ({
   lastName,

@@ -1,4 +1,5 @@
 import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
+import type { More } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
 import { phone, thisDevice, unrecorded } from './components/examples'
 import type { SessionPage, Unsent } from './security-api'
@@ -8,7 +9,6 @@ import {
   cursorAfter,
   endsWithGoneCursor,
   listingOf,
-  type More,
   moreOf,
   readPasswordChange,
   unreadMessageOf,

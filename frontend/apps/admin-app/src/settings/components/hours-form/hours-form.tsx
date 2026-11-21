@@ -5,6 +5,7 @@ import {
   Form,
   type FormErrors,
   FormPart,
+  FormRow,
   Note,
   RadioGroup,
   TextField,
@@ -23,7 +24,6 @@ import {
   weekPartsOf,
 } from '../../hours-form'
 import { periodNameOf } from '../../settings-format'
-import styles from './hours-form.module.css'
 
 export type HoursFormProps = {
   /** The hours the form was opened with, as the API keeps them */
@@ -194,68 +194,63 @@ export const HoursForm = ({
           const open = opens[part.weekday] ?? false
 
           return (
-            <fieldset key={part.weekday} className={styles['row']}>
-              <legend className={styles['rowName']}>
-                {weekdayNameOf(part.weekday)}
-              </legend>
-              <div className={styles['rowControls']}>
-                <RadioGroup
-                  label='営業'
-                  name={nameOf('opens')}
-                  options={[
-                    { value: OPEN, label: '営業する' },
-                    { value: CLOSED, label: '休業' },
-                  ]}
-                  value={open ? OPEN : CLOSED}
-                  onChange={(event) =>
-                    setOpens({
-                      ...opens,
-                      [part.weekday]: event.target.value === OPEN,
-                    })
-                  }
-                />
-                {open && (
-                  <>
-                    <Times
-                      nameOf={nameOf}
-                      openTime={part.openTime}
-                      closeTime={part.closeTime}
-                      errors={errors}
+            <FormRow key={part.weekday} label={weekdayNameOf(part.weekday)}>
+              <RadioGroup
+                label='営業'
+                name={nameOf('opens')}
+                options={[
+                  { value: OPEN, label: '営業する' },
+                  { value: CLOSED, label: '休業' },
+                ]}
+                value={open ? OPEN : CLOSED}
+                onChange={(event) =>
+                  setOpens({
+                    ...opens,
+                    [part.weekday]: event.target.value === OPEN,
+                  })
+                }
+              />
+              {open && (
+                <>
+                  <Times
+                    nameOf={nameOf}
+                    openTime={part.openTime}
+                    closeTime={part.closeTime}
+                    errors={errors}
+                  />
+                  <FieldRow>
+                    <TextField
+                      label='休憩の始まり'
+                      type='time'
+                      name={nameOf('breakStart')}
+                      autoComplete='off'
+                      description='休憩がないときは、始まりも終わりも空にします。'
+                      defaultValue={timeInputOf(part.breakStart ?? null)}
+                      error={errors[nameOf('breakStart')]}
                     />
-                    <FieldRow>
-                      <TextField
-                        label='休憩の始まり'
-                        type='time'
-                        name={nameOf('breakStart')}
-                        autoComplete='off'
-                        description='休憩がないときは、始まりも終わりも空にします。'
-                        defaultValue={timeInputOf(part.breakStart ?? null)}
-                        error={errors[nameOf('breakStart')]}
-                      />
-                      <TextField
-                        label='休憩の終わり'
-                        type='time'
-                        name={nameOf('breakEnd')}
-                        autoComplete='off'
-                        defaultValue={timeInputOf(part.breakEnd ?? null)}
-                        error={errors[nameOf('breakEnd')]}
-                      />
-                    </FieldRow>
-                  </>
-                )}
-                {part.more && (
-                  <Note size='small'>
-                    この曜日には、営業時間か休憩が 2
-                    つ以上あります。毎週の営業時間を変えて保存すると、最初の営業時間と最初の休憩だけが残ります。
-                  </Note>
-                )}
-                {part.effectivePeriod !== null && (
-                  <Note size='small'>
-                    {`この曜日の営業時間は、${periodNameOf(part.effectivePeriod, timezone)}です。期間は、この画面では変えません。`}
-                  </Note>
-                )}
-              </div>
-            </fieldset>
+                    <TextField
+                      label='休憩の終わり'
+                      type='time'
+                      name={nameOf('breakEnd')}
+                      autoComplete='off'
+                      defaultValue={timeInputOf(part.breakEnd ?? null)}
+                      error={errors[nameOf('breakEnd')]}
+                    />
+                  </FieldRow>
+                </>
+              )}
+              {part.more && (
+                <Note size='small'>
+                  この曜日には、営業時間か休憩が 2
+                  つ以上あります。毎週の営業時間を変えて保存すると、最初の営業時間と最初の休憩だけが残ります。
+                </Note>
+              )}
+              {part.effectivePeriod !== null && (
+                <Note size='small'>
+                  {`この曜日の営業時間は、${periodNameOf(part.effectivePeriod, timezone)}です。期間は、この画面では変えません。`}
+                </Note>
+              )}
+            </FormRow>
           )
         })}
       </FormPart>
@@ -268,9 +263,8 @@ export const HoursForm = ({
             dateControlOf(index, property)
 
           return (
-            <fieldset
+            <FormRow
               key={row.key}
-              className={styles['row']}
               ref={(group) => {
                 if (group === null) {
                   groups.current.delete(row.key)
@@ -278,73 +272,69 @@ export const HoursForm = ({
                   groups.current.set(row.key, group)
                 }
               }}
+              label={`${index + 1} 行目`}
             >
-              <legend className={styles['rowName']}>
-                {`${index + 1} 行目`}
-              </legend>
-              <div className={styles['rowControls']}>
-                <TextField
-                  className={styles['short']}
-                  label='日付'
-                  type='date'
-                  name={nameOf('date')}
-                  autoComplete='off'
-                  required
-                  defaultValue={row.shown.date}
-                  error={said[nameOf('date')]}
-                />
-                <RadioGroup
-                  label='営業'
-                  name={nameOf('opens')}
-                  options={[
-                    { value: OPEN, label: '営業する' },
-                    { value: CLOSED, label: '終日休業' },
-                  ]}
-                  value={row.opens ? OPEN : CLOSED}
-                  onChange={(event) =>
-                    choose(row.key, event.target.value === OPEN)
-                  }
-                />
-                {row.opens && (
-                  <>
-                    <Times
-                      nameOf={nameOf}
-                      openTime={row.shown.openTime}
-                      closeTime={row.shown.closeTime}
-                      errors={said}
-                    />
-                    <Checkbox
-                      label='祝日の営業'
-                      name={nameOf('isHoliday')}
-                      description='祝日や店休日に、時間を決めて営業する日に印を付けます。'
-                      defaultChecked={row.shown.isHoliday}
-                    />
-                  </>
-                )}
-                <TextField
-                  label='祝日・休業日の名前'
-                  name={nameOf('holidayName')}
-                  autoComplete='off'
-                  description='100 文字まで。「元日」「年末年始」「設備の点検」など。'
-                  defaultValue={row.shown.holidayName}
-                  error={said[nameOf('holidayName')]}
-                />
-                <TextField
-                  label='備考'
-                  name={nameOf('notes')}
-                  autoComplete='off'
-                  defaultValue={row.shown.notes}
-                  error={said[nameOf('notes')]}
-                />
-                <Button
-                  size='small'
-                  aria-label={`${index + 1} 行目を外す`}
-                  onClick={() => removeRow(row.key)}
-                >
-                  外す
-                </Button>
-              </div>
-            </fieldset>
+              <TextField
+                width='short'
+                label='日付'
+                type='date'
+                name={nameOf('date')}
+                autoComplete='off'
+                required
+                defaultValue={row.shown.date}
+                error={said[nameOf('date')]}
+              />
+              <RadioGroup
+                label='営業'
+                name={nameOf('opens')}
+                options={[
+                  { value: OPEN, label: '営業する' },
+                  { value: CLOSED, label: '終日休業' },
+                ]}
+                value={row.opens ? OPEN : CLOSED}
+                onChange={(event) =>
+                  choose(row.key, event.target.value === OPEN)
+                }
+              />
+              {row.opens && (
+                <>
+                  <Times
+                    nameOf={nameOf}
+                    openTime={row.shown.openTime}
+                    closeTime={row.shown.closeTime}
+                    errors={said}
+                  />
+                  <Checkbox
+                    label='祝日の営業'
+                    name={nameOf('isHoliday')}
+                    description='祝日や店休日に、時間を決めて営業する日に印を付けます。'
+                    defaultChecked={row.shown.isHoliday}
+                  />
+                </>
+              )}
+              <TextField
+                label='祝日・休業日の名前'
+                name={nameOf('holidayName')}
+                autoComplete='off'
+                description='100 文字まで。「元日」「年末年始」「設備の点検」など。'
+                defaultValue={row.shown.holidayName}
+                error={said[nameOf('holidayName')]}
+              />
+              <TextField
+                label='備考'
+                name={nameOf('notes')}
+                autoComplete='off'
+                defaultValue={row.shown.notes}
+                error={said[nameOf('notes')]}
+              />
+              <Button
+                size='small'
+                aria-label={`${index + 1} 行目を外す`}
+                onClick={() => removeRow(row.key)}
+              >
+                外す
+              </Button>
+            </FormRow>
           )
         })}
         <Button ref={add} onClick={addRow}>

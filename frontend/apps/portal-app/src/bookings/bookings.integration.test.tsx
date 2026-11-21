@@ -551,7 +551,7 @@ describe('the screens of a booking, against the API', () => {
       ).toEqual([{ staff: MIKA, customerRequest: null }])
       expect(
         detailsIn(await screen.findByRole('region', { name: /^予約番号 / })),
-      ).toMatchObject({ 担当: MIKA, ご要望: 'なし' })
+      ).toMatchObject({ 担当: MIKA, ご要望: '記録なし' })
     })
 
     it('should say that the time could not be booked when somebody took it first, read the times again and keep the rest', async () => {

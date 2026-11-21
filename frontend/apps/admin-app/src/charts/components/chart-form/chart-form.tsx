@@ -9,6 +9,7 @@ import {
   Form,
   type FormErrors,
   FormPart,
+  FormRow,
   Note,
   Select,
   TextArea,
@@ -21,7 +22,6 @@ import {
   rowControlOf,
   TREATMENT_OPTIONS,
 } from '../../chart-form'
-import styles from './chart-form.module.css'
 
 export type ChartFormProps = {
   /** The chart the form opens with; none for one that is made */
@@ -144,9 +144,8 @@ export const ChartForm = ({
         description='ほかのサロンで受けた施術や、カルテを始める前の施術を書きます。'
       >
         {rows.map((row, index) => (
-          <fieldset
+          <FormRow
             key={row.key}
-            className={styles['row']}
             ref={(group) => {
               if (group === null) {
                 groups.current.delete(row.key)
@@ -154,56 +153,52 @@ export const ChartForm = ({
                 groups.current.set(row.key, group)
               }
             }}
+            label={`${index + 1} 件目の施術`}
           >
-            <legend className={styles['rowName']}>
-              {`${index + 1} 件目の施術`}
-            </legend>
-            <div className={styles['rowControls']}>
-              <FieldRow>
-                <Select
-                  label='施術'
-                  name={rowControlOf(index, 'treatment')}
-                  options={TREATMENT_OPTIONS}
-                  placeholder='選んでください'
-                  required
-                  defaultValue={row.shown?.treatment ?? ''}
-                  error={said[rowControlOf(index, 'treatment')]}
-                />
-                <TextField
-                  label='施術日'
-                  name={rowControlOf(index, 'date')}
-                  autoComplete='off'
-                  type='date'
-                  required
-                  min={EARLIEST_DAY}
-                  max={today}
-                  defaultValue={row.shown?.date}
-                  error={said[rowControlOf(index, 'date')]}
-                />
-              </FieldRow>
+            <FieldRow>
+              <Select
+                label='施術'
+                name={rowControlOf(index, 'treatment')}
+                options={TREATMENT_OPTIONS}
+                placeholder='選んでください'
+                required
+                defaultValue={row.shown?.treatment ?? ''}
+                error={said[rowControlOf(index, 'treatment')]}
+              />
               <TextField
-                label='サロン'
-                name={rowControlOf(index, 'salonName')}
+                label='施術日'
+                name={rowControlOf(index, 'date')}
                 autoComplete='off'
-                description='施術を受けたサロンの名前。分からなければ空のままにします。'
-                defaultValue={row.shown?.salonName ?? undefined}
-                error={said[rowControlOf(index, 'salonName')]}
+                type='date'
+                required
+                min={EARLIEST_DAY}
+                max={today}
+                defaultValue={row.shown?.date}
+                error={said[rowControlOf(index, 'date')]}
               />
-              <TextArea
-                label='施術のメモ'
-                name={rowControlOf(index, 'notes')}
-                rows={2}
-                defaultValue={row.shown?.notes ?? undefined}
-              />
-              <Button
-                size='small'
-                aria-label={`${index + 1} 件目の施術を外す`}
-                onClick={() => removeRow(row.key)}
-              >
-                外す
-              </Button>
-            </div>
-          </fieldset>
+            </FieldRow>
+            <TextField
+              label='サロン'
+              name={rowControlOf(index, 'salonName')}
+              autoComplete='off'
+              description='施術を受けたサロンの名前。分からなければ空のままにします。'
+              defaultValue={row.shown?.salonName ?? undefined}
+              error={said[rowControlOf(index, 'salonName')]}
+            />
+            <TextArea
+              label='施術のメモ'
+              name={rowControlOf(index, 'notes')}
+              rows={2}
+              defaultValue={row.shown?.notes ?? undefined}
+            />
+            <Button
+              size='small'
+              aria-label={`${index + 1} 件目の施術を外す`}
+              onClick={() => removeRow(row.key)}
+            >
+              外す
+            </Button>
+          </FormRow>
         ))}
         {rows.length < MOST_TREATMENTS ? (
           <Button ref={add} onClick={addRow}>

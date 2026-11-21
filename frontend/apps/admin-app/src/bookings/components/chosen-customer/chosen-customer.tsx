@@ -41,7 +41,7 @@ export const ChosenCustomer = ({
       <DescriptionList
         items={[
           { term: 'お名前', description: customerNameOf(customer) },
-          { term: 'フリガナ', description: kana === '' ? '未登録' : kana },
+          { term: 'フリガナ', description: kana === '' ? null : kana },
           { term: '電話番号', description: customer.phoneNumber },
           { term: 'メールアドレス', description: customer.email },
         ]}

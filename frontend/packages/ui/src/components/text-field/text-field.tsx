@@ -1,6 +1,5 @@
 import type { ComponentProps } from 'react'
-import controlStyles from '../field/control.module.css'
-import { Field } from '../field/field'
+import { type ControlWidth, controlClassOf, Field } from '../field/field'
 
 /** What a browser may fill a control in with: a name of HTML, or `off` */
 type AutoFill = NonNullable<ComponentProps<'input'>['autoComplete']>
@@ -20,7 +19,7 @@ type TextFieldType =
 
 export type TextFieldProps = Omit<
   ComponentProps<'input'>,
-  'type' | 'children' | 'autoComplete'
+  'type' | 'children' | 'autoComplete' | 'width'
 > & {
   label: string
   /** Help for the value: what to enter, or in which form */
@@ -28,6 +27,8 @@ export type TextFieldProps = Omit<
   /** What is wrong with the value */
   error?: string | undefined
   type?: TextFieldType | undefined
+  /** `short` for a value of a few characters that stands alone in a column: a date, a number, a code */
+  width?: ControlWidth | undefined
   /**
    * What the browser may fill in: the name HTML gives the value (`email`,
    * `tel`, `family-name`, `bday`), or `off` for a value it knows nothing of
@@ -48,6 +49,7 @@ export const TextField = ({
   description,
   error,
   type = 'text',
+  width = 'full',
   id,
   required,
   className,
@@ -65,7 +67,7 @@ export const TextField = ({
       <input
         {...input}
         {...control}
-        className={controlStyles['control']}
+        className={controlClassOf(width)}
         type={type}
         required={required}
       />

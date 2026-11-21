@@ -168,9 +168,6 @@ export const contactsOf = ({
   ...(allowMarketing ? ['キャンペーンなどのお知らせ'] : []),
 ]
 
-/** What stands where a value would, when nobody has given one */
-export const UNSAID = '未登録'
-
 /**
  * What a salon wrote down of the hair of a customer, as names and values.
  * What no salon wrote down is said to be missing: a name without a value
@@ -183,19 +180,19 @@ export const hairOf = ({
 }: Pick<
   ModelsCustomerProfileResponse,
   'hairType' | 'hairThickness' | 'scalpCondition'
->): { term: string; description: string }[] => [
+>): { term: string; description: string | null }[] => [
   {
     term: '髪質',
-    description: hairType === null ? UNSAID : HAIR_TYPE_NAMES[hairType],
+    description: hairType === null ? null : HAIR_TYPE_NAMES[hairType],
   },
   {
     term: '髪の太さ',
     description:
-      hairThickness === null ? UNSAID : HAIR_THICKNESS_NAMES[hairThickness],
+      hairThickness === null ? null : HAIR_THICKNESS_NAMES[hairThickness],
   },
   {
     term: '頭皮の状態',
     description:
-      scalpCondition === null ? UNSAID : SCALP_CONDITION_NAMES[scalpCondition],
+      scalpCondition === null ? null : SCALP_CONDITION_NAMES[scalpCondition],
   },
 ]

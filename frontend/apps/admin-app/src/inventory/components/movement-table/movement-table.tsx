@@ -5,10 +5,10 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   countOf,
-  type More,
   momentNameAt,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
+import type { More } from '@beauty-salon-frontend/ui'
 import { priceNameOf } from '../../../products/product-format'
 import {
   changeNameOf,
@@ -93,7 +93,10 @@ export const MovementTable = ({
       {
         key: 'performedBy',
         header: '記録した人',
-        cell: ({ performedBy }) => performerNameOf(performedBy, staff),
+        // Nobody is named for an administrator, nor for the movement that
+        // began the records of a row
+        cell: ({ performedBy }) =>
+          performedBy === null ? null : performerNameOf(performedBy, staff),
       },
     ]}
     rows={movements}

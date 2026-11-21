@@ -6,8 +6,8 @@ import type {
   ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
 import { dayAt, dayNameOf } from '@beauty-salon-frontend/salon-screens'
+import { NOT_RECORDED } from '@beauty-salon-frontend/ui'
 import { timeNameOf, WEEKDAYS } from '../shifts/shift-week'
-import { NOT_RECORDED } from '../staff/staff-format'
 
 /*
  * The words of the settings of a salon: its hours, by the day of the week
@@ -91,7 +91,8 @@ export type CalendarDay = {
   hours: string
   /** The name of the holiday or of the day off, 「祝日・休業日」 for one without a name, and 「いいえ」 for an ordinary day */
   holiday: string
-  notes: string
+  /** `null` when nothing was noted of the day */
+  notes: string | null
 }
 
 /**
@@ -116,19 +117,19 @@ export const calendarFrom = (
       holiday: entry.isHoliday
         ? (entry.holidayName ?? '祝日・休業日')
         : 'いいえ',
-      notes: entry.notes ?? NOT_RECORDED,
+      notes: entry.notes,
     }))
 
 /** A rate of tax: 「10%」, 「8.5%」. */
 export const taxRateNameOf = (taxRate: number): string => `${taxRate}%`
 
-/** The place of a salon on the map: 「緯度 35.658、経度 139.7016」, or nothing recorded. */
+/** The place of a salon on the map: 「緯度 35.658、経度 139.7016」, or `null` when it is not recorded. */
 export const coordinatesNameOf = (
   latitude: number | null,
   longitude: number | null,
-): string =>
+): string | null =>
   latitude === null && longitude === null
-    ? NOT_RECORDED
+    ? null
     : `緯度 ${latitude ?? NOT_RECORDED}、経度 ${longitude ?? NOT_RECORDED}`
 
 /** How the customers rate the salon: 「4.0（3 件のレビュー）」, or that there is no rating yet. */

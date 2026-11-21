@@ -2,7 +2,7 @@ import type {
   ModelsAuthPasswordChangeRequest,
   ModelsSessionResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { FormErrors } from '@beauty-salon-frontend/ui'
+import type { FormErrors, More } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { newPasswordError, refusedPasswordMessage } from './password-rule'
 import type {
@@ -128,9 +128,6 @@ export const unreadMessageOf = (what: string, reason: Unsent): string =>
   reason.type === 'tooManyRequests'
     ? TOO_MANY_REQUESTS
     : `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`
-
-/** What comes after the sessions that are shown, for the list that shows them. */
-export type More = 'none' | 'available' | 'loading' | 'failed'
 
 /** What the pages of the sessions that were read so far amount to. */
 export type SessionListing =
