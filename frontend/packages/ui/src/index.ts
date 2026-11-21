@@ -86,6 +86,10 @@ export {
   type NavigationItem,
   type NavigationProps,
 } from './components/navigation/navigation'
+export {
+  NOT_RECORDED,
+  NotRecorded,
+} from './components/not-recorded/not-recorded'
 export { Note, type NoteProps, type NoteSize } from './components/note/note'
 export {
   type Notification,

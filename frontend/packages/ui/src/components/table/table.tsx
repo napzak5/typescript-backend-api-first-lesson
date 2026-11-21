@@ -1,5 +1,6 @@
 import { type ReactNode, useId, useRef } from 'react'
 import { classNames } from '../../class-names'
+import { NotRecorded } from '../not-recorded/not-recorded'
 import { visuallyHiddenClass } from '../visually-hidden/visually-hidden'
 import { useScrollsSideways } from './scrolls-sideways'
 import styles from './table.module.css'
@@ -19,6 +20,7 @@ export type TableColumn<Row> = {
   /** Tells the columns apart; it is not shown */
   key: string
   header: string
+  /** What the cell of a row holds, or `null` when it was not recorded: it is then said as 「記録なし」 */
   cell: (row: Row) => ReactNode
   /** `end` for numbers and amounts, so that their digits line up */
   align?: ColumnAlignment | undefined
@@ -52,12 +54,16 @@ const wrapClass: Record<ColumnWrap, string | undefined> = {
 }
 
 /** What a cell holds, in the room its column gives text */
-const contentOf = <Row,>(column: TableColumn<Row>, row: Row): ReactNode =>
-  column.wrap === undefined ? (
-    column.cell(row)
+const contentOf = <Row,>(column: TableColumn<Row>, row: Row): ReactNode => {
+  const value = column.cell(row)
+  const shown = value === null ? <NotRecorded /> : value
+
+  return column.wrap === undefined ? (
+    shown
   ) : (
-    <span className={wrapClass[column.wrap]}>{column.cell(row)}</span>
+    <span className={wrapClass[column.wrap]}>{shown}</span>
   )
+}
 
 /**
  * A list of records, one row each. A table that is wider than its room

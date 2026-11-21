@@ -130,6 +130,16 @@ describe('Table', () => {
     expect(screen.getByText('山田 花子').className).toBe('')
   })
 
+  it('should say quietly of a cell whose value was not recorded that it was not', async () => {
+    // Act
+    await stories.WithText.run()
+
+    // Assert
+    const notRecorded = screen.getByText('記録なし')
+    expect(notRecorded).toHaveClass('notRecorded')
+    expect(notRecorded.closest('td')).not.toBeNull()
+  })
+
   it('should keep its name when its caption is hidden from the eye', async () => {
     // Act
     await stories.CaptionHidden.run()
