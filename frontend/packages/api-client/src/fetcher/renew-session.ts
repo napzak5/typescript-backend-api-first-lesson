@@ -1,7 +1,7 @@
 import { type StoredSession, sessionStore } from '@beauty-salon-frontend/io'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
-import type { AuthCrudRefreshToken200 } from '../generated/models'
+import type { AuthCrudRefreshToken200 } from '../generated/models/authCrudRefreshToken200'
 
 /** Where a refresh token is exchanged: the path of the operation `refreshToken` of the API */
 export const SESSION_RENEWAL_PATH = '/api/v1/auth/refresh'

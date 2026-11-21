@@ -2,8 +2,9 @@ import { env } from '@beauty-salon-frontend/config'
 import { type StoredSession, sessionStore } from '@beauty-salon-frontend/io'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
-import type { ModelsProblemDetails } from '../generated/models'
-import { ModelsErrorCodeType } from '../generated/models'
+// The module of the codes alone: the index of the models loads all 777 of them
+import { ModelsErrorCodeType } from '../generated/models/modelsErrorCodeType'
+import type { ModelsProblemDetails } from '../generated/models/modelsProblemDetails'
 import { renewSession, sessionAfterRejectionOf } from './renew-session'
 
 const REQUEST_TIMEOUT_MS = 30_000
