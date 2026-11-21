@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -12,6 +15,10 @@ const photo = (number: number): HTMLElement =>
 
 describe('PhotoForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.New, () =>
+    screen.getByRole('textbox', { name: '撮った向き' }),
+  )
 
   it('should open with one photo, say where its file is kept, and ask when it was taken and where it is', async () => {
     // Act

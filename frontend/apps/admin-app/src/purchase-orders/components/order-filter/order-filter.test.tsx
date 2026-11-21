@@ -1,5 +1,6 @@
 import {
   itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
@@ -38,6 +39,10 @@ const UnderAnAddress = ({ other, ...props }: UnderAnAddressProps) => {
 
 describe('OrderFilter', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Every, () =>
+    screen.getByRole('textbox', { name: '仕入先' }),
+  )
 
   it('should offer every status in the order an order goes through them, and narrow nothing at first', async () => {
     // Act

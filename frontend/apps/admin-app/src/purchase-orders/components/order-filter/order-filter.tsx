@@ -73,6 +73,7 @@ export const OrderFilter = ({
           <TextField
             label='仕入先'
             name='supplier'
+            autoComplete='off'
             description='仕入先の名前のすべて。発注に書いたとおりに入力します。'
             value={values.supplier}
             error={errors['supplier']}
@@ -81,6 +82,7 @@ export const OrderFilter = ({
           <TextField
             label='発注日（から）'
             name='from'
+            autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
@@ -91,6 +93,7 @@ export const OrderFilter = ({
           <TextField
             label='発注日（まで）'
             name='to'
+            autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}

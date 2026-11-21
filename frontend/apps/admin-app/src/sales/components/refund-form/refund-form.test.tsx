@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -28,6 +31,10 @@ const described = (): Record<string, string | null> => {
 
 describe('RefundForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Cash, () =>
+    screen.getByRole('textbox', { name: '返金する金額' }),
+  )
 
   it('should name the payment, and give back the whole of it at first', async () => {
     // Act

@@ -1,5 +1,6 @@
 import {
   itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
@@ -37,6 +38,10 @@ const UnderAnAddress = ({ other, ...props }: UnderAnAddressProps) => {
 
 describe('TreatmentFilter', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Every, () =>
+    screen.getByLabelText('書いた日（から）'),
+  )
 
   it('should offer every member of the staff, and narrow nothing at first', async () => {
     // Act

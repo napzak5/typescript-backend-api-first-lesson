@@ -105,13 +105,11 @@ test.describe('writing customers at once, in a browser', () => {
     await pressWithTheKeyboard(tagButton)
     const tagDialog = page.getByRole('dialog', { name: '選んだ 2 人のタグ' })
     await expect(tagDialog.getByRole('radio', { name: '付ける' })).toBeFocused()
-    await tagDialog
-      .getByRole('textbox', { name: 'タグ' })
-      .fill('秋のキャンペーン')
+    const tag = tagDialog.getByRole('textbox', { name: 'タグ' })
+    await tag.fill('秋のキャンペーン')
     await expectSoundPage(page)
-    await pressWithTheKeyboard(
-      tagDialog.getByRole('button', { name: '反映する' }),
-    )
+    // Sent as somebody sends it who has typed the tag: with the Enter key
+    await tag.press('Enter')
 
     // Assert: the focus is given back to the button that opened the dialog
     await expect(tagDialog).toBeHidden()

@@ -4,8 +4,10 @@ import type {
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  FieldRow,
   Form,
   type FormErrors,
+  FormPart,
   type FormProps,
   RadioGroup,
   TextArea,
@@ -20,7 +22,6 @@ import {
   wayOf,
 } from '../../movement-format'
 import { quantityNameOf, stockRowNameOf } from '../../stock-format'
-import styles from './movement-form.module.css'
 
 export type MovementFormProps = Pick<
   FormProps,
@@ -68,79 +69,76 @@ export const MovementForm = ({
 
   return (
     <Form {...form} errors={errors}>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>在庫の移動</legend>
-        <div className={styles['controls']}>
-          <p className={styles['note']}>
-            {`${stockRowNameOf(row, product)}。いまの在庫数は ${quantityNameOf(row.currentStock, product)}、そのうち使える数は ${quantityNameOf(available, product)} です。`}
-          </p>
+      <FormPart
+        name='在庫の移動'
+        note={`${stockRowNameOf(row, product)}。いまの在庫数は ${quantityNameOf(row.currentStock, product)}、そのうち使える数は ${quantityNameOf(available, product)} です。`}
+      >
+        <RadioGroup
+          label='区分'
+          name='transactionType'
+          required
+          options={offered.map((kind) => ({
+            value: kind,
+            label: movementTypeNameOf(kind),
+          }))}
+          description={
+            offered.includes('adjustment')
+              ? undefined
+              : '在庫の調整、廃棄、サロン間の移動は、オーナーとマネージャーが記録します。'
+          }
+          value={chosen}
+          onChange={(event) => setChosen(event.target.value)}
+          error={errors['transactionType']}
+        />
+        {type !== undefined && wayOf(type) === 'either' && (
           <RadioGroup
-            label='区分'
-            name='transactionType'
+            label='向き'
+            name='direction'
             required
-            options={offered.map((kind) => ({
-              value: kind,
-              label: movementTypeNameOf(kind),
-            }))}
-            description={
-              offered.includes('adjustment')
-                ? undefined
-                : '在庫の調整、廃棄、サロン間の移動は、オーナーとマネージャーが記録します。'
-            }
-            value={chosen}
-            onChange={(event) => setChosen(event.target.value)}
-            error={errors['transactionType']}
+            options={[
+              { value: 'in', label: '在庫が増える' },
+              { value: 'out', label: '在庫が減る' },
+            ]}
+            description={wayDescriptionOf(type)}
+            error={errors['direction']}
           />
-          {type !== undefined && wayOf(type) === 'either' && (
-            <RadioGroup
-              label='向き'
-              name='direction'
-              required
-              options={[
-                { value: 'in', label: '在庫が増える' },
-                { value: 'out', label: '在庫が減る' },
-              ]}
-              description={wayDescriptionOf(type)}
-              error={errors['direction']}
-            />
-          )}
-          <div className={styles['pair']}>
-            <TextField
-              label='数量'
-              name='quantity'
-              required
-              inputMode='decimal'
-              autoComplete='off'
-              description={
-                product === undefined
-                  ? '小数は 2 桁まで。'
-                  : `${product.unit} で数えます。小数は 2 桁まで。`
-              }
-              error={errors['quantity']}
-            />
-            <TextField
-              label='単価（円）'
-              name='unitCost'
-              inputMode='numeric'
-              autoComplete='off'
-              description='任意。金額は、単価 × 数量を四捨五入した円です。'
-              error={errors['unitCost']}
-            />
-          </div>
-          <TextArea
-            label='理由'
-            name='reason'
-            rows={3}
-            required={type !== undefined && needsReason(type)}
+        )}
+        <FieldRow>
+          <TextField
+            label='数量'
+            name='quantity'
+            required
+            inputMode='decimal'
+            autoComplete='off'
             description={
-              type !== undefined && needsReason(type)
-                ? '在庫数を変える理由を、次に数える人のために書きます。'
-                : '任意。'
+              product === undefined
+                ? '小数は 2 桁まで。'
+                : `${product.unit} で数えます。小数は 2 桁まで。`
             }
-            error={errors['reason']}
+            error={errors['quantity']}
           />
-        </div>
-      </fieldset>
+          <TextField
+            label='単価（円）'
+            name='unitCost'
+            inputMode='numeric'
+            autoComplete='off'
+            description='任意。金額は、単価 × 数量を四捨五入した円です。'
+            error={errors['unitCost']}
+          />
+        </FieldRow>
+        <TextArea
+          label='理由'
+          name='reason'
+          rows={3}
+          required={type !== undefined && needsReason(type)}
+          description={
+            type !== undefined && needsReason(type)
+              ? '在庫数を変える理由を、次に数える人のために書きます。'
+              : '任意。'
+          }
+          error={errors['reason']}
+        />
+      </FormPart>
     </Form>
   )
 }

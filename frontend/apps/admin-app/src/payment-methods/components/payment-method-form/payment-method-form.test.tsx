@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -32,6 +35,10 @@ const sentBy = async (
 
 describe('PaymentMethodForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.New, () =>
+    screen.getByRole('textbox', { name: '表示名' }),
+  )
 
   it('should open a new method used at the counter and last in the order, and send what it holds', async () => {
     // Act

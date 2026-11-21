@@ -92,6 +92,7 @@ export const TreatmentFilter = ({
           <TextField
             label='書いた日（から）'
             name='from'
+            autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}
@@ -102,6 +103,7 @@ export const TreatmentFilter = ({
           <TextField
             label='書いた日（まで）'
             name='to'
+            autoComplete='off'
             type='date'
             min={EARLIEST_DAY}
             max={LATEST_DAY}

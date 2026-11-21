@@ -9,6 +9,7 @@ import {
   timeOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
 import {
+  FieldRow,
   Form,
   type FormProps,
   Select,
@@ -86,10 +87,11 @@ export const BookingMoveForm = ({
             description='予約の担当です。いまの担当が受け持つ明細は、新しい担当に替わります。ほかのスタッフの明細と、担当を決めない明細は、担当がそのままです。'
             error={errors['staffId']}
           />
-          <div className={styles['pair']}>
+          <FieldRow>
             <TextField
               label='来店日'
               name='date'
+              autoComplete='off'
               type='date'
               required
               defaultValue={booking.bookingDate}
@@ -101,13 +103,14 @@ export const BookingMoveForm = ({
             <TextField
               label='開始の時刻'
               name='startTime'
+              autoComplete='off'
               type='time'
               required
               defaultValue={timeOfDayAt(booking.startTime, timezone)}
               description='最初の明細が始まる時刻です。すべての明細が、同じ時間だけ動きます。'
               error={errors['startTime']}
             />
-          </div>
+          </FieldRow>
         </div>
       </fieldset>
       <section className={styles['part']} aria-labelledby={movedName}>

@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -33,6 +36,10 @@ const fillIn = async () => {
 
 describe('BookingEntryForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Empty, () =>
+    screen.getByLabelText('来店日'),
+  )
 
   it('should open on the day it is given, with the member, the lines and the notes in two groups', async () => {
     // Act

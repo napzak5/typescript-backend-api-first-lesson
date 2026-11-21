@@ -685,7 +685,8 @@ describe('the reviews of a salon', () => {
     expect(await within(dialog).findByRole('status')).toHaveTextContent(
       'このアカウントでは、このレビューをもう通報しています。',
     )
-    expect(within(dialog).getByRole('button', { name: '閉じる' })).toHaveFocus()
+    // The focus is on the answer, which took the place of the form
+    expect(within(dialog).getByRole('status').parentElement).toHaveFocus()
     expect(await storedReportsOf(GOOD)).toHaveLength(1)
   })
 

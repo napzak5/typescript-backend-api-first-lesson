@@ -12,13 +12,6 @@
   color: var(--color-text-muted);
 }
 
-/* What went wrong, then the reason */
-.form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
 @media (min-width: 40rem) {
   .changes {
     grid-template-columns: none;

@@ -5,10 +5,11 @@ import {
   Button,
   Card,
   Dialog,
+  FormDialog,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, type Ref, useId } from 'react'
+import type { Ref } from 'react'
 import type { StatusAction } from '../../booking-actions'
 import { statusNameOf, statusToneOf } from '../../booking-format'
 import styles from './status-actions.module.css'
@@ -76,20 +77,7 @@ export const StatusActions = ({
   onCancel,
   onNoShow,
 }: StatusActionsProps) => {
-  const completionId = useId()
-  const cancellationId = useId()
-
-  const sent =
-    (send: (values: FormData) => void, action: StatusAction) =>
-    (event: FormEvent<HTMLFormElement>): void => {
-      event.preventDefault()
-      if (pending !== action) {
-        send(new FormData(event.currentTarget))
-      }
-    }
-
   const said = message !== undefined && <Alert tone='danger'>{message}</Alert>
-  const back = <Button onClick={onClose}>戻る</Button>
 
   return (
     <Card title='状態' headingRef={headingRef}>
@@ -126,85 +114,55 @@ export const StatusActions = ({
           </div>
         )}
       </div>
-      <Dialog
+      <FormDialog
         open={asking === 'complete'}
         onClose={onClose}
         title='予約を完了にしますか？'
         description={`${when}の予約を完了にします。完了にした予約は、元に戻せません。`}
-        actions={
-          <>
-            {back}
-            <Button
-              type='submit'
-              form={completionId}
-              variant='primary'
-              pending={pending === 'complete'}
-            >
-              完了にする
-            </Button>
-          </>
-        }
+        submitLabel='完了にする'
+        message={message}
+        errors={completionErrors}
+        pending={pending === 'complete'}
+        onSubmit={onComplete}
       >
-        <form
-          className={styles['form']}
-          id={completionId}
-          noValidate
-          onSubmit={sent(onComplete, 'complete')}
-        >
-          {said}
-          <TextField
-            label='実際の開始'
-            name='actualStartTime'
-            type='datetime-local'
-            description={
-              recordedStart === undefined
-                ? 'サロンの時計の日時。空欄のときは、記録しません。'
-                : `サロンの時計の日時。空欄のときは、施術を始めたときに記録した日時（${recordedStart}）のままです。`
-            }
-            error={completionErrors['actualStartTime']}
-          />
-          <TextField
-            label='実際の終了'
-            name='actualEndTime'
-            type='datetime-local'
-            description='サロンの時計の日時。空欄のときは、記録しません。'
-            error={completionErrors['actualEndTime']}
-          />
-        </form>
-      </Dialog>
-      <Dialog
+        <TextField
+          label='実際の開始'
+          name='actualStartTime'
+          autoComplete='off'
+          type='datetime-local'
+          description={
+            recordedStart === undefined
+              ? 'サロンの時計の日時。空欄のときは、記録しません。'
+              : `サロンの時計の日時。空欄のときは、施術を始めたときに記録した日時（${recordedStart}）のままです。`
+          }
+          error={completionErrors['actualStartTime']}
+        />
+        <TextField
+          label='実際の終了'
+          name='actualEndTime'
+          autoComplete='off'
+          type='datetime-local'
+          description='サロンの時計の日時。空欄のときは、記録しません。'
+          error={completionErrors['actualEndTime']}
+        />
+      </FormDialog>
+      <FormDialog
         open={asking === 'cancel'}
         onClose={onClose}
         title='予約をキャンセルしますか？'
         description={`${when}の予約をキャンセルします。キャンセルした予約は、元に戻せません。`}
-        actions={
-          <>
-            {back}
-            <Button
-              type='submit'
-              form={cancellationId}
-              variant='danger'
-              pending={pending === 'cancel'}
-            >
-              キャンセルを確定する
-            </Button>
-          </>
-        }
+        submitLabel='キャンセルを確定する'
+        tone='danger'
+        message={message}
+        pending={pending === 'cancel'}
+        onSubmit={onCancel}
       >
-        <form
-          className={styles['form']}
-          id={cancellationId}
-          noValidate
-          onSubmit={sent(onCancel, 'cancel')}
-        >
-          {said}
-          <TextArea
-            label='キャンセルの理由'
-            name='cancellationReason'
-            description='お客様からの連絡の内容など。空欄のままでも、キャンセルできます。'
-          />
-        </form>
-      </Dialog>
+        <TextArea
+          label='キャンセルの理由'
+          name='cancellationReason'
+          description='お客様からの連絡の内容など。空欄のままでも、キャンセルできます。'
+        />
+      </FormDialog>
       <Dialog
         open={asking === 'noShow'}
         onClose={onClose}
@@ -212,7 +170,7 @@ export const StatusActions = ({
         description={`${when}の予約に、お客様が来店しなかったことを記録します。記録した予約は、元に戻せません。`}
         actions={
           <>
-            {back}
+            <Button onClick={onClose}>戻る</Button>
             <Button
               variant='danger'
               pending={pending === 'noShow'}

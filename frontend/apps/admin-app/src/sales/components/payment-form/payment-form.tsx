@@ -1,6 +1,7 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
+  FieldRow,
   Form,
   type FormProps,
   RadioGroup,
@@ -8,7 +9,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { useState } from 'react'
 import { methodLabelOf, takesCard } from '../../payments'
-import styles from './payment-form.module.css'
 
 export type PaymentFormProps = Pick<
   FormProps,
@@ -64,7 +64,7 @@ export const PaymentForm = ({
         error={errors['amount']}
       />
       {method !== undefined && takesCard(method) && (
-        <div className={styles['card']}>
+        <FieldRow>
           <TextField
             label='カードの下 4 桁'
             name='cardLastFour'
@@ -82,7 +82,7 @@ export const PaymentForm = ({
             description='わかるときだけ入れます（VISA、Mastercard、JCB など）。'
             error={errors['cardBrand']}
           />
-        </div>
+        </FieldRow>
       )}
     </Form>
   )

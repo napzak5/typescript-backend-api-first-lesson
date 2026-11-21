@@ -1,5 +1,6 @@
 import {
   itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
@@ -11,6 +12,10 @@ const stories = composeStories(chartFilterStories)
 
 describe('ChartFilter', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Everything, () =>
+    screen.getByRole('searchbox', { name: 'キーワード' }),
+  )
 
   it('should show the conditions of the address, and lead to every chart', async () => {
     // Act

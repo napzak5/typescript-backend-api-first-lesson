@@ -5,6 +5,7 @@ import type {
 import {
   Form,
   type FormErrors,
+  FormPart,
   type FormProps,
   TextArea,
   TextField,
@@ -16,7 +17,6 @@ import {
   quantityNameOf,
   stockRowNameOf,
 } from '../../stock-format'
-import styles from './count-form.module.css'
 
 export type CountFormProps = Pick<
   FormProps,
@@ -61,37 +61,33 @@ export const CountForm = ({
   ...form
 }: CountFormProps) => (
   <Form {...form} errors={errors}>
-    <fieldset className={styles['part']}>
-      <legend className={styles['name']}>数えた数</legend>
-      <div className={styles['controls']}>
-        <p className={styles['note']}>
-          数えた行に、数えた数を入力します。空のままの行は数えず、在庫数も変わりません。小数は
-          2 桁まで。
-        </p>
-        {rows.map((row) => {
-          const product = productOf(products, row.productId)
-          const control = countedControlOf(row.id)
+    <FormPart
+      name='数えた数'
+      note='数えた行に、数えた数を入力します。空のままの行は数えず、在庫数も変わりません。小数は 2 桁まで。'
+    >
+      {rows.map((row) => {
+        const product = productOf(products, row.productId)
+        const control = countedControlOf(row.id)
 
-          return (
-            <TextField
-              key={row.id}
-              label={stockRowNameOf(row, product)}
-              name={control}
-              inputMode='decimal'
-              autoComplete='off'
-              description={booksOf(row, product)}
-              error={errors[control]}
-            />
-          )
-        })}
-        <TextArea
-          label='理由'
-          name='reason'
-          rows={3}
-          description='任意。帳簿の在庫数との差を直す、在庫の調整の理由になります。空のときは「棚卸しの差異」と記録します。'
-          error={errors['reason']}
-        />
-      </div>
-    </fieldset>
+        return (
+          <TextField
+            key={row.id}
+            label={stockRowNameOf(row, product)}
+            name={control}
+            inputMode='decimal'
+            autoComplete='off'
+            description={booksOf(row, product)}
+            error={errors[control]}
+          />
+        )
+      })}
+      <TextArea
+        label='理由'
+        name='reason'
+        rows={3}
+        description='任意。帳簿の在庫数との差を直す、在庫の調整の理由になります。空のときは「棚卸しの差異」と記録します。'
+        error={errors['reason']}
+      />
+    </FormPart>
   </Form>
 )

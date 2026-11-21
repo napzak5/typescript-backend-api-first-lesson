@@ -4,8 +4,10 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   CheckboxGroup,
+  FieldRow,
   Form,
   type FormErrors,
+  FormPart,
   type FormProps,
   Select,
 } from '@beauty-salon-frontend/ui'
@@ -23,7 +25,6 @@ import {
   SWITCH_ON,
   serviceChoicesOf,
 } from '../../services-change'
-import styles from './services-change-form.module.css'
 
 export type ServicesChangeFormProps = Pick<
   FormProps,
@@ -67,90 +68,84 @@ export const ServicesChangeForm = ({
 
   return (
     <Form {...form} errors={errors}>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>サービス</legend>
-        <div className={styles['controls']}>
-          <CheckboxGroup
-            label='変えるサービス'
-            name='serviceIds'
-            description={`メニューの順。名前のあとは、カテゴリーです。1 件から ${MOST_SERVICES} 件まで。`}
-            options={serviceChoicesOf(categories, services)}
-            error={errors['serviceIds']}
-          />
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>変える項目</legend>
-        <div className={styles['controls']}>
-          <p className={styles['note']}>
-            選んだサービスのすべてを、同じ値にします。「変えない」のままの項目は、サービスごとに今のままです。
-          </p>
+      <FormPart name='サービス'>
+        <CheckboxGroup
+          label='変えるサービス'
+          name='serviceIds'
+          description={`メニューの順。名前のあとは、カテゴリーです。1 件から ${MOST_SERVICES} 件まで。`}
+          options={serviceChoicesOf(categories, services)}
+          error={errors['serviceIds']}
+        />
+      </FormPart>
+      <FormPart
+        name='変える項目'
+        note='選んだサービスのすべてを、同じ値にします。「変えない」のままの項目は、サービスごとに今のままです。'
+      >
+        <Select
+          label='カテゴリー'
+          name='categoryId'
+          placeholder={KEEP}
+          options={[
+            { value: NONE, label: '未分類にする' },
+            ...categories.map((category) => ({
+              value: category.id,
+              label: categoryPathOf(category, byId),
+            })),
+          ]}
+          defaultValue=''
+          error={errors['categoryId']}
+        />
+        <FieldRow>
           <Select
-            label='カテゴリー'
-            name='categoryId'
+            label='有効'
+            name='isActive'
             placeholder={KEEP}
             options={[
-              { value: NONE, label: '未分類にする' },
-              ...categories.map((category) => ({
-                value: category.id,
-                label: categoryPathOf(category, byId),
-              })),
+              { value: SWITCH_ON, label: '有効にする' },
+              { value: SWITCH_OFF, label: '無効にする' },
             ]}
             defaultValue=''
-            error={errors['categoryId']}
+            error={errors['isActive']}
           />
-          <div className={styles['pair']}>
-            <Select
-              label='有効'
-              name='isActive'
-              placeholder={KEEP}
-              options={[
-                { value: SWITCH_ON, label: '有効にする' },
-                { value: SWITCH_OFF, label: '無効にする' },
-              ]}
-              defaultValue=''
-              error={errors['isActive']}
-            />
-            <Select
-              label='オンライン予約'
-              name='allowOnlineBooking'
-              placeholder={KEEP}
-              options={[
-                { value: SWITCH_ON, label: '受ける' },
-                { value: SWITCH_OFF, label: '受けない' },
-              ]}
-              defaultValue=''
-              error={errors['allowOnlineBooking']}
-            />
-          </div>
-          <div className={styles['pair']}>
-            <Select
-              label='提供の状態'
-              name='serviceStatus'
-              placeholder={KEEP}
-              options={SERVICE_STATUS_OPTIONS}
-              defaultValue=''
-              error={errors['serviceStatus']}
-            />
-            <Select
-              label='提供日'
-              name='availability'
-              placeholder={KEEP}
-              options={AVAILABILITY_OPTIONS}
-              defaultValue=''
-              error={errors['availability']}
-            />
-          </div>
           <Select
-            label='担当できるスタッフ'
-            name='requiredStaffLevel'
+            label='オンライン予約'
+            name='allowOnlineBooking'
             placeholder={KEEP}
-            options={LEVEL_CHOICES}
+            options={[
+              { value: SWITCH_ON, label: '受ける' },
+              { value: SWITCH_OFF, label: '受けない' },
+            ]}
             defaultValue=''
-            error={errors['requiredStaffLevel']}
+            error={errors['allowOnlineBooking']}
           />
-        </div>
-      </fieldset>
+        </FieldRow>
+        <FieldRow>
+          <Select
+            label='提供の状態'
+            name='serviceStatus'
+            placeholder={KEEP}
+            options={SERVICE_STATUS_OPTIONS}
+            defaultValue=''
+            error={errors['serviceStatus']}
+          />
+          <Select
+            label='提供日'
+            name='availability'
+            placeholder={KEEP}
+            options={AVAILABILITY_OPTIONS}
+            defaultValue=''
+            error={errors['availability']}
+          />
+        </FieldRow>
+        <Select
+          label='担当できるスタッフ'
+          name='requiredStaffLevel'
+          placeholder={KEEP}
+          options={LEVEL_CHOICES}
+          defaultValue=''
+          error={errors['requiredStaffLevel']}
+        />
+      </FormPart>
     </Form>
   )
 }

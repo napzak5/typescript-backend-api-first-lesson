@@ -1,5 +1,6 @@
 import type { ModelsBookingResponse } from '@beauty-salon-frontend/api-client'
 import {
+  FieldRow,
   type FormErrors,
   Select,
   TextArea,
@@ -39,7 +40,7 @@ export const BookingNotesFields = ({
   errors,
 }: BookingNotesFieldsProps) => (
   <div className={styles['fields']}>
-    <div className={styles['pair']}>
+    <FieldRow>
       <Select
         label='受付の経路'
         name='source'
@@ -57,7 +58,7 @@ export const BookingNotesFields = ({
         description='お預かりした円の金額。お預かりしていなければ空欄です。'
         error={errors['depositAmount']}
       />
-    </div>
+    </FieldRow>
     <TextArea
       label='お客様の要望'
       name='customerRequest'

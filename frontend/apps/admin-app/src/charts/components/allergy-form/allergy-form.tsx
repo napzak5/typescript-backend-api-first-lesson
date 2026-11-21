@@ -99,6 +99,7 @@ export const AllergyForm = ({
     <TextField
       label='確かめた日'
       name='confirmedDate'
+      autoComplete='off'
       type='date'
       min={EARLIEST_DAY}
       max={today}

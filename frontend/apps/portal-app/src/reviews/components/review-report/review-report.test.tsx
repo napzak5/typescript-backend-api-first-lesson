@@ -228,7 +228,7 @@ describe('ReviewReport', () => {
     expect(reasons()).not.toHaveAttribute('aria-invalid')
   })
 
-  it('should say that the review was reported before, in place of the form, and move the focus to the way out that is left', async () => {
+  it('should say that the review was reported before, in place of the form, and move the focus to what it says', async () => {
     // Act
     await stories.ReportedBefore.run()
 
@@ -239,9 +239,7 @@ describe('ReviewReport', () => {
     expect(within(dialog()).queryByRole('radiogroup')).toBeNull()
     expect(within(dialog()).queryByRole('textbox')).toBeNull()
     expect(buttons()).toEqual(['閉じる'])
-    expect(
-      within(dialog()).getByRole('button', { name: '閉じる' }),
-    ).toHaveFocus()
+    expect(within(dialog()).getByRole('status').parentElement).toHaveFocus()
   })
 
   it('should say that it is to be closed when the way out of a report that was made before is pressed', async () => {

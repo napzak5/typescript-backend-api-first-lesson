@@ -2,7 +2,9 @@ import type { ModelsCustomerProfileResponse } from '@beauty-salon-frontend/api-c
 import {
   Checkbox,
   CheckboxGroup,
+  FieldRow,
   Form,
+  FormPart,
   type FormProps,
   Select,
   TextArea,
@@ -47,185 +49,170 @@ export const ProfileForm = ({
   ...form
 }: ProfileFormProps) => (
   <Form {...form} errors={errors}>
-    <fieldset className={styles['part']}>
-      <legend className={styles['name']}>お名前</legend>
-      <div className={styles['controls']}>
-        <div className={styles['pair']}>
-          <TextField
-            label='姓'
-            name='lastName'
-            autoComplete='family-name'
-            required
-            defaultValue={profile?.lastName}
-            error={errors['lastName']}
-          />
-          <TextField
-            label='名'
-            name='firstName'
-            autoComplete='given-name'
-            required
-            defaultValue={profile?.firstName}
-            error={errors['firstName']}
-          />
-        </div>
-        <div className={styles['pair']}>
-          <TextField
-            label='姓（フリガナ）'
-            name='lastNameKana'
-            defaultValue={profile?.lastNameKana ?? undefined}
-            error={errors['lastNameKana']}
-          />
-          <TextField
-            label='名（フリガナ）'
-            name='firstNameKana'
-            defaultValue={profile?.firstNameKana ?? undefined}
-            error={errors['firstNameKana']}
-          />
-        </div>
-      </div>
-    </fieldset>
-    <fieldset className={styles['part']}>
-      <legend className={styles['name']}>連絡先</legend>
-      <div className={styles['controls']}>
+    <FormPart name='お名前'>
+      <FieldRow>
         <TextField
-          label='電話番号'
-          name='phoneNumber'
-          type='tel'
-          autoComplete='tel'
+          label='姓'
+          name='lastName'
+          autoComplete='family-name'
           required
-          description='ご予約について、サロンから連絡することがあります。'
-          defaultValue={profile?.phoneNumber}
-          error={errors['phoneNumber']}
+          defaultValue={profile?.lastName}
+          error={errors['lastName']}
         />
         <TextField
-          label='予備の電話番号'
-          name='alternativePhone'
-          type='tel'
-          description='上の番号につながらないときに、連絡する番号です。'
-          defaultValue={profile?.alternativePhone ?? undefined}
-          error={errors['alternativePhone']}
+          label='名'
+          name='firstName'
+          autoComplete='given-name'
+          required
+          defaultValue={profile?.firstName}
+          error={errors['firstName']}
         />
-        <p className={styles['note']}>
-          {profile === null
-            ? 'メールアドレスは、サインインに使っているものを登録します。'
-            : `メールアドレス（${profile.email}）は、ここでは変更できません。変更するときは、サロンにお問い合わせください。`}
-        </p>
-      </div>
-    </fieldset>
-    <fieldset className={styles['part']}>
-      <legend className={styles['name']}>住所</legend>
-      <div className={styles['controls']}>
+      </FieldRow>
+      <FieldRow>
         <TextField
-          label='郵便番号'
-          name='postalCode'
-          autoComplete='postal-code'
-          defaultValue={profile?.postalCode ?? undefined}
-          error={errors['postalCode']}
-        />
-        <div className={styles['pair']}>
-          <TextField
-            label='都道府県'
-            name='prefecture'
-            autoComplete='address-level1'
-            defaultValue={profile?.prefecture ?? undefined}
-            error={errors['prefecture']}
-          />
-          <TextField
-            label='市区町村'
-            name='city'
-            autoComplete='address-level2'
-            defaultValue={profile?.city ?? undefined}
-            error={errors['city']}
-          />
-        </div>
-        <TextField
-          label='番地'
-          name='address'
-          autoComplete='address-line1'
-          defaultValue={profile?.address ?? undefined}
-          error={errors['address']}
+          label='姓（フリガナ）'
+          name='lastNameKana'
+          autoComplete='off'
+          defaultValue={profile?.lastNameKana ?? undefined}
+          error={errors['lastNameKana']}
         />
         <TextField
-          label='建物名・部屋番号'
-          name='building'
-          autoComplete='address-line2'
-          defaultValue={profile?.building ?? undefined}
-          error={errors['building']}
+          label='名（フリガナ）'
+          name='firstNameKana'
+          autoComplete='off'
+          defaultValue={profile?.firstNameKana ?? undefined}
+          error={errors['firstNameKana']}
         />
-      </div>
-    </fieldset>
-    <fieldset className={styles['part']}>
-      <legend className={styles['name']}>ご本人について</legend>
-      <div className={styles['controls']}>
-        <div className={styles['pair']}>
-          <TextField
-            label='生年月日'
-            name='birthDate'
-            type='date'
-            autoComplete='bday'
-            min={EARLIEST_BIRTH_DATE}
-            max={today}
-            defaultValue={profile?.birthDate ?? undefined}
-            error={errors['birthDate']}
-          />
-          <Select
-            label='性別'
-            name='gender'
-            autoComplete='sex'
-            placeholder='選択しない'
-            options={GENDER_OPTIONS}
-            defaultValue={profile?.gender ?? ''}
-            error={errors['gender']}
-          />
-        </div>
+      </FieldRow>
+    </FormPart>
+    <FormPart name='連絡先'>
+      <TextField
+        label='電話番号'
+        name='phoneNumber'
+        type='tel'
+        autoComplete='tel'
+        required
+        description='ご予約について、サロンから連絡することがあります。'
+        defaultValue={profile?.phoneNumber}
+        error={errors['phoneNumber']}
+      />
+      <TextField
+        label='予備の電話番号'
+        name='alternativePhone'
+        autoComplete='off'
+        type='tel'
+        description='上の番号につながらないときに、連絡する番号です。'
+        defaultValue={profile?.alternativePhone ?? undefined}
+        error={errors['alternativePhone']}
+      />
+      <p className={styles['note']}>
+        {profile === null
+          ? 'メールアドレスは、サインインに使っているものを登録します。'
+          : `メールアドレス（${profile.email}）は、ここでは変更できません。変更するときは、サロンにお問い合わせください。`}
+      </p>
+    </FormPart>
+    <FormPart name='住所'>
+      <TextField
+        label='郵便番号'
+        name='postalCode'
+        autoComplete='postal-code'
+        defaultValue={profile?.postalCode ?? undefined}
+        error={errors['postalCode']}
+      />
+      <FieldRow>
         <TextField
-          label='職業'
-          name='occupation'
-          autoComplete='organization-title'
-          defaultValue={profile?.occupation ?? undefined}
-          error={errors['occupation']}
+          label='都道府県'
+          name='prefecture'
+          autoComplete='address-level1'
+          defaultValue={profile?.prefecture ?? undefined}
+          error={errors['prefecture']}
         />
-      </div>
-    </fieldset>
-    <fieldset className={styles['part']}>
-      <legend className={styles['name']}>好み</legend>
-      <div className={styles['controls']}>
-        <CheckboxGroup
-          label='好みのメニュー'
-          name={PREFERRED_SERVICES}
-          layout='columns'
-          options={CATEGORY_OPTIONS}
-          defaultValue={profile?.preferences?.preferredServices}
-          error={errors[PREFERRED_SERVICES]}
+        <TextField
+          label='市区町村'
+          name='city'
+          autoComplete='address-level2'
+          defaultValue={profile?.city ?? undefined}
+          error={errors['city']}
         />
-        <TextArea
-          label='サロンに伝えておきたいこと'
-          name={PREFERENCE_NOTES}
-          description='使ってほしい製品や、苦手なことなどを書いてください。'
-          defaultValue={profile?.preferences?.notes ?? undefined}
-          error={errors[PREFERENCE_NOTES]}
+      </FieldRow>
+      <TextField
+        label='番地'
+        name='address'
+        autoComplete='address-line1'
+        defaultValue={profile?.address ?? undefined}
+        error={errors['address']}
+      />
+      <TextField
+        label='建物名・部屋番号'
+        name='building'
+        autoComplete='address-line2'
+        defaultValue={profile?.building ?? undefined}
+        error={errors['building']}
+      />
+    </FormPart>
+    <FormPart name='ご本人について'>
+      <FieldRow>
+        <TextField
+          label='生年月日'
+          name='birthDate'
+          type='date'
+          autoComplete='bday'
+          min={EARLIEST_BIRTH_DATE}
+          max={today}
+          defaultValue={profile?.birthDate ?? undefined}
+          error={errors['birthDate']}
         />
-      </div>
-    </fieldset>
-    <fieldset className={styles['part']}>
-      <legend className={styles['name']}>受け取る連絡</legend>
-      <div className={styles['controls']}>
-        <Checkbox
-          label='メールでの連絡を受け取る'
-          name='allowEmail'
-          defaultChecked={profile?.allowEmail}
+        <Select
+          label='性別'
+          name='gender'
+          autoComplete='sex'
+          placeholder='選択しない'
+          options={GENDER_OPTIONS}
+          defaultValue={profile?.gender ?? ''}
+          error={errors['gender']}
         />
-        <Checkbox
-          label='SMS での連絡を受け取る'
-          name='allowSms'
-          defaultChecked={profile?.allowSms}
-        />
-        <Checkbox
-          label='キャンペーンなどのお知らせを受け取る'
-          name='allowMarketing'
-          defaultChecked={profile?.allowMarketing}
-        />
-      </div>
-    </fieldset>
+      </FieldRow>
+      <TextField
+        label='職業'
+        name='occupation'
+        autoComplete='organization-title'
+        defaultValue={profile?.occupation ?? undefined}
+        error={errors['occupation']}
+      />
+    </FormPart>
+    <FormPart name='好み'>
+      <CheckboxGroup
+        label='好みのメニュー'
+        name={PREFERRED_SERVICES}
+        layout='columns'
+        options={CATEGORY_OPTIONS}
+        defaultValue={profile?.preferences?.preferredServices}
+        error={errors[PREFERRED_SERVICES]}
+      />
+      <TextArea
+        label='サロンに伝えておきたいこと'
+        name={PREFERENCE_NOTES}
+        description='使ってほしい製品や、苦手なことなどを書いてください。'
+        defaultValue={profile?.preferences?.notes ?? undefined}
+        error={errors[PREFERENCE_NOTES]}
+      />
+    </FormPart>
+    <FormPart name='受け取る連絡'>
+      <Checkbox
+        label='メールでの連絡を受け取る'
+        name='allowEmail'
+        defaultChecked={profile?.allowEmail}
+      />
+      <Checkbox
+        label='SMS での連絡を受け取る'
+        name='allowSms'
+        defaultChecked={profile?.allowSms}
+      />
+      <Checkbox
+        label='キャンペーンなどのお知らせを受け取る'
+        name='allowMarketing'
+        defaultChecked={profile?.allowMarketing}
+      />
+    </FormPart>
   </Form>
 )

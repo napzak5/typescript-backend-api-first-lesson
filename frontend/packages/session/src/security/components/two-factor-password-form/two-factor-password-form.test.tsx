@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -10,6 +13,10 @@ const password = () => screen.getByLabelText('パスワード')
 
 describe('TwoFactorPasswordForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Empty, () =>
+    screen.getByLabelText('パスワード'),
+  )
 
   it('should ask for the password of the account, as a password manager fills it in, and say why', async () => {
     // Act

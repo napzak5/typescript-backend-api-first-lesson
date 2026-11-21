@@ -11,6 +11,7 @@ import {
   Button,
   DescriptionList,
   Form,
+  FormPart,
   type FormProps,
   LoadingIndicator,
   Select,
@@ -246,32 +247,29 @@ export const CheckoutForm = ({
           ))
           .exhaustive()}
       </section>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>会計の記録</legend>
-        <div className={styles['controls']}>
-          <Select
-            label='会計の担当'
-            name='staffId'
-            options={[
-              ...staff.map(({ id, displayName }) => ({
-                value: id,
-                label: displayName,
-              })),
-              { value: NO_CASHIER, label: '記録しない' },
-            ]}
-            defaultValue={cashier}
-            description='支払いを受けたスタッフです。売上の担当として記録します。'
-            error={errors['staffId']}
-          />
-          <TextArea
-            label='メモ'
-            name='notes'
-            rows={3}
-            description='サロンの中で見る、この会計のメモです。お客様には見えません。'
-            error={errors['notes']}
-          />
-        </div>
-      </fieldset>
+      <FormPart name='会計の記録'>
+        <Select
+          label='会計の担当'
+          name='staffId'
+          options={[
+            ...staff.map(({ id, displayName }) => ({
+              value: id,
+              label: displayName,
+            })),
+            { value: NO_CASHIER, label: '記録しない' },
+          ]}
+          defaultValue={cashier}
+          description='支払いを受けたスタッフです。売上の担当として記録します。'
+          error={errors['staffId']}
+        />
+        <TextArea
+          label='メモ'
+          name='notes'
+          rows={3}
+          description='サロンの中で見る、この会計のメモです。お客様には見えません。'
+          error={errors['notes']}
+        />
+      </FormPart>
     </Form>
   )
 }

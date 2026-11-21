@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -11,6 +14,10 @@ const combobox = (name: string): HTMLElement =>
 
 describe('BookingLineForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Empty, () =>
+    screen.getByLabelText('開始の時刻'),
+  )
 
   it('should offer the services and the members, the member of the booking at first, and name the day of the time', async () => {
     // Act

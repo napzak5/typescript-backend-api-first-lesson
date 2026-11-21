@@ -1,15 +1,11 @@
 import {
   Alert,
-  Button,
-  Dialog,
+  FormDialog,
   type FormErrors,
   RadioGroup,
   TextArea,
-  useErrorFocus,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useId, useLayoutEffect, useRef } from 'react'
 import { DETAILS, MAX_DETAILS_LENGTH, REASON, REASONS } from '../../reader-flow'
-import styles from './review-report.module.css'
 
 export type ReviewReportProps = {
   /** The dialog is open */
@@ -56,79 +52,34 @@ export const ReviewReport = ({
   errors = NO_ERRORS,
   pending = false,
   onReport,
-}: ReviewReportProps) => {
-  const formId = useId()
-  const form = useErrorFocus(errors)
-  const close = useRef<HTMLButtonElement>(null)
-
-  // The button that sent the form went with the form: the focus goes to
-  // the one that is left, in the commit that shows the dialog without them
-  useLayoutEffect(() => {
-    if (reportedBefore) {
-      close.current?.focus()
+}: ReviewReportProps) => (
+  <FormDialog
+    open={open}
+    onClose={onClose}
+    title='レビューを通報する'
+    description={`${subject}のレビューを、運営に通報します。運営が内容を確かめ、規則に反するレビューは削除します。確かめが済むまで、レビューは掲載されたままです。`}
+    submitLabel='通報する'
+    message={message}
+    errors={errors}
+    pending={pending}
+    onSubmit={onReport}
+    answer={
+      reportedBefore ? <Alert tone='info'>{REPORTED_BEFORE}</Alert> : undefined
     }
-  }, [reportedBefore])
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    if (!pending) {
-      onReport(new FormData(event.currentTarget))
-    }
-  }
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title='レビューを通報する'
-      description={`${subject}のレビューを、運営に通報します。運営が内容を確かめ、規則に反するレビューは削除します。確かめが済むまで、レビューは掲載されたままです。`}
-      actions={
-        reportedBefore ? (
-          <Button ref={close} onClick={onClose}>
-            閉じる
-          </Button>
-        ) : (
-          <>
-            <Button onClick={onClose}>戻る</Button>
-            <Button
-              type='submit'
-              form={formId}
-              variant='primary'
-              pending={pending}
-            >
-              通報する
-            </Button>
-          </>
-        )
-      }
-    >
-      {reportedBefore ? (
-        <Alert tone='info'>{REPORTED_BEFORE}</Alert>
-      ) : (
-        <form
-          className={styles['form']}
-          id={formId}
-          noValidate
-          onSubmit={submit}
-          ref={form}
-        >
-          {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-          <RadioGroup
-            label='通報の理由'
-            name={REASON}
-            options={REASONS}
-            required
-            error={errors[REASON]}
-          />
-          <TextArea
-            label='詳しい内容'
-            name={DETAILS}
-            maxLength={MAX_DETAILS_LENGTH}
-            description={`どこが問題かを、${MAX_DETAILS_LENGTH} 文字以内でご記入ください。理由が「その他」のときは、必ずご記入ください。`}
-            error={errors[DETAILS]}
-          />
-        </form>
-      )}
-    </Dialog>
-  )
-}
+  >
+    <RadioGroup
+      label='通報の理由'
+      name={REASON}
+      options={REASONS}
+      required
+      error={errors[REASON]}
+    />
+    <TextArea
+      label='詳しい内容'
+      name={DETAILS}
+      maxLength={MAX_DETAILS_LENGTH}
+      description={`どこが問題かを、${MAX_DETAILS_LENGTH} 文字以内でご記入ください。理由が「その他」のときは、必ずご記入ください。`}
+      error={errors[DETAILS]}
+    />
+  </FormDialog>
+)

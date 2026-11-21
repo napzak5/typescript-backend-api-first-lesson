@@ -210,4 +210,14 @@ describe('ChosenCustomers', () => {
       ).getByRole('alert'),
     ).toHaveTextContent('鈴木 一郎 様には、終わっていない予約があります。')
   })
+
+  it('should say why the removal was refused in its own dialog alone, not in the closed one of the tags', async () => {
+    // Act
+    await stories.RemovalRefused.run()
+
+    // Assert
+    expect(
+      screen.getAllByText(/^鈴木 一郎 様には、終わっていない予約があります。/),
+    ).toHaveLength(1)
+  })
 })

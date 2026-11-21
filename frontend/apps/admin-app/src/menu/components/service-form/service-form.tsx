@@ -7,8 +7,10 @@ import {
   Button,
   Checkbox,
   CheckboxGroup,
+  FieldRow,
   Form,
   type FormErrors,
+  FormPart,
   type FormProps,
   Select,
   TextArea,
@@ -184,382 +186,361 @@ export const ServiceForm = ({
 
   return (
     <Form {...form} errors={errors}>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>サービス</legend>
-        <div className={styles['controls']}>
+      <FormPart name='サービス'>
+        <TextField
+          label='名前'
+          name='name'
+          autoComplete='off'
+          required
+          description='255 文字まで。お客様のメニューに出ます。'
+          defaultValue={service?.name}
+          error={errors['name']}
+        />
+        <Select
+          label='カテゴリー'
+          name='categoryId'
+          placeholder='未分類'
+          options={categories.map((category) => ({
+            value: category.id,
+            label: categoryPathOf(category, byId),
+          }))}
+          defaultValue={service?.categoryId ?? ''}
+          error={errors['categoryId']}
+        />
+        <TextArea
+          label='短い紹介'
+          name='shortDescription'
+          rows={2}
+          description='500 文字まで。メニューの一覧に出ます。'
+          defaultValue={service?.shortDescription ?? undefined}
+          error={errors['shortDescription']}
+        />
+        <TextArea
+          label='説明'
+          name='description'
+          rows={4}
+          defaultValue={service?.description ?? undefined}
+          error={errors['description']}
+        />
+        <FieldRow>
           <TextField
-            label='名前'
-            name='name'
+            label='タグ'
+            name='tags'
+            autoComplete='off'
+            description='「、」か「,」で区切って書きます。'
+            defaultValue={tagsTextOf(service?.tags ?? [])}
+            error={errors['tags']}
+          />
+          <TextField
+            label='表示順'
+            name='sortOrder'
+            inputMode='numeric'
             autoComplete='off'
             required
-            description='255 文字まで。お客様のメニューに出ます。'
-            defaultValue={service?.name}
-            error={errors['name']}
+            description='0 以上の整数。小さいものから並びます。'
+            defaultValue={String(service?.sortOrder ?? sortOrder)}
+            error={errors['sortOrder']}
+          />
+        </FieldRow>
+      </FormPart>
+      <FormPart name='時間と料金'>
+        <FieldRow>
+          <TextField
+            label='所要時間（分）'
+            name='duration'
+            inputMode='numeric'
+            autoComplete='off'
+            required
+            description='1 から 1440 までの整数。'
+            defaultValue={service === null ? '' : String(service.duration)}
+            error={errors['duration']}
           />
           <Select
-            label='カテゴリー'
-            name='categoryId'
-            placeholder='未分類'
-            options={categories.map((category) => ({
-              value: category.id,
-              label: categoryPathOf(category, byId),
-            }))}
-            defaultValue={service?.categoryId ?? ''}
-            error={errors['categoryId']}
+            label='価格の決め方'
+            name='pricingStrategy'
+            required
+            options={PRICING_OPTIONS}
+            defaultValue={service?.pricingStrategy ?? 'fixed'}
+            error={errors['pricingStrategy']}
           />
-          <TextArea
-            label='短い紹介'
-            name='shortDescription'
-            rows={2}
-            description='500 文字まで。メニューの一覧に出ます。'
-            defaultValue={service?.shortDescription ?? undefined}
-            error={errors['shortDescription']}
-          />
-          <TextArea
-            label='説明'
-            name='description'
-            rows={4}
-            defaultValue={service?.description ?? undefined}
-            error={errors['description']}
-          />
-          <div className={styles['pair']}>
-            <TextField
-              label='タグ'
-              name='tags'
-              autoComplete='off'
-              description='「、」か「,」で区切って書きます。'
-              defaultValue={tagsTextOf(service?.tags ?? [])}
-              error={errors['tags']}
-            />
-            <TextField
-              label='表示順'
-              name='sortOrder'
-              inputMode='numeric'
-              autoComplete='off'
-              required
-              description='0 以上の整数。小さいものから並びます。'
-              defaultValue={String(service?.sortOrder ?? sortOrder)}
-              error={errors['sortOrder']}
-            />
-          </div>
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>時間と料金</legend>
-        <div className={styles['controls']}>
-          <div className={styles['pair']}>
-            <TextField
-              label='所要時間（分）'
-              name='duration'
-              inputMode='numeric'
-              autoComplete='off'
-              required
-              description='1 から 1440 までの整数。'
-              defaultValue={service === null ? '' : String(service.duration)}
-              error={errors['duration']}
-            />
-            <Select
-              label='価格の決め方'
-              name='pricingStrategy'
-              required
-              options={PRICING_OPTIONS}
-              defaultValue={service?.pricingStrategy ?? 'fixed'}
-              error={errors['pricingStrategy']}
-            />
-          </div>
-          <div className={styles['pair']}>
-            <TextField
-              label='料金'
-              name='price'
-              inputMode='numeric'
-              autoComplete='off'
-              required
-              description='0 以上の整数。'
-              defaultValue={service === null ? '' : String(service.price)}
-              error={errors['price']}
-            />
-            <TextField
-              label='割引後の料金'
-              name='discountPrice'
-              inputMode='numeric'
-              autoComplete='off'
-              description='料金以下の整数。割引がなければ、空のままにします。'
-              defaultValue={
-                service?.discountPrice === null ||
-                service?.discountPrice === undefined
-                  ? ''
-                  : String(service.discountPrice)
-              }
-              error={errors['discountPrice']}
-            />
-          </div>
-          <Checkbox
-            label='税込'
-            name='taxIncluded'
-            description='外すと、料金は税別です。'
-            defaultChecked={service?.taxIncluded ?? true}
-          />
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>提供</legend>
-        <div className={styles['controls']}>
-          <Checkbox
-            label='有効'
-            name='isActive'
-            description='外すと、お客様のメニューに出なくなり、予約できなくなります。'
-            defaultChecked={service?.isActive ?? true}
-          />
-          <div className={styles['pair']}>
-            <Select
-              label='提供の状態'
-              name='serviceStatus'
-              required
-              options={SERVICE_STATUS_OPTIONS}
-              description='お客様が予約できるのは、「有効」のサービスです。'
-              defaultValue={service?.serviceStatus ?? 'active'}
-              error={errors['serviceStatus']}
-            />
-            <Select
-              label='提供日'
-              name='availability'
-              required
-              options={AVAILABILITY_OPTIONS}
-              defaultValue={service?.availability ?? 'always'}
-              error={errors['availability']}
-            />
-          </div>
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>予約</legend>
-        <div className={styles['controls']}>
-          <Checkbox
-            label='オンライン予約を受ける'
-            name='allowOnlineBooking'
-            description='外すと、お客様が自分で予約できなくなります。サロンが入れる予約には使えます。'
-            defaultChecked={service?.allowOnlineBooking ?? true}
-          />
-          <Checkbox
-            label='カウンセリングが要る'
-            name='requiresConsultation'
-            defaultChecked={service?.requiresConsultation ?? false}
-          />
-          <div className={styles['pair']}>
-            <Select
-              label='担当できるスタッフ'
-              name='requiredStaffLevel'
-              placeholder='すべてのスタッフ'
-              options={LEVEL_CHOICES}
-              defaultValue={service?.requiredStaffLevel ?? ''}
-              error={errors['requiredStaffLevel']}
-            />
-            <TextField
-              label='1 日の予約の上限'
-              name='maxBookingsPerDay'
-              inputMode='numeric'
-              autoComplete='off'
-              description='1 以上の整数。上限がなければ、空のままにします。'
-              defaultValue={
-                service?.maxBookingsPerDay === null ||
-                service?.maxBookingsPerDay === undefined
-                  ? ''
-                  : String(service.maxBookingsPerDay)
-              }
-              error={errors['maxBookingsPerDay']}
-            />
-          </div>
-          <CheckboxGroup
-            label='予約の条件'
-            name='bookingRequirements'
-            layout='columns'
-            options={REQUIREMENT_OPTIONS}
-            defaultValue={service?.bookingRequirements ?? []}
-            error={errors['bookingRequirements']}
-          />
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>写真</legend>
-        <div className={styles['controls']}>
+        </FieldRow>
+        <FieldRow>
           <TextField
-            label='写真の URL'
-            name='imageUrl'
-            type='url'
+            label='料金'
+            name='price'
+            inputMode='numeric'
             autoComplete='off'
-            description='http:// か https:// で始まる、500 文字までの URL。'
-            defaultValue={service?.imageUrl ?? undefined}
-            error={errors['imageUrl']}
+            required
+            description='0 以上の整数。'
+            defaultValue={service === null ? '' : String(service.price)}
+            error={errors['price']}
           />
-          <TextArea
-            label='ほかの写真の URL'
-            name='imageUrls'
-            rows={3}
-            description='1 行に 1 つ。http:// か https:// で始まる URL。'
-            defaultValue={(service?.imageUrls ?? []).join('\n')}
-            error={errors['imageUrls']}
+          <TextField
+            label='割引後の料金'
+            name='discountPrice'
+            inputMode='numeric'
+            autoComplete='off'
+            description='料金以下の整数。割引がなければ、空のままにします。'
+            defaultValue={
+              service?.discountPrice === null ||
+              service?.discountPrice === undefined
+                ? ''
+                : String(service.discountPrice)
+            }
+            error={errors['discountPrice']}
           />
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>パッケージ</legend>
-        <div className={styles['controls']}>
-          {containers.length > 0 ? (
-            <p className={styles['note']}>
-              {`このサービスは、パッケージ${containers.map(({ name }) => `「${name}」`).join('')}に入っているので、パッケージにできません。`}
-            </p>
-          ) : (
-            <Checkbox
-              label='パッケージにする'
-              name='isPackage'
-              description={`ほかのサービスを ${FEWEST_PACKAGED} 件から ${MOST_PACKAGED} 件まとめて、1 つのサービスにします。パッケージに入れられるのは、パッケージでないサービスです。`}
-              checked={isPackage}
-              onChange={(event) => makePackage(event.currentTarget.checked)}
-              error={errors['isPackage']}
-            />
-          )}
-          {isPackage &&
-            packaged.map((row, index) => (
-              <fieldset
-                key={row.key}
-                className={styles['row']}
-                ref={groupRef(row.key)}
-              >
-                <legend className={styles['rowName']}>
-                  {`構成サービス ${index + 1}`}
-                </legend>
-                <div className={styles['rowControls']}>
-                  <Select
-                    label='サービス'
-                    name={packagedControlOf(index)}
-                    placeholder='選んでください'
-                    required
-                    options={choices}
-                    defaultValue={row.shown ?? ''}
-                    error={said[packagedControlOf(index)]}
-                  />
-                  <Button
-                    className={styles['remove']}
-                    size='small'
-                    aria-label={`構成サービス ${index + 1} を外す`}
-                    onClick={() => takeAway(row.key, { type: 'addPackaged' })}
-                  >
-                    外す
-                  </Button>
-                </div>
-              </fieldset>
-            ))}
-          {isPackage && packaged.length < MOST_PACKAGED && (
-            <Button
-              className={styles['add']}
-              ref={addPackaged}
-              onClick={() => add('packaged')}
-            >
-              構成サービスを足す
-            </Button>
-          )}
-        </div>
-      </fieldset>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>オプション</legend>
-        <div className={styles['controls']}>
+        </FieldRow>
+        <Checkbox
+          label='税込'
+          name='taxIncluded'
+          description='外すと、料金は税別です。'
+          defaultChecked={service?.taxIncluded ?? true}
+        />
+      </FormPart>
+      <FormPart name='提供'>
+        <Checkbox
+          label='有効'
+          name='isActive'
+          description='外すと、お客様のメニューに出なくなり、予約できなくなります。'
+          defaultChecked={service?.isActive ?? true}
+        />
+        <FieldRow>
+          <Select
+            label='提供の状態'
+            name='serviceStatus'
+            required
+            options={SERVICE_STATUS_OPTIONS}
+            description='お客様が予約できるのは、「有効」のサービスです。'
+            defaultValue={service?.serviceStatus ?? 'active'}
+            error={errors['serviceStatus']}
+          />
+          <Select
+            label='提供日'
+            name='availability'
+            required
+            options={AVAILABILITY_OPTIONS}
+            defaultValue={service?.availability ?? 'always'}
+            error={errors['availability']}
+          />
+        </FieldRow>
+      </FormPart>
+      <FormPart name='予約'>
+        <Checkbox
+          label='オンライン予約を受ける'
+          name='allowOnlineBooking'
+          description='外すと、お客様が自分で予約できなくなります。サロンが入れる予約には使えます。'
+          defaultChecked={service?.allowOnlineBooking ?? true}
+        />
+        <Checkbox
+          label='カウンセリングが要る'
+          name='requiresConsultation'
+          defaultChecked={service?.requiresConsultation ?? false}
+        />
+        <FieldRow>
+          <Select
+            label='担当できるスタッフ'
+            name='requiredStaffLevel'
+            placeholder='すべてのスタッフ'
+            options={LEVEL_CHOICES}
+            defaultValue={service?.requiredStaffLevel ?? ''}
+            error={errors['requiredStaffLevel']}
+          />
+          <TextField
+            label='1 日の予約の上限'
+            name='maxBookingsPerDay'
+            inputMode='numeric'
+            autoComplete='off'
+            description='1 以上の整数。上限がなければ、空のままにします。'
+            defaultValue={
+              service?.maxBookingsPerDay === null ||
+              service?.maxBookingsPerDay === undefined
+                ? ''
+                : String(service.maxBookingsPerDay)
+            }
+            error={errors['maxBookingsPerDay']}
+          />
+        </FieldRow>
+        <CheckboxGroup
+          label='予約の条件'
+          name='bookingRequirements'
+          layout='columns'
+          options={REQUIREMENT_OPTIONS}
+          defaultValue={service?.bookingRequirements ?? []}
+          error={errors['bookingRequirements']}
+        />
+      </FormPart>
+      <FormPart name='写真'>
+        <TextField
+          label='写真の URL'
+          name='imageUrl'
+          type='url'
+          autoComplete='off'
+          description='http:// か https:// で始まる、500 文字までの URL。'
+          defaultValue={service?.imageUrl ?? undefined}
+          error={errors['imageUrl']}
+        />
+        <TextArea
+          label='ほかの写真の URL'
+          name='imageUrls'
+          rows={3}
+          description='1 行に 1 つ。http:// か https:// で始まる URL。'
+          defaultValue={(service?.imageUrls ?? []).join('\n')}
+          error={errors['imageUrls']}
+        />
+      </FormPart>
+      <FormPart name='パッケージ'>
+        {containers.length > 0 ? (
           <p className={styles['note']}>
-            お客様が予約のときに足せるものです。並びの順に、お客様に出ます。
+            {`このサービスは、パッケージ${containers.map(({ name }) => `「${name}」`).join('')}に入っているので、パッケージにできません。`}
           </p>
-          {options.map((row, index) => (
+        ) : (
+          <Checkbox
+            label='パッケージにする'
+            name='isPackage'
+            description={`ほかのサービスを ${FEWEST_PACKAGED} 件から ${MOST_PACKAGED} 件まとめて、1 つのサービスにします。パッケージに入れられるのは、パッケージでないサービスです。`}
+            checked={isPackage}
+            onChange={(event) => makePackage(event.currentTarget.checked)}
+            error={errors['isPackage']}
+          />
+        )}
+        {isPackage &&
+          packaged.map((row, index) => (
             <fieldset
               key={row.key}
               className={styles['row']}
               ref={groupRef(row.key)}
             >
               <legend className={styles['rowName']}>
-                {`オプション ${index + 1}`}
+                {`構成サービス ${index + 1}`}
               </legend>
               <div className={styles['rowControls']}>
-                <TextField
-                  label='名前'
-                  name={optionControlOf(index, 'name')}
-                  autoComplete='off'
+                <Select
+                  label='サービス'
+                  name={packagedControlOf(index)}
+                  placeholder='選んでください'
                   required
-                  defaultValue={row.shown?.name}
-                  error={said[optionControlOf(index, 'name')]}
-                />
-                <div className={styles['pair']}>
-                  <Select
-                    label='種類'
-                    name={optionControlOf(index, 'optionType')}
-                    required
-                    options={OPTION_TYPE_OPTIONS}
-                    defaultValue={row.shown?.optionType ?? 'addon'}
-                    error={said[optionControlOf(index, 'optionType')]}
-                  />
-                  <TextField
-                    label='選べる数'
-                    name={optionControlOf(index, 'maxQuantity')}
-                    inputMode='numeric'
-                    autoComplete='off'
-                    required
-                    defaultValue={String(row.shown?.maxQuantity ?? 1)}
-                    error={said[optionControlOf(index, 'maxQuantity')]}
-                  />
-                </div>
-                <div className={styles['pair']}>
-                  <TextField
-                    label='追加の時間（分）'
-                    name={optionControlOf(index, 'additionalTime')}
-                    inputMode='numeric'
-                    autoComplete='off'
-                    required
-                    defaultValue={String(row.shown?.additionalTime ?? 0)}
-                    error={said[optionControlOf(index, 'additionalTime')]}
-                  />
-                  <TextField
-                    label='追加の料金'
-                    name={optionControlOf(index, 'additionalPrice')}
-                    inputMode='numeric'
-                    autoComplete='off'
-                    required
-                    defaultValue={String(row.shown?.additionalPrice ?? 0)}
-                    error={said[optionControlOf(index, 'additionalPrice')]}
-                  />
-                </div>
-                <TextArea
-                  label='説明'
-                  name={optionControlOf(index, 'description')}
-                  rows={2}
-                  defaultValue={row.shown?.description ?? undefined}
-                />
-                <Checkbox
-                  label='必須'
-                  name={optionControlOf(index, 'isRequired')}
-                  description='予約のときに、かならず付きます。'
-                  defaultChecked={row.shown?.isRequired ?? false}
-                />
-                <Checkbox
-                  label='有効'
-                  name={optionControlOf(index, 'isActive')}
-                  defaultChecked={row.shown?.isActive ?? true}
+                  options={choices}
+                  defaultValue={row.shown ?? ''}
+                  error={said[packagedControlOf(index)]}
                 />
                 <Button
                   className={styles['remove']}
                   size='small'
-                  aria-label={`オプション ${index + 1} を外す`}
-                  onClick={() => takeAway(row.key, { type: 'addOption' })}
+                  aria-label={`構成サービス ${index + 1} を外す`}
+                  onClick={() => takeAway(row.key, { type: 'addPackaged' })}
                 >
                   外す
                 </Button>
               </div>
             </fieldset>
           ))}
+        {isPackage && packaged.length < MOST_PACKAGED && (
           <Button
             className={styles['add']}
-            ref={addOption}
-            onClick={() => add('options')}
+            ref={addPackaged}
+            onClick={() => add('packaged')}
           >
-            オプションを足す
+            構成サービスを足す
           </Button>
-        </div>
-      </fieldset>
+        )}
+      </FormPart>
+      <FormPart
+        name='オプション'
+        note='お客様が予約のときに足せるものです。並びの順に、お客様に出ます。'
+      >
+        {options.map((row, index) => (
+          <fieldset
+            key={row.key}
+            className={styles['row']}
+            ref={groupRef(row.key)}
+          >
+            <legend className={styles['rowName']}>
+              {`オプション ${index + 1}`}
+            </legend>
+            <div className={styles['rowControls']}>
+              <TextField
+                label='名前'
+                name={optionControlOf(index, 'name')}
+                autoComplete='off'
+                required
+                defaultValue={row.shown?.name}
+                error={said[optionControlOf(index, 'name')]}
+              />
+              <FieldRow>
+                <Select
+                  label='種類'
+                  name={optionControlOf(index, 'optionType')}
+                  required
+                  options={OPTION_TYPE_OPTIONS}
+                  defaultValue={row.shown?.optionType ?? 'addon'}
+                  error={said[optionControlOf(index, 'optionType')]}
+                />
+                <TextField
+                  label='選べる数'
+                  name={optionControlOf(index, 'maxQuantity')}
+                  inputMode='numeric'
+                  autoComplete='off'
+                  required
+                  defaultValue={String(row.shown?.maxQuantity ?? 1)}
+                  error={said[optionControlOf(index, 'maxQuantity')]}
+                />
+              </FieldRow>
+              <FieldRow>
+                <TextField
+                  label='追加の時間（分）'
+                  name={optionControlOf(index, 'additionalTime')}
+                  inputMode='numeric'
+                  autoComplete='off'
+                  required
+                  defaultValue={String(row.shown?.additionalTime ?? 0)}
+                  error={said[optionControlOf(index, 'additionalTime')]}
+                />
+                <TextField
+                  label='追加の料金'
+                  name={optionControlOf(index, 'additionalPrice')}
+                  inputMode='numeric'
+                  autoComplete='off'
+                  required
+                  defaultValue={String(row.shown?.additionalPrice ?? 0)}
+                  error={said[optionControlOf(index, 'additionalPrice')]}
+                />
+              </FieldRow>
+              <TextArea
+                label='説明'
+                name={optionControlOf(index, 'description')}
+                rows={2}
+                defaultValue={row.shown?.description ?? undefined}
+              />
+              <Checkbox
+                label='必須'
+                name={optionControlOf(index, 'isRequired')}
+                description='予約のときに、かならず付きます。'
+                defaultChecked={row.shown?.isRequired ?? false}
+              />
+              <Checkbox
+                label='有効'
+                name={optionControlOf(index, 'isActive')}
+                defaultChecked={row.shown?.isActive ?? true}
+              />
+              <Button
+                className={styles['remove']}
+                size='small'
+                aria-label={`オプション ${index + 1} を外す`}
+                onClick={() => takeAway(row.key, { type: 'addOption' })}
+              >
+                外す
+              </Button>
+            </div>
+          </fieldset>
+        ))}
+        <Button
+          className={styles['add']}
+          ref={addOption}
+          onClick={() => add('options')}
+        >
+          オプションを足す
+        </Button>
+      </FormPart>
     </Form>
   )
 }

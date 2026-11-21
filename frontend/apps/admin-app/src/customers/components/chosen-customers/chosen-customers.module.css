@@ -28,13 +28,6 @@
   }
 }
 
-/* What went wrong, the way and the tag */
-.form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-}
-
 /* What went wrong, and who are removed */
 .removal {
   display: grid;

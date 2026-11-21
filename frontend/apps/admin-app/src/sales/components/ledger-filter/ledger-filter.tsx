@@ -82,6 +82,7 @@ export const LedgerFilter = ({
       <TextField
         label='会計日（から）'
         name='from'
+        autoComplete='off'
         type='date'
         min='1900-01-01'
         max='2999-12-31'
@@ -93,6 +94,7 @@ export const LedgerFilter = ({
       <TextField
         label='会計日（まで）'
         name='to'
+        autoComplete='off'
         type='date'
         min='1900-01-01'
         max='2999-12-31'

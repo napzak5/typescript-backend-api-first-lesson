@@ -90,6 +90,7 @@ export const TimeSlotFields = ({
               <TextField
                 label={`時間帯 ${index + 1} の開始`}
                 name={startOf(name, index)}
+                autoComplete='off'
                 type='time'
                 defaultValue={row.slot?.startTime}
                 error={said[startOf(name, index)]}
@@ -97,6 +98,7 @@ export const TimeSlotFields = ({
               <TextField
                 label={`時間帯 ${index + 1} の終了`}
                 name={endOf(name, index)}
+                autoComplete='off'
                 type='time'
                 defaultValue={row.slot?.endTime}
                 error={said[endOf(name, index)]}

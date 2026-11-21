@@ -2,6 +2,7 @@ import type { ModelsPurchaseOrderResponse } from '@beauty-salon-frontend/api-cli
 import {
   Form,
   type FormErrors,
+  FormPart,
   type FormProps,
   TextArea,
   TextField,
@@ -34,32 +35,29 @@ export const OrderReceiptForm = ({
   ...form
 }: OrderReceiptFormProps) => (
   <Form {...form} errors={errors}>
-    <fieldset className={styles['part']}>
-      <legend className={styles['name']}>届いた数量</legend>
-      <div className={styles['controls']}>
-        <p className={styles['note']}>
-          届いた数量を、明細ごとに入力します。はじめの値は、発注した数量です。届かなかった明細は空にします。入荷を記録すると、発注は納品済みになり、空の明細は受け取りません。あとから届いた分と、発注より多く届いた分は、在庫の移動（仕入れ）で記録します。
-        </p>
-        {order.items.map((item) =>
-          item.inventoryId === null ? (
-            <p key={item.productCode} className={styles['note']}>
-              {`${item.productCode} ${item.productName}: 在庫の行が削除されたので、入荷できません。`}
-            </p>
-          ) : (
-            <TextField
-              key={item.inventoryId}
-              label={`${item.productCode} ${item.productName}`}
-              name={receivedControlOf(item.inventoryId)}
-              inputMode='decimal'
-              autoComplete='off'
-              defaultValue={orderedTextOf(item)}
-              description={`発注 ${itemQuantityNameOf(item)}`}
-              error={errors[receivedControlOf(item.inventoryId)]}
-            />
-          ),
-        )}
-      </div>
-    </fieldset>
+    <FormPart
+      name='届いた数量'
+      note='届いた数量を、明細ごとに入力します。はじめの値は、発注した数量です。届かなかった明細は空にします。入荷を記録すると、発注は納品済みになり、空の明細は受け取りません。あとから届いた分と、発注より多く届いた分は、在庫の移動（仕入れ）で記録します。'
+    >
+      {order.items.map((item) =>
+        item.inventoryId === null ? (
+          <p key={item.productCode} className={styles['note']}>
+            {`${item.productCode} ${item.productName}: 在庫の行が削除されたので、入荷できません。`}
+          </p>
+        ) : (
+          <TextField
+            key={item.inventoryId}
+            label={`${item.productCode} ${item.productName}`}
+            name={receivedControlOf(item.inventoryId)}
+            inputMode='decimal'
+            autoComplete='off'
+            defaultValue={orderedTextOf(item)}
+            description={`発注 ${itemQuantityNameOf(item)}`}
+            error={errors[receivedControlOf(item.inventoryId)]}
+          />
+        ),
+      )}
+    </FormPart>
     <TextArea
       label='納品のメモ'
       name='deliveryNotes'

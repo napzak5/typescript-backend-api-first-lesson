@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -14,6 +17,10 @@ const submitButton = () =>
 
 describe('PasswordChangeForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Empty, () =>
+    screen.getByLabelText('現在のパスワード'),
+  )
 
   it('should ask for the current password and for a new one that keeps the rule, as a password manager fills them in', async () => {
     // Act

@@ -877,9 +877,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
             .getAllByRole('button')
             .map((button) => button.textContent),
         ).toEqual(['閉じる'])
-        expect(
-          within(dialog()).getByRole('button', { name: '閉じる' }),
-        ).toHaveFocus()
+        // The focus is on the answer, which took the place of the form
+        expect(within(dialog()).getByRole('status').parentElement).toHaveFocus()
         expect(await storedOf(review.id)).toEqual(before)
 
         // Act

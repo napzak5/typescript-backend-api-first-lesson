@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -14,6 +17,10 @@ const kinds = (): string[] =>
 
 describe('PointEntryForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Counter, () =>
+    screen.getByRole('textbox', { name: 'ポイント数' }),
+  )
 
   it('should offer the counter what it records, with the balance and the day of expiry of points given', async () => {
     // Act
