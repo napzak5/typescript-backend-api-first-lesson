@@ -4,6 +4,7 @@ import { expect, test } from './fixtures'
 import {
   ADMIN_START,
   CUSTOMER,
+  DASHBOARD_START,
   enterCredentials,
   heading,
   MANAGER,
@@ -62,7 +63,7 @@ test.describe('the dashboard application', () => {
     await enterCredentials(page, MANAGER, api.seedPassword)
 
     // Assert
-    await expect(heading(page, DASHBOARD.title)).toBeFocused()
+    await expect(heading(page, DASHBOARD_START)).toBeFocused()
     await expectSoundPage(page)
   })
 

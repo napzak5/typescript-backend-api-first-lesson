@@ -66,19 +66,30 @@ export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
     .exhaustive()
 }
 
+export type OtherSalonNoticeProps = {
+  /** What is not theirs to see: 「売上」 */
+  what?: string
+  /** Who may see it */
+  who?: string
+  /** Where the start of the application leads a member: 「予約」 */
+  start?: string
+}
+
 /**
  * What a member of the staff of another salon is told: the API shows what
  * is kept of a salon (its bookings, its sales) to its own staff. The start
  * leads to their own salon.
  */
-export const OtherSalonNotice = ({ what = '予約' }: { what?: string }) => (
+export const OtherSalonNotice = ({
+  what = '予約',
+  who = 'そのサロンのスタッフと、管理者',
+  start = '予約',
+}: OtherSalonNoticeProps) => (
   <>
-    <p>
-      {`このサロンの${what}は、見られません。${what}を見られるのは、そのサロンのスタッフと、管理者です。`}
-    </p>
+    <p>{`このサロンの${what}は、見られません。${what}を見られるのは、${who}です。`}</p>
     <p>
       <ButtonLink href='/' variant='secondary'>
-        自分のサロンの予約へ
+        {`自分のサロンの${start}へ`}
       </ButtonLink>
     </p>
   </>

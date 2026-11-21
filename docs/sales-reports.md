@@ -13,6 +13,7 @@
 | 期間のレポート、1 日の売上、スタッフ別、カテゴリー別、推移、出力（`SalesReportCrud` の `get`、`getDaily`、`getByStaff`、`getByCategory`、`getTrends`、`export`） | 実装済み |
 
 - 出力は、期間の売上を日ごとに並べた CSV ファイルだけです（[出力](#出力)）
+- 画面は、dashboard-app の売上レポートの画面です（期間のレポートと、その出力。[売上レポートの画面](./frontend-api-integration.md#売上レポートの画面)）。1 日の売上、スタッフ別、カテゴリー別、推移の画面は、まだありません
 - 次のものは、ありません
   - Excel と PDF のファイル。出力したファイルの保存と、ダウンロード URL
   - スタッフ別、カテゴリー別、支払い方法別の CSV

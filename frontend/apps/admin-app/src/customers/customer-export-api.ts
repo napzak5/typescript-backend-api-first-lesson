@@ -2,7 +2,7 @@ import {
   customerCrudExport,
   customerCrudExportData,
 } from '@beauty-salon-frontend/api-client'
-import { type FileToSave, fileNameOf } from '@beauty-salon-frontend/io'
+import { type FileToSave, fileOfAnswer } from '@beauty-salon-frontend/io'
 import {
   FAILED,
   type Forbidden,
@@ -37,18 +37,6 @@ const FORBIDDEN: Forbidden = { type: 'forbidden' }
 /** What a spreadsheet tells a CSV file of UTF-8 by: the mark of its byte order */
 const BYTE_ORDER_MARK = '﻿'
 
-/**
- * The file the API answered with, under the name it gave; `undefined` when
- * the answer names none.
- */
-const fileOf = (headers: Headers, content: string): FileToSave | undefined => {
-  const name = fileNameOf(headers)
-
-  return name === undefined
-    ? undefined
-    : { name, type: headers.get('content-type') ?? '', content }
-}
-
 export type LedgerExport =
   | {
       type: 'exported'
@@ -80,7 +68,7 @@ export const exportLedger = async (
       .returnType<LedgerExport>()
       .with({ status: 200 }, ({ data, headers }) => {
         const read = rowsOfCsv(data)
-        const file = fileOf(headers, `${BYTE_ORDER_MARK}${data}`)
+        const file = fileOfAnswer(headers, `${BYTE_ORDER_MARK}${data}`)
 
         return read.type === 'rows' && file !== undefined
           ? { type: 'exported', file, customers: read.rows.length - 1 }
@@ -116,7 +104,7 @@ export const exportCustomerData = async (
     match(answer)
       .returnType<DataExport>()
       .with({ status: 200 }, ({ data, headers }) => {
-        const file = fileOf(headers, JSON.stringify(data, null, 2))
+        const file = fileOfAnswer(headers, JSON.stringify(data, null, 2))
 
         return file === undefined ? FAILED : { type: 'exported', file }
       })

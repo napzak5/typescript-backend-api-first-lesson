@@ -24,11 +24,15 @@
   background-color: var(--color-surface);
 }
 
+/*
+ * The title, and the account under it on a narrow screen: a long word of the
+ * title has the whole width. From 40rem they stand side by side.
+ */
 .headerContent {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2);
 }
 
 .title {
@@ -41,6 +45,7 @@
 .account {
   display: grid;
   grid-auto-flow: column;
+  justify-content: start;
   align-items: center;
   gap: var(--space-3);
 }
@@ -90,6 +95,13 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+@media (min-width: 40rem) {
+  .headerContent {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-4);
+  }
 }
 
 @media (min-width: 60rem) {

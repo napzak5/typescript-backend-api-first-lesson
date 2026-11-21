@@ -12,6 +12,8 @@ export const OWNER = 'owner@beautysalon.jp'
 export const MANAGER = 'manager@beautysalon.jp'
 export const STAFF = 'stylist1@beautysalon.jp'
 export const CUSTOMER = 'customer1@example.com'
+/** The operator of the platform: a member of no salon */
+export const OPERATOR = 'admin@beautysalon.jp'
 
 /** Somebody who registers in a test: an account without a profile */
 export const NEWCOMER = 'newcomer@example.com'
@@ -22,6 +24,12 @@ export const NEWCOMER_PASSWORD = 'a passphrase that only this test knows'
  * salon: the bookings of their salon, today.
  */
 export const ADMIN_START = '予約台帳'
+
+/**
+ * The first screen of the dashboard for the owner and a manager: the sales
+ * report of their salon.
+ */
+export const DASHBOARD_START = '売上レポート'
 
 /** The heading of the screen: where the focus is after the screen changed. */
 export const heading = (page: Page, name: string): Locator =>

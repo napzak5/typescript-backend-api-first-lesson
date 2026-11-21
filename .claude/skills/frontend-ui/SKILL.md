@@ -34,15 +34,17 @@ this one: a component is not done without its stories and its test.
 | Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
 | The salon of who is signed in (`useOwnSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/salon/`, `src/components/no-salon-notice/` |
-| What the screens of a salon share, in the admin and the dashboard applications: how an answer of the API is read (`reading.ts`, `outside-the-contract.ts`), a list that goes on (`pages.ts`, `PagedTable`), the search by a keyword (`keyword.ts`, `KeywordSearch`), the clock of a salon (`salon-time.ts`), the salons searched for and read (`salons-api.ts`), the choice of a salon at the start (`SalonChoiceScreen`, `SalonChoices`), the salon of an address around the screens below it (`WithSalon`), the period of a count with its form (`period.ts`, `StatisticsPeriod`), what a form gives (`form.ts`: `Read`, `textOf`), an amount and the names of the kinds of payment and of service (`format.ts`) | `frontend/packages/salon-screens/src/` (`@beauty-salon-frontend/salon-screens`) |
+| What the screens of a salon share, in the admin and the dashboard applications: how an answer of the API is read (`reading.ts`, `outside-the-contract.ts`), a list that goes on (`pages.ts`, `PagedTable`), the search by a keyword (`keyword.ts`, `KeywordSearch`), the clock of a salon (`salon-time.ts`), the salons searched for and read (`salons-api.ts`), the start of an application, which leads a member to the first screen of their salon and lets `admin` choose a salon (`StartScreen`, `SalonChoiceScreen`, `SalonChoices`), the salon of an address around the screens below it (`WithSalon`), the period of a count with its form (`period.ts`, `StatisticsPeriod`), what a form gives (`form.ts`: `Read`, `textOf`), an amount and the names of the kinds of payment and of service (`format.ts`) | `frontend/packages/salon-screens/src/` (`@beauty-salon-frontend/salon-screens`) |
 | The staff and the services of a salon that a booking names, in the admin application | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
 | The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording, the customers of a file, the merge, the exports, the requests to have the data erased | `frontend/apps/admin-app/src/customers/` |
 | The charts of the customers in the admin application: the chart, the form with the rows of the treatments had before, the search of the charts, the allergies of a customer with their form and their removal | `frontend/apps/admin-app/src/charts/` |
 | The treatment records in the admin application: the list, a record with its removal, the form with the rows of the products used, the part of the page of a booking, the photos of a record with their form and their removal, the statistics over a period; the products of a salon, read to the end | `frontend/apps/admin-app/src/treatments/`, `src/products/products-api.ts` |
-| A file the API answers with, saved by the browser: its name, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `saveFile`) |
+| A file the API answers with, saved by the browser: its name, the file of an answer, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `fileOfAnswer`, `saveFile`) |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
+| The sales report of a salon in the dashboard: the screen with its period and its export as a CSV file, the four parts of a report, the words of its counts | `frontend/apps/dashboard-app/src/reports/` |
+| The links of the header of the dashboard, by the role and the salon of the address | `frontend/apps/dashboard-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
 
@@ -1036,9 +1038,10 @@ writes what it read" holds; this is what comes on top.
   can be passed on. A member of the staff belongs to one salon:
   `useOwnSalon` of the session package reads it (`GET /staff-profiles/me`)
   for `owner`, `manager` and `staff`, and says `platform` for `admin`
-  without asking. `/` replaces its entry with the bookings of the own salon
-  (`<Navigate replace>`) for a member, and is the choice of a salon for
-  `admin` (a keyword, which the API matches in the name and the
+  without asking. `/` (`StartScreen` of `salon-screens`) replaces its
+  entry with the first screen of the own salon (`<Navigate replace>`) for
+  a member, the bookings in the admin application and the sales report in
+  the dashboard, and is the choice of a salon for `admin` (a keyword, which the API matches in the name and the
   description). An account of a salon role that belongs to no salon (403)
   is told so (`NoSalonNotice`), and that the invitation of an owner brings
   it in.
@@ -1052,7 +1055,8 @@ writes what it read" holds; this is what comes on top.
   changes), so the focus would be left at the top of the document. A
   salon that is not there has a heading that says so. The API refuses a
   member the bookings of another salon (403): the screen says that they are
-  not theirs to see and links to their own (`OtherSalonNotice`). A booking
+  not theirs to see and links to their own (`OtherSalonNotice`, told
+  what the screen shows, who may see it and where their own begins). A booking
   of another salon under the address of this one is not found, for `admin`
   too.
 - **The clock is the salon's.** Today is `dayAt(new Date(), salon.timezone)`,
@@ -1659,6 +1663,27 @@ with `components/treatment-statistics/`.
   zeros. What a count counts twice (a record of two categories counts in
   both) is said under the table.
 
+The sales report of the dashboard is the example of a report of the
+salon: `reports/sales-report-screen.tsx` with `components/sales-report/`,
+`sales-report.ts` for its words and for what an export says, and
+`sales-report-api.ts`.
+
+- **A report starts with the days its readers look at most**: the month
+  up to today at the salon (`monthUntil`), or the days of the address
+  (`periodIn`, which keeps the period it is given when the address holds
+  none the API counts over). It is read whenever it is shown, and what an
+  earlier screen read is not shown meanwhile (`isFetchedAfterMount`): a
+  sale is entered at every checkout.
+- **Each part says how it counts, under it**, where its sum is another
+  than that of the sales: what was received leaves out what is not paid
+  yet, a kind of service leaves out the products, the sales of a member of
+  the staff hold the products and their counts do not.
+- **An export is a button of the header, while there is something to
+  export**: the file is the one the API makes, under its name; what was
+  saved is a notification that names the days and the file, and the
+  button keeps the focus. Why nothing was saved is an `Alert` under the
+  header, for the days it was asked for: other days take it away.
+
 ### A ledger that some roles keep: registered, changed, made inactive, removed
 
 The staff ledger is the example to read: `staff-ledger-screen.tsx`,
@@ -2112,7 +2137,7 @@ A share link opens a file for somebody who has no account
 
 | Component | Use it for |
 |-----------|------------|
-| `AppShell` | The frame of an application: the link that skips to the content, the header (title, `account`), the `navigation` (under the header, or beside the content with `navigationPlacement='side'`), the main content with the notification at its top |
+| `AppShell` | The frame of an application: the link that skips to the content, the header (title, and `account` under it on a narrow screen, beside it from 40rem), the `navigation` (under the header, or beside the content with `navigationPlacement='side'`), the main content with the notification at its top |
 | `Navigation` | The links to the screens. The application says which one is `current` |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (one below the other on a narrow screen, side by side from 40rem) |

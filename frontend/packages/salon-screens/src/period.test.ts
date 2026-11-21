@@ -51,7 +51,9 @@ describe('periodIn', () => {
     ],
   ])('should read %s', (_case, query, period) => {
     // Act, Assert
-    expect(periodIn(new URLSearchParams(query), TODAY)).toEqual(period)
+    expect(periodIn(new URLSearchParams(query), lastYearUntil(TODAY))).toEqual(
+      period,
+    )
   })
 
   it.each<[string, string]>([
@@ -63,10 +65,14 @@ describe('periodIn', () => {
       'a period longer than the API counts over',
       'from=2025-11-19&to=2026-11-20',
     ],
-  ])('should give the year up to today for %s', (_case, query) => {
+  ])('should give the period the screen starts with for %s', (_case, query) => {
     // Act, Assert
-    expect(periodIn(new URLSearchParams(query), TODAY)).toEqual({
+    expect(periodIn(new URLSearchParams(query), lastYearUntil(TODAY))).toEqual({
       from: '2025-11-20',
+      to: TODAY,
+    })
+    expect(periodIn(new URLSearchParams(query), monthUntil(TODAY))).toEqual({
+      from: '2026-11-01',
       to: TODAY,
     })
   })
@@ -135,7 +141,9 @@ describe('periodQueryOf and periodNameOf', () => {
     expect(periodQueryOf(period).toString()).toBe(
       'from=2026-11-01&to=2026-11-20',
     )
-    expect(periodIn(periodQueryOf(period), TODAY)).toEqual(period)
+    expect(periodIn(periodQueryOf(period), lastYearUntil(TODAY))).toEqual(
+      period,
+    )
   })
 
   it.each<[string, Period, string]>([
