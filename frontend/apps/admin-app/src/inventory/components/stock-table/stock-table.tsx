@@ -8,7 +8,6 @@ import {
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
 import { Badge, Link } from '@beauty-salon-frontend/ui'
-import { NOT_RECORDED } from '../../../staff/staff-format'
 import {
   expiryNameOf,
   isExpired,
@@ -61,7 +60,7 @@ export const StockTable = ({
         key: 'productCode',
         header: '商品コード',
         cell: ({ productId }) =>
-          productOf(products, productId)?.productCode ?? NOT_RECORDED,
+          productOf(products, productId)?.productCode ?? null,
       },
       {
         key: 'name',
@@ -75,7 +74,7 @@ export const StockTable = ({
       {
         key: 'lotNumber',
         header: 'ロット番号',
-        cell: ({ lotNumber }) => lotNumber ?? 'なし',
+        cell: ({ lotNumber }) => lotNumber,
       },
       {
         key: 'expiryDate',

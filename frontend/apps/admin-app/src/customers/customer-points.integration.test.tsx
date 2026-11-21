@@ -326,9 +326,9 @@ describe('the points of customers, against the API', () => {
           '3,500 ポイント',
           dayNameOf(await dayFromToday(90)),
           'ほかのサロンの売上',
-          '',
+          '記録なし',
         ],
-        ['利用', '−200', '3,100 ポイント', '', '予約 BK-TEST-0302', ''],
+        ['利用', '−200', '3,100 ポイント', '', '予約 BK-TEST-0302', '記録なし'],
         [
           '付与',
           '+500',

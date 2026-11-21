@@ -15,7 +15,6 @@ import {
   customerCalled,
   minutesNameOf,
   NOT_ANSWERED,
-  NOT_RECORDED,
   satisfactionNameOf,
 } from '../../treatment-format'
 import type { FoundTreatment } from '../../treatments-api'
@@ -104,7 +103,7 @@ export const TreatmentTable = ({
         header: '施術時間',
         cell: ({ record }) =>
           record.processingTime === null
-            ? NOT_RECORDED
+            ? null
             : minutesNameOf(record.processingTime),
       },
       {

@@ -24,8 +24,8 @@ describe('KIND_OPTIONS', () => {
 })
 
 describe('feeNameOf', () => {
-  it.each<[number | null, string]>([
-    [null, '記録なし'],
+  it.each<[number | null, string | null]>([
+    [null, null],
     [0, '手数料なし'],
     [3.24, '3.24%'],
     [100, '100%'],

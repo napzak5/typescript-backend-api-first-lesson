@@ -84,7 +84,7 @@ export const ReportTable = ({
       key: 'details',
       header: '詳しい内容',
       wrap: 'lines',
-      cell: ({ details }) => details ?? 'なし',
+      cell: ({ details }) => details,
     },
     {
       key: 'status',

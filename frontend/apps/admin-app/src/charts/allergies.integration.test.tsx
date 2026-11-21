@@ -186,7 +186,7 @@ describe('the allergies of the customers, against the API', () => {
         FRAGRANCE,
         '軽い',
         '香料',
-        '未登録',
+        '記録なし',
         '無香料のスタイリング剤を使う',
         '不明',
         '直す削除',

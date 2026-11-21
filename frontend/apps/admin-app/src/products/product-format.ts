@@ -2,16 +2,17 @@ import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import type { Option } from '../customers/customer-format'
-import { NOT_RECORDED } from '../staff/staff-format'
 import type { Carried, Purpose } from './product-ledger'
 
 /*
  * How the products of a salon are named on the screens.
  */
 
-/** A price, in the currency of the salon: 「￥3,000」, or 「記録なし」. */
-export const priceNameOf = (price: number | null, currency: string): string =>
-  price === null ? NOT_RECORDED : amountOf(price, currency)
+/** A price, in the currency of the salon: 「￥3,000」, or `null` when it is not recorded. */
+export const priceNameOf = (
+  price: number | null,
+  currency: string,
+): string | null => (price === null ? null : amountOf(price, currency))
 
 /** What a product is for: 「店頭販売、施術」, 「店頭販売」, 「施術」, or 「どちらでもない」 (supplies). */
 export const usesNameOf = ({
@@ -36,13 +37,13 @@ const QUANTITY = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 2 })
 export const levelNameOf = (level: number | null, unit: string): string =>
   level === null ? '決めていない' : `${QUANTITY.format(level)} ${unit}`
 
-/** The days a delivery takes: 「3 日」, or 「記録なし」. */
-export const leadTimeNameOf = (days: number | null): string =>
-  days === null ? NOT_RECORDED : `${days} 日`
+/** The days a delivery takes: 「3 日」, or `null` when they are not recorded. */
+export const leadTimeNameOf = (days: number | null): string | null =>
+  days === null ? null : `${days} 日`
 
-/** How long a product keeps: 「24 か月」, or 「記録なし」. */
-export const expiryNameOf = (months: number | null): string =>
-  months === null ? NOT_RECORDED : `${months} か月`
+/** How long a product keeps: 「24 か月」, or `null` when it is not recorded. */
+export const expiryNameOf = (months: number | null): string | null =>
+  months === null ? null : `${months} か月`
 
 /** Whether the stock of a product is kept by lot. */
 export const lotsNameOf = (requiresLotTracking: boolean): string =>

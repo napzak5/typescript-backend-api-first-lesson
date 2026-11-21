@@ -93,7 +93,10 @@ export const MovementTable = ({
       {
         key: 'performedBy',
         header: '記録した人',
-        cell: ({ performedBy }) => performerNameOf(performedBy, staff),
+        // Nobody is named for an administrator, nor for the movement that
+        // began the records of a row
+        cell: ({ performedBy }) =>
+          performedBy === null ? null : performerNameOf(performedBy, staff),
       },
     ]}
     rows={movements}

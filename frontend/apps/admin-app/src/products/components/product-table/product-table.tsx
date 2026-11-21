@@ -5,7 +5,6 @@ import {
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
 import { Badge, Link } from '@beauty-salon-frontend/ui'
-import { NOT_RECORDED } from '../../../staff/staff-format'
 import { carriedNameOf, priceNameOf, usesNameOf } from '../../product-format'
 
 export type ProductTableProps = {
@@ -54,12 +53,12 @@ export const ProductTable = ({
       {
         key: 'category',
         header: 'カテゴリー',
-        cell: ({ category }) => category ?? NOT_RECORDED,
+        cell: ({ category }) => category,
       },
       {
         key: 'brand',
         header: 'ブランド',
-        cell: ({ brand }) => brand ?? NOT_RECORDED,
+        cell: ({ brand }) => brand,
       },
       {
         key: 'salonPrice',

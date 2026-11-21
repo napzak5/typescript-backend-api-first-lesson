@@ -155,7 +155,7 @@ describe('the charts of the customers, against the API', () => {
         'Hair Studio Aoyama',
         'ブリーチ 1 回のハイライト',
       ],
-      ['2025年11月2日（日）', 'パーマ', '未登録', ''],
+      ['2025年11月2日（日）', 'パーマ', '記録なし', '記録なし'],
     ])
     expect(
       screen.getByRole('link', { name: 'お客様の台帳へ' }),

@@ -86,7 +86,7 @@ export const PaymentTable = ({
           {
             key: 'card',
             header: 'カード',
-            cell: (payment) => cardNameOf(payment) ?? 'なし',
+            cell: (payment) => cardNameOf(payment),
           },
           {
             key: 'status',

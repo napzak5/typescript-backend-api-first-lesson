@@ -10,7 +10,6 @@ import {
   bookingsNameOf,
   fullStaffNameOf,
   levelNameOf,
-  NOT_RECORDED,
 } from '../../staff-format'
 
 export type StaffTableProps = {
@@ -60,7 +59,7 @@ export const StaffTable = ({
       {
         key: 'position',
         header: '役職',
-        cell: ({ position }) => position ?? NOT_RECORDED,
+        cell: ({ position }) => position,
       },
       {
         key: 'canReceiveBookings',

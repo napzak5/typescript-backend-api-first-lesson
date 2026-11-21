@@ -87,7 +87,7 @@ export const ReviewTable = ({
         key: 'comment',
         header: 'コメント',
         wrap: 'lines',
-        cell: ({ comment }) => comment ?? 'なし',
+        cell: ({ comment }) => comment,
       },
       {
         key: 'staffId',

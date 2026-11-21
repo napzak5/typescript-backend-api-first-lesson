@@ -953,7 +953,7 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert
       await theCustomer()
-      expect(describedIn('台帳')['紹介元']).toBe('なし')
+      expect(describedIn('台帳')['紹介元']).toBe('記録なし')
       expect((await storedCustomerOf(SAKURA.email)).referredBy).toBeNull()
     })
 

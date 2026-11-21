@@ -53,7 +53,7 @@ describe('changedItemsOf', () => {
     // Assert
     expect(changed).toEqual([
       { term: '電話番号', before: '090-1234-5678', after: '080-3333-4444' },
-      { term: '予備の電話番号', before: '未登録', after: '03-1234-5678' },
+      { term: '予備の電話番号', before: null, after: '03-1234-5678' },
     ])
   })
 
@@ -100,7 +100,7 @@ describe('changedItemsOf', () => {
     expect(changed).toEqual([
       {
         term: '紹介元',
-        before: 'なし',
+        before: null,
         after: '紹介: c19f4d7a-6e8c-4adf-8dbe-ac7e3f6a8bc5',
       },
     ])

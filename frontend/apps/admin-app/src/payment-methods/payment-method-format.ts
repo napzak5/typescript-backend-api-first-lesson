@@ -25,9 +25,9 @@ export const KIND_OPTIONS: readonly Option[] = METHOD_KINDS.map((kind) => ({
   label: methodKindNameOf(kind),
 }))
 
-/** The rate of the fee: 「3.6%」, 「手数料なし」, or 「記録なし」 when it is not recorded. */
-export const feeNameOf = (fee: number | null): string =>
-  fee === null ? '記録なし' : fee === 0 ? '手数料なし' : `${fee}%`
+/** The rate of the fee: 「3.6%」, 「手数料なし」, or `null` when it is not recorded. */
+export const feeNameOf = (fee: number | null): string | null =>
+  fee === null ? null : fee === 0 ? '手数料なし' : `${fee}%`
 
 /** What a method takes at once: 「￥1,000から」, 「￥1,000から￥20,000まで」, 「下限も上限もなし」. */
 export const amountsNameOf = (

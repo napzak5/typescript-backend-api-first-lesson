@@ -57,7 +57,7 @@ export const BookingLineRecord = ({
             ? `済み${line.completedAt === null ? '' : `（${momentNameAt(line.completedAt, timezone)}）`}`
             : '未',
         },
-        { term: 'メモ', description: line.notes ?? 'なし' },
+        { term: 'メモ', description: line.notes },
       ]}
     />
   </Card>

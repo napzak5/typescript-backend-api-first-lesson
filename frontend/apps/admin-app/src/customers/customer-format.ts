@@ -144,25 +144,22 @@ export const SCALP_CONDITION_OPTIONS: readonly Option[] = SCALP_CONDITIONS.map(
   }),
 )
 
-/** What is said of a value that was not given. */
-export const UNRECORDED = '未登録'
-
-/** The gender of a customer, if they gave it. */
+/** The gender of a customer, or `null` when they did not give it. */
 export const genderNameOf = (
   gender: ModelsCustomerGenderType | null,
-): string => (gender === null ? UNRECORDED : GENDER_NAMES[gender])
+): string | null => (gender === null ? null : GENDER_NAMES[gender])
 
 /** The kinds of service a customer likes, in the order of the contract. */
 export const categoriesNameOf = (
   categories: readonly ModelsServiceCategoryType[],
 ): string =>
   categories.length === 0
-    ? UNRECORDED
+    ? 'なし'
     : CATEGORIES.filter((category) => categories.includes(category))
         .map((category) => categoryNameOf(category))
         .join('、')
 
-/** The hair and the scalp of a customer, what of them was recorded: 「ストレート、細い髪、頭皮は乾燥」. */
+/** The hair and the scalp of a customer, what of them was recorded: 「ストレート、細い髪、頭皮は乾燥」, or `null` when none was. */
 export const hairNameOf = ({
   hairType,
   hairThickness,
@@ -170,7 +167,7 @@ export const hairNameOf = ({
 }: Pick<
   ModelsCustomerResponse,
   'hairType' | 'hairThickness' | 'scalpCondition'
->): string => {
+>): string | null => {
   const parts = [
     hairType === null ? null : HAIR_TYPE_NAMES[hairType],
     hairThickness === null ? null : `${HAIR_THICKNESS_NAMES[hairThickness]}髪`,
@@ -179,10 +176,10 @@ export const hairNameOf = ({
       : `頭皮は${SCALP_CONDITION_NAMES[scalpCondition]}`,
   ].filter((part) => part !== null)
 
-  return parts.length === 0 ? UNRECORDED : parts.join('、')
+  return parts.length === 0 ? null : parts.join('、')
 }
 
-/** Where a customer lives, as an envelope says it: 「〒150-0001 東京都渋谷区神宮前 4-1-1 ハイツ 101」. */
+/** Where a customer lives, as an envelope says it: 「〒150-0001 東京都渋谷区神宮前 4-1-1 ハイツ 101」, or `null` when nothing of it was recorded. */
 export const addressNameOf = ({
   postalCode,
   prefecture,
@@ -192,7 +189,7 @@ export const addressNameOf = ({
 }: Pick<
   ModelsCustomerResponse,
   'postalCode' | 'prefecture' | 'city' | 'address' | 'building'
->): string => {
+>): string | null => {
   const place = [prefecture, city, address]
     .filter((part) => part !== null)
     .join('')
@@ -202,7 +199,7 @@ export const addressNameOf = ({
     building,
   ].filter((part) => part !== null)
 
-  return parts.length === 0 ? UNRECORDED : parts.join(' ')
+  return parts.length === 0 ? null : parts.join(' ')
 }
 
 /** How a customer may be reached: the ways they allowed, or that there is none. */

@@ -197,7 +197,7 @@ describe('the own profile, against the API', () => {
     // Assert
     expect(await screen.findByText(SAVED)).toBeInTheDocument()
     await recordSays({
-      資格: '記録なし',
+      資格: 'なし',
       経験年数: '記録なし',
       紹介文: '記録なし',
     })
@@ -339,7 +339,7 @@ describe('the own profile, against the API', () => {
       ['レベル', 'ディレクター'],
       ['役職', 'Owner'],
       ['予約', '受けない'],
-      ['専門', '記録なし'],
+      ['専門', 'なし'],
       ['資格', '美容師免許管理美容師'],
       ['経験年数', '記録なし'],
       ['紹介文', '記録なし'],

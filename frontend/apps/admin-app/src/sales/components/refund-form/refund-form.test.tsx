@@ -46,7 +46,7 @@ describe('RefundForm', () => {
       受けた日時: '2026年11月20日（金） 11:05',
       支払い方法: '現金',
       金額: '￥3,000',
-      カード: 'なし',
+      カード: '記録なし',
     })
     expect(amount()).toHaveValue('3000')
     expect(amount()).toHaveAccessibleDescription(

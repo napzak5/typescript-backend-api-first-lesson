@@ -240,20 +240,20 @@ describe('the screens of the purchase orders', () => {
       ['納品のメモ', '記録なし'],
     ])
     expect(rowsOf('明細')).toEqual([
-      ['SHMP001', SHAMPOO, '10 bottle', '￥1,500', '￥15,000', ''],
+      ['SHMP001', SHAMPOO, '10 bottle', '￥1,500', '￥15,000', '記録なし'],
       [
         'COND001',
         'Professional Conditioner 500ml',
         '5 bottle',
         '￥1,500',
         '￥7,500',
-        '',
+        '記録なし',
       ],
     ])
     expect(termsOf('金額')).toEqual([
       ['小計', '￥22,500'],
       ['税額', '￥2,250'],
-      ['送料', 'なし'],
+      ['送料', '記録なし'],
       ['合計', '￥24,750'],
     ])
 
@@ -298,7 +298,7 @@ describe('the screens of the purchase orders', () => {
         '12 jar',
         '￥2,000',
         '￥24,000',
-        '',
+        '記録なし',
       ],
     ])
     expect(termsOf('金額')).toEqual([

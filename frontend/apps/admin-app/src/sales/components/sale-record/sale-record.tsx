@@ -16,7 +16,6 @@ import {
   Table,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
-import { NO_RECORD } from '../../../bookings/booking-entry'
 import { GONE_CUSTOMER } from '../../../bookings/booking-format'
 import { memberNameOf, type Names } from '../../../bookings/day-bookings'
 import { customerNameOf } from '../../../customers/customers-api'
@@ -45,8 +44,6 @@ export type SaleRecordProps = {
   /** The heading of the sale: the focus goes there after it was voided */
   headingRef?: Ref<HTMLHeadingElement> | undefined
 }
-
-const NONE = 'なし'
 
 /**
  * What the ledger keeps of a sale: when it was entered, for whom and by
@@ -93,14 +90,14 @@ export const SaleRecord = ({
               term: '会計の担当',
               description:
                 sale.staffId === null
-                  ? NO_RECORD
+                  ? null
                   : memberNameOf(sale.staffId, staff),
             },
             {
               term: '予約',
               description:
                 bookingHref === undefined ? (
-                  NONE
+                  'なし'
                 ) : (
                   <Link href={bookingHref}>予約の内容</Link>
                 ),
@@ -124,10 +121,10 @@ export const SaleRecord = ({
                   },
                   {
                     term: '取り消しの理由',
-                    description: sale.voidReason ?? NO_RECORD,
+                    description: sale.voidReason,
                   },
                 ]),
-            { term: 'メモ', description: sale.notes ?? NONE },
+            { term: 'メモ', description: sale.notes },
           ]}
         />
       </Card>
@@ -213,13 +210,13 @@ export const SaleRecord = ({
   )
 }
 
-/** The customer of a sale, by name: none recorded, or removed from the ledger. */
+/** The customer of a sale, by name, removed from the ledger, or `null` when none was recorded. */
 const customerNameIn = (
   customerId: string | null,
   customer: SaleRecordProps['customer'],
-): string => {
+): string | null => {
   if (customerId === null) {
-    return NO_RECORD
+    return null
   }
 
   return customer === null ? GONE_CUSTOMER : customerNameOf(customer)

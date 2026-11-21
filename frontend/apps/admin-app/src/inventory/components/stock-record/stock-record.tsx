@@ -9,7 +9,6 @@ import {
   DescriptionList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { NOT_RECORDED } from '../../../staff/staff-format'
 import { performerNameOf } from '../../movement-format'
 import {
   countedNameOf,
@@ -58,7 +57,7 @@ export const StockRecord = ({
                 ? REMOVED_PRODUCT
                 : `${product.name}（${product.productCode}）`,
           },
-          { term: 'ロット番号', description: row.lotNumber ?? 'なし' },
+          { term: 'ロット番号', description: row.lotNumber },
           {
             term: '使用期限',
             description: isExpired(row.expiryDate, today) ? (
@@ -70,14 +69,12 @@ export const StockRecord = ({
               expiryNameOf(row.expiryDate)
             ),
           },
-          { term: '保管場所', description: row.location ?? NOT_RECORDED },
-          { term: '棚', description: row.shelf ?? NOT_RECORDED },
+          { term: '保管場所', description: row.location },
+          { term: '棚', description: row.shelf },
           {
             term: 'メモ',
             description:
-              row.notes === null ? (
-                NOT_RECORDED
-              ) : (
+              row.notes === null ? null : (
                 <WrittenText>{row.notes}</WrittenText>
               ),
           },

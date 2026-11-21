@@ -78,7 +78,7 @@ export const PointHistory = ({
       {
         key: 'description',
         header: '説明',
-        cell: ({ description }) => description ?? '',
+        cell: ({ description }) => description,
       },
     ]}
     rows={transactions}
