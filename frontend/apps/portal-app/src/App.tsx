@@ -78,9 +78,7 @@ const NotFoundPage = () => (
       description='アドレスが正しいか、お確かめください。'
     />
     <p>
-      <ButtonLink href='/' variant='secondary'>
-        トップへ戻る
-      </ButtonLink>
+      <ButtonLink href='/'>トップへ戻る</ButtonLink>
     </p>
   </>
 )

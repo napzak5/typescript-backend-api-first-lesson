@@ -184,8 +184,8 @@ export const HoursForm = ({
       onSubmit={onSubmit}
     >
       <FormPart
-        name='毎週'
-        note='曜日ごとの営業時間です。時刻は、サロンの時計の時刻です。お客様の予約の空き枠は、営業時間から休憩を除いた時間にできます。'
+        label='毎週'
+        description='曜日ごとの営業時間です。時刻は、サロンの時計の時刻です。お客様の予約の空き枠は、営業時間から休憩を除いた時間にできます。'
       >
         {week.map((part) => {
           const nameOf = (property: HoursProperty): string =>
@@ -259,8 +259,8 @@ export const HoursForm = ({
         })}
       </FormPart>
       <FormPart
-        name='日付ごと'
-        note='祝日、臨時休業、短縮営業の日です。日付ごとの行がある日は、曜日の営業時間の代わりに、その行を使います。'
+        label='日付ごと'
+        description='祝日、臨時休業、短縮営業の日です。日付ごとの行がある日は、曜日の営業時間の代わりに、その行を使います。'
       >
         {rows.map((row, index) => {
           const nameOf = (property: HoursProperty): string =>

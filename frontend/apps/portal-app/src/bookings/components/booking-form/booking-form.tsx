@@ -157,7 +157,6 @@ export const BookingForm = ({
         />
         <div className={styles['steps']}>
           <Button
-            variant='secondary'
             size='small'
             disabled={choice.date <= today}
             onClick={() =>
@@ -167,7 +166,6 @@ export const BookingForm = ({
             前の日
           </Button>
           <Button
-            variant='secondary'
             size='small'
             onClick={() => onChoose({ ...choice, date: dayAfter(choice.date) })}
           >
@@ -203,7 +201,7 @@ export const BookingForm = ({
           <UnreadNotice
             message={unreadMessageOf('空いている時刻', reason)}
             onRetry={onRetry}
-            retrying={retrying}
+            pending={retrying}
           />
         ))
         .exhaustive()}

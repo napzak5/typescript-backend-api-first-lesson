@@ -1,11 +1,3 @@
-/* That there is no sale yet, then the way to enter it */
-.unbilled {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: start;
-  gap: var(--space-3);
-}
-
 .said {
   margin: 0;
 }

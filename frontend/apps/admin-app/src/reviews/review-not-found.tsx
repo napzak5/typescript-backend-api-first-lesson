@@ -4,9 +4,7 @@ import { reviewsHrefOf } from '../navigation'
 /** The way back to the reviews of the salon */
 export const ToTheReviews = ({ salonId }: { salonId: string }) => (
   <p>
-    <ButtonLink href={reviewsHrefOf(salonId)} variant='secondary'>
-      レビューへ
-    </ButtonLink>
+    <ButtonLink href={reviewsHrefOf(salonId)}>レビューへ</ButtonLink>
   </p>
 )
 

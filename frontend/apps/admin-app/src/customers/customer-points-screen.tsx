@@ -139,10 +139,7 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
   return (
     <>
       <p>
-        <ButtonLink
-          href={customerHrefOf(salon.id, customer.id)}
-          variant='secondary'
-        >
+        <ButtonLink href={customerHrefOf(salon.id, customer.id)}>
           お客様の台帳へ
         </ButtonLink>
       </p>
@@ -160,7 +157,7 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
           <UnreadNotice
             message={unreadMessageOf('残高', reason)}
             onRetry={() => void balance.refetch()}
-            retrying={balance.isFetching}
+            pending={balance.isFetching}
           />
         ))
         .exhaustive()}
@@ -180,7 +177,7 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
           <UnreadNotice
             message={unreadMessageOf('期限が近いポイント', reason)}
             onRetry={() => void expiring.refetch()}
-            retrying={expiring.isFetching}
+            pending={expiring.isFetching}
           />
         ))
         .exhaustive()}
@@ -194,7 +191,7 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
           <UnreadNotice
             message={unreadMessageOf('ポイントの履歴', reason)}
             onRetry={() => void history.refetch()}
-            retrying={history.isFetching}
+            pending={history.isFetching}
           />
         ))
         .with({ type: 'listed' }, ({ items, total, rest }) => (

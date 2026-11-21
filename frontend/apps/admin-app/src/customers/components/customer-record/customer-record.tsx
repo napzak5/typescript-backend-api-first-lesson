@@ -83,9 +83,7 @@ export const CustomerRecord = ({
           <ButtonLink href={bookingHref} variant='primary'>
             予約を入れる
           </ButtonLink>
-          <ButtonLink href={changeHref} variant='secondary'>
-            台帳を直す
-          </ButtonLink>
+          <ButtonLink href={changeHref}>台帳を直す</ButtonLink>
         </>
       }
     >
@@ -108,11 +106,7 @@ export const CustomerRecord = ({
     </Card>
     <Card
       title='来店とポイント'
-      actions={
-        <ButtonLink href={pointsHref} variant='secondary'>
-          ポイントの履歴
-        </ButtonLink>
-      }
+      actions={<ButtonLink href={pointsHref}>ポイントの履歴</ButtonLink>}
     >
       <DescriptionList
         items={[
@@ -145,11 +139,7 @@ export const CustomerRecord = ({
     </Card>
     <Card
       title='カルテ'
-      actions={
-        <ButtonLink href={chartHref} variant='secondary'>
-          カルテを見る
-        </ButtonLink>
-      }
+      actions={<ButtonLink href={chartHref}>カルテを見る</ButtonLink>}
     >
       <p>
         施術の前に確かめる持病や体調、好みの商材と避ける商材、ほかのサロンで受けた施術は、カルテに書きます。

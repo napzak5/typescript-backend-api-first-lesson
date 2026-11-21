@@ -1,7 +1,6 @@
 import type { ModelsCustomerDeletionRequestResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { Table, type TableColumn } from '@beauty-salon-frontend/ui'
-import styles from './executed-requests.module.css'
 
 export type ExecutedRequestsProps = {
   /** The requests a run carried out, in the order of their dates */
@@ -33,7 +32,8 @@ export const ExecutedRequests = ({
     {
       key: 'reason',
       header: '依頼の理由',
-      cell: ({ reason }) => <span className={styles['reason']}>{reason}</span>,
+      wrap: 'lines',
+      cell: ({ reason }) => reason,
     },
   ]
 

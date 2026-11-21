@@ -24,28 +24,33 @@ describe('FormPart', () => {
     expect(part).toHaveClass('part')
   })
 
-  it('should say what it says of all its controls before them', async () => {
+  it('should say what it says of all its controls before them, as the description of the group', async () => {
     // Act
-    await stories.WithNote.run()
+    await stories.WithDescription.run()
 
     // Assert
     const note = screen.getByText(
       'どちらか一つは入れてください。予約の確認に使います。',
     )
-    expect(note).toHaveClass('note')
+    expect(note).toHaveClass('description')
+    expect(
+      screen.getByRole('group', { name: '連絡先' }),
+    ).toHaveAccessibleDescription(
+      'どちらか一つは入れてください。予約の確認に使います。',
+    )
     expect(note.nextElementSibling).toContainElement(
       screen.getByRole('textbox', { name: 'メールアドレス' }),
     )
   })
 
-  it('should say nothing before its controls when it is given no note', async () => {
+  it('should say nothing before its controls when it is given no description', async () => {
     // Act
     await stories.Default.run()
 
     // Assert
-    expect(
-      screen.getByRole('group', { name: '連絡先' }).querySelector('p'),
-    ).toBeNull()
+    const part = screen.getByRole('group', { name: '連絡先' })
+    expect(part.querySelector('p')).toBeNull()
+    expect(part).not.toHaveAttribute('aria-describedby')
   })
 
   it('should hand what else a fieldset takes to its fieldset', async () => {

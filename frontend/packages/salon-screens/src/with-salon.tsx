@@ -47,9 +47,7 @@ export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
           description='アドレスが正しいか、お確かめください。削除されたサロンは、表示できません。'
         />
         <p>
-          <ButtonLink href='/' variant='secondary'>
-            トップへ戻る
-          </ButtonLink>
+          <ButtonLink href='/'>トップへ戻る</ButtonLink>
         </p>
       </>
     ))
@@ -59,7 +57,7 @@ export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
         <UnreadNotice
           message={unreadMessageOf('サロン', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
       </>
     ))
@@ -88,9 +86,7 @@ export const OtherSalonNotice = ({
   <>
     <p>{`このサロンの${what}は、見られません。${what}を見られるのは、${who}です。`}</p>
     <p>
-      <ButtonLink href='/' variant='secondary'>
-        {`自分のサロンの${start}へ`}
-      </ButtonLink>
+      <ButtonLink href='/'>{`自分のサロンの${start}へ`}</ButtonLink>
     </p>
   </>
 )

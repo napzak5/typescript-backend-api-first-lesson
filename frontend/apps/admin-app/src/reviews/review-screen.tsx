@@ -314,7 +314,7 @@ const ReviewPart = ({ salon, reviewId }: ReviewPartProps) => {
           <UnreadNotice
             message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         </>
       ))

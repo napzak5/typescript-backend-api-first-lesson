@@ -151,9 +151,7 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
   ) : undefined
   // Every member of the staff sees to the alerts
   const alerts = (
-    <ButtonLink href={stockAlertsHrefOf(salon.id)} variant='secondary'>
-      在庫のアラート
-    </ButtonLink>
+    <ButtonLink href={stockAlertsHrefOf(salon.id)}>在庫のアラート</ButtonLink>
   )
   // Who keeps the stock adds rows to it, and has the alerts, the count and
   // the value as other actions
@@ -163,10 +161,10 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
         otherActions: (
           <>
             {alerts}
-            <ButtonLink href={stockCountHrefOf(salon.id)} variant='secondary'>
+            <ButtonLink href={stockCountHrefOf(salon.id)}>
               棚卸しする
             </ButtonLink>
-            <ButtonLink href={stockValueHrefOf(salon.id)} variant='secondary'>
+            <ButtonLink href={stockValueHrefOf(salon.id)}>
               在庫評価額
             </ButtonLink>
           </>
@@ -217,14 +215,14 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
           <UnreadNotice
             message={unreadMessageOf('在庫', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
           <EmptyState
             title={words.empty}
             description={words.emptyDescription}
-            action={view.type === 'all' ? entry : undefined}
+            actions={view.type === 'all' ? entry : undefined}
           />
         ))
         .with({ type: 'listed' }, ({ items, total, rest }) => (
@@ -274,7 +272,7 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
             <UnreadNotice
               message={unreadMessageOf('商品', reason)}
               onRetry={() => void products.refetch()}
-              retrying={products.isFetching}
+              pending={products.isFetching}
             />
           ),
         )

@@ -11,7 +11,7 @@
  * A browser sets the legend of a fieldset apart from what the fieldset
  * lays out, so the gap below the name is the name's own.
  */
-.name {
+.label {
   margin-block-end: var(--space-3);
   font-size: var(--font-size-large);
   font-weight: var(--font-weight-bold);
@@ -26,7 +26,7 @@
 }
 
 /* Said as the description of a control is: helper text has one look */
-.note {
+.description {
   margin: 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-small);

@@ -75,7 +75,6 @@ export const AlertDialog = ({
       <TextArea
         label='メモ'
         name='notes'
-        rows={3}
         description='任意。何をしたか、これから何をするかを書きます（発注した、廃棄する、など）。'
       />
     </FormDialog>

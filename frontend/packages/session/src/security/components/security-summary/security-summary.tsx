@@ -57,9 +57,7 @@ export const SecuritySummary = ({
           ]}
         />
         <p>
-          <ButtonLink href={passwordHref} variant='secondary'>
-            パスワードを変更する
-          </ButtonLink>
+          <ButtonLink href={passwordHref}>パスワードを変更する</ButtonLink>
         </p>
       </Card>
       <Card title='2 要素認証' headingRef={twoFactorHeadingRef}>
@@ -77,14 +75,10 @@ export const SecuritySummary = ({
         <p className={styles['actions']}>
           {match(user.twoFactorStatus)
             .with('disabled', () => (
-              <ButtonLink href={twoFactorHref} variant='secondary'>
-                2 要素認証を設定する
-              </ButtonLink>
+              <ButtonLink href={twoFactorHref}>2 要素認証を設定する</ButtonLink>
             ))
             .with('pending', () => (
-              <ButtonLink href={twoFactorHref} variant='secondary'>
-                設定をやり直す
-              </ButtonLink>
+              <ButtonLink href={twoFactorHref}>設定をやり直す</ButtonLink>
             ))
             .with('enabled', () => (
               <>

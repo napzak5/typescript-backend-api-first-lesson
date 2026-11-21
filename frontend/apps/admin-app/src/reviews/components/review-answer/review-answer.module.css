@@ -9,7 +9,6 @@
 .text {
   max-inline-size: var(--size-text-column);
   white-space: pre-line;
-  overflow-wrap: anywhere;
 }
 
 .moment,

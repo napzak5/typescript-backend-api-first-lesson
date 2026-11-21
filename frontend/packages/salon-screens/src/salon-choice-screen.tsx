@@ -81,7 +81,7 @@ export const SalonChoiceScreen = ({
           <UnreadNotice
             message={unreadMessageOf('サロン', reason)}
             onRetry={() => void found.refetch()}
-            retrying={found.isFetching}
+            pending={found.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () =>

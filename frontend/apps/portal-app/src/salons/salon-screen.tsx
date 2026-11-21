@@ -109,7 +109,7 @@ const MenuSection = ({ salon }: OfSalonProps) => {
           <UnreadNotice
             message={unreadMessageOf('メニュー', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}
@@ -153,7 +153,7 @@ const StaffSection = ({ salon }: OfSalonProps) => {
                   <UnreadNotice
                     message={unreadMessageOf('スタッフの評価', reason)}
                     onRetry={() => void ratings.refetch()}
-                    retrying={ratings.isFetching}
+                    pending={ratings.isFetching}
                   />
                 ),
               )
@@ -172,7 +172,7 @@ const StaffSection = ({ salon }: OfSalonProps) => {
           <UnreadNotice
             message={unreadMessageOf('スタッフ', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}
@@ -332,7 +332,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
           <UnreadNotice
             message={unreadMessageOf('評価', reason)}
             onRetry={() => void summary.refetch()}
-            retrying={summary.isFetching}
+            pending={summary.isFetching}
           />
         ))
         .exhaustive()}
@@ -346,7 +346,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
           <UnreadNotice
             message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void reviews.refetch()}
-            retrying={reviews.isFetching}
+            pending={reviews.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
@@ -414,11 +414,7 @@ const SalonPage = ({ salon }: OfSalonProps) => (
     <PageHeader
       title={salon.name}
       description={salon.nameKana ?? undefined}
-      actions={
-        <ButtonLink href='/' variant='secondary'>
-          サロンを探す
-        </ButtonLink>
-      }
+      actions={<ButtonLink href='/'>サロンを探す</ButtonLink>}
     />
     {!salon.isActive && (
       <Alert tone='warning'>
@@ -479,7 +475,7 @@ export const SalonScreen = () => {
           <UnreadNotice
             message={unreadMessageOf('サロン', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         </>
       ))

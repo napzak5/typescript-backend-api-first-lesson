@@ -3,6 +3,7 @@ import { classNames } from '../../class-names'
 import choiceStyles from '../field/choice.module.css'
 import { FieldMessages, messageAttributes, RequiredMark } from '../field/field'
 import fieldStyles from '../field/field.module.css'
+import { visuallyHiddenClass } from '../visually-hidden/visually-hidden'
 
 export type CheckboxProps = Omit<
   ComponentProps<'input'>,
@@ -50,7 +51,7 @@ export const Checkbox = ({
             type='checkbox'
             required={required}
           />
-          <span className={labelHidden ? choiceStyles['hidden'] : undefined}>
+          <span className={labelHidden ? visuallyHiddenClass : undefined}>
             {label}
           </span>
         </label>

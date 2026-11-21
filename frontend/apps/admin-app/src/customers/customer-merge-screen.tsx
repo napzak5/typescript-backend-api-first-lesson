@@ -137,9 +137,7 @@ const MergeWith = ({
           選んだお客様は、台帳にいません。まとめる相手を選び直してください。
         </p>
         <p>
-          <ButtonLink href={chooseAgainHref} variant='secondary'>
-            相手を選び直す
-          </ButtonLink>
+          <ButtonLink href={chooseAgainHref}>相手を選び直す</ButtonLink>
         </p>
       </>
     ))
@@ -147,7 +145,7 @@ const MergeWith = ({
       <UnreadNotice
         message={unreadMessageOf('まとめる相手', reason)}
         onRetry={() => void read.refetch()}
-        retrying={read.isFetching}
+        pending={read.isFetching}
       />
     ))
     .with({ type: 'found' }, (found) => {
@@ -159,9 +157,7 @@ const MergeWith = ({
         <>
           <p>{`${fullNameOf(found.other)} 様（${found.other.email}）`}</p>
           <p>
-            <ButtonLink href={chooseAgainHref} variant='secondary'>
-              相手を選び直す
-            </ButtonLink>
+            <ButtonLink href={chooseAgainHref}>相手を選び直す</ButtonLink>
           </p>
           <CustomerMerge
             customer={customer}

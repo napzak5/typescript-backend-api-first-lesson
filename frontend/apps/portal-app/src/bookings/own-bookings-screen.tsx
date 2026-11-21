@@ -112,7 +112,7 @@ const Bookings = ({ when }: BookingsProps) => {
       <UnreadNotice
         message={unreadMessageOf('予約', reason)}
         onRetry={() => void read.refetch()}
-        retrying={read.isFetching}
+        pending={read.isFetching}
       />
     ))
     .with({ type: 'listed', items: [] }, () =>
@@ -122,7 +122,7 @@ const Bookings = ({ when }: BookingsProps) => {
         <EmptyState
           title='これからの予約はありません'
           description='サロンを探して、メニューから予約できます。'
-          action={<ButtonLink href='/'>サロンを探す</ButtonLink>}
+          actions={<ButtonLink href='/'>サロンを探す</ButtonLink>}
         />
       ),
     )
@@ -132,7 +132,7 @@ const Bookings = ({ when }: BookingsProps) => {
           <UnreadNotice
             message={unreadMessageOf('予約', reason)}
             onRetry={readNamesAgain}
-            retrying={readingNamesAgain}
+            pending={readingNamesAgain}
           />
         ))
         .with([[], P._], () => (

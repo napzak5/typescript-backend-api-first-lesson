@@ -40,16 +40,6 @@ export const WithError: Story = {
   args: { required: true, error: '担当スタッフを選択してください' },
 }
 
-export const WithUnavailableOption: Story = {
-  args: {
-    options: [
-      { value: 'sato', label: '佐藤 美咲' },
-      { value: 'suzuki', label: '鈴木 健（休み）', disabled: true },
-      { value: 'takahashi', label: '高橋 彩' },
-    ],
-  },
-}
-
 export const Disabled: Story = {
   args: { disabled: true, defaultValue: 'sato' },
 }

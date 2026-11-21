@@ -73,17 +73,4 @@ describe('Rating', () => {
     expect(screen.getByText('評価なし')).toBeVisible()
     expect(screen.queryByRole('img')).toBeNull()
   })
-
-  it('should keep a class its container gives it', async () => {
-    // Act
-    await stories.One.run({
-      args: { ...stories.One.args, className: 'in-row' },
-    })
-
-    // Assert
-    expect(screen.getByRole('img', { name: '5 段階中 4.0' })).toHaveClass(
-      'rating',
-      'in-row',
-    )
-  })
 })

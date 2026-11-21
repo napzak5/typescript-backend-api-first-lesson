@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
-import { expectSoundPage } from './checks'
+import { expectSoundPage, sidewaysScrollOf } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { enterCredentials, heading, OWNER } from './sign-in'
 
@@ -158,14 +158,13 @@ test.describe('merging two records, on a screen as wide as a laptop', () => {
     )
     await enterCredentials(page, OWNER, api.seedPassword)
 
-    // Assert
-    const differences = page.getByRole('region', { name: '2 人で違う項目' })
+    // Assert: a table that fits is no region, nor a stop of the Tab key
+    const differences = page.getByRole('table', { name: '2 人で違う項目' })
     await expect(differences).toContainText(NOTES)
-    expect(
-      await differences.evaluate(
-        (frame) => frame.scrollWidth <= frame.clientWidth,
-      ),
-    ).toBe(true)
+    expect(await sidewaysScrollOf(differences)).toBeLessThanOrEqual(0)
+    await expect(
+      page.getByRole('region', { name: '2 人で違う項目' }),
+    ).toHaveCount(0)
     await expectSoundPage(page)
   })
 })

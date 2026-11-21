@@ -5,6 +5,7 @@ import {
   Card,
   DescriptionList,
   Dialog,
+  EmptyState,
   FormDialog,
   type FormErrors,
   LoadingIndicator,
@@ -110,7 +111,11 @@ export const CustomerErasure = ({
   const shownRequest = (request: ErasureRequest | null) =>
     match(request)
       .with(null, () =>
-        requestable ? asking : <p>消去の依頼はありません。</p>,
+        requestable ? (
+          asking
+        ) : (
+          <EmptyState kind='part' title='消去の依頼はありません。' />
+        ),
       )
       .with({ status: 'pending' }, ({ requestedAt, scheduledAt, reason }) => (
         <>
@@ -131,9 +136,7 @@ export const CustomerErasure = ({
           <p>
             予定の日時を過ぎたあとに、消去が実行されます。それまでは、依頼を取り消せます。
           </p>
-          <Button variant='secondary' onClick={() => onOpen('cancel')}>
-            依頼を取り消す
-          </Button>
+          <Button onClick={() => onOpen('cancel')}>依頼を取り消す</Button>
         </>
       ))
       .with({ status: 'cancelled' }, (cancelled) => (
@@ -159,7 +162,7 @@ export const CustomerErasure = ({
             <UnreadNotice
               message={unread}
               onRetry={onRetry}
-              retrying={retrying}
+              pending={retrying}
             />
           ))
           .with({ type: 'read' }, ({ request }) => shownRequest(request))
@@ -172,7 +175,7 @@ export const CustomerErasure = ({
           title='消去の依頼を受け付けますか？'
           description={`${name} 様のデータの消去の依頼を受け付けます。受け付けてから 14 日のあいだは、取り消せます。`}
           submitLabel='受け付ける'
-          tone='danger'
+          submitVariant='danger'
           message={message}
           errors={errors}
           pending={pending}
@@ -181,7 +184,6 @@ export const CustomerErasure = ({
           <TextArea
             label='依頼の理由'
             name='reason'
-            rows={3}
             required
             description='ご本人が述べた理由や、依頼を受けた方法を書きます。依頼の記録に残ります。'
             error={errors['reason']}

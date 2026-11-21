@@ -6,6 +6,7 @@ import {
 import {
   ButtonLink,
   Card,
+  EmptyState,
   LoadingIndicator,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
@@ -56,18 +57,19 @@ export const BookingTreatment = ({
             <UnreadNotice
               message={unreadMessageOf('施術記録', reason)}
               onRetry={onRetry}
-              retrying={retrying}
+              pending={retrying}
             />
           ))
           .with({ type: 'found', record: null }, () => (
-            <div className={styles['part']}>
-              <p className={styles['said']}>まだ施術記録を書いていません。</p>
-              <p className={styles['said']}>
+            <EmptyState
+              kind='part'
+              title='まだ施術記録を書いていません。'
+              actions={
                 <ButtonLink href={entryHref} variant='primary'>
                   施術記録を書く
                 </ButtonLink>
-              </p>
-            </div>
+              }
+            />
           ))
           .with({ type: 'found', record: P.nonNullable }, ({ record }) => (
             <div className={styles['part']}>
@@ -75,7 +77,7 @@ export const BookingTreatment = ({
                 {`${momentNameAt(record.createdAt, timezone)}に書いた施術記録があります。`}
               </p>
               <p className={styles['said']}>
-                <ButtonLink href={treatmentHref(record.id)} variant='secondary'>
+                <ButtonLink href={treatmentHref(record.id)}>
                   施術記録を見る
                 </ButtonLink>
               </p>

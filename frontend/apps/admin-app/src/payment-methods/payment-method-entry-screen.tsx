@@ -140,7 +140,7 @@ const EntryPart = ({ salon }: EntryPartProps) => {
             <UnreadNotice
               message={unreadMessageOf('支払い方法', reason)}
               onRetry={() => void methods.refetch()}
-              retrying={methods.isFetching}
+              pending={methods.isFetching}
             />
           ),
         )

@@ -131,7 +131,7 @@ const TreatmentList = ({ salon, staff, services }: TreatmentListProps) => {
           <UnreadNotice
             message={unreadMessageOf('施術記録', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () =>
@@ -144,8 +144,8 @@ const TreatmentList = ({ salon, staff, services }: TreatmentListProps) => {
             <EmptyState
               title='施術記録はありません'
               description='施術記録は、施術を始めた予約の画面から書きます。'
-              action={
-                <ButtonLink href={bookingsHrefOf(salon.id)} variant='secondary'>
+              actions={
+                <ButtonLink href={bookingsHrefOf(salon.id)}>
                   今日の予約へ
                 </ButtonLink>
               }
@@ -190,10 +190,7 @@ export const TreatmentsScreen = () => {
             title={TITLE}
             description={salon.name}
             actions={
-              <ButtonLink
-                href={treatmentStatisticsHrefOf(salon.id)}
-                variant='secondary'
-              >
+              <ButtonLink href={treatmentStatisticsHrefOf(salon.id)}>
                 施術の統計
               </ButtonLink>
             }

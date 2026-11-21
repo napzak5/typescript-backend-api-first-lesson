@@ -66,11 +66,7 @@ export const AuthenticatorRegistration = ({
         message={message}
         errors={errors}
         pending={pending}
-        actions={
-          <ButtonLink href={cancelHref} variant='secondary'>
-            やめる
-          </ButtonLink>
-        }
+        actions={<ButtonLink href={cancelHref}>やめる</ButtonLink>}
         onSubmit={onSubmit}
       >
         <TextField

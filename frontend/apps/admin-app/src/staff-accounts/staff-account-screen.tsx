@@ -210,10 +210,7 @@ const InactiveNotice = ({
       無効なスタッフは、招待できません。休職や退職の手続きが終わって復帰するときは、スタッフ情報を有効に戻してから招待してください。
     </p>
     <p>
-      <ButtonLink
-        href={staffChangeHrefOf(salon.id, member.id)}
-        variant='secondary'
-      >
+      <ButtonLink href={staffChangeHrefOf(salon.id, member.id)}>
         スタッフ情報を直す
       </ButtonLink>
     </p>
@@ -459,10 +456,7 @@ const AccountPart = ({ account, ...props }: AccountPartProps) => {
           (administers || !own) && (
             <>
               {administers && (
-                <ButtonLink
-                  href={userAccountHrefOf(account.id)}
-                  variant='secondary'
-                >
+                <ButtonLink href={userAccountHrefOf(account.id)}>
                   アカウントの状態を見る
                 </ButtonLink>
               )}
@@ -600,7 +594,7 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
               void account.refetch()
               void invitation.refetch()
             }}
-            retrying={account.isFetching || invitation.isFetching}
+            pending={account.isFetching || invitation.isFetching}
           />
         ))
         .with({ type: 'account' }, ({ account: linked }) => (
@@ -612,10 +606,7 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
         .with({ type: 'none' }, () => <NoLoginPart {...props} />)
         .exhaustive()}
       <p>
-        <ButtonLink
-          href={staffMemberHrefOf(salon.id, member.id)}
-          variant='secondary'
-        >
+        <ButtonLink href={staffMemberHrefOf(salon.id, member.id)}>
           スタッフの内容へ
         </ButtonLink>
       </p>

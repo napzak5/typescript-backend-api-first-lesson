@@ -58,7 +58,7 @@ const SummaryPart = ({ salonId }: { salonId: string }) => {
       <UnreadNotice
         message={unreadMessageOf('評価のまとめ', reason)}
         onRetry={() => void read.refetch()}
-        retrying={read.isFetching}
+        pending={read.isFetching}
       />
     ))
     .exhaustive()
@@ -124,7 +124,7 @@ const ReviewList = ({ salon, staff }: ReviewListProps) => {
           <UnreadNotice
             message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () =>
@@ -184,10 +184,7 @@ const ReviewsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         description={salon.name}
         actions={
           handles ? (
-            <ButtonLink
-              href={reviewReportsHrefOf(salon.id)}
-              variant='secondary'
-            >
+            <ButtonLink href={reviewReportsHrefOf(salon.id)}>
               通報を見る
             </ButtonLink>
           ) : undefined

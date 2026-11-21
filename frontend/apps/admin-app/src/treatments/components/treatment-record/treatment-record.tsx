@@ -192,12 +192,8 @@ export const TreatmentRecord = ({
             {
               key: 'notes',
               header: 'メモ',
-              cell: ({ material: { notes } }) =>
-                notes === null ? (
-                  ''
-                ) : (
-                  <span className={styles['notes']}>{notes}</span>
-                ),
+              wrap: 'lines',
+              cell: ({ material: { notes } }) => notes ?? '',
             },
           ]}
           rows={record.materials.map((material, place) => ({

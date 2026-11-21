@@ -169,7 +169,7 @@ const AttachmentsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <UnreadNotice
             message={unreadMessageOf('ファイル', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (

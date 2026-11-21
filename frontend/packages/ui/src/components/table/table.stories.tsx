@@ -9,6 +9,7 @@ type Booking = {
   serviceName: string
   status: '確定' | '仮予約'
   totalAmount: number
+  notes: string
 }
 
 const bookings: Booking[] = [
@@ -19,6 +20,7 @@ const bookings: Booking[] = [
     serviceName: 'カット',
     status: '確定',
     totalAmount: 5500,
+    notes: '前回より短めに。\n耳は出さない。',
   },
   {
     id: 'b2',
@@ -27,6 +29,7 @@ const bookings: Booking[] = [
     serviceName: 'カット、カラー',
     status: '仮予約',
     totalAmount: 13200,
+    notes: '',
   },
   {
     id: 'b3',
@@ -35,6 +38,8 @@ const bookings: Booking[] = [
     serviceName: 'パーマ',
     status: '確定',
     totalAmount: 9900,
+    notes:
+      'https://example.com/a-photo-of-the-style-the-customer-showed-at-the-last-visit',
   },
 ]
 
@@ -104,5 +109,26 @@ export const RowHeaderNotFirst: Story = {
   args: {
     columns: [STARTS_AT, CUSTOMER],
     rowHeader: 'customer',
+  },
+}
+
+/** Columns of text: the services break between words, the notes keep their lines */
+export const WithText: Story = {
+  args: {
+    columns: [
+      CUSTOMER,
+      {
+        key: 'service',
+        header: 'メニュー',
+        wrap: 'words',
+        cell: (row) => row.serviceName,
+      },
+      {
+        key: 'notes',
+        header: '申し送り',
+        wrap: 'lines',
+        cell: (row) => row.notes,
+      },
+    ],
   },
 }

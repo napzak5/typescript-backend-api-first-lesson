@@ -100,10 +100,7 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
         currency={salon.currency}
         actions={
           <>
-            <ButtonLink
-              href={staffChangeHrefOf(salon.id, member.id)}
-              variant='secondary'
-            >
+            <ButtonLink href={staffChangeHrefOf(salon.id, member.id)}>
               スタッフ情報を直す
             </ButtonLink>
             {!own && (
@@ -121,16 +118,10 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
         }
       />
       <p className={styles['ways']}>
-        <ButtonLink
-          href={scheduleHrefOf(salon.id, member.id)}
-          variant='secondary'
-        >
+        <ButtonLink href={scheduleHrefOf(salon.id, member.id)}>
           勤務スケジュール
         </ButtonLink>
-        <ButtonLink
-          href={staffAccountHrefOf(salon.id, member.id)}
-          variant='secondary'
-        >
+        <ButtonLink href={staffAccountHrefOf(salon.id, member.id)}>
           ログインアカウント
         </ButtonLink>
       </p>

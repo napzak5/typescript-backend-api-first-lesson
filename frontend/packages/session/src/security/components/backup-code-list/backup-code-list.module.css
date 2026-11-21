@@ -8,5 +8,4 @@
 .code {
   font-family: var(--font-family-mono);
   font-size: var(--font-size-control);
-  overflow-wrap: anywhere;
 }

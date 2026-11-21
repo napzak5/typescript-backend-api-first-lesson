@@ -152,10 +152,7 @@ const SettingsPart = ({ salon }: SettingsPartProps) => {
               <ButtonLink href={salonChangeHrefOf(salon.id)} variant='primary'>
                 サロンの情報を直す
               </ButtonLink>
-              <ButtonLink
-                href={hoursChangeHrefOf(salon.id)}
-                variant='secondary'
-              >
+              <ButtonLink href={hoursChangeHrefOf(salon.id)}>
                 営業時間を直す
               </ButtonLink>
             </>

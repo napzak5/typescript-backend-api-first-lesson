@@ -46,7 +46,7 @@ const OwnPage = () => {
             <Card title='お客様の情報'>
               <ProfileDetails profile={profile} />
               <p>
-                <ButtonLink href='/mypage/profile' variant='secondary'>
+                <ButtonLink href='/mypage/profile'>
                   お客様の情報を変更する
                 </ButtonLink>
               </p>
@@ -57,7 +57,7 @@ const OwnPage = () => {
                 来店したサロンに書いたレビューを確かめ、変更し、削除できます。
               </p>
               <p>
-                <ButtonLink href='/mypage/reviews' variant='secondary'>
+                <ButtonLink href='/mypage/reviews'>
                   自分のレビューを見る
                 </ButtonLink>
               </p>
@@ -68,7 +68,7 @@ const OwnPage = () => {
           <EmptyState
             title='お客様の情報は、まだ登録されていません'
             description='お名前と電話番号を登録すると、サロンを予約できます。会員の情報も、ここに表示されます。'
-            action={
+            actions={
               <ButtonLink href='/mypage/profile'>
                 お客様の情報を登録する
               </ButtonLink>
@@ -79,7 +79,7 @@ const OwnPage = () => {
           <UnreadNotice
             message={unreadMessageOf('お客様の情報', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}
@@ -89,7 +89,7 @@ const OwnPage = () => {
           パスワードの変更と、このアカウントでサインインしている端末の確認ができます。
         </p>
         <p>
-          <ButtonLink href={SECURITY_PATH} variant='secondary'>
+          <ButtonLink href={SECURITY_PATH}>
             アカウントの安全を確かめる
           </ButtonLink>
         </p>

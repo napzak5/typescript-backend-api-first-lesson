@@ -58,7 +58,7 @@ export const SalonForm = ({
 
   return (
     <Form {...form} errors={errors}>
-      <FormPart name='サロン'>
+      <FormPart label='サロン'>
         <TextField
           label='名前'
           name='name'
@@ -91,7 +91,7 @@ export const SalonForm = ({
           defaultChecked={salon.isActive}
         />
       </FormPart>
-      <FormPart name='所在地'>
+      <FormPart label='所在地'>
         <FieldRow>
           <TextField
             label='郵便番号'
@@ -157,7 +157,7 @@ export const SalonForm = ({
           />
         </FieldRow>
       </FormPart>
-      <FormPart name='連絡先'>
+      <FormPart label='連絡先'>
         <FieldRow>
           <TextField
             label='電話番号'
@@ -198,7 +198,7 @@ export const SalonForm = ({
           error={errors['websiteUrl']}
         />
       </FormPart>
-      <FormPart name='写真'>
+      <FormPart label='写真'>
         <TextField
           label='ロゴの URL'
           name='logoUrl'
@@ -210,13 +210,12 @@ export const SalonForm = ({
         <TextArea
           label='写真の URL'
           name='imageUrls'
-          rows={3}
           description='1 行に 1 つ。店舗や内装の写真。'
           defaultValue={salon.imageUrls.join('\n')}
           error={errors['imageUrls']}
         />
       </FormPart>
-      <FormPart name='特徴と設備'>
+      <FormPart label='特徴と設備'>
         <TextField
           label='特徴'
           name='features'
@@ -234,7 +233,7 @@ export const SalonForm = ({
           error={errors['amenities']}
         />
       </FormPart>
-      <FormPart name='会計'>
+      <FormPart label='会計'>
         <TextField
           label='税率（%）'
           name='taxRate'

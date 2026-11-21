@@ -149,10 +149,7 @@ const NotReceived = ({
   <>
     <p>{reason}</p>
     <p>
-      <ButtonLink
-        href={purchaseOrderHrefOf(salonId, order.id)}
-        variant='secondary'
-      >
+      <ButtonLink href={purchaseOrderHrefOf(salonId, order.id)}>
         発注へ戻る
       </ButtonLink>
     </p>
@@ -201,7 +198,7 @@ const ReceiptPart = ({ salon, purchaseOrderId }: ReceiptPartProps) => {
         <UnreadNotice
           message={unreadMessageOf('発注', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
       </>
     ))

@@ -108,10 +108,7 @@ const ChartEntry = ({ salon, customer }: ChartEntryProps) => {
       actions={
         <>
           {exists && (
-            <ButtonLink
-              href={chartChangeHrefOf(salon.id, customer.id)}
-              variant='secondary'
-            >
+            <ButtonLink href={chartChangeHrefOf(salon.id, customer.id)}>
               そのカルテを直す
             </ButtonLink>
           )}
@@ -143,7 +140,6 @@ export const ChartEntryScreen = () => {
                     <p>
                       <ButtonLink
                         href={chartChangeHrefOf(salon.id, customer.id)}
-                        variant='secondary'
                       >
                         カルテを直す
                       </ButtonLink>

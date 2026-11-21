@@ -176,7 +176,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <UnreadNotice
             message={unreadMessageOf('アラートの件数', reason)}
             onRetry={() => void summary.refetch()}
-            retrying={summary.isFetching}
+            pending={summary.isFetching}
           />
         ))
         .exhaustive()}
@@ -201,7 +201,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <UnreadNotice
             message={unreadMessageOf('在庫のアラート', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () =>
@@ -244,9 +244,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         ))
         .exhaustive()}
       <p>
-        <ButtonLink href={inventoryHrefOf(salon.id)} variant='secondary'>
-          在庫へ
-        </ButtonLink>
+        <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
       </p>
       <AlertDialog
         alert={seeing}

@@ -151,7 +151,7 @@ const WithStaff = ({ salon, sale }: Omit<SaleChangeProps, 'staff'>) => {
       <UnreadNotice
         message={unreadMessageOf('スタッフ', reason)}
         onRetry={() => void staff.refetch()}
-        retrying={staff.isFetching}
+        pending={staff.isFetching}
       />
     ))
     .exhaustive()
@@ -175,10 +175,7 @@ export const SaleChangeScreen = () => {
                 <>
                   <p>{why}</p>
                   <p>
-                    <ButtonLink
-                      href={saleHrefOf(salon.id, sale.id)}
-                      variant='secondary'
-                    >
+                    <ButtonLink href={saleHrefOf(salon.id, sale.id)}>
                       売上の内容へ
                     </ButtonLink>
                   </p>

@@ -203,7 +203,7 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
         <UnreadNotice
           message={unreadMessageOf('予約の内容', whyUnread(reads))}
           onRetry={again}
-          retrying={salon.isFetching || service.isFetching || staff.isFetching}
+          pending={salon.isFetching || service.isFetching || staff.isFetching}
         />
       ),
     )
@@ -232,9 +232,7 @@ const OwnBooking = () => {
         <PageHeader title={TITLE} />
         <BookingDetails booking={booking} />
         <p>
-          <ButtonLink href='/bookings' variant='secondary'>
-            予約の一覧へ
-          </ButtonLink>
+          <ButtonLink href='/bookings'>予約の一覧へ</ButtonLink>
         </p>
       </>
     ))
@@ -255,7 +253,7 @@ const OwnBooking = () => {
         <UnreadNotice
           message={unreadMessageOf('予約', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
       </>
     ))

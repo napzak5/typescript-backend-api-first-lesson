@@ -96,7 +96,7 @@ export const SignedOutOnNarrowScreen: Story = {
     title: 'Kushi',
     navigation: [],
     account: (
-      <ButtonLink href='/sign-in' variant='secondary' size='small'>
+      <ButtonLink href='/sign-in' size='small'>
         サインイン
       </ButtonLink>
     ),

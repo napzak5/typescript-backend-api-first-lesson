@@ -64,7 +64,7 @@ const PaymentMethodPart = ({
         <UnreadNotice
           message={unreadMessageOf('支払い方法', reason)}
           onRetry={() => void method.refetch()}
-          retrying={method.isFetching}
+          pending={method.isFetching}
         />
       </>
     ))
@@ -86,7 +86,7 @@ const PaymentMethodPart = ({
         />
         <PaymentMethodRecord method={found.method} currency={salon.currency} />
         <p>
-          <ButtonLink href={paymentMethodsHrefOf(salon.id)} variant='secondary'>
+          <ButtonLink href={paymentMethodsHrefOf(salon.id)}>
             支払い方法へ
           </ButtonLink>
         </p>

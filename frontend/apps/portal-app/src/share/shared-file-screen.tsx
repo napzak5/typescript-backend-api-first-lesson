@@ -266,7 +266,7 @@ const SharedFileOfToken = ({ token }: { token: string }) => {
             <UnreadNotice
               message={unreadMessageOf('ファイルの情報', reason)}
               onRetry={() => void check.refetch()}
-              retrying={check.isFetching}
+              pending={check.isFetching}
             />
           </>
         ))

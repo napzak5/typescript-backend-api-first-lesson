@@ -8,7 +8,7 @@ import {
   dayNameOf,
   momentNameAt,
 } from '@beauty-salon-frontend/salon-screens'
-import type { BadgeProps, SelectOption } from '@beauty-salon-frontend/ui'
+import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'
 import { UNLISTED_STAFF } from '../bookings/booking-format'
 import { quantityNameOf } from '../inventory/stock-format'
 
@@ -20,7 +20,7 @@ import { quantityNameOf } from '../inventory/stock-format'
 type Status = {
   name: string
   /** The colour groups the statuses; the word says which one */
-  tone: NonNullable<BadgeProps['tone']>
+  tone: BadgeTone
 }
 
 const STATUSES: Record<ModelsOrderStatusType, Status> = {
@@ -49,12 +49,11 @@ export const orderStatusNameOf = (status: ModelsOrderStatusType): string =>
   STATUSES[status].name
 
 /** The colour a status is shown in. */
-export const orderStatusToneOf = (
-  status: ModelsOrderStatusType,
-): NonNullable<BadgeProps['tone']> => STATUSES[status].tone
+export const orderStatusToneOf = (status: ModelsOrderStatusType): BadgeTone =>
+  STATUSES[status].tone
 
 /** Every status, to narrow the orders to one */
-export const ORDER_STATUS_OPTIONS: readonly SelectOption[] = STATUS_ORDER.map(
+export const ORDER_STATUS_OPTIONS: readonly ChoiceOption[] = STATUS_ORDER.map(
   (status) => ({ value: status, label: STATUSES[status].name }),
 )
 

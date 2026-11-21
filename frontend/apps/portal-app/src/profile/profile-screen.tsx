@@ -220,7 +220,7 @@ const OwnProfile = () => {
         <UnreadNotice
           message={unreadMessageOf('お客様の情報', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
       </>
     ))

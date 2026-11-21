@@ -57,9 +57,7 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
   })
   const toTheSale = (
     <p>
-      <ButtonLink href={saleHrefOf(salon.id, saleId)} variant='secondary'>
-        売上の内容へ
-      </ButtonLink>
+      <ButtonLink href={saleHrefOf(salon.id, saleId)}>売上の内容へ</ButtonLink>
     </p>
   )
 
@@ -117,9 +115,7 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
             description='アドレスが正しいか、お確かめください。'
           />
           <p>
-            <ButtonLink href={salesHrefOf(salon.id)} variant='secondary'>
-              今日の売上へ
-            </ButtonLink>
+            <ButtonLink href={salesHrefOf(salon.id)}>今日の売上へ</ButtonLink>
           </p>
         </>
       ))
@@ -139,7 +135,7 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
           <UnreadNotice
             message={unreadMessageOf('レシート', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         </>
       ))

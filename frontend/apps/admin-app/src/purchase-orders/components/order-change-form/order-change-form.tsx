@@ -51,7 +51,6 @@ export const OrderChangeForm = ({
     <TextArea
       label='納品のメモ'
       name='deliveryNotes'
-      rows={3}
       defaultValue={order.deliveryNotes ?? ''}
       description='任意。届け先や届く時間など、納品について仕入先と決めたこと。'
       error={errors['deliveryNotes']}
@@ -59,7 +58,6 @@ export const OrderChangeForm = ({
     <TextArea
       label='メモ'
       name='notes'
-      rows={3}
       defaultValue={order.notes ?? ''}
       description='任意。仕入先への連絡や、届いたあとのことなど。'
       error={errors['notes']}

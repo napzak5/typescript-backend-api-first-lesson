@@ -38,12 +38,11 @@ export const Dangerous: Story = {
     title: '売上を取り消しますか？',
     description: '取り消した売上は、直すことも支払いを受けることもできません。',
     submitLabel: '取り消す',
-    tone: 'danger',
+    submitVariant: 'danger',
     children: (
       <TextArea
         label='取り消しの理由'
         name='voidReason'
-        rows={3}
         required
         description='取り消した売上に残ります。'
       />

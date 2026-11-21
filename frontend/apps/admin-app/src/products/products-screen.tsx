@@ -134,7 +134,7 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
           <UnreadNotice
             message={unreadMessageOf('商品台帳', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () =>
@@ -142,7 +142,7 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
             <EmptyState
               title='条件に合う商品はありません'
               description='条件を変えて探してください。'
-              action={entry}
+              actions={entry}
             />
           ) : (
             <EmptyState
@@ -152,7 +152,7 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
                   ? '店頭で売るものと、施術で使うものを足してください。'
                   : '商品を足せるのは、サロンのオーナーとマネージャーと、管理者です。'
               }
-              action={entry}
+              actions={entry}
             />
           ),
         )

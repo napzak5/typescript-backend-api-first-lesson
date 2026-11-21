@@ -4,7 +4,7 @@ import {
   type Read,
   textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import type { SelectOption } from '@beauty-salon-frontend/ui'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import type { ChartConditions } from './charts-api'
 
 /*
@@ -18,7 +18,7 @@ type Allergies = NonNullable<ChartConditions['allergies']>
 const ALLERGIES: readonly Allergies[] = ['with', 'without']
 
 /** The choices of the allergies recorded of the customer */
-export const ALLERGY_OPTIONS: readonly SelectOption[] = [
+export const ALLERGY_OPTIONS: readonly ChoiceOption[] = [
   { value: 'with', label: 'ある' },
   { value: 'without', label: 'ない' },
 ]

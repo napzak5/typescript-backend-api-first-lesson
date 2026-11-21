@@ -56,18 +56,4 @@ describe('Alert', () => {
     )
     expect(screen.getByText('予約できませんでした')).toHaveClass('title')
   })
-
-  it('should keep a class its container gives it', async () => {
-    // Act
-    await stories.Success.run({
-      args: { ...stories.Success.args, className: 'in-page' },
-    })
-
-    // Assert
-    expect(screen.getByRole('status')).toHaveClass(
-      'alert',
-      'success',
-      'in-page',
-    )
-  })
 })

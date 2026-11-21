@@ -153,7 +153,7 @@ const EntryPart = ({ salon }: EntryPartProps) => {
             <EmptyState
               title='取り扱い中の商品はありません'
               description='在庫の行は、取り扱い中の商品に足します。先に、商品台帳に商品を足してください。'
-              action={
+              actions={
                 <ButtonLink
                   href={productEntryHrefOf(salon.id)}
                   variant='primary'
@@ -173,7 +173,7 @@ const EntryPart = ({ salon }: EntryPartProps) => {
             <UnreadNotice
               message={unreadMessageOf('商品', reason)}
               onRetry={() => void products.refetch()}
-              retrying={products.isFetching}
+              pending={products.isFetching}
             />
           ),
         )

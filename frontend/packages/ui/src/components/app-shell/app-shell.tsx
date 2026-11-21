@@ -1,10 +1,12 @@
 import { createContext, type ReactNode, useContext, useState } from 'react'
+import { classNames } from '../../class-names'
 import { useWideScreen } from '../../wide-screen'
 import { Button } from '../button/button'
 import { Dialog } from '../dialog/dialog'
 import { Link } from '../link/link'
 import { Navigation, type NavigationItem } from '../navigation/navigation'
 import { NotificationOutlet } from '../notifications/notifications'
+import { visuallyHiddenClass } from '../visually-hidden/visually-hidden'
 import styles from './app-shell.module.css'
 import { ScreensProvider } from './screens'
 
@@ -142,7 +144,11 @@ export const AppShell = ({
 
   return (
     <div className={styles['frame']}>
-      <a className={styles['skipLink']} href={`#${MAIN_ID}`}>
+      {/* Out of sight until the keyboard reaches it */}
+      <a
+        className={classNames(styles['skipLink'], visuallyHiddenClass)}
+        href={`#${MAIN_ID}`}
+      >
         本文へ移動
       </a>
       <header className={styles['header']}>

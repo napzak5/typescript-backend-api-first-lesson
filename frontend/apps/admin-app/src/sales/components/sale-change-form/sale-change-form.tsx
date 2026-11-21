@@ -92,7 +92,6 @@ export const SaleChangeForm = ({
       <TextArea
         label='メモ'
         name='notes'
-        rows={3}
         defaultValue={sale.notes ?? ''}
         description='サロンの中で見る、この会計のメモです。お客様には見えません。空にすると、メモを消します。'
         error={errors['notes']}

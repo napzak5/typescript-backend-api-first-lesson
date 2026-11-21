@@ -88,7 +88,7 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
             description='アドレスが正しいか、お確かめください。削除された予約は、表示できません。'
           />
           <p>
-            <ButtonLink href={bookingsHrefOf(salon.id)} variant='secondary'>
+            <ButtonLink href={bookingsHrefOf(salon.id)}>
               今日の予約へ
             </ButtonLink>
           </p>
@@ -106,7 +106,7 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
           <UnreadNotice
             message={unreadMessageOf('予約', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         </>
       ))
@@ -119,9 +119,7 @@ export const Unchangeable = ({ why, back }: { why: string; back: string }) => (
   <>
     <p>{why}</p>
     <p>
-      <ButtonLink href={back} variant='secondary'>
-        予約の内容へ
-      </ButtonLink>
+      <ButtonLink href={back}>予約の内容へ</ButtonLink>
     </p>
   </>
 )
@@ -175,7 +173,7 @@ export const WithStaffAndServices = ({
             void staff.refetch()
             void services.refetch()
           }}
-          retrying={staff.isFetching || services.isFetching}
+          pending={staff.isFetching || services.isFetching}
         />
       ),
     )

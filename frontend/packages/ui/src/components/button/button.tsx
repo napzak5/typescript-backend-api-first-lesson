@@ -7,13 +7,13 @@ export type ButtonSize = 'medium' | 'small'
 
 export type ButtonProps = ComponentProps<'button'> & {
   /** `primary` is the one main action of a view; `danger` destroys something */
-  variant?: ButtonVariant
-  size?: ButtonSize
+  variant?: ButtonVariant | undefined
+  size?: ButtonSize | undefined
   /**
    * The action has started and has not finished. The button stays focusable
    * and announces that it is busy, and a press does nothing.
    */
-  pending?: boolean
+  pending?: boolean | undefined
 }
 
 const variantClass: Record<ButtonVariant, string | undefined> = {

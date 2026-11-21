@@ -65,7 +65,7 @@ export const BookingEntryForm = ({
   ...form
 }: BookingEntryFormProps) => (
   <Form {...form} errors={errors} submitLabel='予約を入れる'>
-    <FormPart name='担当と日時' onChange={onLinesChange}>
+    <FormPart label='担当と日時' onChange={onLinesChange}>
       <FieldRow>
         <Select
           label='担当スタッフ'
@@ -118,7 +118,7 @@ export const BookingEntryForm = ({
         </p>
       </div>
     </FormPart>
-    <FormPart name='受付の記録'>
+    <FormPart label='受付の記録'>
       <BookingNotesFields errors={errors} />
     </FormPart>
   </Form>

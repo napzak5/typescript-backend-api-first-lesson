@@ -14,6 +14,14 @@
     font-size: var(--font-size-body);
     font-weight: var(--font-weight-regular);
     line-height: var(--line-height-body);
+    /*
+     * What somebody typed (a name, an address, a file name) may hold a word
+     * longer than the line: it breaks where the line ends, in every
+     * component, so that nothing is wider than the room it is given. Words
+     * of Japanese break anywhere already; a word of letters keeps whole
+     * where it fits
+     */
+    overflow-wrap: anywhere;
     -webkit-font-smoothing: antialiased;
   }
 

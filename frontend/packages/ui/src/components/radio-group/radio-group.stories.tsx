@@ -39,24 +39,6 @@ export const WithError: Story = {
   args: { required: true, error: 'お支払い方法を選択してください' },
 }
 
-export const WithUnavailableOption: Story = {
-  args: {
-    options: [
-      { value: 'cash', label: '現金' },
-      { value: 'creditCard', label: 'クレジットカード' },
-      {
-        value: 'electronicMoney',
-        label: '電子マネー（この店舗では使えません）',
-        disabled: true,
-      },
-    ],
-  },
-}
-
-export const Disabled: Story = {
-  args: { disabled: true, defaultValue: 'cash' },
-}
-
 /** The times of a day: short, and too many for one column. */
 export const InColumns: Story = {
   args: {

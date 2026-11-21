@@ -113,11 +113,10 @@ export const ChartForm = ({
       actions={actions}
       onSubmit={onSubmit}
     >
-      <FormPart name='施術の前に確かめること'>
+      <FormPart label='施術の前に確かめること'>
         <TextArea
           label='持病や体調'
           name='medicalConditions'
-          rows={3}
           description='施術の前に注意が必要な持病や体調を書きます。'
           defaultValue={chart?.medicalConditions ?? undefined}
           error={errors['medicalConditions']}
@@ -140,8 +139,8 @@ export const ChartForm = ({
         />
       </FormPart>
       <FormPart
-        name='過去の施術'
-        note='ほかのサロンで受けた施術や、カルテを始める前の施術を書きます。'
+        label='過去の施術'
+        description='ほかのサロンで受けた施術や、カルテを始める前の施術を書きます。'
       >
         {rows.map((row, index) => (
           <fieldset
@@ -219,7 +218,6 @@ export const ChartForm = ({
       <TextArea
         label='メモ'
         name='notes'
-        rows={3}
         defaultValue={chart?.notes ?? undefined}
         error={errors['notes']}
       />

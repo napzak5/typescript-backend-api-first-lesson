@@ -136,10 +136,7 @@ const LineOfBooking = ({ salon, booking }: LineOfBookingProps) => {
     : undefined
   const back = (
     <p>
-      <ButtonLink
-        href={bookingHrefOf(salon.id, booking.id)}
-        variant='secondary'
-      >
+      <ButtonLink href={bookingHrefOf(salon.id, booking.id)}>
         予約の内容へ
       </ButtonLink>
     </p>
@@ -168,7 +165,7 @@ const LineOfBooking = ({ salon, booking }: LineOfBookingProps) => {
       <UnreadNotice
         message={unreadMessageOf('施術明細', reason)}
         onRetry={() => void read.refetch()}
-        retrying={read.isFetching}
+        pending={read.isFetching}
       />
     ))
     .exhaustive()

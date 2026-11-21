@@ -8,13 +8,12 @@ import {
   useState,
 } from 'react'
 import { classNames } from '../../class-names'
+import { type Tone, toneClass } from '../../tone'
 import { Button } from '../button/button'
 import styles from './notifications.module.css'
 
-type NotificationTone = 'info' | 'success' | 'warning' | 'danger'
-
 export type Notification = {
-  tone: NotificationTone
+  tone: Tone
   /** What happened, as a sentence: 「予約を確定しました。」 */
   message: string
 }
@@ -73,13 +72,6 @@ export const NotificationProvider = ({
  */
 export const useNotifications = (): Pick<Notifications, 'notify' | 'dismiss'> =>
   useContext(NotificationContext)
-
-const toneClass: Record<NotificationTone, string | undefined> = {
-  info: styles['info'],
-  success: styles['success'],
-  warning: styles['warning'],
-  danger: styles['danger'],
-}
 
 /**
  * Where the notification is shown: `AppShell` has it at the top of the main

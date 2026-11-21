@@ -43,8 +43,3 @@
   display: inline-block;
   text-decoration: inherit;
 }
-
-/* What a salon wrote may be long, and in any language */
-.name {
-  overflow-wrap: anywhere;
-}

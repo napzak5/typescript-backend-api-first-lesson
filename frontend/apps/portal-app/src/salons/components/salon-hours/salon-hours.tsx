@@ -2,6 +2,7 @@ import type {
   ModelsBusinessHours,
   ModelsOpeningHours,
 } from '@beauty-salon-frontend/api-client'
+import { EmptyState } from '@beauty-salon-frontend/ui'
 import {
   calendarDateOf,
   comingDays,
@@ -48,9 +49,10 @@ export const SalonHours = ({
       <div className={styles['part']}>
         <h3 className={styles['title']}>曜日ごとの営業時間</h3>
         {businessHours === null ? (
-          <p className={styles['note']}>
-            曜日ごとの営業時間は、登録されていません。
-          </p>
+          <EmptyState
+            kind='part'
+            title='曜日ごとの営業時間は、登録されていません。'
+          />
         ) : (
           <dl className={styles['days']}>
             {weeklyHoursOf(businessHours, timezone).map((day) => (

@@ -27,9 +27,7 @@ export const ReportRefusal = ({ refusal, what }: ReportRefusalProps) =>
       <>
         <p>{`このサロンは削除されたため、${what}を見られません。`}</p>
         <p>
-          <ButtonLink href='/' variant='secondary'>
-            トップへ戻る
-          </ButtonLink>
+          <ButtonLink href='/'>トップへ戻る</ButtonLink>
         </p>
       </>
     ))

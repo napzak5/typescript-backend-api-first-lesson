@@ -205,10 +205,7 @@ const RecordPart = ({
         products={products}
         actions={
           <>
-            <ButtonLink
-              href={treatmentChangeHrefOf(salon.id, record.id)}
-              variant='secondary'
-            >
+            <ButtonLink href={treatmentChangeHrefOf(salon.id, record.id)}>
               施術記録を直す
             </ButtonLink>
             {removable && (

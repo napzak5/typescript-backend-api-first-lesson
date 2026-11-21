@@ -83,13 +83,13 @@ export const ReportTable = ({
     {
       key: 'details',
       header: '詳しい内容',
-      cell: ({ details }) => (
-        <span className={styles['details']}>{details ?? 'なし'}</span>
-      ),
+      wrap: 'lines',
+      cell: ({ details }) => details ?? 'なし',
     },
     {
       key: 'status',
       header: '状態',
+      wrap: 'words',
       cell: (report) => {
         const state = reportStateOf(report, timezone)
 

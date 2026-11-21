@@ -237,7 +237,7 @@ const CheckoutOfBooking = ({ salon, booking }: CheckoutOfBookingProps) => {
       <UnreadNotice
         message={unreadMessageOf('会計', reason)}
         onRetry={() => void sales.refetch()}
-        retrying={sales.isFetching}
+        pending={sales.isFetching}
       />
     ))
     .with({ type: 'forbidden' }, () => <OtherSalonNotice what='会計' />)
@@ -262,10 +262,7 @@ const CheckoutOfBooking = ({ salon, booking }: CheckoutOfBookingProps) => {
             件です。
           </p>
           <p>
-            <ButtonLink
-              href={saleHrefOf(salon.id, sale.id)}
-              variant='secondary'
-            >
+            <ButtonLink href={saleHrefOf(salon.id, sale.id)}>
               売上の内容へ
             </ButtonLink>
           </p>

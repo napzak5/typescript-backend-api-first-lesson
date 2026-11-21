@@ -21,11 +21,7 @@ const writtenOrNone = (text: string | null) =>
   text === null ? NOT_RECORDED : <p className={styles['written']}>{text}</p>
 
 const addressOrNone = (address: string | null) =>
-  address === null ? (
-    NOT_RECORDED
-  ) : (
-    <span className={styles['address']}>{address}</span>
-  )
+  address === null ? NOT_RECORDED : address
 
 /**
  * Everything the ledger keeps of a product: what it is and what it is

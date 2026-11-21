@@ -40,7 +40,6 @@
 .said,
 .remarks {
   grid-column: 2;
-  overflow-wrap: anywhere;
 }
 
 .remarks {

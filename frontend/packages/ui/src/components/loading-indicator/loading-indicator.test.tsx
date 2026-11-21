@@ -9,17 +9,9 @@ const stories = composeStories(loadingIndicatorStories)
 describe('LoadingIndicator', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
-  it('should say that content is loading, as a status', async () => {
+  it('should say what is being waited for, as a status', async () => {
     // Act
     await stories.Default.run()
-
-    // Assert
-    expect(screen.getByRole('status')).toHaveTextContent(/^読み込み中$/)
-  })
-
-  it('should say what is being waited for when it is told', async () => {
-    // Act
-    await stories.WithLabel.run()
 
     // Assert
     expect(screen.getByRole('status')).toHaveTextContent(

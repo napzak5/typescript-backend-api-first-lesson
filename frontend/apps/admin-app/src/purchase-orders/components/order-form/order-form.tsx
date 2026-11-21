@@ -122,8 +122,8 @@ export const OrderForm = ({
         error={errors['supplier']}
       />
       <FormPart
-        name='明細'
-        note='発注する行に、数量を入力します。空のままの行は発注しません。単価のはじめの値は、商品の仕入価格です。数量の小数は 2 桁まで。'
+        label='明細'
+        description='発注する行に、数量を入力します。空のままの行は発注しません。単価のはじめの値は、商品の仕入価格です。数量の小数は 2 桁まで。'
         onInput={tally}
       >
         {rows.map((row) => {
@@ -198,7 +198,6 @@ export const OrderForm = ({
       <TextArea
         label='メモ'
         name='notes'
-        rows={3}
         description='任意。仕入先への連絡や、届いたあとのことなど。'
         error={errors['notes']}
       />

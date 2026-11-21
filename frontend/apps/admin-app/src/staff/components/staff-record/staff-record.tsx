@@ -134,11 +134,7 @@ export const StaffRecord = ({
           {
             term: '写真の URL',
             description:
-              member.imageUrl === null ? (
-                NOT_RECORDED
-              ) : (
-                <span className={styles['address']}>{member.imageUrl}</span>
-              ),
+              member.imageUrl === null ? NOT_RECORDED : member.imageUrl,
           },
         ]}
       />

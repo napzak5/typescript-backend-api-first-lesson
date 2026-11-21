@@ -154,7 +154,7 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             <UnreadNotice
               message={unreadMessageOf('在庫の行', reason)}
               onRetry={() => void rows.refetch()}
-              retrying={rows.isFetching}
+              pending={rows.isFetching}
             />
           ),
         )
@@ -168,7 +168,7 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             <UnreadNotice
               message={unreadMessageOf('商品', reason)}
               onRetry={() => void products.refetch()}
-              retrying={products.isFetching}
+              pending={products.isFetching}
             />
           ),
         )
@@ -176,10 +176,8 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <EmptyState
             title='発注する在庫の行がありません'
             description='発注は、在庫の行ごとに作ります。在庫の行は、サロンのオーナーとマネージャーと、管理者が足します。'
-            action={
-              <ButtonLink href={inventoryHrefOf(salon.id)} variant='secondary'>
-                在庫へ
-              </ButtonLink>
+            actions={
+              <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
             }
           />
         ))
@@ -193,7 +191,7 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
               <UnreadNotice
                 message={unreadMessageOf('発注の提案', reason)}
                 onRetry={() => void suggestions.refetch()}
-                retrying={suggestions.isFetching}
+                pending={suggestions.isFetching}
               />
             ))
             .with({ type: 'found' }, (offered) => {

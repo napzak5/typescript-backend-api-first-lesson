@@ -76,7 +76,6 @@ export const RefundForm = ({
       <TextArea
         label='返金の理由'
         name='refundReason'
-        rows={3}
         required
         description='返金の記録に残ります。お金を返してから記録します。'
         error={errors['refundReason']}

@@ -231,7 +231,7 @@ const ChangePart = ({ salon, paymentMethodId }: ChangePartProps) => {
         <UnreadNotice
           message={unreadMessageOf('支払い方法', reason)}
           onRetry={() => void method.refetch()}
-          retrying={method.isFetching}
+          pending={method.isFetching}
         />
       </>
     ))

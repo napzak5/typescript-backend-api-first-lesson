@@ -9,12 +9,24 @@ const stories = composeStories(emptyStateStories)
 describe('EmptyState', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
-  it('should say in words what is not there', async () => {
+  it('should say in words what is not there, in a frame where the content of the page would be', async () => {
     // Act
     await stories.TitleOnly.run()
+    const title = screen.getByText('予約はまだありません')
 
     // Assert
-    expect(screen.getByText('予約はまだありません')).toHaveClass('title')
+    expect(title).toHaveClass('title')
+    expect(title.parentElement).toHaveClass('emptyState', 'page')
+  })
+
+  it('should say it quietly, without a frame, inside a part of a page', async () => {
+    // Act
+    await stories.InAPart.run()
+    const title = screen.getByText('施術写真はありません。')
+
+    // Assert
+    expect(title.parentElement).toHaveClass('emptyState', 'part')
+    expect(title.parentElement).not.toHaveClass('page')
   })
 
   it('should say what to do about it', async () => {
@@ -29,7 +41,7 @@ describe('EmptyState', () => {
 
   it('should offer the first step after its text', async () => {
     // Act
-    await stories.WithAction.run()
+    await stories.WithActions.run()
     const action = screen.getByRole('link', { name: 'サロンを探す' })
 
     // Assert

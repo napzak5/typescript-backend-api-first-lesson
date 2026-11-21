@@ -66,7 +66,7 @@ export const PreferencesForm = ({
 
   return (
     <Form {...form} errors={errors}>
-      <FormPart name='スタッフ'>
+      <FormPart label='スタッフ'>
         {entered.preferredStaffId === undefined ||
         entered.avoidStaffIds === undefined ? (
           <p className={styles['note']}>
@@ -93,8 +93,8 @@ export const PreferencesForm = ({
         )}
       </FormPart>
       <FormPart
-        name='希望する時間帯'
-        note='来店しやすい時間帯を、いくつでも登録できます。曜日は選べません。'
+        label='希望する時間帯'
+        description='来店しやすい時間帯を、いくつでも登録できます。曜日は選べません。'
       >
         <TimeSlotFields
           name={TIME_SLOTS}
@@ -102,7 +102,7 @@ export const PreferencesForm = ({
           errors={errors}
         />
       </FormPart>
-      <FormPart name='スタイルの好み'>
+      <FormPart label='スタイルの好み'>
         <TextField
           label='希望の長さ'
           name={PREFERRED_LENGTH}
@@ -113,7 +113,6 @@ export const PreferencesForm = ({
         <TextArea
           label='好きな色'
           name={PREFERRED_COLORS}
-          rows={3}
           description={ONE_A_LINE}
           defaultValue={entered.preferredColors}
           error={errors[PREFERRED_COLORS]}
@@ -121,7 +120,6 @@ export const PreferencesForm = ({
         <TextArea
           label='避けたいスタイル'
           name={AVOIDED_STYLES}
-          rows={3}
           description={ONE_A_LINE}
           defaultValue={entered.avoidStyles}
           error={errors[AVOIDED_STYLES]}
@@ -129,13 +127,12 @@ export const PreferencesForm = ({
         <TextArea
           label='参考の画像の URL'
           name={INSPIRATION_IMAGES}
-          rows={3}
           description='参考にしてほしい画像のアドレスを、1 行に 1 つずつ書いてください。'
           defaultValue={entered.inspirationImages}
           error={errors[INSPIRATION_IMAGES]}
         />
       </FormPart>
-      <FormPart name='接客'>
+      <FormPart label='接客'>
         <TextField
           label='接客の好み'
           name={COMMUNICATION_STYLE}
@@ -147,6 +144,7 @@ export const PreferencesForm = ({
         <TextArea
           label='特別な要望'
           name={SPECIAL_REQUESTS}
+          rows={4}
           defaultValue={entered.specialRequests}
           error={errors[SPECIAL_REQUESTS]}
         />

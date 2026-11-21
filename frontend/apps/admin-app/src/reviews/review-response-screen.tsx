@@ -158,7 +158,7 @@ const ResponsePart = ({ salon, reviewId }: ResponsePartProps) => {
         <UnreadNotice
           message={unreadMessageOf('レビュー', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
       </>
     ))
@@ -181,7 +181,7 @@ const ResponseForbidden = ({ salon, reviewId }: ResponseForbiddenProps) => (
       このアカウントでは、レビューに返信できません。返信を書けるのは、サロンのオーナーとマネージャーです。
     </p>
     <p>
-      <ButtonLink href={reviewHrefOf(salon.id, reviewId)} variant='secondary'>
+      <ButtonLink href={reviewHrefOf(salon.id, reviewId)}>
         レビューへ戻る
       </ButtonLink>
     </p>

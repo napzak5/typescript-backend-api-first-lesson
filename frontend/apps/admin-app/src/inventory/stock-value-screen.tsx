@@ -40,7 +40,7 @@ const ValuePart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <UnreadNotice
             message={unreadMessageOf('在庫評価額', reason)}
             onRetry={() => void report.refetch()}
-            retrying={report.isFetching}
+            pending={report.isFetching}
           />
         ))
         .with({ type: 'found' }, ({ report: found }) => (
@@ -48,9 +48,7 @@ const ValuePart = ({ salon }: { salon: ModelsSalonResponse }) => {
         ))
         .exhaustive()}
       <p>
-        <ButtonLink href={inventoryHrefOf(salon.id)} variant='secondary'>
-          在庫へ
-        </ButtonLink>
+        <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
       </p>
     </>
   )

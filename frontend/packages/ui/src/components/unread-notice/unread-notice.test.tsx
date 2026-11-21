@@ -35,13 +35,13 @@ describe('UnreadNotice', () => {
 
   it('should show that the API is being asked again, and not ask again', async () => {
     // Arrange
-    await stories.Retrying.run()
+    await stories.Pending.run()
 
     // Act
     await userEvent.click(retryButton())
 
     // Assert
     expect(retryButton()).toHaveAttribute('aria-busy', 'true')
-    expect(stories.Retrying.args.onRetry).not.toHaveBeenCalled()
+    expect(stories.Pending.args.onRetry).not.toHaveBeenCalled()
   })
 })

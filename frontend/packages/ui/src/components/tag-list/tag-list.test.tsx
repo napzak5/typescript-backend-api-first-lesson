@@ -36,17 +36,4 @@ describe('TagList', () => {
       'ドリンクサービス',
     ])
   })
-
-  it('should keep a class its container gives it', async () => {
-    // Act
-    await stories.Default.run({
-      args: { ...stories.Default.args, className: 'in-card' },
-    })
-
-    // Assert
-    expect(screen.getByRole('list', { name: '特徴' })).toHaveClass(
-      'tagList',
-      'in-card',
-    )
-  })
 })

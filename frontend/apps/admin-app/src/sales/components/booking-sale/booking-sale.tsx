@@ -5,6 +5,7 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
+  EmptyState,
   Link,
   LoadingIndicator,
   UnreadNotice,
@@ -53,7 +54,7 @@ export const BookingSale = ({
         <UnreadNotice
           message={unreadMessageOf('会計', reason)}
           onRetry={onRetry}
-          retrying={retrying}
+          pending={retrying}
         />
       ))
       .with({ type: 'forbidden' }, () => (
@@ -91,14 +92,15 @@ export const BookingSale = ({
         const why = whyNoCheckout(booking)
 
         return why === undefined ? (
-          <div className={styles['unbilled']}>
-            <p className={styles['said']}>まだ会計を入れていません。</p>
-            <p className={styles['said']}>
+          <EmptyState
+            kind='part'
+            title='まだ会計を入れていません。'
+            actions={
               <ButtonLink href={checkoutHref} variant='primary'>
                 会計を入れる
               </ButtonLink>
-            </p>
-          </div>
+            }
+          />
         ) : (
           <p className={styles['said']}>{why}</p>
         )

@@ -1,12 +1,16 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as tableStories from './table.stories'
 
 const stories = composeStories(tableStories)
 
 describe('Table', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   itShouldBeAccessibleInEveryStory(stories)
 
   it('should be a table named by its caption', async () => {
@@ -88,8 +92,10 @@ describe('Table', () => {
     expect(screen.queryByText('今日の予約はありません。')).toBeNull()
   })
 
-  it('should scroll inside a region of its name that the Tab key reaches', async () => {
+  it('should scroll inside a region of its name that the Tab key reaches, when it is wider than its room', async () => {
     // Arrange
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(900)
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(390)
     await stories.Default.run()
 
     // Act
@@ -102,25 +108,34 @@ describe('Table', () => {
     )
   })
 
+  it('should be neither a region nor a stop of the Tab key when it fits its room', async () => {
+    // Arrange
+    await stories.Default.run()
+
+    // Act
+    await userEvent.tab()
+
+    // Assert
+    expect(screen.queryByRole('region')).toBeNull()
+    expect(document.body).toHaveFocus()
+  })
+
+  it('should break the lines of a column of sentences between its words, and keep those of what was written', async () => {
+    // Act
+    await stories.WithText.run()
+
+    // Assert
+    expect(screen.getByText('カット、カラー')).toHaveClass('words')
+    expect(screen.getByText(/^前回より短めに。/)).toHaveClass('lines')
+    expect(screen.getByText('山田 花子').className).toBe('')
+  })
+
   it('should keep its name when its caption is hidden from the eye', async () => {
     // Act
     await stories.CaptionHidden.run()
 
     // Assert
     expect(screen.getByRole('table', { name: '今日の予約' })).toBeVisible()
-    expect(screen.getByText('今日の予約')).toHaveClass('captionHidden')
-  })
-
-  it('should keep a class its container gives it', async () => {
-    // Act
-    await stories.Default.run({
-      args: { ...stories.Default.args, className: 'in-page' },
-    })
-
-    // Assert
-    expect(screen.getByRole('region', { name: '今日の予約' })).toHaveClass(
-      'frame',
-      'in-page',
-    )
+    expect(screen.getByText('今日の予約')).toHaveClass('hidden')
   })
 })

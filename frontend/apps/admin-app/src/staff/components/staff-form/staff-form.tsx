@@ -42,7 +42,7 @@ const numberText = (number: number | null | undefined): string | undefined =>
  */
 export const StaffForm = ({ member, errors = {}, ...form }: StaffFormProps) => (
   <Form {...form} errors={errors}>
-    <FormPart name='名前'>
+    <FormPart label='名前'>
       <FieldRow>
         <TextField
           label='姓'
@@ -87,7 +87,7 @@ export const StaffForm = ({ member, errors = {}, ...form }: StaffFormProps) => (
         error={errors['displayName']}
       />
     </FormPart>
-    <FormPart name='連絡先'>
+    <FormPart label='連絡先'>
       <TextField
         label='メールアドレス'
         name='email'
@@ -118,7 +118,7 @@ export const StaffForm = ({ member, errors = {}, ...form }: StaffFormProps) => (
         />
       </FieldRow>
     </FormPart>
-    <FormPart name='雇用'>
+    <FormPart label='雇用'>
       <FieldRow>
         <TextField
           label='スタッフコード'
@@ -189,12 +189,12 @@ export const StaffForm = ({ member, errors = {}, ...form }: StaffFormProps) => (
       </FieldRow>
     </FormPart>
     <FormPart
-      name='紹介'
-      note='表示名、レベル、役職と一緒に、お客様に見せるスタッフの紹介です。'
+      label='紹介'
+      description='表示名、レベル、役職と一緒に、お客様に見せるスタッフの紹介です。'
     >
       <IntroductionFields shown={member} errors={errors} />
     </FormPart>
-    <FormPart name='予約の受け方'>
+    <FormPart label='予約の受け方'>
       <Checkbox
         label='予約を受ける'
         name='canReceiveBookings'
@@ -236,7 +236,7 @@ export const StaffForm = ({ member, errors = {}, ...form }: StaffFormProps) => (
         />
       </FieldRow>
     </FormPart>
-    <FormPart name='在籍'>
+    <FormPart label='在籍'>
       <Checkbox
         label='有効なスタッフ'
         name='isActive'

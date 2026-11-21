@@ -29,9 +29,7 @@ export const StaffLedgerForbidden = () => (
       このサロンのスタッフ台帳は、扱えません。スタッフ台帳を扱えるのは、そのサロンのオーナーと、管理者です。
     </p>
     <p>
-      <ButtonLink href='/' variant='secondary'>
-        トップへ戻る
-      </ButtonLink>
+      <ButtonLink href='/'>トップへ戻る</ButtonLink>
     </p>
   </>
 )
@@ -64,9 +62,7 @@ const StaffNotFound = ({ salon }: StaffNotFoundProps) => (
       description='アドレスが正しいか、お確かめください。台帳から削除したスタッフは、表示できません。'
     />
     <p>
-      <ButtonLink href={staffLedgerHrefOf(salon.id)} variant='secondary'>
-        スタッフ台帳へ
-      </ButtonLink>
+      <ButtonLink href={staffLedgerHrefOf(salon.id)}>スタッフ台帳へ</ButtonLink>
     </p>
   </>
 )
@@ -146,7 +142,7 @@ export const WithStaffMember = ({
         <UnreadNotice
           message={unreadMessageOf('スタッフ', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
       </>
     ))

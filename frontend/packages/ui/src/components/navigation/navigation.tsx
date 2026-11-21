@@ -20,8 +20,7 @@ export type NavigationProps = {
    * `horizontal`: in a row, which scrolls when it is longer than its place.
    * `vertical`: below each other, in as many columns as there is room for
    */
-  orientation?: NavigationOrientation
-  className?: string | undefined
+  orientation?: NavigationOrientation | undefined
 }
 
 const orientationClass: Record<NavigationOrientation, string | undefined> = {
@@ -57,7 +56,6 @@ export const Navigation = ({
   label,
   items,
   orientation = 'horizontal',
-  className,
 }: NavigationProps) => {
   const list = useRef<HTMLUListElement>(null)
   const addresses = items.map((item) => item.href).join(NEXT_ADDRESS)
@@ -76,7 +74,7 @@ export const Navigation = ({
   }, [addresses, current, orientation])
 
   return (
-    <nav className={className} aria-label={label}>
+    <nav aria-label={label}>
       <ul
         ref={list}
         className={classNames(styles['list'], orientationClass[orientation])}

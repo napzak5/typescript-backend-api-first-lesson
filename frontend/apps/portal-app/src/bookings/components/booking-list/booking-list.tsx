@@ -103,8 +103,8 @@ export const BookingList = ({
                   )}
                 </Link>
               </h3>
-              <p className={styles['name']}>{salon?.name ?? NO_SALON}</p>
-              <p className={styles['name']}>{serviceName ?? NO_SERVICE}</p>
+              <p>{salon?.name ?? NO_SALON}</p>
+              <p>{serviceName ?? NO_SERVICE}</p>
               <p>
                 <Badge tone={statusToneOf(booking.status)}>
                   {statusNameOf(booking.status)}

@@ -83,9 +83,7 @@ export const RemovedRecord = ({
             台帳に戻す
           </Button>
         )}
-        <ButtonLink href={historyHref} variant='secondary'>
-          変更履歴
-        </ButtonLink>
+        <ButtonLink href={historyHref}>変更履歴</ButtonLink>
       </div>
       <Card title='削除されたときの台帳'>
         <DescriptionList

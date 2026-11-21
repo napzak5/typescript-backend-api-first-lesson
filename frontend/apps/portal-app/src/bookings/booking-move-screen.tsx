@@ -264,7 +264,7 @@ const BookingToMove = ({ booking }: BookingToMoveProps) => {
         <UnreadNotice
           message={unreadMessageOf('予約の内容', whyUnread(reads))}
           onRetry={again}
-          retrying={salon.isFetching || service.isFetching || staff.isFetching}
+          pending={salon.isFetching || service.isFetching || staff.isFetching}
         />
       ),
     )
@@ -293,7 +293,7 @@ const MovePage = () => {
         <PageHeader
           title={TITLE}
           actions={
-            <ButtonLink href={`/bookings/${booking.id}`} variant='secondary'>
+            <ButtonLink href={`/bookings/${booking.id}`}>
               予約の内容へ戻る
             </ButtonLink>
           }
@@ -318,7 +318,7 @@ const MovePage = () => {
         <UnreadNotice
           message={unreadMessageOf('予約', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
       </>
     ))

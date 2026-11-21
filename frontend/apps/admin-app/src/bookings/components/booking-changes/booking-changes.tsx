@@ -51,18 +51,12 @@ export const BookingChanges = ({
 }: BookingChangesProps) => (
   <div className={styles['changes']}>
     {moveHref !== undefined && (
-      <ButtonLink href={moveHref} variant='secondary'>
-        日時と担当を変える
-      </ButtonLink>
+      <ButtonLink href={moveHref}>日時と担当を変える</ButtonLink>
     )}
     {lineEntryHref !== undefined && (
-      <ButtonLink href={lineEntryHref} variant='secondary'>
-        施術明細を追加する
-      </ButtonLink>
+      <ButtonLink href={lineEntryHref}>施術明細を追加する</ButtonLink>
     )}
-    <ButtonLink href={notesHref} variant='secondary'>
-      要望とメモを変える
-    </ButtonLink>
+    <ButtonLink href={notesHref}>要望とメモを変える</ButtonLink>
     {removable && (
       <>
         <Button variant='danger' onClick={onOpen}>

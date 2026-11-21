@@ -6,7 +6,7 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import type { BadgeProps, SelectOption } from '@beauty-salon-frontend/ui'
+import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'
 import { performerNameOf } from './movement-format'
 import { stockRowNameOf } from './stock-format'
 
@@ -35,7 +35,7 @@ export const alertKindNameOf = (alert: ModelsInventoryAlertType): string =>
   KINDS[alert]
 
 /** Every kind, to narrow the alerts to one */
-export const ALERT_KIND_OPTIONS: readonly SelectOption[] = KIND_ORDER.map(
+export const ALERT_KIND_OPTIONS: readonly ChoiceOption[] = KIND_ORDER.map(
   (alert) => ({ value: alert, label: KINDS[alert] }),
 )
 
@@ -48,7 +48,7 @@ export const alertKindIn = (
 type Severity = {
   name: string
   /** The colour groups the severities; the word says which one */
-  tone: NonNullable<BadgeProps['tone']>
+  tone: BadgeTone
 }
 
 const SEVERITIES: Record<ModelsInventoryAlertSeverityType, Severity> = {
@@ -72,10 +72,10 @@ export const severityNameOf = (
 /** The colour a severity is shown in. */
 export const severityToneOf = (
   severity: ModelsInventoryAlertSeverityType,
-): NonNullable<BadgeProps['tone']> => SEVERITIES[severity].tone
+): BadgeTone => SEVERITIES[severity].tone
 
 /** Every severity, to narrow the alerts to one */
-export const SEVERITY_OPTIONS: readonly SelectOption[] = SEVERITY_ORDER.map(
+export const SEVERITY_OPTIONS: readonly ChoiceOption[] = SEVERITY_ORDER.map(
   (severity) => ({ value: severity, label: SEVERITIES[severity].name }),
 )
 
