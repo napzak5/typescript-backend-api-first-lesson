@@ -113,6 +113,7 @@ import { TreatmentPhotosScreen } from './treatments/treatment-photos-screen'
 import { TreatmentScreen } from './treatments/treatment-screen'
 import { TreatmentStatisticsScreen } from './treatments/treatment-statistics-screen'
 import { TreatmentsScreen } from './treatments/treatments-screen'
+import { UserAccountScreen } from './user-accounts/user-account-screen'
 
 /** Who this application is for: the people who work at a salon, and the operator of the platform */
 const ROLES: RequireSessionProps['roles'] = [
@@ -208,6 +209,7 @@ export const App = () => {
                 }
               />
               <Route path={SALON_ENTRY_PATH} element={<SalonEntryScreen />} />
+              <Route path='/users/:userId' element={<UserAccountScreen />} />
               <Route
                 path='/salons/:salonId/bookings'
                 element={<DayBookingsScreen />}

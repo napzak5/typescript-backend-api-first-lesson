@@ -12,6 +12,9 @@ export const SALON_ENTRY_PATH = '/salons/new'
 export const salonIdIn = (pathname: string): string | undefined =>
   SALON_PATH.exec(pathname)?.[1]
 
+/** The account a user signs in with, for an administrator: its state, its lock lifted, its second factor reset. */
+export const userAccountHrefOf = (userId: string): string => `/users/${userId}`
+
 /** The bookings of a salon: where its screens begin. */
 export const bookingsHrefOf = (salonId: string): string =>
   `/salons/${salonId}/bookings`

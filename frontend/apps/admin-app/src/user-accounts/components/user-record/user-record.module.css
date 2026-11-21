@@ -1,0 +1,10 @@
+/* What a state, a lock or the time zone means for what is shown */
+.note {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* An address has no spaces to break a line at: it breaks anywhere rather than run out of the card */
+.address {
+  overflow-wrap: anywhere;
+}

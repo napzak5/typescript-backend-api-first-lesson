@@ -49,7 +49,9 @@ import {
   customerPreferencesHrefOf,
   customersHrefOf,
   treatmentsOfCustomerHrefOf,
+  userAccountHrefOf,
 } from '../navigation'
+import { useAdministersAccounts } from '../user-accounts/administers-accounts'
 import {
   CustomerErasure,
   type ErasureDialog,
@@ -193,6 +195,33 @@ const PreferencesPart = ({ salon, customer }: PartProps) => {
     </Card>
   )
 }
+
+/**
+ * Whether the customer signs in to the portal, for an administrator, who
+ * is led to the account: its lock is lifted, and its second factor reset,
+ * there.
+ */
+const AccountPart = ({ customer }: Pick<PartProps, 'customer'>) => (
+  <Card
+    title='ログインアカウント'
+    actions={
+      customer.userId === null ? undefined : (
+        <ButtonLink
+          href={userAccountHrefOf(customer.userId)}
+          variant='secondary'
+        >
+          アカウントの状態を見る
+        </ButtonLink>
+      )
+    }
+  >
+    <p>
+      {customer.userId === null
+        ? 'このお客様は、ポータルのアカウントを持っていません。'
+        : 'このお客様は、ポータルにログインするアカウントを持っています。ロックの解除と 2 要素認証のリセットは、アカウントの画面で行います。'}
+    </p>
+  </Card>
+)
 
 /**
  * What the customer did at the salon over a period: the year up to today
@@ -665,6 +694,7 @@ type CustomerPageProps = {
 
 const CustomerPage = ({ salon }: CustomerPageProps) => {
   const moved = useRef(false)
+  const administers = useAdministersAccounts()
 
   return (
     <WithCustomer
@@ -726,6 +756,9 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
             salon={salon}
             customer={customer}
           />
+          {administers && (
+            <AccountPart key={`account-${customer.id}`} customer={customer} />
+          )}
           <RequestsPart
             key={`requests-${customer.id}`}
             salon={salon}

@@ -4,6 +4,23 @@
   color: var(--color-text-muted);
 }
 
+/*
+ * The buttons of the account, one under the other on a narrow screen:
+ * two of them side by side are wider than the card there. Where there is
+ * room, they stand side by side, each as wide as its words.
+ */
+.actions {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+@media (min-width: 40rem) {
+  .actions {
+    grid-auto-flow: column;
+  }
+}
+
 /* An address has no spaces to break a line at: it breaks anywhere rather than run out of the card */
 .address {
   overflow-wrap: anywhere;
