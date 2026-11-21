@@ -148,6 +148,29 @@ export const Closed: Story = {
   args: { open: false },
 }
 
+/**
+ * A menu, which asks nothing: a press on the overlay closes it, and so does
+ * a press on one of its links or buttons.
+ */
+export const Menu: Story = {
+  args: {
+    kind: 'menu',
+    title: '予約台帳を開く',
+    description: undefined,
+    children: (
+      <ul>
+        <li>
+          <a href='#today'>今日の予約</a>
+        </li>
+        <li>
+          <a href='#tomorrow'>明日の予約</a>
+        </li>
+      </ul>
+    ),
+    actions: <Button>閉じる</Button>,
+  },
+}
+
 /** Opened by a button and closed by its own: how a screen uses it. */
 export const OpenedByButton: Story = {
   render: (args) => {

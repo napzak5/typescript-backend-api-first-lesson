@@ -26,8 +26,8 @@ export const Vertical: Story = {
 }
 
 /**
- * More links than a phone has room for, the current one far along the row:
- * the row scrolls, by itself, so that the current link is in its middle.
+ * More links than the row has room for, the current one far along it: the
+ * row scrolls, by itself, so that the current link is in its middle.
  */
 export const CurrentFarAlong: Story = {
   args: {

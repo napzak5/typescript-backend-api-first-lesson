@@ -17,6 +17,7 @@ import {
 } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
 import { CUSTOMER, enterCredentials, heading, PORTAL_START } from './sign-in'
 
 /*
@@ -31,9 +32,6 @@ import { CUSTOMER, enterCredentials, heading, PORTAL_START } from './sign-in'
  */
 const LONG_REASON =
   '急な出張が入りました。詳しい日程は、こちらにあります: https://calendar.example.com/business_trip_to_fukuoka_and_kagoshima_from_november_to_december_2026'
-
-const mainMenu = (page: Page): Locator =>
-  page.getByRole('navigation', { name: 'メインメニュー' })
 
 const whichList = (page: Page): Locator =>
   page.getByRole('navigation', { name: '予約の時期' })
@@ -81,7 +79,7 @@ test.describe('the bookings of a customer, in a browser', () => {
     const id = new URL(page.url()).pathname.replace('/bookings/', '')
 
     // Act: to the bookings, by the link of the header
-    await mainMenu(page).getByRole('link', { name: '予約の一覧' }).click()
+    await mainMenuLink(page, '予約の一覧').click()
 
     // Assert: the visits to come with the new one, the earliest first
     await expect(heading(page, '予約の一覧')).toBeFocused()
@@ -96,9 +94,10 @@ test.describe('the bookings of a customer, in a browser', () => {
       'text-decoration-line',
       'underline',
     )
-    await expect(
-      mainMenu(page).getByRole('link', { name: '予約の一覧' }),
-    ).toHaveAttribute('aria-current', 'page')
+    await expect(mainMenuLink(page, '予約の一覧')).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
     await expectSoundPage(page)
 
     // Act
@@ -248,9 +247,9 @@ test.describe('the bookings of a customer, in a browser', () => {
     await expect(bookingsIn(page, 'これまでの予約')).toHaveCount(3)
 
     // Act: the header leads to the search, and from there to the bookings
-    await mainMenu(page).getByRole('link', { name: 'サロンを探す' }).click()
+    await mainMenuLink(page, 'サロンを探す').click()
     await expect(heading(page, PORTAL_START)).toBeFocused()
-    await mainMenu(page).getByRole('link', { name: '予約の一覧' }).click()
+    await mainMenuLink(page, '予約の一覧').click()
 
     // Assert: the list without a query is the one of the visits to come
     await expect(heading(page, '予約の一覧')).toBeFocused()

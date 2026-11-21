@@ -1,7 +1,7 @@
-import type { Locator, Page } from '@playwright/test'
 import { DASHBOARD } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
+import { mainMenuLink, pressInTheMenu } from './main-menu'
 import { dayFromToday, pressWithTheKeyboard, sellACutToday } from './sales'
 import {
   DASHBOARD_START,
@@ -17,12 +17,6 @@ import {
  */
 
 const TABLE = '区切りごとの売上、会計の件数、客単価'
-
-/** A link of the header */
-const menuLink = (page: Page, name: string): Locator =>
-  page
-    .getByRole('navigation', { name: 'メインメニュー' })
-    .getByRole('link', { name })
 
 /** A month as the table names it: 「2026年11月」 */
 const monthNameOf = (day: string): string =>
@@ -41,7 +35,7 @@ test.describe('the trends and the sales of a day, in a browser', () => {
     await expect(heading(page, DASHBOARD_START)).toBeFocused()
 
     // Act
-    await pressWithTheKeyboard(menuLink(page, '売上の推移'))
+    await pressWithTheKeyboard(mainMenuLink(page, '売上の推移'))
     await expect(heading(page, '売上の推移')).toBeFocused()
     await page.getByRole('radio', { name: '月', exact: true }).focus()
     await page.keyboard.press('ArrowLeft')
@@ -57,7 +51,7 @@ test.describe('the trends and the sales of a day, in a browser', () => {
     ).toContainText(/からの週￥5,5001 件￥5,500/)
 
     // Act
-    await pressWithTheKeyboard(menuLink(page, '1 日の売上'))
+    await pressWithTheKeyboard(mainMenuLink(page, '1 日の売上'))
     await expect(heading(page, '1 日の売上')).toBeFocused()
     await expect(page.getByRole('region', { name: /の売上$/ })).toContainText(
       '￥5,500',
@@ -83,7 +77,7 @@ test.describe('the trends and the sales of a day, in a browser', () => {
     await page.goto(DASHBOARD.origin)
     await enterCredentials(page, OWNER, api.seedPassword)
     await expect(heading(page, DASHBOARD_START)).toBeFocused()
-    await menuLink(page, '売上の推移').click()
+    await mainMenuLink(page, '売上の推移').click()
     await expect(page.getByRole('table', { name: TABLE })).toBeVisible()
     const tip = page.getByText(`${monthNameOf(today)} ￥5,500`, {
       exact: true,
@@ -112,7 +106,7 @@ test.describe('the trends and the sales of a day, on a screen as narrow as a pho
     await expect(heading(page, DASHBOARD_START)).toBeFocused()
 
     // Act
-    await menuLink(page, '売上の推移').click()
+    await pressInTheMenu(page, '売上の推移')
 
     // Assert
     await expect(page.getByRole('table', { name: TABLE })).toBeVisible()
@@ -130,7 +124,7 @@ test.describe('the trends and the sales of a day, on a screen as narrow as a pho
     await expect(heading(page, DASHBOARD_START)).toBeFocused()
 
     // Act
-    await menuLink(page, '1 日の売上').click()
+    await pressInTheMenu(page, '1 日の売上')
 
     // Assert
     await expect(page.getByRole('region', { name: /の売上$/ })).toContainText(

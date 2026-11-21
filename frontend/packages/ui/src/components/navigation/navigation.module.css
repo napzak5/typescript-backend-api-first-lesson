@@ -16,8 +16,12 @@
   overflow-x: auto;
 }
 
+/*
+ * Below each other, in as many columns as there is room for: the menu of a
+ * narrow screen shows a dozen links at once.
+ */
 .vertical {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
 }
 
 .item {
@@ -35,6 +39,11 @@
   .item:hover {
     background-color: var(--color-surface-sunken);
   }
+}
+
+/* Below each other, the words of a link begin where those of a button below them do */
+.vertical .item {
+  padding-inline: var(--space-4);
 }
 
 /* The current screen: a colour and a weight, so that colour is not the only sign */

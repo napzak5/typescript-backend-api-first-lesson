@@ -4,6 +4,7 @@ import { ADMIN } from './applications'
 import { salonId, TOKYO } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
 import { enterCredentials, heading, OWNER } from './sign-in'
 
 /*
@@ -92,12 +93,6 @@ const writeInto = async (control: Locator, value: string): Promise<void> => {
   await control.fill(value)
 }
 
-/** A link of the navigation of the application */
-const navigationLink = (page: Page, name: string): Locator =>
-  page
-    .getByRole('navigation', { name: 'メインメニュー' })
-    .getByRole('link', { name, exact: true })
-
 /** The methods the screen that records a payment offers */
 const offered = (page: Page): Locator =>
   page.getByRole('radiogroup', { name: '支払い方法' }).getByRole('radio')
@@ -179,7 +174,7 @@ test.describe('the payment methods of a salon, in a browser', () => {
 
     // Act
     await renamedMeanwhile(api, 'Cash', '現金')
-    await navigationLink(page, '設定').click()
+    await mainMenuLink(page, '設定').click()
     await page.getByRole('link', { name: '支払い方法を見る' }).click()
     // The list is read anew: it has what another account changed meanwhile
     await expect(
@@ -190,7 +185,7 @@ test.describe('the payment methods of a salon, in a browser', () => {
     await page.getByRole('checkbox', { name: 'この支払い方法を使う' }).uncheck()
     await page.getByRole('button', { name: '変更を保存する' }).click()
     await expect(heading(page, '支払い方法の内容')).toBeFocused()
-    await navigationLink(page, '売上').click()
+    await mainMenuLink(page, '売上').click()
     await page.getByRole('link', { name: SALE, exact: true }).click()
     await page.getByRole('link', { name: '支払いを記録する' }).click()
 

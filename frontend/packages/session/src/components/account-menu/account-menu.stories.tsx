@@ -1,6 +1,7 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
+import { AppShell, PageHeader } from '@beauty-salon-frontend/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { fn } from 'storybook/test'
+import { fn, userEvent } from 'storybook/test'
 import { AccountMenu } from './account-menu'
 
 const user: ModelsUserResponse = {
@@ -50,6 +51,41 @@ export const LongAddress: Story = {
         email: 'hanako.yamada.reservations@beauty-salon-group.example.com',
       },
     },
+  },
+}
+
+/**
+ * In the menu of a narrow screen, below the links: the address is shown
+ * whole, and the buttons are as high as the links.
+ */
+export const InTheMenu: Story = {
+  args: {
+    session: {
+      type: 'signedIn',
+      user: {
+        ...user,
+        email: 'hanako.yamada.reservations@beauty-salon-group.example.com',
+      },
+    },
+    securityHref: '/account/security',
+  },
+  decorators: [
+    (Story) => (
+      <AppShell
+        title='Kushi Admin'
+        navigation={[{ href: '/bookings', label: '予約', current: true }]}
+        account={<Story />}
+      >
+        <PageHeader title='予約台帳' />
+      </AppShell>
+    ),
+  ],
+  parameters: { layout: 'fullscreen' },
+  globals: { viewport: { value: 'mobile1', isRotated: false } },
+  play: async ({ canvas }) => {
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'メインメニュー' }),
+    )
   },
 }
 

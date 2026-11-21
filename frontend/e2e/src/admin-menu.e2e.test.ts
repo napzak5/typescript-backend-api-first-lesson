@@ -4,6 +4,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
 import { ADMIN_START, enterCredentials, heading, MANAGER } from './sign-in'
 
 /*
@@ -60,11 +61,7 @@ test.describe('the menu, in a browser', () => {
     await expect(heading(page, ADMIN_START)).toBeFocused()
 
     // Act: from the navigation to the menu
-    await pressWithTheKeyboard(
-      page
-        .getByRole('navigation', { name: 'メインメニュー' })
-        .getByRole('link', { name: 'メニュー' }),
-    )
+    await pressWithTheKeyboard(mainMenuLink(page, 'メニュー'))
 
     // Assert
     await expect(heading(page, 'メニュー')).toBeFocused()

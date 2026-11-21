@@ -31,8 +31,10 @@ The styling and component rules are in the skill `frontend-ui`.
 
 `@beauty-salon-frontend/testing` holds what the tests share: the setup
 (`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, the
-methods of the `dialog` element that jsdom lacks, and the saving of a file
-a page made), `savedFiles`, `findAccessibilityViolations`
+methods of the `dialog` element and the width of the window that jsdom
+lacks, and the saving of a file a page made), what the catalogue gives
+every story (`@beauty-salon-frontend/testing/stories`), `savedFiles`,
+`setWindowWidth`, `findAccessibilityViolations`
 and `itShouldBeAccessibleInEveryStory`, and the real API of the integration
 tests (`@beauty-salon-frontend/testing/api`). The browser tests take from it
 what knows no test runner: how to start the test server and what to ask it
@@ -177,6 +179,18 @@ describe('Button', () => {
   its controls: what a test counts with `querySelectorAll` is counted
   inside the element it is about (`closest('form')`), not in the
   document.
+- jsdom lays nothing out and has no `matchMedia`. A component that draws
+  something else on a narrow screen asks it (`AppShell`, below 40rem), so
+  `@beauty-salon-frontend/testing/setup` gives jsdom a window of a width:
+  1024 pixels, as wide as jsdom says, in every test, until the test calls
+  `setWindowWidth(390)`. It answers `(min-width: …rem)` and tells the
+  listeners of a query whose answer changes, as a phone that is turned
+  does (inside `act()` once the component is drawn). A story that the
+  catalogue shows at the width of a phone
+  (`globals: { viewport: { value: 'mobile1', isRotated: false } }`) is
+  drawn at that width in its tests too: its play function finds the
+  button of the menu. What only a stylesheet changes at a width is not
+  seen in jsdom, which applies no stylesheet: the browser test measures it.
 - A component that is generic in its data gets a wrapper with the type filled
   in, and the stories are those of the wrapper (`BookingTable` in
   `table.stories.tsx`).
@@ -1385,7 +1399,10 @@ export default defineConfig({
   ssr: { resolve: { conditions: [SOURCE, ...defaultServerConditions] } },
   test: {
     environment: 'jsdom',
-    setupFiles: ['@beauty-salon-frontend/testing/setup', './vitest.setup.ts'],
+    setupFiles: [
+      '@beauty-salon-frontend/testing/setup',
+      '@beauty-salon-frontend/testing/stories',
+    ],
     css: {
       // The class names of the CSS Modules, as they are written
       modules: { classNameStrategy: 'non-scoped' },
@@ -1394,33 +1411,29 @@ export default defineConfig({
 })
 ```
 
-`vitest.setup.ts` of a package with stories gives the tests what the catalogue
-gives every story (`frontend/packages/ui/vitest.setup.ts`):
+`@beauty-salon-frontend/testing/stories` gives the tests what the catalogue
+gives every story: Storybook empties the `fn()` callbacks of a story
+between two tests, and a story is drawn at the width of its viewport
+(`atTheWidthOfTheStory`). It also leaves nothing that a test rendered with
+`@testing-library/react` directly, as `App.test.tsx` does, to the next
+(`afterEach(cleanup)`). A package or an application whose stories the
+catalogue of `ui` shows has no preview of its own and names it as it is;
+`storybook`, `@storybook/react-vite` and `@testing-library/react` are among
+its dev dependencies.
+
+`ui` has the preview of the catalogue, and gives it with its own
+`vitest.setup.ts` in place of the shared one:
 
 ```ts
+import { atTheWidthOfTheStory } from '@beauty-salon-frontend/testing'
 import { setProjectAnnotations } from '@storybook/react-vite'
 import { beforeAll } from 'vitest'
 import * as preview from './.storybook/preview'
 
-const annotations = setProjectAnnotations([preview])
+const annotations = setProjectAnnotations([preview, atTheWidthOfTheStory])
 
 beforeAll(annotations.beforeAll)
 ```
-
-A package or an application whose stories the catalogue of `ui` shows has no
-preview of its own and gives none (`frontend/packages/session/vitest.setup.ts`,
-`frontend/apps/portal-app/vitest.setup.ts`); `storybook` and
-`@storybook/react-vite` are among its dev dependencies. The call is still
-needed: it is what empties the `fn()` callbacks of a story between two tests.
-
-```ts
-const annotations = setProjectAnnotations([])
-
-beforeAll(annotations.beforeAll)
-```
-
-A test that renders with `@testing-library/react` directly, as `App.test.tsx`
-does, needs `afterEach(cleanup)` in its `vitest.setup.ts`.
 
 Where setting up the DOM for every file takes most of the run, the unit
 tests run in the `vmThreads` pool (`pool: 'vmThreads'` in `test`; `admin-app`,
@@ -1449,7 +1462,7 @@ first in three lines, and `vitest.config.ts` gets
     setupFiles: [
       '@beauty-salon-frontend/testing/setup',
       '@beauty-salon-frontend/testing/api/setup',
-      './vitest.setup.ts',
+      '@beauty-salon-frontend/testing/stories',
     ],
     css: {
       // The class names of the CSS Modules, as they are written
