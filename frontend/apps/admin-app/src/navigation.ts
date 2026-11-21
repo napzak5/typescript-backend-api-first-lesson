@@ -221,6 +221,20 @@ export const stockRowChangeHrefOf = (
   inventoryId: string,
 ): string => `${stockRowHrefOf(salonId, inventoryId)}/edit`
 
+/** The purchase orders of a salon. */
+export const purchaseOrdersHrefOf = (salonId: string): string =>
+  `/salons/${salonId}/purchase-orders`
+
+/** The screen that makes a purchase order. */
+export const purchaseOrderEntryHrefOf = (salonId: string): string =>
+  `${purchaseOrdersHrefOf(salonId)}/new`
+
+/** A purchase order of a salon. */
+export const purchaseOrderHrefOf = (
+  salonId: string,
+  purchaseOrderId: string,
+): string => `${purchaseOrdersHrefOf(salonId)}/${purchaseOrderId}`
+
 /** The movements of a stock row, the latest first. */
 export const stockMovementsHrefOf = (
   salonId: string,
@@ -435,6 +449,7 @@ export const navigationFor = (
     const menu = menuHrefOf(salonId)
     const products = productsHrefOf(salonId)
     const inventory = inventoryHrefOf(salonId)
+    const purchaseOrders = purchaseOrdersHrefOf(salonId)
     const staff = staffLedgerHrefOf(salonId)
     const settings = settingsHrefOf(salonId)
 
@@ -471,6 +486,11 @@ export const navigationFor = (
         href: inventory,
         label: '在庫',
         current: isAtOrBelow(pathname, inventory),
+      },
+      {
+        href: purchaseOrders,
+        label: '発注',
+        current: isAtOrBelow(pathname, purchaseOrders),
       },
       ...(role !== undefined && mayKeepStaffLedger(role)
         ? [

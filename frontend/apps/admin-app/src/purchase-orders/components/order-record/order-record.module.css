@@ -1,0 +1,12 @@
+/* The cards of an order one below the other. */
+.record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+/* What was written in several lines keeps its line breaks */
+.written {
+  margin: 0;
+  white-space: pre-wrap;
+}
