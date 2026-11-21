@@ -308,6 +308,20 @@ export const categoryChangeHrefOf = (
   categoryId: string,
 ): string => `${menuHrefOf(salonId)}/categories/${categoryId}/edit`
 
+/** The reviews of a salon, with their summary. */
+export const reviewsHrefOf = (salonId: string): string =>
+  `/salons/${salonId}/reviews`
+
+/** A review of a salon, with what the account may do to it. */
+export const reviewHrefOf = (salonId: string, reviewId: string): string =>
+  `${reviewsHrefOf(salonId)}/${reviewId}`
+
+/** The screen that writes the answer of a salon to a review, or changes it. */
+export const reviewResponseHrefOf = (
+  salonId: string,
+  reviewId: string,
+): string => `${reviewHrefOf(salonId, reviewId)}/response`
+
 /** The ledger of the customers, from the screens of a salon. */
 export const customersHrefOf = (salonId: string): string =>
   `/salons/${salonId}/customers`
@@ -474,6 +488,7 @@ export const navigationFor = (
     const bookings = bookingsHrefOf(salonId)
     const sales = salesHrefOf(salonId)
     const customers = customersHrefOf(salonId)
+    const reviews = reviewsHrefOf(salonId)
     const treatments = treatmentsHrefOf(salonId)
     const shifts = shiftsHrefOf(salonId)
     const menu = menuHrefOf(salonId)
@@ -495,6 +510,11 @@ export const navigationFor = (
         href: customers,
         label: '顧客',
         current: isAtOrBelow(pathname, customers),
+      },
+      {
+        href: reviews,
+        label: 'レビュー',
+        current: isAtOrBelow(pathname, reviews),
       },
       {
         href: treatments,

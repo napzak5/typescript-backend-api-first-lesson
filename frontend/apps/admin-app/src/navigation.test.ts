@@ -36,6 +36,9 @@ import {
   receiptHrefOf,
   refundHrefOf,
   reorderSuggestionsHrefOf,
+  reviewHrefOf,
+  reviewResponseHrefOf,
+  reviewsHrefOf,
   saleChangeHrefOf,
   salesHrefOf,
   salonChangeHrefOf,
@@ -75,6 +78,7 @@ const SALON_ID = '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01'
 const BOOKINGS = `/salons/${SALON_ID}/bookings`
 const SALES = `/salons/${SALON_ID}/sales`
 const CUSTOMERS = `/salons/${SALON_ID}/customers`
+const REVIEWS = `/salons/${SALON_ID}/reviews`
 const TREATMENTS = `/salons/${SALON_ID}/treatments`
 const SHIFTS = `/salons/${SALON_ID}/shifts`
 const STAFF = `/salons/${SALON_ID}/staff`
@@ -126,6 +130,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: true },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -150,6 +155,7 @@ describe('navigationFor', () => {
         { href: BOOKINGS, label: '予約', current: true },
         { href: SALES, label: '売上', current: false },
         { href: CUSTOMERS, label: '顧客', current: false },
+        { href: REVIEWS, label: 'レビュー', current: false },
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
@@ -174,6 +180,7 @@ describe('navigationFor', () => {
         { href: BOOKINGS, label: '予約', current: false },
         { href: SALES, label: '売上', current: false },
         { href: CUSTOMERS, label: '顧客', current: false },
+        { href: REVIEWS, label: 'レビュー', current: false },
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
@@ -219,6 +226,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -241,6 +249,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: true },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -271,6 +280,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: true },
+      { href: REVIEWS, label: 'レビュー', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -297,6 +307,7 @@ describe('navigationFor', () => {
         { href: BOOKINGS, label: '予約', current: false },
         { href: SALES, label: '売上', current: false },
         { href: CUSTOMERS, label: '顧客', current: false },
+        { href: REVIEWS, label: 'レビュー', current: false },
         { href: TREATMENTS, label: '施術記録', current: true },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
@@ -318,6 +329,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
       { href: MENU, label: 'メニュー', current: false },
@@ -334,6 +346,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: true },
       { href: MENU, label: 'メニュー', current: false },
@@ -396,6 +409,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -421,6 +435,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: true },
@@ -442,6 +457,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -482,6 +498,7 @@ describe('navigationFor', () => {
       { href: BOOKINGS, label: '予約', current: false },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: false },
       { href: TREATMENTS, label: '施術記録', current: false },
       { href: SHIFTS, label: 'シフト', current: false },
       { href: MENU, label: 'メニュー', current: false },
@@ -531,6 +548,7 @@ describe('navigationFor', () => {
         { href: BOOKINGS, label: '予約', current: false },
         { href: SALES, label: '売上', current: false },
         { href: CUSTOMERS, label: '顧客', current: false },
+        { href: REVIEWS, label: 'レビュー', current: false },
         { href: TREATMENTS, label: '施術記録', current: false },
         { href: SHIFTS, label: 'シフト', current: false },
         { href: MENU, label: 'メニュー', current: false },
@@ -569,6 +587,35 @@ describe('navigationFor', () => {
       `${PURCHASE_ORDERS}/new?suggested=A%26B+%E5%95%86%E4%BA%8B`,
       `${PURCHASE_ORDERS}/new?suggested=`,
     ])
+  })
+
+  it.each<[string, string]>([
+    ['the reviews', REVIEWS],
+    ['a review', reviewHrefOf(SALON_ID, 'x')],
+    ['the answer to a review', reviewResponseHrefOf(SALON_ID, 'x')],
+  ])('should mark the reviews as the screen of %s', (_case, pathname) => {
+    expect(navigationFor('staff', pathname)).toEqual([
+      { href: BOOKINGS, label: '予約', current: false },
+      { href: SALES, label: '売上', current: false },
+      { href: CUSTOMERS, label: '顧客', current: false },
+      { href: REVIEWS, label: 'レビュー', current: true },
+      { href: TREATMENTS, label: '施術記録', current: false },
+      { href: SHIFTS, label: 'シフト', current: false },
+      { href: MENU, label: 'メニュー', current: false },
+      { href: PRODUCTS, label: '商品', current: false },
+      { href: INVENTORY, label: '在庫', current: false },
+      { href: PURCHASE_ORDERS, label: '発注', current: false },
+      SETTINGS_LINK,
+      PROFILE,
+    ])
+  })
+
+  it('should write the addresses of the reviews', () => {
+    expect([
+      reviewsHrefOf(SALON_ID),
+      reviewHrefOf(SALON_ID, 'review'),
+      reviewResponseHrefOf(SALON_ID, 'review'),
+    ]).toEqual([REVIEWS, `${REVIEWS}/review`, `${REVIEWS}/review/response`])
   })
 
   it('should write the addresses of the menu', () => {

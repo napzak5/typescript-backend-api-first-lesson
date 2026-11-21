@@ -75,6 +75,9 @@ import { PurchaseOrderReceiptScreen } from './purchase-orders/purchase-order-rec
 import { PurchaseOrderScreen } from './purchase-orders/purchase-order-screen'
 import { PurchaseOrdersScreen } from './purchase-orders/purchase-orders-screen'
 import { ReorderSuggestionsScreen } from './purchase-orders/reorder-suggestions-screen'
+import { ReviewResponseScreen } from './reviews/review-response-screen'
+import { ReviewScreen } from './reviews/review-screen'
+import { ReviewsScreen } from './reviews/reviews-screen'
 import { CheckoutScreen } from './sales/checkout-screen'
 import { PaymentEntryScreen } from './sales/payment-entry-screen'
 import { ReceiptScreen } from './sales/receipt-screen'
@@ -459,6 +462,18 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/purchase-orders/:purchaseOrderId/receive'
                 element={<PurchaseOrderReceiptScreen />}
+              />
+              <Route
+                path='/salons/:salonId/reviews'
+                element={<ReviewsScreen />}
+              />
+              <Route
+                path='/salons/:salonId/reviews/:reviewId'
+                element={<ReviewScreen />}
+              />
+              <Route
+                path='/salons/:salonId/reviews/:reviewId/response'
+                element={<ReviewResponseScreen />}
               />
               <Route
                 path='/salons/:salonId/settings'
