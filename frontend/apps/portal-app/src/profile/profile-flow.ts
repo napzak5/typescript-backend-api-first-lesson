@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import {
   type ModelsCustomerBasicPreferences,
   ModelsCustomerGenderType,
@@ -8,7 +9,6 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { RefusedValue } from '../behind-the-session'
 import type { FormSays, Read } from '../forms'
 import type { ProfileCreation, ProfileUpdate } from './profile-api'
 

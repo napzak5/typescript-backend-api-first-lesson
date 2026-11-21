@@ -1,5 +1,17 @@
 import {
-  type ModelsProblemDetails,
+  from,
+  LARGEST_PAGE,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  toTheEnd,
+  type Unread,
+  unreadOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsReviewResponse,
   type ModelsReviewSortType,
   type ModelsReviewSummaryResponse,
@@ -18,27 +30,14 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
-import { outsideTheContract } from '../outside-the-contract'
 import type { SalonConditions } from './salon-search'
 
-/** Why nothing came of a request to read: there is nothing a person could correct. */
-export type Unread =
-  | { type: 'tooManyRequests' }
-  /** No answer, or one that says nothing a person could act on */
-  | { type: 'failed' }
-
-/** The address names nothing: no salon has this ID, or the salon was removed. */
-export type NotFound = { type: 'notFound' }
-
-/** One page of a list, and where the next one begins. */
-export type Page<Item> = {
-  type: 'found'
-  items: Item[]
-  /** How many items the whole list has; `null` when the API did not count */
-  total: number | null
-  /** `null` on the last page */
-  nextCursor: string | null
-}
+/**
+ * The answers of a public operation that say nothing about what was asked
+ * for, and no answer at all: those of `Refused` but a 401, which a request
+ * without a session never gets.
+ */
+const REFUSED = P.union(null, { status: 400 }, { status: 429 }, { status: 500 })
 
 type SalonPage = Page<ModelsSalonResponse> | Unread
 
@@ -76,83 +75,6 @@ export type ReviewPage = Page<ModelsReviewResponse> | Unread
 /** How many salons, and how many reviews, a page of the screen has. */
 const SALONS_PER_PAGE = 20
 const REVIEWS_PER_PAGE = 10
-
-/**
- * A list that is read to its end is asked for in the largest pages the API
- * gives, and in no more than this many: a menu of a thousand services is cut.
- */
-const LARGEST_PAGE = 100
-const MOST_PAGES = 10
-
-type Problem<Status extends number> = {
-  status: Status
-  data: ModelsProblemDetails
-}
-
-/**
- * The answers that say nothing about what was asked for, and no answer at
- * all. A 400 is among them: the screens send only what the API takes.
- */
-type Refused = Problem<400> | Problem<429> | Problem<500> | null
-
-const REFUSED = P.union(null, { status: 400 }, { status: 429 }, { status: 500 })
-
-const NOT_FOUND: NotFound = { type: 'notFound' }
-
-const unreadOf = (answer: Refused): Unread =>
-  match(answer)
-    .returnType<Unread>()
-    .with({ status: 429 }, () => ({ type: 'tooManyRequests' }))
-    .with(P.union(null, { status: 400 }, { status: 500 }), () => ({
-      type: 'failed',
-    }))
-    .exhaustive()
-
-/**
- * Why a part of a screen that reads several things is not shown: too many
- * requests when one of them was refused for that, which waiting mends and
- * looking at the connection does not.
- */
-export const whyUnread = (
-  reads: readonly ({ type: string } | undefined)[],
-): Unread =>
-  reads.some((read) => read?.type === 'tooManyRequests')
-    ? { type: 'tooManyRequests' }
-    : { type: 'failed' }
-
-type ListMeta = { total: number | null; nextCursor: string | null }
-
-export const pageOf = <Item>(items: Item[], meta: ListMeta): Page<Item> => ({
-  type: 'found',
-  items,
-  total: meta.total,
-  nextCursor: meta.nextCursor,
-})
-
-/** The parameter `cursor` of a list: absent for its first page. */
-export const from = (cursor: string | undefined): { cursor?: string } =>
-  cursor === undefined ? {} : { cursor }
-
-/**
- * Reads a list to its end, a page at a time. What stops one page stops the
- * list: half a menu is not shown as the menu.
- */
-export const toTheEnd = async <Item, Stopped extends NotFound | Unread>(
-  readPage: (cursor: string | undefined) => Promise<Page<Item> | Stopped>,
-  cursor: string | undefined = undefined,
-  read: Item[] = [],
-  pagesLeft: number = MOST_PAGES,
-): Promise<{ type: 'found'; items: Item[] } | Stopped> => {
-  const page = await readPage(cursor)
-  if (page.type !== 'found') {
-    return page
-  }
-  const items = [...read, ...page.items]
-
-  return page.nextCursor === null || pagesLeft === 1
-    ? { type: 'found', items }
-    : toTheEnd(readPage, page.nextCursor, items, pagesLeft - 1)
-}
 
 /**
  * The salons that take bookings and meet the conditions, a page at a time.

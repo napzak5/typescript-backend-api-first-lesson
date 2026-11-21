@@ -1,4 +1,16 @@
 import {
+  FAILED,
+  from,
+  type NotFound,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  TOO_MANY_REQUESTS,
+  toTheEnd,
+  type Unread,
+  type Unsent,
+} from '@beauty-salon-frontend/answers'
+import {
   availableSlotCrudList,
   type CustomerBookingsListParams,
   customerBookingsCancel,
@@ -16,21 +28,7 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
-import {
-  FAILED,
-  TOO_MANY_REQUESTS,
-  type Unsent,
-  unansweredOf,
-} from '../behind-the-session'
-import { outsideTheContract } from '../outside-the-contract'
-import {
-  from,
-  type NotFound,
-  type Page,
-  pageOf,
-  toTheEnd,
-  type Unread,
-} from '../salons/salons-api'
+import { unansweredOf } from '../behind-the-session'
 
 export type ServiceRead =
   | { type: 'found'; service: ModelsServiceResponse }

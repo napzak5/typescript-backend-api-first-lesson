@@ -1,10 +1,10 @@
+import type { Unread } from '@beauty-salon-frontend/answers'
 import type {
   ModelsAttachmentContentType,
   ModelsSharedFileResponse,
 } from '@beauty-salon-frontend/api-client'
 import { match } from 'ts-pattern'
 import type { FormSays, Read } from '../forms'
-import type { Unread } from '../salons/salons-api'
 
 /*
  * What the screen of a share link says of the file and of what became of a

@@ -1,4 +1,13 @@
 import {
+  FAILED,
+  outsideTheContract,
+  type RefusedValue,
+  refusedValuesOf,
+  TOO_MANY_REQUESTS,
+  type Unread,
+  type Unsent,
+} from '@beauty-salon-frontend/answers'
+import {
   customerProfileCreate,
   customerProfileGet,
   customerProfileUpdate,
@@ -7,16 +16,7 @@ import {
   type ModelsCustomerProfileUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
-import {
-  FAILED,
-  type RefusedValue,
-  refusedValuesOf,
-  TOO_MANY_REQUESTS,
-  type Unsent,
-  unansweredOf,
-} from '../behind-the-session'
-import { outsideTheContract } from '../outside-the-contract'
-import type { Unread } from '../salons/salons-api'
+import { unansweredOf } from '../behind-the-session'
 
 /**
  * The key under which the profile of the account is kept. Every screen

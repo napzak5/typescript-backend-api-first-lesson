@@ -1,4 +1,15 @@
 import {
+  FAILED,
+  type NotFound,
+  outsideTheContract,
+  type RefusedValue,
+  refusedValuesOf,
+  TOO_MANY_REQUESTS,
+  type Unread,
+  type Unsent,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
+import {
   customerProfileGetPreferences,
   customerProfileUpdatePreferences,
   type ModelsCustomerPreferencesResponse,
@@ -12,23 +23,9 @@ import {
   staffIdsOf,
 } from '@beauty-salon-frontend/preferences'
 import { match, P } from 'ts-pattern'
-import {
-  FAILED,
-  type RefusedValue,
-  refusedValuesOf,
-  TOO_MANY_REQUESTS,
-  type Unsent,
-  unansweredOf,
-} from '../behind-the-session'
+import { unansweredOf } from '../behind-the-session'
 import { readBookedSalonIds } from '../bookings/bookings-api'
-import { outsideTheContract } from '../outside-the-contract'
-import {
-  type NotFound,
-  readSalon,
-  readStaff,
-  type Unread,
-  whyUnread,
-} from '../salons/salons-api'
+import { readSalon, readStaff } from '../salons/salons-api'
 
 /**
  * The key under which the preferences of the customer are kept, as the

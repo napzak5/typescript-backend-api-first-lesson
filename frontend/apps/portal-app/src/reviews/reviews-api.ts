@@ -1,4 +1,18 @@
 import {
+  FAILED,
+  from,
+  type NotFound,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  type RefusedValue,
+  refusedValuesOf,
+  TOO_MANY_REQUESTS,
+  type Unread,
+  type Unsent,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsCustomerBookingResponse,
   type ModelsReviewCreateRequest,
   type ModelsReviewReportRequest,
@@ -16,26 +30,9 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
-import {
-  FAILED,
-  type RefusedValue,
-  refusedValuesOf,
-  TOO_MANY_REQUESTS,
-  type Unsent,
-} from '../behind-the-session'
 import { readOwnBooking } from '../bookings/bookings-api'
-import { outsideTheContract } from '../outside-the-contract'
 import { readOwnProfile } from '../profile/profile-api'
-import {
-  from,
-  type NotFound,
-  type Page,
-  pageOf,
-  readSalon,
-  readStaff,
-  type Unread,
-  whyUnread,
-} from '../salons/salons-api'
+import { readSalon, readStaff } from '../salons/salons-api'
 import { reviewersOf } from './review-staff'
 
 /**

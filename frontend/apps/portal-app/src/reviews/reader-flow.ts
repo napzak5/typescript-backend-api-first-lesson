@@ -1,10 +1,10 @@
+import type { RefusedValue, Unsent } from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewReportReasonType,
   ModelsReviewReportRequest,
 } from '@beauty-salon-frontend/api-client'
 import type { Session } from '@beauty-salon-frontend/session'
 import { match } from 'ts-pattern'
-import type { RefusedValue, Unsent } from '../behind-the-session'
 import type { FormSays, Read } from '../forms'
 import type { ProfileRead } from '../profile/profile-api'
 import { NOT_SENT, TOO_MANY_REQUESTS } from './review-flow'

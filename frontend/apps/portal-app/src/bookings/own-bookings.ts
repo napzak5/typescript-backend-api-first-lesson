@@ -1,3 +1,4 @@
+import type { NotFound, Unread } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingStatusType,
   ModelsCustomerBookingResponse,
@@ -5,7 +6,6 @@ import type {
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
 import type { More } from '@beauty-salon-frontend/ui'
-import type { NotFound, Unread } from '../salons/salons-api'
 import { daysFrom, queryOf } from './booking-choice'
 import type { OwnBookingsAsked } from './bookings-api'
 

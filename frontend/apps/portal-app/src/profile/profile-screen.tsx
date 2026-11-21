@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsCustomerProfileResponse } from '@beauty-salon-frontend/api-client'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
@@ -15,7 +16,6 @@ import { useNavigate } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import { ProfileForm } from './components/profile-form/profile-form'
 import {

@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -11,7 +12,6 @@ import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
 import { OwnPreferences } from '../preferences/own-preferences'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { SECURITY_PATH } from '../security/security-screens'
 import { SignInHelp } from '../sign-in-help'
 import { MembershipDetails } from './components/membership-details/membership-details'

@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/api-client'
 import {
   afterPreferencesChange,
@@ -23,7 +24,6 @@ import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { OWN_PROFILE, type ProfileRead } from '../profile/profile-api'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import {
   OWN_PREFERENCES,

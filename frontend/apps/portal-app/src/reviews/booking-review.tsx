@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
@@ -9,7 +10,6 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
 import { ReviewContent } from '../salons/components/review-content/review-content'
-import { unreadMessageOf } from '../salons/pages'
 import { readReviewOfBooking, reviewOfBookingKey } from './reviews-api'
 
 const UNREAD = P.union('tooManyRequests', 'failed')

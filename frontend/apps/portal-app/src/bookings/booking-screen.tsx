@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsServiceResponse,
@@ -32,7 +33,6 @@ import {
 } from '../profile/profile-api'
 import { afterProfile, readProfile } from '../profile/profile-flow'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { dateAt, durationOf } from '../salons/salon-format'
 import { readSalon, readStaff } from '../salons/salons-api'
 import { SignInHelp } from '../sign-in-help'

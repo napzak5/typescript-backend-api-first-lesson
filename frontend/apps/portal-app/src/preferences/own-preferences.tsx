@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import {
   ButtonLink,
   Card,
@@ -6,7 +7,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
-import { unreadMessageOf } from '../salons/pages'
 import { PreferencesDetails } from './components/preferences-details/preferences-details'
 import { OWN_PREFERENCES, readOwnPreferences } from './preferences-api'
 

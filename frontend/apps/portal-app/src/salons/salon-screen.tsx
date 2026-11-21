@@ -1,3 +1,9 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewReportRequest,
   ModelsReviewResponse,
@@ -12,6 +18,7 @@ import {
   EmptyState,
   Link,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -44,13 +51,6 @@ import { SalonAbout } from './components/salon-about/salon-about'
 import { SalonHours } from './components/salon-hours/salon-hours'
 import { ServiceMenu } from './components/service-menu/service-menu'
 import { StaffProfiles } from './components/staff-profiles/staff-profiles'
-import {
-  cursorAfter,
-  firstCursor,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
-} from './pages'
 import { dateAt, postedOf } from './salon-format'
 import { menuOf } from './salon-menu'
 import {

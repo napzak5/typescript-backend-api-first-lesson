@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSharedFileResponse } from '@beauty-salon-frontend/api-client'
 import {
   Form,
@@ -11,7 +12,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { match, P } from 'ts-pattern'
 import { useMailedToken } from '../account/mailed-token'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
-import { unreadMessageOf } from '../salons/pages'
 import {
   type SharedFileContent,
   SharedFileRecord,

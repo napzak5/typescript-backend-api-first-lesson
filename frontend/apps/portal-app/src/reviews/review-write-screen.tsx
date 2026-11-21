@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
@@ -20,7 +21,6 @@ import { whenLineOf } from '../bookings/booking-format'
 import { listHrefOf } from '../bookings/own-bookings'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import { ReviewForm } from './components/review-form/review-form'
 import { afterReviewWrite } from './review-cache'

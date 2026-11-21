@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewCreateRequest,
   ModelsReviewResponse,
@@ -9,7 +10,6 @@ import {
 } from '@beauty-salon-frontend/preferences'
 import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { RefusedValue } from '../behind-the-session'
 import type { FormSays, Read } from '../forms'
 import { DETAIL_RATINGS } from '../salons/salon-format'
 import type {

@@ -1,11 +1,10 @@
+import { outsideTheContract, type Unread } from '@beauty-salon-frontend/answers'
 import {
   type ModelsSharedFileResponse,
   sharedFileCrudGet,
   sharedFileCrudGetDownloadUrl,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
-import { outsideTheContract } from '../outside-the-contract'
-import type { Unread } from '../salons/salons-api'
 
 /*
  * A file that a salon shares with somebody who has no account: the token of

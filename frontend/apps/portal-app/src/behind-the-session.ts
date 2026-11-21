@@ -1,31 +1,15 @@
-import type { ModelsProblemDetails } from '@beauty-salon-frontend/api-client'
+import {
+  FAILED,
+  type Problem,
+  TOO_MANY_REQUESTS,
+  type Unread,
+} from '@beauty-salon-frontend/answers'
 import { match, P } from 'ts-pattern'
-import type { Unread } from './salons/salons-api'
 
 /*
  * What the functions share that call the API for the screens behind the
  * guard of the session: the screens of a customer who is signed in.
  */
-
-/** A value the API does not take: the property, and the rule it broke. */
-export type RefusedValue = { field: string; rule: string }
-
-/** Why nothing came of a request to write, besides what the request itself may be refused for. */
-export type Unsent =
-  | { type: 'tooManyRequests' }
-  /** No answer, or one that says nothing a person could act on */
-  | { type: 'failed' }
-
-type Problem<Status extends number> = {
-  status: Status
-  data: ModelsProblemDetails
-}
-
-export const FAILED: { type: 'failed' } = { type: 'failed' }
-
-export const TOO_MANY_REQUESTS: { type: 'tooManyRequests' } = {
-  type: 'tooManyRequests',
-}
 
 /**
  * The answers that say nothing about what was asked for, and no answer at
@@ -51,9 +35,3 @@ export const unansweredOf = (answer: Unanswered): Unread =>
       () => FAILED,
     )
     .exhaustive()
-
-/** The values a refusal names, each with the rule it broke. */
-export const refusedValuesOf = ({
-  errors,
-}: Pick<ModelsProblemDetails, 'errors'>): RefusedValue[] =>
-  (errors ?? []).map(({ field, rule }) => ({ field, rule }))

@@ -1,8 +1,15 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -19,13 +26,6 @@ import { match, P } from 'ts-pattern'
 import { listHrefOf } from '../bookings/own-bookings'
 import { OWN_PROFILE, readOwnProfile } from '../profile/profile-api'
 import { CUSTOMERS } from '../roles'
-import {
-  cursorAfter,
-  firstCursor,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
-} from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import { OwnReviewList } from './components/own-review-list/own-review-list'
 import { ReviewRemoval } from './components/review-removal/review-removal'

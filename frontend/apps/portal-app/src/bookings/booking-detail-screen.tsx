@@ -1,3 +1,4 @@
+import { unreadMessageOf, whyUnread } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingCancelRequest,
   ModelsCustomerBookingResponse,
@@ -19,8 +20,7 @@ import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { BookingReview } from '../reviews/booking-review'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
-import { readSalon, readStaff, whyUnread } from '../salons/salons-api'
+import { readSalon, readStaff } from '../salons/salons-api'
 import { SignInHelp } from '../sign-in-help'
 import { afterCancellation, readCancellation } from './booking-flow'
 import { whenLineOf } from './booking-format'

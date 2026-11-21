@@ -1,3 +1,4 @@
+import { outsideTheContract } from '@beauty-salon-frontend/answers'
 import {
   authCrudAcceptStaffInvitation,
   authCrudConfirmEmailVerification,
@@ -13,7 +14,6 @@ import {
   type ModelsStaffInvitationResponse,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
-import { outsideTheContract } from '../outside-the-contract'
 
 /** A value the API does not take: the property, and the rule it broke. */
 export type RefusedValue = { field: string; rule: string }

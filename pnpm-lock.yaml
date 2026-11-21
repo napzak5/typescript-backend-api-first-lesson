@@ -774,6 +774,9 @@ importers:
 
   frontend/apps/portal-app:
     dependencies:
+      '@beauty-salon-frontend/answers':
+        specifier: workspace:*
+        version: link:../../packages/answers
       '@beauty-salon-frontend/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
