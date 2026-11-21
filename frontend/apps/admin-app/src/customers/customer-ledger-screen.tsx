@@ -229,9 +229,9 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
       <PageHeader
         title={TITLE}
         description={salon.name}
-        actions={
+        actions={entry}
+        otherActions={
           <>
-            {entry}
             <ButtonLink
               href={customerImportHrefOf(salon.id)}
               variant='secondary'
