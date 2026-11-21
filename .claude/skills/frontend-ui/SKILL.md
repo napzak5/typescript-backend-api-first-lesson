@@ -1886,7 +1886,8 @@ the screens of a service and of a category, `menu-api.ts`,
 
 The settings are the example to read: `settings-screen.tsx`,
 `salon-change-screen.tsx`, `hours-change-screen.tsx`,
-`settings-format.ts`, `salon-form.ts` and `hours-form.ts`.
+`salon-entry-screen.tsx`, `settings-format.ts`, `salon-form.ts`,
+`hours-form.ts` and `salon-removal.ts`.
 
 - **A value that would change how everything else is read is shown,
   not offered** (the time zone and the currency): the form says why it
@@ -1910,6 +1911,22 @@ The settings are the example to read: `settings-screen.tsx`,
 - **What the form cannot hold is said before it is lost**: a day with
   more hours than the form has controls for says that saving the week
   keeps the first of them.
+- **A value that cannot be changed later is chosen when the record is
+  made**: the form of a new salon (`SalonForm` with `subject` of type
+  `new`) offers the time zone and the currency, from what the browser
+  knows (`Intl.supportedValuesOf`), and the form that changes a salon
+  shows them. What the record needs before it is used (the hours, the
+  menu) is given afterwards, and the salon takes no bookings online
+  until then.
+- **A removal refused for what the record holds says so where it was
+  asked, with the way out** (`afterSalonRemoval`): a salon with
+  bookings that are not finished says so in its removal, with a link to
+  the bookings; what another attempt may change (a failure, too many
+  requests) is said in the dialog.
+- **What a removal leaves behind is dropped before the next screen**:
+  the choice of a salon and the salon of the account are read anew, and
+  the salon is put as not found, so that the start shows the salons
+  that are left, or tells a member that no salon is theirs.
 
 The payment methods (`src/payment-methods/`) are kept from the settings:
 
