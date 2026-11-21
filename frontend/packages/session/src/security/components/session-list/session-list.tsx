@@ -2,6 +2,7 @@ import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
 import {
   Badge,
   Button,
+  countOf,
   DescriptionList,
   type More,
   PagedList,
@@ -9,7 +10,6 @@ import {
 import {
   addressOf,
   browserOf,
-  countOf,
   momentOf,
   sessionNameOf,
 } from '../../security-format'
@@ -56,7 +56,12 @@ export const SessionList = ({
     items={sessions}
     itemKey={({ id }) => id}
     label='サインインしている端末'
-    count={countOf(total, sessions.length)}
+    count={countOf(
+      total,
+      sessions.length,
+      '台',
+      (count) => `${count} 台の端末でサインインしています`,
+    )}
     focus='item'
     more={more}
     onMore={onMore}

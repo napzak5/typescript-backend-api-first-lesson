@@ -3,7 +3,6 @@ export {
   type KeywordSearchProps,
 } from './components/keyword-search/keyword-search'
 export {
-  countOf,
   PagedTable,
   type PagedTableProps,
 } from './components/paged-table/paged-table'

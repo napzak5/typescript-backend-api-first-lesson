@@ -23,6 +23,7 @@ import {
   EmptyState,
   LoadingIndicator,
   moreOf,
+  moreOfRows,
   PageHeader,
   PeriodSwitch,
   UnreadNotice,
@@ -49,7 +50,7 @@ import {
 import { bookingListsKeyOf, readDayBookings } from './bookings-api'
 import { BookingFilter } from './components/booking-filter/booking-filter'
 import { DayBookingTable } from './components/day-booking-table/day-booking-table'
-import { customerIdsOf, moreOfRows, rowsOf } from './day-bookings'
+import { customerIdsOf, rowsOf } from './day-bookings'
 
 const TITLE = '予約台帳'
 

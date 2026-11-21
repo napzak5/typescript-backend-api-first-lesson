@@ -10,6 +10,7 @@ import {
   EmptyState,
   LoadingIndicator,
   moreOf,
+  moreOfRows,
   Navigation,
   PageHeader,
   UnreadNotice,
@@ -26,7 +27,6 @@ import { BookingList } from './components/booking-list/booking-list'
 import {
   askedOf,
   listHrefOf,
-  moreOfRows,
   namedBy,
   OWN_BOOKING_LISTS,
   rowsOf,

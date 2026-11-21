@@ -89,6 +89,7 @@ export {
   type LoadMoreProps,
   type More,
   moreOf,
+  moreOfRows,
   useFocusOnMore,
 } from './components/load-more/load-more'
 export {
@@ -116,6 +117,7 @@ export {
   type PageHeaderProps,
 } from './components/page-header/page-header'
 export {
+  countOf,
   PagedList,
   type PagedListFocus,
   type PagedListProps,

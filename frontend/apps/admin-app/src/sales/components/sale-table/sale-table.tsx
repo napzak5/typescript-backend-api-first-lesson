@@ -1,11 +1,10 @@
 import type { ModelsSaleResponse } from '@beauty-salon-frontend/api-client'
 import {
   amountOf,
-  countOf,
   momentNameAt,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
-import { Badge, Link, type More } from '@beauty-salon-frontend/ui'
+import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
 import { paymentStatusNameOf, paymentStatusToneOf } from '../../sale-format'
 
 export type SaleTableProps = {

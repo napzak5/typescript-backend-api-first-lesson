@@ -1,10 +1,6 @@
 import type { ModelsAttachmentResponse } from '@beauty-salon-frontend/api-client'
-import {
-  countOf,
-  momentNameAt,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
-import { Link, type More } from '@beauty-salon-frontend/ui'
+import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
+import { countOf, Link, type More } from '@beauty-salon-frontend/ui'
 import { contentTypeNameOf, sizeNameOf } from '../../attachment-file'
 
 export type AttachmentTableProps = {

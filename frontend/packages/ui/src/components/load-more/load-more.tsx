@@ -29,6 +29,28 @@ export const moreOf = (
   return rest === 'unread' ? 'failed' : 'available'
 }
 
+/**
+ * What comes after rows that wait for something read after their page, the
+ * names of the people in them: rows whose names are on their way are on
+ * their way; rows whose names could not be read did not come, and are asked
+ * for again when the names are read again (`readingAgain`). Past the rows,
+ * it is what the pages of the list say.
+ */
+export const moreOfRows = (
+  rest: { type: 'none' | 'reading' | 'unread' },
+  pages: More,
+  readingAgain: boolean,
+): More => {
+  if (rest.type === 'reading') {
+    return 'loading'
+  }
+  if (rest.type === 'unread') {
+    return readingAgain ? 'loading' : 'failed'
+  }
+
+  return pages
+}
+
 export type LoadMoreProps = {
   more: More
   /** Asks for the items that come next */

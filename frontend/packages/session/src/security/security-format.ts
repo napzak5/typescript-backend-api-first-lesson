@@ -80,14 +80,3 @@ export const addressOf = ({
   ipAddress,
 }: Pick<ModelsSessionResponse, 'ipAddress'>): string =>
   ipAddress ?? '記録されていません'
-
-/** How many sessions the account has, and how many of them are shown. */
-export const countOf = (total: number | null, shown: number): string => {
-  if (total === null) {
-    return `${shown} 台を表示しています`
-  }
-
-  return shown < total
-    ? `${total} 台の端末でサインインしています（${shown} 台を表示しています）`
-    : `${total} 台の端末でサインインしています`
-}

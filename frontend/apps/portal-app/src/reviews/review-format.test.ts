@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { fullReview, salon } from '../salons/components/examples'
-import { countOf, ratedStaffOf, subjectOf, timezoneOf } from './review-format'
+import { ratedStaffOf, subjectOf, timezoneOf } from './review-format'
 
 /** 23:30 in Tokyo, which is the next day in Auckland */
 const LATE = { ...fullReview, createdAt: '2026-11-10T14:30:00.000Z' }
@@ -56,25 +56,5 @@ describe('ratedStaffOf', () => {
         staffName: null,
       }),
     ).toBeNull()
-  })
-})
-
-describe('countOf', () => {
-  it('should say how many reviews there are when all of them are shown', () => {
-    expect(countOf(3, 3)).toBe('3 件のレビューがあります')
-  })
-
-  it('should say how many of them are shown when there are more', () => {
-    expect(countOf(12, 10)).toBe(
-      '12 件のレビューがあります（10 件を表示しています）',
-    )
-  })
-
-  it('should say how many are shown when the API did not count them', () => {
-    expect(countOf(null, 10)).toBe('10 件を表示しています')
-  })
-
-  it('should not say that more are shown than there are, when the count is older than the list', () => {
-    expect(countOf(2, 3)).toBe('2 件のレビューがあります')
   })
 })
