@@ -8,6 +8,7 @@ import {
   linesOf,
   pictureAddressesError,
 } from '@beauty-salon-frontend/preferences'
+import type { RefusedValue } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
 import { type Read, textOf } from '../bookings/booking-actions'
@@ -17,7 +18,6 @@ import {
   TOO_MANY_REQUESTS,
 } from '../bookings/booking-entry'
 import { tagsIn } from '../customers/customer-ledger'
-import type { RefusedValue } from '../reading'
 import { LEVELS } from '../staff/staff-format'
 import { numberOf } from '../treatments/treatment-form'
 import type { TreatmentRemovalSays } from '../treatments/treatment-format'

@@ -1,4 +1,5 @@
 import type { ModelsAttachmentResponse } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   Button,
@@ -9,7 +10,6 @@ import {
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { momentNameAt } from '../../../salon-time'
 import {
   contentTypeNameOf,
   isImage,

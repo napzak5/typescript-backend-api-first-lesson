@@ -4,6 +4,11 @@ import type {
   ModelsServiceCategoryUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import {
+  NOT_FOUND,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   Alert,
   Button,
   ButtonLink,
@@ -19,9 +24,7 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { menuHrefOf } from '../navigation'
-import { NOT_FOUND, unreadMessageOf } from '../reading'
 import { servicesKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import {
   afterCategoryRemoval,
   afterCategoryWrite,

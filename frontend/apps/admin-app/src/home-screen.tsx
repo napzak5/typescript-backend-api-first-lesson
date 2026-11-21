@@ -1,3 +1,4 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import { NoSalonNotice, useOwnSalon } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,
@@ -7,7 +8,6 @@ import {
 import { Navigate } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { bookingsHrefOf } from './navigation'
-import { unreadMessageOf } from './reading'
 import { SalonChoiceScreen } from './salons/salon-choice-screen'
 
 /**

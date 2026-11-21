@@ -1,4 +1,12 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -9,9 +17,6 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { customerHrefOf, customerVersionHrefOf } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { CustomerHistory } from './components/customer-history/customer-history'
 import {
   changerNameOf,

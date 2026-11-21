@@ -1,12 +1,12 @@
 import type { ModelsSaleResponse } from '@beauty-salon-frontend/api-client'
-import { Badge, Link } from '@beauty-salon-frontend/ui'
-import { amountOf } from '../../../bookings/booking-format'
 import {
   countOf,
+  type More,
+  momentNameAt,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
-import { momentNameAt } from '../../../salon-time'
+} from '@beauty-salon-frontend/salon-screens'
+import { Badge, Link } from '@beauty-salon-frontend/ui'
+import { amountOf } from '../../../bookings/booking-format'
 import { paymentStatusNameOf, paymentStatusToneOf } from '../../sale-format'
 
 export type SaleTableProps = {

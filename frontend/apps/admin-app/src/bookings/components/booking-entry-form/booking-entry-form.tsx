@@ -2,6 +2,7 @@ import type {
   ModelsServiceResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Button,
   Form,
@@ -9,7 +10,6 @@ import {
   Select,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import type { LineCheck } from '../../bookings-api'
 import { BookingLines } from '../booking-lines/booking-lines'
 import { BookingNotesFields } from '../booking-notes-fields/booking-notes-fields'

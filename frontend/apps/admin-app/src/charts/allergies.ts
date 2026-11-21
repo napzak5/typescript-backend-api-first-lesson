@@ -5,6 +5,11 @@ import {
   type ModelsCustomerAllergyResponse,
   type ModelsCustomerAllergyUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import {
+  EARLIEST_DAY,
+  isDay,
+  type RefusedValue,
+} from '@beauty-salon-frontend/salon-screens'
 import type {
   BadgeProps,
   RadioOption,
@@ -14,8 +19,6 @@ import { match } from 'ts-pattern'
 import { type Read, textOf } from '../bookings/booking-actions'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { mayKeepCustomers } from '../customers/customer-history'
-import type { RefusedValue } from '../reading'
-import { EARLIEST_DAY, isDay } from '../salon-time'
 import type { AllergyRemoval, AllergyWrite } from './allergies-api'
 
 /*

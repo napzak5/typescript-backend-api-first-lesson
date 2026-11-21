@@ -1,12 +1,17 @@
 import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   EmptyState,
   LoadingIndicator,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { match } from 'ts-pattern'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { unreadMessageOf } from '../reading'
 import {
   type ChooseCustomer,
   CustomerChoices,

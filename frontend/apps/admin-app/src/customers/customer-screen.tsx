@@ -5,6 +5,13 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
+import {
+  dayAt,
+  NOT_FOUND,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -36,9 +43,6 @@ import {
   customersHrefOf,
   treatmentsOfCustomerHrefOf,
 } from '../navigation'
-import { NOT_FOUND, unreadMessageOf } from '../reading'
-import { dayAt } from '../salon-time'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import {
   CustomerErasure,
   type ErasureDialog,

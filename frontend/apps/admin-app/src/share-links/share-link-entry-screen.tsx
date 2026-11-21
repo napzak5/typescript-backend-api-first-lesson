@@ -4,6 +4,10 @@ import type {
   ModelsShareLinkCreateRequest,
   ModelsShareLinkResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -23,8 +27,6 @@ import {
 } from '../attachments/attachments-api'
 import type { FormSays } from '../bookings/booking-entry'
 import { attachmentHrefOf, shareLinkHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import {
   type Copying,
   IssuedShareLink,

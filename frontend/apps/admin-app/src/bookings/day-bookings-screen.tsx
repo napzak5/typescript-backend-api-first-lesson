@@ -3,6 +3,20 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  dayAfter,
+  dayAt,
+  dayNameOf,
+  FAILED,
+  firstCursor,
+  listingOf,
+  moreOf,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+  whyUnread,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
@@ -14,16 +28,12 @@ import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { CUSTOMER_LISTS, readCustomers } from '../customers/customers-api'
 import { bookingEntryHrefOf, bookingHrefOf } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { FAILED, unreadMessageOf, whyUnread } from '../reading'
-import { dayAfter, dayAt, dayNameOf } from '../salon-time'
 import {
   readServices,
   readStaffProfiles,
   servicesKeyOf,
   staffProfilesKeyOf,
 } from '../salons/salons-api'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import {
   conditionsIn,
   conditionsOf,

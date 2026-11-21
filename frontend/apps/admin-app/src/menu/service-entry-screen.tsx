@@ -5,6 +5,12 @@ import type {
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  NOT_FOUND,
+  salonKeyOf,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -17,9 +23,7 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { menuHrefOf, serviceHrefOf } from '../navigation'
-import { NOT_FOUND, unreadMessageOf } from '../reading'
-import { readServices, salonKeyOf, servicesKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
+import { readServices, servicesKeyOf } from '../salons/salons-api'
 import { ServiceForm } from './components/service-form/service-form'
 import { MenuForbidden, useKeepsMenu } from './keeps-menu'
 import {

@@ -5,15 +5,17 @@ import type {
   ModelsServiceResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  dayNameOf,
+  NOT_FOUND,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { bookingHrefOf } from '../navigation'
-import { NOT_FOUND } from '../reading'
-import { dayNameOf } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import type { FormSays } from './booking-entry'
 import { afterAddition, readAddition, whyNoLineAdded } from './booking-moves'
 import {

@@ -1,12 +1,7 @@
+import { answering, json, UNREAD } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { salon } from '../bookings/components/examples'
-import {
-  findSalons,
-  readSalon,
-  readServices,
-  readStaffProfiles,
-} from './salons-api'
+import { readServices, readStaffProfiles } from './salons-api'
 
 /*
  * The answers the real API gives are met in the screen tests. Here are
@@ -14,8 +9,6 @@ import {
  */
 
 const READS: [string, () => Promise<{ type: string }>][] = [
-  ['findSalons', () => findSalons(undefined, undefined)],
-  ['readSalon', () => readSalon(salon.id)],
   ['readStaffProfiles', () => readStaffProfiles(salon.id)],
   ['readServices', () => readServices(salon.id)],
 ]
@@ -26,7 +19,7 @@ const EMPTY_PAGE = {
   links: { self: '/' },
 }
 
-describe('the reads of salons', () => {
+describe('the reads of the names of a salon', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -42,22 +35,6 @@ describe('the reads of salons', () => {
         expect(await read()).toEqual({ type })
       },
     )
-  })
-
-  it('should look for salons whatever they take, with the keyword, 20 at a time', async () => {
-    // Arrange
-    const fetched = answering(() => json(200, EMPTY_PAGE))
-
-    // Act
-    await findSalons('表参道', salon.id)
-
-    // Assert
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      keyword: '表参道',
-      cursor: salon.id,
-      limit: '20',
-    })
   })
 
   it('should read the staff and the services of a salon in the largest pages', async () => {
@@ -80,14 +57,5 @@ describe('the reads of salons', () => {
     expect(Object.fromEntries(services?.searchParams ?? [])).toEqual({
       limit: '100',
     })
-  })
-
-  it('should not ask for a salon whose address holds no ID', async () => {
-    // Arrange
-    const fetched = answering(() => problem(500))
-
-    // Act, Assert
-    expect(await readSalon('omotesando')).toEqual({ type: 'notFound' })
-    expect(fetched).not.toHaveBeenCalled()
   })
 })

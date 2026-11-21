@@ -2,6 +2,7 @@ import type {
   ModelsSaleResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Form,
   type FormProps,
@@ -9,7 +10,6 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import { NO_CASHIER } from '../../checkout'
 import { saleMomentOf } from '../../sale-changes'
 import styles from './sale-change-form.module.css'

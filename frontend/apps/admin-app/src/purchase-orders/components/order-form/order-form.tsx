@@ -2,6 +2,7 @@ import type {
   ModelsInventoryResponse,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Form,
   type FormErrors,
@@ -16,7 +17,6 @@ import {
   quantityNameOf,
   stockRowNameOf,
 } from '../../../inventory/stock-format'
-import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import {
   quantityControlOf,
   subtotalOf,

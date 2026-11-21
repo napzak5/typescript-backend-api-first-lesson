@@ -2,6 +2,7 @@ import type {
   ModelsInventoryResponse,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Form,
   type FormErrors,
@@ -11,7 +12,6 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useState } from 'react'
-import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import { showsLot } from '../../stock-form'
 import { productOf, REMOVED_PRODUCT } from '../../stock-format'
 import styles from './stock-form.module.css'

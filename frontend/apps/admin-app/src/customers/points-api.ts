@@ -8,19 +8,19 @@ import {
   pointCrudListTransactions,
   pointCrudUse,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import * as z from 'zod/mini'
-import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
   type Forbidden,
   from,
+  outsideTheContract,
   type Page,
   pageOf,
   refusedValuesOf,
   type Unread,
   unreadOf,
-} from '../reading'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
+import * as z from 'zod/mini'
 import { readSale } from '../sales/sales-api'
 import { customerKeyOf } from './customers-api'
 import { type PointAttempt, type PointRecording, whyRefused } from './points'

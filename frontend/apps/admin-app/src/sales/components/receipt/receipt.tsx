@@ -3,10 +3,10 @@ import type {
   ModelsSaleReceiptResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { DescriptionList, Table } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
 import { amountOf } from '../../../bookings/booking-format'
-import { momentNameAt } from '../../../salon-time'
 import { cardNameOf, methodNameOf, refundedOf } from '../../sale-format'
 import styles from './receipt.module.css'
 

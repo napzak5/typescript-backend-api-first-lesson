@@ -1,13 +1,15 @@
 import type { ModelsBookingResponse } from '@beauty-salon-frontend/api-client'
 import {
+  momentNameAt,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   Card,
   LoadingIndicator,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
-import { unreadMessageOf } from '../../../reading'
-import { momentNameAt } from '../../../salon-time'
 import type { TreatmentOfBookingRead } from '../../treatments-api'
 import styles from './booking-treatment.module.css'
 

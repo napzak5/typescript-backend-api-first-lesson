@@ -1,5 +1,13 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  FAILED,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
@@ -10,9 +18,6 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { staffEntryHrefOf, staffMemberHrefOf } from '../navigation'
-import { firstCursor, listingOf, moreOf } from '../pages'
-import { FAILED, unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { StaffTable } from './components/staff-table/staff-table'
 import { readStaffPage, STAFF_LISTS, type StaffPageRead } from './staff-api'
 import { StaffLedgerForbidden, useKeepsStaffLedger } from './with-staff-member'

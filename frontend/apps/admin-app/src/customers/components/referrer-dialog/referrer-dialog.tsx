@@ -1,6 +1,9 @@
+import {
+  keywordOf,
+  LONGEST_KEYWORD,
+} from '@beauty-salon-frontend/salon-screens'
 import { Button, Dialog, TextField } from '@beauty-salon-frontend/ui'
 import type { FormEvent, ReactNode } from 'react'
-import { keywordOf, LONGEST_KEYWORD } from '../../../keyword'
 import styles from './referrer-dialog.module.css'
 
 export type ReferrerDialogProps = {

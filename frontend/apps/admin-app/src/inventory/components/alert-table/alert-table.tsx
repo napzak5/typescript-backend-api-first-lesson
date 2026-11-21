@@ -2,12 +2,12 @@ import type {
   ModelsInventoryAlertResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import { Badge, Button, Link } from '@beauty-salon-frontend/ui'
 import {
   countOf,
+  type More,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
+} from '@beauty-salon-frontend/salon-screens'
+import { Badge, Button, Link } from '@beauty-salon-frontend/ui'
 import {
   acknowledgementNameOf,
   alertKindNameOf,

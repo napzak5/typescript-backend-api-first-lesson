@@ -7,11 +7,11 @@ import type {
   ModelsSalesDetail,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
+import type { RefusedValue } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import { textOf } from '../bookings/booking-actions'
 import { nullIfBlank } from '../bookings/booking-entry'
 import { GONE_SERVICE } from '../bookings/booking-format'
-import type { RefusedValue } from '../reading'
 
 /*
  * Entering the sale of a booking: what it bills, how the tax that the API

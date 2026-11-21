@@ -2,9 +2,9 @@ import type {
   ModelsDayOfWeekType,
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Table } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { dayNameOf } from '../../../salon-time'
 import { partsOf } from '../../schedule-form'
 import { type Shift, shiftOf, weekdayNameOf } from '../../shift-week'
 import styles from './schedule-record.module.css'

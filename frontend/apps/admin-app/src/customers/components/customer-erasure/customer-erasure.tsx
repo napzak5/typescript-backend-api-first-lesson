@@ -1,3 +1,4 @@
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   Button,
@@ -12,7 +13,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { type FormEvent, type Ref, useId } from 'react'
 import { match } from 'ts-pattern'
-import { momentNameAt } from '../../../salon-time'
 import { erasureStateOf } from '../../customer-erasure'
 import type { ErasureRequest } from '../../customer-erasure-api'
 import styles from './customer-erasure.module.css'

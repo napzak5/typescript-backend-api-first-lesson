@@ -1,5 +1,5 @@
+import { isDay } from '@beauty-salon-frontend/salon-screens'
 import type { Period } from '../customers/customer-statistics'
-import { isDay } from '../salon-time'
 import { NOT_RECORDED } from './treatment-format'
 
 /*

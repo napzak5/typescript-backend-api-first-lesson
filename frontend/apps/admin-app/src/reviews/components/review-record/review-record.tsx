@@ -1,4 +1,5 @@
 import type { ModelsReviewResponse } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   Card,
@@ -9,7 +10,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { match } from 'ts-pattern'
-import { momentNameAt } from '../../../salon-time'
 import {
   detailRatingsOf,
   reviewDayNameOf,

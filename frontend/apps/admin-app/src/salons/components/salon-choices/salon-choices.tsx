@@ -1,10 +1,10 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
-import { Badge, Link } from '@beauty-salon-frontend/ui'
 import {
   countOf,
+  type More,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
+} from '@beauty-salon-frontend/salon-screens'
+import { Badge, Link } from '@beauty-salon-frontend/ui'
 
 export type SalonChoicesProps = {
   /** The salons that were read so far, in the order of the API; at least one */

@@ -8,6 +8,11 @@ import type {
   ModelsTreatmentRecordCreateRequest,
 } from '@beauty-salon-frontend/api-client'
 import {
+  unreadMessageOf,
+  WithSalon,
+  whyUnread,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   Alert,
   ButtonLink,
   Link,
@@ -29,8 +34,6 @@ import {
 import { customerKeyOf, readCustomer } from '../customers/customers-api'
 import { bookingHrefOf, treatmentHrefOf } from '../navigation'
 import { productsKeyOf, readProducts } from '../products/products-api'
-import { unreadMessageOf, whyUnread } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { TreatmentForm } from './components/treatment-form/treatment-form'
 import {
   afterTreatmentWrite,

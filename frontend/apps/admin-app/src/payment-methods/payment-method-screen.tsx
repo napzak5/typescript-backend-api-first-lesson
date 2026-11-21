@@ -1,5 +1,10 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -9,8 +14,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { paymentMethodChangeHrefOf, paymentMethodsHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { PaymentMethodRecord } from './components/payment-method-record/payment-method-record'
 import {
   PaymentMethodNotFound,

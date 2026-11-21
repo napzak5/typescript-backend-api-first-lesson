@@ -1,3 +1,4 @@
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Button,
   ButtonLink,
@@ -7,7 +8,6 @@ import {
   useErrorFocus,
 } from '@beauty-salon-frontend/ui'
 import { type FormEvent, useState } from 'react'
-import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import { ORDER_STATUS_OPTIONS } from '../../order-format'
 import { type OrderConditions, orderQueryOf } from '../../order-search'
 import styles from './order-filter.module.css'

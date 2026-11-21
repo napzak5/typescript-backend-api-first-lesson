@@ -5,9 +5,9 @@ import type {
   ModelsPaymentStatusType,
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeProps } from '@beauty-salon-frontend/ui'
 import { amountOf } from '../bookings/booking-format'
-import { momentNameAt } from '../salon-time'
 
 /*
  * A sale and its payments in the words of the salon, and what follows from

@@ -1,3 +1,4 @@
+import { LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   Checkbox,
@@ -8,7 +9,6 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useState } from 'react'
-import { LATEST_DAY } from '../../../salon-time'
 import { countNameOf } from '../../customer-format'
 import { kindNameOf, type OfferedSale, type PointKind } from '../../points'
 import styles from './point-entry-form.module.css'

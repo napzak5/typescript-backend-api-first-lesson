@@ -3,6 +3,11 @@ import type {
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  dayAt,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   type FormErrors,
@@ -23,9 +28,6 @@ import {
   readDays,
 } from '../customers/customer-statistics'
 import { treatmentsHrefOf } from '../navigation'
-import { unreadMessageOf } from '../reading'
-import { dayAt } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import { TreatmentStatistics } from './components/treatment-statistics/treatment-statistics'
 import { statisticsPeriodIn } from './treatment-statistics'
 import {

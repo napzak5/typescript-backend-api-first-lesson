@@ -5,13 +5,16 @@ import {
   type ModelsPreviousTreatment,
   ModelsTreatmentType,
 } from '@beauty-salon-frontend/api-client'
+import {
+  EARLIEST_DAY,
+  isDay,
+  type RefusedValue,
+} from '@beauty-salon-frontend/salon-screens'
 import type { SelectOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { type Read, textOf } from '../bookings/booking-actions'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { tagsIn } from '../customers/customer-ledger'
-import type { RefusedValue } from '../reading'
-import { EARLIEST_DAY, isDay } from '../salon-time'
 import type { ChartWrite } from './charts-api'
 
 /*

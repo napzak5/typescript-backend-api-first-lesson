@@ -3,6 +3,11 @@ import type {
   ModelsSalonResponse,
   ModelsShareLinkResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  unreadMessageOf,
+  WithSalon,
+  whyUnread,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,
@@ -18,8 +23,6 @@ import { AttachmentNotFound } from '../attachments/attachment-not-found'
 import { attachmentKeyOf, readAttachment } from '../attachments/attachments-api'
 import { useUploaderName } from '../attachments/use-uploader-name'
 import { attachmentHrefOf } from '../navigation'
-import { unreadMessageOf, whyUnread } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { ShareLinkRecord } from './components/share-link-record/share-link-record'
 import { afterRevoking, sharesFiles } from './share-link'
 import {

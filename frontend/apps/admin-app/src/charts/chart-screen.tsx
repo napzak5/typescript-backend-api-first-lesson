@@ -3,6 +3,14 @@ import type {
   ModelsCustomerResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
 import {
@@ -22,9 +30,6 @@ import {
   chartEntryHrefOf,
   customerHrefOf,
 } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { afterAllergyRemoval, mayRemoveAllergies } from './allergies'
 import { allergiesKeyOf, readAllergyPage, removeAllergy } from './allergies-api'
 import { CHART_LISTS } from './charts-api'

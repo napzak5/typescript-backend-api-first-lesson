@@ -2,6 +2,13 @@ import type {
   ModelsSalonResponse,
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
+import {
+  type Forbidden,
+  NOT_FOUND,
+  type NotFound,
+  type Unread,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -14,13 +21,6 @@ import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { shiftsHrefOf } from '../navigation'
-import {
-  type Forbidden,
-  NOT_FOUND,
-  type NotFound,
-  type Unread,
-  unreadMessageOf,
-} from '../reading'
 import { readStaffMember, staffKeyOf } from '../staff/staff-api'
 import { useKeepsStaffLedger } from '../staff/with-staff-member'
 import {

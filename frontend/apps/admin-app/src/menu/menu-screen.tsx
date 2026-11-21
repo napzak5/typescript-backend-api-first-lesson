@@ -1,5 +1,9 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
@@ -17,9 +21,7 @@ import {
   serviceHrefOf,
   servicesChangeHrefOf,
 } from '../navigation'
-import { unreadMessageOf } from '../reading'
 import { readServices, servicesKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import { CategoryTable } from './components/category-table/category-table'
 import { MenuSections } from './components/menu-sections/menu-sections'
 import { useKeepsMenu } from './keeps-menu'

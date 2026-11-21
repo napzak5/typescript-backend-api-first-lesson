@@ -1,6 +1,6 @@
+import { isDay } from '@beauty-salon-frontend/salon-screens'
 import * as z from 'zod'
 import { type Read, textOf } from '../bookings/booking-actions'
-import { isDay } from '../salon-time'
 import type { TreatmentConditions } from './treatments-api'
 
 /*

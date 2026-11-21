@@ -6,6 +6,11 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   Button,
   ButtonLink,
   EmptyState,
@@ -26,8 +31,6 @@ import {
   stockRowHrefOf,
 } from '../navigation'
 import { productsKeyOf, readProducts } from '../products/products-api'
-import { unreadMessageOf } from '../reading'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { CountForm } from './components/count-form/count-form'
 import { CountResult } from './components/count-result/count-result'
 import { countStock } from './count-api'

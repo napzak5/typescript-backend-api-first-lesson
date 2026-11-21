@@ -5,9 +5,12 @@ import type {
   ModelsBookingServiceResponse,
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
+import {
+  isDay,
+  momentOf,
+  type RefusedValue,
+} from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import type { RefusedValue } from '../reading'
-import { isDay, momentOf } from '../salon-time'
 import { type Read, textOf } from './booking-actions'
 import {
   afterRefusal,

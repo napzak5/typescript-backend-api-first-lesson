@@ -3,10 +3,14 @@ import type {
   ModelsPurchaseOrderItem,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  dayAt,
+  dayNameOf,
+  momentNameAt,
+} from '@beauty-salon-frontend/salon-screens'
 import type { BadgeProps, SelectOption } from '@beauty-salon-frontend/ui'
 import { UNLISTED_STAFF } from '../bookings/booking-format'
 import { quantityNameOf } from '../inventory/stock-format'
-import { dayAt, dayNameOf, momentNameAt } from '../salon-time'
 
 /*
  * The statuses of the purchase orders, and how an order is named on the

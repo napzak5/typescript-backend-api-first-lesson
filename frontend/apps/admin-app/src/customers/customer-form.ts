@@ -4,6 +4,11 @@ import type {
   ModelsCustomerResponse,
   ModelsCustomerUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import {
+  EARLIEST_DAY,
+  isDay,
+  type RefusedValue,
+} from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
 import { type Read, textOf } from '../bookings/booking-actions'
@@ -12,8 +17,6 @@ import {
   nullIfBlank,
   TOO_MANY_REQUESTS,
 } from '../bookings/booking-entry'
-import type { RefusedValue } from '../reading'
-import { EARLIEST_DAY, isDay } from '../salon-time'
 import {
   CATEGORIES,
   CUSTOMER_STATUSES,

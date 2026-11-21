@@ -1,5 +1,10 @@
+import {
+  answering,
+  json,
+  problem,
+  UNREAD,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { aStaffMember } from '../staff/components/examples'
 import {
   attemptInvitation,

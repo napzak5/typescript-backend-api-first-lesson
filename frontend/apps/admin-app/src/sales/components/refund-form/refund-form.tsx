@@ -2,6 +2,7 @@ import type {
   ModelsPaymentMethodResponse,
   ModelsPaymentResponse,
 } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Card,
   DescriptionList,
@@ -11,7 +12,6 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { amountOf } from '../../../bookings/booking-format'
-import { momentNameAt } from '../../../salon-time'
 import { cardNameOf, methodNameOf } from '../../sale-format'
 import styles from './refund-form.module.css'
 

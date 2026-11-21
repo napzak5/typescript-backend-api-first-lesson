@@ -1,4 +1,5 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
@@ -9,9 +10,7 @@ import {
   stockMovementsHrefOf,
   stockRowChangeHrefOf,
 } from '../navigation'
-import { dayAt } from '../salon-time'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import { StockRecord } from './components/stock-record/stock-record'
 import { useKeepsStock } from './keeps-stock'
 import { productOf } from './stock-format'

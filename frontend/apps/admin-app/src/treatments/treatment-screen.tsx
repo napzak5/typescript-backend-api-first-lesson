@@ -3,6 +3,11 @@ import type {
   ModelsTreatmentPhotoResponse,
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  dayNameOf,
+  NOT_FOUND,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
@@ -22,9 +27,6 @@ import {
   treatmentPhotosHrefOf,
   treatmentsHrefOf,
 } from '../navigation'
-import { NOT_FOUND } from '../reading'
-import { dayNameOf } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import { TreatmentPhotos } from './components/treatment-photos/treatment-photos'
 import { TreatmentRecord } from './components/treatment-record/treatment-record'
 import {

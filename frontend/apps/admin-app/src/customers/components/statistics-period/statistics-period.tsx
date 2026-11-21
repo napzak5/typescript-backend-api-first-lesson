@@ -1,3 +1,4 @@
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Button,
   type FormErrors,
@@ -5,7 +6,6 @@ import {
   useErrorFocus,
 } from '@beauty-salon-frontend/ui'
 import { type FormEvent, useState } from 'react'
-import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import { type Period, periodQueryOf } from '../../customer-statistics'
 import styles from './statistics-period.module.css'
 

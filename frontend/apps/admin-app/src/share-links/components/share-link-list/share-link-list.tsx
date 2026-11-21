@@ -1,5 +1,11 @@
 import type { ModelsShareLinkResponse } from '@beauty-salon-frontend/api-client'
 import {
+  countOf,
+  type More,
+  momentNameAt,
+  PagedTable,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   Badge,
   ButtonLink,
   Card,
@@ -9,12 +15,6 @@ import {
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import {
-  countOf,
-  PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
-import { momentNameAt } from '../../../salon-time'
 import {
   downloadsNameOf,
   passwordNameOf,

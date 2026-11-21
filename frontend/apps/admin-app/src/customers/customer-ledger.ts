@@ -3,9 +3,14 @@ import type {
   ModelsCustomerStatusType,
   ModelsMembershipTierType,
 } from '@beauty-salon-frontend/api-client'
+import {
+  dayAfter,
+  isDay,
+  keywordIn,
+  LONGEST_KEYWORD,
+  startOfDayAt,
+} from '@beauty-salon-frontend/salon-screens'
 import { type Read, textOf } from '../bookings/booking-actions'
-import { keywordIn, LONGEST_KEYWORD } from '../keyword'
-import { dayAfter, isDay, startOfDayAt } from '../salon-time'
 import { CUSTOMER_STATUSES, TIERS } from './customer-format'
 
 /**

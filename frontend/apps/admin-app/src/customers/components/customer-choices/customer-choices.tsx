@@ -1,11 +1,11 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
-import { Button, Link } from '@beauty-salon-frontend/ui'
-import { match } from 'ts-pattern'
 import {
   countOf,
+  type More,
   PagedTable,
-} from '../../../components/paged-table/paged-table'
-import type { More } from '../../../pages'
+} from '@beauty-salon-frontend/salon-screens'
+import { Button, Link } from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
 import { customerKanaOf, customerNameOf } from '../../customers-api'
 
 /**

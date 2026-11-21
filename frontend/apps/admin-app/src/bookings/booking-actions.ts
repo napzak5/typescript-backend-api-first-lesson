@@ -4,8 +4,8 @@ import type {
   ModelsBookingResponse,
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
+import { isDay, momentOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
-import { isDay, momentOf } from '../salon-time'
 import type { StatusChange } from './bookings-api'
 
 /** What can be done to the state of a booking. */

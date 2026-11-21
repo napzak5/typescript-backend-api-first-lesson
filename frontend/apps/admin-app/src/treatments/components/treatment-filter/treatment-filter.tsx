@@ -1,4 +1,5 @@
 import type { ModelsStaffProfileResponse } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Button,
   ButtonLink,
@@ -9,7 +10,6 @@ import {
   useErrorFocus,
 } from '@beauty-salon-frontend/ui'
 import { type FormEvent, useState } from 'react'
-import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import { treatmentQueryOf } from '../../treatment-search'
 import type { TreatmentConditions } from '../../treatments-api'
 import styles from './treatment-filter.module.css'

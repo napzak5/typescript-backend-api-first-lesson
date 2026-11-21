@@ -3,11 +3,11 @@ import type {
   ModelsSaleProcessRequest,
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
+import type { RefusedValue } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import { type Read, textOf } from '../bookings/booking-actions'
 import { nullIfBlank, yenOf } from '../bookings/booking-entry'
 import { amountOf } from '../bookings/booking-format'
-import type { RefusedValue } from '../reading'
 import { CARD_METHODS, whyNoPayment } from './sale-format'
 
 /*

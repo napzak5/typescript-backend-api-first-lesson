@@ -4,6 +4,7 @@ import type {
   ModelsSaleResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { NOT_FOUND, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -12,8 +13,6 @@ import { match, P } from 'ts-pattern'
 import type { FormSays } from '../bookings/booking-entry'
 import { amountOf } from '../bookings/booking-format'
 import { saleHrefOf } from '../navigation'
-import { NOT_FOUND } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import { PaymentForm } from './components/payment-form/payment-form'
 import { afterPayment, methodsInUse, readPayment } from './payments'
 import { owedOf, whyNoPayment } from './sale-format'

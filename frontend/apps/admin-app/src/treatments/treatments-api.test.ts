@@ -1,6 +1,11 @@
 import type { ModelsTreatmentPhotoCreateRequest } from '@beauty-salon-frontend/api-client'
+import {
+  answering,
+  json,
+  problem,
+  UNREAD,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { salon } from '../bookings/components/examples'
 import { aPhoto, aTreatment } from './components/examples'
 import {

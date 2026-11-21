@@ -2,8 +2,8 @@ import type {
   ModelsBookingResponse,
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
+import { timeOfDayAt } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeProps } from '@beauty-salon-frontend/ui'
-import { timeOfDayAt } from '../salon-time'
 
 const STATUS_NAMES: Record<ModelsBookingStatusType, string> = {
   draft: '下書き',

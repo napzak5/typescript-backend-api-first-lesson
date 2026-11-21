@@ -4,6 +4,10 @@ import type {
   ModelsSalonResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   type FormErrors,
@@ -26,9 +30,7 @@ import {
   customerHrefOf,
   reviewResponseHrefOf,
 } from '../navigation'
-import { unreadMessageOf } from '../reading'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
-import { WithSalon } from '../salons/with-salon'
 import { ReviewAnswer } from './components/review-answer/review-answer'
 import {
   type ReviewAuthor,

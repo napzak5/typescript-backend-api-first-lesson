@@ -2,6 +2,7 @@ import type {
   ModelsCustomerVersionResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,
@@ -11,7 +12,6 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
-import { unreadMessageOf } from '../reading'
 import { mayKeepCustomers } from './customer-history'
 import { type Removal, readRemoved, removedKeyOf } from './customer-history-api'
 import { customerKeyOf } from './customers-api'

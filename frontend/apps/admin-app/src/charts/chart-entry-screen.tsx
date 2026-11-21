@@ -3,6 +3,11 @@ import type {
   ModelsMedicalChartCreateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  dayAt,
+  NOT_FOUND,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -12,9 +17,6 @@ import type { FormSays } from '../bookings/booking-entry'
 import { customerKeyOf, customerNameOf } from '../customers/customers-api'
 import { WithCustomer } from '../customers/with-customer'
 import { chartChangeHrefOf, chartHrefOf } from '../navigation'
-import { NOT_FOUND } from '../reading'
-import { dayAt } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import {
   afterChartWrite,
   CHART_EXISTS,

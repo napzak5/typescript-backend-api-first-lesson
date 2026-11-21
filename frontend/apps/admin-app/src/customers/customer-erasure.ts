@@ -1,7 +1,7 @@
 import type { ModelsCustomerDeletionRequestCreateRequest } from '@beauty-salon-frontend/api-client'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import { type Read, textOf } from '../bookings/booking-actions'
-import { momentNameAt } from '../salon-time'
 import type {
   ErasureAsking,
   ErasureCancelling,

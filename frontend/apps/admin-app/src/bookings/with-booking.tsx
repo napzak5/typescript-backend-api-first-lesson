@@ -5,6 +5,12 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  dayNameOf,
+  OtherSalonNotice,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
@@ -15,15 +21,12 @@ import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { bookingsHrefOf } from '../navigation'
-import { unreadMessageOf, whyUnread } from '../reading'
-import { dayNameOf } from '../salon-time'
 import {
   readServices,
   readStaffProfiles,
   servicesKeyOf,
   staffProfilesKeyOf,
 } from '../salons/salons-api'
-import { OtherSalonNotice } from '../salons/with-salon'
 import { hoursOf } from './booking-format'
 import { bookingKeyOf, readBooking } from './bookings-api'
 

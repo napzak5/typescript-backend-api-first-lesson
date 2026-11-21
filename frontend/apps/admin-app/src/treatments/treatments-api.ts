@@ -16,27 +16,28 @@ import {
   treatmentRecordCrudRemovePhoto,
   treatmentRecordCrudUpdate,
 } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
-import * as z from 'zod'
-import type { Period } from '../customers/customer-statistics'
-import { readCustomers } from '../customers/customers-api'
-import { outsideTheContract } from '../outside-the-contract'
 import {
+  dayAfter,
   FAILED,
   type Forbidden,
   from,
   LARGEST_PAGE,
   NOT_FOUND,
   type NotFound,
+  outsideTheContract,
   type Page,
   pageOf,
   type RefusedValue,
   refusedValuesOf,
+  startOfDayAt,
   toTheEnd,
   type Unread,
   unreadOf,
-} from '../reading'
-import { dayAfter, startOfDayAt } from '../salon-time'
+} from '@beauty-salon-frontend/salon-screens'
+import { match, P } from 'ts-pattern'
+import * as z from 'zod'
+import type { Period } from '../customers/customer-statistics'
+import { readCustomers } from '../customers/customers-api'
 
 /*
  * The treatment records of a salon: what was done at a visit, written by

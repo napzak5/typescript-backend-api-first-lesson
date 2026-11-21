@@ -3,14 +3,13 @@ import type {
   ModelsBookingUpdateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { NOT_FOUND, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { ButtonLink, Form, useNotifications } from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { bookingHrefOf } from '../navigation'
-import { NOT_FOUND } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import {
   afterNotesChange,
   type FormSays,

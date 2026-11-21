@@ -1,5 +1,9 @@
+import {
+  dayAfter,
+  dayNameOf,
+  isDay,
+} from '@beauty-salon-frontend/salon-screens'
 import { type Read, textOf } from '../bookings/booking-actions'
-import { dayAfter, dayNameOf, isDay } from '../salon-time'
 
 /** The days of the visits the use of a salon is counted over, at the salon; both ends counted. */
 export type Period = { from: string; to: string }

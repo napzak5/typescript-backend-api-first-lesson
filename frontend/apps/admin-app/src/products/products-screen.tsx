@@ -1,5 +1,15 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  moreOf,
+  OtherSalonNotice,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   EmptyState,
   type FormErrors,
@@ -12,9 +22,6 @@ import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { productEntryHrefOf, productHrefOf } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { FAILED, unreadMessageOf } from '../reading'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
 import { ProductFilter } from './components/product-filter/product-filter'
 import { ProductTable } from './components/product-table/product-table'
 import { useKeepsProducts } from './keeps-products'

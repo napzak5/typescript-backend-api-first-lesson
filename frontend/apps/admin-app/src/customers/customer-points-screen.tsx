@@ -4,6 +4,15 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  cursorAfter,
+  dayAt,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   ButtonLink,
   Link,
   LoadingIndicator,
@@ -19,11 +28,7 @@ import {
   pointEntryHrefOf,
   saleHrefOf,
 } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { unreadMessageOf } from '../reading'
 import { readSale, saleKeyOf } from '../sales/sales-api'
-import { dayAt } from '../salon-time'
-import { WithSalon } from '../salons/with-salon'
 import { ExpiringPoints } from './components/expiring-points/expiring-points'
 import { PointBalance } from './components/point-balance/point-balance'
 import { PointHistory } from './components/point-history/point-history'

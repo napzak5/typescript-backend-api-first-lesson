@@ -2,6 +2,7 @@ import type {
   ModelsDayOfWeekType,
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
+import { isDay, type NotFound } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import { type Read, textOf } from '../bookings/booking-actions'
 import {
@@ -9,8 +10,6 @@ import {
   nullIfBlank,
   TOO_MANY_REQUESTS,
 } from '../bookings/booking-entry'
-import type { NotFound } from '../reading'
-import { isDay } from '../salon-time'
 import { type ScheduleAttempt, sameSchedule } from './schedules-api'
 import { WEEKDAYS } from './shift-week'
 

@@ -2,9 +2,9 @@ import type {
   ModelsBookingResponse,
   ModelsCustomerResponse,
 } from '@beauty-salon-frontend/api-client'
+import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
 import { customerNameOf } from '../../../customers/customers-api'
-import { dayNameOf, momentNameAt } from '../../../salon-time'
 import { NO_RECORD, sourceNameOf } from '../../booking-entry'
 import {
   amountOf,

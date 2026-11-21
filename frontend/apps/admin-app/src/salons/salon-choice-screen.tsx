@@ -1,4 +1,15 @@
 import {
+  cursorAfter,
+  findSalons,
+  firstCursor,
+  KeywordSearch,
+  keywordIn,
+  keywordOf,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/salon-screens'
+import {
   EmptyState,
   LoadingIndicator,
   PageHeader,
@@ -7,14 +18,9 @@ import {
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
-import { KeywordSearch } from '../components/keyword-search/keyword-search'
-import { keywordIn, keywordOf } from '../keyword'
 import { bookingsHrefOf } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { unreadMessageOf } from '../reading'
 import { SalonChoices } from './components/salon-choices/salon-choices'
 import { KEYWORD, queryOfKeyword } from './salon-choice'
-import { findSalons } from './salons-api'
 
 /**
  * Where an administrator chooses the salon to work on: every salon, or

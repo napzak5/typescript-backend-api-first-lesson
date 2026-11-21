@@ -5,6 +5,7 @@ import type {
   ModelsOpeningHours,
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { isDay, type NotFound } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import { textOf } from '../bookings/booking-actions'
 import {
@@ -12,8 +13,6 @@ import {
   nullIfBlank,
   TOO_MANY_REQUESTS,
 } from '../bookings/booking-entry'
-import type { NotFound } from '../reading'
-import { isDay } from '../salon-time'
 import { WEEKDAYS, weekdayOf } from '../shifts/shift-week'
 import type { Hours, HoursAttempt } from './hours-api'
 

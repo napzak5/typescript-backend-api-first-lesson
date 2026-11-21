@@ -1,5 +1,13 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+  WithSalon,
+} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
@@ -26,9 +34,6 @@ import {
   customerHrefOf,
   customerImportHrefOf,
 } from '../navigation'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
-import { unreadMessageOf } from '../reading'
-import { WithSalon } from '../salons/with-salon'
 import {
   ChosenCustomers,
   type ChosenDialog,
