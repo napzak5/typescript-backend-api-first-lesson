@@ -182,6 +182,7 @@ describe('the bookings of a salon, against the API', () => {
       expect(address).toBe(`/salons/${osaka}/bookings`)
       expect(navigationItems()).toEqual([
         ['サロンを選ぶ', '/', null],
+        ['運用', '/operations', null],
         ['予約', `/salons/${osaka}/bookings`, 'page'],
         ['売上', `/salons/${osaka}/sales`, null],
         ['顧客', `/salons/${osaka}/customers`, null],

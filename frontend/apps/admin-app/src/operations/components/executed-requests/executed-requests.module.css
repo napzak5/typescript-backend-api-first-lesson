@@ -1,0 +1,12 @@
+/*
+ * The reason a request was made keeps its lines. Unlike the other cells it
+ * breaks them, and is never narrower than a few words nor wider than a
+ * column of reading
+ */
+.reason {
+  display: block;
+  min-inline-size: 12rem;
+  max-inline-size: 28rem;
+  white-space: pre-line;
+  overflow-wrap: break-word;
+}

@@ -12,6 +12,9 @@ export const SALON_ENTRY_PATH = '/salons/new'
 export const salonIdIn = (pathname: string): string | undefined =>
   SALON_PATH.exec(pathname)?.[1]
 
+/** The screen an administrator runs the platform with: the state of the system, and the operations run by hand. */
+export const OPERATIONS_PATH = '/operations'
+
 /** The account a user signs in with, for an administrator: its state, its lock lifted, its second factor reset. */
 export const userAccountHrefOf = (userId: string): string => `/users/${userId}`
 
@@ -497,7 +500,9 @@ export const OWN_PROFILE_PATH = '/account/profile'
  * the staff is led from there to the salon they belong to. So a member who
  * is elsewhere (the security of the account, the profile) goes back to the
  * bookings through the start. A member of a salon is led to their own
- * profile last, wherever they are; an administrator is a member of none.
+ * profile last, wherever they are; an administrator is a member of none,
+ * and is led to the screen that runs the platform after the choice of the
+ * salon.
  */
 export const navigationFor = (
   role: ModelsUserResponse['role'] | undefined,
@@ -506,7 +511,14 @@ export const navigationFor = (
   const salonId = salonIdIn(pathname)
   const choice: NavigationItem[] =
     role === 'admin'
-      ? [{ href: '/', label: 'サロンを選ぶ', current: pathname === '/' }]
+      ? [
+          { href: '/', label: 'サロンを選ぶ', current: pathname === '/' },
+          {
+            href: OPERATIONS_PATH,
+            label: '運用',
+            current: pathname === OPERATIONS_PATH,
+          },
+        ]
       : []
   const member = role !== undefined && SALON_ROLES.includes(role)
   const profile: NavigationItem[] = member

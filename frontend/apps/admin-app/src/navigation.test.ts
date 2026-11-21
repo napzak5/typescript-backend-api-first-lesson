@@ -21,6 +21,7 @@ import {
   menuHrefOf,
   movementEntryHrefOf,
   navigationFor,
+  OPERATIONS_PATH,
   orderChangeHrefOf,
   orderReceiptHrefOf,
   paymentMethodChangeHrefOf,
@@ -94,6 +95,9 @@ const PURCHASE_ORDERS = `/salons/${SALON_ID}/purchase-orders`
 const SETTINGS = `/salons/${SALON_ID}/settings`
 const SETTINGS_LINK = { href: SETTINGS, label: '設定', current: false }
 
+/** The screen an administrator runs the platform with, after the choice of a salon */
+const OPERATIONS = { href: '/operations', label: '運用', current: false }
+
 type Role = ModelsUserResponse['role']
 
 /** The roles of a salon that do not keep its staff ledger */
@@ -136,9 +140,10 @@ describe('salonIdIn', () => {
 })
 
 describe('navigationFor', () => {
-  it('should lead an administrator to the choice of a salon, and to the bookings, the sales, the customers, the treatment records, the shifts and the staff of the salon chosen', () => {
+  it('should lead an administrator to the choice of a salon, to the operations, and to the bookings, the sales, the customers, the treatment records, the shifts and the staff of the salon chosen', () => {
     expect(navigationFor('admin', `${BOOKINGS}/x`)).toEqual([
       { href: '/', label: 'サロンを選ぶ', current: false },
+      OPERATIONS,
       { href: BOOKINGS, label: '予約', current: true },
       { href: SALES, label: '売上', current: false },
       { href: CUSTOMERS, label: '顧客', current: false },
@@ -158,6 +163,14 @@ describe('navigationFor', () => {
   it('should mark the choice of a salon as the screen an administrator is on', () => {
     expect(navigationFor('admin', '/')).toEqual([
       { href: '/', label: 'サロンを選ぶ', current: true },
+      OPERATIONS,
+    ])
+  })
+
+  it('should mark the operations as the screen an administrator is on there', () => {
+    expect(navigationFor('admin', OPERATIONS_PATH)).toEqual([
+      { href: '/', label: 'サロンを選ぶ', current: false },
+      { ...OPERATIONS, current: true },
     ])
   })
 
@@ -229,7 +242,7 @@ describe('navigationFor', () => {
   it('should lead an administrator to no profile, as no salon has them as a member', () => {
     expect(
       navigationFor('admin', '/account/profile').map(({ label }) => label),
-    ).toEqual(['サロンを選ぶ'])
+    ).toEqual(['サロンを選ぶ', '運用'])
   })
 
   it.each(NO_LINKS)('should offer no link when %s', (_case, role) => {
