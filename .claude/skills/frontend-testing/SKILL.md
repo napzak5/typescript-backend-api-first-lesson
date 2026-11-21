@@ -991,6 +991,25 @@ adds:
   (`customer-merge.integration.test.tsx`) is the 409 of the API, which
   the screen answers by reading again.
 
+The sales report of the dashboard
+(`frontend/apps/dashboard-app/src/reports/sales-report.integration.test.tsx`)
+adds:
+
+- **The sales a report counts are written by the test, as the checkout
+  would have** (`arrangeSale`, `paySale`, `voidSale` of
+  `dashboard-app/src/__tests__/arrangements.ts`: a sale of the salon in
+  Tokyo on a day counted from today there, its lines with their tax and
+  their member of the staff, its payments and what was given back). The
+  seed data has no sales. The sums the test expects are written out from
+  those sales, so that a sale voided, a refund or a product that are
+  counted wrongly fail.
+- **Today is the one of the database, in the time zone of the salon**
+  (`dayFromToday`): the report starts with the month up to it, and the
+  test names the days it expects by the same clock.
+- **A salon removed meanwhile is a statement** (`removeTokyo`) between the
+  report the screen read and what it asks next: the export and the count
+  meet the real refusal of the API.
+
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
