@@ -281,6 +281,79 @@ describe('checkStyleRules', () => {
     expect(broken).toEqual([])
   })
 
+  it.each<[declaration: string]>([
+    ['margin: 0'],
+    ['margin: 0 0'],
+    ['list-style: none'],
+    ['list-style-type: none'],
+  ])(
+    'should report "%s" in a CSS Module, which the reset does already',
+    (declaration) => {
+      // Act
+      const broken = rulesBrokenBy(
+        component('list.module.css', `.list { ${declaration}; }`),
+        component(
+          'list.tsx',
+          "import styles from './list.module.css'\nexport const List = () => <ul className={styles['list']} />",
+        ),
+      )
+
+      // Assert
+      expect(broken).toEqual(['list.module.css: repeats-the-reset'])
+    },
+  )
+
+  it('should accept a margin that is not 0, and the reset itself', () => {
+    // Act
+    const broken = rulesBrokenBy(
+      component('reset.css', 'p { margin: 0; } ul { list-style: none; }'),
+      component(
+        'bullets.module.css',
+        '.bullets { margin: 0 auto; list-style: disc; }',
+      ),
+      component(
+        'bullets.tsx',
+        "import styles from './bullets.module.css'\nexport const Bullets = () => <ul className={styles['bullets']} />",
+      ),
+    )
+
+    // Assert
+    expect(broken).toEqual([])
+  })
+
+  it.each<[query: string]>([
+    ['(min-width: 48rem)'],
+    ['(max-width: 40rem)'],
+    ['(min-width: 40rem) and (max-width: 59rem)'],
+  ])(
+    'should report "@media %s", which no stylesheet is widened at',
+    (query) => {
+      // Act
+      const broken = rulesBrokenBy(
+        component(
+          'page.css',
+          `@media ${query} { main { gap: var(--space-2); } }`,
+        ),
+      )
+
+      // Assert
+      expect(broken).toEqual(['page.css: unknown-breakpoint'])
+    },
+  )
+
+  it('should accept the two widths a stylesheet is widened at, and queries of no width', () => {
+    // Act
+    const broken = rulesBrokenBy(
+      component(
+        'page.css',
+        '@media (min-width: 40rem) { main { gap: var(--space-2); } } @media (min-width: 60rem) { main { gap: 0; } } @media (hover: hover) { a { color: currentColor; } } @media print { main { gap: 0; } }',
+      ),
+    )
+
+    // Assert
+    expect(broken).toEqual([])
+  })
+
   it('should report a class name written as a string in the markup', () => {
     // Act
     const broken = rulesBrokenBy(
