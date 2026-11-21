@@ -1,4 +1,8 @@
-import type { RefusedValue, Unsent } from '@beauty-salon-frontend/answers'
+import {
+  NOT_SENT_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewReportReasonType,
   ModelsReviewReportRequest,
@@ -7,7 +11,6 @@ import type { Session } from '@beauty-salon-frontend/session'
 import { match } from 'ts-pattern'
 import type { FormSays, Read } from '../forms'
 import type { ProfileRead } from '../profile/profile-api'
-import { NOT_SENT, TOO_MANY_REQUESTS } from './review-flow'
 import type { ReviewReporting } from './reviews-api'
 
 /*
@@ -163,15 +166,8 @@ export const afterReport = (
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
     .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT, errors: {} }))
-    .exhaustive()
-
-/** What the page says after the API did not count a "helpful": the customer may press again. */
-export const afterHelpful = (outcome: Unsent): string =>
-  match(outcome)
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => NOT_SENT)
+    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
     .exhaustive()

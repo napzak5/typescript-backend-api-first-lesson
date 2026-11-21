@@ -1,3 +1,4 @@
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsAttachmentContentType,
   ModelsAttachmentResponse,
@@ -217,10 +218,7 @@ export const afterRemoving = (
 ): string =>
   match(outcome)
     .with({ type: 'forbidden' }, () => REMOVAL_NOTE)
-    .with(
-      { type: 'tooManyRequests' },
-      () => 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-    )
+    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
     .with(
       { type: 'failed' },
       () =>

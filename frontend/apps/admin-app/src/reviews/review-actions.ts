@@ -1,4 +1,7 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewReportReasonType,
   ModelsReviewReportRequest,
@@ -173,10 +176,7 @@ export const afterWithdrawing = (
       () =>
         'このアカウントでは、この返信を取り下げられません。取り下げられるのは、サロンのオーナーとマネージャーと、管理者です。',
     )
-    .with(
-      { type: 'tooManyRequests' },
-      () => 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-    )
+    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
     .with(
       { type: 'failed' },
       () =>

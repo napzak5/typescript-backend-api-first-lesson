@@ -1,3 +1,4 @@
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsUserResponse,
   ModelsUserRoleType,
@@ -156,9 +157,6 @@ export type SupportSays =
   /** Another attempt changes nothing: the dialog closes, and the part says why */
   | { type: 'refused'; message: string }
 
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-
 /** What follows an attempt to lift the lock of the account of the address. */
 export const afterUnlocking = (
   outcome: Unlocking,
@@ -183,7 +181,7 @@ export const afterUnlocking = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -216,7 +214,7 @@ export const afterTwoFactorReset = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

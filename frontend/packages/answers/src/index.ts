@@ -11,6 +11,7 @@ export {
   from,
   LARGEST_PAGE,
   NOT_FOUND,
+  NOT_SENT_MESSAGE,
   type NotFound,
   type Page,
   type Problem,
@@ -20,6 +21,7 @@ export {
   type RefusedValue,
   refusedValuesOf,
   TOO_MANY_REQUESTS,
+  TOO_MANY_REQUESTS_MESSAGE,
   toTheEnd,
   UNANSWERED_PARTS,
   UNREAD_TYPES,
@@ -27,5 +29,6 @@ export {
   type Unsent,
   unreadMessageOf,
   unreadOf,
+  unsentMessageOf,
   whyUnread,
 } from './reading'

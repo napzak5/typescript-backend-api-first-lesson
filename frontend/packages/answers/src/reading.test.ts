@@ -20,6 +20,7 @@ import {
   type Unread,
   unreadMessageOf,
   unreadOf,
+  unsentMessageOf,
   whyUnread,
 } from './reading'
 
@@ -261,4 +262,18 @@ describe('unreadMessageOf', () => {
       )
     },
   )
+})
+
+describe('unsentMessageOf', () => {
+  it('should ask for patience when there were too many requests', () => {
+    expect(unsentMessageOf(TOO_MANY_REQUESTS)).toBe(
+      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+    )
+  })
+
+  it('should say that nothing was sent, and to look at the connection', () => {
+    expect(unsentMessageOf(FAILED)).toBe(
+      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
+  })
 })

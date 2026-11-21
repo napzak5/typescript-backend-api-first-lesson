@@ -173,11 +173,25 @@ export const toTheEnd = async <
     : toTheEnd(readPage, page.nextCursor, items, pagesLeft - 1)
 }
 
+/** What a screen says after too many requests: waiting mends it, the connection does not. */
+export const TOO_MANY_REQUESTS_MESSAGE =
+  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
+
+/** What a screen says when a request to write got no answer to act on. */
+export const NOT_SENT_MESSAGE =
+  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
+
+/** What a screen says when a request that changes nothing a person typed got nowhere. */
+export const unsentMessageOf = (reason: Unsent): string =>
+  reason.type === 'tooManyRequests'
+    ? TOO_MANY_REQUESTS_MESSAGE
+    : NOT_SENT_MESSAGE
+
 /** Why something could not be read, in words. */
 export const unreadMessageOf = (
   what: string,
   reason: Unread | NotFound,
 ): string =>
   reason.type === 'tooManyRequests'
-    ? 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
+    ? TOO_MANY_REQUESTS_MESSAGE
     : `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`

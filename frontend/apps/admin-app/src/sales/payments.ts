@@ -1,4 +1,7 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsPaymentMethodResponse,
   ModelsSaleProcessRequest,
@@ -259,8 +262,7 @@ export const afterPayment = (outcome: PaymentAttempt): PaymentSays =>
     .with({ type: P.union('notFound', 'forbidden') }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({

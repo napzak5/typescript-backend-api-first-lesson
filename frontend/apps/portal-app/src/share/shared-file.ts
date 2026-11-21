@@ -1,4 +1,8 @@
-import type { Unread } from '@beauty-salon-frontend/answers'
+import {
+  NOT_SENT_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+  type Unread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsAttachmentContentType,
   ModelsSharedFileResponse,
@@ -68,9 +72,6 @@ export const PASSWORD_AGAIN_SAID =
 /** Said at the password when it is sent empty */
 const PASSWORD_MISSING_SAID = 'パスワードを入力してください。'
 
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-
 /**
  * The password the form was sent with. It is held to no rule but that there
  * is one: whoever opens the link does not know those the link was made
@@ -94,12 +95,11 @@ export const afterPassword = (
       errors: { password: PASSWORD_REFUSED_SAID },
     }))
     .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({
-      message:
-        '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: NOT_SENT_MESSAGE,
       errors: {},
     }))
     .exhaustive()
@@ -109,7 +109,7 @@ export const loadMessageOf = (
   reason: Unread | { type: 'notFetched' },
 ): string =>
   match(reason)
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
+    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
     .with(
       { type: 'failed' },
       () =>

@@ -5,7 +5,6 @@ import { phone, thisDevice, unrecorded } from './components/examples'
 import type { SessionPage } from './security-api'
 import {
   afterPasswordChange,
-  afterUnsent,
   cursorAfter,
   endsWithGoneCursor,
   listingOf,
@@ -174,13 +173,6 @@ describe('afterPasswordChange', () => {
       expect(afterPasswordChange(outcome)).toEqual({ message, errors: {} })
     },
   )
-})
-
-describe('afterUnsent', () => {
-  it('should say why nothing came of a request', () => {
-    expect(afterUnsent({ type: 'tooManyRequests' })).toBe(TOO_MANY)
-    expect(afterUnsent({ type: 'failed' })).toBe(NOT_SENT)
-  })
 })
 
 const GONE: SessionPage = { type: 'cursorGone' }

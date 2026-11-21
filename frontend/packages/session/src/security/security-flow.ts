@@ -1,5 +1,10 @@
-import type { RefusedValue, Unsent } from '@beauty-salon-frontend/answers'
-import { FAILED } from '@beauty-salon-frontend/answers'
+import {
+  FAILED,
+  NOT_SENT_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+  type Unsent,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsAuthPasswordChangeRequest,
   ModelsSessionResponse,
@@ -36,11 +41,6 @@ const CURRENT_PASSWORD_WRONG =
   '現在のパスワードが違います。5 回続けて違うと、15 分間、サインインもできなくなります。'
 const UNCHANGED =
   '現在のパスワードと同じです。別のパスワードを入力してください。'
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-const NOT_SENT =
-  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
-
 const textOf = (values: FormData, name: string): string => {
   const value = values.get(name)
 
@@ -107,17 +107,10 @@ export const afterPasswordChange = (
         : { message: undefined, errors: Object.fromEntries(said) }
     })
     .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT, errors: {} }))
-    .exhaustive()
-
-/** What the screen says when a request that changes nothing a person typed got nowhere. */
-export const afterUnsent = (outcome: Unsent): string =>
-  match(outcome)
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => NOT_SENT)
+    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
     .exhaustive()
 
 /** What the pages of the sessions that were read so far amount to. */

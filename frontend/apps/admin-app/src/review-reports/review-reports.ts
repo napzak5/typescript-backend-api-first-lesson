@@ -1,3 +1,4 @@
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewReportReasonType,
   ModelsReviewReportResponse,
@@ -98,9 +99,6 @@ export type HandlingSays =
   /** The review was removed meanwhile: it is read anew, and the screen says it is gone */
   | { type: 'gone' }
 
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-
 /** What follows an attempt to dismiss a report. */
 export const afterDismissal = (outcome: Dismissal): HandlingSays =>
   match(outcome)
@@ -121,7 +119,7 @@ export const afterDismissal = (outcome: Dismissal): HandlingSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -146,7 +144,7 @@ export const afterReviewRemoval = (outcome: ReviewRemoval): HandlingSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

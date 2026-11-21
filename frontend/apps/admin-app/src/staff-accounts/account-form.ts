@@ -1,3 +1,4 @@
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonRoleType,
   ModelsStaffAccountResponse,
@@ -199,7 +200,7 @@ export type AfterDialog =
 
 const tooManyRequests = (): AfterDialog => ({
   type: 'again',
-  message: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+  message: TOO_MANY_REQUESTS_MESSAGE,
 })
 
 /** What the screen does with what the API answered to the revocation of the invitation of a member. */

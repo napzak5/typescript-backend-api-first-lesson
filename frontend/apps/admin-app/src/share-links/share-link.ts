@@ -1,3 +1,4 @@
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsShareLinkCreateRequest,
   ModelsShareLinkResponse,
@@ -264,10 +265,7 @@ export const afterRevoking = (
       () =>
         `このアカウントでは、この共有リンクを取り消せません。${SHARING_NOTE}`,
     )
-    .with(
-      { type: 'tooManyRequests' },
-      () => 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-    )
+    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
     .with(
       { type: 'failed' },
       () =>

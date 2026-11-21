@@ -1,3 +1,4 @@
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsServiceCategoryCreateRequest,
   ModelsServiceCategoryResponse,
@@ -229,8 +230,7 @@ export const afterCategoryRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

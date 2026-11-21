@@ -4,6 +4,7 @@ import {
   listingOf,
   UNREAD_TYPES,
   unreadMessageOf,
+  unsentMessageOf,
 } from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewReportRequest,
@@ -37,12 +38,7 @@ import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { OWN_PROFILE, readOwnProfile } from '../profile/profile-api'
 import { ReviewReport } from '../reviews/components/review-report/review-report'
-import {
-  afterHelpful,
-  afterReport,
-  readerOf,
-  readReport,
-} from '../reviews/reader-flow'
+import { afterReport, readerOf, readReport } from '../reviews/reader-flow'
 import { afterHelpfulCounted, afterReviewGone } from '../reviews/review-cache'
 import { reportReview, sayHelpful } from '../reviews/reviews-api'
 import { signInHrefFrom } from '../sign-in-path'
@@ -267,7 +263,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         })
         .with({ type: 'gone' }, () => reviewIsGone(review))
         .with({ type: 'tooManyRequests' }, { type: 'failed' }, (unsent) =>
-          notify({ tone: 'danger', message: afterHelpful(unsent) }),
+          notify({ tone: 'danger', message: unsentMessageOf(unsent) }),
         )
         .exhaustive()
     },

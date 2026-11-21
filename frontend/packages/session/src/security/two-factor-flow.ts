@@ -1,4 +1,9 @@
-import type { RefusedValue, Unsent } from '@beauty-salon-frontend/answers'
+import {
+  NOT_SENT_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+  type Unsent,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsAuthTwoFactorDisableRequest,
   ModelsUserResponse,
@@ -37,11 +42,6 @@ const CODE_MISSING =
 const CODE_TOO_LONG =
   'コードが長すぎます。認証アプリの 6 桁のコードか、バックアップコードを入力してください。'
 const CODE_WRONG = `コードが違うか、使ったことのあるバックアップコードです。${LOCK}`
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-const NOT_SENT =
-  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
-
 const textOf = (values: FormData, name: string): string => {
   const value = values.get(name)
 
@@ -150,10 +150,10 @@ export const afterRefusal = (outcome: FormRefusal, kind: CodeKind): FormSays =>
         : { message: undefined, errors: Object.fromEntries(said) }
     })
     .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT, errors: {} }))
+    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
     .exhaustive()
 
 /**

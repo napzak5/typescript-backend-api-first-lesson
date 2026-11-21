@@ -2,6 +2,7 @@ import {
   firstCursor,
   UNREAD_TYPES,
   unreadMessageOf,
+  unsentMessageOf,
 } from '@beauty-salon-frontend/answers'
 import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
 import {
@@ -39,7 +40,6 @@ import {
   stopTwoFactor,
 } from './security-api'
 import {
-  afterUnsent,
   cursorAfter,
   endsWithGoneCursor,
   type FormSays,
@@ -318,7 +318,7 @@ const Sessions = ({ timeZone }: PartProps) => {
           })
         })
         .with({ type: UNSENT }, (reason) =>
-          notify({ tone: 'danger', message: afterUnsent(reason) }),
+          notify({ tone: 'danger', message: unsentMessageOf(reason) }),
         )
         .exhaustive(),
   })
@@ -335,7 +335,7 @@ const Sessions = ({ timeZone }: PartProps) => {
             message: 'すべての端末でサインアウトしました。',
           }),
         )
-        .with({ type: UNSENT }, (reason) => setUnsent(afterUnsent(reason)))
+        .with({ type: UNSENT }, (reason) => setUnsent(unsentMessageOf(reason)))
         .exhaustive(),
   })
 

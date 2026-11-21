@@ -1,4 +1,7 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingRescheduleRequest,
   ModelsBookingResponse,
@@ -344,8 +347,7 @@ export const afterLineRemoval = (
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

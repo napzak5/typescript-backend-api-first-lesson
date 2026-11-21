@@ -1,3 +1,4 @@
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerResponse,
   ModelsCustomerVersionOperationType,
@@ -81,9 +82,6 @@ export type RemovalSays =
   /** The customer had left already: the page shows them as removed */
   | { type: 'gone' }
 
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-
 export const afterRemoval = (outcome: CustomerRemoval): RemovalSays =>
   match(outcome)
     .returnType<RemovalSays>()
@@ -100,7 +98,7 @@ export const afterRemoval = (outcome: CustomerRemoval): RemovalSays =>
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -140,7 +138,7 @@ export const afterRestoration = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'refused',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'refused',

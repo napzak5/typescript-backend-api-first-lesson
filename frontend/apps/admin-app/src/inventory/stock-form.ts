@@ -1,4 +1,7 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryCreateRequest,
   ModelsInventoryResponse,
@@ -324,8 +327,7 @@ export const afterStockRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

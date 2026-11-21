@@ -1,4 +1,7 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingCreateRequest,
   ModelsBookingServiceCreateRequest,
@@ -322,7 +325,7 @@ export const sourceNameOf = (source: string): string =>
 export type FormSays = { message: string | undefined; errors: FormErrors }
 
 export const TOO_MANY_REQUESTS: FormSays = {
-  message: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+  message: TOO_MANY_REQUESTS_MESSAGE,
   errors: {},
 }
 
@@ -477,8 +480,7 @@ export const afterRemoval = (outcome: BookingRemoval): RemovalSays =>
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -498,7 +500,7 @@ export const checkedSaysOf = (checks: readonly LineCheck[]): string => {
   const unread = indicesOf('failed')
   const taken = indicesOf('taken')
   if (indicesOf('tooManyRequests').length > 0) {
-    return 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
+    return TOO_MANY_REQUESTS_MESSAGE
   }
   if (unread.length > 0) {
     return `${linesNamed(unread)} の担当の空きを確かめられませんでした。通信の状態を確かめて、もう一度お試しください。`

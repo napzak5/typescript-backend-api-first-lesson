@@ -1,3 +1,4 @@
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type { ModelsCustomerDeletionRequestCreateRequest } from '@beauty-salon-frontend/api-client'
 import {
   momentNameAt,
@@ -68,9 +69,6 @@ export const erasureStateOf = (
     .exhaustive()
 }
 
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-
 /** What follows an attempt to take a request, or to call one off. */
 export type ErasureSays =
   /** Done: the dialog closes, the part shows the request, and the notification says what was done */
@@ -127,7 +125,7 @@ export const afterErasureAsk = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({
@@ -159,7 +157,7 @@ export const afterErasureCancel = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({
