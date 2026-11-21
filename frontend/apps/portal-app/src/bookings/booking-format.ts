@@ -3,7 +3,7 @@ import type {
   ModelsCustomerBookingResponse,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { BadgeProps } from '@beauty-salon-frontend/ui'
+import type { BadgeTone } from '@beauty-salon-frontend/ui'
 import { amountOf, timeOfDayAt, weekdayOf } from '../salons/salon-format'
 import { priceOf } from '../salons/salon-menu'
 
@@ -21,10 +21,7 @@ const STATUS_NAMES: Record<ModelsBookingStatusType, string> = {
 export const statusNameOf = (status: ModelsBookingStatusType): string =>
   STATUS_NAMES[status]
 
-const STATUS_TONES: Record<
-  ModelsBookingStatusType,
-  NonNullable<BadgeProps['tone']>
-> = {
+const STATUS_TONES: Record<ModelsBookingStatusType, BadgeTone> = {
   draft: 'neutral',
   pending: 'warning',
   confirmed: 'success',
@@ -35,9 +32,8 @@ const STATUS_TONES: Record<
 }
 
 /** The group the state belongs to: the colour of its badge. */
-export const statusToneOf = (
-  status: ModelsBookingStatusType,
-): NonNullable<BadgeProps['tone']> => STATUS_TONES[status]
+export const statusToneOf = (status: ModelsBookingStatusType): BadgeTone =>
+  STATUS_TONES[status]
 
 const STATUS_NOTES: Record<ModelsBookingStatusType, string | undefined> = {
   draft: 'サロンが、予約の内容を整えています。',

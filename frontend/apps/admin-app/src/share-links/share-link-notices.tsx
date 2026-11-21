@@ -8,10 +8,7 @@ type FileOfTheAddress = { salonId: string; attachmentId: string }
 /** The way back to the file of the address */
 export const ToTheFile = ({ salonId, attachmentId }: FileOfTheAddress) => (
   <p>
-    <ButtonLink
-      href={attachmentHrefOf(salonId, attachmentId)}
-      variant='secondary'
-    >
+    <ButtonLink href={attachmentHrefOf(salonId, attachmentId)}>
       ファイルへ戻る
     </ButtonLink>
   </p>

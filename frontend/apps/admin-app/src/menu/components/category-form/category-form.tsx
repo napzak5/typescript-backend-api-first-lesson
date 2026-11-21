@@ -93,7 +93,6 @@ export const CategoryForm = ({
       <TextArea
         label='説明'
         name='description'
-        rows={3}
         defaultValue={category?.description ?? undefined}
         error={errors['description']}
       />

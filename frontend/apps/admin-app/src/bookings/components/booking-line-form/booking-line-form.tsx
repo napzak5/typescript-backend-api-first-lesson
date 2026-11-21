@@ -52,7 +52,7 @@ export const BookingLineForm = ({
   ...form
 }: BookingLineFormProps) => (
   <Form {...form} errors={errors} submitLabel='施術明細を追加する'>
-    <FormPart name='足す明細' onChange={onValuesChange}>
+    <FormPart label='足す明細' onChange={onValuesChange}>
       <Select
         label='メニュー'
         name='serviceId'

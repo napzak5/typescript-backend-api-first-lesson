@@ -264,6 +264,23 @@ describe('checkStyleRules', () => {
     expect(broken).toEqual([])
   })
 
+  it('should count the classes that a module beside the components reads for them', () => {
+    // Act
+    const broken = rulesBrokenBy(
+      component(
+        'tone.module.css',
+        '.info { color: var(--color-accent); } .danger { color: var(--color-accent); }',
+      ),
+      component(
+        'tone.ts',
+        "import styles from './tone.module.css'\nexport const toneClass = { info: styles['info'], danger: styles['danger'] }",
+      ),
+    )
+
+    // Assert
+    expect(broken).toEqual([])
+  })
+
   it('should report a class name written as a string in the markup', () => {
     // Act
     const broken = rulesBrokenBy(
@@ -302,6 +319,7 @@ describe('the styles of the frontend', () => {
         'packages/theme/src/tokens.css',
         'packages/ui/src/components/button/button.module.css',
         'packages/ui/src/components/button/button.tsx',
+        'packages/ui/src/tone.ts',
         'packages/ui/src/components/app-shell/app-shell.module.css',
         'apps/admin-app/src/App.tsx',
       ]),

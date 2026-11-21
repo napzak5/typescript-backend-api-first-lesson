@@ -71,7 +71,7 @@ const StaffPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                   <UnreadNotice
                     message={unreadMessageOf(TITLE, reason)}
                     onRetry={() => void read.refetch()}
-                    retrying={read.isFetching}
+                    pending={read.isFetching}
                   />
                 ))
                 .exhaustive()}

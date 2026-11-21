@@ -10,29 +10,6 @@
   color: var(--color-text-muted);
 }
 
-/*
- * The symptoms and the notes break their lines, unlike the other cells,
- * and are never narrower than a few words: a column as narrow as a
- * character would make a row as tall as the text is long. They keep the
- * lines they were written in. They are narrower than the long texts of
- * the other tables, 10rem, for the seven columns to fit the page of a
- * laptop; on a narrower screen the table scrolls sideways.
- */
-.text {
-  display: block;
-  min-inline-size: 10rem;
-  white-space: pre-wrap;
-  overflow-wrap: break-word;
-}
-
-/* An allergen with a long name, such as a chemical, breaks its line too */
-.allergen {
-  display: block;
-  min-inline-size: 8rem;
-  white-space: normal;
-  overflow-wrap: break-word;
-}
-
 /* The link that changes an allergy above the button that removes it */
 .actions {
   display: grid;

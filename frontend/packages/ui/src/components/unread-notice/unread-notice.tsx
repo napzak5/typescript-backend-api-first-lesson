@@ -7,7 +7,7 @@ export type UnreadNoticeProps = {
   /** Asks the API again */
   onRetry: () => void
   /** The API is being asked again */
-  retrying: boolean
+  pending: boolean
 }
 
 /**
@@ -18,12 +18,12 @@ export type UnreadNoticeProps = {
 export const UnreadNotice = ({
   message,
   onRetry,
-  retrying,
+  pending,
 }: UnreadNoticeProps) => (
   <>
     <Alert tone='danger'>{message}</Alert>
     <p>
-      <Button onClick={onRetry} pending={retrying}>
+      <Button onClick={onRetry} pending={pending}>
         もう一度読み込む
       </Button>
     </p>

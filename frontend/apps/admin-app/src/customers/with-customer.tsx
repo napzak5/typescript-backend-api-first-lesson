@@ -63,9 +63,7 @@ export const CustomerNotFound = ({
       }
     />
     <p>
-      <ButtonLink href={customersHrefOf(salon.id)} variant='secondary'>
-        顧客台帳へ
-      </ButtonLink>
+      <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
     </p>
   </>
 )
@@ -136,7 +134,7 @@ export const WithCustomer = ({
         <UnreadNotice
           message={unreadMessageOf('お客様', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
       </>
     ))

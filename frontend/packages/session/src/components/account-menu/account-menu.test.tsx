@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -15,6 +18,17 @@ describe('AccountMenu', () => {
 
     // Assert
     expect(screen.getByText('hanako@example.com')).toHaveClass('user')
+  })
+
+  it('should keep the address out of sight, and still read, in a narrow header', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.SignedIn.run()
+
+    // Assert
+    expect(screen.getByText('hanako@example.com')).toHaveClass('hidden')
   })
 
   it('should show the whole address in the menu of a narrow screen, above buttons as high as its links', async () => {

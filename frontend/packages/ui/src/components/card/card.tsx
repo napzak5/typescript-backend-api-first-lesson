@@ -1,6 +1,5 @@
 import { type ReactNode, type Ref, useId } from 'react'
 import { match } from 'ts-pattern'
-import { classNames } from '../../class-names'
 import styles from './card.module.css'
 
 type HeadingLevel = 2 | 3
@@ -9,7 +8,7 @@ export type CardProps = {
   /** The heading of the card; the card is a region of this name */
   title: string
   /** The level of the heading: 2 below the heading of the screen, 3 inside another card */
-  headingLevel?: HeadingLevel
+  headingLevel?: HeadingLevel | undefined
   /**
    * The heading, for a card that takes away what had the focus (a list that
    * is read anew, with the button that was pressed): the card moves the
@@ -19,7 +18,6 @@ export type CardProps = {
   /** What can be done with what the card holds: 「編集」, beside the heading where there is room and below it where there is not */
   actions?: ReactNode
   children: ReactNode
-  className?: string | undefined
 }
 
 /** A part of a screen that stands by itself, under its own heading. */
@@ -29,17 +27,13 @@ export const Card = ({
   headingRef,
   actions,
   children,
-  className,
 }: CardProps) => {
   const titleId = useId()
   // Takes the focus from the card, never from the Tab key
   const focus = headingRef === undefined ? undefined : -1
 
   return (
-    <section
-      className={classNames(styles['card'], className)}
-      aria-labelledby={titleId}
-    >
+    <section className={styles['card']} aria-labelledby={titleId}>
       <div className={styles['head']}>
         {match(headingLevel)
           .with(2, () => (

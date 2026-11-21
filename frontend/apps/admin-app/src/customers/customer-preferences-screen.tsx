@@ -166,9 +166,7 @@ const PreferencesToChange = ({ salon, customer }: PreferencesToChangeProps) => {
         <>
           <p>このお客様は、台帳から削除されました。</p>
           <p>
-            <ButtonLink href={customersHrefOf(salon.id)} variant='secondary'>
-              顧客台帳へ
-            </ButtonLink>
+            <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
           </p>
         </>
       ))
@@ -176,7 +174,7 @@ const PreferencesToChange = ({ salon, customer }: PreferencesToChangeProps) => {
         <UnreadNotice
           message={unreadMessageOf('好み設定', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
       ))
       .exhaustive()

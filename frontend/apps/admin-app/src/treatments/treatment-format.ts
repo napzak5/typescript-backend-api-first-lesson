@@ -5,7 +5,7 @@ import type {
   ModelsTreatmentMaterial,
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { SelectOption } from '@beauty-salon-frontend/ui'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { customerNameOf } from '../customers/customers-api'
 import type { TreatmentRemoval } from './treatments-api'
@@ -33,7 +33,7 @@ export const satisfactionNameOf = (satisfaction: number): string => {
 }
 
 /** The satisfactions a form offers, the highest first */
-export const SATISFACTION_OPTIONS: readonly SelectOption[] = SATISFACTIONS.map(
+export const SATISFACTION_OPTIONS: readonly ChoiceOption[] = SATISFACTIONS.map(
   ([value]) => ({ value: String(value), label: satisfactionNameOf(value) }),
 )
 

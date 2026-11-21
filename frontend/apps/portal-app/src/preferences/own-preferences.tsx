@@ -37,7 +37,7 @@ export const OwnPreferences = () => {
           <>
             <PreferencesDetails preferences={preferences} staff={staff} />
             <p>
-              <ButtonLink href='/mypage/preferences' variant='secondary'>
+              <ButtonLink href='/mypage/preferences'>
                 好みの設定を変更する
               </ButtonLink>
             </p>
@@ -52,7 +52,7 @@ export const OwnPreferences = () => {
           <UnreadNotice
             message={unreadMessageOf('好みの設定', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}

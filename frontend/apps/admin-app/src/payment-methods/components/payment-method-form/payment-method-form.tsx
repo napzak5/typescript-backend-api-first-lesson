@@ -72,7 +72,6 @@ export const PaymentMethodForm = ({
     <TextArea
       label='説明'
       name='description'
-      rows={3}
       defaultValue={method?.description ?? undefined}
       error={errors['description']}
     />

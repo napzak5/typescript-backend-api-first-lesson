@@ -69,7 +69,7 @@ export const ReviewReport = ({
       title='レビューを通報する'
       description='このレビューを、運営に通報します。通報の内容を読むのは運営だけで、レビューを書いたお客様には伝わりません。確かめが済むまで、レビューは掲載されたままです。'
       submitLabel='通報する'
-      tone='danger'
+      submitVariant='danger'
       message={message}
       errors={errors}
       pending={pending}
@@ -90,6 +90,7 @@ export const ReviewReport = ({
       <TextArea
         label='詳しい内容'
         name={DETAILS}
+        rows={4}
         maxLength={MAX_DETAILS_LENGTH}
         description={`どこが規則に反するかを、${MAX_DETAILS_LENGTH} 文字以内で書いてください。理由が「その他」のときは、必ず書いてください。`}
         error={errors[DETAILS]}

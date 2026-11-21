@@ -150,16 +150,6 @@
   font-weight: var(--font-weight-medium);
 }
 
-/* Out of sight until the keyboard reaches it */
-.skipLink:not(:focus-visible) {
-  inline-size: 1px;
-  block-size: 1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 @media (min-width: 40rem) {
   .header {
     padding-inline: var(--space-6);

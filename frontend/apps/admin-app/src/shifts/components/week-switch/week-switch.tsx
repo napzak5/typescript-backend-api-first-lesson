@@ -15,13 +15,13 @@ export const WeekSwitch = ({
   weekAfterHref,
 }: WeekSwitchProps) => (
   <nav className={styles['weekSwitch']} aria-label='シフトの週'>
-    <ButtonLink href={weekBeforeHref} variant='secondary' size='small'>
+    <ButtonLink href={weekBeforeHref} size='small'>
       前の週
     </ButtonLink>
-    <ButtonLink href={thisWeekHref} variant='secondary' size='small'>
+    <ButtonLink href={thisWeekHref} size='small'>
       今週
     </ButtonLink>
-    <ButtonLink href={weekAfterHref} variant='secondary' size='small'>
+    <ButtonLink href={weekAfterHref} size='small'>
       次の週
     </ButtonLink>
   </nav>

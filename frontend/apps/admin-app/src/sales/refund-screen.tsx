@@ -128,9 +128,7 @@ const Unrefundable = ({ why, back }: { why: string; back: string }) => (
   <>
     <p>{why}</p>
     <p>
-      <ButtonLink href={back} variant='secondary'>
-        売上の内容へ
-      </ButtonLink>
+      <ButtonLink href={back}>売上の内容へ</ButtonLink>
     </p>
   </>
 )

@@ -4,9 +4,7 @@ import { attachmentsHrefOf } from '../navigation'
 /** The way back to the files of the salon */
 export const ToTheFiles = ({ salonId }: { salonId: string }) => (
   <p>
-    <ButtonLink href={attachmentsHrefOf(salonId)} variant='secondary'>
-      ファイルの一覧へ
-    </ButtonLink>
+    <ButtonLink href={attachmentsHrefOf(salonId)}>ファイルの一覧へ</ButtonLink>
   </p>
 )
 

@@ -65,7 +65,7 @@ export const SaleTable = ({
         header: '支払い',
         cell: ({ isVoid, paymentStatus }) =>
           isVoid ? (
-            <Badge tone='neutral'>取り消し</Badge>
+            <Badge>取り消し</Badge>
           ) : (
             <Badge tone={paymentStatusToneOf(paymentStatus)}>
               {paymentStatusNameOf(paymentStatus)}

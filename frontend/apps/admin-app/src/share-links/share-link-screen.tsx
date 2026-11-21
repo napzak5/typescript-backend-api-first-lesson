@@ -199,7 +199,7 @@ const ShareLinkPart = ({
               void file.refetch()
               void link.refetch()
             }}
-            retrying={file.isFetching || link.isFetching}
+            pending={file.isFetching || link.isFetching}
           />
         </>
       ))

@@ -59,7 +59,7 @@ export const StartScreen = ({
         <UnreadNotice
           message={unreadMessageOf('所属するサロン', reason)}
           onRetry={readAgain}
-          retrying={readingAgain}
+          pending={readingAgain}
         />
       </>
     ))

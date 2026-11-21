@@ -1,4 +1,10 @@
-import { Button, ButtonLink, useInMenu } from '@beauty-salon-frontend/ui'
+import {
+  Button,
+  ButtonLink,
+  useInMenu,
+  useWideScreen,
+  VisuallyHidden,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { Session } from '../../use-session'
 import styles from './account-menu.module.css'
@@ -26,7 +32,9 @@ export type AccountMenuProps = {
  *
  * In the menu of a narrow screen it has the width of the screen: the
  * address is shown whole, and the buttons are as high as the links above
- * them, for a finger.
+ * them, for a finger. A narrow header (one without a menu) has room for
+ * the name and for the way out only: there the address is out of sight,
+ * and still read.
  */
 export const AccountMenu = ({
   session,
@@ -35,14 +43,19 @@ export const AccountMenu = ({
   onSignOut,
 }: AccountMenuProps) => {
   const inMenu = useInMenu()
+  const wide = useWideScreen()
   const size = inMenu ? 'medium' : 'small'
 
   return match(session)
     .with({ type: 'signedIn' }, ({ user }) => (
       <>
-        <span className={inMenu ? styles['userInMenu'] : styles['user']}>
-          {user.email}
-        </span>
+        {inMenu || wide ? (
+          <span className={inMenu ? styles['userInMenu'] : styles['user']}>
+            {user.email}
+          </span>
+        ) : (
+          <VisuallyHidden>{user.email}</VisuallyHidden>
+        )}
         {securityHref !== undefined && (
           <ButtonLink href={securityHref} variant='quiet' size={size}>
             アカウントの安全
@@ -55,7 +68,7 @@ export const AccountMenu = ({
     ))
     .with({ type: 'signedOut' }, () =>
       signInHref === undefined ? null : (
-        <ButtonLink href={signInHref} variant='secondary' size='small'>
+        <ButtonLink href={signInHref} size='small'>
           サインイン
         </ButtonLink>
       ),

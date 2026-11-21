@@ -22,7 +22,7 @@ export const DescriptionList = ({ items, className }: DescriptionListProps) => (
     {items.map((item) => (
       <div key={item.term} className={styles['item']}>
         <dt className={styles['term']}>{item.term}</dt>
-        <dd className={styles['description']}>{item.description}</dd>
+        <dd>{item.description}</dd>
       </div>
     ))}
   </dl>

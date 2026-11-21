@@ -181,7 +181,7 @@ const VisitToReview = () => {
           <EmptyState
             title='この予約は、まだ来店が済んでいません'
             description='レビューは、来店が済んだ予約について書けます。'
-            action={
+            actions={
               <ButtonLink href={`/bookings/${bookingId}`}>
                 予約の内容を見る
               </ButtonLink>
@@ -192,7 +192,7 @@ const VisitToReview = () => {
           <EmptyState
             title='この来店のレビューは、投稿済みです'
             description='レビューは、来店 1 回につき 1 件です。投稿したレビューは、変更できます。'
-            action={
+            actions={
               <ButtonLink href={`${OWN_REVIEWS}/${review.id}`}>
                 レビューを変更する
               </ButtonLink>
@@ -203,21 +203,21 @@ const VisitToReview = () => {
           <EmptyState
             title='このサロンは、掲載を終えています'
             description='掲載を終えたサロンのレビューは、書けません。'
-            action={TO_THE_VISITS}
+            actions={TO_THE_VISITS}
           />
         ))
         .with({ type: 'notFound' }, () => (
           <EmptyState
             title='予約が見つかりません'
             description='アドレスが正しいか、お確かめください。ほかのアカウントで入れた予約のレビューは、書けません。'
-            action={TO_THE_VISITS}
+            actions={TO_THE_VISITS}
           />
         ))
         .with({ type: UNREAD }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('来店の内容', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}

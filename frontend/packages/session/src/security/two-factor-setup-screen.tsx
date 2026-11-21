@@ -237,7 +237,7 @@ export const TwoFactorSetupScreen = ({
           <UnreadNotice
             message={unreadMessageOf('アカウント', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}

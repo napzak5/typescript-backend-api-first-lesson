@@ -41,9 +41,7 @@ const TITLE = 'ログインアカウント'
 /** The way out of a screen that shows no account */
 const ToTheStart = () => (
   <p>
-    <ButtonLink href='/' variant='secondary'>
-      トップへ戻る
-    </ButtonLink>
+    <ButtonLink href='/'>トップへ戻る</ButtonLink>
   </p>
 )
 
@@ -243,7 +241,7 @@ const AccountPage = ({ userId }: AccountPageProps) => {
           <UnreadNotice
             message={unreadMessageOf('アカウント', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}

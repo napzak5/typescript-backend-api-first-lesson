@@ -109,6 +109,18 @@ export const edgesOf = (element: Locator): Promise<Edges> =>
     }
   })
 
+/**
+ * How far a table scrolls sideways inside its frame, in pixels: 0 when it
+ * fits. A table that fits has a frame that is no region, so it is found by
+ * its own name.
+ */
+export const sidewaysScrollOf = (table: Locator): Promise<number> =>
+  table.evaluate((shown) => {
+    const frame = shown.parentElement
+
+    return frame === null ? Number.NaN : frame.scrollWidth - frame.clientWidth
+  })
+
 /** Whether each corner of the window, a pixel inside it, is under the open dialog or its overlay */
 export const cornersUnderTheDialog = (page: Page): Promise<boolean[]> =>
   page.evaluate(() => {

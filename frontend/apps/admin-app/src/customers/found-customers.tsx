@@ -53,7 +53,7 @@ export const FoundCustomers = ({ keyword, choose }: FoundCustomersProps) => {
       <UnreadNotice
         message={unreadMessageOf('お客様', reason)}
         onRetry={() => void found.refetch()}
-        retrying={found.isFetching}
+        pending={found.isFetching}
       />
     ))
     .with({ type: 'listed', items: [] }, () => (

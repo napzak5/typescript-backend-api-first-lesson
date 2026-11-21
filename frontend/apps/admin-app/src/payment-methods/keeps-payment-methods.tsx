@@ -27,7 +27,7 @@ export const PaymentMethodsForbidden = ({
       このアカウントでは、支払い方法を変えられません。支払い方法を変えられるのは、サロンのオーナーとマネージャーと、管理者です。
     </p>
     <p>
-      <ButtonLink href={paymentMethodsHrefOf(salon.id)} variant='secondary'>
+      <ButtonLink href={paymentMethodsHrefOf(salon.id)}>
         支払い方法へ戻る
       </ButtonLink>
     </p>
@@ -46,7 +46,7 @@ export const PaymentMethodNotFound = ({
       description='アドレスが正しいか、お確かめください。削除した支払い方法は、表示できません。'
     />
     <p>
-      <ButtonLink href={paymentMethodsHrefOf(salon.id)} variant='secondary'>
+      <ButtonLink href={paymentMethodsHrefOf(salon.id)}>
         支払い方法へ
       </ButtonLink>
     </p>

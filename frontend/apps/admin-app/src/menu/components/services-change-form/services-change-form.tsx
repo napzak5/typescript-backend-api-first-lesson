@@ -68,7 +68,7 @@ export const ServicesChangeForm = ({
 
   return (
     <Form {...form} errors={errors}>
-      <FormPart name='サービス'>
+      <FormPart label='サービス'>
         <CheckboxGroup
           label='変えるサービス'
           name='serviceIds'
@@ -78,8 +78,8 @@ export const ServicesChangeForm = ({
         />
       </FormPart>
       <FormPart
-        name='変える項目'
-        note='選んだサービスのすべてを、同じ値にします。「変えない」のままの項目は、サービスごとに今のままです。'
+        label='変える項目'
+        description='選んだサービスのすべてを、同じ値にします。「変えない」のままの項目は、サービスごとに今のままです。'
       >
         <Select
           label='カテゴリー'

@@ -4,7 +4,7 @@ import type {
   ModelsProductResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { SelectOption } from '@beauty-salon-frontend/ui'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { UNLISTED_STAFF } from '../bookings/booking-format'
 import { NOT_RECORDED } from '../staff/staff-format'
@@ -93,7 +93,7 @@ export const recordedKindsOf = (
   ORDER.filter((type) => keeps || !KINDS[type].forKeepers)
 
 /** Every kind, to narrow the history to one */
-export const MOVEMENT_TYPE_OPTIONS: readonly SelectOption[] = ORDER.map(
+export const MOVEMENT_TYPE_OPTIONS: readonly ChoiceOption[] = ORDER.map(
   (type) => ({ value: type, label: KINDS[type].name }),
 )
 

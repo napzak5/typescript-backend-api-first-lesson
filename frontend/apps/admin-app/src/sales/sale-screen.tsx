@@ -220,10 +220,7 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
             title='レシート'
             actions={
               noReceipt === undefined && (
-                <ButtonLink
-                  href={receiptHrefOf(salon.id, sale.id)}
-                  variant='secondary'
-                >
+                <ButtonLink href={receiptHrefOf(salon.id, sale.id)}>
                   レシートを出す
                 </ButtonLink>
               )
@@ -282,7 +279,7 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
           void customer.refetch()
           void staff.refetch()
         }}
-        retrying={customer.isFetching || staff.isFetching}
+        pending={customer.isFetching || staff.isFetching}
       />
     ))
     .exhaustive()
@@ -309,7 +306,6 @@ export const SaleScreen = () => {
                     from: sale.saleDate,
                     to: sale.saleDate,
                   }).toString()}`}
-                  variant='secondary'
                 >
                   この日の売上へ
                 </ButtonLink>

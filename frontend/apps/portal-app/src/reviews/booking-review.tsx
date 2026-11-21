@@ -2,6 +2,7 @@ import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
   Card,
+  EmptyState,
   LoadingIndicator,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
@@ -50,30 +51,28 @@ export const BookingReview = ({ bookingId, salon }: BookingReviewProps) => {
             <>
               <ReviewContent review={review} timezone={salon.timezone} />
               <p>
-                <ButtonLink
-                  href={`/mypage/reviews/${review.id}`}
-                  variant='secondary'
-                >
+                <ButtonLink href={`/mypage/reviews/${review.id}`}>
                   レビューを変更する
                 </ButtonLink>
               </p>
             </>
           ))
           .with({ type: 'none' }, () => (
-            <>
-              <p>この来店のレビューは、まだ書かれていません。</p>
-              <p>
+            <EmptyState
+              kind='part'
+              title='この来店のレビューは、まだ書かれていません。'
+              actions={
                 <ButtonLink href={`/bookings/${bookingId}/review`}>
                   レビューを書く
                 </ButtonLink>
-              </p>
-            </>
+              }
+            />
           ))
           .with({ type: UNREAD }, (reason) => (
             <UnreadNotice
               message={unreadMessageOf('レビュー', reason)}
               onRetry={() => void read.refetch()}
-              retrying={read.isFetching}
+              pending={read.isFetching}
             />
           ))
           .exhaustive()

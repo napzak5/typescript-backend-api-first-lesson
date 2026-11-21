@@ -191,9 +191,7 @@ export const OperationsScreen = () =>
       <PageHeader title={TITLE} />
       <p>{ADMINISTRATORS_ONLY}</p>
       <p>
-        <ButtonLink href='/' variant='secondary'>
-          トップへ戻る
-        </ButtonLink>
+        <ButtonLink href='/'>トップへ戻る</ButtonLink>
       </p>
     </>
   )

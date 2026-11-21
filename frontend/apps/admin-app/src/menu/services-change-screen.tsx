@@ -157,7 +157,7 @@ const ChangePart = ({ salon }: ChangePartProps) => {
             <UnreadNotice
               message={unreadMessageOf('メニュー', reason)}
               onRetry={readAgain}
-              retrying={categories.isFetching || services.isFetching}
+              pending={categories.isFetching || services.isFetching}
             />
           ),
         )

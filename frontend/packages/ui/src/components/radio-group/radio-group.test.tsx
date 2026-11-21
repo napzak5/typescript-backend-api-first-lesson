@@ -156,37 +156,6 @@ describe('RadioGroup', () => {
     expect(screen.getByText('必須')).toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('should not let an unavailable option be chosen', async () => {
-    // Arrange
-    await stories.WithUnavailableOption.run()
-    const unavailable = screen.getByRole('radio', {
-      name: '電子マネー（この店舗では使えません）',
-    })
-
-    // Act
-    await userEvent.click(unavailable)
-
-    // Assert
-    expect(unavailable).toBeDisabled()
-    expect(unavailable).not.toBeChecked()
-    expect(screen.getByRole('radio', { name: '現金' })).toBeEnabled()
-  })
-
-  it('should not take a choice while it is disabled', async () => {
-    // Arrange
-    await stories.Disabled.run()
-
-    // Act
-    await userEvent.click(screen.getByRole('radio', { name: '電子マネー' }))
-
-    // Assert
-    for (const radio of screen.getAllByRole('radio')) {
-      expect(radio).toBeDisabled()
-    }
-    expect(screen.getByRole('radio', { name: '現金' })).toBeChecked()
-    expect(stories.Disabled.args.onChange).not.toHaveBeenCalled()
-  })
-
   it('should place its options one below the other unless it is asked for columns', async () => {
     // Act
     await stories.Default.run()
@@ -215,18 +184,5 @@ describe('RadioGroup', () => {
         .map((radio) => radio.getAttribute('value')),
     ).toEqual(stories.InColumns.args.options?.map((option) => option.value))
     expect(within(group).getAllByRole('radio')).toHaveLength(14)
-  })
-
-  it('should keep a class its container gives it', async () => {
-    // Act
-    await stories.Default.run({
-      args: { ...stories.Default.args, className: 'in-form' },
-    })
-
-    // Assert
-    expect(screen.getByRole('radiogroup', { name: LABEL })).toHaveClass(
-      'field',
-      'in-form',
-    )
   })
 })

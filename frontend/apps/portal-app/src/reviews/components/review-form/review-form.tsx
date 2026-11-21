@@ -1,10 +1,10 @@
 import {
+  type ChoiceOption,
   Form,
   FormPart,
   type FormProps,
   RadioGroup,
   Select,
-  type SelectOption,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -31,7 +31,7 @@ type RatedStaff =
    * A new review: one of these can be chosen, or nobody. With none of them
    * the form has no control, and says why
    */
-  | { type: 'choice'; options: readonly SelectOption[] }
+  | { type: 'choice'; options: readonly ChoiceOption[] }
   /**
    * A review that is written rates this member, which cannot be changed.
    * `name` is `null` when their salon no longer shows them
@@ -50,7 +50,7 @@ export type ReviewFormProps = Pick<
 }
 
 /** The ratings there are, the best first, each with the word for it */
-const RATINGS: readonly SelectOption[] = [
+const RATINGS: readonly ChoiceOption[] = [
   { value: '5', label: '5（とても満足）' },
   { value: '4', label: '4（満足）' },
   { value: '3', label: '3（ふつう）' },
@@ -94,7 +94,7 @@ export const ReviewForm = ({
       <p className={styles['note']}>
         レビューは、サロンのページに掲載され、誰でも読めます。
       </p>
-      <FormPart name='評価'>
+      <FormPart label='評価'>
         <RadioGroup
           label='総合の評価'
           name={OVERALL_RATING}
@@ -150,7 +150,7 @@ export const ReviewForm = ({
           ))}
         </div>
       </FormPart>
-      <FormPart name='感想'>
+      <FormPart label='感想'>
         <TextField
           label='タイトル'
           name={TITLE}
@@ -170,7 +170,6 @@ export const ReviewForm = ({
         <TextArea
           label='写真の URL'
           name={IMAGES}
-          rows={3}
           description={`写真のアドレスを、1 行に 1 つずつ、${MAX_IMAGES} 個まで書けます。`}
           defaultValue={entered.imageUrls}
           error={errors[IMAGES]}

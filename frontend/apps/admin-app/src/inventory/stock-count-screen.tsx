@@ -158,7 +158,7 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             <UnreadNotice
               message={unreadMessageOf('在庫の行', reason)}
               onRetry={() => void rows.refetch()}
-              retrying={rows.isFetching}
+              pending={rows.isFetching}
             />
           ),
         )
@@ -172,7 +172,7 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             <UnreadNotice
               message={unreadMessageOf('商品', reason)}
               onRetry={() => void products.refetch()}
-              retrying={products.isFetching}
+              pending={products.isFetching}
             />
           ),
         )
@@ -180,7 +180,7 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <EmptyState
             title='数える在庫の行がありません'
             description='在庫の行を足すと、ここで数えられます。'
-            action={
+            actions={
               <ButtonLink href={stockEntryHrefOf(salon.id)} variant='primary'>
                 在庫の行を足す
               </ButtonLink>
@@ -216,7 +216,7 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <ButtonLink href={inventoryHrefOf(salon.id)} variant='primary'>
             在庫へ
           </ButtonLink>{' '}
-          <Button variant='secondary' onClick={() => setCounted(undefined)}>
+          <Button onClick={() => setCounted(undefined)}>
             続けて棚卸しする
           </Button>
         </p>

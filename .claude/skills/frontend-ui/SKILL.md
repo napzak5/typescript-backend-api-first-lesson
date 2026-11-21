@@ -197,7 +197,20 @@ nobody reads is removed.
   `<name>.stories.tsx`, `<name>.test.tsx`. File names are kebab-case.
 - `export const Name = (props: NameProps) => …`, with `NameProps` exported.
   A component that wraps a native element extends `ComponentProps<'element'>`,
-  passes the remaining props on and keeps a `className` it is given.
+  passes the remaining props on and keeps a `className` it is given. A
+  component with props of its own takes no `className`: what holds it
+  places it, and its props are its looks.
+- An optional prop is `?: T | undefined`, so a caller hands on a value that
+  may be missing as it is (`exactOptionalPropertyTypes`). The same thing
+  has the same name in every component: `label` names a control or a group
+  of them, `description` says more of it, `pending` is an attempt on its
+  way, `actions` what can be done from there, `tone` the state something
+  says (a `Tone`: `info`, `success`, `warning`, `danger`, one stylesheet
+  of colours in `tone.module.css`), `variant` the look of a button.
+- A default is what most callers want, and a value equal to it is not
+  written (`variant='secondary'`). What every caller gives is required (the
+  `label` of `LoadingIndicator`). An option that no caller uses is removed
+  with its story and its test.
 - The element comes before ARIA: `button`, `a`, `label` with `input`, `table`,
   `dialog`, `nav`. A control has an accessible name. What a sighted user sees
   as a state is also an attribute (`aria-busy`, `aria-invalid`,
@@ -212,8 +225,8 @@ nobody reads is removed.
 - `@beauty-salon-frontend/ui` knows React and nothing else of the system: no
   API client, no router, no query library, no text of a business domain. Text
   comes in through props. The text of the interface is Japanese; the few
-  words that belong to a component itself are in it (必須, 閉じる,
-  本文へ移動, 読み込み中, メインメニュー).
+  words that belong to a component itself are in it (必須, 閉じる, 戻る,
+  本文へ移動, メインメニュー, ほかの操作).
 - A component that one application uses stays in that application, with the
   same four files, in `src/<area>/components/<name>/`
   (`frontend/apps/portal-app/src/salons/components/`). It only shows: what
@@ -241,17 +254,17 @@ nobody reads is removed.
 |-----------|------------|
 | `TextField` | One line. `type` is `text` (the default), `email`, `password`, `tel`, `url`, `search`, `number`, `date`, `time` or `datetime-local`. `autoComplete` is required: the name HTML gives the value (`email`, `tel`, `family-name`, `bday`), or `off` for a value the browser knows nothing of (a tag, a note, the day of a booking) |
 | `PasswordField` | A password that a person chooses. Its owner may look at it (「パスワードを表示する」). `autoComplete` is required: `new-password`, `current-password`, or `off` for one that belongs to no account |
-| `TextArea` | Several lines |
+| `TextArea` | Several lines: three in sight, `rows` for more |
 | `Select` | One of a list. `placeholder` adds a first option without a value |
 | `RadioGroup` | One of a few choices that should all be in sight. `layout='columns'` for many short ones (the times of a day): as many columns as fit, and the arrow keys go through them in the order they are read. Choices with long labels (the payment methods with what they take) stay one below the other: a label does not fit a column at 390px |
 | `Checkbox` | One thing that is so or not so. `labelHidden` keeps the label for a screen reader alone: the checkbox of a row of a table, whose row says what it is about (「山田 花子 様を選ぶ」) |
-| `CheckboxGroup` | Several of a few choices. The chosen values are sent under one name (`formData.getAll(name)`). `layout='columns'` for many short ones |
+| `CheckboxGroup` | Several of a few choices. The chosen values are sent under one name (`formData.getAll(name)`). `layout='columns'` for many short ones. It is a `fieldset`, where `RadioGroup` is a `radiogroup`: a group of checkboxes is never required as a whole, and one of radio buttons says so (`aria-required`) |
 | `FileField` | A file to choose (`accept` names its kinds). The screen reads the chosen file itself (`onChange`, `event.currentTarget.files`); it is not sent with the form. Its button looks like a secondary button |
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
 | `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it and what else can be done (`actions`): one below the other and as wide as the form below 40rem, in a row from there |
-| `FormPart` | A part of a long form under its name (a `fieldset` and its `legend`), with what it says of all its controls (`note`) before them, in the look of a description. What else a `fieldset` takes (`disabled`, `onChange`) is handed to it |
+| `FormPart` | A part of a long form under its name (`label`: a `fieldset` and its `legend`), with what it says of all its controls (`description`, which the `fieldset` is described by) before them, in the look of a description. What else a `fieldset` takes (`disabled`, `onChange`) is handed to it |
 | `FieldRow` | Two controls that are read together (a name and its kana, the start and the end), or three (`columns={3}`: the prices of a product), side by side from 40rem and one below the other below it. Each keeps its height, so their upper edges stay in line when one has a description |
-| `FormDialog` | A question answered with a form (a cancellation and its reason, a tag for the chosen customers): a `Dialog` whose content is the form, with 「戻る」 and the button that sends it (`submitLabel`, `tone='danger'` for what cannot be undone) among its actions. Enter in a control sends it, nothing is sent again while `pending`, and the focus goes to the first control with an error. `answer` is what the form brought when it is to be read before the dialog closes (the codes issued, the report made before): it takes the place of the form, with 「閉じる」 alone, and takes the focus |
+| `FormDialog` | A question answered with a form (a cancellation and its reason, a tag for the chosen customers): a `Dialog` whose content is the form, with 「戻る」 and the button that sends it (`submitLabel`, `submitVariant='danger'` for what cannot be undone) among its actions. Enter in a control sends it, nothing is sent again while `pending`, and the focus goes to the first control with an error. `answer` is what the form brought when it is to be read before the dialog closes (the codes issued, the report made before): it takes the place of the form, with 「閉じる」 alone, and takes the focus |
 
 ```tsx
 <TextField
@@ -281,6 +294,10 @@ nobody reads is removed.
 - **The controls of the browser are used**: `select`, `input type='date'`,
   radio buttons. They bring the keyboard, the screen reader and the pickers of
   a phone. No dropdown or date picker is built by hand.
+- **The choices of `Select`, `RadioGroup` and `CheckboxGroup`** are
+  `ChoiceOption`s (`{ value, label }`), and the two groups are laid out by
+  a `ChoiceLayout` (`stack` or `columns`). A choice that may not be made
+  is not offered, rather than offered and disabled.
 - **`autoComplete`** is given for what a browser can fill in: `name`, `email`,
   `tel`, `current-password`, `new-password`, `one-time-code`. The address a
   person signs in with is `username`, so that a password manager finds the
@@ -507,10 +524,14 @@ list, `salon-screen.tsx` for a record with its parts).
   time zone of the salon and not of the browser; what a visitor is not
   offered is left out; an address of the web becomes a link when it is
   `http` or `https`. They are tested without a screen.
-- **What a salon wrote may be long, and in any language.** It wraps
-  (`overflow-wrap: anywhere`), and a pair of a name and a long value keeps
-  its two columns at every width (`salon-hours.module.css`) where a table
-  would scroll.
+- **What somebody wrote may be long, and in any language.** A word
+  longer than the line breaks where the line ends, in every component and
+  on every screen: the page says so once (`overflow-wrap: anywhere` on
+  `body`, in `global.css` of the theme), and no stylesheet says it again.
+  A pair of a name and a long value keeps its two columns at every width
+  (`salon-hours.module.css`) where a table would scroll. The browser test
+  of narrow screens gives a salon a name of one long word, and opens the
+  screens that show it.
 - **The components of a screen only show** (`components/`): they take the
   models of the API as props, have the four files and a story for every
   state, and know neither the router nor the query. A link gets its
@@ -693,7 +714,7 @@ none).
   just loaded.
 - **The parts of a long form are `FormPart`s**, a `fieldset` with a
   `legend` (a `div` with `role='group'` does not pass the lint). What a
-  part says of all its controls is its `note`. Controls that share a row
+  part says of all its controls is its `description`. Controls that share a row
   are a `FieldRow`, side by side from the width at which two of them fit
   (`min-width: 40rem`).
 - **A property inside another is named by its path** (`preferences.notes`),
@@ -1548,10 +1569,10 @@ and `customer-export.ts` for the ledger and a customer saved as files).
   are a table of the item, both values and the value after the merge,
   which the screen works out by the rules of the API (`mergedLedgerOf`),
   and the items of the ledger share their words with the page of the
-  customer (`comparedItemsOf` of `ledger-items.tsx`). Unlike the cells
-  of other tables, its values break their lines, each at least 10rem
-  wide (a block of the module in the cell): notes and addresses are
-  long, and the value after the merge is the column to be seen. What the API
+  customer (`comparedItemsOf` of `ledger-items.tsx`). Its values are
+  columns of text that keep their lines (`wrap: 'lines'`): notes and
+  addresses are long, and the value after the merge is the column to be
+  seen. What the API
   refuses a merge for is read with the other (a pending request of
   erasure, the charts) and said in full instead of the button. Two
   customers of one name are told apart by their address of mail
@@ -1620,14 +1641,11 @@ The charts of the admin application are the example to read:
   by the number of the row, and its errors are hidden once a row is
   taken away. A list the API puts in place of the one it holds is sent
   whole when it was changed, and left out when it was not.
-- **A long text in a cell breaks its lines in a block at least 12rem
-  wide** (`.text` of `ChartTable`, `.notes` of `ChartRecord`), as the
-  values of the merge do: a cell whose text may break without a least
-  width is as narrow as a character in a table that scrolls, and its
-  row as tall as the text is long. A table of seven columns keeps its
-  long texts at least 10rem wide and lets its row header break its line
-  at 8rem, with the actions of a row one below the other (`AllergyList`):
-  it fits the page from 1180px on, and scrolls on a narrower screen.
+- **A long text in a cell is a column of text** (`wrap` of the column
+  of `Table`: `words` for the products of `ChartTable`, `lines` for the
+  notes of `ChartRecord`), as the values of the merge are. A table of
+  seven columns (`AllergyList`) has the actions of a row one below the
+  other, and scrolls on a screen narrower than a laptop.
 - **A list of records that name their customer by ID reads the customers
   of the page at once** (`readCustomers` of `customers-api.ts`), and a
   customer who left the ledger between the two reads is said to have
@@ -2350,14 +2368,15 @@ A share link opens a file for somebody who has no account
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (`actions` always in sight, `otherActions` in the same row from 40rem and in a sheet behind 「ほかの操作」 below it) |
 | `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are; below it they follow each other like words, and go on in the next line where the card ends: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
 | `DescriptionList` | The names and values of one record, side by side on every screen, one line for a value. The names share a column as wide as the longest of them, and never more than two fifths of the list: a longer name goes on in a second line |
-| `Badge` | The state of a record, in a word |
+| `Badge` | The state of a record, in a word, in the colours of a `Tone`, or `neutral` (`BadgeTone`) |
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends |
 | `Rating` | A rating out of five: the stars, the number, and how many gave it |
 | `QrCode` | A QR code drawn from its text, as an image with a name: what an authenticator app reads. The text stays in the browser |
 | `Table` | A list of records. Its first column heads each row, or the one `rowHeader` names: the name of a customer, when a column of checkboxes comes first |
-| `EmptyState` | What is shown where content would be, while there is none |
-| `LoadingIndicator` | What is shown where content will be, while it loads |
-| `UnreadNotice` | What is shown where content could not be read: the message the application words (`unreadMessageOf(what, reason)`), and the button that reads again |
+| `EmptyState` | What is shown where content would be, while there is none: a frame of its own in the place of the content of a page, and `kind='part'` quietly inside a card, with no frame (the photos of a treatment, the bill of a booking). `actions` lead on from there |
+| `LoadingIndicator` | What is shown where content will be, while it loads. Its `label` says what is read |
+| `UnreadNotice` | What is shown where content could not be read: the message the application words (`unreadMessageOf(what, reason)`), and the button that reads again (`pending` while it reads) |
+| `VisuallyHidden` | Words that assistive technology reads and the eye does not see, where what is around them shows the same (the address of the account, in a narrow header). Its stylesheet holds the one rule of the frontend that hides from the eye; the components of `ui` use its class (the caption of a table, the label of a checkbox, the link that skips to the content) |
 | `FilterForm`, `useFilterValues` | The conditions of a list, above it: the controls in sight, the other conditions (in a sheet on a narrow screen), the button that sends them and the link that takes them away; and the values its controls show, which follow the address |
 | `Dialog` | A question or a small form that has to be dealt with first: a sheet on the bottom edge of a narrow screen, a box in the middle of a wider one; `size='wide'` for a table to choose from; `kind='menu'` for links and buttons to choose from, which asks nothing |
 | `NotificationProvider`, `useNotifications` | The result of what the user just did |
@@ -2452,9 +2471,15 @@ A share link opens a file for somebody who has no account
 - **`Table`**: `caption` is its name (`captionHidden` when a heading above
   says the same). The first column names the record; its cells are the headers
   of their rows. `align: 'end'` for numbers and amounts. Cells stay on one
-  line, so a table that is wider than the screen scrolls inside its frame,
-  and that frame takes the focus of the keyboard: this is the one lint rule
-  the package switches off, in place, with the reason.
+  line, but those of a column of text (`wrap`): `words` for names and
+  sentences, which break between their words, and `lines` for what
+  somebody wrote in lines, which keeps them. Such a cell is at least
+  10rem and at most 28rem wide: as narrow as a character, a row would be
+  as tall as its text is long. A table that is wider than its room
+  scrolls inside its frame, which is then a region of the name of the
+  table that the Tab key reaches (`useScrollsSideways`, which measures it
+  with a `ResizeObserver`); a table that fits is neither, so that a page
+  of tables adds no stops to the Tab key.
 - **`Dialog`** is the `dialog` element opened with `showModal()`: the browser
   keeps the focus inside, makes the page behind inert, closes on Escape and
   gives the focus back. While it is open the page behind it does not
@@ -2477,9 +2502,7 @@ A share link opens a file for somebody who has no account
   (`position: sticky`). Give the actions in the order they are read, the one
   that changes nothing first (「戻る」, then 「予約を取り消す」): the focus
   goes to the first. In a dialog with a form, the first control of the form
-  stands before the actions and takes the focus. The description breaks
-  a word that is longer than the dialog: it may name what somebody else
-  wrote. `onClose` is called once whenever
+  stands before the actions and takes the focus. `onClose` is called once whenever
   it has closed; set `open` to false there. The Escape key is heard at
   `cancel`, at once: the browser fires `close` a task later, after which a
   press of the same button would find the dialog still open for the

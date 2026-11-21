@@ -7,18 +7,11 @@
   gap: var(--space-2);
 }
 
-/*
- * What an alert is of, above the expiry of a stock row. Unlike the other
- * cells it breaks its lines, and is never narrower than a few words: the
- * names of the products are long, and the table fits the page of a laptop
- */
+/* What an alert is of, above the expiry of a stock row */
 .subject {
   display: grid;
   justify-items: start;
   gap: var(--space-1);
-  min-inline-size: 12rem;
-  white-space: normal;
-  overflow-wrap: break-word;
 }
 
 /* The stock, above what the stock of a product is held against */
@@ -36,19 +29,16 @@
 
 /*
  * Who saw to an alert and when, above the notes; or that nobody did, above
- * the button that does. It breaks its lines like what an alert is of
+ * the button that does
  */
 .acknowledgement {
   display: grid;
   justify-items: start;
   gap: var(--space-2);
-  min-inline-size: 12rem;
-  white-space: normal;
 }
 
 /* The notes keep the lines they were written in */
 .notes {
   white-space: pre-wrap;
-  overflow-wrap: break-word;
   color: var(--color-text-muted);
 }

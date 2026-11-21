@@ -114,17 +114,6 @@ describe('Select', () => {
     expect(screen.getByText('必須')).toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('should not let an unavailable option be chosen', async () => {
-    // Act
-    await stories.WithUnavailableOption.run()
-
-    // Assert
-    expect(
-      screen.getByRole('option', { name: '鈴木 健（休み）' }),
-    ).toBeDisabled()
-    expect(screen.getByRole('option', { name: '佐藤 美咲' })).toBeEnabled()
-  })
-
   it('should not take a choice while it is disabled', async () => {
     // Arrange
     await stories.Disabled.run()

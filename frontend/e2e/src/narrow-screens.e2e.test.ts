@@ -28,8 +28,12 @@ import {
  * A button gives way before it sticks out: its label goes on in a second
  * line. So a row of buttons that has no room does not make a page wider,
  * and what the shared parts do with their buttons on a narrow screen is
- * asserted by where the buttons stand.
+ * asserted by where the buttons stand. A word that somebody typed, longer
+ * than the line, breaks where the line ends, wherever it is shown.
  */
+
+/** A name of one word longer than any line of a phone, as somebody may type it or paste it */
+const UNBROKEN = `Salon${'a'.repeat(90)}`
 
 /** The address of a screen below where its application or its salon is, and its heading */
 type Screen = [path: string, heading: string]
@@ -302,6 +306,38 @@ test.describe('the screens, on a screen 320 pixels wide', () => {
       expect(right, name).toBeLessThan(card.right)
       expect(await linesOf(button), name).toBe(1)
     }
+  })
+
+  test('should break a word longer than the line where the line ends, in a heading, a list, a record and a dialog', async ({
+    page,
+    api,
+  }) => {
+    // Arrange: the owner signed in first, while the salon has the name of the seed it is found by
+    const salon = await salonId(api)
+    const salonPath = await openTheSalon(page, api)
+    await api.query('update salons set name = $2 where id = $1', [
+      salon,
+      UNBROKEN,
+    ])
+
+    // Act and assert: the salon in the portal, found and opened
+    await measureScreens(page, PORTAL, '', [
+      ['/', PORTAL_START],
+      [`/salons/${salon}`, UNBROKEN],
+    ])
+    expect(await linesOf(heading(page, UNBROKEN))).toBeGreaterThan(1)
+
+    // Act and assert: its settings, and the question before it is deleted
+    await measureScreens(page, ADMIN, salonPath, [
+      ['/settings', 'サロンの設定'],
+    ])
+    await page.getByRole('button', { name: 'サロンを削除する' }).click()
+    await expect(
+      page.getByRole('dialog', {
+        name: `サロン「${UNBROKEN}」を削除しますか？`,
+      }),
+    ).toBeVisible()
+    await expectSoundLayout(page, 'the question before the salon is deleted')
   })
 
   test('should keep the screens of the operator in the admin application as wide as the window', async ({

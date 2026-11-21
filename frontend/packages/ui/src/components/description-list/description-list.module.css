@@ -22,11 +22,6 @@
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-medium);
-  overflow-wrap: anywhere;
-}
-
-.description {
-  overflow-wrap: anywhere;
 }
 
 @media (min-width: 40rem) {

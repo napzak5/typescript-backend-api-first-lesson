@@ -232,13 +232,10 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
         actions={entry}
         otherActions={
           <>
-            <ButtonLink
-              href={customerImportHrefOf(salon.id)}
-              variant='secondary'
-            >
+            <ButtonLink href={customerImportHrefOf(salon.id)}>
               CSV から登録する
             </ButtonLink>
-            <ButtonLink href={chartSearchHrefOf(salon.id)} variant='secondary'>
+            <ButtonLink href={chartSearchHrefOf(salon.id)}>
               カルテを探す
             </ButtonLink>
             {mayKeep && (
@@ -269,7 +266,7 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
           <UnreadNotice
             message={unreadMessageOf('顧客台帳', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () =>
@@ -277,13 +274,13 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
             <EmptyState
               title='条件に合うお客様はいません'
               description='条件を変えて探すか、新しいお客様として登録してください。'
-              action={entry}
+              actions={entry}
             />
           ) : (
             <EmptyState
               title='台帳にお客様はいません'
               description='最初のお客様を登録してください。'
-              action={entry}
+              actions={entry}
             />
           ),
         )

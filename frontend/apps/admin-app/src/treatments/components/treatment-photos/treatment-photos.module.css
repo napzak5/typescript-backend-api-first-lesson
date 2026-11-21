@@ -62,7 +62,6 @@
 /* What was written of a photo keeps its line breaks */
 .description {
   white-space: pre-wrap;
-  overflow-wrap: break-word;
 }
 
 .use {

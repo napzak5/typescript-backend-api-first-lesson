@@ -63,9 +63,7 @@ const TreatmentNotFound = ({ salonId }: { salonId: string }) => (
       description='アドレスが正しいか、お確かめください。削除された施術記録は、表示できません。'
     />
     <p>
-      <ButtonLink href={treatmentsHrefOf(salonId)} variant='secondary'>
-        施術記録の一覧へ
-      </ButtonLink>
+      <ButtonLink href={treatmentsHrefOf(salonId)}>施術記録の一覧へ</ButtonLink>
     </p>
   </>
 )
@@ -131,7 +129,7 @@ export const WithTreatment = ({
           <UnreadNotice
             message={unreadMessageOf('施術記録', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         </>
       ))
@@ -199,7 +197,7 @@ export const WithTreatment = ({
                 void customer.refetch()
                 void products.refetch()
               }}
-              retrying={
+              pending={
                 booking.isFetching || customer.isFetching || products.isFetching
               }
             />

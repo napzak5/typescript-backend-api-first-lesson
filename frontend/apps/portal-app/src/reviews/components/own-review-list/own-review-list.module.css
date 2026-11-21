@@ -26,16 +26,13 @@
   background-color: var(--color-surface);
 }
 
-/* What a salon wrote may be long, and in any language */
 .salon {
   font-size: var(--font-size-large);
-  overflow-wrap: anywhere;
 }
 
 .staff {
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
-  overflow-wrap: anywhere;
 }
 
 /* The way to change the review, then the way to remove it, side by side */

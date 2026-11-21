@@ -49,7 +49,7 @@ export const ProfileForm = ({
   ...form
 }: ProfileFormProps) => (
   <Form {...form} errors={errors}>
-    <FormPart name='お名前'>
+    <FormPart label='お名前'>
       <FieldRow>
         <TextField
           label='姓'
@@ -85,7 +85,7 @@ export const ProfileForm = ({
         />
       </FieldRow>
     </FormPart>
-    <FormPart name='連絡先'>
+    <FormPart label='連絡先'>
       <TextField
         label='電話番号'
         name='phoneNumber'
@@ -111,7 +111,7 @@ export const ProfileForm = ({
           : `メールアドレス（${profile.email}）は、ここでは変更できません。変更するときは、サロンにお問い合わせください。`}
       </p>
     </FormPart>
-    <FormPart name='住所'>
+    <FormPart label='住所'>
       <TextField
         label='郵便番号'
         name='postalCode'
@@ -150,7 +150,7 @@ export const ProfileForm = ({
         error={errors['building']}
       />
     </FormPart>
-    <FormPart name='ご本人について'>
+    <FormPart label='ご本人について'>
       <FieldRow>
         <TextField
           label='生年月日'
@@ -180,7 +180,7 @@ export const ProfileForm = ({
         error={errors['occupation']}
       />
     </FormPart>
-    <FormPart name='好み'>
+    <FormPart label='好み'>
       <CheckboxGroup
         label='好みのメニュー'
         name={PREFERRED_SERVICES}
@@ -192,12 +192,13 @@ export const ProfileForm = ({
       <TextArea
         label='サロンに伝えておきたいこと'
         name={PREFERENCE_NOTES}
+        rows={4}
         description='使ってほしい製品や、苦手なことなどを書いてください。'
         defaultValue={profile?.preferences?.notes ?? undefined}
         error={errors[PREFERENCE_NOTES]}
       />
     </FormPart>
-    <FormPart name='受け取る連絡'>
+    <FormPart label='受け取る連絡'>
       <Checkbox
         label='メールでの連絡を受け取る'
         name='allowEmail'

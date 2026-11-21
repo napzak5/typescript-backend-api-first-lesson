@@ -186,7 +186,7 @@ export const ServiceForm = ({
 
   return (
     <Form {...form} errors={errors}>
-      <FormPart name='サービス'>
+      <FormPart label='サービス'>
         <TextField
           label='名前'
           name='name'
@@ -243,7 +243,7 @@ export const ServiceForm = ({
           />
         </FieldRow>
       </FormPart>
-      <FormPart name='時間と料金'>
+      <FormPart label='時間と料金'>
         <FieldRow>
           <TextField
             label='所要時間（分）'
@@ -297,7 +297,7 @@ export const ServiceForm = ({
           defaultChecked={service?.taxIncluded ?? true}
         />
       </FormPart>
-      <FormPart name='提供'>
+      <FormPart label='提供'>
         <Checkbox
           label='有効'
           name='isActive'
@@ -324,7 +324,7 @@ export const ServiceForm = ({
           />
         </FieldRow>
       </FormPart>
-      <FormPart name='予約'>
+      <FormPart label='予約'>
         <Checkbox
           label='オンライン予約を受ける'
           name='allowOnlineBooking'
@@ -369,7 +369,7 @@ export const ServiceForm = ({
           error={errors['bookingRequirements']}
         />
       </FormPart>
-      <FormPart name='写真'>
+      <FormPart label='写真'>
         <TextField
           label='写真の URL'
           name='imageUrl'
@@ -382,13 +382,12 @@ export const ServiceForm = ({
         <TextArea
           label='ほかの写真の URL'
           name='imageUrls'
-          rows={3}
           description='1 行に 1 つ。http:// か https:// で始まる URL。'
           defaultValue={(service?.imageUrls ?? []).join('\n')}
           error={errors['imageUrls']}
         />
       </FormPart>
-      <FormPart name='パッケージ'>
+      <FormPart label='パッケージ'>
         {containers.length > 0 ? (
           <p className={styles['note']}>
             {`このサービスは、パッケージ${containers.map(({ name }) => `「${name}」`).join('')}に入っているので、パッケージにできません。`}
@@ -445,8 +444,8 @@ export const ServiceForm = ({
         )}
       </FormPart>
       <FormPart
-        name='オプション'
-        note='お客様が予約のときに足せるものです。並びの順に、お客様に出ます。'
+        label='オプション'
+        description='お客様が予約のときに足せるものです。並びの順に、お客様に出ます。'
       >
         {options.map((row, index) => (
           <fieldset

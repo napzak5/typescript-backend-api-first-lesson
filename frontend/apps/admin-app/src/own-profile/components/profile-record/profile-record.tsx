@@ -63,11 +63,7 @@ export const ProfileRecord = ({
         {
           term: '写真の URL',
           description:
-            profile.imageUrl === null ? (
-              NOT_RECORDED
-            ) : (
-              <span className={styles['address']}>{profile.imageUrl}</span>
-            ),
+            profile.imageUrl === null ? NOT_RECORDED : profile.imageUrl,
         },
       ]}
     />

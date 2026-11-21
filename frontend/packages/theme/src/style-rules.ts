@@ -86,7 +86,9 @@ const INLINE_CUSTOM_PROPERTY = /['"](--[\w-]+)['"]\s*:/g
 const SET_CUSTOM_PROPERTY = /\.setProperty\(\s*['"](--[\w-]+)['"]/g
 
 const isStylesheet = (file: SourceFile): boolean => file.path.endsWith('.css')
-const isComponent = (file: SourceFile): boolean => file.path.endsWith('.tsx')
+/** A component, or a module beside the components that reads a CSS Module for them (the classes of a state) */
+const isComponent = (file: SourceFile): boolean =>
+  file.path.endsWith('.tsx') || file.path.endsWith('.ts')
 const isTokensFile = (file: SourceFile): boolean =>
   path.basename(file.path) === TOKENS_FILE
 
@@ -305,13 +307,15 @@ const SKIPPED_DIRECTORIES = new Set([
   'coverage',
 ])
 
-/** The stylesheets and components below `directory`, with paths relative to it. */
+/** The stylesheets, the components and the other modules below `directory` but their tests (which write rules down as text), with paths relative to it. */
 export const readSourceFiles = (directory: string): SourceFile[] =>
   fs
     .readdirSync(directory, { recursive: true, encoding: 'utf8' })
     .filter(
       (relative) =>
-        (relative.endsWith('.css') || relative.endsWith('.tsx')) &&
+        (relative.endsWith('.css') ||
+          relative.endsWith('.tsx') ||
+          (relative.endsWith('.ts') && !relative.endsWith('.test.ts'))) &&
         !relative.split(path.sep).some((part) => SKIPPED_DIRECTORIES.has(part)),
     )
     .map((relative) => ({

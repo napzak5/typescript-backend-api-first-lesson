@@ -1,5 +1,5 @@
 import type { ModelsReviewResponse } from '@beauty-salon-frontend/api-client'
-import type { SelectOption } from '@beauty-salon-frontend/ui'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { booking } from '../../bookings/components/examples'
 import {
   fullReview,
@@ -20,7 +20,7 @@ import type { OwnReview, Visit } from '../reviews-api'
 const [stylist] = staff.filter(({ id }) => id === booking.staffId)
 
 /** The people a review of the visit can rate, as a form offers them */
-export const reviewers: SelectOption[] = staff
+export const reviewers: ChoiceOption[] = staff
   .filter(({ id }) => id === booking.staffId)
   .map(({ id, displayName }) => ({ value: id, label: displayName }))
 

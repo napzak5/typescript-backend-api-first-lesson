@@ -5,7 +5,7 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { linesOf } from '@beauty-salon-frontend/preferences'
 import { textOf } from '@beauty-salon-frontend/salon-screens'
-import type { SelectOption } from '@beauty-salon-frontend/ui'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
 import {
@@ -103,12 +103,12 @@ const CURRENCIES: readonly string[] = Intl.supportedValuesOf('currency')
 const currencyNames = new Intl.DisplayNames('ja', { type: 'currency' })
 
 /** The time zones a salon may be given: those the browser knows, by their names (「Asia/Tokyo」). */
-export const TIME_ZONE_CHOICES: readonly SelectOption[] = TIME_ZONES.map(
+export const TIME_ZONE_CHOICES: readonly ChoiceOption[] = TIME_ZONES.map(
   (zone) => ({ value: zone, label: zone }),
 )
 
 /** The currencies a salon may be given: those the browser knows, by their codes and names (「JPY（日本円）」). */
-export const CURRENCY_CHOICES: readonly SelectOption[] = CURRENCIES.map(
+export const CURRENCY_CHOICES: readonly ChoiceOption[] = CURRENCIES.map(
   (code) => ({ value: code, label: `${code}（${currencyNames.of(code)}）` }),
 )
 

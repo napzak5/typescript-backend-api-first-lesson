@@ -74,7 +74,7 @@
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `api-client`、`ui`（型のみ） |
 | `theme` | デザイントークン（`src/tokens.css`）、フォント（Inter と Noto Sans JP、`src/styles.css` が読み込む）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
 | `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、フォームの区切りの `FormPart`・`FieldRow`、フォームを持つダイアログの `FormDialog`、メッセージの `Alert`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、読めなかったことの知らせの `UnreadNotice`、QR コードの `QrCode`、評価の星の `Rating`、言葉の一覧の `TagList`、リンクの `LinkProvider`・`Link`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` と、アプリのストーリーも表示する） | 3つのアプリ、`session` |
-| `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）と、画面が保存したファイル（`savedFiles`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`io`、`session`、3つのアプリのテスト、`frontend/e2e` |
+| `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）と `ResizeObserver`、画面が保存したファイル（`savedFiles`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`io`、`session`、3つのアプリのテスト、`frontend/e2e` |
 | `preferences` | 好み設定のフォーム（`PreferencesForm`、時間帯の行の `TimeSlotFields`）、フォームの読み取り（`readPreferencesChange`）と断られたときの言葉（`afterPreferencesChange`）、選べるスタッフの並びと名前（`staffChoicesOf`、`staffLabelOf`）、1 行に 1 つずつ書く一覧の読み取り（`linesOf`）。お客様がポータルで書くものと、サロンが台帳で書くものは、同じ好み設定 | portal-app（`src/preferences/`、`src/reviews/`）、admin-app（`src/customers/`） |
 | `assets` | 画像アセット | なし |
 
@@ -285,7 +285,7 @@ const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'staff', 'admin
 - **断られたとき**は、メールアドレスとパスワードのどちらが誤っているかを言わない（API が区別しないため）。5 回続けて誤ると 15 分ロックされることを、同じメッセージで伝える。コードが誤っていたときは、コードの欄にそう表示する
 - **フォームの値**は、ブラウザーが持つ（`value` を React の状態にしない）。送信のときに `FormData` として読み、純粋な関数 `readAttempt`（`sign-in-screen/sign-in-flow.ts`）が確かめる。空の欄と、メールアドレスの形でない値は、API に送らずに、その欄にメッセージを出す。API の応答からフォームの状態を決めるのも、純粋な関数 `afterAttempt`。送信は TanStack Query の `useMutation` で、送信中はボタンが `aria-busy` になり、2 回目の送信は無視する
 - **メッセージ**は、欄のものは欄の下に（`aria-describedby`、`aria-invalid`）、試行の全体についてのものはフォームの先頭に `Alert` で出す。ブラウザーの検証の吹き出しは使わない（`noValidate`）。フォーカスは、誤りのある最初の欄へ移る
-- **フォームの区切りと並び**は、`ui` の部品で書く。長いフォームは、名前を持つまとまり（`FormPart`。`fieldset` と `legend`）に分け、まとまりの全体についての説明（`note`）は、欄の説明と同じ小さい文字で、欄の前に置く。いっしょに読む 2 つか 3 つの欄（姓と名、始まりと終わり、商品の 3 つの価格）は、`FieldRow` で、40rem 以上の幅で横に並べる
+- **フォームの区切りと並び**は、`ui` の部品で書く。長いフォームは、名前を持つまとまり（`FormPart`。`fieldset` と `legend`）に分け、まとまりの全体についての説明（`description`）は、欄の説明と同じ小さい文字で、欄の前に置く。いっしょに読む 2 つか 3 つの欄（姓と名、始まりと終わり、商品の 3 つの価格）は、`FieldRow` で、40rem 以上の幅で横に並べる
 - **取り消せないことを尋ねるフォーム**（キャンセルとその理由、取り消し、通報など）は、`ui` の `FormDialog` に入れる。送るボタンは、ダイアログの操作の列に「戻る」と並び、`form` 属性でフォームにつながる。送っている間は、ボタンでも Enter キーでも送り直さない。送った結果を読んでから閉じるもの（発行したバックアップコード、前に通報していたこと）は、フォームの代わりに結果を出し（`answer`）、ボタンは「閉じる」だけにして、結果にフォーカスを移す
 - **欄の自動入力**は、どの 1 行の欄でも指定する（`TextField` と `PasswordField` の `autoComplete` は必須）。ブラウザーが知る値（メールアドレス、電話番号、名前、生年月日）は HTML の名前、知らない値（タグ、メモ、予約の日）は `off`
 - **1 行の欄で Enter キーを押すと、フォームを送る**（ブラウザーの動き）。1 行の欄を持つフォームは、どれも、そのことをテストで確かめる（`@beauty-salon-frontend/testing` の `itShouldBeSentByTheEnterKey`）。複数行の欄（`TextArea`）の Enter キーは、改行になる

@@ -257,10 +257,7 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
         <>
           <p>この予約の施術記録は、書いてあります。</p>
           <p>
-            <ButtonLink
-              href={treatmentHrefOf(salon.id, record.id)}
-              variant='secondary'
-            >
+            <ButtonLink href={treatmentHrefOf(salon.id, record.id)}>
               施術記録を見る
             </ButtonLink>
           </p>
@@ -302,7 +299,7 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
             void existing.refetch()
             void products.refetch()
           }}
-          retrying={
+          pending={
             customer.isFetching || existing.isFetching || products.isFetching
           }
         />

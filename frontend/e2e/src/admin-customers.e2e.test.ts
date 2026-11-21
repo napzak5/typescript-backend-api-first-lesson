@@ -2,7 +2,7 @@ import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
-import { expectSoundPage } from './checks'
+import { expectSoundPage, sidewaysScrollOf } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { ADMIN_START, enterCredentials, heading, OWNER, STAFF } from './sign-in'
 
@@ -238,9 +238,9 @@ test.describe('the referrer and the preferences of a customer, in a browser', ()
     await expectSoundPage(page)
     // A wide screen shows every column of what was found, with nothing to scroll
     expect(
-      await dialog
-        .getByRole('region', { name: '見つかったお客様' })
-        .evaluate((frame) => frame.scrollWidth - frame.clientWidth),
+      await sidewaysScrollOf(
+        dialog.getByRole('table', { name: '見つかったお客様' }),
+      ),
     ).toBeLessThanOrEqual(1)
     await pressWithTheKeyboard(found)
 

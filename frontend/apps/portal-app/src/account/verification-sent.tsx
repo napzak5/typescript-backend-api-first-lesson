@@ -57,7 +57,6 @@ export const VerificationSent = ({ email }: VerificationSentProps) => {
       </p>
       <p>
         <Button
-          variant='secondary'
           pending={sending.isPending}
           onClick={() => sending.mutate(email)}
         >

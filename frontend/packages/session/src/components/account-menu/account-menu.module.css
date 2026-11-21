@@ -1,37 +1,16 @@
-/*
- * A narrow header has room for the name and for the way out: there the
- * address is out of sight, and still read.
- */
+/* In a wide header. A long address is cut short: the header keeps its one row */
 .user {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
+  max-inline-size: 20rem;
   overflow: hidden;
-  clip-path: inset(50%);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-/* Where there is room it is shown. A long address is cut short: the header keeps its one row */
-@media (min-width: 40rem) {
-  .user {
-    position: static;
-    inline-size: auto;
-    max-inline-size: 20rem;
-    block-size: auto;
-    clip-path: none;
-    color: var(--color-text-muted);
-    font-size: var(--font-size-small);
-    text-overflow: ellipsis;
-  }
-}
-
-/*
- * In the menu of a narrow screen, above its buttons: a long address breaks,
- * and its words begin where those of the buttons do.
- */
+/* In the menu of a narrow screen, above its buttons: its words begin where those of the buttons do */
 .userInMenu {
   padding-inline: var(--space-4);
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
-  overflow-wrap: anywhere;
 }

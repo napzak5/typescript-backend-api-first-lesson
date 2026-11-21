@@ -12,29 +12,7 @@
   padding: var(--space-3) var(--space-4);
   border-inline-start: var(--space-1) solid currentColor;
   border-radius: var(--radius-small);
-  background-color: var(--notification-surface);
-  color: var(--notification-text);
   font-weight: var(--font-weight-medium);
-}
-
-.info {
-  --notification-surface: var(--color-info-subtle);
-  --notification-text: var(--color-info-text);
-}
-
-.success {
-  --notification-surface: var(--color-success-subtle);
-  --notification-text: var(--color-success-text);
-}
-
-.warning {
-  --notification-surface: var(--color-warning-subtle);
-  --notification-text: var(--color-warning-text);
-}
-
-.danger {
-  --notification-surface: var(--color-danger-subtle);
-  --notification-text: var(--color-danger-text);
 }
 
 /* What the application said is for the screen: a page that is printed has none of it */

@@ -88,6 +88,7 @@ export const AlertTable = ({
       {
         key: 'subject',
         header: '対象',
+        wrap: 'words',
         cell: (alert) => (
           <span className={styles['subject']}>
             {alert.inventoryId === null ? (
@@ -123,6 +124,7 @@ export const AlertTable = ({
       {
         key: 'acknowledgement',
         header: '確認',
+        wrap: 'words',
         cell: (alert) => (
           <span className={styles['acknowledgement']}>
             <span>

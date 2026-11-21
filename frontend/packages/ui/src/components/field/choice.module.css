@@ -15,17 +15,6 @@
   cursor: pointer;
 }
 
-/* A label that is read and not shown: the place of the choice shows what it means */
-.hidden {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .mark {
   inline-size: 1.125rem;
   block-size: 1.125rem;

@@ -91,7 +91,7 @@ export const WithStockRow = ({
             <UnreadNotice
               message={unreadMessageOf('在庫の行', reason)}
               onRetry={() => void row.refetch()}
-              retrying={row.isFetching}
+              pending={row.isFetching}
             />
           </>
         ),
@@ -109,7 +109,7 @@ export const WithStockRow = ({
             <UnreadNotice
               message={unreadMessageOf('商品', reason)}
               onRetry={() => void products.refetch()}
-              retrying={products.isFetching}
+              pending={products.isFetching}
             />
           </>
         ),

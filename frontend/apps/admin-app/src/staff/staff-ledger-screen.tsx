@@ -88,7 +88,7 @@ const StaffList = ({ salon }: StaffListProps) => {
           <UnreadNotice
             message={unreadMessageOf('スタッフ', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (

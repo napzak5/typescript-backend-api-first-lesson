@@ -1,4 +1,3 @@
-import { classNames } from '../../class-names'
 import { Badge } from '../badge/badge'
 import styles from './tag-list.module.css'
 
@@ -7,7 +6,6 @@ export type TagListProps = {
   label: string
   /** The words; one that is repeated is shown once */
   items: readonly string[]
-  className?: string | undefined
 }
 
 /**
@@ -16,8 +14,8 @@ export type TagListProps = {
  * the next line, and a word longer than the line breaks, so the list is as
  * wide as it is given and never wider.
  */
-export const TagList = ({ label, items, className }: TagListProps) => (
-  <ul className={classNames(styles['tagList'], className)} aria-label={label}>
+export const TagList = ({ label, items }: TagListProps) => (
+  <ul className={styles['tagList']} aria-label={label}>
     {Array.from(new Set(items), (item) => (
       <li key={item} className={styles['item']}>
         <Badge className={styles['word']}>{item}</Badge>

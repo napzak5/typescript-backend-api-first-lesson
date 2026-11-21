@@ -3,7 +3,7 @@ import type {
   ModelsInventoryAlertType,
 } from '@beauty-salon-frontend/api-client'
 import { textOf } from '@beauty-salon-frontend/salon-screens'
-import type { SelectOption } from '@beauty-salon-frontend/ui'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { alertKindIn, severityIn } from './alert-format'
 
@@ -30,7 +30,7 @@ const acknowledgedIn = (text: string): boolean | undefined =>
     .otherwise(() => undefined)
 
 /** Whether somebody saw to the alerts, to narrow them by it */
-export const ACKNOWLEDGED_OPTIONS: readonly SelectOption[] = [
+export const ACKNOWLEDGED_OPTIONS: readonly ChoiceOption[] = [
   { value: 'false', label: '未確認' },
   { value: 'true', label: '確認済み' },
 ]

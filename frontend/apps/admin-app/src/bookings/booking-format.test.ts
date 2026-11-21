@@ -1,9 +1,9 @@
 import type { ModelsBookingStatusType } from '@beauty-salon-frontend/api-client'
-import type { BadgeProps } from '@beauty-salon-frontend/ui'
+import type { BadgeTone } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
 import { hoursOf, statusNameOf, statusToneOf } from './booking-format'
 
-type StatusCase = [ModelsBookingStatusType, string, BadgeProps['tone']]
+type StatusCase = [ModelsBookingStatusType, string, BadgeTone]
 
 const STATUSES: StatusCase[] = [
   ['draft', '下書き', 'neutral'],

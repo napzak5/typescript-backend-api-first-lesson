@@ -169,7 +169,7 @@ const ChangePart = ({ salon, purchaseOrderId }: ChangePartProps) => {
         <UnreadNotice
           message={unreadMessageOf('発注', reason)}
           onRetry={() => void read.refetch()}
-          retrying={read.isFetching}
+          pending={read.isFetching}
         />
       </>
     ))
@@ -180,10 +180,7 @@ const ChangePart = ({ salon, purchaseOrderId }: ChangePartProps) => {
           {header}
           <p>{CLOSED_ORDERS[order.status]}</p>
           <p>
-            <ButtonLink
-              href={purchaseOrderHrefOf(salon.id, order.id)}
-              variant='secondary'
-            >
+            <ButtonLink href={purchaseOrderHrefOf(salon.id, order.id)}>
               発注へ戻る
             </ButtonLink>
           </p>

@@ -8,8 +8,8 @@ import { Link } from '../link/link'
 
 export type ButtonLinkProps = {
   href: string
-  variant?: ButtonVariant
-  size?: ButtonSize
+  variant?: ButtonVariant | undefined
+  size?: ButtonSize | undefined
   children: ReactNode
   className?: string | undefined
   /**

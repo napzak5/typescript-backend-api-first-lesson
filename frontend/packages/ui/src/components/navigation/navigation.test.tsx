@@ -87,14 +87,4 @@ describe('Navigation', () => {
       expect(screen.getByRole('list')).toHaveClass('list', orientation)
     },
   )
-
-  it('should keep a class its container gives it', async () => {
-    // Act
-    await stories.Vertical.run({
-      args: { ...stories.Vertical.args, className: 'in-shell' },
-    })
-
-    // Assert
-    expect(screen.getByRole('navigation')).toHaveClass('in-shell')
-  })
 })

@@ -27,11 +27,7 @@ export const OwnSecurityScreen = () => (
     <AccountSecurityScreen
       passwordHref={PASSWORD_PATH}
       twoFactorHref={TWO_FACTOR_PATH}
-      actions={
-        <ButtonLink href='/mypage' variant='secondary'>
-          マイページへ戻る
-        </ButtonLink>
-      }
+      actions={<ButtonLink href='/mypage'>マイページへ戻る</ButtonLink>}
     />
   </RequireSession>
 )

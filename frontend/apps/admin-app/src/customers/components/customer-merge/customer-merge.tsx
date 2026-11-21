@@ -141,23 +141,20 @@ export const CustomerMerge = ({
             {
               key: 'primary',
               header: `残す ${primary} 様`,
-              cell: ({ primary: shown }) => (
-                <div className={styles['value']}>{shown}</div>
-              ),
+              wrap: 'lines',
+              cell: ({ primary: shown }) => shown,
             },
             {
               key: 'secondary',
               header: `まとめる ${secondary} 様`,
-              cell: ({ secondary: shown }) => (
-                <div className={styles['value']}>{shown}</div>
-              ),
+              wrap: 'lines',
+              cell: ({ secondary: shown }) => shown,
             },
             {
               key: 'merged',
               header: 'まとめたあと',
-              cell: ({ merged }) => (
-                <div className={styles['value']}>{merged}</div>
-              ),
+              wrap: 'lines',
+              cell: ({ merged }) => merged,
             },
           ]}
           rows={items}

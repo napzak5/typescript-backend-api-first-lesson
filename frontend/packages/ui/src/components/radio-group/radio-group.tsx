@@ -1,25 +1,17 @@
 import { type ChangeEventHandler, useId } from 'react'
 import { classNames } from '../../class-names'
+import type { ChoiceLayout, ChoiceOption } from '../field/choice'
 import choiceStyles from '../field/choice.module.css'
 import { FieldMessages, messageAttributes, RequiredMark } from '../field/field'
 import fieldStyles from '../field/field.module.css'
 import styles from './radio-group.module.css'
-
-export type RadioOption = {
-  value: string
-  label: string
-  disabled?: boolean | undefined
-}
-
-/** One option below the other, or as many beside each other as fit. */
-export type RadioGroupLayout = 'stack' | 'columns'
 
 export type RadioGroupProps = {
   /** What is being chosen: the name of the group */
   label: string
   /** The name the chosen value is sent under */
   name: string
-  options: readonly RadioOption[]
+  options: readonly ChoiceOption[]
   /** The chosen value, when the caller keeps it. Give `onChange` with it */
   value?: string | undefined
   /** The value chosen at first, when the browser keeps it */
@@ -30,16 +22,14 @@ export type RadioGroupProps = {
   /** What is wrong with the choice */
   error?: string | undefined
   required?: boolean | undefined
-  disabled?: boolean | undefined
   /**
    * `columns` for many short options (the times of a day): they stand beside
    * each other, in columns of one width, and still all in sight
    */
-  layout?: RadioGroupLayout | undefined
-  className?: string | undefined
+  layout?: ChoiceLayout | undefined
 }
 
-const layoutClass: Record<RadioGroupLayout, string | undefined> = {
+const layoutClass: Record<ChoiceLayout, string | undefined> = {
   stack: undefined,
   columns: styles['columns'],
 }
@@ -49,6 +39,10 @@ const layoutClass: Record<RadioGroupLayout, string | undefined> = {
  * choice, as the browser does for radio buttons of one name. The label, the
  * description and the error belong to the group, not to one of its buttons.
  * For a long list of long options, use `Select`.
+ *
+ * It is a `radiogroup`, where `CheckboxGroup` is a `fieldset`: the role
+ * says that one of its buttons has to be chosen (`aria-required`), which a
+ * `fieldset` cannot say.
  */
 export const RadioGroup = ({
   label,
@@ -60,9 +54,7 @@ export const RadioGroup = ({
   description,
   error,
   required = false,
-  disabled = false,
   layout = 'stack',
-  className,
 }: RadioGroupProps) => {
   const id = useId()
   const labelId = `${id}-label`
@@ -70,7 +62,7 @@ export const RadioGroup = ({
   return (
     <div
       {...messageAttributes(id, { description, error })}
-      className={classNames(fieldStyles['field'], className)}
+      className={fieldStyles['field']}
       role='radiogroup'
       aria-labelledby={labelId}
       aria-required={required || undefined}
@@ -93,7 +85,6 @@ export const RadioGroup = ({
               name={name}
               value={option.value}
               required={required}
-              disabled={disabled || option.disabled === true}
               onChange={onChange}
             />
             <span>{option.label}</span>

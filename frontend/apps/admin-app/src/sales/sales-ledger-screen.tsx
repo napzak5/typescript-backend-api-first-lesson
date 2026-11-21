@@ -118,7 +118,7 @@ const SalesLedger = ({ salon }: SalesLedgerProps) => {
           <UnreadNotice
             message={unreadMessageOf('売上', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (

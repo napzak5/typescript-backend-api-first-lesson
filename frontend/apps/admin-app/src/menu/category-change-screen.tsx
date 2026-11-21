@@ -213,9 +213,7 @@ const CategoryNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
       description='アドレスが正しいか、お確かめください。削除したカテゴリーは、表示できません。'
     />
     <p>
-      <ButtonLink href={menuHrefOf(salon.id)} variant='secondary'>
-        メニューへ
-      </ButtonLink>
+      <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
     </p>
   </>
 )
@@ -256,7 +254,7 @@ const ChangePart = ({ salon, categoryId }: ChangePartProps) => {
         <UnreadNotice
           message={unreadMessageOf('カテゴリー', reason)}
           onRetry={retry}
-          retrying={retrying}
+          pending={retrying}
         />
       </>
     ))
@@ -268,7 +266,7 @@ const ChangePart = ({ salon, categoryId }: ChangePartProps) => {
           <UnreadNotice
             message={unreadMessageOf('カテゴリー', reason)}
             onRetry={retry}
-            retrying={retrying}
+            pending={retrying}
           />
         </>
       ),

@@ -13,6 +13,7 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
+  EmptyState,
   LoadingIndicator,
   UnreadNotice,
   useNotifications,
@@ -156,11 +157,11 @@ export const ReportsOfReview = ({ salon, review }: HandlingProps) => {
           <UnreadNotice
             message={unreadMessageOf('通報', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
-          <p>このレビューへの通報はありません。</p>
+          <EmptyState kind='part' title='このレビューへの通報はありません。' />
         ))
         .with({ type: 'listed' }, ({ items, total, rest }) => (
           <ReportTable

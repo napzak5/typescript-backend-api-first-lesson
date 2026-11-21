@@ -19,12 +19,8 @@ export const SalePoints = ({ usedHref, earnedHref }: SalePointsProps) => (
         お会計で使ったポイントと、付与するポイントを、この売上に結びつけて、お客様のポイントに記録します。
       </p>
       <div className={styles['actions']}>
-        <ButtonLink href={usedHref} variant='secondary'>
-          使ったポイントを記録する
-        </ButtonLink>
-        <ButtonLink href={earnedHref} variant='secondary'>
-          ポイントを付与する
-        </ButtonLink>
+        <ButtonLink href={usedHref}>使ったポイントを記録する</ButtonLink>
+        <ButtonLink href={earnedHref}>ポイントを付与する</ButtonLink>
       </div>
     </div>
   </Card>

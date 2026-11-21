@@ -252,7 +252,7 @@ const Account = ({ passwordHref, twoFactorHref, timeZone }: AccountProps) => {
       <UnreadNotice
         message={unreadMessageOf('アカウント', reason)}
         onRetry={() => void read.refetch()}
-        retrying={read.isFetching}
+        pending={read.isFetching}
       />
     ))
     .exhaustive()
@@ -358,7 +358,7 @@ const Sessions = ({ timeZone }: PartProps) => {
           <UnreadNotice
             message={unreadMessageOf('サインインしている端末', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .with({ type: 'listed' }, ({ sessions, total, rest }) => (

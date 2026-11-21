@@ -160,6 +160,17 @@ describe('AppShell', () => {
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main')
   })
 
+  it('should keep the link to the main content out of sight until the keyboard reaches it', async () => {
+    // Act
+    await stories.NavigationInHeader.run()
+
+    // Assert
+    expect(screen.getByRole('link', { name: '本文へ移動' })).toHaveClass(
+      'skipLink',
+      'hidden',
+    )
+  })
+
   it('should mark the link of the current screen in the navigation', async () => {
     // Act
     await stories.NavigationInHeader.run()

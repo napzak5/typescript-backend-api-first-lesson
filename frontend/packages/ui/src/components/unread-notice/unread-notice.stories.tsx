@@ -9,7 +9,7 @@ const meta: Meta<typeof UnreadNotice> = {
     message:
       'メニューを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
     onRetry: fn(),
-    retrying: false,
+    pending: false,
   },
 }
 
@@ -20,6 +20,6 @@ type Story = StoryObj<typeof meta>
 export const Unread: Story = {}
 
 /** The API is being asked again */
-export const Retrying: Story = {
-  args: { retrying: true },
+export const Pending: Story = {
+  args: { pending: true },
 }

@@ -9,7 +9,7 @@ import {
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
 import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
-import type { BadgeProps } from '@beauty-salon-frontend/ui'
+import type { BadgeTone } from '@beauty-salon-frontend/ui'
 
 /*
  * How the screens of the ledger of the customers name what it holds: the
@@ -48,10 +48,7 @@ export const customerStatusNameOf = (
   status: ModelsCustomerStatusType,
 ): string => STATUS_NAMES[status]
 
-const STATUS_TONES: Record<
-  ModelsCustomerStatusType,
-  NonNullable<BadgeProps['tone']>
-> = {
+const STATUS_TONES: Record<ModelsCustomerStatusType, BadgeTone> = {
   active: 'success',
   inactive: 'neutral',
   vip: 'info',
@@ -61,7 +58,7 @@ const STATUS_TONES: Record<
 /** The tone a state is shown in: one that keeps a customer from booking stands out. */
 export const customerStatusToneOf = (
   status: ModelsCustomerStatusType,
-): NonNullable<BadgeProps['tone']> => STATUS_TONES[status]
+): BadgeTone => STATUS_TONES[status]
 
 /** The states, in the order of the contract. */
 export const CUSTOMER_STATUSES: readonly ModelsCustomerStatusType[] =

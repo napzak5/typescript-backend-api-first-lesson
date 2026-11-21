@@ -87,9 +87,7 @@ export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
             description='アドレスが正しいか、お確かめください。'
           />
           <p>
-            <ButtonLink href={salesHrefOf(salon.id)} variant='secondary'>
-              今日の売上へ
-            </ButtonLink>
+            <ButtonLink href={salesHrefOf(salon.id)}>今日の売上へ</ButtonLink>
           </p>
         </>
       ))
@@ -105,7 +103,7 @@ export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
           <UnreadNotice
             message={unreadMessageOf('売上', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         </>
       ))
@@ -144,7 +142,7 @@ export const WithPaymentMethods = ({
       <UnreadNotice
         message={unreadMessageOf('支払い方法', reason)}
         onRetry={() => void methods.refetch()}
-        retrying={methods.isFetching}
+        pending={methods.isFetching}
       />
     ))
     .exhaustive()

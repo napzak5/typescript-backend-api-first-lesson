@@ -6,7 +6,11 @@ export {
   useInMenu,
 } from './components/app-shell/app-shell'
 export { useScreenHeadingFocus } from './components/app-shell/screens'
-export { Badge, type BadgeProps } from './components/badge/badge'
+export {
+  Badge,
+  type BadgeProps,
+  type BadgeTone,
+} from './components/badge/badge'
 export { Button, type ButtonProps } from './components/button/button'
 export {
   ButtonLink,
@@ -16,9 +20,7 @@ export { Card, type CardProps } from './components/card/card'
 export { Checkbox, type CheckboxProps } from './components/checkbox/checkbox'
 export {
   CheckboxGroup,
-  type CheckboxGroupLayout,
   type CheckboxGroupProps,
-  type CheckboxOption,
 } from './components/checkbox-group/checkbox-group'
 export {
   DescriptionList,
@@ -34,6 +36,7 @@ export {
   EnvironmentBanner,
   type EnvironmentBannerProps,
 } from './components/environment-banner/environment-banner'
+export type { ChoiceLayout, ChoiceOption } from './components/field/choice'
 export { FieldRow, type FieldRowProps } from './components/field-row/field-row'
 export {
   FileField,
@@ -91,16 +94,10 @@ export {
 export { QrCode, type QrCodeProps } from './components/qr-code/qr-code'
 export {
   RadioGroup,
-  type RadioGroupLayout,
   type RadioGroupProps,
-  type RadioOption,
 } from './components/radio-group/radio-group'
 export { Rating, type RatingProps } from './components/rating/rating'
-export {
-  Select,
-  type SelectOption,
-  type SelectProps,
-} from './components/select/select'
+export { Select, type SelectProps } from './components/select/select'
 export {
   Table,
   type TableColumn,
@@ -116,3 +113,9 @@ export {
   UnreadNotice,
   type UnreadNoticeProps,
 } from './components/unread-notice/unread-notice'
+export {
+  VisuallyHidden,
+  type VisuallyHiddenProps,
+} from './components/visually-hidden/visually-hidden'
+export type { Tone } from './tone'
+export { useWideScreen } from './wide-screen'

@@ -236,7 +236,7 @@ const ChangePart = ({ salon, productId }: ChangePartProps) => {
         <UnreadNotice
           message={unreadMessageOf('商品', reason)}
           onRetry={() => void product.refetch()}
-          retrying={product.isFetching}
+          pending={product.isFetching}
         />
       </>
     ))

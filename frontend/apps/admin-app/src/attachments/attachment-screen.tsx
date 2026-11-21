@@ -230,7 +230,7 @@ const AttachmentPart = ({ salon, attachmentId }: AttachmentPartProps) => {
           <UnreadNotice
             message={unreadMessageOf('ファイル', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         </>
       ))

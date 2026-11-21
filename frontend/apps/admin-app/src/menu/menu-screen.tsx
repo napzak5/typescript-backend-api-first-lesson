@@ -68,16 +68,10 @@ const MenuPart = ({ salon }: MenuPartProps) => {
         otherActions={
           keeps ? (
             <>
-              <ButtonLink
-                href={categoryEntryHrefOf(salon.id)}
-                variant='secondary'
-              >
+              <ButtonLink href={categoryEntryHrefOf(salon.id)}>
                 カテゴリーを足す
               </ButtonLink>
-              <ButtonLink
-                href={servicesChangeHrefOf(salon.id)}
-                variant='secondary'
-              >
+              <ButtonLink href={servicesChangeHrefOf(salon.id)}>
                 まとめて変える
               </ButtonLink>
             </>
@@ -97,7 +91,7 @@ const MenuPart = ({ salon }: MenuPartProps) => {
                 void categories.refetch()
                 void services.refetch()
               }}
-              retrying={categories.isFetching || services.isFetching}
+              pending={categories.isFetching || services.isFetching}
             />
           ),
         )

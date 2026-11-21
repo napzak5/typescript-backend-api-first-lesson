@@ -152,7 +152,7 @@ export const StatusActions = ({
         title='予約をキャンセルしますか？'
         description={`${when}の予約をキャンセルします。キャンセルした予約は、元に戻せません。`}
         submitLabel='キャンセルを確定する'
-        tone='danger'
+        submitVariant='danger'
         message={message}
         pending={pending === 'cancel'}
         onSubmit={onCancel}
@@ -160,6 +160,7 @@ export const StatusActions = ({
         <TextArea
           label='キャンセルの理由'
           name='cancellationReason'
+          rows={4}
           description='お客様からの連絡の内容など。空欄のままでも、キャンセルできます。'
         />
       </FormDialog>

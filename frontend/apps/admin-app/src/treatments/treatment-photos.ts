@@ -10,7 +10,7 @@ import {
   type RefusedValue,
   textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import type { SelectOption } from '@beauty-salon-frontend/ui'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
@@ -37,7 +37,7 @@ const PHOTO_TYPE_NAMES: Record<ModelsTreatmentPhotoType, string> = {
 }
 
 /** When a photo may have been taken, in the order of a treatment */
-export const PHOTO_TYPE_OPTIONS: readonly SelectOption[] = Object.values(
+export const PHOTO_TYPE_OPTIONS: readonly ChoiceOption[] = Object.values(
   ModelsTreatmentPhotoType,
 ).map((photoType) => ({ value: photoType, label: PHOTO_TYPE_NAMES[photoType] }))
 

@@ -192,7 +192,7 @@ const ReviewToChange = () => {
             <EmptyState
               title='レビューが見つかりません'
               description='アドレスが正しいか、お確かめください。ほかのアカウントで書いたレビューは、変更できません。'
-              action={
+              actions={
                 <ButtonLink href={OWN_REVIEWS}>自分のレビューを見る</ButtonLink>
               }
             />
@@ -202,7 +202,7 @@ const ReviewToChange = () => {
           <UnreadNotice
             message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         ))
         .exhaustive()}

@@ -135,7 +135,7 @@ const Shifts = ({ salon }: ShiftsProps) => {
           <UnreadNotice
             message={unreadMessageOf('シフト', reason)}
             onRetry={readAgain}
-            retrying={retrying}
+            pending={retrying}
           />
         ))
         .with({ type: 'found' }, () =>
@@ -167,7 +167,7 @@ const Shifts = ({ salon }: ShiftsProps) => {
                   <UnreadNotice
                     message={unreadMessageOf('シフト', reason)}
                     onRetry={readAgain}
-                    retrying={retrying}
+                    pending={retrying}
                   />
                 ),
               )

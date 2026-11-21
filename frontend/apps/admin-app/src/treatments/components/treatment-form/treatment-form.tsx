@@ -10,13 +10,12 @@ import { LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Button,
   CheckboxGroup,
-  type CheckboxOption,
+  type ChoiceOption,
   FieldRow,
   Form,
   type FormErrors,
   FormPart,
   Select,
-  type SelectOption,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -78,7 +77,7 @@ const distinct = (ids: readonly string[]): string[] => [...new Set(ids)]
 const serviceOptionsOf = (
   services: readonly ModelsServiceResponse[],
   held: readonly string[],
-): CheckboxOption[] => [
+): ChoiceOption[] => [
   ...services.map(({ id, name }) => ({ value: id, label: name })),
   ...held
     .filter((id) => !services.some((service) => service.id === id))
@@ -92,7 +91,7 @@ const serviceOptionsOf = (
 const productOptionsOf = (
   products: readonly ModelsProductResponse[],
   held: string | undefined,
-): SelectOption[] => {
+): ChoiceOption[] => {
   const offered = products.filter(
     ({ id, isForTreatment, isActive }) =>
       (isForTreatment && isActive) || id === held,
@@ -216,7 +215,7 @@ export const TreatmentForm = ({
       actions={actions}
       onSubmit={onSubmit}
     >
-      <FormPart name='施術'>
+      <FormPart label='施術'>
         {record === undefined ? (
           <Select
             label='担当'
@@ -270,11 +269,10 @@ export const TreatmentForm = ({
           error={errors['processingTime']}
         />
       </FormPart>
-      <FormPart name='カウンセリングと状態'>
+      <FormPart label='カウンセリングと状態'>
         <TextArea
           label='カウンセリングのメモ'
           name='consultationNotes'
-          rows={3}
           defaultValue={record?.consultationNotes ?? undefined}
           error={errors['consultationNotes']}
         />
@@ -304,8 +302,8 @@ export const TreatmentForm = ({
         />
       </FormPart>
       <FormPart
-        name='使った商材'
-        note='記録しても在庫は減りません。在庫から出した分は、在庫の画面で記録します。'
+        label='使った商材'
+        description='記録しても在庫は減りません。在庫から出した分は、在庫の画面で記録します。'
       >
         {rows.map((row, index) => (
           <fieldset
@@ -397,11 +395,10 @@ export const TreatmentForm = ({
           </p>
         )}
       </FormPart>
-      <FormPart name='結果と次回'>
+      <FormPart label='結果と次回'>
         <TextArea
           label='結果のメモ'
           name='resultNotes'
-          rows={3}
           description='いつもと違うことがなければ、空のままにします。'
           defaultValue={record?.resultNotes ?? undefined}
           error={errors['resultNotes']}
@@ -454,7 +451,6 @@ export const TreatmentForm = ({
         <TextArea
           label='申し送り'
           name='staffEvaluation'
-          rows={3}
           description='施術の振り返りや、次に担当するスタッフへ伝えること。'
           defaultValue={record?.staffEvaluation ?? undefined}
           error={errors['staffEvaluation']}

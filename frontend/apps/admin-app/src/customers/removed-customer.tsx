@@ -88,7 +88,7 @@ export const RemovedCustomer = ({
                 exact: true,
               })
             }
-            retrying={false}
+            pending={false}
           />
         </>
       ))
@@ -98,7 +98,7 @@ export const RemovedCustomer = ({
           <UnreadNotice
             message={unreadMessageOf('お客様', reason)}
             onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
+            pending={read.isFetching}
           />
         </>
       ))

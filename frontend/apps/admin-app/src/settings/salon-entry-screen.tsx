@@ -109,9 +109,7 @@ export const SalonEntryScreen = () => {
             このアカウントでは、サロンを登録できません。サロンを登録できるのは、管理者です。
           </p>
           <p>
-            <ButtonLink href='/' variant='secondary'>
-              トップへ戻る
-            </ButtonLink>
+            <ButtonLink href='/'>トップへ戻る</ButtonLink>
           </p>
         </>
       )}

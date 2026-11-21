@@ -1,26 +1,17 @@
 import type { ReactNode } from 'react'
 import { classNames } from '../../class-names'
+import { type Tone, toneClass } from '../../tone'
 import styles from './alert.module.css'
-
-type AlertTone = 'info' | 'success' | 'warning' | 'danger'
 
 export type AlertProps = {
   /** `danger` is something that went wrong and interrupts; the others wait their turn */
-  tone?: AlertTone | undefined
+  tone?: Tone | undefined
   title?: string | undefined
   children: ReactNode
-  className?: string | undefined
-}
-
-const toneClass: Record<AlertTone, string | undefined> = {
-  info: styles['info'],
-  success: styles['success'],
-  warning: styles['warning'],
-  danger: styles['danger'],
 }
 
 /** An error is announced at once; anything else when the user is idle. */
-const roleOf: Record<AlertTone, 'alert' | 'status'> = {
+const roleOf: Record<Tone, 'alert' | 'status'> = {
   info: 'status',
   success: 'status',
   warning: 'status',
@@ -32,14 +23,9 @@ const roleOf: Record<AlertTone, 'alert' | 'status'> = {
  * to know. Assistive technology announces it when it appears, so render it
  * when there is something to say and not before.
  */
-export const Alert = ({
-  tone = 'info',
-  title,
-  children,
-  className,
-}: AlertProps) => (
+export const Alert = ({ tone = 'info', title, children }: AlertProps) => (
   <div
-    className={classNames(styles['alert'], toneClass[tone], className)}
+    className={classNames(styles['alert'], toneClass[tone])}
     role={roleOf[tone]}
   >
     {title !== undefined && <p className={styles['title']}>{title}</p>}

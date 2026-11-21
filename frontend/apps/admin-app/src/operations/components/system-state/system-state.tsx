@@ -47,9 +47,8 @@ const COLUMNS: TableColumn<ModelsHealthCheck>[] = [
   {
     key: 'error',
     header: 'エラー',
-    cell: ({ error }) => (
-      <span className={styles['error']}>{error ?? 'ありません'}</span>
-    ),
+    wrap: 'words',
+    cell: ({ error }) => error ?? 'ありません',
   },
 ]
 
@@ -87,7 +86,7 @@ export const SystemStateRecord = ({
     <Card
       title='システムの状態'
       actions={
-        <Button variant='secondary' pending={checking} onClick={onCheck}>
+        <Button pending={checking} onClick={onCheck}>
           もう一度確かめる
         </Button>
       }

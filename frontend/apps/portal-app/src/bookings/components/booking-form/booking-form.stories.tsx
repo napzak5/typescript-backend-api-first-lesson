@@ -18,6 +18,7 @@ const meta: Meta<typeof BookingForm> = {
       <TextArea
         label='ご要望'
         name='customerRequest'
+        rows={4}
         description='サロンに伝えておきたいことがあれば、ご記入ください。'
       />
     ),

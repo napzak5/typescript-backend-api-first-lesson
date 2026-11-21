@@ -187,8 +187,8 @@ export const ScheduleForm = ({
       onSubmit={onSubmit}
     >
       <FormPart
-        name='毎週'
-        note='曜日ごとの勤務時間です。時刻は、サロンの時計の時刻です。勤務しない曜日に備考を書くと、休みの理由として残ります。'
+        label='毎週'
+        description='曜日ごとの勤務時間です。時刻は、サロンの時計の時刻です。勤務しない曜日に備考を書くと、休みの理由として残ります。'
       >
         {parts.weekly.map(({ weekday, row }) => {
           const nameOf = (property: ScheduleProperty): string =>
@@ -230,8 +230,8 @@ export const ScheduleForm = ({
         })}
       </FormPart>
       <FormPart
-        name='日付ごと'
-        note='その日だけ勤務時間を変える日や、休みの日です。日付ごとの行がある日は、曜日の勤務時間の代わりに、その行を使います。'
+        label='日付ごと'
+        description='その日だけ勤務時間を変える日や、休みの日です。日付ごとの行がある日は、曜日の勤務時間の代わりに、その行を使います。'
       >
         {rows.map((row, index) => {
           const nameOf = (property: ScheduleProperty): string =>

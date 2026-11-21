@@ -30,14 +30,14 @@ describe('TextArea', () => {
     expect(stories.Default.args.onChange).toHaveBeenCalledTimes(3)
   })
 
-  it('should show four lines unless its caller says how many', async () => {
+  it('should show three lines unless its caller says how many', async () => {
     // Act
     await stories.Default.run()
 
     // Assert
     expect(screen.getByRole('textbox', { name: 'ご要望' })).toHaveAttribute(
       'rows',
-      '4',
+      '3',
     )
   })
 
