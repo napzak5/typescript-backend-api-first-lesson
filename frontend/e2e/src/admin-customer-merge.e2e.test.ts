@@ -94,7 +94,7 @@ test.describe('merging two records of one customer, in a browser', () => {
     )
     await expect(heading(page, 'ほかのお客様とまとめる')).toBeFocused()
     await page.getByRole('searchbox', { name: 'キーワード' }).fill('Yamamoto')
-    await pressWithTheKeyboard(page.getByRole('button', { name: '検索する' }))
+    await pressWithTheKeyboard(page.getByRole('button', { name: '探す' }))
     await expect(page.getByText(`${KENJI.name}（このお客様）`)).toBeVisible()
     await pressWithTheKeyboard(page.getByRole('link', { name: KENJI.name }))
 

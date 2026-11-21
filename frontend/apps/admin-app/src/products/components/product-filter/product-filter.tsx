@@ -1,15 +1,13 @@
 import {
-  Button,
-  ButtonLink,
+  countNarrowing,
+  FilterForm,
   type FormErrors,
   Select,
   TextField,
-  useErrorFocus,
+  useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
 import { CARRIED_OPTIONS, USE_OPTIONS } from '../../product-format'
 import { type ProductConditions, productQueryOf } from '../../product-ledger'
-import styles from './product-filter.module.css'
 
 export type ProductFilterProps = {
   /** The conditions that are shown: those of the address */
@@ -37,6 +35,14 @@ const valuesOf = (conditions: ProductConditions): Values => ({
 
 const NO_ERRORS: FormErrors = {}
 
+/** The conditions of the sheet that narrow the list: its button counts them */
+const COUNTED: readonly (keyof Values)[] = [
+  'barcode',
+  'category',
+  'carried',
+  'use',
+]
+
 /**
  * Which products the ledger shows: a keyword, a barcode, a category,
  * whether the salon still carries them and what they are for. The names
@@ -51,50 +57,30 @@ export const ProductFilter = ({
   clearHref,
   onSubmit,
 }: ProductFilterProps) => {
-  const form = useErrorFocus(errors)
-  const shownQuery = productQueryOf(conditions).toString()
-  const [shown, setShown] = useState({
-    shownQuery,
-    values: valuesOf(conditions),
-  })
-  if (shown.shownQuery !== shownQuery) {
-    setShown({ shownQuery, values: valuesOf(conditions) })
-  }
-
-  const hold = (name: keyof Values, value: string): void => {
-    setShown({ shownQuery, values: { ...shown.values, [name]: value } })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(
+    productQueryOf(conditions).toString(),
+    () => valuesOf(conditions),
+  )
 
   return (
-    <search aria-label='商品を探す'>
-      <form className={styles['form']} noValidate onSubmit={submit} ref={form}>
-        <div className={styles['keywords']}>
-          <TextField
-            label='キーワード'
-            name='keyword'
-            type='search'
-            description='商品名、商品コード、ブランドの一部。'
-            value={shown.values.keyword}
-            error={errors['keyword']}
-            onChange={(event) => hold('keyword', event.target.value)}
-          />
+    <FilterForm
+      label='商品を探す'
+      errors={errors}
+      clearHref={clearHref}
+      onSubmit={onSubmit}
+      conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
+      conditions={
+        <>
           <TextField
             label='バーコード'
             name='barcode'
             inputMode='numeric'
             autoComplete='off'
             description='バーコードのすべて。読み取り機で入力できます。'
-            value={shown.values.barcode}
+            value={values.barcode}
             error={errors['barcode']}
             onChange={(event) => hold('barcode', event.target.value)}
           />
-        </div>
-        <div className={styles['conditions']}>
           <Select
             label='カテゴリー'
             name='category'
@@ -103,7 +89,7 @@ export const ProductFilter = ({
               label: category,
             }))}
             placeholder='すべて'
-            value={shown.values.category}
+            value={values.category}
             onChange={(event) => hold('category', event.target.value)}
           />
           <Select
@@ -111,7 +97,7 @@ export const ProductFilter = ({
             name='carried'
             options={CARRIED_OPTIONS}
             placeholder='すべて'
-            value={shown.values.carried}
+            value={values.carried}
             onChange={(event) => hold('carried', event.target.value)}
           />
           <Select
@@ -119,21 +105,21 @@ export const ProductFilter = ({
             name='use'
             options={USE_OPTIONS}
             placeholder='すべて'
-            value={shown.values.use}
+            value={values.use}
             onChange={(event) => hold('use', event.target.value)}
           />
-        </div>
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            探す
-          </Button>
-          {clearHref !== undefined && (
-            <ButtonLink href={clearHref} variant='quiet'>
-              条件を外す
-            </ButtonLink>
-          )}
-        </div>
-      </form>
-    </search>
+        </>
+      }
+    >
+      <TextField
+        label='キーワード'
+        name='keyword'
+        type='search'
+        description='商品名、商品コード、ブランドの一部。'
+        value={values.keyword}
+        error={errors['keyword']}
+        onChange={(event) => hold('keyword', event.target.value)}
+      />
+    </FilterForm>
   )
 }

@@ -1,12 +1,15 @@
-import { Button, ButtonLink, Select } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
+import {
+  countNarrowing,
+  FilterForm,
+  Select,
+  useFilterValues,
+} from '@beauty-salon-frontend/ui'
 import { ALERT_KIND_OPTIONS, SEVERITY_OPTIONS } from '../../alert-format'
 import {
   ACKNOWLEDGED_OPTIONS,
   type AlertConditions,
   alertQueryOf,
 } from '../../alert-search'
-import styles from './alert-filter.module.css'
 
 export type AlertFilterProps = {
   /** The conditions that are shown: those of the address */
@@ -30,6 +33,9 @@ const valuesOf = ({
   acknowledged: acknowledged === undefined ? '' : `${acknowledged}`,
 })
 
+/** The conditions of the sheet that narrow the list: its button counts them */
+const COUNTED: readonly (keyof Values)[] = ['alert', 'severity', 'acknowledged']
+
 /**
  * Which alerts of the stock the screen shows: their kind, their severity,
  * and whether somebody saw to them. Like the filter of the movements, it
@@ -40,34 +46,26 @@ export const AlertFilter = ({
   clearHref,
   onSubmit,
 }: AlertFilterProps) => {
-  const shownQuery = alertQueryOf(conditions).toString()
-  const [shown, setShown] = useState({
-    shownQuery,
-    values: valuesOf(conditions),
-  })
-  if (shown.shownQuery !== shownQuery) {
-    setShown({ shownQuery, values: valuesOf(conditions) })
-  }
-
-  const hold = (name: keyof Values, value: string): void => {
-    setShown({ shownQuery, values: { ...shown.values, [name]: value } })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(
+    alertQueryOf(conditions).toString(),
+    () => valuesOf(conditions),
+  )
 
   return (
-    <search aria-label='在庫のアラートを絞り込む'>
-      <form className={styles['form']} noValidate onSubmit={submit}>
-        <div className={styles['conditions']}>
+    <FilterForm
+      label='在庫のアラートを絞り込む'
+      purpose='view'
+      clearHref={clearHref}
+      onSubmit={onSubmit}
+      conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
+      conditions={
+        <>
           <Select
             label='種類'
             name='alert'
             options={ALERT_KIND_OPTIONS}
             placeholder='すべて'
-            value={shown.values.alert}
+            value={values.alert}
             onChange={(event) => hold('alert', event.target.value)}
           />
           <Select
@@ -75,7 +73,7 @@ export const AlertFilter = ({
             name='severity'
             options={SEVERITY_OPTIONS}
             placeholder='すべて'
-            value={shown.values.severity}
+            value={values.severity}
             onChange={(event) => hold('severity', event.target.value)}
           />
           <Select
@@ -83,21 +81,11 @@ export const AlertFilter = ({
             name='acknowledged'
             options={ACKNOWLEDGED_OPTIONS}
             placeholder='すべて'
-            value={shown.values.acknowledged}
+            value={values.acknowledged}
             onChange={(event) => hold('acknowledged', event.target.value)}
           />
-        </div>
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            表示する
-          </Button>
-          {clearHref !== undefined && (
-            <ButtonLink href={clearHref} variant='quiet'>
-              条件をすべて外す
-            </ButtonLink>
-          )}
-        </div>
-      </form>
-    </search>
+        </>
+      }
+    />
   )
 }

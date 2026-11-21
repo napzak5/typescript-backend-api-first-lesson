@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -46,7 +49,7 @@ describe('ReviewFilter', () => {
       '評価の高い順',
       '参考になった順',
     ])
-    expect(screen.queryByRole('link', { name: '条件をすべて外す' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
   })
 
   it('should show the conditions of the address, and lead to every review', async () => {
@@ -58,7 +61,7 @@ describe('ReviewFilter', () => {
     expect(box('評価の上限')).toHaveValue('3')
     expect(box('担当スタッフ')).toHaveValue(staff[1]?.id)
     expect(box('並び順')).toHaveValue('helpful')
-    expect(screen.getByRole('link', { name: '条件をすべて外す' })).toBeVisible()
+    expect(screen.getByRole('link', { name: '条件を外す' })).toBeVisible()
   })
 
   it('should hand over the conditions that were chosen', async () => {
@@ -86,6 +89,20 @@ describe('ReviewFilter', () => {
     expect(box('評価の上限')).toBeInvalid()
     expect(box('評価の上限')).toHaveAccessibleDescription(
       '評価の上限は、下限と同じか、それより高くしてください。',
+    )
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the reviews, and not the order, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（2）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
     )
   })
 })

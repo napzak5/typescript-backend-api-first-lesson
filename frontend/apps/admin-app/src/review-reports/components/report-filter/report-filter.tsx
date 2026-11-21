@@ -1,7 +1,5 @@
-import { Button, Select } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useState } from 'react'
+import { FilterForm, Select, useFilterValues } from '@beauty-salon-frontend/ui'
 import { REPORTS_SHOWN, type ReportsShown, SHOWN } from '../../review-reports'
-import styles from './report-filter.module.css'
 
 export type ReportFilterProps = {
   /** The reports that are shown: those of the address */
@@ -17,35 +15,17 @@ export type ReportFilterProps = {
  * changes, and what was chosen until the form is sent.
  */
 export const ReportFilter = ({ shown, onSubmit }: ReportFilterProps) => {
-  const [held, setHeld] = useState<{ shown: ReportsShown; value: string }>({
-    shown,
-    value: shown,
-  })
-  if (held.shown !== shown) {
-    setHeld({ shown, value: shown })
-  }
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
-  }
+  const [values, hold] = useFilterValues(shown, () => ({ [SHOWN]: shown }))
 
   return (
-    <search aria-label='通報を絞り込む'>
-      <form className={styles['form']} noValidate onSubmit={submit}>
-        <Select
-          label='状態'
-          name={SHOWN}
-          options={REPORTS_SHOWN}
-          value={held.value}
-          onChange={(event) => setHeld({ shown, value: event.target.value })}
-        />
-        <div className={styles['actions']}>
-          <Button type='submit' variant='primary'>
-            表示する
-          </Button>
-        </div>
-      </form>
-    </search>
+    <FilterForm label='通報を絞り込む' purpose='view' onSubmit={onSubmit}>
+      <Select
+        label='状態'
+        name={SHOWN}
+        options={REPORTS_SHOWN}
+        value={values[SHOWN]}
+        onChange={(event) => hold(SHOWN, event.target.value)}
+      />
+    </FilterForm>
   )
 }

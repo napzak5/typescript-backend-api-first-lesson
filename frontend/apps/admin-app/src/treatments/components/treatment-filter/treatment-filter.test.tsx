@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
@@ -48,7 +51,7 @@ describe('TreatmentFilter', () => {
     ).toEqual(['すべて', '田中 美咲', '佐藤 健'])
     expect(from()).toHaveValue('')
     expect(to()).toHaveValue('')
-    expect(screen.queryByRole('link', { name: '条件をすべて外す' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
   })
 
   it('should show the conditions that narrow the list, and the way to every record', async () => {
@@ -59,9 +62,10 @@ describe('TreatmentFilter', () => {
     expect(member()).toHaveDisplayValue('佐藤 健')
     expect(from()).toHaveValue('2026-11-01')
     expect(to()).toHaveValue('2026-11-20')
-    expect(
-      screen.getByRole('link', { name: '条件をすべて外す' }),
-    ).toHaveAttribute('href', `/salons/${salon.id}/treatments`)
+    expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
+      'href',
+      `/salons/${salon.id}/treatments`,
+    )
   })
 
   it('should name the customer of the list, keep them, and lead to every customer', async () => {
@@ -129,5 +133,19 @@ describe('TreatmentFilter', () => {
     expect(member()).toHaveValue('')
     expect(from()).toHaveValue('2026-10-01')
     expect(to()).toHaveValue('')
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the records, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（3）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
   })
 })

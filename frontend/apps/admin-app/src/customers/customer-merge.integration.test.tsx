@@ -115,7 +115,7 @@ const searchFor = async (
     within(chosen).getByRole('searchbox', { name: 'キーワード' }),
     keyword,
   )
-  await user.click(within(chosen).getByRole('button', { name: '検索する' }))
+  await user.click(within(chosen).getByRole('button', { name: '探す' }))
 }
 
 /** Searches the ledger for the keyword and chooses the customer of the name that leads on. */

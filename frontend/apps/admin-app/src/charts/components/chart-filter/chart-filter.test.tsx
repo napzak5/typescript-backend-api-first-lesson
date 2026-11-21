@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -69,5 +72,19 @@ describe('ChartFilter', () => {
       expect.stringContaining('キーワードは 100 文字以内で入力してください。'),
     )
     expect(keyword).toHaveFocus()
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the charts, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（1）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
   })
 })

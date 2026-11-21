@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  setWindowWidth,
+} from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
@@ -172,5 +175,19 @@ describe('CustomerFilter', () => {
     expect(to()).toHaveValue('2026-11-22')
     expect(status()).toHaveValue('')
     expect(tier()).toHaveValue('')
+  })
+
+  it('should count on its button the conditions of the sheet that narrow the ledger, on a narrow screen', async () => {
+    // Arrange
+    setWindowWidth(390)
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: '条件（5）' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
   })
 })

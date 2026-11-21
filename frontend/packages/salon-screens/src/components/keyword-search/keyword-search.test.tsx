@@ -61,7 +61,7 @@ describe('KeywordSearch', () => {
       'サロンの名前か紹介文にある言葉。空欄のときは、すべてのサロンを並べます。',
     )
     expect(keyword()).toHaveAttribute('maxLength', '100')
-    expect(screen.queryByRole('link', { name: '条件をなくす' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
   })
 
   it('should hand over what was typed when it is sent', async () => {
@@ -89,7 +89,7 @@ describe('KeywordSearch', () => {
 
     // Assert
     expect(keyword()).toHaveValue('表参道')
-    expect(screen.getByRole('link', { name: '条件をなくす' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
       'href',
       '/',
     )

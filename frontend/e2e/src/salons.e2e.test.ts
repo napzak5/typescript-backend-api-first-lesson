@@ -21,7 +21,7 @@ const prefecture = (page: Page): Locator =>
   search(page).getByRole('textbox', { name: '都道府県' })
 
 const send = (page: Page): Locator =>
-  search(page).getByRole('button', { name: '検索する' })
+  search(page).getByRole('button', { name: '探す' })
 
 const results = (page: Page): Locator =>
   page.getByRole('region', { name: '検索結果' })

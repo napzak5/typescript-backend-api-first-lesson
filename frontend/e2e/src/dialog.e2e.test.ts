@@ -118,7 +118,7 @@ test.describe('a dialog over its page', () => {
 
       // Act
       await dialog.getByRole('searchbox', { name: 'キーワード' }).fill('a')
-      await dialog.getByRole('button', { name: '検索する' }).click()
+      await dialog.getByRole('button', { name: '探す' }).click()
       await expect(dialog.getByRole('table')).toBeVisible()
 
       // Assert: it fills the window but for a strip above it, and scrolls inside
