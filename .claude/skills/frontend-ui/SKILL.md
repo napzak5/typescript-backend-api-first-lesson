@@ -1951,6 +1951,25 @@ works at the salon:
   the alerts are read anew before the dialog closes, and the heading
   takes the focus. A refusal is said under the heading.
 
+The purchase orders of a salon (`src/purchase-orders/`) are searched,
+read and drafted by everybody who works at the salon:
+
+- **Items as a count enters them**: every stock row of the salon has a
+  quantity and a unit price, and only the rows given a quantity are
+  ordered. A price starts as what the product is bought at; the tax is
+  entered as the supplier bills it, and the form suggests it at the
+  rate of the salon.
+- **A subtotal as the API works it out**: each item is its quantity
+  times its price, rounded half up to the yen in whole numbers
+  (`BigInt`), and the form says the subtotal as the values are entered,
+  from the values it last read over the rows there are now. What an
+  amount of the API holds is checked before sending: the largest price
+  an item may have is said at its price, a total too large above the
+  form.
+- **An order of the address**: the routes of the orders are not below
+  the salon, and an administrator reads the orders of every salon, so
+  an order of another salon is not found at the address of this one.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
