@@ -247,10 +247,13 @@ pnpm test:integration    # integration tests, backend and frontend; needs Docker
 pnpm test:e2e            # browser tests; needs the Chromium of `pnpm test:e2e:install` and a PostgreSQL (TEST_DATABASE_URL, or Docker)
 ```
 
-CI runs the unit tests once and the integration tests twice: against a
-PostgreSQL service through `TEST_DATABASE_URL`, and with testcontainers; the
-mail delivery tests start their Mailpit container and the file storage tests
-their SeaweedFS container in both runs. The browser tests run in a job of
+CI runs the unit tests and the integration tests once each. The integration
+tests use a PostgreSQL service through `TEST_DATABASE_URL`, as the browser
+tests do; the mail delivery tests start their Mailpit container and the file
+storage tests their SeaweedFS container through testcontainers. On a
+developer's machine `TEST_DATABASE_URL` is left out, and the tests start a
+PostgreSQL container as well: that needs nothing but Docker and leaves the
+development database alone. The browser tests run in a job of
 their own, against the PostgreSQL service; a run that fails keeps its report
 and its traces as an artifact. How to
 run one package, one file or one test is in the

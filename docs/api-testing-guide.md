@@ -229,8 +229,9 @@ setup gives the test a database of its own:
 The template is dropped when the file is done. The mark (12 hexadecimal
 digits) is chosen once per call of `openTestDatabases`, so the databases of
 one file, or of one test server, are told from those that other files and
-servers make and drop on the same instance meanwhile (the job of CI with an
-external database runs the tests of every package on one PostgreSQL).
+servers make and drop on the same instance meanwhile (a job of the
+integration tests in CI runs the tests of every package on one PostgreSQL,
+the service of the job).
 
 PostgreSQL copies a database much faster than it applies the schema again
 (about 250 statements), which is why the schema is applied once per file and
