@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
@@ -33,6 +36,10 @@ const UnderAnAddress = ({ other, ...props }: UnderAnAddressProps) => {
 
 describe('StatisticsPeriod', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.LastYear, () =>
+    screen.getByLabelText('集計する期間（から）'),
+  )
 
   it('should show the days of the period, and say how long it may be', async () => {
     // Act

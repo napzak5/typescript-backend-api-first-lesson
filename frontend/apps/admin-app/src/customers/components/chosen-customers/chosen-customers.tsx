@@ -2,12 +2,12 @@ import {
   Alert,
   Button,
   Dialog,
+  FormDialog,
   type FormErrors,
   RadioGroup,
   TextField,
-  useErrorFocus,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useId, useLayoutEffect, useRef } from 'react'
+import { useId, useLayoutEffect, useRef } from 'react'
 import { MOST_CHOSEN, TAG, TAG_WAY } from '../../customer-bulk'
 import styles from './chosen-customers.module.css'
 
@@ -66,8 +66,6 @@ export const ChosenCustomers = ({
   onRemove,
 }: ChosenCustomersProps) => {
   const headingId = useId()
-  const formId = useId()
-  const form = useErrorFocus(errors)
   const count = customers.length
   const tooMany = count > MOST_CHOSEN
   const sectionRef = useRef<HTMLElement>(null)
@@ -86,11 +84,6 @@ export const ChosenCustomers = ({
     }
     hadChosen.current = count > 0
   }, [count])
-
-  const retag = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onRetag(new FormData(event.currentTarget))
-  }
 
   return (
     <section
@@ -137,55 +130,36 @@ export const ChosenCustomers = ({
           </Button>
         </div>
       )}
-      <Dialog
+      <FormDialog
         open={count > 0 && open === 'tag'}
         onClose={onClose}
         title={`選んだ ${count} 人のタグ`}
         description='タグを付けるか外すかを選び、タグを 1 つ入力します。お客様のほかのタグは、そのまま残ります。'
-        actions={
-          <>
-            <Button onClick={onClose}>戻る</Button>
-            <Button
-              type='submit'
-              form={formId}
-              variant='primary'
-              pending={pending}
-            >
-              反映する
-            </Button>
-          </>
-        }
+        submitLabel='反映する'
+        message={open === 'tag' ? message : undefined}
+        errors={errors}
+        pending={pending}
+        onSubmit={onRetag}
       >
-        <form
-          className={styles['form']}
-          id={formId}
-          noValidate
-          onSubmit={retag}
-          ref={form}
-        >
-          {open === 'tag' && message !== undefined && (
-            <Alert tone='danger'>{message}</Alert>
-          )}
-          <RadioGroup
-            label='タグを'
-            name={TAG_WAY}
-            defaultValue='add'
-            required
-            options={[
-              { value: 'add', label: '付ける' },
-              { value: 'remove', label: '外す' },
-            ]}
-          />
-          <TextField
-            label='タグ'
-            name={TAG}
-            required
-            autoComplete='off'
-            description='例: 秋のキャンペーン'
-            error={errors[TAG]}
-          />
-        </form>
-      </Dialog>
+        <RadioGroup
+          label='タグを'
+          name={TAG_WAY}
+          defaultValue='add'
+          required
+          options={[
+            { value: 'add', label: '付ける' },
+            { value: 'remove', label: '外す' },
+          ]}
+        />
+        <TextField
+          label='タグ'
+          name={TAG}
+          required
+          autoComplete='off'
+          description='例: 秋のキャンペーン'
+          error={errors[TAG]}
+        />
+      </FormDialog>
       <Dialog
         open={count > 0 && open === 'removal'}
         onClose={onClose}

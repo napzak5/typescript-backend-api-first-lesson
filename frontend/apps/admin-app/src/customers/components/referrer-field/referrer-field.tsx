@@ -44,6 +44,7 @@ export const ReferrerField = ({
       <input type='hidden' name={REFERRER} value={referrerIdOf(referrer)} />
       <TextField
         label='紹介元'
+        autoComplete='off'
         readOnly
         value={referrerNameOf(referrer)}
         description='このお客様を紹介したお客様です。台帳から探して選びます。'

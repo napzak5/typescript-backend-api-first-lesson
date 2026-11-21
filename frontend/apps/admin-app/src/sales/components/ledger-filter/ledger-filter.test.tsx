@@ -1,5 +1,6 @@
 import {
   itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
@@ -35,6 +36,10 @@ const UnderAnAddress = ({ other, ...props }: UnderAnAddressProps) => {
 
 describe('LedgerFilter', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Today, () =>
+    screen.getByLabelText('会計日（から）'),
+  )
 
   it('should show the days and every state of payment the API writes', async () => {
     // Act

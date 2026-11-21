@@ -4,8 +4,10 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
+  FieldRow,
   Form,
   type FormErrors,
+  FormPart,
   type FormProps,
   Select,
   TextArea,
@@ -57,90 +59,88 @@ export const StockForm = ({
 
   return (
     <Form {...form} errors={errors}>
-      <fieldset className={styles['part']}>
-        <legend className={styles['name']}>在庫の行</legend>
-        <div className={styles['controls']}>
-          {row === null ? (
-            <>
-              <p className={styles['note']}>
-                在庫数 0
-                の行として足します。在庫数は、入庫と棚卸しで変わります。
-              </p>
-              <Select
-                label='商品'
-                name='productId'
-                required
-                placeholder='選んでください'
-                options={products.map(({ id, name, productCode }) => ({
-                  value: id,
-                  label: `${name}（${productCode}）`,
-                }))}
-                description='取り扱い中の商品です。ロット番号で分ける商品を選ぶと、ロット番号を入力します。'
-                value={chosen}
-                onChange={(event) => setChosen(event.target.value)}
-                error={errors['productId']}
-              />
-            </>
-          ) : (
-            <dl className={styles['product']}>
-              <dt className={styles['term']}>商品</dt>
-              <dd className={styles['named']}>
-                {product === undefined
-                  ? REMOVED_PRODUCT
-                  : `${product.name}（${product.productCode}）`}
-              </dd>
-            </dl>
-          )}
-          {showsLot(row, product) && (
-            <TextField
-              label='ロット番号'
-              name='lotNumber'
-              autoComplete='off'
-              required={tracked}
-              description={tracked ? LOT_KEPT : LOT_TO_CLEAR}
-              defaultValue={row?.lotNumber ?? undefined}
-              error={errors['lotNumber']}
-            />
-          )}
+      <FormPart
+        name='在庫の行'
+        note={
+          row === null
+            ? '在庫数 0 の行として足します。在庫数は、入庫と棚卸しで変わります。'
+            : undefined
+        }
+      >
+        {row === null ? (
+          <Select
+            label='商品'
+            name='productId'
+            required
+            placeholder='選んでください'
+            options={products.map(({ id, name, productCode }) => ({
+              value: id,
+              label: `${name}（${productCode}）`,
+            }))}
+            description='取り扱い中の商品です。ロット番号で分ける商品を選ぶと、ロット番号を入力します。'
+            value={chosen}
+            onChange={(event) => setChosen(event.target.value)}
+            error={errors['productId']}
+          />
+        ) : (
+          <dl className={styles['product']}>
+            <dt className={styles['term']}>商品</dt>
+            <dd className={styles['named']}>
+              {product === undefined
+                ? REMOVED_PRODUCT
+                : `${product.name}（${product.productCode}）`}
+            </dd>
+          </dl>
+        )}
+        {showsLot(row, product) && (
           <TextField
-            className={styles['short']}
-            label='使用期限'
-            name='expiryDate'
-            type='date'
+            label='ロット番号'
+            name='lotNumber'
             autoComplete='off'
-            min={EARLIEST_DAY}
-            max={LATEST_DAY}
-            description='使用期限のないものは、空にします。'
-            defaultValue={row?.expiryDate ?? undefined}
-            error={errors['expiryDate']}
+            required={tracked}
+            description={tracked ? LOT_KEPT : LOT_TO_CLEAR}
+            defaultValue={row?.lotNumber ?? undefined}
+            error={errors['lotNumber']}
           />
-          <div className={styles['pair']}>
-            <TextField
-              label='保管場所'
-              name='location'
-              autoComplete='off'
-              description='100 文字まで。'
-              defaultValue={row?.location ?? undefined}
-              error={errors['location']}
-            />
-            <TextField
-              label='棚'
-              name='shelf'
-              autoComplete='off'
-              description='50 文字まで。'
-              defaultValue={row?.shelf ?? undefined}
-              error={errors['shelf']}
-            />
-          </div>
-          <TextArea
-            label='メモ'
-            name='notes'
-            rows={3}
-            defaultValue={row?.notes ?? undefined}
-            error={errors['notes']}
+        )}
+        <TextField
+          className={styles['short']}
+          label='使用期限'
+          name='expiryDate'
+          type='date'
+          autoComplete='off'
+          min={EARLIEST_DAY}
+          max={LATEST_DAY}
+          description='使用期限のないものは、空にします。'
+          defaultValue={row?.expiryDate ?? undefined}
+          error={errors['expiryDate']}
+        />
+        <FieldRow>
+          <TextField
+            label='保管場所'
+            name='location'
+            autoComplete='off'
+            description='100 文字まで。'
+            defaultValue={row?.location ?? undefined}
+            error={errors['location']}
           />
-        </div>
-      </fieldset>
+          <TextField
+            label='棚'
+            name='shelf'
+            autoComplete='off'
+            description='50 文字まで。'
+            defaultValue={row?.shelf ?? undefined}
+            error={errors['shelf']}
+          />
+        </FieldRow>
+        <TextArea
+          label='メモ'
+          name='notes'
+          rows={3}
+          defaultValue={row?.notes ?? undefined}
+          error={errors['notes']}
+        />
+      </FormPart>
     </Form>
   )
 }

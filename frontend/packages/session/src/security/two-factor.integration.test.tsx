@@ -519,9 +519,10 @@ describe('the second factor of an account, against the API', () => {
       )
 
       // Assert
+      // The focus is on the answer, which took the place of the form
       const said =
         await within(dialog).findByText(/^新しいバックアップコードです。/)
-      expect(said).toHaveFocus()
+      expect(said.parentElement).toHaveFocus()
       const issued = within(dialog)
         .getAllByRole('code')
         .map((code) => code.textContent ?? '')
@@ -580,7 +581,8 @@ describe('the second factor of an account, against the API', () => {
 
       // Assert
       expect(
-        await within(dialog).findByText(/^新しいバックアップコードです。/),
+        (await within(dialog).findByText(/^新しいバックアップコードです。/))
+          .parentElement,
       ).toHaveFocus()
       // The used code counted as a wrong attempt, until a sign-in succeeds
       expect(await twoFactorOf(CUSTOMER)).toEqual({

@@ -70,6 +70,7 @@ export const ChartFilter = ({
       <TextField
         label='キーワード'
         name='search'
+        autoComplete='off'
         type='search'
         description='持病や体調、メモ、好みの商材と避ける商材の名前の一部。'
         value={values.search}

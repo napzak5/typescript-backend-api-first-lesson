@@ -87,6 +87,7 @@ export const BookingFilter = ({
       <TextField
         label='日付'
         name='date'
+        autoComplete='off'
         type='date'
         min='1900-01-01'
         max='2999-12-31'

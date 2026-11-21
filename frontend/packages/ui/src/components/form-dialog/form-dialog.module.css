@@ -1,0 +1,17 @@
+/* What went wrong with the attempt, then the controls, one below the other */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-fields);
+}
+
+/* What the form brought, in place of the form */
+.answer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.answer > p {
+  margin: 0;
+}

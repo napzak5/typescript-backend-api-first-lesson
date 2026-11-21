@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -14,6 +17,10 @@ const amount = (): HTMLElement => screen.getByRole('textbox', { name: '金額' }
 
 describe('PaymentForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Owed, () =>
+    screen.getByRole('textbox', { name: '金額' }),
+  )
 
   it('should offer the methods the salon uses with what they take at once, and the whole of what is left to pay', async () => {
     // Act

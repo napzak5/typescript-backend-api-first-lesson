@@ -1,46 +1,5 @@
-/*
- * A part of the form, under its name: further from what stands before it
- * than its controls are from each other. The name of a fieldset stands on
- * its upper edge, so the room above it is outside the fieldset.
- */
-.part:not(:first-child) {
-  margin-block-start: var(--space-3);
-}
-
-/*
- * A browser sets the legend of a fieldset apart from what the fieldset
- * lays out, so the gap below the name is the name's own.
- */
-.name {
-  margin-block-end: var(--space-3);
-  font-size: var(--font-size-large);
-  font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-tight);
-}
-
-/* The controls of a part, one below the other */
-.controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-fields);
-}
-
 /* What the form shows without offering it to be changed, and why */
 .note {
   margin: 0;
   color: var(--color-text-muted);
-}
-
-/* Two values that are read together: one below the other, side by side where there is room */
-.pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-  gap: var(--space-fields);
-}
-
-@media (min-width: 40rem) {
-  .pair {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }

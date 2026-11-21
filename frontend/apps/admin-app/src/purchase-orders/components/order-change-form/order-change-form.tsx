@@ -40,6 +40,7 @@ export const OrderChangeForm = ({
     <TextField
       label='納品予定日'
       name='expectedDelivery'
+      autoComplete='off'
       type='date'
       min={EARLIEST_DAY}
       max={LATEST_DAY}

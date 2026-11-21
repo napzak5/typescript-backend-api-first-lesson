@@ -49,6 +49,7 @@ export const DayChoice = ({
       <TextField
         label='日付'
         name='date'
+        autoComplete='off'
         type='date'
         min={EARLIEST_DAY}
         max={LATEST_DAY}

@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -12,6 +15,10 @@ const box = (name: string): HTMLElement => screen.getByRole('textbox', { name })
 
 describe('OrderChangeForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Filled, () =>
+    screen.getByLabelText('納品予定日'),
+  )
 
   it('should open with the day of the delivery at the salon and the notes the order holds', async () => {
     // Act

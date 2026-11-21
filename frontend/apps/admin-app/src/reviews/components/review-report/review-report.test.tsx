@@ -94,7 +94,7 @@ describe('ReviewReport', () => {
     )
   })
 
-  it('should say that the account reported the review before, and offer to close the dialog alone', async () => {
+  it('should say that the account reported the review before, move the focus to what it says, and offer to close the dialog alone', async () => {
     // Act
     await stories.ReportedBefore.run()
 
@@ -109,6 +109,6 @@ describe('ReviewReport', () => {
         .getAllByRole('button')
         .map(({ textContent }) => textContent),
     ).toEqual(['閉じる'])
-    expect(within(dialog).getByRole('button', { name: '閉じる' })).toHaveFocus()
+    expect(within(dialog).getByRole('status').parentElement).toHaveFocus()
   })
 })

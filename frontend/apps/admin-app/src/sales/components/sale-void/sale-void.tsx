@@ -1,12 +1,9 @@
 import {
-  Alert,
   Button,
-  Dialog,
+  FormDialog,
   type FormErrors,
   TextArea,
-  useErrorFocus,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useId } from 'react'
 import styles from './sale-void.module.css'
 
 export type SaleVoidProps = {
@@ -55,14 +52,6 @@ export const SaleVoid = ({
   pending = false,
   onVoid,
 }: SaleVoidProps) => {
-  const formId = useId()
-  const form = useErrorFocus(errors)
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    onVoid(new FormData(event.currentTarget))
-  }
-
   if (why !== undefined) {
     return <p className={styles['why']}>{why}</p>
   }
@@ -77,43 +66,27 @@ export const SaleVoid = ({
           売上を取り消す
         </Button>
       </p>
-      <Dialog
+      <FormDialog
         open={open}
         onClose={onClose}
         title='売上を取り消しますか？'
         description={`${subject}を取り消します。取り消した売上は、取り消しの記録として売上台帳に残り、直すことも支払いを受けることもできません。予約の会計は、入れ直せます。取り消しは、元に戻せません。`}
-        actions={
-          <>
-            <Button onClick={onClose}>戻る</Button>
-            <Button
-              type='submit'
-              form={formId}
-              variant='danger'
-              pending={pending}
-            >
-              取り消す
-            </Button>
-          </>
-        }
+        submitLabel='取り消す'
+        tone='danger'
+        message={message}
+        errors={errors}
+        pending={pending}
+        onSubmit={onVoid}
       >
-        <form
-          className={styles['form']}
-          id={formId}
-          noValidate
-          onSubmit={submit}
-          ref={form}
-        >
-          {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-          <TextArea
-            label='取り消しの理由'
-            name='voidReason'
-            rows={3}
-            required
-            description='取り消した売上に残ります。あとで見る人に分かるように書きます。'
-            error={errors['voidReason']}
-          />
-        </form>
-      </Dialog>
+        <TextArea
+          label='取り消しの理由'
+          name='voidReason'
+          rows={3}
+          required
+          description='取り消した売上に残ります。あとで見る人に分かるように書きます。'
+          error={errors['voidReason']}
+        />
+      </FormDialog>
     </div>
   )
 }

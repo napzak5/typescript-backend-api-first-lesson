@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -30,6 +33,10 @@ const materialOf = (place: number): (string | null)[] =>
 
 describe('TreatmentForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.New, () =>
+    screen.getByRole('textbox', { name: '技法' }),
+  )
 
   it('should open a new record with the member and the services of the booking, and no material', async () => {
     // Act

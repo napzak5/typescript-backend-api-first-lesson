@@ -1,11 +1,9 @@
 import {
-  Alert,
   Button,
   ButtonLink,
-  Dialog,
+  FormDialog,
   TextArea,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useId } from 'react'
 import styles from './booking-changes.module.css'
 
 export type BookingChangesProps = {
@@ -49,15 +47,6 @@ export const BookingChanges = ({
   pending = false,
   onCancel,
 }: BookingChangesProps) => {
-  const formId = useId()
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    if (!pending) {
-      onCancel(new FormData(event.currentTarget))
-    }
-  }
-
   return (
     <div className={styles['changes']}>
       {moveHref === undefined ? (
@@ -72,39 +61,23 @@ export const BookingChanges = ({
       <Button variant='danger' onClick={onOpen}>
         予約をキャンセルする
       </Button>
-      <Dialog
+      <FormDialog
         open={open}
         onClose={onClose}
         title='予約をキャンセルしますか？'
         description={`${when}の予約をキャンセルします。キャンセルした予約は、元に戻せません。`}
-        actions={
-          <>
-            <Button onClick={onClose}>戻る</Button>
-            <Button
-              type='submit'
-              form={formId}
-              variant='danger'
-              pending={pending}
-            >
-              キャンセルを確定する
-            </Button>
-          </>
-        }
+        submitLabel='キャンセルを確定する'
+        tone='danger'
+        message={message}
+        pending={pending}
+        onSubmit={onCancel}
       >
-        <form
-          className={styles['form']}
-          id={formId}
-          noValidate
-          onSubmit={submit}
-        >
-          {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-          <TextArea
-            label='キャンセルの理由'
-            name='cancellationReason'
-            description='サロンに伝えたいことがあれば、ご記入ください。空欄のままでも、キャンセルできます。'
-          />
-        </form>
-      </Dialog>
+        <TextArea
+          label='キャンセルの理由'
+          name='cancellationReason'
+          description='サロンに伝えたいことがあれば、ご記入ください。空欄のままでも、キャンセルできます。'
+        />
+      </FormDialog>
     </div>
   )
 }

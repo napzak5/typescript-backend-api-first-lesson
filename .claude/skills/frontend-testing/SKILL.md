@@ -34,9 +34,9 @@ The styling and component rules are in the skill `frontend-ui`.
 methods of the `dialog` element and the width of the window that jsdom
 lacks, and the saving of a file a page made), what the catalogue gives
 every story (`@beauty-salon-frontend/testing/stories`), `savedFiles`,
-`setWindowWidth`, `findAccessibilityViolations`
-and `itShouldBeAccessibleInEveryStory`, and the real API of the integration
-tests (`@beauty-salon-frontend/testing/api`). The browser tests take from it
+`setWindowWidth`, `findAccessibilityViolations`,
+`itShouldBeAccessibleInEveryStory` and `itShouldBeSentByTheEnterKey`, and
+the real API of the integration tests (`@beauty-salon-frontend/testing/api`). The browser tests take from it
 what knows no test runner: how to start the test server and what to ask it
 for (`@beauty-salon-frontend/testing/api/test-server`), and the rules of the
 accessibility check (`@beauty-salon-frontend/testing/accessibility`).
@@ -114,6 +114,14 @@ describe('Button', () => {
   class.
 - Act through `userEvent` (`click`, `tab`, `keyboard`, `type`). Cover the
   keyboard for everything a pointer can do.
+- A form with a control of one line declares, below the accessibility
+  tests, that the Enter key in it sends the form, as a browser does:
+  `itShouldBeSentByTheEnterKey(stories.Entry, () => screen.getByRole('textbox', { name: '姓' }))`.
+  The copy of user-event in `storybook/test` looks for the button inside
+  the form element alone, and without one sends a form only when the
+  control is its only `input`: a `FormDialog` of more controls than that
+  is sent with Enter in a browser test. A screen whose form has no test
+  of its own sends it with Enter in its integration test.
 - jsdom applies no stylesheet. Assert the attribute or the class a style hangs
   on (`toHaveAttribute('aria-busy', 'true')`, `toHaveClass('primary')`) and
   look at the catalogue for how it looks.

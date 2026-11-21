@@ -1,5 +1,6 @@
 import {
   itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
@@ -65,6 +66,10 @@ const sent = async (
 
 describe('StockFilter', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Everything, () =>
+    screen.getByRole('textbox', { name: 'ロット番号' }),
+  )
 
   it('should offer every product of the salon and a lot, with nothing chosen', async () => {
     // Act

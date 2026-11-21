@@ -1,5 +1,6 @@
 import {
   itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
@@ -45,6 +46,10 @@ const UnderAnAddress = ({ other, ...props }: UnderAnAddressProps) => {
 
 describe('CustomerFilter', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Everyone, () =>
+    screen.getByRole('textbox', { name: 'タグ' }),
+  )
 
   it('should offer every condition the API narrows the ledger by, with nothing chosen', async () => {
     // Act

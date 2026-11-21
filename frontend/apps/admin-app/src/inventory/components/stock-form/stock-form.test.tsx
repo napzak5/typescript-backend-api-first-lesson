@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -40,6 +43,8 @@ const sentBy = async (
 
 describe('StockForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.New, expiry)
 
   it('should offer the products given, and ask for no lot before one kept by lots is chosen', async () => {
     // Act

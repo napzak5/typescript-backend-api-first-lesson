@@ -114,6 +114,7 @@ export const ProductFilter = ({
       <TextField
         label='キーワード'
         name='keyword'
+        autoComplete='off'
         type='search'
         description='商品名、商品コード、ブランドの一部。'
         value={values.keyword}

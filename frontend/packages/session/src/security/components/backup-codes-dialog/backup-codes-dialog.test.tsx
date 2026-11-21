@@ -121,15 +121,15 @@ describe('BackupCodesDialog', () => {
     expect(back).not.toBeInTheDocument()
   })
 
-  it('should move the focus to what is said of the new codes, as they take the place of the form', async () => {
+  it('should move the focus to the new codes and what is said of them, as they take the place of the form', async () => {
     // Arrange
     await stories.IssuedByCode.run()
 
     // Act
     await userEvent.type(code(), '012345{Enter}')
 
-    // Assert
-    expect(within(dialog()).getByText(ISSUED)).toHaveFocus()
+    // Assert: the answer, which begins with what is said of the codes
+    expect(within(dialog()).getByText(ISSUED).parentElement).toHaveFocus()
   })
 
   it('should close when it is closed after the codes are shown', async () => {

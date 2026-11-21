@@ -212,6 +212,30 @@ describe('StatusActions', () => {
     expect(stories.Cancelling.args.onCancel).not.toHaveBeenCalled()
   })
 
+  it('should leave the completion as it is while a cancellation is on its way', async () => {
+    // Act
+    await stories.AskingCompletion.run({
+      args: { ...stories.AskingCompletion.args, pending: 'cancel' },
+    })
+
+    // Assert
+    expect(
+      within(dialog()).getByRole('button', { name: '完了にする' }),
+    ).not.toHaveAttribute('aria-busy')
+  })
+
+  it('should show the completion as on its way while it is', async () => {
+    // Act
+    await stories.AskingCompletion.run({
+      args: { ...stories.AskingCompletion.args, pending: 'complete' },
+    })
+
+    // Assert
+    expect(
+      within(dialog()).getByRole('button', { name: '完了にする' }),
+    ).toHaveAttribute('aria-busy', 'true')
+  })
+
   it('should record that nobody came, after asking', async () => {
     // Arrange
     await stories.AskingNoShow.run()

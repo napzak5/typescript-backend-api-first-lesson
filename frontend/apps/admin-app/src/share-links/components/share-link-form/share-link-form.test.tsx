@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -14,6 +17,10 @@ const sentValues = (): [string, FormDataEntryValue][][] =>
 
 describe('ShareLinkForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Empty, () =>
+    screen.getByRole('textbox', { name: 'ダウンロードの回数の上限' }),
+  )
 
   it('should start with seven days, no limit and no password, and offer the periods the API takes', async () => {
     // Act

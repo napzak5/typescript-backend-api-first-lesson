@@ -177,11 +177,12 @@ is broken.
     | `--space-fields` | The gap between the fields of a form or of a search | 12px |
 
     A frame, a stack of parts and a form use these names, not a step of
-    the scale. A part of a form (a `fieldset` under its `legend`) is
-    further from what stands before it than its fields are from each
-    other, and that room is a margin of the fieldset, not a padding: the
-    legend stands on the upper edge of the fieldset, so a padding ends up
-    below the name (`.part:not(:first-child)` in the stylesheet of a form).
+    the scale. A part of a form (`FormPart`: a `fieldset` under its
+    `legend`) is further from what stands before it than its fields are
+    from each other, and that room is a margin of the fieldset, not a
+    padding: the legend stands on the upper edge of the fieldset, so a
+    padding ends up below the name (`.part:not(:first-child)` in
+    `form-part.module.css`).
 
 ### Adding a token
 
@@ -238,8 +239,8 @@ nobody reads is removed.
 
 | Component | Use it for |
 |-----------|------------|
-| `TextField` | One line. `type` is `text` (the default), `email`, `password`, `tel`, `url`, `search`, `number`, `date`, `time` or `datetime-local` |
-| `PasswordField` | A password that a person chooses. Its owner may look at it (「パスワードを表示する」) |
+| `TextField` | One line. `type` is `text` (the default), `email`, `password`, `tel`, `url`, `search`, `number`, `date`, `time` or `datetime-local`. `autoComplete` is required: the name HTML gives the value (`email`, `tel`, `family-name`, `bday`), or `off` for a value the browser knows nothing of (a tag, a note, the day of a booking) |
+| `PasswordField` | A password that a person chooses. Its owner may look at it (「パスワードを表示する」). `autoComplete` is required: `new-password`, `current-password`, or `off` for one that belongs to no account |
 | `TextArea` | Several lines |
 | `Select` | One of a list. `placeholder` adds a first option without a value |
 | `RadioGroup` | One of a few choices that should all be in sight. `layout='columns'` for many short ones (the times of a day): as many columns as fit, and the arrow keys go through them in the order they are read. Choices with long labels (the payment methods with what they take) stay one below the other: a label does not fit a column at 390px |
@@ -248,6 +249,9 @@ nobody reads is removed.
 | `FileField` | A file to choose (`accept` names its kinds). The screen reads the chosen file itself (`onChange`, `event.currentTarget.files`); it is not sent with the form. Its button looks like a secondary button |
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
 | `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it and what else can be done (`actions`): one below the other and as wide as the form below 40rem, in a row from there |
+| `FormPart` | A part of a long form under its name (a `fieldset` and its `legend`), with what it says of all its controls (`note`) before them, in the look of a description. What else a `fieldset` takes (`disabled`, `onChange`) is handed to it |
+| `FieldRow` | Two controls that are read together (a name and its kana, the start and the end), or three (`columns={3}`: the prices of a product), side by side from 40rem and one below the other below it. Each keeps its height, so their upper edges stay in line when one has a description |
+| `FormDialog` | A question answered with a form (a cancellation and its reason, a tag for the chosen customers): a `Dialog` whose content is the form, with 「戻る」 and the button that sends it (`submitLabel`, `tone='danger'` for what cannot be undone) among its actions. Enter in a control sends it, nothing is sent again while `pending`, and the focus goes to the first control with an error. `answer` is what the form brought when it is to be read before the dialog closes (the codes issued, the report made before): it takes the place of the form, with 「閉じる」 alone, and takes the focus |
 
 ```tsx
 <TextField
@@ -280,7 +284,9 @@ nobody reads is removed.
 - **`autoComplete`** is given for what a browser can fill in: `name`, `email`,
   `tel`, `current-password`, `new-password`, `one-time-code`. The address a
   person signs in with is `username`, so that a password manager finds the
-  pair.
+  pair. Every other control of one line says `off`: the type of `TextField`
+  and `PasswordField` requires the property, so none is left to the browser
+  to guess from the name of the control.
 - **A password that is chosen** is a `PasswordField` with
   `autoComplete='new-password'`. It can be shown, so it is asked for once:
   there is no second control to type it again. Its `description` says the
@@ -293,7 +299,7 @@ nobody reads is removed.
 - What is typed into keeps `--font-size-control` (16px): below that, iOS zooms
   the page when the control takes focus.
 - A form is a grid: `display: grid; gap: var(--space-fields)`. Fields that share a
-  row are columns of it. A field keeps its label, its control and its
+  row are in a `FieldRow`. A field keeps its label, its control and its
   messages as high as they are (`align-content: start` in
   `field.module.css`), so a field beside one that says an error is not
   drawn out to its height: the two controls stay on one line, and the row
@@ -616,11 +622,11 @@ page of a booking the ways to move it and to cancel it.
   said in the place of its link, with whom to ask. A screen that an
   address opens for a record it cannot change says so in place of its
   form.
-- **What cannot be taken back is asked first**, in a `Dialog` that holds
-  the form (`components/booking-changes/`): the `form` is the content of
-  the dialog, and its button stands among the `actions`, tied to it with
-  `form={id}`. The dialog names what it is about (the day and the hours
-  of the booking). The component takes `open`, `onOpen`, `onClose`,
+- **What cannot be taken back is asked first**, in a `FormDialog`
+  (`components/booking-changes/`): the form is the content of the
+  dialog, and its button stands among the actions, tied to it with
+  `form`. The dialog names what it is about (the day and the hours of
+  the booking). The component takes `open`, `onOpen`, `onClose`,
   `message` and `pending`, and hands the `FormData` up; the screen
   decides.
 - **Where a failure is said depends on what can be done about it**
@@ -685,9 +691,11 @@ none).
   title that changed after the read would be another screen to the frame,
   which would move the focus to the heading, also on a page that was
   just loaded.
-- **The parts of a long form are `fieldset`s with a `legend`** (a `div`
-  with `role='group'` does not pass the lint). Controls that share a row
-  do so from the width at which two of them fit (`min-width: 40rem`).
+- **The parts of a long form are `FormPart`s**, a `fieldset` with a
+  `legend` (a `div` with `role='group'` does not pass the lint). What a
+  part says of all its controls is its `note`. Controls that share a row
+  are a `FieldRow`, side by side from the width at which two of them fit
+  (`min-width: 40rem`).
 - **A property inside another is named by its path** (`preferences.notes`),
   as the API names it in `errors[].field`. What the API says about one
   value of a list (`preferences.preferredServices.0`) is said at the group
@@ -915,18 +923,17 @@ also says that a review of somebody else was helpful, and reports one.
   API does not say who found a review helpful, so the button is not
   pressed on a page that is opened anew; pressing it again counts nobody
   twice, and the page says what the API answered.
-- **A form in a dialog** (`components/review-report/`) is a child of the
-  `Dialog`, and its button among the `actions` sends it by the `form`
-  attribute. It takes `message`, `errors` and `pending` as `Form` does,
-  and moves the focus to the first control with an error with the hook
-  `Form` uses (`useErrorFocus` of `ui`). Every time the dialog is opened
-  it is a new form (a `key` that counts the openings): nothing that was
-  typed or said the time before is there.
+- **A form in a dialog** (`components/review-report/`) is a
+  `FormDialog`: it takes `message`, `errors` and `pending` as `Form`
+  does, and its button among the actions sends it by the `form`
+  attribute. Every time the dialog is opened it is a new form (a `key`
+  that counts the openings): nothing that was typed or said the time
+  before is there.
 - **Where nothing can be sent any more, the form gives way to a
   sentence** (the account reported the review before: an `Alert` of the
-  tone `info`, and one button that closes). The button that sent the form
-  went with it, so the one that is left takes the focus, in the layout
-  effect of the commit that shows it.
+  tone `info`), the `answer` of the `FormDialog`. The button that sent
+  the form went with it: the answer takes the focus, in the layout
+  effect of the commit that shows it, and 「閉じる」 is the one button.
 - **A record that is gone while its row is on the page** (a 404 to a
   press) is taken out of what was read, in every order (`afterReviewGone`:
   `setQueriesData`), and what counts it is read again behind what the

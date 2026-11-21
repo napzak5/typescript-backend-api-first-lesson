@@ -1,15 +1,10 @@
 import {
-  Alert,
-  Button,
-  Dialog,
+  FormDialog,
   type FormErrors,
   TextField,
-  useErrorFocus,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useId, useLayoutEffect, useRef } from 'react'
 import { CODE } from '../../two-factor-flow'
 import { BackupCodeList } from '../backup-code-list/backup-code-list'
-import styles from './backup-codes-dialog.module.css'
 
 export type BackupCodesDialogProps = {
   open: boolean
@@ -40,90 +35,41 @@ export const BackupCodesDialog = ({
   errors = NO_ERRORS,
   pending = false,
   onIssue,
-}: BackupCodesDialogProps) => {
-  const formId = useId()
-  const form = useErrorFocus(errors)
-  const said = useRef<HTMLParagraphElement>(null)
-
-  // The button that sent the form went with the form: the focus goes to
-  // what is said about the codes, in the commit that shows them
-  useLayoutEffect(() => {
-    if (issued !== undefined) {
-      said.current?.focus()
+}: BackupCodesDialogProps) => (
+  <FormDialog
+    open={open}
+    onClose={onClose}
+    title='バックアップコードを発行し直す'
+    description={
+      issued === undefined
+        ? '新しいバックアップコードを 10 個発行します。いまのバックアップコードは、使えなくなります。'
+        : undefined
     }
-  }, [issued])
-
-  const submit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    if (!pending) {
-      onIssue(new FormData(event.currentTarget))
-    }
-  }
-
-  return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title='バックアップコードを発行し直す'
-      description={
-        issued === undefined
-          ? '新しいバックアップコードを 10 個発行します。いまのバックアップコードは、使えなくなります。'
-          : undefined
-      }
-      // Each button has a key of its own: React would otherwise make the
-      // button that goes back the one that closes, and the browser would
-      // draw it changing from the one look into the other
-      actions={
-        issued === undefined ? (
-          <>
-            <Button key='back' onClick={onClose}>
-              戻る
-            </Button>
-            <Button
-              key='issue'
-              type='submit'
-              form={formId}
-              variant='primary'
-              pending={pending}
-            >
-              発行し直す
-            </Button>
-          </>
-        ) : (
-          <Button key='close' variant='primary' onClick={onClose}>
-            閉じる
-          </Button>
-        )
-      }
-    >
-      {issued === undefined ? (
-        <form
-          className={styles['form']}
-          id={formId}
-          noValidate
-          onSubmit={submit}
-          ref={form}
-        >
-          {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-          <TextField
-            label='認証アプリのコードかバックアップコード'
-            name={CODE}
-            autoComplete='one-time-code'
-            required
-            description='アカウントの持ち主であることを確かめます。認証アプリに表示されている 6 桁のコードか、まだ使っていないバックアップコードを入力してください。'
-            error={errors[CODE]}
-          />
-        </form>
-      ) : (
-        <div className={styles['issued']}>
-          <p ref={said} tabIndex={-1}>
+    submitLabel='発行し直す'
+    message={message}
+    errors={errors}
+    pending={pending}
+    onSubmit={onIssue}
+    answer={
+      issued === undefined ? undefined : (
+        <>
+          <p>
             新しいバックアップコードです。それまでのバックアップコードは、使えなくなりました。それぞれ
             1
             回だけ、認証アプリのコードの代わりに使えます。このダイアログを閉じると、二度と表示されません。印刷するか、パスワードマネージャーなどの安全な場所に控えてください。発行し直したことを、メールでお知らせしました。
           </p>
           <BackupCodeList codes={issued} />
-        </div>
-      )}
-    </Dialog>
-  )
-}
+        </>
+      )
+    }
+  >
+    <TextField
+      label='認証アプリのコードかバックアップコード'
+      name={CODE}
+      autoComplete='one-time-code'
+      required
+      description='アカウントの持ち主であることを確かめます。認証アプリに表示されている 6 桁のコードか、まだ使っていないバックアップコードを入力してください。'
+      error={errors[CODE]}
+    />
+  </FormDialog>
+)

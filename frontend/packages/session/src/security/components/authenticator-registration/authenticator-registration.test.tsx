@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -11,6 +14,10 @@ const part = (name: string) => screen.getByRole('region', { name })
 
 describe('AuthenticatorRegistration', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.Issued, () =>
+    screen.getByRole('textbox', { name: '認証アプリのコード' }),
+  )
 
   it('should show the QR code the app reads, and the secret in groups of four for an app that cannot read it', async () => {
     // Act

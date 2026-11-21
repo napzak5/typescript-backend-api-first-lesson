@@ -225,9 +225,11 @@ describe('the screens of an account, against the API', () => {
     it('should create an account that waits for its address to be confirmed, and say where the link is', async () => {
       // Arrange
       renderAt('/register')
+      const user = userEvent.setup()
 
-      // Act
-      await register(VISITOR, PASSWORD)
+      // Act: sent with the Enter key in its last control
+      await user.type(emailField(), VISITOR)
+      await user.type(screen.getByLabelText('パスワード'), `${PASSWORD}{Enter}`)
 
       // Assert
       expect(await heading('確認メールを送りました')).toHaveFocus()
@@ -451,9 +453,8 @@ describe('the screens of an account, against the API', () => {
       await heading('メールアドレスの確認')
       const user = userEvent.setup()
 
-      // Act
-      await user.type(emailField(), 'hanako@')
-      await user.click(button('確認メールを送る'))
+      // Act: sent with the Enter key in its control
+      await user.type(emailField(), 'hanako@{Enter}')
 
       // Assert
       expect(emailField()).toHaveFocus()
@@ -492,8 +493,8 @@ describe('the screens of an account, against the API', () => {
       // Arrange
       renderAt('/forgot-password')
 
-      // Act
-      await askFor(CUSTOMER)
+      // Act: sent with the Enter key in its control
+      await userEvent.type(emailField(), `${CUSTOMER}{Enter}`)
 
       // Assert
       expect(await heading('再設定のメールを送りました')).toHaveFocus()
@@ -569,8 +570,11 @@ describe('the screens of an account, against the API', () => {
       await askForResetThroughApi(CUSTOMER)
       await openMailedLink(CUSTOMER)
 
-      // Act
-      await choose(PASSWORD)
+      // Act: sent with the Enter key in its control
+      await userEvent.type(
+        await screen.findByLabelText('新しいパスワード'),
+        `${PASSWORD}{Enter}`,
+      )
 
       // Assert
       expect(await heading('パスワードを変更しました')).toHaveFocus()
@@ -738,9 +742,8 @@ describe('the screens of an account, against the API', () => {
         violations: await findAccessibilityViolations(),
       }
 
-      // Act
-      await user.type(password, PASSWORD)
-      await user.click(button('アカウントを作る'))
+      // Act: sent with the Enter key in its control
+      await user.type(password, `${PASSWORD}{Enter}`)
 
       // Assert
       expect(await heading('アカウントを作りました')).toHaveFocus()

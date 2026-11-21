@@ -148,6 +148,7 @@ export const BookingForm = ({
       <div className={styles['day']}>
         <TextField
           label='日付'
+          autoComplete='off'
           type='date'
           min={today}
           value={choice.date}

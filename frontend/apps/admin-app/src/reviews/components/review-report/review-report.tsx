@@ -2,13 +2,11 @@ import {
   Alert,
   Button,
   Card,
-  Dialog,
+  FormDialog,
   type FormErrors,
   RadioGroup,
   TextArea,
-  useErrorFocus,
 } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useId, useLayoutEffect, useRef } from 'react'
 import {
   DETAILS,
   MAX_DETAILS_LENGTH,
@@ -52,94 +50,50 @@ export const ReviewReport = ({
   onAsk,
   onClose,
   onReport,
-}: ReviewReportProps) => {
-  const reportId = useId()
-  const form = useErrorFocus(errors)
-  const close = useRef<HTMLButtonElement>(null)
-
-  // The button that sent the form went with the form: the focus goes to
-  // the one that is left, in the commit that shows the dialog without them
-  useLayoutEffect(() => {
-    if (reportedBefore) {
-      close.current?.focus()
-    }
-  }, [reportedBefore])
-
-  // Its text area takes a line on Enter: the form is sent by its button,
-  // and not again while the report is on its way
-  const report = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault()
-    if (!pending) {
-      onReport(new FormData(event.currentTarget))
-    }
-  }
-
-  return (
-    <Card title='運営への通報'>
-      <div className={styles['report']}>
-        <p>
-          事実と違う内容や個人情報など、規則に反するレビューを運営に知らせます。サロンは、レビューを削除できません。運営が内容を確かめ、規則に反するレビューは削除します。通報は、1
-          つのレビューに 1 回です。
-        </p>
-        <div className={styles['buttons']}>
-          <Button variant='danger' onClick={onAsk}>
-            通報する
-          </Button>
-        </div>
+}: ReviewReportProps) => (
+  <Card title='運営への通報'>
+    <div className={styles['report']}>
+      <p>
+        事実と違う内容や個人情報など、規則に反するレビューを運営に知らせます。サロンは、レビューを削除できません。運営が内容を確かめ、規則に反するレビューは削除します。通報は、1
+        つのレビューに 1 回です。
+      </p>
+      <div className={styles['buttons']}>
+        <Button variant='danger' onClick={onAsk}>
+          通報する
+        </Button>
       </div>
-      <Dialog
-        open={asking}
-        onClose={onClose}
-        title='レビューを通報する'
-        description='このレビューを、運営に通報します。通報の内容を読むのは運営だけで、レビューを書いたお客様には伝わりません。確かめが済むまで、レビューは掲載されたままです。'
-        actions={
-          reportedBefore ? (
-            <Button ref={close} onClick={onClose}>
-              閉じる
-            </Button>
-          ) : (
-            <>
-              <Button onClick={onClose}>戻る</Button>
-              <Button
-                type='submit'
-                form={reportId}
-                variant='danger'
-                pending={pending}
-              >
-                通報する
-              </Button>
-            </>
-          )
-        }
-      >
-        {reportedBefore ? (
+    </div>
+    <FormDialog
+      open={asking}
+      onClose={onClose}
+      title='レビューを通報する'
+      description='このレビューを、運営に通報します。通報の内容を読むのは運営だけで、レビューを書いたお客様には伝わりません。確かめが済むまで、レビューは掲載されたままです。'
+      submitLabel='通報する'
+      tone='danger'
+      message={message}
+      errors={errors}
+      pending={pending}
+      onSubmit={onReport}
+      answer={
+        reportedBefore ? (
           <Alert tone='info'>{REPORTED_BEFORE}</Alert>
-        ) : (
-          <form
-            className={styles['form']}
-            id={reportId}
-            noValidate
-            onSubmit={report}
-            ref={form}
-          >
-            {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-            <RadioGroup
-              label='通報の理由'
-              name={REASON}
-              options={REASONS}
-              required
-              error={errors[REASON]}
-            />
-            <TextArea
-              label='詳しい内容'
-              name={DETAILS}
-              maxLength={MAX_DETAILS_LENGTH}
-              description={`どこが規則に反するかを、${MAX_DETAILS_LENGTH} 文字以内で書いてください。理由が「その他」のときは、必ず書いてください。`}
-              error={errors[DETAILS]}
-            />
-          </form>
-        )}
-      </Dialog>
-    </Card>
-  )
-}
+        ) : undefined
+      }
+    >
+      <RadioGroup
+        label='通報の理由'
+        name={REASON}
+        options={REASONS}
+        required
+        error={errors[REASON]}
+      />
+      <TextArea
+        label='詳しい内容'
+        name={DETAILS}
+        maxLength={MAX_DETAILS_LENGTH}
+        description={`どこが規則に反するかを、${MAX_DETAILS_LENGTH} 文字以内で書いてください。理由が「その他」のときは、必ず書いてください。`}
+        error={errors[DETAILS]}
+      />
+    </FormDialog>
+  </Card>
+)

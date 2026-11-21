@@ -298,14 +298,16 @@ test.describe('the reviews of a salon and who reads them, in a browser', () => {
     await tabToTheSendButton(page)
     await page.keyboard.press('Enter')
 
-    // Assert: the dialog says that there is nothing to send, and the focus
-    // is on the way out that is left
+    // Assert: the dialog says, where the form was, that there is nothing to
+    // send; the focus is on what it says, and the way out is all that is left
     await expect(dialog(page).getByText(REPORTED_BEFORE)).toBeVisible()
     await expect(dialog(page).getByRole('button')).toHaveText(['閉じる'])
+    await expect(dialog(page).getByRole('status').locator('..')).toBeFocused()
+    await expectSoundPage(page)
+    await page.keyboard.press('Tab')
     await expect(
       dialog(page).getByRole('button', { name: '閉じる' }),
     ).toBeFocused()
-    await expectSoundPage(page)
     await page.keyboard.press('Enter')
     await expect(dialog(page)).toBeHidden()
     await expect(reportButton(good)).toBeFocused()

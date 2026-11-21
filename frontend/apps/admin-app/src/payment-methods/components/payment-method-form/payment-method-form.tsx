@@ -2,6 +2,7 @@ import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-cli
 import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Checkbox,
+  FieldRow,
   Form,
   type FormProps,
   Select,
@@ -75,7 +76,7 @@ export const PaymentMethodForm = ({
       defaultValue={method?.description ?? undefined}
       error={errors['description']}
     />
-    <div className={styles['pair']}>
+    <FieldRow>
       <TextField
         label='1 回の金額の下限（円）'
         name='minimumAmount'
@@ -94,8 +95,8 @@ export const PaymentMethodForm = ({
         defaultValue={amountText(method?.maximumAmount)}
         error={errors['maximumAmount']}
       />
-    </div>
-    <div className={styles['pair']}>
+    </FieldRow>
+    <FieldRow>
       <TextField
         label='手数料率（%）'
         name='fee'
@@ -113,7 +114,7 @@ export const PaymentMethodForm = ({
         defaultValue={method?.processorName ?? undefined}
         error={errors['processorName']}
       />
-    </div>
+    </FieldRow>
     <Checkbox
       label='店頭の会計で使う'
       name='isOfflineEnabled'

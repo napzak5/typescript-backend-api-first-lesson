@@ -1,4 +1,7 @@
-import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import {
+  itShouldBeAccessibleInEveryStory,
+  itShouldBeSentByTheEnterKey,
+} from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -35,6 +38,10 @@ const sentBy = async (
 
 describe('MovementForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  itShouldBeSentByTheEnterKey(stories.ForAKeeper, () =>
+    screen.getByRole('textbox', { name: '数量' }),
+  )
 
   it('should offer every kind to one who keeps the stock, with none chosen, and say the stock of the row', async () => {
     // Act
