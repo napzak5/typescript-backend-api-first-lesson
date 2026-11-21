@@ -212,7 +212,7 @@ nobody reads is removed.
   API client, no router, no query library, no text of a business domain. Text
   comes in through props. The text of the interface is Japanese; the few
   words that belong to a component itself are in it (必須, 閉じる,
-  本文へ移動, 読み込み中).
+  本文へ移動, 読み込み中, メインメニュー).
 - A component that one application uses stays in that application, with the
   same four files, in `src/<area>/components/<name>/`
   (`frontend/apps/portal-app/src/salons/components/`). It only shows: what
@@ -934,7 +934,7 @@ also says that a review of somebody else was helpful, and reports one.
 
 ```tsx
 <NotificationProvider>
-  <AppShell title={title} account={<SessionAccount />}>
+  <AppShell title={title} navigation={items} account={<SessionAccount />}>
     <RequireSession roles={ROLES}>
       <Routes>…</Routes>
     </RequireSession>
@@ -963,8 +963,8 @@ also says that a review of somebody else was helpful, and reports one.
   gives them for the role and the path (`navigationFor` in
   `frontend/apps/portal-app/src/navigation.ts`): a customer of the portal
   has the search, their bookings and their page; a visitor and an account
-  of another role have none, and `AppShell` is then given no `navigation`
-  (a landmark without a link says nothing). The admin application gives
+  of another role have none, and `AppShell`, given no links, draws no
+  navigation (a landmark without a link says nothing) and no menu. The admin application gives
   them for the salon of the address (`frontend/apps/admin-app/src/navigation.ts`). A link is the current one on
   every screen below it: the page of a salon belongs to the search, the
   page of a booking to the bookings, the form of the profile to the page
@@ -2309,8 +2309,8 @@ A share link opens a file for somebody who has no account
 
 | Component | Use it for |
 |-----------|------------|
-| `AppShell` | The frame of an application: the link that skips to the content, the header (the mark and the `title`, a link to the first screen of the application, and `account` under it on a narrow screen, beside it from 40rem), the `navigation` (under the header, or beside the content with `navigationPlacement='side'`), the main content with the notification at its top |
-| `Navigation` | The links to the screens. The application says which one is `current`; a row too long for the screen is scrolled to it |
+| `AppShell` | The frame of an application: the link that skips to the content, the header (the mark and the `title`, a link to the first screen of the application, and the `account` at its end), the links of `navigation` in a row under the header, the main content with the notification at its top. Below 40rem the header is one row, and the links and the account are in its menu |
+| `Navigation` | Links to screens or to views of one, under a name of their own. The application says which one is `current`; a row too long for the screen is scrolled to it, and `orientation='vertical'` puts them below each other, in as many columns as there is room for |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (one below the other on a narrow screen, side by side from 40rem) |
 | `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are; below it they follow each other like words, and go on in the next line where the card ends: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
@@ -2323,7 +2323,7 @@ A share link opens a file for somebody who has no account
 | `EmptyState` | What is shown where content would be, while there is none |
 | `LoadingIndicator` | What is shown where content will be, while it loads |
 | `UnreadNotice` | What is shown where content could not be read: the message the application words (`unreadMessageOf(what, reason)`), and the button that reads again |
-| `Dialog` | A question or a small form that has to be dealt with first: a sheet on the bottom edge of a narrow screen, a box in the middle of a wider one; `size='wide'` for a table to choose from |
+| `Dialog` | A question or a small form that has to be dealt with first: a sheet on the bottom edge of a narrow screen, a box in the middle of a wider one; `size='wide'` for a table to choose from; `kind='menu'` for links and buttons to choose from, which asks nothing |
 | `NotificationProvider`, `useNotifications` | The result of what the user just did |
 
 - **The name of an application** is that of `applications` in the brand
@@ -2339,6 +2339,25 @@ A share link opens a file for somebody who has no account
   `index.html`: the title, the description, the icons and what a shared
   link shows (Open Graph). `index.html` holds what every page has and
   nothing of the brand.
+- **On a narrow screen the header is one row.** Below 40rem there is no
+  room for the links of the navigation and the account beside the name:
+  the header is the name and, at its end, the button 「メインメニュー」 (three
+  lines, no word: 「メニュー」 is the menu of the services of a salon). It
+  opens the menu, a `Dialog` of the kind `menu`: a sheet on the bottom
+  edge with the links, two to a row, and the account below them, which
+  shows the whole address there and buttons as high as the links
+  (`useInMenu()`, which `AccountMenu` reads). A link or a button of the
+  menu closes it once it is pressed, and so do the overlay, 「閉じる」 and
+  the Escape key; the focus goes back to the button, and on to the heading
+  of the screen a link opened. Without links (a visitor of the portal) the
+  account stays in the header, beside the name: the way in.
+- **What is drawn differently on a narrow screen is drawn once.**
+  `AppShell` asks the browser whether the window is 40rem wide
+  (`useWideScreen` beside it, `matchMedia`, which hears when the window is
+  turned) and draws either the row of links or the menu. It does not draw
+  both and hide one with a stylesheet: a screen reader would find the same
+  links twice, and so would a test. What only changes its look stays a
+  media query of the stylesheet.
 - **A screen** is a `PageHeader`, then its content; the frame gives them their
   width and the gaps between them. One `h1` per screen, and headings go down
   one level at a time.
@@ -2398,7 +2417,9 @@ A share link opens a file for somebody who has no account
   scrollbar with `scrollbar-gutter`: the overlay does not cover such a
   strip. A press on the overlay
   does not close it: it holds a question that has to be answered, or what
-  somebody typed. Below 40rem it is a sheet on the bottom edge, as wide as
+  somebody typed. A menu (`kind='menu'`) asks nothing: a press on the
+  overlay closes it, and so does a press on one of its links or buttons,
+  once that has done what it does (the menu of `AppShell`). Below 40rem it is a sheet on the bottom edge, as wide as
   the screen, which comes up from below (`@starting-style`; closing takes
   no time), with its actions one below the other, each as wide as the
   sheet. From 40rem it is a box in the middle, with its actions in a row
