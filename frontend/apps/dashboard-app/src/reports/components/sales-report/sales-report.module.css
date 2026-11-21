@@ -16,3 +16,8 @@
   margin: 0;
   color: var(--color-text-muted);
 }
+
+/* The way to the whole of what the card shows a part of */
+.more {
+  margin: 0;
+}

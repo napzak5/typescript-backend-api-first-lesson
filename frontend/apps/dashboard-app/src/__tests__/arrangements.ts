@@ -188,3 +188,114 @@ export const removeTokyo = (): Promise<unknown> =>
   testApi().query(`update salons set "deletedAt" = now() where name = $1`, [
     TOKYO,
   ])
+
+/**
+ * The sales of today that the staff and the kinds of service are counted
+ * from: Hiroshi Tanaka cuts and does a balayage of a sale not paid yet,
+ * Mika Suzuki does a colour with a discount, sells a product and trims a
+ * fringe that is not on the menu, Yui Watanabe cuts on a sale of Hiroshi
+ * Tanaka's, and a balayage of hers is voided. A product alone is sold
+ * forty days before.
+ */
+export const sellToBreakDown = async (): Promise<void> => {
+  const cut = await arrangeSale({
+    saleNumber: 'S-BREAKDOWN-1',
+    day: 0,
+    staffCode: 'STF001',
+    lines: [
+      {
+        itemType: 'service',
+        itemName: 'Ladies Cut',
+        unitPrice: 5000,
+        tax: 500,
+        staffCode: 'STF001',
+      },
+    ],
+  })
+  await paySale(cut, 'cash', 5500)
+  const colour = await arrangeSale({
+    saleNumber: 'S-BREAKDOWN-2',
+    day: 0,
+    staffCode: 'STF002',
+    lines: [
+      {
+        itemType: 'service',
+        itemName: 'Full Color',
+        unitPrice: 8000,
+        discount: 1000,
+        tax: 800,
+        staffCode: 'STF002',
+      },
+      {
+        itemType: 'product',
+        itemName: 'Repair Shampoo',
+        unitPrice: 3000,
+        tax: 300,
+      },
+    ],
+  })
+  await paySale(colour, 'credit_card', 11_100)
+  await arrangeSale({
+    saleNumber: 'S-BREAKDOWN-3',
+    day: 0,
+    staffCode: 'STF001',
+    lines: [
+      {
+        itemType: 'service',
+        itemName: 'Mens Cut',
+        unitPrice: 4000,
+        tax: 400,
+        staffCode: 'STF004',
+      },
+      {
+        itemType: 'service',
+        itemName: 'Balayage',
+        unitPrice: 15_000,
+        tax: 1500,
+        staffCode: 'STF001',
+      },
+    ],
+  })
+  const mistake = await arrangeSale({
+    saleNumber: 'S-BREAKDOWN-4',
+    day: 0,
+    staffCode: 'STF004',
+    lines: [
+      {
+        itemType: 'service',
+        itemName: 'Balayage',
+        unitPrice: 15_000,
+        tax: 1500,
+        staffCode: 'STF004',
+      },
+    ],
+  })
+  await voidSale(mistake)
+  await arrangeSale({
+    saleNumber: 'S-BREAKDOWN-5',
+    day: 0,
+    staffCode: 'STF002',
+    lines: [
+      {
+        itemType: 'service',
+        itemName: 'Fringe Trim',
+        unitPrice: 1000,
+        tax: 100,
+        staffCode: 'STF002',
+      },
+    ],
+  })
+  await arrangeSale({
+    saleNumber: 'S-BREAKDOWN-6',
+    day: -40,
+    staffCode: 'STF004',
+    lines: [
+      {
+        itemType: 'product',
+        itemName: 'Repair Shampoo',
+        unitPrice: 3000,
+        tax: 300,
+      },
+    ],
+  })
+}

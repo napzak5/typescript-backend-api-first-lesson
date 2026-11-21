@@ -9,8 +9,14 @@ import {
   categoryNameOf,
   methodKindNameOf,
 } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList, Table } from '@beauty-salon-frontend/ui'
-import { countNameOf, percentNameOf, rankNameOf } from '../../sales-report'
+import { Card, DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
+import {
+  CATEGORY_SALES_NOTE,
+  countNameOf,
+  percentNameOf,
+  rankNameOf,
+  STAFF_SALES_NOTE,
+} from '../../sales-report'
 import styles from './sales-report.module.css'
 
 export type SalesReportProps = {
@@ -18,6 +24,10 @@ export type SalesReportProps = {
   report: ModelsSalesReportResponse
   /** The currency of the salon */
   currency: string
+  /** The sales of every member of the staff, over the same days */
+  staffHref: string
+  /** The sales of every kind of service, over the same days */
+  categoriesHref: string
 }
 
 /** A member of the staff, at their place among those who sold the most */
@@ -29,7 +39,12 @@ type Ranked = { rank: number; counted: ModelsSalesByStaffResponse }
  * staff who sold the most. Each part says how it is counted, where that
  * makes its sum another than that of the sales.
  */
-export const SalesReport = ({ report, currency }: SalesReportProps) => {
+export const SalesReport = ({
+  report,
+  currency,
+  staffHref,
+  categoriesHref,
+}: SalesReportProps) => {
   const money = (amount: number): string => amountOf(amount, currency)
 
   return (
@@ -133,8 +148,9 @@ export const SalesReport = ({ report, currency }: SalesReportProps) => {
             rowKey={({ category }) => category}
             emptyMessage='メニューの売上はありません'
           />
-          <p className={styles['note']}>
-            サービスの売上を、サービスがいま属している区分で数えます。商品の売上は入りません。
+          <p className={styles['note']}>{CATEGORY_SALES_NOTE}</p>
+          <p className={styles['more']}>
+            <Link href={categoriesHref}>区分別の売上へ</Link>
           </p>
         </div>
       </Card>
@@ -182,8 +198,9 @@ export const SalesReport = ({ report, currency }: SalesReportProps) => {
             rowKey={({ counted }) => counted.staffId}
             emptyMessage='担当したスタッフのいる売上はありません'
           />
-          <p className={styles['note']}>
-            明細を担当したスタッフ（明細になければ、会計の担当）の売上で、商品の売上も入ります。施術の数と施術の平均単価は、施術の明細だけで数えます。名前は、いまの表示名です。
+          <p className={styles['note']}>{STAFF_SALES_NOTE}</p>
+          <p className={styles['more']}>
+            <Link href={staffHref}>すべてのスタッフの売上へ</Link>
           </p>
         </div>
       </Card>

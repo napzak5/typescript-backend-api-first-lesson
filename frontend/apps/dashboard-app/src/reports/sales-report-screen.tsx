@@ -1,13 +1,9 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
 import {
-  dayAt,
-  monthUntil,
   type Period,
-  periodIn,
   periodNameOf,
   periodQueryOf,
-  readPeriod,
   StatisticsPeriod,
   unreadMessageOf,
   WithSalon,
@@ -16,16 +12,16 @@ import {
   Alert,
   Button,
   EmptyState,
-  type FormErrors,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useParams, useSearchParams } from 'react-router'
+import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
+import { categorySalesHrefOf, staffSalesHrefOf } from '../navigation'
 import { SalesReport } from './components/sales-report/sales-report'
 import { ReportRefusal } from './report-refusal'
 import { afterReportExport, REPORT_PERIOD } from './sales-report'
@@ -34,6 +30,7 @@ import {
   readSalesReport,
   salesReportKeyOf,
 } from './sales-report-api'
+import { usePeriodCount } from './use-period-count'
 
 const TITLE = '売上レポート'
 
@@ -41,9 +38,6 @@ const UNREAD = P.union('tooManyRequests', 'failed')
 
 /** Why the last export saved nothing, for the period it was asked for */
 type ExportSaid = { asked: string; message: string }
-
-/** What was wrong with the form, and the days the address showed when it was sent */
-type Refused = { asked: string; errors: FormErrors }
 
 /**
  * The sales of the salon over a period, counted: the month up to today at
@@ -53,20 +47,13 @@ type Refused = { asked: string; errors: FormErrors }
  * report the account may not see says so instead of the period.
  */
 const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
-  const [query, setQuery] = useSearchParams()
-  // What was wrong with what was sent, while the address shows the days it was sent from
-  const [refused, setRefused] = useState<Refused>()
   const [exportSaid, setExportSaid] = useState<ExportSaid>()
   const { notify } = useNotifications()
-  const period = periodIn(query, monthUntil(dayAt(new Date(), salon.timezone)))
-  const asked = periodQueryOf(period).toString()
-  const errors = refused?.asked === asked ? refused.errors : undefined
-  const read = useQuery({
-    queryKey: salesReportKeyOf(salon.id, period),
-    queryFn: () => readSalesReport(salon.id, period),
-    staleTime: 0,
-  })
-  const shown = read.isFetchedAfterMount ? read.data : undefined
+  const { period, asked, errors, count, read, shown } = usePeriodCount(
+    salon,
+    (counted) => salesReportKeyOf(salon.id, counted),
+    (counted) => readSalesReport(salon.id, counted),
+  )
 
   const exporting = useMutation({
     mutationFn: (exported: Period) => exportSalesReport(salon.id, exported),
@@ -85,21 +72,6 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         )
         .exhaustive(),
   })
-
-  const count = (values: FormData): void => {
-    const filled = readPeriod(values)
-    if (filled.type === 'invalid') {
-      setRefused({ asked, errors: filled.errors })
-      return
-    }
-    setRefused(undefined)
-    if (periodQueryOf(filled.request).toString() === asked) {
-      // The same days again: whoever sends it wants what there is now
-      void read.refetch()
-      return
-    }
-    setQuery(periodQueryOf(filled.request), { replace: true })
-  }
 
   const header = (exportable: boolean) => (
     <PageHeader
@@ -151,7 +123,12 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             />
           ))
           .with({ type: 'found' }, ({ report }) => (
-            <SalesReport report={report} currency={salon.currency} />
+            <SalesReport
+              report={report}
+              currency={salon.currency}
+              staffHref={`${staffSalesHrefOf(salon.id)}?${asked}`}
+              categoriesHref={`${categorySalesHrefOf(salon.id)}?${asked}`}
+            />
           ))
           .with({ type: UNREAD }, (reason) => (
             <UnreadNotice

@@ -1,10 +1,12 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import { describe, expect, it } from 'vitest'
 import {
+  categorySalesHrefOf,
   dailyHrefOf,
   navigationFor,
   reportsHrefOf,
   salonIdIn,
+  staffSalesHrefOf,
   trendsHrefOf,
 } from './navigation'
 
@@ -16,6 +18,8 @@ const salesOf = (current: string) =>
     [`/salons/${SALON_ID}/reports`, '売上レポート'],
     [`/salons/${SALON_ID}/reports/trends`, '売上の推移'],
     [`/salons/${SALON_ID}/reports/daily`, '1 日の売上'],
+    [`/salons/${SALON_ID}/reports/staff`, 'スタッフ別の売上'],
+    [`/salons/${SALON_ID}/reports/categories`, '区分別の売上'],
   ].map(([href = '', label = '']) => ({
     href,
     label,
@@ -50,6 +54,8 @@ describe('navigationFor', () => {
     [reportsHrefOf(SALON_ID), reportsHrefOf(SALON_ID)],
     [trendsHrefOf(SALON_ID), trendsHrefOf(SALON_ID)],
     [dailyHrefOf(SALON_ID), dailyHrefOf(SALON_ID)],
+    [staffSalesHrefOf(SALON_ID), staffSalesHrefOf(SALON_ID)],
+    [categorySalesHrefOf(SALON_ID), categorySalesHrefOf(SALON_ID)],
     [`${dailyHrefOf(SALON_ID)}/x`, dailyHrefOf(SALON_ID)],
     [`/salons/${SALON_ID}/elsewhere`, ''],
   ])('should mark the screen of the sales at %s alone', (pathname, current) => {

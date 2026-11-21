@@ -32,6 +32,14 @@ export const percentNameOf = (percentage: number): string =>
 /** A place among the members of the staff: 「1 位」. */
 export const rankNameOf = (rank: number): string => `${rank} 位`
 
+/** How the sales of a member of the staff are counted, said under them */
+export const STAFF_SALES_NOTE =
+  '明細を担当したスタッフ（明細になければ、会計の担当）の売上で、商品の売上も入ります。施術の数と施術の平均単価は、施術の明細だけで数えます。名前は、いまの表示名です。'
+
+/** How the sales of a kind of service are counted, said under them */
+export const CATEGORY_SALES_NOTE =
+  'サービスの売上を、サービスがいま属している区分で数えます。商品の売上は入りません。'
+
 export type ExportSays =
   /** The file is saved, and the notification says what it holds */
   | { type: 'saved'; file: FileToSave; message: string }
