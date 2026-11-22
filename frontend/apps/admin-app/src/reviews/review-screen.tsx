@@ -206,10 +206,10 @@ const ReviewDetails = ({ salon, review, staff }: ReviewDetailsProps) => {
         setMessage(undefined)
         setReportErrors(errors)
       })
-      .with({ type: 'valid' }, ({ request }) => {
+      .with({ type: 'valid' }, ({ value }) => {
         setMessage(undefined)
         setReportErrors({})
-        report.mutate(request)
+        report.mutate(value)
       })
       .exhaustive()
 

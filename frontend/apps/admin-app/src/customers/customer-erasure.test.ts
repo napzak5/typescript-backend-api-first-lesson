@@ -25,7 +25,7 @@ describe('readErasureAsk', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: { reason: ' 店頭で\nお申し出 ' },
+      value: { reason: ' 店頭で\nお申し出 ' },
     })
   })
 

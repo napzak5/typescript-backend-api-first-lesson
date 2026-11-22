@@ -1,4 +1,5 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
   NOT_SENT_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
@@ -8,8 +9,12 @@ import type {
   ModelsReviewReportRequest,
 } from '@beauty-salon-frontend/api-client'
 import type { Session } from '@beauty-salon-frontend/session'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { FormSays, Read } from '../forms'
 import type { ProfileRead } from '../profile/profile-api'
 import type { ReviewReporting } from './reviews-api'
 
@@ -98,7 +103,7 @@ const UNACCEPTABLE = 'この内容は送信できません。入力し直して�
  */
 export const readReport = (
   values: FormData,
-): Read<ModelsReviewReportRequest> => {
+): FormRead<ModelsReviewReportRequest> => {
   const chosen = values.get(REASON)
   const reason = REASONS.find(({ value }) => value === chosen)?.value
   const entered = values.get(DETAILS)
@@ -136,10 +141,7 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
   const details = values.find(({ field }) => field === DETAILS)
 
   return reason === undefined && details === undefined
-    ? {
-        message: '入力した内容を確かめて、もう一度お試しください。',
-        errors: {},
-      }
+    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
     : {
         message: undefined,
         errors: {
@@ -165,9 +167,8 @@ export const afterReport = (
   match(outcome)
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
-    .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()

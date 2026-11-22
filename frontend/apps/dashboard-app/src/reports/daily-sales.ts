@@ -2,9 +2,8 @@ import {
   dayAfter,
   EARLIEST_DAY,
   isDay,
-  type Read,
-  textOf,
 } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 
 /*
  * The day whose sales are shown: kept in the address, today at the salon
@@ -23,11 +22,11 @@ export const dayQueryOf = (day: string): URLSearchParams =>
   new URLSearchParams({ date: day })
 
 /** The day that was filled in. */
-export const readDay = (values: FormData): Read<string> => {
+export const readDay = (values: FormData): FormRead<string> => {
   const day = textOf(values, 'date').trim()
 
   return isDay(day)
-    ? { type: 'valid', request: day }
+    ? { type: 'valid', value: day }
     : { type: 'invalid', errors: { date: '日付を入力してください。' } }
 }
 

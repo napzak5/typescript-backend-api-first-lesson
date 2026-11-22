@@ -4,6 +4,7 @@ import { Alert } from '../alert/alert'
 import { Button } from '../button/button'
 import { type FormErrors, useErrorFocus } from './error-focus'
 import styles from './form.module.css'
+import { NO_ERRORS } from './form-values'
 
 export type FormProps = {
   /** The controls, in the order they are filled in */
@@ -26,8 +27,6 @@ export type FormProps = {
   /** The values of the controls, under their names */
   onSubmit: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * A form that is sent to the API: its controls in one column, what went

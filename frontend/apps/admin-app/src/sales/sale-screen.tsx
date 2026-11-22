@@ -15,7 +15,9 @@ import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   Card,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -23,7 +25,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { customerKeyOf, readCustomer } from '../customers/customers-api'
 import {
   bookingHrefOf,
@@ -64,8 +65,6 @@ const TITLE = '売上の内容'
 /** A sale names no customer when none was recorded: nothing is read for it */
 const NO_CUSTOMER: { type: 'none' } = { type: 'none' }
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 type SaleDetailsProps = {
   salon: ModelsSalonResponse
   sale: ModelsSaleResponse
@@ -90,7 +89,7 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
   const session = useSession()
   const { notify } = useNotifications()
   const [voiding, setVoiding] = useState(false)
-  const [voidSaid, setVoidSaid] = useState<FormSays>(NOTHING_SAID)
+  const [voidSaid, setVoidSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const recordHeading = useRef<HTMLHeadingElement>(null)
   const voidHeading = useRef<HTMLHeadingElement>(null)
   /**
@@ -249,7 +248,7 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
                 subject={`売上番号 ${sale.saleNumber}`}
                 open={voiding}
                 onOpen={() => {
-                  setVoidSaid(NOTHING_SAID)
+                  setVoidSaid(NOTHING_TO_SAY)
                   setVoiding(true)
                 }}
                 onClose={() => setVoiding(false)}
@@ -262,8 +261,8 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
                     setVoidSaid({ message: undefined, errors: read.errors })
                     return
                   }
-                  setVoidSaid(NOTHING_SAID)
-                  voidance.mutate(read.request)
+                  setVoidSaid(NOTHING_TO_SAY)
+                  voidance.mutate(read.value)
                 }}
               />
             </Card>

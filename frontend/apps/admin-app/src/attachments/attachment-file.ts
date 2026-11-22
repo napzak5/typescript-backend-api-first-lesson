@@ -3,9 +3,12 @@ import type {
   ModelsAttachmentContentType,
   ModelsAttachmentResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { FormErrors } from '@beauty-salon-frontend/ui'
+import {
+  aboutTheAttempt,
+  type FormErrors,
+  type FormSays,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import type { AttachmentRemoval, Uploading } from './attachments-api'
 
 /*
@@ -180,22 +183,24 @@ export const afterUploading = (
           'ファイルの中身が、名前の拡張子の種類と合いませんでした。中身と拡張子の合うファイルを選んでください。',
       },
     }))
-    .with({ type: 'notSent' }, () => ({
-      message:
+    .with({ type: 'notSent' }, () =>
+      aboutTheAttempt(
         'ファイルを送れませんでした。通信の状態を確かめて、もう一度アップロードしてください。',
-      errors: {},
-    }))
-    .with({ type: 'forbidden' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt(
         'このアカウントでは、このサロンにファイルを置けません。置けるのは、このサロンのスタッフと、管理者です。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         'ファイルをアップロードできませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /** The roles that remove every file of their salon: those that remove a booking */

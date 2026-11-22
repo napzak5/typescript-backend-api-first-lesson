@@ -8,7 +8,9 @@ import type {
 import { salonKeyOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -17,7 +19,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { menuHrefOf, serviceHrefOf } from '../navigation'
 import { readServices, servicesKeyOf } from '../salons/salons-api'
 import { ServiceForm } from './components/service-form/service-form'
@@ -38,8 +39,6 @@ import {
 } from './service-form'
 
 const TITLE = 'サービスを足す'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type ServiceEntryProps = {
   salon: ModelsSalonResponse
@@ -64,7 +63,7 @@ const ServiceEntry = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsServiceCreateRequest) =>
       addService(salon.id, request),
@@ -102,9 +101,9 @@ const ServiceEntry = ({
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        entry.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        entry.mutate(value)
       })
       .exhaustive()
 

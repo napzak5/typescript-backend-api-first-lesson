@@ -99,7 +99,7 @@ const ReviewList = ({ salon, staff }: ReviewListProps) => {
       return
     }
     setErrors(undefined)
-    const next = reviewQueryOf(chosen.request)
+    const next = reviewQueryOf(chosen.value)
     if (next.toString() === asked) {
       // The same reviews again: whoever sends it wants what there is now
       void read.refetch()

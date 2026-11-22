@@ -308,7 +308,7 @@ describe('the hours of a salon, against the API', () => {
     // Assert
     expect(await heading('サロンの設定')).toHaveFocus()
     expect(
-      await screen.findByText('変更はありませんでした。'),
+      await screen.findByText('変更された項目はありません。'),
     ).toBeInTheDocument()
     expect(await storedSalonOf(TOKYO)).toEqual(before)
   })

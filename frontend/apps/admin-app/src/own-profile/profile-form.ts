@@ -1,7 +1,15 @@
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type { ModelsStaffProfileUpdateRequest } from '@beauty-salon-frontend/api-client'
-import type { Read } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import {
   controlOf,
   INTRODUCTION_CONTROLS,
@@ -23,7 +31,7 @@ export const SAVED =
 
 /** What a change of the profile asks for: nothing, when nothing was changed. */
 type ProfileChange =
-  | Read<ModelsStaffProfileUpdateRequest>
+  | FormRead<ModelsStaffProfileUpdateRequest>
   | { type: 'unchanged' }
 
 /**
@@ -39,11 +47,11 @@ export const readProfileChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const changes = introductionChangesOf(read.request, shown)
+  const changes = introductionChangesOf(read.value, shown)
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /** What the form says after the API did not take it. */
@@ -58,24 +66,21 @@ export const afterProfileSave = (
         .filter((control) => INTRODUCTION_CONTROLS.includes(control))
 
       return {
-        message:
-          said.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map((control) => [
             control,
-            control === 'imageUrl'
-              ? URL_ERROR
-              : 'この値は受け付けられませんでした。入力を確かめてください。',
+            control === 'imageUrl' ? URL_ERROR : REFUSED_VALUE_MESSAGE,
           ]),
         ),
       }
     })
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         'プロフィールを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()

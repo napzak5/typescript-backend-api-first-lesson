@@ -1,13 +1,16 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import {
   type ModelsCustomerBasicPreferences,
   type ModelsCustomerCreateRequest,
   type ModelsCustomerResponse,
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
+import { aboutTheAttempt } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
-import { TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import {
   CANNOT_HANDLE_CUSTOMERS,
   PREFERENCE_NOTES,
@@ -587,7 +590,7 @@ export const readCustomerFile = async (
     if (unread.length > 0) {
       continue
     }
-    const { email, referralCode } = entry.request
+    const { email, referralCode } = entry.value
     const sameEmail = customers.find(
       ({ request }) => request.email.toLowerCase() === email.toLowerCase(),
     )
@@ -609,7 +612,7 @@ export const readCustomerFile = async (
         message: `${sameCode.row} 行目と同じ紹介コードです。`,
       })
     }
-    customers.push({ row, request: entry.request })
+    customers.push({ row, request: entry.value })
   }
 
   return problems.length === 0 ? { type: 'read', customers } : invalid(problems)
@@ -752,7 +755,7 @@ export const afterRegistration = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS.message,
+      message: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE).message,
       problems: [],
     }))
     .with({ type: 'failed' }, () => ({

@@ -6,8 +6,10 @@ import {
   Card,
   DescriptionList,
   EmptyState,
+  type FormSays,
   Link,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -19,7 +21,6 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { whenLineOf } from '../bookings/booking-format'
 import { listHrefOf } from '../bookings/own-bookings'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
 import { SignInHelp } from '../sign-in-help'
 import { ReviewForm } from './components/review-form/review-form'

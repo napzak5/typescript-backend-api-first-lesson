@@ -66,11 +66,11 @@ describe('readReviewConditions', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: { minRating: 1, staff: STAFF_ID, order: 'rating' },
+      value: { minRating: 1, staff: STAFF_ID, order: 'rating' },
     })
     expect(
       readReviewConditions(formOf({ min: '', max: '', staff: '', sort: '' })),
-    ).toEqual({ type: 'valid', request: {} })
+    ).toEqual({ type: 'valid', value: {} })
   })
 
   it('should say that the highest rating is below the lowest', () => {

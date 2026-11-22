@@ -9,20 +9,19 @@ import type {
   ModelsBookingServiceResponse,
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
+import { isDay, momentOf } from '@beauty-salon-frontend/salon-screens'
 import {
-  isDay,
-  momentOf,
-  type Read,
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
   textOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import {
   afterRefusal,
-  type FormSays,
   MOST_LINES,
   NOT_ON_THE_CLOCK,
   readLine,
-  TOO_MANY_REQUESTS,
 } from './booking-entry'
 import { statusNameOf } from './booking-format'
 import type { LineCheck } from './bookings-api'
@@ -138,7 +137,7 @@ export const lineRequestOf = ({
 export const readMove = (
   values: FormData,
   timezone: string,
-): Read<ModelsBookingRescheduleRequest> => {
+): FormRead<ModelsBookingRescheduleRequest> => {
   const staffId = textOf(values, 'staffId')
   const date = textOf(values, 'date')
   const time = textOf(values, 'startTime')
@@ -158,7 +157,7 @@ export const readMove = (
     return { type: 'invalid', errors }
   }
 
-  return { type: 'valid', request: { staffId, startTime } }
+  return { type: 'valid', value: { staffId, startTime } }
 }
 
 /**
@@ -185,7 +184,7 @@ export const readAddition = (
     booking: Pick<ModelsBookingResponse, 'bookingDate' | 'staffId' | 'services'>
     timezone: string
   },
-): Read<ModelsBookingServiceCreateRequest> => {
+): FormRead<ModelsBookingServiceCreateRequest> => {
   const read = readLine(values, (part) => part, {
     date: booking.bookingDate,
     staffId: booking.staffId,
@@ -196,7 +195,7 @@ export const readAddition = (
   }
   const starts = [
     ...booking.services.map(({ startTime }) => Date.parse(startTime)),
-    Date.parse(read.request.startTime),
+    Date.parse(read.value.startTime),
   ]
 
   return Math.max(...starts) - Math.min(...starts) <= A_DAY
@@ -274,17 +273,18 @@ export const afterMove = (
     .with({ type: 'invalid' }, ({ values }) =>
       afterRefusal(values, isMoveControl),
     )
-    .with({ type: 'taken' }, () => ({ message: MOVE_TAKEN, errors: {} }))
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、この予約を変えられません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'taken' }, () => aboutTheAttempt(MOVE_TAKEN))
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、この予約を変えられません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '予約の日時と担当を変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /** What the form that adds a line says after the API did not add it. */
@@ -299,22 +299,23 @@ export const afterAddition = (
     .with({ type: 'invalid' }, ({ values }) =>
       afterRefusal(values, (field) => LINE_CONTROLS.includes(field)),
     )
-    .with({ type: 'taken' }, () => ({ message: ADDITION_TAKEN, errors: {} }))
-    .with({ type: 'tooMuch' }, () => ({
-      message:
+    .with({ type: 'taken' }, () => aboutTheAttempt(ADDITION_TAKEN))
+    .with({ type: 'tooMuch' }, () =>
+      aboutTheAttempt(
         '金額の合計が、1 件の予約で扱える上限を超えるため、施術明細を足せませんでした。',
-      errors: {},
-    }))
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、この予約を変えられません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、この予約を変えられません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '施術明細を足せませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /** What follows an attempt to take a line away. */

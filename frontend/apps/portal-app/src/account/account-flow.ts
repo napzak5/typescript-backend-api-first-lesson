@@ -1,22 +1,23 @@
-import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  NOT_SENT_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import {
   newPasswordError,
   refusedPasswordMessage,
 } from '@beauty-salon-frontend/session'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
-import type { FormSays, Read } from '../forms'
 import type { Refusal, RefusedValue } from './account-api'
 
 const EMAIL_MISSING = 'メールアドレスを入力してください。'
 const EMAIL_MALFORMED = 'メールアドレスの形式で入力してください。'
-
-const textOf = (values: FormData, name: string): string => {
-  const value = values.get(name)
-
-  return typeof value === 'string' ? value : ''
-}
-
 const emailSchema = z.email().check(z.maxLength(255))
 
 const emailError = (email: string): string | undefined =>
@@ -32,7 +33,7 @@ const emailError = (email: string): string | undefined =>
  * The address of the control `email`, without the spaces around it, which
  * come with a pasted value.
  */
-export const readEmail = (values: FormData): Read<string> => {
+export const readEmail = (values: FormData): FormRead<string> => {
   const email = textOf(values, 'email').trim()
   const error = emailError(email)
 
@@ -45,7 +46,7 @@ export const readEmail = (values: FormData): Read<string> => {
 export const readNewPassword = (
   values: FormData,
   name: 'password' | 'newPassword',
-): Read<string> => {
+): FormRead<string> => {
   const password = textOf(values, name)
   const error = newPasswordError(password)
 
@@ -57,7 +58,7 @@ export const readNewPassword = (
 /** The address and the password of a registration: both are checked, and both errors are said. */
 export const readRegistration = (
   values: FormData,
-): Read<{ email: string; password: string }> => {
+): FormRead<{ email: string; password: string }> => {
   const email = readEmail(values)
   const password = readNewPassword(values, 'password')
 
@@ -96,10 +97,7 @@ export const afterRefusal = (refusal: Refusal): FormSays =>
       })
 
       return said.length === 0
-        ? {
-            message: '入力した内容を確かめて、もう一度お試しください。',
-            errors: {},
-          }
+        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
         : {
             message: undefined,
             // The first thing the API says about a value is the one to act on
@@ -108,15 +106,12 @@ export const afterRefusal = (refusal: Refusal): FormSays =>
             ),
           }
     })
-    .with({ type: 'tooManyAttempts' }, () => ({
-      message:
+    .with({ type: 'tooManyAttempts' }, () =>
+      aboutTheAttempt(
         '試した回数が多すぎます。しばらくしてから、もう一度お試しください。',
-      errors: {},
-    }))
-    .with({ type: 'failed' }, () => ({
-      message: NOT_SENT_MESSAGE,
-      errors: {},
-    }))
+      ),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /**
@@ -129,6 +124,6 @@ export const messageAfter = (refusal: Refusal): string => {
   return (
     message ??
     Object.values(errors).find((error) => error !== undefined) ??
-    '入力した内容を確かめて、もう一度お試しください。'
+    CHECK_THE_VALUES_MESSAGE
   )
 }

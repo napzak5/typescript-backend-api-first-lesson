@@ -2,6 +2,7 @@ import {
   countNarrowing,
   FilterForm,
   type FormErrors,
+  NO_ERRORS,
   Select,
   TextField,
   useFilterValues,
@@ -37,8 +38,6 @@ const valuesOf = (conditions: LedgerConditions): Values => ({
   to: conditions.to,
   paymentStatus: conditions.paymentStatus ?? '',
 })
-
-const NO_ERRORS: FormErrors = {}
 
 /** The conditions of the sheet that narrow the list: its button counts them */
 const COUNTED: readonly (keyof Values)[] = ['paymentStatus']

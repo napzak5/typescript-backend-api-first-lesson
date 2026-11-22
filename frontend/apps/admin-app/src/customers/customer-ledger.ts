@@ -5,13 +5,13 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   dayAfter,
+  daysErrorsOf,
   isDay,
   keywordIn,
   LONGEST_KEYWORD,
-  type Read,
   startOfDayAt,
-  textOf,
 } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { CUSTOMER_STATUSES, TIERS } from './customer-format'
 
 /**
@@ -88,27 +88,18 @@ export const customerConditionsIn = (
   }
 }
 
-const DAY_ERROR = '日付を入力してください。'
-
-const RANGE_ERROR = '終わりの日は、始まりの日と同じか、その後にしてください。'
-
 const KEYWORD_ERROR = `キーワードは ${LONGEST_KEYWORD} 文字以内で入力してください。`
-
-/** Whether a control that may be left empty holds what is no day. */
-const isNoDay = (day: string): boolean => day !== '' && !isDay(day)
 
 /** The conditions that were filled in: every one may be left empty, and the end comes not before the start. */
 export const readCustomerConditions = (
   values: FormData,
-): Read<CustomerConditions> => {
+): FormRead<CustomerConditions> => {
   const search = textOf(values, 'search').trim()
   const from = textOf(values, 'from').trim()
   const to = textOf(values, 'to').trim()
   const errors: Record<string, string> = {
     ...(search.length > LONGEST_KEYWORD ? { search: KEYWORD_ERROR } : {}),
-    ...(isNoDay(from) ? { from: DAY_ERROR } : {}),
-    ...(isNoDay(to) ? { to: DAY_ERROR } : {}),
-    ...(isDay(from) && isDay(to) && to < from ? { to: RANGE_ERROR } : {}),
+    ...daysErrorsOf(from, to, 'optional'),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
@@ -118,7 +109,7 @@ export const readCustomerConditions = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       ...(search === '' ? {} : { search }),
       tags: tagsIn(textOf(values, 'tags')),
       ...rangeOf(from === '' ? undefined : from, to === '' ? undefined : to),

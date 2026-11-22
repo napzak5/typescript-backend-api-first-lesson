@@ -456,7 +456,7 @@ describe('moving a booking and changing its lines, against the API', () => {
 
       // Assert
       expect(await heading('予約の内容')).toHaveFocus()
-      expect(notifications()).toContain('変更はありませんでした。')
+      expect(notifications()).toContain('変更された項目はありません。')
       expect(sent(fetched, 'POST', '/reschedule')).toEqual([])
     })
 

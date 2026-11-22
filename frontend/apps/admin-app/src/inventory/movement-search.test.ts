@@ -56,7 +56,7 @@ describe('readMovementConditions', () => {
           ['to', '2026-11-30'],
         ]),
       ),
-    ).toEqual({ type: 'valid', request: { type: 'sale', to: '2026-11-30' } })
+    ).toEqual({ type: 'valid', value: { type: 'sale', to: '2026-11-30' } })
     expect(
       readMovementConditions(
         formOf([
@@ -65,7 +65,7 @@ describe('readMovementConditions', () => {
           ['to', ''],
         ]),
       ),
-    ).toEqual({ type: 'valid', request: {} })
+    ).toEqual({ type: 'valid', value: {} })
   })
 
   it('should say a day that is none, and a last day before the first', () => {

@@ -75,7 +75,8 @@ const pictures = (count: number): string =>
 const OVERALL_RATING_MISSING = '総合の評価を選んでください。'
 const TITLE_TOO_LONG = '255 文字以内で入力してください。'
 const TOO_MANY_IMAGES = '画像は 10 個までです。行を減らしてください。'
-const UNACCEPTABLE = 'この内容は登録できません。入力し直してください。'
+const UNACCEPTABLE =
+  'この値は受け付けられませんでした。入力を確かめてください。'
 const STAFF_GONE =
   'このスタッフは、選べなくなりました。ほかのスタッフか、「スタッフを評価しない」を選んでください。'
 const TOO_MANY_REQUESTS =

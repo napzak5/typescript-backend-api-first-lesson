@@ -8,7 +8,9 @@ import { salonKeyOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -17,7 +19,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import {
   inventoryHrefOf,
   productEntryHrefOf,
@@ -37,8 +38,6 @@ import { productOf, stockRowNameOf } from './stock-format'
 
 const TITLE = '在庫の行を足す'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 type StockEntryProps = {
   salon: ModelsSalonResponse
   /** The products the salon carries, in the order of their codes */
@@ -55,7 +54,7 @@ const StockEntry = ({ salon, carried }: StockEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsInventoryCreateRequest) => addStockRow(request),
     onSuccess: (outcome, request) =>
@@ -97,9 +96,9 @@ const StockEntry = ({ salon, carried }: StockEntryProps) => {
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        entry.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        entry.mutate(value)
       })
       .exhaustive()
 

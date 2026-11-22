@@ -101,7 +101,7 @@ describe('readChartEntry', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         customerId: CUSTOMER,
         previousTreatments: [
           {
@@ -249,7 +249,7 @@ describe('readChartChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'valid',
-      request: {
+      value: {
         previousTreatments: [
           {
             treatment: 'perm',
@@ -284,7 +284,7 @@ describe('readChartChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'valid',
-      request: {
+      value: {
         previousTreatments: [
           {
             treatment: 'perm',

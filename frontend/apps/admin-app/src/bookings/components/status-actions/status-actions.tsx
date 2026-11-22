@@ -7,6 +7,7 @@ import {
   Card,
   Dialog,
   FormDialog,
+  type FormErrors,
   Note,
   TextArea,
   TextField,
@@ -37,7 +38,7 @@ export type StatusActionsProps = {
   /** What went wrong with the attempt in the dialog that is open */
   message?: string | undefined
   /** What is wrong with the fields of the completion */
-  completionErrors?: Record<string, string> | undefined
+  completionErrors?: FormErrors | undefined
   /** When the treatment began, as it was recorded; `undefined` when it was not */
   recordedStart?: string | undefined
   onAct: (action: DirectAction) => void

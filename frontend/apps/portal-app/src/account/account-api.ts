@@ -1,4 +1,7 @@
-import { outsideTheContract } from '@beauty-salon-frontend/answers'
+import {
+  outsideTheContract,
+  type Problem,
+} from '@beauty-salon-frontend/answers'
 import {
   authCrudAcceptStaffInvitation,
   authCrudConfirmEmailVerification,
@@ -10,7 +13,6 @@ import {
   authCrudVerifyResetToken,
   authCrudVerifyStaffInvitation,
   type ModelsAuthRegisterRequest,
-  type ModelsProblemDetails,
   type ModelsStaffInvitationResponse,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
@@ -30,6 +32,9 @@ export type Refusal =
  * unknown, used, expired or withdrawn.
  */
 type TokenRefused = { type: 'tokenRefused' }
+
+/** The API refused the token of the link: it is not known, it has run out, or it was used */
+export const TOKEN_REFUSED: TokenRefused = { type: 'tokenRefused' }
 
 /**
  * A request that the API answers alike whether or not there is an account:
@@ -70,12 +75,6 @@ export type InvitationJoining =
   | { type: 'notForThisAccount' }
   | TokenRefused
   | Refusal
-
-type Problem<Status extends number> = {
-  status: Status
-  data: ModelsProblemDetails
-}
-
 /** The answers that every operation of an account has, and no answer at all. */
 type Refused =
   | Problem<400>
@@ -126,7 +125,7 @@ const tokenRefusalOf = (answer: Refused): TokenRefused | Refusal => {
 
   return refusal.type === 'invalid' &&
     refusal.values.some(({ field }) => field === 'token')
-    ? { type: 'tokenRefused' }
+    ? TOKEN_REFUSED
     : refusal
 }
 

@@ -1,5 +1,6 @@
 import {
   FAILED,
+  isUnread,
   type NotFound,
   outsideTheContract,
   type RefusedValue,
@@ -105,10 +106,6 @@ const readStaffMember = async (id: string): Promise<StaffMemberRead> => {
     .with(P.union(null, { status: 400 }, { status: 500 }), () => FAILED)
     .exhaustive(outsideTheContract)
 }
-
-const isUnread = ({ type }: { type: string }): boolean =>
-  type === 'tooManyRequests' || type === 'failed'
-
 /**
  * The preferences with the staff a screen can name: the staff that is
  * `listed` already, the members the preferences name beyond them, and the

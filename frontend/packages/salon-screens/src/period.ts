@@ -1,4 +1,4 @@
-import { type Read, textOf } from './form'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { dayAfter, dayNameOf, isDay } from './salon-time'
 
 /** The days something of a salon is counted over, on its clock; both ends counted. */
@@ -44,34 +44,46 @@ export const periodIn = (query: URLSearchParams, initial: Period): Period => {
 
 const DAY_ERROR = '日付を入力してください。'
 
+const RANGE_ERROR = '終わりの日は、始まりの日と同じか、その後にしてください。'
+
+/**
+ * What is wrong with the first and the last day of a period, under the
+ * controls `from` and `to`: a day that is none, and an end before the
+ * start. The days of a search may be left empty (`optional`), those of a
+ * count may not (`required`).
+ */
+export const daysErrorsOf = (
+  from: string,
+  to: string,
+  ends: 'required' | 'optional',
+): Record<string, string> => {
+  const wrong = (day: string): boolean =>
+    !isDay(day) && (ends === 'required' || day !== '')
+
+  return isDay(from) && isDay(to) && to < from
+    ? { to: RANGE_ERROR }
+    : {
+        ...(wrong(from) ? { from: DAY_ERROR } : {}),
+        ...(wrong(to) ? { to: DAY_ERROR } : {}),
+      }
+}
+
 /** The days that were filled in: both of them, the end not before the start. */
-export const readDays = (values: FormData): Read<Period> => {
+export const readDays = (values: FormData): FormRead<Period> => {
   const from = textOf(values, 'from').trim()
   const to = textOf(values, 'to').trim()
-  const errors = {
-    ...(isDay(from) ? {} : { from: DAY_ERROR }),
-    ...(isDay(to) ? {} : { to: DAY_ERROR }),
-  }
-  if (Object.keys(errors).length > 0) {
-    return { type: 'invalid', errors }
-  }
-  if (to < from) {
-    return {
-      type: 'invalid',
-      errors: {
-        to: '終わりの日は、始まりの日と同じか、その後にしてください。',
-      },
-    }
-  }
+  const errors = daysErrorsOf(from, to, 'required')
 
-  return { type: 'valid', request: { from, to } }
+  return Object.keys(errors).length > 0
+    ? { type: 'invalid', errors }
+    : { type: 'valid', value: { from, to } }
 }
 
 /** The period that was filled in: the days, no more of them than the API counts over. */
-export const readPeriod = (values: FormData): Read<Period> => {
+export const readPeriod = (values: FormData): FormRead<Period> => {
   const days = readDays(values)
 
-  return days.type === 'valid' && daysOf(days.request) > MOST_DAYS
+  return days.type === 'valid' && daysOf(days.value) > MOST_DAYS
     ? {
         type: 'invalid',
         errors: { to: `期間は ${MOST_DAYS} 日までにしてください。` },

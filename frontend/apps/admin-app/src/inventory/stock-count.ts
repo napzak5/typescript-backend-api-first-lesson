@@ -1,17 +1,23 @@
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryResponse,
   ModelsInventoryStockCountItem,
   ModelsInventoryStockCountRequest,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
-import { match } from 'ts-pattern'
 import {
+  aboutTheAttempt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
 import { levelOf } from '../products/product-form'
+import { hundredthsOf } from '../products/quantity'
 import type { StockCount } from './count-api'
 import { productOf, quantityNameOf } from './stock-format'
 
@@ -33,9 +39,6 @@ const TOO_MANY = `一度に記録できるのは ${MOST_ROWS} 行までです。
 /** The name of the control of what was counted of a row */
 export const countedControlOf = (inventoryId: string): string =>
   `counted.${inventoryId}`
-
-/** A quantity in hundredths, which compare without the errors of fractions */
-const hundredthsOf = (quantity: number): number => Math.round(quantity * 100)
 
 /** What a row of the form holds: nothing when it was not counted */
 type CountedRow =
@@ -83,7 +86,7 @@ export const readStockCount = (
     'id' | 'productId' | 'reservedStock'
   >[],
   products: readonly ModelsProductResponse[],
-): Read<ModelsInventoryStockCountRequest> => {
+): FormRead<ModelsInventoryStockCountRequest> => {
   const read = rows.map((row) => countedRowOf(values, row, products))
   const wrong = Object.fromEntries(
     read.flatMap((row) =>
@@ -113,10 +116,10 @@ export const readStockCount = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       salonId,
       items,
-      reason: nullIfBlank(textOf(values, 'reason')),
+      reason: textOrNull(textOf(values, 'reason')),
     },
   }
 }
@@ -151,32 +154,31 @@ export const afterStockCount = (
       })
 
       return {
-        message:
-          said.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(said),
       }
     })
-    .with({ type: 'rowsChanged' }, () => ({
-      message:
+    .with({ type: 'rowsChanged' }, () =>
+      aboutTheAttempt(
         '数えた在庫の行のどれかが、その間に削除されました。在庫の行を読み直しました。数えた数を確かめて、もう一度記録してください。',
-      errors: {},
-    }))
-    .with({ type: 'belowReserved' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'belowReserved' }, () =>
+      aboutTheAttempt(
         '数えた数が、引き当てた数を下回る行があります。その間に在庫が引き当てられました。在庫の行を読み直しました。数えた数を確かめて、もう一度記録してください。',
-      errors: {},
-    }))
-    .with({ type: 'forbidden' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt(
         'このアカウントでは、棚卸しを記録できません。棚卸しを記録できるのは、サロンのオーナーとマネージャーと、管理者です。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '棚卸しを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()

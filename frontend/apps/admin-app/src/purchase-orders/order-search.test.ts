@@ -69,13 +69,13 @@ describe('readOrderConditions', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: { status: 'draft', supplier: '東京', to: '2026-11-20' },
+      value: { status: 'draft', supplier: '東京', to: '2026-11-20' },
     })
     expect(
       readOrderConditions(
         formOf({ status: '', supplier: '', from: '', to: '' }),
       ),
-    ).toEqual({ type: 'valid', request: {} })
+    ).toEqual({ type: 'valid', value: {} })
   })
 
   it('should say what is wrong with a supplier too long and a day that is none', () => {
@@ -105,7 +105,7 @@ describe('readOrderConditions', () => {
       readOrderConditions(formOf({ from: '2026-11-20', to: '2026-11-20' })),
     ).toEqual({
       type: 'valid',
-      request: { from: '2026-11-20', to: '2026-11-20' },
+      value: { from: '2026-11-20', to: '2026-11-20' },
     })
   })
 })

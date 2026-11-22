@@ -7,8 +7,11 @@ import {
   Card,
   DescriptionList,
   EmptyState,
+  type FormSays,
   Link,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -18,7 +21,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
 import { dayOf } from '../salons/salon-format'
 import { SignInHelp } from '../sign-in-help'
@@ -93,7 +95,7 @@ const Change = ({ own, onGone }: ChangeProps) => {
       // Nothing was changed, so there is nothing to ask the API for: the
       // customer is told so where the reviews are listed
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更された項目はありません。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(OWN_REVIEWS)
       })
       .with({ type: 'valid' }, ({ value }) => change.mutate(value))

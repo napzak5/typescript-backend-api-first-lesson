@@ -88,7 +88,7 @@ describe('readStockEntry', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         salonId: SALON_ID,
         productId: colour.id,
         lotNumber: 'LOT-2026-050',
@@ -113,7 +113,7 @@ describe('readStockEntry', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         salonId: SALON_ID,
         productId: gloves.id,
         lotNumber: null,
@@ -231,7 +231,7 @@ describe('readStockChange', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         lotNumber: 'LOT-2026-042',
         expiryDate: null,
         location: null,
@@ -256,7 +256,7 @@ describe('readStockChange', () => {
         colourLot,
         dropped,
       ),
-    ).toEqual({ type: 'valid', request: { lotNumber: null } })
+    ).toEqual({ type: 'valid', value: { lotNumber: null } })
     expect(
       readStockChange(
         rowForm(colourLot, { lotNumber: 'LOT-9' }),

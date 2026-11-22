@@ -7,6 +7,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -29,8 +30,6 @@ export type CountFormProps = Pick<
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
   errors?: FormErrors | undefined
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /** What the books say of a row: its stock and what of it is reserved, and where it is kept. */
 const booksOf = (

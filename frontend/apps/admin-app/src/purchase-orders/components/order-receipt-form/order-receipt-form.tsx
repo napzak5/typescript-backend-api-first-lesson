@@ -4,6 +4,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   Note,
   TextArea,
   TextField,
@@ -20,8 +21,6 @@ export type OrderReceiptFormProps = Pick<
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
   errors?: FormErrors | undefined
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The goods that came for an order: for every item whose stock row is

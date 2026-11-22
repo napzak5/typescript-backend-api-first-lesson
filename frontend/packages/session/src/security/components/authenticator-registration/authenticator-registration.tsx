@@ -3,6 +3,7 @@ import {
   Card,
   Form,
   type FormErrors,
+  NO_ERRORS,
   QrCode,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -28,8 +29,6 @@ export type AuthenticatorRegistrationProps = {
   /** The heading of the step, which takes the focus when the step begins */
   headingRef?: Ref<HTMLHeadingElement> | undefined
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The second step of setting up the second factor: the authenticator app

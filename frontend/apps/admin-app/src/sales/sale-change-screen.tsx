@@ -12,7 +12,10 @@ import type {
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -20,7 +23,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { saleHrefOf } from '../navigation'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
 import { SaleChangeForm } from './components/sale-change-form/sale-change-form'
@@ -39,8 +41,6 @@ import {
 import { WithSale } from './with-sale'
 
 const TITLE = '売上を直す'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type SaleChangeProps = {
   salon: ModelsSalonResponse
@@ -62,7 +62,7 @@ const SaleChange = ({ salon, sale, staff }: SaleChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const key = saleKeyOf(sale.id)
   const back = saleHrefOf(salon.id, sale.id)
   const show = (now: ModelsSaleResponse): void => {
@@ -111,12 +111,12 @@ const SaleChange = ({ salon, sale, staff }: SaleChangeProps) => {
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(back)
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        change.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        change.mutate(value)
       })
       .exhaustive()
 

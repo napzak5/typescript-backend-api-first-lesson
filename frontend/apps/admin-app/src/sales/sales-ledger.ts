@@ -1,10 +1,10 @@
 import type { ModelsPaymentStatusType } from '@beauty-salon-frontend/api-client'
 import {
   dayNameOf,
+  daysErrorsOf,
   isDay,
-  type Read,
-  textOf,
 } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 
 /**
  * Which sales of a salon the ledger shows: those whose day (at the salon)
@@ -57,31 +57,21 @@ export const ledgerConditionsIn = (
   }
 }
 
-const RANGE_ERROR = '終わりの日は、始まりの日と同じか、その後にしてください。'
-
-const DAY_ERROR = '日付を入力してください。'
-
 /** The conditions that were filled in: both days, the end not before the start. */
 export const readLedgerConditions = (
   values: FormData,
-): Read<LedgerConditions> => {
+): FormRead<LedgerConditions> => {
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
   const paymentStatus = paymentStatusFrom(textOf(values, 'paymentStatus'))
-  const errors = {
-    ...(isDay(from) ? {} : { from: DAY_ERROR }),
-    ...(isDay(to) ? {} : { to: DAY_ERROR }),
-  }
+  const errors = daysErrorsOf(from, to, 'required')
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
-  }
-  if (to < from) {
-    return { type: 'invalid', errors: { to: RANGE_ERROR } }
   }
 
   return {
     type: 'valid',
-    request: {
+    value: {
       from,
       to,
       ...(paymentStatus === undefined ? {} : { paymentStatus }),

@@ -1,21 +1,22 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsPaymentRefundRequest,
   ModelsPaymentResponse,
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
-  amountOf,
-  type Read,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
-import { match, P } from 'ts-pattern'
-import {
+  aboutTheAttempt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-  yenOf,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match, P } from 'ts-pattern'
+import { yenOf } from '../bookings/booking-entry'
 import { whyNoVoid } from './sale-changes'
 
 /*
@@ -70,9 +71,9 @@ export const readRefund = (
   values: FormData,
   { amount }: Pick<ModelsPaymentResponse, 'amount'>,
   currency: string,
-): Read<ModelsPaymentRefundRequest> => {
+): FormRead<ModelsPaymentRefundRequest> => {
   const refundAmount = yenOf(textOf(values, 'refundAmount'))
-  const refundReason = nullIfBlank(textOf(values, 'refundReason'))
+  const refundReason = textOrNull(textOf(values, 'refundReason'))
   const amountError = amountErrorOf(refundAmount, amount, currency)
   const errors = {
     ...(amountError === undefined ? {} : { refundAmount: amountError }),
@@ -86,7 +87,7 @@ export const readRefund = (
     return { type: 'invalid', errors }
   }
 
-  return { type: 'valid', request: { refundAmount, refundReason } }
+  return { type: 'valid', value: { refundAmount, refundReason } }
 }
 
 /**
@@ -176,7 +177,7 @@ export const afterRefund = (outcome: RefundAttempt): RefundSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      ...TOO_MANY_REQUESTS,
+      ...aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

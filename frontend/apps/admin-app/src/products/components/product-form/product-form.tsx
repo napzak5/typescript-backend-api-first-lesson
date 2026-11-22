@@ -6,6 +6,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -24,10 +25,8 @@ export type ProductFormProps = Pick<
   errors?: FormErrors | undefined
 }
 
-const NO_ERRORS: FormErrors = {}
-
 /** A text as the form opens with it: nothing for none. */
-const textOf = (text: string | null | undefined): string | undefined =>
+const textOrNothing = (text: string | null | undefined): string | undefined =>
   text ?? undefined
 
 /** A number as the form opens with it: nothing for none. */
@@ -80,7 +79,7 @@ export const ProductForm = ({
       <TextArea
         label='説明'
         name='description'
-        defaultValue={textOf(product?.description)}
+        defaultValue={textOrNothing(product?.description)}
         error={errors['description']}
       />
       <FieldRow>
@@ -89,7 +88,7 @@ export const ProductForm = ({
           name='category'
           autoComplete='off'
           description='100 文字まで。商品台帳で、カテゴリーで探せます。在庫の評価額をカテゴリーごとに集計します。'
-          defaultValue={textOf(product?.category)}
+          defaultValue={textOrNothing(product?.category)}
           error={errors['category']}
         />
         <TextField
@@ -97,7 +96,7 @@ export const ProductForm = ({
           name='brand'
           autoComplete='off'
           description='100 文字まで。'
-          defaultValue={textOf(product?.brand)}
+          defaultValue={textOrNothing(product?.brand)}
           error={errors['brand']}
         />
       </FieldRow>
@@ -197,7 +196,7 @@ export const ProductForm = ({
           name='supplier'
           autoComplete='off'
           description='255 文字まで。'
-          defaultValue={textOf(product?.supplier)}
+          defaultValue={textOrNothing(product?.supplier)}
           error={errors['supplier']}
         />
         <TextField
@@ -205,7 +204,7 @@ export const ProductForm = ({
           name='supplierProductCode'
           autoComplete='off'
           description='100 文字まで。発注するときに使います。'
-          defaultValue={textOf(product?.supplierProductCode)}
+          defaultValue={textOrNothing(product?.supplierProductCode)}
           error={errors['supplierProductCode']}
         />
       </FieldRow>
@@ -228,7 +227,7 @@ export const ProductForm = ({
           inputMode='numeric'
           autoComplete='off'
           description='100 文字まで。商品台帳で、バーコードで探せます。'
-          defaultValue={textOf(product?.barcode)}
+          defaultValue={textOrNothing(product?.barcode)}
           error={errors['barcode']}
         />
         <TextField
@@ -252,7 +251,7 @@ export const ProductForm = ({
         label='保管条件'
         name='storageConditions'
         rows={2}
-        defaultValue={textOf(product?.storageConditions)}
+        defaultValue={textOrNothing(product?.storageConditions)}
         error={errors['storageConditions']}
       />
       <TextField
@@ -262,7 +261,7 @@ export const ProductForm = ({
         inputMode='url'
         autoComplete='off'
         description='http:// または https:// で始まる URL。500 文字まで。'
-        defaultValue={textOf(product?.imageUrl)}
+        defaultValue={textOrNothing(product?.imageUrl)}
         error={errors['imageUrl']}
       />
       <TextField
@@ -272,7 +271,7 @@ export const ProductForm = ({
         inputMode='url'
         autoComplete='off'
         description='メーカーの安全データシート（SDS）の URL。500 文字まで。'
-        defaultValue={textOf(product?.safetyDataSheet)}
+        defaultValue={textOrNothing(product?.safetyDataSheet)}
         error={errors['safetyDataSheet']}
       />
     </FormPart>

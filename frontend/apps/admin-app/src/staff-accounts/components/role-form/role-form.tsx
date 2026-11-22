@@ -1,5 +1,10 @@
 import type { ModelsSalonRoleType } from '@beauty-salon-frontend/api-client'
-import { Form, type FormErrors, RadioGroup } from '@beauty-salon-frontend/ui'
+import {
+  Form,
+  type FormErrors,
+  NO_ERRORS,
+  RadioGroup,
+} from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { ROLE } from '../../account-form'
 import { roleOptionsOf } from '../../account-format'
@@ -20,8 +25,6 @@ export type RoleFormProps = {
   /** What the form says before the choice: where an invitation goes */
   children?: ReactNode
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The choice of a role for the account of a member: the role an

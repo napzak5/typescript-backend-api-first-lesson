@@ -9,6 +9,7 @@ import { Alert } from '../alert/alert'
 import { Button } from '../button/button'
 import { Dialog, type DialogProps } from '../dialog/dialog'
 import { type FormErrors, useErrorFocus } from '../form/error-focus'
+import { NO_ERRORS } from '../form/form-values'
 import styles from './form-dialog.module.css'
 
 export type FormDialogProps = Pick<
@@ -43,8 +44,6 @@ export type FormDialogProps = Pick<
    */
   answer?: ReactNode
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * A question answered with a form: a `Dialog` whose content is the form and

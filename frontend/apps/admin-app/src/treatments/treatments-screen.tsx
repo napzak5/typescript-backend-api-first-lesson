@@ -100,7 +100,7 @@ const TreatmentList = ({ salon, staff, services }: TreatmentListProps) => {
       return
     }
     setErrors(undefined)
-    const next = treatmentQueryOf(filled.request)
+    const next = treatmentQueryOf(filled.value)
     if (next.toString() === asked) {
       // The same records again: whoever sends it wants what there is now
       void read.refetch()

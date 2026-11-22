@@ -1,21 +1,27 @@
-import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsServiceCategoryCreateRequest,
   ModelsServiceCategoryResponse,
   ModelsServiceCategoryUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
-import {
-  type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
 import { CATEGORIES } from '../customers/customer-format'
 import { numberOf } from '../treatments/treatment-form'
 import type { TreatmentRemovalSays } from '../treatments/treatment-format'
 import type { CategoryRemoval, CategoryWrite } from './menu-api'
+import { FORBIDDEN_MESSAGE } from './service-form'
 
 /*
  * The form of a category of the menu: what it sends, and what it says
@@ -58,9 +64,9 @@ const CONTROLS: readonly string[] = [
 /** The whole category the form holds, or what is wrong with it. */
 const readWhole = (
   values: FormData,
-): Read<ModelsServiceCategoryCreateRequest> => {
+): FormRead<ModelsServiceCategoryCreateRequest> => {
   const optional = (name: string): string | null =>
-    nullIfBlank(textOf(values, name))
+    textOrNull(textOf(values, name))
   const name = textOf(values, 'name').trim()
   const kind = CATEGORIES.find((one) => one === textOf(values, 'category'))
   const displayOrder = numberOf(textOf(values, 'displayOrder'), 0)
@@ -90,7 +96,7 @@ const readWhole = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       name,
       description: optional('description'),
       parentId: optional('parentId'),
@@ -106,17 +112,12 @@ const readWhole = (
 /** A new category, as the form holds it. */
 export const readCategoryEntry = (
   values: FormData,
-): Read<ModelsServiceCategoryCreateRequest> => readWhole(values)
+): FormRead<ModelsServiceCategoryCreateRequest> => readWhole(values)
 
 /** What a change of a category asks for: nothing, when nothing was changed. */
 type CategoryChange =
-  | Read<ModelsServiceCategoryUpdateRequest>
+  | FormRead<ModelsServiceCategoryUpdateRequest>
   | { type: 'unchanged' }
-
-/** A text as the form reads it back: without the spaces around it, nothing as `null`. */
-const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
 /**
  * What was changed in the form: the values that are others than those of
  * the category it was opened with, each compared as the form reads it.
@@ -129,10 +130,10 @@ export const readCategoryChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const sent = read.request
+  const sent = read.value
   const changes: ModelsServiceCategoryUpdateRequest = {
     ...(sent.name === shown.name.trim() ? {} : { name: sent.name }),
-    ...(sent.description === shownText(shown.description)
+    ...(sent.description === textOrNull(shown.description)
       ? {}
       : { description: sent.description }),
     ...(sent.parentId === shown.parentId ? {} : { parentId: sent.parentId }),
@@ -140,7 +141,7 @@ export const readCategoryChange = (
     ...(sent.displayOrder === shown.displayOrder
       ? {}
       : { displayOrder: sent.displayOrder }),
-    ...(sent.iconUrl === shownText(shown.iconUrl)
+    ...(sent.iconUrl === textOrNull(shown.iconUrl)
       ? {}
       : { iconUrl: sent.iconUrl }),
     ...(sent.color === (shown.color?.toUpperCase() ?? null)
@@ -151,24 +152,18 @@ export const readCategoryChange = (
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
-/** What is said when the account may not change the menu of the salon */
-const FORBIDDEN_MESSAGE =
-  'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。'
-
 /** What is said at a control the API refused a value of. */
-const errorAt = (field: string, rule: string): string =>
+const refusalAt = (field: string, rule: string): string =>
   match(field)
     .with('name', () => NAME_ERROR)
     .with('displayOrder', () => ORDER_ERROR)
     .with('iconUrl', () => ICON_ERROR)
     .with('color', () => COLOR_ERROR)
     .with('parentId', () => (rule === 'circular' ? PARENT_BELOW : PARENT_GONE))
-    .otherwise(
-      () => 'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /** Whether a refusal is of the parent: the categories are read again, to choose from what there is now. */
 export const refusesParent = (
@@ -188,25 +183,21 @@ export const afterCategoryWrite = (
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message:
-          said.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
-          said.map(({ field, rule }) => [field, errorAt(field, rule)]),
+          said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
       }
     })
-    .with({ type: 'forbidden' }, () => ({
-      message: FORBIDDEN_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         'カテゴリーを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /**

@@ -397,7 +397,9 @@ describe('the status of a purchase order, and what is written down on it', () =>
 
     // Assert
     await heading('発注 PO-SEED-0002')
-    expect(await screen.findByText('変更はありませんでした。')).toBeVisible()
+    expect(
+      await screen.findByText('変更された項目はありません。'),
+    ).toBeVisible()
     expect(await storedOrderOf('PO-SEED-0002')).toEqual(before)
   })
 

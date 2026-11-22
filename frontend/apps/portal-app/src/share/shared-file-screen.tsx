@@ -1,8 +1,11 @@
 import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSharedFileResponse } from '@beauty-salon-frontend/api-client'
 import {
+  aboutTheAttempt,
   Form,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
   UnreadNotice,
@@ -11,7 +14,6 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { match, P } from 'ts-pattern'
 import { useMailedToken } from '../account/mailed-token'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import {
   type SharedFileContent,
   SharedFileRecord,
@@ -147,7 +149,7 @@ const PasswordGate = ({
   onUnusable,
 }: PasswordGateProps) => {
   const [says, setSays] = useState<FormSays>(
-    again ? { message: PASSWORD_AGAIN_SAID, errors: {} } : NOTHING_TO_SAY,
+    again ? aboutTheAttempt(PASSWORD_AGAIN_SAID) : NOTHING_TO_SAY,
   )
   const opening = useMutation({
     mutationFn: (password: string) => readSharedFile(token, password),

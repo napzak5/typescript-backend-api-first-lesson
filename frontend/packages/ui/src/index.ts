@@ -72,6 +72,18 @@ export {
 } from './components/form/error-focus'
 export { Form, type FormProps } from './components/form/form'
 export {
+  aboutTheAttempt,
+  errorAt,
+  type FormRead,
+  type FormSays,
+  NO_CHANGE_MESSAGE,
+  NO_ERRORS,
+  NOTHING_TO_SAY,
+  same,
+  textOf,
+  textOrNull,
+} from './components/form/form-values'
+export {
   FormDialog,
   type FormDialogProps,
 } from './components/form-dialog/form-dialog'

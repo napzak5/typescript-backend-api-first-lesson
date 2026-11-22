@@ -3,10 +3,9 @@ import type {
   ModelsOrderStatusType,
   ModelsPurchaseOrderCancelRequest,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf, textOrNull } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { ChangeSays } from '../bookings/booking-actions'
-import { nullIfBlank } from '../bookings/booking-entry'
 import type { OrderStep } from './purchase-orders-api'
 
 /*
@@ -104,12 +103,12 @@ const REASON_MISSING = '取り消す理由を入力してください。'
 /** The cancellation of an order, from its form: the reason is asked for. */
 export const readOrderCancellation = (
   values: FormData,
-): Read<ModelsPurchaseOrderCancelRequest> => {
-  const reason = nullIfBlank(textOf(values, 'cancellationReason'))
+): FormRead<ModelsPurchaseOrderCancelRequest> => {
+  const reason = textOrNull(textOf(values, 'cancellationReason'))
 
   return reason === null
     ? { type: 'invalid', errors: { cancellationReason: REASON_MISSING } }
-    : { type: 'valid', request: { cancellationReason: reason } }
+    : { type: 'valid', value: { cancellationReason: reason } }
 }
 
 /** What an operation did, as the notification says it: 「発注 PO-… を承認」 */

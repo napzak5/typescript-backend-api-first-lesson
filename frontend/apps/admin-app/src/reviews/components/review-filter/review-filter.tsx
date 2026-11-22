@@ -4,6 +4,7 @@ import {
   countNarrowing,
   FilterForm,
   type FormErrors,
+  NO_ERRORS,
   Select,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
@@ -50,8 +51,6 @@ const ORDER_OPTIONS: readonly ChoiceOption[] = [
   { value: 'rating', label: '評価の高い順' },
   { value: 'helpful', label: '参考になった順' },
 ]
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The conditions of the sheet that narrow the list: its button counts

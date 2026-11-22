@@ -3,6 +3,7 @@ import {
   countNarrowing,
   FilterForm,
   type FormErrors,
+  NO_ERRORS,
   Select,
   TextField,
   useFilterValues,
@@ -34,8 +35,6 @@ const valuesOf = (view: StockFilterProps['view']): Values =>
         days: '30',
       }
     : { productId: '', lotNumber: '', days: String(view.days) }
-
-const NO_ERRORS: FormErrors = {}
 
 /** The conditions of every row, in the sheet: its button counts them */
 const COUNTED: readonly (keyof Values)[] = ['productId', 'lotNumber']

@@ -87,7 +87,7 @@ describe('readPayment', () => {
       }),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         paymentMethodId: cash?.id,
         amount: 3000,
         cardLastFour: null,
@@ -110,7 +110,7 @@ describe('readPayment', () => {
       read({ paymentMethodId: card?.id ?? '', amount: '5500', ...entries }),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         paymentMethodId: card?.id,
         amount: 5500,
         cardLastFour: lastFour,

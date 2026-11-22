@@ -8,13 +8,18 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  type FormSays,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { bookingHrefOf } from '../navigation'
-import type { FormSays } from './booking-entry'
 import { afterMove, movedLines, readMove, whyUnmovable } from './booking-moves'
 import {
   attemptMove,
@@ -27,8 +32,6 @@ import { BookingMoveForm } from './components/booking-move-form/booking-move-for
 import { Unchangeable, WithBooking, WithStaffAndServices } from './with-booking'
 
 const TITLE = '日時と担当を変える'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type MoveProps = {
   salon: ModelsSalonResponse
@@ -52,7 +55,7 @@ const Move = ({ salon, booking, staff, services }: MoveProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const [moved, setMoved] = useState<
     readonly ModelsBookingServiceResponse[] | undefined
   >(() =>
@@ -104,7 +107,7 @@ const Move = ({ salon, booking, staff, services }: MoveProps) => {
   const change = (values: FormData): void => {
     const read = readMove(values, salon.timezone)
     setMoved(
-      read.type === 'valid' ? movedLines(booking, read.request) : undefined,
+      read.type === 'valid' ? movedLines(booking, read.value) : undefined,
     )
     setChecks(undefined)
   }
@@ -117,17 +120,17 @@ const Move = ({ salon, booking, staff, services }: MoveProps) => {
       .with(
         {
           type: 'valid',
-          request: { staffId: booking.staffId, startTime: booking.startTime },
+          value: { staffId: booking.staffId, startTime: booking.startTime },
         },
         () => {
-          notify({ tone: 'info', message: '変更はありませんでした。' })
+          notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
           void navigate(back)
         },
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
         setChecks(undefined)
-        move.mutate(request)
+        move.mutate(value)
       })
       .exhaustive()
 

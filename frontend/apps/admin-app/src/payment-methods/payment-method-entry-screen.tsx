@@ -10,7 +10,9 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -19,7 +21,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { paymentMethodHrefOf, paymentMethodsHrefOf } from '../navigation'
 import { paymentMethodsKeyOf, readPaymentMethods } from '../sales/sales-api'
 import { PaymentMethodForm } from './components/payment-method-form/payment-method-form'
@@ -40,8 +41,6 @@ import {
 
 const TITLE = '支払い方法を足す'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 type PaymentMethodEntryProps = { salon: ModelsSalonResponse; sortOrder: number }
 
 /**
@@ -53,7 +52,7 @@ const PaymentMethodEntry = ({ salon, sortOrder }: PaymentMethodEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsPaymentMethodCreateRequest) =>
       addPaymentMethod(salon.id, request),
@@ -89,9 +88,9 @@ const PaymentMethodEntry = ({ salon, sortOrder }: PaymentMethodEntryProps) => {
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        entry.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        entry.mutate(value)
       })
       .exhaustive()
 

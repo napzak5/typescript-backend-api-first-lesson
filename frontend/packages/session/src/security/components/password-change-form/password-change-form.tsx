@@ -2,6 +2,7 @@ import {
   ButtonLink,
   Form,
   type FormErrors,
+  NO_ERRORS,
   PasswordField,
 } from '@beauty-salon-frontend/ui'
 import { PASSWORD_RULE } from '../../password-rule'
@@ -19,8 +20,6 @@ export type PasswordChangeFormProps = {
   /** The values of the two controls, under their names */
   onSubmit: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The form that changes the password: the current one, which shows that it

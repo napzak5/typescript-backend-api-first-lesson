@@ -311,7 +311,7 @@ describe('the charts of the customers, against the API', () => {
 
     // Assert
     await heading('カルテ')
-    expect(notifications()).toContain('変更はありませんでした。')
+    expect(notifications()).toContain('変更された項目はありません。')
     expect(await storedChartOf(YUKI.email)).toEqual(before)
   })
 

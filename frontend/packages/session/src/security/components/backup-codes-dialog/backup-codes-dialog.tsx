@@ -1,6 +1,7 @@
 import {
   FormDialog,
   type FormErrors,
+  NO_ERRORS,
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { CODE } from '../../two-factor-flow'
@@ -20,8 +21,6 @@ export type BackupCodesDialogProps = {
   /** The value of the control, under its name */
   onIssue: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * Issues new backup codes, after a code that shows that the owner asks,

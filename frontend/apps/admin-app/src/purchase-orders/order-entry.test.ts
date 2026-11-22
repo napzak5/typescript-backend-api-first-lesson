@@ -64,7 +64,7 @@ describe('readOrderEntry', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         salonId: salon.id,
         supplier: '東京ビューティーサプライ',
         items: [

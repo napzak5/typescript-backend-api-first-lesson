@@ -1,18 +1,26 @@
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryMovementRequest,
   ModelsInventoryResponse,
   ModelsInventoryTransactionType,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
-import { match } from 'ts-pattern'
 import {
+  aboutTheAttempt,
+  errorAt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-  yenOf,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
+import { yenOf } from '../bookings/booking-entry'
 import { levelOf } from '../products/product-form'
+import { hundredthsOf } from '../products/quantity'
 import { movementTypeIn, needsReason, wayOf } from './movement-format'
 import type { MovementRecord } from './movements-api'
 import { quantityNameOf } from './stock-format'
@@ -51,15 +59,6 @@ const CONTROLS: readonly string[] = [
   'unitCost',
   'reason',
 ]
-
-/** A quantity in hundredths, which add up without the errors of fractions */
-const hundredthsOf = (quantity: number): number => Math.round(quantity * 100)
-
-/** What is said at a control, under its name; nothing when the value may be sent. */
-const errorAt = (
-  control: string,
-  message: string | undefined,
-): [string, string][] => (message === undefined ? [] : [[control, message]])
 
 /** Which way the stock goes: that of the kind, or the one chosen for a kind that moves either way. */
 const wayIn = (
@@ -114,14 +113,14 @@ export const readMovement = (
   row: Pick<ModelsInventoryResponse, 'id' | 'currentStock' | 'reservedStock'>,
   product: Pick<ModelsProductResponse, 'unit'> | undefined,
   offered: readonly ModelsInventoryTransactionType[],
-): Read<ModelsInventoryMovementRequest> => {
+): FormRead<ModelsInventoryMovementRequest> => {
   const type = movementTypeIn(textOf(values, 'transactionType'))
   const offeredType =
     type !== undefined && offered.includes(type) ? type : undefined
   const way = wayIn(values, offeredType)
   const quantity = levelOf(textOf(values, 'quantity'))
   const unitCost = yenOf(textOf(values, 'unitCost'))
-  const reason = nullIfBlank(textOf(values, 'reason'))
+  const reason = textOrNull(textOf(values, 'reason'))
   const counted =
     typeof quantity === 'number' && quantity > 0 ? quantity : undefined
   const errors = Object.fromEntries([
@@ -168,7 +167,7 @@ export const readMovement = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       inventoryId: row.id,
       transactionType: offeredType,
       quantity: way === 'out' ? -counted : counted,
@@ -187,9 +186,7 @@ const refusalAt = (field: string, rule: string): string =>
     .with('quantity', () => QUANTITY_ERROR)
     .with('unitCost', () => (rule === 'too_big' ? COST_ERROR : UNIT_COST_ERROR))
     .with('reason', () => REASON_ERROR)
-    .otherwise(
-      () => 'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /**
  * What the form says after the API did not take it. A movement that would
@@ -210,10 +207,7 @@ export const afterMovementRecord = (
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message:
-          said.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
@@ -223,14 +217,13 @@ export const afterMovementRecord = (
       message: undefined,
       errors: { quantity: sentQuantity < 0 ? BELOW_RESERVED : ABOVE_MOST },
     }))
-    .with({ type: 'forbidden' }, () => ({
-      message: FORBIDDEN_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '在庫の移動を記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()

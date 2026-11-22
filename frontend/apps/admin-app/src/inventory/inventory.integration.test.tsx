@@ -686,7 +686,7 @@ describe('the stock screens', () => {
 
     // Assert
     expect(
-      await screen.findByText('変更はありませんでした。'),
+      await screen.findByText('変更された項目はありません。'),
     ).toBeInTheDocument()
     await openedRow()
   })

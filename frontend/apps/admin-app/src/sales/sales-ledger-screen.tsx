@@ -75,7 +75,7 @@ const SalesLedger = ({ salon }: SalesLedgerProps) => {
       return
     }
     setErrors(undefined)
-    const next = ledgerQueryOf(filled.request)
+    const next = ledgerQueryOf(filled.value)
     if (next.toString() === asked) {
       // The same ledger again: whoever sends it wants what there is now
       void read.refetch()

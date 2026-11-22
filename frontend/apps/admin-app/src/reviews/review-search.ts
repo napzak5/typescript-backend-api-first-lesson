@@ -1,5 +1,5 @@
 import type { ModelsReviewSortType } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import * as z from 'zod'
 import type { ReviewListParams } from './reviews-api'
 
@@ -68,7 +68,7 @@ const RANGE_ERROR = '評価の上限は、下限と同じか、それより高�
 /** The conditions that were chosen: each may be left as it is, for every review. */
 export const readReviewConditions = (
   values: FormData,
-): Read<ReviewConditions> => {
+): FormRead<ReviewConditions> => {
   const minRating = ratingFrom(textOf(values, 'min'))
   const maxRating = ratingFrom(textOf(values, 'max'))
   if (
@@ -83,7 +83,7 @@ export const readReviewConditions = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       ...(minRating === undefined ? {} : { minRating }),
       ...(maxRating === undefined ? {} : { maxRating }),
       ...(staff === undefined ? {} : { staff }),

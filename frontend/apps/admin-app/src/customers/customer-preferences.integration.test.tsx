@@ -320,7 +320,7 @@ describe('the preferences of a customer, changed by a salon against the API', ()
 
     // Assert
     await heading('お客様の台帳')
-    expect(notifications()).toContain('変更はありませんでした。')
+    expect(notifications()).toContain('変更された項目はありません。')
     expect(await storedPreferencesOf(YUKI.email)).toEqual(before)
   })
 

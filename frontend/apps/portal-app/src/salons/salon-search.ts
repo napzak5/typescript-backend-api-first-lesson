@@ -20,7 +20,10 @@ export const LONGEST = { keyword: 100, prefecture: 50, city: 100 }
 /** The ratings a visitor can ask for at least */
 export const MIN_RATINGS: readonly number[] = [3, 3.5, 4, 4.5]
 
-const textOf = (value: string | null, longest: number): string | undefined => {
+const boundedTextOf = (
+  value: string | null,
+  longest: number,
+): string | undefined => {
   const text = (value ?? '').trim()
 
   return text === '' || text.length > longest ? undefined : text
@@ -38,9 +41,9 @@ const minRatingOf = (value: string | null): number | undefined =>
 const conditionsFrom = (
   read: (name: keyof SalonConditions) => string | null,
 ): SalonConditions => {
-  const keyword = textOf(read('keyword'), LONGEST.keyword)
-  const prefecture = textOf(read('prefecture'), LONGEST.prefecture)
-  const city = textOf(read('city'), LONGEST.city)
+  const keyword = boundedTextOf(read('keyword'), LONGEST.keyword)
+  const prefecture = boundedTextOf(read('prefecture'), LONGEST.prefecture)
+  const city = boundedTextOf(read('city'), LONGEST.city)
   const minRating = minRatingOf(read('minRating'))
 
   return {

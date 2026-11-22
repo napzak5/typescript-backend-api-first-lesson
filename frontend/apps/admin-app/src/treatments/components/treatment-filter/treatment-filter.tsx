@@ -5,6 +5,7 @@ import {
   FilterForm,
   type FormErrors,
   Link,
+  NO_ERRORS,
   Select,
   TextField,
   useFilterValues,
@@ -41,8 +42,6 @@ const valuesOf = ({ staff, from, to }: TreatmentConditions): Values => ({
   from: from ?? '',
   to: to ?? '',
 })
-
-const NO_ERRORS: FormErrors = {}
 
 /** The conditions of the sheet that narrow the list: its button counts them */
 const COUNTED: readonly (keyof Values)[] = ['staff', 'from', 'to']

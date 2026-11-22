@@ -256,7 +256,7 @@ describe('changing, voiding and giving back a sale, against the API', () => {
 
       // Assert
       await theSale()
-      expect(notifications()).toContain('変更はありませんでした。')
+      expect(notifications()).toContain('変更された項目はありません。')
       expect(await storedRecordOf(saleId)).toEqual(before)
     })
 

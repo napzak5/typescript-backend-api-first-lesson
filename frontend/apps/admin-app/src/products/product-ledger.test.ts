@@ -73,7 +73,7 @@ describe('readProductConditions', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         keyword: 'カラー',
         category: 'Hair Color',
         carried: 'carried',

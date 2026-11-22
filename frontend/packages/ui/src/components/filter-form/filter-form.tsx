@@ -11,6 +11,7 @@ import { Button } from '../button/button'
 import { ButtonLink } from '../button-link/button-link'
 import { Dialog } from '../dialog/dialog'
 import { type FormErrors, firstInvalidIn, hasErrors } from '../form/error-focus'
+import { NO_ERRORS } from '../form/form-values'
 import styles from './filter-form.module.css'
 
 export type FilterFormProps = {
@@ -53,8 +54,6 @@ const SUBMIT_LABEL: Record<FilterPurpose, string> = {
   view: '表示する',
   count: '集計する',
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The conditions of a list, above it: a `search` landmark around a form.

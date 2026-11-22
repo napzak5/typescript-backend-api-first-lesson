@@ -91,7 +91,7 @@ describe('readStockConditions', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: { type: 'all', productId: colour.id, lotNumber: 'LOT-1' },
+      value: { type: 'all', productId: colour.id, lotNumber: 'LOT-1' },
     })
   })
 
@@ -103,7 +103,7 @@ describe('readStockConditions', () => {
           ['lotNumber', '  '],
         ]),
       ),
-    ).toEqual({ type: 'valid', request: { type: 'all' } })
+    ).toEqual({ type: 'valid', value: { type: 'all' } })
   })
 
   it('should say that a lot is too long', () => {

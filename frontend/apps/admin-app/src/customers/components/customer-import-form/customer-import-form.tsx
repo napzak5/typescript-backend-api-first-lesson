@@ -4,9 +4,9 @@ import {
   BulletList,
   Button,
   FileField,
-  type FormErrors,
   type FormProps,
   LoadingIndicator,
+  NO_ERRORS,
   Table,
   useErrorFocus,
 } from '@beauty-salon-frontend/ui'
@@ -40,8 +40,6 @@ export type CustomerImportFormProps = Pick<
   /** A file was chosen, or the choice was taken back */
   onChoose: (file: File | undefined) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * A file of customers to register: chosen, read in the browser, and either

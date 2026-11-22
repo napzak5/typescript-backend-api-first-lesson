@@ -4,12 +4,17 @@ import type {
   ModelsTreatmentPhotoBulkCreateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { Alert, ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  Alert,
+  ButtonLink,
+  type FormSays,
+  NOTHING_TO_SAY,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { treatmentHrefOf } from '../navigation'
 import { PhotoForm } from './components/photo-form/photo-form'
 import { customerCalled } from './treatment-format'
@@ -30,8 +35,6 @@ import { type TreatmentContext, WithTreatment } from './with-treatment'
 
 const TITLE = '施術写真を足す'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 type PhotosEntryProps = TreatmentContext & { salon: ModelsSalonResponse }
 
 /**
@@ -48,7 +51,7 @@ const PhotosEntry = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const back = treatmentHrefOf(salon.id, record.id)
   const key = treatmentKeyOf(record.id)
   const room = roomOf(record)
@@ -96,9 +99,9 @@ const PhotosEntry = ({
       .with({ type: 'noRoom' }, ({ message }) =>
         setSaid({ message, errors: {} }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        adding.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        adding.mutate(value)
       })
       .exhaustive()
 

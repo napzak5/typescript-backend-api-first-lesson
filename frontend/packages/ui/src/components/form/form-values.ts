@@ -1,0 +1,62 @@
+import type { FormErrors } from './error-focus'
+
+/**
+ * What a form was sent with: the value to send on, or what is wrong with
+ * the values, under the names of their controls. A form that names its
+ * controls in a type of its own gives that type of errors.
+ */
+export type FormRead<Value, Errors extends FormErrors = FormErrors> =
+  | { type: 'valid'; value: Value }
+  | { type: 'invalid'; errors: Errors }
+
+/** What a form says about the last attempt: about the whole of it, and at its controls. */
+export type FormSays = {
+  message: string | undefined
+  errors: FormErrors
+}
+
+/** A form with nothing wrong at any control: one object, so that a form that is given none renders the same */
+export const NO_ERRORS: FormErrors = {}
+
+/** What a form says before the first attempt, and after one there is nothing to say about */
+export const NOTHING_TO_SAY: FormSays = {
+  message: undefined,
+  errors: NO_ERRORS,
+}
+
+/** What a form says about an attempt as a whole, with nothing at its controls */
+export const aboutTheAttempt = (message: string): FormSays => ({
+  message,
+  errors: {},
+})
+
+/** What is said when a form is sent with the values it opened with: nothing is sent */
+export const NO_CHANGE_MESSAGE = '変更された項目はありません。'
+
+/** The text of a control of a form; nothing for one that is not there or holds a file. */
+export const textOf = (values: FormData, name: string): string => {
+  const value = values.get(name)
+
+  return typeof value === 'string' ? value : ''
+}
+
+/** A text that was filled in, without the spaces around it; nothing, and only spaces, as `null`. */
+export const textOrNull = (text: string | null): string | null => {
+  const trimmed = (text ?? '').trim()
+
+  return trimmed === '' ? null : trimmed
+}
+
+/** What is wrong with a control, as an entry of the errors under its name; none when nothing is. */
+export const errorAt = (
+  control: string,
+  message: string | undefined,
+): [string, string][] => (message === undefined ? [] : [[control, message]])
+
+/**
+ * Whether a form is sent with the values it opened with. The values are
+ * plain data, as the API sends them and a form reads them back: the same
+ * properties, in the same order.
+ */
+export const same = (one: unknown, other: unknown): boolean =>
+  JSON.stringify(one) === JSON.stringify(other)

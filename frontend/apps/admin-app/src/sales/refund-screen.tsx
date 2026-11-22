@@ -8,12 +8,16 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  type FormSays,
+  NOTHING_TO_SAY,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { saleHrefOf } from '../navigation'
 import { RefundForm } from './components/refund-form/refund-form'
 import { afterRefund, readRefund, voidableAfter, whyNoRefund } from './refunds'
@@ -28,8 +32,6 @@ import {
 import { WithPaymentMethods, WithSale } from './with-sale'
 
 const TITLE = '返金する'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type RefundProps = {
   salon: ModelsSalonResponse
@@ -52,7 +54,7 @@ const Refund = ({ salon, sale, payment, methods }: RefundProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const key = saleKeyOf(sale.id)
   const back = saleHrefOf(salon.id, sale.id)
   const forgetLists = (): void => {
@@ -101,8 +103,8 @@ const Refund = ({ salon, sale, payment, methods }: RefundProps) => {
       setSaid({ message: undefined, errors: read.errors })
       return
     }
-    setSaid(NOTHING_SAID)
-    refund.mutate(read.request)
+    setSaid(NOTHING_TO_SAY)
+    refund.mutate(read.value)
   }
 
   return (

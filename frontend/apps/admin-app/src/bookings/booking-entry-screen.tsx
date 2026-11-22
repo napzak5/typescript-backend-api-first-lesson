@@ -22,8 +22,10 @@ import {
   Alert,
   ButtonLink,
   EmptyState,
+  type FormSays,
   LoadingIndicator,
   moreOf,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -62,7 +64,6 @@ import {
   type EntryChoice,
   entryChoiceIn,
   entryQueryOf,
-  type FormSays,
   readEntry,
   readLines,
 } from './booking-entry'
@@ -78,8 +79,6 @@ import { BookingEntryForm } from './components/booking-entry-form/booking-entry-
 import { ChosenCustomer } from './components/chosen-customer/chosen-customer'
 
 const TITLE = '予約を入れる'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 /** The address of the screen with another choice in it. */
 const hrefOf = (choice: EntryChoice): string =>
@@ -213,7 +212,7 @@ const Entry = ({ salon, choice, customer, staff, services }: EntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const checks = useMutation({
     mutationFn: (lines: Parameters<typeof checkLine>[1][]) =>
       Promise.all(lines.map((line) => checkLine(salon.id, line))),
@@ -228,8 +227,8 @@ const Entry = ({ salon, choice, customer, staff, services }: EntryProps) => {
       checks.reset()
       return
     }
-    setSaid(NOTHING_SAID)
-    checks.mutate(lines.request.services)
+    setSaid(NOTHING_TO_SAY)
+    checks.mutate(lines.value.services)
   }
 
   const submit = (values: FormData): void => {
@@ -242,8 +241,8 @@ const Entry = ({ salon, choice, customer, staff, services }: EntryProps) => {
       setSaid({ message: undefined, errors: entry.errors })
       return
     }
-    setSaid(NOTHING_SAID)
-    create.mutate(entry.request, {
+    setSaid(NOTHING_TO_SAY)
+    create.mutate(entry.value, {
       onSuccess: (outcome) => {
         if (outcome.type === 'created') {
           const read: BookingRead = { type: 'found', booking: outcome.booking }
@@ -255,7 +254,7 @@ const Entry = ({ salon, choice, customer, staff, services }: EntryProps) => {
         }
         setSaid(afterEntry(outcome))
         if (outcome.type === 'conflict') {
-          checks.mutate(entry.request.services)
+          checks.mutate(entry.value.services)
         }
       },
     })

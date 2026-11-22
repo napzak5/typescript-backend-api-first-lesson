@@ -16,6 +16,7 @@ import {
   type FormErrors,
   LoadingIndicator,
   moreOf,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -73,8 +74,6 @@ const TITLE = '顧客台帳'
 /** What a dialog of the chosen customers says */
 type DialogSays = { message: string | undefined; errors: FormErrors }
 
-const NOTHING_SAID: DialogSays = { message: undefined, errors: {} }
-
 /** Why an export of the ledger saved no file, under the conditions it was asked for */
 type ExportSaid = {
   asked: string
@@ -123,7 +122,7 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
   const chosen = choice.asked === asked ? choice.chosen : NONE_CHOSEN
   const setChosen = (next: Chosen): void => setChoice({ asked, chosen: next })
   const [dialog, setDialog] = useState<ChosenDialog>('none')
-  const [said, setSaid] = useState<DialogSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<DialogSays>(NOTHING_TO_SAY)
   const [exportSaid, setExportSaid] = useState<ExportSaid>()
   const mayKeep =
     session.type === 'signedIn' && mayKeepCustomers(session.user.role)
@@ -144,7 +143,7 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
       return
     }
     setErrors(undefined)
-    const next = customerQueryOf(filled.request)
+    const next = customerQueryOf(filled.value)
     if (next.toString() === asked) {
       // The same customers again: whoever sends it wants what there is now
       void read.refetch()
@@ -212,9 +211,9 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
       .with({ type: 'invalid' }, ({ errors: wrong }) =>
         setSaid({ message: undefined, errors: wrong }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        retagging.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        retagging.mutate(value)
       })
       .exhaustive()
 
@@ -294,7 +293,7 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
               mayRemove={mayKeep}
               open={dialog}
               onOpen={(opened) => {
-                setSaid(NOTHING_SAID)
+                setSaid(NOTHING_TO_SAY)
                 setDialog(opened)
               }}
               onClose={() => setDialog('none')}

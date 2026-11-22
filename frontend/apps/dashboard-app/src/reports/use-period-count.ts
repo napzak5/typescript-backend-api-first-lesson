@@ -59,12 +59,12 @@ export const usePeriodCount = <Read>(
       return
     }
     setRefused(undefined)
-    if (periodQueryOf(filled.request).toString() === asked) {
+    if (periodQueryOf(filled.value).toString() === asked) {
       // The same days again: whoever sends them wants what there is now
       void read.refetch()
       return
     }
-    setQuery(periodQueryOf(filled.request), { replace: true })
+    setQuery(periodQueryOf(filled.value), { replace: true })
   }
 
   return { period, asked, errors, count, read, shown }

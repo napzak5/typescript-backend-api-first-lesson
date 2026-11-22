@@ -5,12 +5,17 @@ import type {
   ModelsStaffUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  type FormSays,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { staffMemberHrefOf } from '../navigation'
 import { StaffForm } from './components/staff-form/staff-form'
 import {
@@ -24,8 +29,6 @@ import { isOwnStaffRecord } from './staff-format'
 import { useSignedInUserId, WithStaffMember } from './with-staff-member'
 
 const TITLE = 'スタッフ情報を直す'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type StaffChangeProps = {
   salon: ModelsSalonResponse
@@ -44,7 +47,7 @@ const StaffChange = ({ salon, member }: StaffChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const userId = useSignedInUserId()
   const own = isOwnStaffRecord(member, userId)
   const key = staffKeyOf(member.id)
@@ -88,12 +91,12 @@ const StaffChange = ({ salon, member }: StaffChangeProps) => {
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(back)
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        change.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        change.mutate(value)
       })
       .exhaustive()
 

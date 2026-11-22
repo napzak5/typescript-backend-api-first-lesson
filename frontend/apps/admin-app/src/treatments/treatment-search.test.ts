@@ -60,14 +60,14 @@ describe('readTreatmentConditions', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: { staff: STAFF, from: '2026-11-01' },
+      value: { staff: STAFF, from: '2026-11-01' },
     })
   })
 
   it('should keep the customer the list was opened for', () => {
     expect(readTreatmentConditions(formOf({ customer: CUSTOMER }))).toEqual({
       type: 'valid',
-      request: { customer: CUSTOMER },
+      value: { customer: CUSTOMER },
     })
   })
 
@@ -99,7 +99,7 @@ describe('readTreatmentConditions', () => {
       readTreatmentConditions(formOf({ from: '2026-11-20', to: '2026-11-20' })),
     ).toEqual({
       type: 'valid',
-      request: { from: '2026-11-20', to: '2026-11-20' },
+      value: { from: '2026-11-20', to: '2026-11-20' },
     })
   })
 })
