@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -10,13 +11,6 @@ const stories = composeStories(stockTableStories)
 
 const table = (): HTMLElement => screen.getByRole('table', { name: '在庫' })
 
-/** The rows of the table, each as the texts of its cells */
-const rows = (): (string | null)[][] =>
-  within(table())
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent))
-
 describe('StockTable', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
@@ -25,7 +19,7 @@ describe('StockTable', () => {
     await stories.Stock.run()
 
     // Assert
-    expect(rows()).toEqual([
+    expect(rowsOf(table())).toEqual([
       [
         'COLOR001',
         'ヘアカラー ナチュラルブラウン',
@@ -81,8 +75,11 @@ describe('StockTable', () => {
     await stories.OfARemovedProduct.run()
 
     // Assert
-    expect(rows()[0]?.slice(0, 2)).toEqual(['記録なし', '削除した商品'])
-    expect(rows()[0]?.slice(5)).toEqual(['2.5'])
+    expect(rowsOf(table())[0]?.slice(0, 2)).toEqual([
+      '記録なし',
+      '削除した商品',
+    ])
+    expect(rowsOf(table())[0]?.slice(5)).toEqual(['2.5'])
   })
 
   it('should ask for the rows that come next', async () => {

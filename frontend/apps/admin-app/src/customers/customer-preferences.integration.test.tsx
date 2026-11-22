@@ -5,6 +5,7 @@ import {
   firstSight,
   heading,
   notifications,
+  optionsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
@@ -121,11 +122,7 @@ describe('the preferences of a customer, changed by a salon against the API', ()
     await screen.findByRole('button', { name: '変更を保存する' })
     expect(address()).toBe(`/salons/${tokyo}/customers/${yuki}/preferences`)
     expect(screen.getByText('Tanaka Yuki（タナカ ユキ） 様')).toBeVisible()
-    expect(
-      within(wished())
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf(wished())).toEqual([
       '指名しない',
       ...(await staffShownAt(TOKYO)).map((name) => named(name)),
       named('Takeshi Ito', OSAKA),

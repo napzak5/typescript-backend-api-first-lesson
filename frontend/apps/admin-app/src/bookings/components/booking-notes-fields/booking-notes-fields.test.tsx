@@ -1,15 +1,11 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
+import { screen } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as bookingNotesFieldsStories from './booking-notes-fields.stories'
 
 const stories = composeStories(bookingNotesFieldsStories)
-
-const ways = (): (string | null)[] =>
-  within(screen.getByRole('combobox', { name: '受付の経路' }))
-    .getAllByRole('option')
-    .map((option) => option.textContent)
 
 describe('BookingNotesFields', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -19,7 +15,13 @@ describe('BookingNotesFields', () => {
     await stories.Empty.run()
 
     // Assert
-    expect(ways()).toEqual(['記録しない', '電話', '店頭', 'メール', 'その他'])
+    expect(optionsOf('受付の経路')).toEqual([
+      '記録しない',
+      '電話',
+      '店頭',
+      'メール',
+      'その他',
+    ])
     expect(screen.getByRole('combobox', { name: '受付の経路' })).toHaveValue('')
     expect(screen.getByRole('textbox', { name: '予約金' })).toHaveValue('')
     expect(screen.getByRole('textbox', { name: '予約金' })).toHaveAttribute(
@@ -36,7 +38,7 @@ describe('BookingNotesFields', () => {
     await stories.Stored.run()
 
     // Assert
-    expect(ways()).toEqual([
+    expect(optionsOf('受付の経路')).toEqual([
       '記録しない',
       '電話',
       '店頭',

@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -11,13 +12,6 @@ const stories = composeStories(tableStories)
 const table = (): HTMLElement =>
   screen.getByRole('table', { name: '在庫のアラート' })
 
-/** The cells of the rows of the table, in the order of the columns */
-const rows = (): (string | null)[][] =>
-  within(table())
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent))
-
 describe('AlertTable', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
@@ -26,7 +20,7 @@ describe('AlertTable', () => {
     await stories.Alerts.run()
 
     // Assert
-    expect(rows()).toEqual([
+    expect(rowsOf(table())).toEqual([
       [
         '緊急期限切れ',
         'ヘアカラー ナチュラルブラウン（ロット LOT-2025-112）使用期限 2025年12月31日',
@@ -84,7 +78,7 @@ describe('AlertTable', () => {
     await stories.OfEveryKind.run()
 
     // Assert
-    expect(rows().map((row) => row.slice(0, 3))).toEqual([
+    expect(rowsOf(table()).map((row) => row.slice(0, 3))).toEqual([
       [
         '注意期限切れ間近',
         'ヘアカラー ナチュラルブラウン（ロット LOT-2026-077）使用期限 2026年12月10日',
@@ -111,7 +105,7 @@ describe('AlertTable', () => {
     await stories[story].run()
 
     // Assert
-    expect(rows()[0]?.[3]).toMatch(/^2026年11月20日（金） 09:30(?!（)/)
+    expect(rowsOf(table())[0]?.[3]).toMatch(/^2026年11月20日（金） 09:30(?!（)/)
   })
 
   it('should say how many are shown, and ask for the next ones', async () => {

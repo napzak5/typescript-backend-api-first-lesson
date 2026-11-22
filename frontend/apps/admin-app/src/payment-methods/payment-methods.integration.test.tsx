@@ -1,6 +1,10 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
-import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  firstSight,
+  heading,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OSAKA,
@@ -50,18 +54,6 @@ const openedForm = async (title: string): Promise<void> => {
   await heading(title)
   await screen.findByRole('textbox', { name: /表示名/ })
 }
-
-/** The rows of the list, each as the texts of its cells. */
-const rows = (): string[][] =>
-  within(screen.getByRole('table', { name: '支払い方法' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
 
 /** What the record of a method says, term by term. */
 const terms = (): [string, string][] =>
@@ -153,7 +145,7 @@ describe('the payment methods of a salon, against the API', () => {
 
     // Assert
     await openedList()
-    expect(rows()).toEqual(SEEDED)
+    expect(rowsOf('支払い方法')).toEqual(SEEDED)
     expect(
       screen.queryByRole('link', { name: '支払い方法を足す' }),
     ).not.toBeInTheDocument()
@@ -236,7 +228,7 @@ describe('the payment methods of a salon, against the API', () => {
 
     // Assert
     await openedList()
-    expect(rows().at(-1)).toEqual([
+    expect(rowsOf('支払い方法').at(-1)).toEqual([
       'PayPay（店頭）',
       'QR コード決済',
       '￥50,000まで',
@@ -311,7 +303,7 @@ describe('the payment methods of a salon, against the API', () => {
 
     // Assert
     await openedList()
-    expect(rows()[4]).toEqual([
+    expect(rowsOf('支払い方法')[4]).toEqual([
       'QR Code Payment',
       'QR コード決済',
       '下限も上限もなし',
@@ -349,7 +341,7 @@ describe('the payment methods of a salon, against the API', () => {
       await screen.findByText('支払い方法「Bank Transfer」を削除しました。'),
     ).toBeInTheDocument()
     await openedList()
-    expect(rows().map(([name]) => name)).toEqual([
+    expect(rowsOf('支払い方法').map(([name]) => name)).toEqual([
       'Cash',
       'Credit Card',
       'Debit Card',

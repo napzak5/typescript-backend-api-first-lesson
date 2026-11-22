@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -18,10 +19,7 @@ describe('ProductTable', () => {
     await stories.Ledger.run()
 
     // Assert
-    const rows = within(table()).getAllByRole('row').slice(1)
-    expect(
-      rows.map((row) => [...row.children].map((cell) => cell.textContent)),
-    ).toEqual([
+    expect(rowsOf(table())).toEqual([
       [
         'COLOR001',
         'ヘアカラー ナチュラルブラウン',

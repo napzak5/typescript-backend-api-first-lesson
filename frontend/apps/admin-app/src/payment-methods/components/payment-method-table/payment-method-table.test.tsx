@@ -1,24 +1,13 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
+import { screen } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { card } from '../examples'
 import * as tableStories from './payment-method-table.stories'
 
 const stories = composeStories(tableStories)
-
-/** The rows of the table, each as the texts of its cells. */
-const rows = (): string[][] =>
-  within(screen.getByRole('table', { name: '支払い方法' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
 
 describe('PaymentMethodTable', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -28,7 +17,7 @@ describe('PaymentMethodTable', () => {
     await stories.Listed.run()
 
     // Assert
-    expect(rows()).toEqual([
+    expect(rowsOf('支払い方法')).toEqual([
       ['現金', '現金', '下限も上限もなし', '手数料なし', '店頭', '使っている'],
       [
         'クレジットカード（端末 1）',

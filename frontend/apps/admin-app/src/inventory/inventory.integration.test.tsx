@@ -4,7 +4,12 @@ import {
   salonIdOf,
   signInAs,
 } from '@beauty-salon-frontend/testing/api'
-import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  firstSight,
+  heading,
+  optionsOf,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -72,13 +77,6 @@ const openedChange = async (): Promise<void> => {
   await heading('在庫の行を直す')
   await screen.findByRole('textbox', { name: '保管場所' })
 }
-
-/** The rows of a table of the stock, each as the texts of its cells. */
-const rows = (caption = '在庫'): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
 
 /** What a card of the record of a row says, term by term. */
 const terms = (card: string): [string, string][] =>
@@ -158,7 +156,7 @@ describe('the stock screens', () => {
     // Assert
     await openedStock()
     expect(firstSight()[0]).toBe(inventoryHrefOf(salonId))
-    expect(rows()).toEqual(await seededRows())
+    expect(rowsOf('在庫')).toEqual(await seededRows())
     expect(screen.getByText('6 行')).toBeVisible()
     expect(
       within(screen.getByRole('navigation', { name: '在庫の見かた' }))
@@ -216,7 +214,7 @@ describe('the stock screens', () => {
 
     // Assert
     await openedStock('条件に合う在庫の行')
-    expect(rows('条件に合う在庫の行').map(([code]) => code)).toEqual([
+    expect(rowsOf('条件に合う在庫の行').map(([code]) => code)).toEqual([
       'COLOR001',
     ])
     expect(firstSight()[0]).toBe(
@@ -241,7 +239,7 @@ describe('the stock screens', () => {
 
     // Assert
     await screen.findByText('6 行')
-    expect(rows()).toEqual(await seededRows())
+    expect(rowsOf('在庫')).toEqual(await seededRows())
     expect(screen.getByRole('combobox', { name: '商品' })).toHaveValue('')
   })
 
@@ -283,7 +281,7 @@ describe('the stock screens', () => {
     // Assert
     await openedStock('在庫僅少')
     expect(
-      rows('在庫僅少').map(([code, , lotNumber, , , stock]) => [
+      rowsOf('在庫僅少').map(([code, , lotNumber, , , stock]) => [
         code,
         lotNumber,
         stock,
@@ -315,7 +313,7 @@ describe('the stock screens', () => {
     // Assert
     await openedStock('期限切れ間近')
     expect(
-      rows('期限切れ間近').map(([code, , , expiry]) => [code, expiry]),
+      rowsOf('期限切れ間近').map(([code, , , expiry]) => [code, expiry]),
     ).toEqual([
       ['TREAT001', EXPIRED],
       ['COLOR001', expiryNameOf(today)],
@@ -334,7 +332,7 @@ describe('the stock screens', () => {
 
     // Assert
     await screen.findByText('3 行')
-    expect(rows('期限切れ間近').map(([code]) => code)).toEqual([
+    expect(rowsOf('期限切れ間近').map(([code]) => code)).toEqual([
       'TREAT001',
       'COLOR001',
       'COND001',
@@ -352,7 +350,7 @@ describe('the stock screens', () => {
 
     // Assert
     await screen.findByText('2 行')
-    expect(rows('期限切れ間近').map(([code]) => code)).toEqual([
+    expect(rowsOf('期限切れ間近').map(([code]) => code)).toEqual([
       'TREAT001',
       'COLOR001',
     ])
@@ -371,7 +369,7 @@ describe('the stock screens', () => {
 
     // Assert
     await screen.findByText('26 行')
-    const read = rows()
+    const read = rowsOf('在庫')
     expect(read).toHaveLength(26)
     expect(read.slice(19, 21).map(([code]) => code)).toEqual(['PAD16', 'PAD17'])
     expect(screen.getByRole('link', { name: 'Cotton Pad 17' })).toHaveFocus()
@@ -386,11 +384,7 @@ describe('the stock screens', () => {
     await openedStock()
     await user.click(screen.getByRole('link', { name: '在庫の行を足す' }))
     await openedEntry()
-    expect(
-      within(product())
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf(product())).toEqual([
       '選んでください',
       'Lightening Powder 500g（BLEACH001）',
       'Hair Color - Natural Brown（COLOR001）',
@@ -451,7 +445,7 @@ describe('the stock screens', () => {
     ])
     await openedStock()
     expect(screen.getByText('7 行')).toBeVisible()
-    expect(rows().map(([code]) => code)).toContain('WAX001')
+    expect(rowsOf('在庫').map(([code]) => code)).toContain('WAX001')
   })
 
   it('should add a lot of a product kept by lots, after saying at the lot that another row has it', async () => {
@@ -752,7 +746,7 @@ describe('the stock screens', () => {
       expect.not.stringContaining('7 行'),
     ])
     await openedStock()
-    expect(rows()).toEqual(await seededRows())
+    expect(rowsOf('在庫')).toEqual(await seededRows())
     expect(
       (await storedRowsOf(TOKYO)).map(({ lotNumber }) => lotNumber),
     ).not.toContain('LOT-2026-001')

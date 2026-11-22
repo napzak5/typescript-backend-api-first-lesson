@@ -2,9 +2,10 @@ import {
   itShouldBeAccessibleInEveryStory,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import type { SalonConditions } from '../../salon-search'
 import { SalonSearchForm, type SalonSearchFormProps } from './salon-search-form'
@@ -70,11 +71,13 @@ describe('SalonSearchForm', () => {
     expect(prefecture()).toHaveValue('')
     expect(city()).toHaveValue('')
     expect(minRating()).toHaveValue('')
-    expect(
-      within(minRating())
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['指定なし', '3.0 以上', '3.5 以上', '4.0 以上', '4.5 以上'])
+    expect(optionsOf(minRating())).toEqual([
+      '指定なし',
+      '3.0 以上',
+      '3.5 以上',
+      '4.0 以上',
+      '4.5 以上',
+    ])
   })
 
   it('should say that a place is found by the spelling the salon registered', async () => {

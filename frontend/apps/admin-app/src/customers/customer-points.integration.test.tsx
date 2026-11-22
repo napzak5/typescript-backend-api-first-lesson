@@ -10,6 +10,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
@@ -72,18 +73,6 @@ const holdReadingsOf = (customerId: string): (() => void) => {
 
   return () => held.resolve()
 }
-
-/** The rows of a table, a list of the texts of their cells each. */
-const rowsOf = (name: string): string[][] =>
-  within(screen.getByRole('table', { name }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
 
 /** The rows of the history without the times, which are those of the test. */
 const historyShown = (): string[][] =>

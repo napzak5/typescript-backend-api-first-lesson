@@ -1,6 +1,6 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
-import { heading } from '@beauty-salon-frontend/testing/screens'
+import { heading, optionsOf } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OSAKA,
@@ -198,11 +198,7 @@ describe('several services of the menu changed at once, against the API', () => 
       ),
     )
     await waitFor(() =>
-      expect(
-        within(choice('カテゴリー'))
-          .getAllByRole('option')
-          .map((option) => option.textContent),
-      ).not.toContain('Styling'),
+      expect(optionsOf(choice('カテゴリー'))).not.toContain('Styling'),
     )
     expect(
       (await storedStatesOf(TOKYO)).find(({ name }) => name === 'Ladies Cut')

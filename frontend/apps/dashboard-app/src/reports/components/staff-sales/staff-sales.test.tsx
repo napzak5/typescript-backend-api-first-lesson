@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -7,15 +8,6 @@ import * as staffSalesStories from './staff-sales.stories'
 const stories = composeStories(staffSalesStories)
 
 const TABLE = 'スタッフ別の売上'
-
-/** The rows of the table, cell by cell */
-const rowsOf = (): (string | null)[][] =>
-  within(screen.getByRole('table', { name: TABLE }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      Array.from(row.querySelectorAll('th, td'), (cell) => cell.textContent),
-    )
 
 /** The bar under the sales of a member of the staff */
 const barOf = (name: string, sales: string): Element | null | undefined =>
@@ -30,7 +22,7 @@ describe('StaffSales', () => {
     await stories.Ranked.run()
 
     // Assert
-    expect(rowsOf()).toEqual([
+    expect(rowsOf(TABLE)).toEqual([
       ['1 位', 'Mika Suzuki', '￥23,100', '3 件', '￥7,700'],
       ['2 位', 'Hiroshi Tanaka', '￥12,100', '2 件', '￥6,050'],
       ['3 位', 'Yuki Sato', '￥9,900', '2 件', '￥4,950'],
@@ -61,6 +53,6 @@ describe('StaffSales', () => {
     expect(
       screen.getByText(/商品の売上も入ります。施術の数と施術の平均単価は/),
     ).toBeInTheDocument()
-    expect(rowsOf()).toHaveLength(1)
+    expect(rowsOf(TABLE)).toHaveLength(1)
   })
 })

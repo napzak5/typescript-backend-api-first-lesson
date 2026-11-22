@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -17,17 +18,6 @@ const termsOf = (name: string): [string, string][] => {
       term.nextElementSibling?.textContent ?? '',
     ])
 }
-
-const linesOf = (): string[][] =>
-  within(screen.getByRole('table', { name: '施術明細' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).getAllByRole('rowheader'),
-        ...within(row).getAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
 
 describe('BookingRecord', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -49,7 +39,7 @@ describe('BookingRecord', () => {
       ['受付の経路', '記録なし'],
       ['予約金', '記録なし'],
     ])
-    expect(linesOf()).toEqual([
+    expect(rowsOf('施術明細')).toEqual([
       ['カット', '田中 美咲', '10:00〜11:00', '￥5,500（税込）', '未'],
     ])
     expect(termsOf('金額')).toEqual([
@@ -65,7 +55,7 @@ describe('BookingRecord', () => {
     await stories.Completed.run()
 
     // Assert
-    expect(linesOf()).toEqual([
+    expect(rowsOf('施術明細')).toEqual([
       ['カット', '田中 美咲', '10:00〜11:00', '￥5,500（税込）', '済み'],
       [
         'カラー',

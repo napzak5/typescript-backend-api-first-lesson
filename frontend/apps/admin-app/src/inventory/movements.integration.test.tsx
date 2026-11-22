@@ -1,6 +1,10 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
-import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  firstSight,
+  heading,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -59,12 +63,7 @@ const openedEntry = async (): Promise<void> => {
 
 /** The rows of the history, each as the texts of its cells but the moment. */
 const movements = (caption = '在庫の移動'): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [...row.children].slice(1).map((cell) => cell.textContent ?? ''),
-    )
+  rowsOf(caption).map((row) => row.slice(1))
 
 const text = (name: RegExp | string): HTMLElement =>
   screen.getByRole('textbox', { name })
@@ -324,12 +323,7 @@ describe('the screens of the movements of the stock', () => {
     expect(firstSight()[0]).toBe(
       `${stockMovementsHrefOf(salonId, rowId)}?type=purchase&from=2025-10-01&to=2025-10-31`,
     )
-    expect(
-      within(screen.getByRole('table', { name: '条件に合う在庫の移動' }))
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) => [...row.children].map((cell) => cell.textContent)),
-    ).toEqual([
+    expect(rowsOf('条件に合う在庫の移動')).toEqual([
       [
         '2025年10月5日（日） 10:00',
         '仕入れ',

@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -23,17 +24,7 @@ describe('ShareLinkList', () => {
         .getAllByRole('columnheader')
         .map((header) => header.textContent),
     ).toEqual(['発行日時', '有効期限', 'ダウンロード', 'パスワード', '状態'])
-    expect(
-      within(table)
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) => [
-          within(row).getByRole('rowheader').textContent,
-          ...within(row)
-            .getAllByRole('cell')
-            .map((cell) => cell.textContent),
-        ]),
-    ).toEqual([
+    expect(rowsOf(table)).toEqual([
       [
         '2026年11月21日（土） 09:40',
         '2026年11月28日（土） 09:40',

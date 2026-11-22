@@ -1,21 +1,11 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as customerHistoryStories from './customer-history.stories'
 
 const stories = composeStories(customerHistoryStories)
-
-/** The cells of the rows of the table, as text */
-const rowsOf = (table: HTMLElement): string[][] =>
-  within(table)
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      within(row)
-        .getAllByRole('cell')
-        .map((cell) => cell.textContent ?? ''),
-    )
 
 describe('CustomerHistory', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -32,15 +22,28 @@ describe('CustomerHistory', () => {
         .map((header) => header.textContent),
     ).toEqual(['版 4', '版 3', '版 2', '版 1'])
     expect(rowsOf(table)).toEqual([
-      ['更新', '2026年11月19日（木） 10:15', 'あなた', '電話番号、住所'],
-      ['更新', '2026年11月18日（水） 18:00', 'ほかのアカウント', 'なし'],
       [
+        '版 4',
+        '更新',
+        '2026年11月19日（木） 10:15',
+        'あなた',
+        '電話番号、住所',
+      ],
+      [
+        '版 3',
+        '更新',
+        '2026年11月18日（水） 18:00',
+        'ほかのアカウント',
+        'なし',
+      ],
+      [
+        '版 2',
         '更新',
         '2026年11月18日（水） 14:30',
         'お客様ご本人',
         '好みのメニュー、好みについてのメモ',
       ],
-      ['記録の開始', '2026年11月1日（日） 09:00', '', ''],
+      ['版 1', '記録の開始', '2026年11月1日（日） 09:00', '', ''],
     ])
     expect(screen.getByText('4 件')).toBeVisible()
     expect(screen.getByRole('link', { name: '版 3' })).toHaveAttribute(

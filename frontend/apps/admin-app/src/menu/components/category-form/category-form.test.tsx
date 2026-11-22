@@ -2,18 +2,14 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import { colouring } from '../examples'
 import * as categoryFormStories from './category-form.stories'
 
 const stories = composeStories(categoryFormStories)
-
-const parentChoices = (): (string | null)[] =>
-  within(screen.getByRole('combobox', { name: '親カテゴリー' }))
-    .getAllByRole('option')
-    .map((option) => option.textContent)
 
 describe('CategoryForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -66,7 +62,7 @@ describe('CategoryForm', () => {
     await stories.New.run()
 
     // Assert
-    expect(parentChoices()).toEqual([
+    expect(optionsOf('親カテゴリー')).toEqual([
       'なし（最上位のカテゴリー）',
       'カット',
       'カラー',
@@ -85,7 +81,7 @@ describe('CategoryForm', () => {
     expect(screen.getByRole('combobox', { name: '親カテゴリー' })).toHaveValue(
       colouring().id,
     )
-    expect(parentChoices()).not.toContain('カラー › ハイライト')
+    expect(optionsOf('親カテゴリー')).not.toContain('カラー › ハイライト')
     expect(screen.getByRole('textbox', { name: '色' })).toHaveValue('#FFD93D')
     expect(screen.getByRole('checkbox', { name: '有効' })).not.toBeChecked()
   })

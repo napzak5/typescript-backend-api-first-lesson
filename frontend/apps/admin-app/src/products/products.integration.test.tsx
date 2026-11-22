@@ -1,6 +1,11 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
-import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  firstSight,
+  heading,
+  optionsOf,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OSAKA,
@@ -54,13 +59,6 @@ const openedForm = async (title: string): Promise<void> => {
   await heading(title)
   await screen.findByRole('textbox', { name: /^商品コード/ })
 }
-
-/** The rows of the ledger, each as the texts of its cells. */
-const rows = (caption = '商品台帳'): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
 
 /** What a card of the record of a product says, term by term. */
 const terms = (card: string): [string, string][] =>
@@ -173,7 +171,7 @@ describe('the product ledger of a salon, against the API', () => {
     // Assert
     await openedLedger()
     expect(firstSight()[0]).toBe(productsHrefOf(salonId))
-    expect(rows()).toEqual(SEEDED)
+    expect(rowsOf('商品台帳')).toEqual(SEEDED)
     expect(screen.getByText('7 件')).toBeVisible()
     expect(
       screen.queryByRole('link', { name: '商品を足す' }),
@@ -230,7 +228,7 @@ describe('the product ledger of a salon, against the API', () => {
 
     // Assert
     await openedLedger('条件に合う商品')
-    expect(rows('条件に合う商品').map(([code]) => code)).toEqual([
+    expect(rowsOf('条件に合う商品').map(([code]) => code)).toEqual([
       'COLOR001',
       'TREAT001',
     ])
@@ -238,11 +236,7 @@ describe('the product ledger of a salon, against the API', () => {
 
     // Act
     await user.clear(screen.getByRole('searchbox', { name: 'キーワード' }))
-    expect(
-      within(combobox('カテゴリー'))
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf(combobox('カテゴリー'))).toEqual([
       'すべて',
       'Hair Care',
       'Hair Color',
@@ -255,7 +249,7 @@ describe('the product ledger of a salon, against the API', () => {
 
     // Assert
     await screen.findByText('3 件')
-    expect(rows('条件に合う商品').map(([code]) => code)).toEqual([
+    expect(rowsOf('条件に合う商品').map(([code]) => code)).toEqual([
       'BLEACH001',
       'COLOR001',
       'DEVELOPER001',
@@ -269,7 +263,7 @@ describe('the product ledger of a salon, against the API', () => {
 
     // Assert
     await screen.findByText('7 件')
-    expect(rows()).toEqual(SEEDED)
+    expect(rowsOf('商品台帳')).toEqual(SEEDED)
     expect(combobox('カテゴリー')).toHaveValue('')
 
     // Act
@@ -281,7 +275,7 @@ describe('the product ledger of a salon, against the API', () => {
 
     // Assert
     await screen.findByText('1 件')
-    expect(rows('条件に合う商品').map(([code]) => code)).toEqual(['WAX001'])
+    expect(rowsOf('条件に合う商品').map(([code]) => code)).toEqual(['WAX001'])
 
     // Act
     await user.clear(screen.getByRole('textbox', { name: 'バーコード' }))
@@ -301,7 +295,7 @@ describe('the product ledger of a salon, against the API', () => {
     await padsOf(TOKYO, 20)
     await openAs(productsHrefOf(await salonIdOf(TOKYO)), STYLIST)
     await openedLedger()
-    expect(rows()).toHaveLength(20)
+    expect(rowsOf('商品台帳')).toHaveLength(20)
     expect(screen.getByText('27 件（20 件を表示しています）')).toBeVisible()
 
     // Act
@@ -309,9 +303,9 @@ describe('the product ledger of a salon, against the API', () => {
 
     // Assert
     await screen.findByText('27 件')
-    expect(rows()).toHaveLength(27)
+    expect(rowsOf('商品台帳')).toHaveLength(27)
     expect(
-      rows()
+      rowsOf('商品台帳')
         .map(([code]) => code)
         .slice(19, 21),
     ).toEqual(['PAD16', 'PAD17'])
@@ -402,7 +396,7 @@ describe('the product ledger of a salon, against the API', () => {
 
     // Assert
     await openedLedger()
-    expect(rows()[4]).toEqual([
+    expect(rowsOf('商品台帳')[4]).toEqual([
       'OIL001',
       'Hair Oil 100ml',
       'Hair Care',
@@ -479,7 +473,7 @@ describe('the product ledger of a salon, against the API', () => {
 
     // Assert
     await openedLedger()
-    expect(rows()[2]).toEqual([
+    expect(rowsOf('商品台帳')[2]).toEqual([
       'COND001',
       'Professional Conditioner 500ml',
       'Hair Care',
@@ -518,7 +512,7 @@ describe('the product ledger of a salon, against the API', () => {
       await screen.findByText('商品「Styling Wax 80g」を削除しました。'),
     ).toBeInTheDocument()
     await openedLedger()
-    expect(rows().map(([code]) => code)).toEqual([
+    expect(rowsOf('商品台帳').map(([code]) => code)).toEqual([
       'BLEACH001',
       'COLOR001',
       'COND001',

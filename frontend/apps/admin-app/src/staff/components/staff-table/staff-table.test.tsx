@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -18,15 +19,7 @@ describe('StaffTable', () => {
     await stories.Found.run()
 
     // Assert
-    const rows = within(table()).getAllByRole('row').slice(1)
-    expect(
-      rows.map((row) =>
-        [
-          ...within(row).getAllByRole('rowheader'),
-          ...within(row).getAllByRole('cell'),
-        ].map((cell) => cell.textContent),
-      ),
-    ).toEqual([
+    expect(rowsOf(table())).toEqual([
       [
         '森 明子',
         '森 明子（モリ アキコ）',

@@ -12,8 +12,10 @@ import {
   goTo,
   heading,
   notifications,
+  optionsOf,
   queryClientOfATest,
   renderApplicationAt,
+  rowsOf,
   statusMessages,
   termsOf,
   termsOnceThere,
@@ -78,6 +80,80 @@ const ReadingARecord = () => {
 
   return <p>{data ?? 'nothing yet'}</p>
 }
+
+/** Three tables: one with the header of a row first, one with it last, one without rows. */
+const Tables = () => (
+  <>
+    <table>
+      <caption>スタッフ</caption>
+      <thead>
+        <tr>
+          <th scope='col'>名前</th>
+          <th scope='col'>役職</th>
+          <th scope='col'>メモ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope='row'>鈴木 美香</th>
+          <td>スタイリスト</td>
+          <td />
+        </tr>
+        <tr>
+          <th scope='row'>田中 博</th>
+          <td>
+            <a href='/roles'>店長</a>
+          </td>
+          <td>月曜は休み</td>
+        </tr>
+      </tbody>
+    </table>
+    <table>
+      <caption>スタッフの予定</caption>
+      <thead>
+        <tr>
+          <th scope='col'>日</th>
+          <th scope='col'>名前</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>11/20</td>
+          <th scope='row'>鈴木 美香</th>
+        </tr>
+      </tbody>
+    </table>
+    <table>
+      <caption>休み</caption>
+      <thead>
+        <tr>
+          <th scope='col'>日</th>
+        </tr>
+      </thead>
+      <tbody />
+    </table>
+  </>
+)
+
+/** Two selects, the label of one the beginning of the label of the other. */
+const Selects = () => (
+  <>
+    <label>
+      担当
+      <select>
+        <option value=''>指名なし</option>
+        <option value='mika'>鈴木 美香</option>
+        <option value='hiroshi'>田中 博</option>
+      </select>
+    </label>
+    <label>
+      担当の役職
+      <select>
+        <option value='stylist'>スタイリスト</option>
+      </select>
+    </label>
+  </>
+)
 
 describe('the screen tools', () => {
   afterEach(() => {
@@ -443,6 +519,80 @@ describe('the screen tools', () => {
         ['都道府県', '東京都'],
         ['建物', ''],
       ])
+    })
+  })
+
+  describe('rowsOf', () => {
+    it('should read the rows below the column headers, the header of a row with its cells and an empty cell as no text', () => {
+      // Arrange
+      render(<Tables />)
+
+      // Act, Assert
+      expect(rowsOf('スタッフ')).toEqual([
+        ['鈴木 美香', 'スタイリスト', ''],
+        ['田中 博', '店長', '月曜は休み'],
+      ])
+    })
+
+    it('should read the cells in the order they stand in, wherever the header of the row is', () => {
+      // Arrange
+      render(<Tables />)
+
+      // Act, Assert
+      expect(rowsOf('スタッフの予定')).toEqual([['11/20', '鈴木 美香']])
+    })
+
+    it('should read no rows of a table that has its column headers alone', () => {
+      // Arrange
+      render(<Tables />)
+
+      // Act, Assert
+      expect(rowsOf('休み')).toEqual([])
+    })
+
+    it('should read the table it is handed, and not another one', () => {
+      // Arrange
+      render(<Tables />)
+      const [, plans] = screen.getAllByRole('table')
+
+      // Act, Assert
+      expect(plans && rowsOf(plans)).toEqual([['11/20', '鈴木 美香']])
+    })
+
+    it('should fail when no table has the caption', () => {
+      // Arrange
+      render(<Tables />)
+
+      // Act, Assert
+      expect(() => rowsOf('予約')).toThrow(/Unable to find/)
+    })
+  })
+
+  describe('optionsOf', () => {
+    it('should read what a select offers, in the order of its options, by the label of the select', () => {
+      // Arrange
+      render(<Selects />)
+
+      // Act, Assert
+      expect(optionsOf('担当')).toEqual(['指名なし', '鈴木 美香', '田中 博'])
+      expect(optionsOf('担当の役職')).toEqual(['スタイリスト'])
+    })
+
+    it('should read the select it is handed, and not another one', () => {
+      // Arrange
+      render(<Selects />)
+      const [, roles] = screen.getAllByRole('combobox')
+
+      // Act, Assert
+      expect(roles && optionsOf(roles)).toEqual(['スタイリスト'])
+    })
+
+    it('should fail when no select has the label', () => {
+      // Arrange
+      render(<Selects />)
+
+      // Act, Assert
+      expect(() => optionsOf('メニュー')).toThrow(/Unable to find/)
     })
   })
 })

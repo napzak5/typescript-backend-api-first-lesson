@@ -5,6 +5,7 @@ import {
   address,
   asTheApplicationKeeps,
   heading,
+  optionsOf,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
@@ -211,9 +212,7 @@ describe('the screens of a booking, against the API', () => {
       // Act: the cut asks for a stylist
       const first = renderAt(await bookingPathOf())
       const namesOf = async (): Promise<(string | null)[]> =>
-        within(await staffControl())
-          .getAllByRole('option')
-          .map((option) => option.textContent)
+        optionsOf(await staffControl())
 
       // Assert: a junior does not cut, and the directors take no bookings;
       // the names are in their order

@@ -2,6 +2,7 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -104,11 +105,7 @@ describe('StaffForm', () => {
     await stories.Entry.run()
 
     // Assert
-    expect(
-      within(screen.getByRole('combobox', { name: 'レベル' }))
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf('レベル')).toEqual([
       '選んでください',
       'ジュニア',
       'スタイリスト',

@@ -11,6 +11,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   OWNER,
@@ -46,15 +47,7 @@ const field = (name: string): HTMLElement => screen.getByLabelText(name)
 
 /** The lines of the page of a booking: the service, who does it and the hours. */
 const linesShown = (): string[][] =>
-  within(screen.getByRole('table', { name: '施術明細' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).getAllByRole('rowheader'),
-        ...within(row).getAllByRole('cell').slice(0, 2),
-      ].map((cell) => cell.textContent ?? ''),
-    )
+  rowsOf('施術明細').map((row) => row.slice(0, 3))
 
 /** The lines of the form that moves a booking, where the move would put them. */
 const movedShown = (): string[] =>

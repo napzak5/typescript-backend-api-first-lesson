@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -7,13 +8,6 @@ import { waitingReport } from '../examples'
 import * as reportTableStories from './report-table.stories'
 
 const stories = composeStories(reportTableStories)
-
-/** The cells of the rows of the table, row by row */
-const rowsOf = (caption: string): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
 
 describe('ReportTable', () => {
   it('should list each report with when it came, its review, why, what was written and its state', async () => {

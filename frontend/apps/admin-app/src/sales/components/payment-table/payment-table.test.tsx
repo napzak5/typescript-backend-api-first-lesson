@@ -1,21 +1,11 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
+import { screen } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as paymentTableStories from './payment-table.stories'
 
 const stories = composeStories(paymentTableStories)
-
-const rowsOf = (): (string | null)[][] =>
-  within(screen.getByRole('table', { name: '支払い' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 describe('PaymentTable', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -25,7 +15,7 @@ describe('PaymentTable', () => {
     await stories.Paid.run()
 
     // Assert
-    expect(rowsOf()).toEqual([
+    expect(rowsOf('支払い')).toEqual([
       [
         'PT-7KQM-4F2H',
         '2026年11月20日（金） 11:05',
@@ -52,7 +42,7 @@ describe('PaymentTable', () => {
     await stories.Empty.run()
 
     // Assert
-    expect(rowsOf()).toEqual([['まだ支払いはありません']])
+    expect(rowsOf('支払い')).toEqual([['まだ支払いはありません']])
   })
 
   it('should name a method the salon removed, and what was recorded of the card', async () => {
@@ -60,7 +50,7 @@ describe('PaymentTable', () => {
     await stories.Refunded.run()
 
     // Assert
-    expect(rowsOf()).toEqual([
+    expect(rowsOf('支払い')).toEqual([
       [
         'PT-7KQM-4F2H',
         '2026年11月20日（金） 11:05',
@@ -82,7 +72,7 @@ describe('PaymentTable', () => {
     await stories.GivenBackByOwner.run()
 
     // Assert
-    expect(rowsOf().map((row) => row.slice(-2))).toEqual([
+    expect(rowsOf('支払い').map((row) => row.slice(-2))).toEqual([
       ['返金済み', '￥3,000、2026年11月20日（金） 11:30'],
       ['受け取り', '返金する'],
     ])

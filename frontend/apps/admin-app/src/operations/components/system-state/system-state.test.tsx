@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -32,13 +33,16 @@ describe('SystemStateRecord', () => {
       ['API のバージョン', '1.0.0'],
       ['確かめた日時', '2026年11月20日（金） 12:00'],
     ])
+    const dependencies = within(record()).getByRole('table', {
+      name: '依存先の状態',
+    })
     expect(
-      within(within(record()).getByRole('table', { name: '依存先の状態' }))
-        .getAllByRole('row')
-        .map((row) => row.textContent),
-    ).toEqual([
-      '依存先状態応答時間エラー',
-      'データベース動いています4 ミリ秒ありません',
+      within(dependencies)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['依存先', '状態', '応答時間', 'エラー'])
+    expect(rowsOf(dependencies)).toEqual([
+      ['データベース', '動いています', '4 ミリ秒', 'ありません'],
     ])
   })
 
@@ -83,13 +87,13 @@ describe('SystemStateRecord', () => {
       ],
       ['全体の状態', '止まっています'],
     ])
-    expect(
-      within(screen.getByRole('table', { name: '依存先の状態' }))
-        .getAllByRole('row')
-        .map((row) => row.textContent),
-    ).toEqual([
-      '依存先状態応答時間エラー',
-      'データベース止まっています3002 ミリ秒Database is unreachable',
+    expect(rowsOf('依存先の状態')).toEqual([
+      [
+        'データベース',
+        '止まっています',
+        '3002 ミリ秒',
+        'Database is unreachable',
+      ],
     ])
   })
 

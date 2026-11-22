@@ -5,7 +5,7 @@ import {
   salonIdOf,
   signInAs,
 } from '@beauty-salon-frontend/testing/api'
-import { heading } from '@beauty-salon-frontend/testing/screens'
+import { heading, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OSAKA,
@@ -49,18 +49,6 @@ const openForm = async (email: string): Promise<void> => {
 
 /** The group of a day of the week, or of a row of a date: 「月曜日」, 「1 行目」 */
 const group = (name: string) => within(screen.getByRole('group', { name }))
-
-/** The rows of a table, each as the texts of its cells. */
-const rowsOf = (caption: string): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
 
 /** Writes a time into a control that holds one. */
 const writeTime = async (

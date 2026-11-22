@@ -1,6 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
+import { screen } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as salonChoicesStories from './salon-choices.stories'
 
@@ -14,18 +15,9 @@ describe('SalonChoices', () => {
     await stories.Salons.run()
 
     // Assert
-    const rows = within(screen.getByRole('table', { name: 'サロン' }))
-      .getAllByRole('row')
-      .slice(1)
-    expect(
-      rows.map((row) =>
-        within(row)
-          .getAllByRole('cell')
-          .map((cell) => cell.textContent),
-      ),
-    ).toEqual([
-      ['東京都 渋谷区 神宮前 4-1-1', '受付中'],
-      ['東京都 中央区 銀座 5-2-1 銀座ビル 3F', '停止中'],
+    expect(rowsOf('サロン')).toEqual([
+      ['Salon Hikari 表参道店', '東京都 渋谷区 神宮前 4-1-1', '受付中'],
+      ['Salon Hikari 銀座店', '東京都 中央区 銀座 5-2-1 銀座ビル 3F', '停止中'],
     ])
     expect(
       screen.getByRole('link', { name: 'Salon Hikari 銀座店' }),

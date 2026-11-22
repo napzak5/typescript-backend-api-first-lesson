@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -17,15 +18,7 @@ describe('CustomerTable', () => {
     await stories.Ledger.run()
 
     // Assert
-    const rows = within(table()).getAllByRole('row').slice(1)
-    expect(
-      rows.map((row) =>
-        [
-          ...within(row).getAllByRole('rowheader'),
-          ...within(row).getAllByRole('cell'),
-        ].map((cell) => cell.textContent),
-      ),
-    ).toEqual([
+    expect(rowsOf(table())).toEqual([
       [
         '山田 花子',
         'ヤマダ ハナコ',

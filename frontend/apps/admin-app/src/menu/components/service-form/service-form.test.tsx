@@ -2,6 +2,7 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -115,16 +116,13 @@ describe('ServiceForm', () => {
     await stories.New.run()
 
     // Assert
-    expect(
-      within(choice('カテゴリー'))
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['未分類', 'カット', 'カラー', 'カラー › ハイライト'])
-    expect(
-      within(choice('担当できるスタッフ'))
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf(choice('カテゴリー'))).toEqual([
+      '未分類',
+      'カット',
+      'カラー',
+      'カラー › ハイライト',
+    ])
+    expect(optionsOf(choice('担当できるスタッフ'))).toEqual([
       'すべてのスタッフ',
       'ジュニア以上',
       'スタイリスト以上',
@@ -173,11 +171,11 @@ describe('ServiceForm', () => {
     // Assert
     expect(box('パッケージにする')).toBeChecked()
     expect(packagedOf()).toEqual([aService().id, aDiscountedColour().id])
-    expect(
-      within(group('構成サービス 1'))
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['選んでください', 'カット', 'フルカラー'])
+    expect(optionsOf(group('構成サービス 1'))).toEqual([
+      '選んでください',
+      'カット',
+      'フルカラー',
+    ])
   })
 
   it('should give two rows to choose in when the box that makes a package is checked, and none once it is cleared', async () => {

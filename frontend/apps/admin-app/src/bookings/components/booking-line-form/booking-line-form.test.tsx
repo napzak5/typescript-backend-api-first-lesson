@@ -2,8 +2,9 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { fireEvent, screen, userEvent, within } from 'storybook/test'
+import { fireEvent, screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import * as bookingLineFormStories from './booking-line-form.stories'
 
@@ -24,16 +25,17 @@ describe('BookingLineForm', () => {
     await stories.Empty.run()
 
     // Assert
-    expect(
-      within(combobox('メニュー'))
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['選んでください', 'カット（60 分）', 'カラー（60 分）'])
-    expect(
-      within(combobox('担当'))
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['予約の担当と同じ', '田中 美咲', '佐藤 健', '決めない'])
+    expect(optionsOf(combobox('メニュー'))).toEqual([
+      '選んでください',
+      'カット（60 分）',
+      'カラー（60 分）',
+    ])
+    expect(optionsOf(combobox('担当'))).toEqual([
+      '予約の担当と同じ',
+      '田中 美咲',
+      '佐藤 健',
+      '決めない',
+    ])
     expect(combobox('担当')).toHaveValue('same')
     expect(screen.getByLabelText('開始の時刻')).toHaveAccessibleDescription(
       '来店日（2026年11月20日（金））の、サロンの時計の時刻です。',

@@ -1,6 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import { aCustomer, salon } from '../../../bookings/components/examples'
 import * as chartTableStories from './chart-table.stories'
@@ -15,17 +16,7 @@ describe('ChartTable', () => {
     await stories.Found.run()
 
     // Assert
-    const rows = within(screen.getByRole('table', { name: 'カルテ' }))
-      .getAllByRole('row')
-      .slice(1)
-    expect(
-      rows.map((row) =>
-        [
-          ...within(row).getAllByRole('rowheader'),
-          ...within(row).getAllByRole('cell'),
-        ].map((cell) => cell.textContent),
-      ),
-    ).toEqual([
+    expect(rowsOf('カルテ')).toEqual([
       [
         '山田 花子 様',
         '頭皮が乾燥しやすく、かゆみが出ることがあります。',

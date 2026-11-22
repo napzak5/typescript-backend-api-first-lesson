@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -22,18 +23,6 @@ const termsOf = (card: string): [string, string][] => {
       term.nextElementSibling?.textContent ?? '',
     ])
 }
-
-/** The rows of the materials, cell by cell */
-const materials = (): (string | null)[][] =>
-  within(screen.getByRole('table', { name: '使った商材の一覧' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 describe('TreatmentRecord', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -92,7 +81,7 @@ describe('TreatmentRecord', () => {
     await stories.Written.run()
 
     // Assert
-    expect(materials()).toEqual([
+    expect(rowsOf('使った商材の一覧')).toEqual([
       ['カラー剤 6N（COLOR-6N）', '1 本', 'LOT-2026-031', '記録なし'],
       ['オキシ 6%（OX-6）', '80.5 ml', '記録なし', '根元に多めに使った。'],
     ])
@@ -121,7 +110,7 @@ describe('TreatmentRecord', () => {
       '記録なし',
       '記録なし',
     ])
-    expect(materials()).toEqual([
+    expect(rowsOf('使った商材の一覧')).toEqual([
       ['削除された商品', '2 本', '記録なし', '記録なし'],
     ])
   })

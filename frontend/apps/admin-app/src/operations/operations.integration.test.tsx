@@ -1,6 +1,6 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
-import { heading } from '@beauty-salon-frontend/testing/screens'
+import { heading, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
   MANAGER,
@@ -154,12 +154,14 @@ describe('the operations of the platform, against the API', () => {
         'API のバージョン',
         '確かめた日時',
       ])
-      const [, dependency] = within(
-        screen.getByRole('table', { name: '依存先の状態' }),
-      ).getAllByRole('row')
-      expect(dependency).toHaveTextContent(
-        /^データベース動いています\d+ ミリ秒ありません$/,
-      )
+      expect(rowsOf('依存先の状態')).toEqual([
+        [
+          'データベース',
+          '動いています',
+          expect.stringMatching(/^\d+ ミリ秒$/),
+          'ありません',
+        ],
+      ])
       expect(screen.getByRole('link', { name: '運用' })).toHaveAttribute(
         'aria-current',
         'page',
@@ -296,11 +298,15 @@ describe('the operations of the platform, against the API', () => {
           '1 件の依頼を実行して、お客様のデータを消去しました。消去したことは、依頼を受け付けたサロンから本人に知らせてください。',
         ),
       ).toBeVisible()
-      const rows = within(
-        within(region).getByRole('table', { name: '実行した依頼' }),
-      ).getAllByRole('row')
-      expect(rows).toHaveLength(2)
-      expect(rows[1]).toHaveTextContent(/ご本人からのお申し出$/)
+      expect(
+        rowsOf(within(region).getByRole('table', { name: '実行した依頼' })),
+      ).toEqual([
+        [
+          expect.any(String),
+          expect.any(String),
+          expect.stringMatching(/ご本人からのお申し出$/),
+        ],
+      ])
       expect(await storedErasureOf(yuki)).toEqual([
         { email: `${yuki}@erased.invalid`, removed: true, status: 'completed' },
       ])

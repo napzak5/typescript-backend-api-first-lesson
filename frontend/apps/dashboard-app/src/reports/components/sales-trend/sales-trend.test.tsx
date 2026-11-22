@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -9,15 +10,6 @@ const stories = composeStories(salesTrendStories)
 
 const TABLE = '区切りごとの売上、会計の件数、客単価'
 
-/** The rows of the table, cell by cell in the order they are shown */
-const rows = (): (string | null)[][] =>
-  within(screen.getByRole('table', { name: TABLE }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      Array.from(row.querySelectorAll('th, td'), (cell) => cell.textContent),
-    )
-
 describe('SalesTrend', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
@@ -26,7 +18,7 @@ describe('SalesTrend', () => {
     await stories.Months.run()
 
     // Assert
-    const counted = rows()
+    const counted = rowsOf(TABLE)
     expect(counted).toHaveLength(12)
     expect(counted.slice(0, 2)).toEqual([
       ['2025年12月', '￥48,000', '5 件', '￥9,600'],
@@ -50,7 +42,7 @@ describe('SalesTrend', () => {
     await stories.Days.run()
 
     // Assert
-    expect(rows()).toEqual([
+    expect(rowsOf(TABLE)).toEqual([
       ['2026年11月16日（月）', '￥5,500', '1 件', '￥5,500'],
       ['2026年11月17日（火）', '￥0', '0 件', '￥0'],
       ['2026年11月18日（水）', '￥12,100', '2 件', '￥6,050'],

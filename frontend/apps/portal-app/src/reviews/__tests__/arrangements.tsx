@@ -423,9 +423,3 @@ export const button = (name: string) => screen.getByRole('button', { name })
 /** The names of the selects of the form, in the order of the page. */
 export const selects = (): (string | null)[] =>
   screen.getAllByRole('combobox').map((control) => control.getAttribute('name'))
-
-/** The options of a select, as they are labelled. */
-export const optionsOf = (control: HTMLElement): (string | null)[] =>
-  within(control)
-    .getAllByRole('option')
-    .map((option) => option.textContent)

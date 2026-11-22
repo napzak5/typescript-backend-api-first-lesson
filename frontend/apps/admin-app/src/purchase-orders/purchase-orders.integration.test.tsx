@@ -4,6 +4,7 @@ import { dayFromToday, salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
+  rowsOf,
   termsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -84,13 +85,6 @@ const openedEntry = async (): Promise<void> => {
 const statuses = (): (string | null)[] =>
   screen.getAllByRole('status').map((status) => status.textContent)
 
-/** The rows of a table, each as the texts of its cells. */
-const rowsOf = (caption = ORDERS): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
-
 const choose = async (
   user: ReturnType<typeof userEvent.setup>,
   name: string,
@@ -165,7 +159,7 @@ describe('the screens of the purchase orders', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: ORDERS }),
     ).toHaveFocus()
-    expect(rowsOf()).toEqual(await seededRows())
+    expect(rowsOf(ORDERS)).toEqual(await seededRows())
     expect(statuses()).toContain('2 件')
 
     // Act
@@ -325,7 +319,7 @@ describe('the screens of the purchase orders', () => {
     // Assert
     await openedOrders()
     expect(firstSight()[0]).toBe(purchaseOrdersHrefOf(salonId))
-    expect(rowsOf()).toEqual(seeded)
+    expect(rowsOf(ORDERS)).toEqual(seeded)
   })
 
   it('should say that the last day is before the first, and keep the address', async () => {
@@ -359,8 +353,8 @@ describe('the screens of the purchase orders', () => {
     await user.click(screen.getByRole('button', { name: SHOW }))
 
     // Assert
-    await waitFor(() => expect(rowsOf()).toHaveLength(3))
-    expect(rowsOf()[2]?.[0]).toBe('PO-PAD-01')
+    await waitFor(() => expect(rowsOf(ORDERS)).toHaveLength(3))
+    expect(rowsOf(ORDERS)[2]?.[0]).toBe('PO-PAD-01')
   })
 
   it('should read the orders that come after a page, and take the focus to the first of them', async () => {
@@ -369,15 +363,19 @@ describe('the screens of the purchase orders', () => {
     await padOrdersOf(TOKYO, 19)
     await openAs(purchaseOrdersHrefOf(await salonIdOf(TOKYO)), OWNER)
     await openedOrders()
-    expect(rowsOf()).toHaveLength(20)
+    expect(rowsOf(ORDERS)).toHaveLength(20)
     expect(statuses()).toContain('21 件（20 件を表示しています）')
 
     // Act
     await user.click(screen.getByRole('button', { name: 'さらに表示' }))
 
     // Assert
-    await waitFor(() => expect(rowsOf()).toHaveLength(21))
-    expect(rowsOf()[20]?.slice(2, 5)).toEqual(['Pad Supply', '下書き', '￥0'])
+    await waitFor(() => expect(rowsOf(ORDERS)).toHaveLength(21))
+    expect(rowsOf(ORDERS)[20]?.slice(2, 5)).toEqual([
+      'Pad Supply',
+      '下書き',
+      '￥0',
+    ])
     expect(screen.getByRole('link', { name: 'PO-PAD-19' })).toHaveFocus()
     expect(screen.queryByRole('button', { name: 'さらに表示' })).toBeNull()
   })
@@ -487,8 +485,8 @@ describe('the screens of the purchase orders', () => {
     // Assert: the list read before was dropped
     await openedOrders()
     expect(firstSight()[1]).not.toContain('PO-SEED')
-    await waitFor(() => expect(rowsOf()).toHaveLength(3))
-    expect(rowsOf()[0]?.slice(0, 5)).toEqual([
+    await waitFor(() => expect(rowsOf(ORDERS)).toHaveLength(3))
+    expect(rowsOf(ORDERS)[0]?.slice(0, 5)).toEqual([
       number,
       dayNameOf(await dayFromToday(0)),
       'Tokyo Beauty Supply',

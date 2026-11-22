@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -44,15 +45,7 @@ describe('SaleRecord', () => {
       'href',
       `/salons/${salon.id}/sales/${aSale().id}/edit`,
     )
-    const lines = within(screen.getByRole('table', { name: '明細' }))
-      .getAllByRole('row')
-      .slice(1)
-      .map((row) =>
-        [
-          ...within(row).getAllByRole('rowheader'),
-          ...within(row).getAllByRole('cell'),
-        ].map((cell) => cell.textContent),
-      )
+    const lines = rowsOf('明細')
     expect(lines).toEqual([
       ['カット', '田中 美咲', '1', '￥5,500', '￥0', '￥0', '￥5,500'],
     ])

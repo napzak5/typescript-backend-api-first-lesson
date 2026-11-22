@@ -11,6 +11,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
@@ -356,12 +357,10 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
         },
       ])
       expect(added).not.toBeInTheDocument()
-      expect(
-        within(screen.getByRole('table', { name: '施術明細' }))
-          .getAllByRole('row')
-          .slice(1)
-          .map((row) => within(row).getAllByRole('cell')[0]?.textContent),
-      ).toEqual(['Mika Suzuki', '未定'])
+      expect(rowsOf('施術明細').map(([, staff]) => staff)).toEqual([
+        'Mika Suzuki',
+        '未定',
+      ])
 
       // Act: the bookings of the day were read before, and are read again
       await user.click(screen.getByRole('link', { name: 'この日の予約へ' }))

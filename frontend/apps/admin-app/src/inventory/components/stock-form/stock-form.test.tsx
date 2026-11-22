@@ -2,8 +2,9 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import { colour, gloves } from '../../../products/components/examples'
 import * as formStories from './stock-form.stories'
@@ -51,11 +52,7 @@ describe('StockForm', () => {
     await stories.New.run()
 
     // Assert
-    expect(
-      within(product())
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf(product())).toEqual([
       '選んでください',
       'ヘアカラー ナチュラルブラウン（COLOR001）',
       'プロフェッショナル シャンプー 500ml（SHMP001）',

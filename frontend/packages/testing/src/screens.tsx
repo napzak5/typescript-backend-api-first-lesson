@@ -151,3 +151,31 @@ export const termsOnceThere = async (
   card: string,
 ): Promise<[string, string][]> =>
   termsIn(await screen.findByRole('region', { name: card }))
+
+/**
+ * What the rows of a table say, below the row of its column headers: a row
+ * is the text of its cells in their order, the header of the row among
+ * them. The table is named by its caption, or handed over.
+ */
+export const rowsOf = (table: string | HTMLElement): string[][] =>
+  within(
+    typeof table === 'string'
+      ? screen.getByRole('table', { name: table })
+      : table,
+  )
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => Array.from(row.children, (cell) => cell.textContent ?? ''))
+
+/**
+ * What a select offers, option by option. The select is named by its
+ * label, or handed over.
+ */
+export const optionsOf = (select: string | HTMLElement): string[] =>
+  within(
+    typeof select === 'string'
+      ? screen.getByRole('combobox', { name: select })
+      : select,
+  )
+    .getAllByRole('option')
+    .map((option) => option.textContent ?? '')

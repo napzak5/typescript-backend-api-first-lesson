@@ -3,8 +3,9 @@ import {
   itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import * as filterStories from './movement-filter.stories'
 
@@ -31,11 +32,7 @@ describe('MovementFilter', () => {
       'aria-label',
       '在庫の移動を絞り込む',
     )
-    expect(
-      within(kind())
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf(kind())).toEqual([
       'すべて',
       '仕入れ',
       '施術で使用',

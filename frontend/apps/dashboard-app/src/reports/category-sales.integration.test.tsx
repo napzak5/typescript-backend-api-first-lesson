@@ -5,7 +5,11 @@ import {
   signInAs,
   testApi,
 } from '@beauty-salon-frontend/testing/api'
-import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  firstSight,
+  heading,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   OPERATOR,
   OSAKA,
@@ -16,13 +20,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { removeTokyo, sellToBreakDown } from '../__tests__/arrangements'
-import {
-  countOver,
-  menuLink,
-  renderAt,
-  rowsOf,
-  TITLE,
-} from '../__tests__/screens'
+import { countOver, menuLink, renderAt, TITLE } from '../__tests__/screens'
 import { categorySalesHrefOf } from '../navigation'
 
 /*

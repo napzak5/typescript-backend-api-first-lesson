@@ -2,6 +2,7 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -82,11 +83,7 @@ describe('AllergyForm', () => {
     await stories.New.run()
 
     // Assert
-    expect(
-      within(screen.getByRole('combobox', { name: '種類' }))
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf('種類')).toEqual([
       '選んでください',
       '化学物質',
       '香料',

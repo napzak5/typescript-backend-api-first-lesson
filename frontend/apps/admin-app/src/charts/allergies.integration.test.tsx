@@ -4,6 +4,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
@@ -71,18 +72,6 @@ const allergies = (): HTMLElement =>
 /** Waits until the allergies are listed, and gives their table. */
 const listed = (): Promise<HTMLElement> =>
   screen.findByRole('table', { name: 'アレルギーの一覧' })
-
-/** The rows of the table of the allergies, each as the texts of its cells. */
-const rowsOf = (table: HTMLElement): (string | null)[][] =>
-  within(table)
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 /** The allergens of the table, in its order */
 const allergensListed = (table: HTMLElement): (string | null)[] =>

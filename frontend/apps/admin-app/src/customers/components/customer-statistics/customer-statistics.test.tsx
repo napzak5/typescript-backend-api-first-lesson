@@ -1,6 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
+import { screen } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import { services, staff } from '../../../bookings/components/examples'
 import * as customerStatisticsStories from './customer-statistics.stories'
@@ -17,17 +18,6 @@ const items = (): [string | null, string | null][] =>
       term.textContent,
       term.nextElementSibling?.textContent ?? null,
     ])
-
-const rowsOf = (name: string): (string | null)[][] =>
-  within(screen.getByRole('table', { name }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 describe('CustomerStatistics', () => {
   itShouldBeAccessibleInEveryStory(stories)

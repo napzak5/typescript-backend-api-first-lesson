@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { optionsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -6,17 +7,6 @@ import { services, staff } from '../examples'
 import * as checkoutFormStories from './checkout-form.stories'
 
 const stories = composeStories(checkoutFormStories)
-
-const cellsOf = (name: string): (string | null)[][] =>
-  within(screen.getByRole('table', { name }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 const toAdd = (): HTMLElement =>
   screen.getByRole('combobox', { name: '足す施術' })
@@ -32,10 +22,10 @@ describe('CheckoutForm', () => {
     await stories.AsBooked.run()
 
     // Assert
-    expect(cellsOf('予約の施術')).toEqual([
+    expect(rowsOf('予約の施術')).toEqual([
       ['カット', '田中 美咲', '￥5,500', '￥0'],
     ])
-    expect(cellsOf('足した施術')).toEqual([
+    expect(rowsOf('足した施術')).toEqual([
       ['予約にない施術をしたときは、メニューから足してください'],
     ])
     const amounts = screen
@@ -60,19 +50,14 @@ describe('CheckoutForm', () => {
     await stories.AsBooked.run()
 
     // Assert
-    expect(
-      within(toAdd())
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['カット（￥5,500）', 'カラー（￥8,800）'])
+    expect(optionsOf(toAdd())).toEqual([
+      'カット（￥5,500）',
+      'カラー（￥8,800）',
+    ])
     expect(toAdd()).toHaveAccessibleDescription(
       'いまのメニューの料金で数えます。担当は、予約の担当です。',
     )
-    expect(
-      within(cashier())
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['田中 美咲', '佐藤 健', '記録しない'])
+    expect(optionsOf(cashier())).toEqual(['田中 美咲', '佐藤 健', '記録しない'])
     expect(cashier()).toHaveValue(staff[0]?.id)
   })
 
@@ -97,7 +82,7 @@ describe('CheckoutForm', () => {
     await stories.WithAddition.run({
       args: { ...stories.WithAddition.args, onRemove },
     })
-    expect(cellsOf('足した施術')).toEqual([
+    expect(rowsOf('足した施術')).toEqual([
       ['カラー', '佐藤 健', '￥8,800', '￥800', '外す'],
     ])
     expect(screen.getByRole('status').textContent).toBe('カラーを足しました。')

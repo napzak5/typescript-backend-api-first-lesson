@@ -4,6 +4,7 @@ import {
   asTheApplicationKeeps,
   firstSight,
   heading,
+  optionsOf,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -36,7 +37,6 @@ import {
   bookingToCome,
   button,
   detailsIn,
-  optionsOf,
   overall,
   paragraphsIn,
   ratingOf,

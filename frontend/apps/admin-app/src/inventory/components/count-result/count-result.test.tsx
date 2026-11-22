@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -11,13 +12,6 @@ const stories = composeStories(resultStories)
 const table = (): HTMLElement =>
   screen.getByRole('table', { name: '帳簿の在庫数と差のあった行' })
 
-/** The rows of the table, each as the texts of its cells */
-const rows = (): (string | null)[][] =>
-  within(table())
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent))
-
 describe('CountResult', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
@@ -26,7 +20,7 @@ describe('CountResult', () => {
     await stories.Differed.run()
 
     // Assert
-    expect(rows()).toEqual([
+    expect(rowsOf(table())).toEqual([
       [
         'ヘアカラー ナチュラルブラウン（ロット LOT-2025-112）',
         '2.5 本',
@@ -74,6 +68,6 @@ describe('CountResult', () => {
     await stories.OfARemovedProduct.run()
 
     // Assert
-    expect(rows()[0]?.[0]).toBe('削除した商品（ロット LOT-2025-112）')
+    expect(rowsOf(table())[0]?.[0]).toBe('削除した商品（ロット LOT-2025-112）')
   })
 })
