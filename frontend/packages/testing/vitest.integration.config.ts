@@ -22,6 +22,6 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['src/**/*.integration.test.{ts,tsx}'],
     globalSetup: ['./src/api/global-setup.ts'],
-    setupFiles: ['./src/setup.ts', './src/api/setup.ts'],
+    setupFiles: ['./src/setup/setup.ts', './src/api/setup.ts'],
   },
 })

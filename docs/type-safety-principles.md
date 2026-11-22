@@ -144,7 +144,7 @@ API の入出力を表すスキーマは、どこにあっても生成された�
 | 読み取りマッパーが直す列（`jsonb`、`numeric`、`timestamptz`） | 返す API の値の、その列だけ。直したあとでもう一度変える値は、その型を足す | `convertedColumnsSchema`（`mappers/read/salon.mapper.ts`）、在庫の評価額の区分（`mappers/read/inventory-report.mapper.ts`。金額は、合計してから数にするので `bigint`） |
 | `jsonb` に保存する API の値 | その API の型 | `storedTimeSlotsSchema satisfies z.ZodType<ApiTimeSlot[]>`（`schemas/customer-preferences.schema.ts`） |
 | フロントエンドが API の応答を読むところ | 生成された応答の型の、読むところだけ | problem details の `code`（`api-client` の `src/fetcher/fetcher.ts`）、セッションの更新の応答（同じく `src/fetcher/renew-session.ts`）、顧客の CSV の好みとタグ（admin-app の `src/customers/customer-file.ts`） |
-| テストが API の応答を読むところ | 同じ | サインインの応答（portal-app の `src/bookings/__tests__/arrangements.ts`、`frontend/e2e/src/sign-in.ts`） |
+| テストが API の応答を読むところ | 同じ | サインインの応答（portal-app の `src/bookings/__tests__/arrangements.ts`、`frontend/e2e/src/support/sign-in.ts`） |
 
 `zod/mini` のスキーマには `z.ZodType` がないので、`satisfies z.ZodMiniType<…>` で結びつけます。
 

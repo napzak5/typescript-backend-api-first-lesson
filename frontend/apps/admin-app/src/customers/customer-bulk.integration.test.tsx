@@ -361,7 +361,7 @@ describe('writing customers at once, against the API', () => {
   })
 
   describe('choosing customers in the ledger', () => {
-    // That the focus goes back to the button that opened the dialog is the browser's (`admin-customer-bulk.e2e.test.ts`)
+    // That the focus goes back to the button that opened the dialog is the browser's (`admin/customer-bulk.e2e.test.ts`)
     it('should give a tag to the chosen customers who lack it, keep the tags they have, and keep them chosen', async () => {
       // Arrange
       const user = userEvent.setup()

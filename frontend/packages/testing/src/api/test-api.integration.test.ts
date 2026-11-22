@@ -1,7 +1,7 @@
 import { env } from '@beauty-salon-frontend/config'
 import { describe, expect, inject, it } from 'vitest'
 import * as z from 'zod'
-import { CUSTOMER, OPERATOR, OSAKA, OWNER, TOKYO } from '../seed'
+import { CUSTOMER, OPERATOR, OSAKA, OWNER, TOKYO } from '../fixtures/seed'
 import {
   countOf,
   dayFromToday,

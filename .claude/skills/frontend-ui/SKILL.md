@@ -85,6 +85,9 @@ same names in every package. A folder is there when something is in it.
   `components/`, `screens/` and `utils/`.
 - A package whose modules are all of one kind keeps them in `src/`, and its
   name says the kind: `fields`, `answers`, `theme`.
+- The tools of the tests (`testing`) are sorted by what each is for, and the
+  browser tests (`frontend/e2e`) by their application: the skill
+  `frontend-testing` says how.
 - What the stories of several components share is in `__stories__/`
   (`frontend/packages/salon-screens/src/__stories__/examples.ts`) or in
   `components/examples.ts`.
@@ -196,7 +199,7 @@ is broken.
     room. A `Button` puts a label that is longer than the line it stands
     in on a second line, between its words (a label may hold a name
     somebody chose), so a button is never wider than what it is in; it is
-    not given `white-space: nowrap`. `narrow-screens.e2e.test.ts` opens
+    not given `white-space: nowrap`. `layout/narrow-screens.e2e.test.ts` opens
     every screen at that width: a new screen is added to its list.
 12. **Type and density are the theme's.** The page is drawn in Inter (Latin
     letters and figures) and Noto Sans JP. `styles.css` of the theme loads

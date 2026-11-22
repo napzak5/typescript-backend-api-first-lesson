@@ -28,7 +28,7 @@ The styling and component rules are in the skill `frontend-ui`.
 | The functions of a screen that call the API, for the answers the real API cannot be made to give | The same | `frontend/apps/portal-app/src/account/account-api.test.ts` |
 | Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
 | A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/screens/sign-in.integration.test.tsx`, `frontend/packages/app-frame/src/screens/staff-application.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
-| A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/sign-in.e2e.test.ts` |
+| A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/admin/sign-in.e2e.test.ts` |
 
 A test is beside the module it tests. In a shared package that is the folder
 of the kind of the module (`api/`, `components/<name>/`, `hooks/`,
@@ -56,6 +56,15 @@ and the sign-in on the screen (`@beauty-salon-frontend/testing/api`:
 names of the seed data, how to start the test server and the API of a test
 (`@beauty-salon-frontend/testing/api/test-server`), and the rules of the
 accessibility check (`@beauty-salon-frontend/testing/accessibility`).
+
+Its `src` has a folder for what each tool is for, and the entry
+(`index.ts`) beside them: `setup/` (the matchers, and what jsdom lacks),
+`stories/` (what the tests of stories declare, and what the catalogue gives
+every story), `accessibility/`, `screens/`, `fixtures/` (what a test makes
+up or names: the answers of the API, the values of a form, the bytes of a
+file, the seed data) and `api/` (the real API). A test of a tool is beside
+it. The names a test imports are those of `exports` in the `package.json`
+of the package, which says where each one is.
 
 ## Stories
 
@@ -555,7 +564,7 @@ it('should show the screen that was asked for after signing in', async () => {
   `signInAs(email)` of `@beauty-salon-frontend/testing/api` signs in on
   the screen as an account of the seed data, and `openAs(path, email)` of
   the admin application renders at an address and does so. The tools have
-  tests of their own (`frontend/packages/testing/src/screens.test.tsx`,
+  tests of their own (`frontend/packages/testing/src/screens/screens.test.tsx`,
   `src/api/sign-in.integration.test.tsx`).
 - The focus is asserted as soon as what it goes to is there, as above: a
   component moves it in the commit that shows the change, so no second wait
@@ -713,7 +722,7 @@ the example to read: a customer books a time that the screen read.
   `src/bookings/__tests__/arrangements.ts` has what the tests book and
   with whom, who is signed in, the day and a booking made through the API, for the
   tests of the screen that books and of those that list, cancel and move.
-  The browser tests have theirs in `frontend/e2e/src/bookings.ts`.
+  The browser tests have theirs in `frontend/e2e/src/support/bookings.ts`.
 - **The times a screen must offer follow from the rows of the staff, too.**
   A booking takes its member of the staff from `bufferTimeBefore` before
   it until `bufferTimeAfter` after it, and a member of the staff may take
@@ -965,7 +974,7 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
   to the button that opened it, and that a screen moves the focus out of a
   dialog it closed, are asserted in a browser test: in jsdom the focus
   reaches a heading behind a dialog that is still open, which a browser
-  refuses (`admin-bookings.e2e.test.ts` found it).
+  refuses (`admin/bookings.e2e.test.ts` found it).
 
 The bookings of a salon in the admin application
 (`frontend/apps/admin-app/src/bookings/`, three files: the start and the list
@@ -1224,7 +1233,7 @@ whole path:
 | In a browser test | In an integration test in jsdom |
 |-------------------|---------------------------------|
 | A critical path, once, from the address bar to the database | Every state of a screen: each message, each refusal, each role |
-| What the browser lays out and paints: nothing sticks out of a narrow window or out of the element it is in, nothing is laid out with flex, the contrast of what is on the page, what is scrolled into sight (`toBeInViewport`: the current link of a narrow header, `navigation.e2e.test.ts`), every screen in a window 320 pixels wide (`narrow-screens.e2e.test.ts`), a dialog over its page (`dialog.e2e.test.ts`) | The accessibility rules that need no layout |
+| What the browser lays out and paints: nothing sticks out of a narrow window or out of the element it is in, nothing is laid out with flex, the contrast of what is on the page, what is scrolled into sight (`toBeInViewport`: the current link of a narrow header, `layout/navigation.e2e.test.ts`), every screen in a window 320 pixels wide (`layout/narrow-screens.e2e.test.ts`), a dialog over its page (`layout/dialog.e2e.test.ts`) | The accessibility rules that need no layout |
 | The focus as the browser moves it: the Tab key through a form, the heading after the screen changed | Which element has the focus after an action |
 | A reload, a second tab, the address bar, the way back and forward | — |
 | A link that leaves the page: from a mail to the portal, from one application to another | The screen such a link opens, rendered at its path |
@@ -1234,14 +1243,14 @@ whole path:
 
 `frontend/e2e/playwright.config.ts` says it all:
 
-- `globalSetup` (`src/global-setup.ts`) starts the test server of the
+- `globalSetup` (`src/support/global-setup.ts`) starts the test server of the
   backend, the one of the integration tests, and on it one API: on port 4100,
   open to the origins of the three applications, and writing the links of
   its mails for the portal of the run. After the run it stops the server.
 - `webServer` builds each application with `vite build --mode test` for that
   API, and for the addresses of the other applications of the run, into
   `frontend/e2e/dist/` and serves the build: the portal on port 4101, the
-  admin application on 4102, the dashboard on 4103 (`src/applications.ts`).
+  admin application on 4102, the dashboard on 4103 (`src/support/applications.ts`).
   Everything listens on the loopback address and on ports of its own, so
   `pnpm dev` may run at the same time.
 - One worker. The applications are built for one API, so the tests share it
@@ -1254,14 +1263,25 @@ whole path:
 A build reads the workspace packages as they were last built. `pnpm test:e2e`
 at the root builds them first; `playwright test` in `frontend/e2e` does not.
 
+### Where a browser test is
+
+`frontend/e2e/src` has folders and no file of its own:
+
+| Folder | What is in it |
+|--------|---------------|
+| `admin/`, `dashboard/`, `portal/` | The tests of the screens of that application. The name of a file is its subject alone (`admin/bookings.e2e.test.ts`, `portal/bookings.e2e.test.ts`). The sign-in screen is tested at an address of the admin application (`admin/sign-in.e2e.test.ts`). A test that ends in another application is with the screens it is about: `portal/account.e2e.test.ts` follows an invited member of the staff into the admin application |
+| `applications/` | What is asked of each of the three applications: whom it opens for (`applications.e2e.test.ts`), its name, its icons and the image of a shared link (`brand.e2e.test.ts`) |
+| `layout/` | How the parts that the applications share are laid out in a browser: a dialog over its page, the conditions of a list, the actions of a screen, the links of the header, every screen in a narrow window, the type and the density |
+| `support/` | What the tests share: the fixtures, the applications of a run and its start (`global-setup.ts`), signing in, the checks of a page, the steps of the keyboard, and what a test arranges through the API |
+
 ### Writing a browser test
 
 ```ts
-import { ADMIN } from './applications'
-import { expectSoundPage } from './checks'
-import { expect, test } from './fixtures'
 import { STYLIST } from '@beauty-salon-frontend/testing/seed'
-import { enterCredentials, heading } from './sign-in'
+import { ADMIN } from '../support/applications'
+import { expectSoundPage } from '../support/checks'
+import { expect, test } from '../support/fixtures'
+import { enterCredentials, heading } from '../support/sign-in'
 
 test.describe('the admin application', () => {
   test('should open for a member of the staff of a salon', async ({
@@ -1281,18 +1301,19 @@ test.describe('the admin application', () => {
 })
 ```
 
-- The file is `src/<subject>.e2e.test.ts`. `test` and `expect` come from
-  `./fixtures`, never from `@playwright/test`: the `test` of the fixtures is
+- The file is `src/<folder>/<subject>.e2e.test.ts`, in the folder of the
+  table above. `test` and `expect` come from `../support/fixtures`, never
+  from `@playwright/test`: the `test` of the fixtures is
   what gives the API a fresh database after every test, and it keeps the
   browser from reaching anything outside this machine (the seed data has
   photos at addresses of example.com): the applications and the API, on
   127.0.0.1, and the storage of the test server, at `localhost`. A test
   chooses a file with the keyboard by pressing Space on the control and
   answering `page.waitForEvent('filechooser')`
-  (`src/admin-attachments.e2e.test.ts`). A test that needs an image at an
+  (`src/admin/attachments.e2e.test.ts`). A test that needs an image at an
   address of the web answers it in the browser
   (`page.route(address, (route) => route.fulfill(…))`,
-  `src/admin-treatment-photos.e2e.test.ts`): the API takes addresses of
+  `src/admin/treatment-photos.e2e.test.ts`): the API takes addresses of
   domain names only, so an address of the application under test will
   not do.
 - The fixture `api` is what `testApi()` is in an integration test, one
@@ -1302,16 +1323,16 @@ test.describe('the admin application', () => {
   `authenticatorCode`, `mails` and `mailedLink`. The accounts and the
   salons are named by `@beauty-salon-frontend/testing/seed`.
   `await page.goto(await api.mailedLink(email))` is the person pressing the
-  link of a mail (`src/account.e2e.test.ts`).
+  link of a mail (`src/portal/account.e2e.test.ts`).
 - Elements are found as a user finds them: `getByRole`, `getByLabel`,
   `getByText`. No class name, no test ID. The locators and the steps that
-  tests share are in `src/sign-in.ts` (`heading`, `enterCredentials`,
+  tests share are in `src/support/sign-in.ts` (`heading`, `enterCredentials`,
   `signOutButton`, and `registerNewcomer` for an account the seed data
   does not have: registered and confirmed through the API, without a
   profile); the applications, their origins and their titles in
-  `src/applications.ts`; a file the owner uploads through the API and the
-  storage, in `src/files.ts`. The parts of a screen and the steps of
-  somebody who has the keyboard alone are in `src/screen.ts`:
+  `src/support/applications.ts`; a file the owner uploads through the API and the
+  storage, in `src/support/files.ts`. The parts of a screen and the steps of
+  somebody who has the keyboard alone are in `src/support/screen.ts`:
   `part(page, name)` is the region of a heading,
   `pressWithTheKeyboard(control)` moves the focus to a link or a button
   and presses Enter, `chooseWithTheKeyboard(control)` presses Space on a
@@ -1328,7 +1349,7 @@ test.describe('the admin application', () => {
   `await expect(locator).toBeVisible()`, `toBeFocused()`, `toHaveURL()`. A
   test never waits for an amount of time.
 - Every screen a test reaches is checked with `expectSoundPage(page)`
-  (`src/checks.ts`), which is `findAccessibilityViolations(page)` and a
+  (`src/support/checks.ts`), which is `findAccessibilityViolations(page)` and a
   measure of the layout: the rules of WCAG 2.2 AA with the contrast of what
   is painted, a page no wider than the window, no element that holds
   something wider than it is without scrolling it or cutting it off, no
@@ -1340,7 +1361,7 @@ test.describe('the admin application', () => {
   the longest values the seed data has (the salon whose hours have a break,
   not the one whose hours are one time).
 - **Every screen is opened once in a window 320 pixels wide**
-  (`src/narrow-screens.e2e.test.ts`), the narrowest it is made for, and
+  (`src/layout/narrow-screens.e2e.test.ts`), the narrowest it is made for, and
   its layout alone is measured: `expectSoundLayout(page, screen)` names
   the screen that fails and goes on to the next. A new screen is added to
   its list, with its heading. The test knows nothing of what a screen
@@ -1352,11 +1373,11 @@ test.describe('the admin application', () => {
   buttons that has no room does not make the page wider, and the measure
   of the layout does not see it. What the shared parts do with their
   buttons on a narrow screen is asserted by the edges of the buttons
-  (`edgesOf` in `src/checks.ts`: one below the other and as wide as the
+  (`edgesOf` in `src/support/checks.ts`: one below the other and as wide as the
   form) and by the lines of a label (`Range.getClientRects()`: one), in
   the same file.
 - **What a stylesheet alone does to a dialog** is asserted by where things
-  are and by what the browser worked out (`src/dialog.e2e.test.ts`): the
+  are and by what the browser worked out (`src/layout/dialog.e2e.test.ts`): the
   edges of the dialog in the window (`edgesOf`, polled until the sheet has
   come up), the element at each corner of the window
   (`document.elementFromPoint`, which answers the dialog for its
@@ -1371,7 +1392,7 @@ test.describe('the admin application', () => {
   one machine and fails on another (a strip kept free with
   `scrollbar-gutter` was 15 pixels wide in CI and none on macOS). Such a
   thing is tested in a file of its own whose browser draws scrollbars
-  (`src/dialog-scrollbar.e2e.test.ts`): `test.use({ launchOptions: {
+  (`src/layout/dialog-scrollbar.e2e.test.ts`): `test.use({ launchOptions: {
   ignoreDefaultArgs: ['--hide-scrollbars'] } })` at the top of the file
   (Playwright refuses it inside a `describe`, because it needs a worker
   of its own), and a scrollbar of a width the test decides
@@ -1387,16 +1408,16 @@ test.describe('the admin application', () => {
 - What a test needs before the path it drives, and which another test
   drives through its screens already, it asks of the API with the
   `request` fixture of Playwright (`accessTokenOf` and `setUpTwoFactor` in
-  `src/sign-in.ts`), and checks the answer with a Zod schema. What neither a screen nor the API
+  `src/support/sign-in.ts`), and checks the answer with a Zod schema. What neither a screen nor the API
   does, such as time having passed, is a statement with `api.query`.
 - A screen whose state is in its address is taken back, forward and
   through a reload (`page.goBack()`, `page.reload()`, a second page of the
-  `context` at the same address): `src/salons.e2e.test.ts`.
+  `context` at the same address): `src/portal/salons.e2e.test.ts`.
 - `selectOption` sets the value of a `select` without giving it the focus.
   A test that asserts where the focus is after a choice gives it first
   (`await control.focus()`), as a person does.
 - A path that begins on a public page and needs a session signs in on the
-  way, at the address that was asked for (`src/bookings.e2e.test.ts`): the
+  way, at the address that was asked for (`src/portal/bookings.e2e.test.ts`): the
   test presses the link, enters the credentials on the screen that stands
   there, and asserts the heading of the screen it wanted. What the
   database must hold for the path (the hours of a day) is arranged with
@@ -1404,11 +1425,11 @@ test.describe('the admin application', () => {
 - **A dialog is worked with the keyboard**: Enter on the button that opens
   it, the first control focused, Escape, the focus back on the button,
   and Tab through its actions in their order
-  (`src/own-bookings.e2e.test.ts`). The page is checked with
+  (`src/portal/own-bookings.e2e.test.ts`). The page is checked with
   `expectSoundPage` while the dialog is open, too.
 - **A dialog that has nothing to type** has the focus on its first button
   when it opens, and Tab goes on to the one that does what was asked
-  (`src/reviews.e2e.test.ts`).
+  (`src/portal/reviews.e2e.test.ts`).
 - **A name that is part of another name is asked for whole.** `getByRole`
   with a `name` finds every element whose name holds it: the link of a
   salon and, in the same row, the link whose `aria-label` begins with the
@@ -1418,13 +1439,13 @@ test.describe('the admin application', () => {
   part of a link that is a box of its own, found by its text inside the
   link.
 - **What several files arrange** is a module beside them
-  (`src/bookings.ts`: the day, a booking made through the API with the
-  `request` fixture, the locators of the booking screens; `src/mypage.ts`:
+  (`src/support/bookings.ts`: the day, a booking made through the API with the
+  `request` fixture, the locators of the booking screens; `src/support/mypage.ts`:
   the locators of the page of a customer and of its forms). What one file
-  alone arranges stays in it (`src/reviews.e2e.test.ts`: the visits of two
+  alone arranges stays in it (`src/portal/reviews.e2e.test.ts`: the visits of two
   customers, what a customer and the owner of a salon ask of the API).
 - **A form is taken through with the keyboard**
-  (`src/mypage.e2e.test.ts`): Tab from control to control in the order
+  (`src/portal/mypage.e2e.test.ts`): Tab from control to control in the order
   they are read, Space on a box, and Enter in a control that holds text
   sends the form.
 - **Controls that share a row where there is room** are asserted by where
@@ -1432,10 +1453,10 @@ test.describe('the admin application', () => {
   same `x` and one below the other at 390px.
 - **A control beside one that says an error** is asserted the same way,
   in the state with the error: the same `y` and the same `height`
-  (`expectRowOnOneLine` in `src/preferences.e2e.test.ts`). A field that
+  (`expectRowOnOneLine` in `src/portal/preferences.e2e.test.ts`). A field that
   is drawn out to the height of its neighbour passes every other check.
 - **Rows that are added and taken away** are worked with the keyboard
-  (`src/preferences.e2e.test.ts`): Enter on the button that adds a row and
+  (`src/portal/preferences.e2e.test.ts`): Enter on the button that adds a row and
   the focus on the first control of the new row, Enter on the button of a
   row and the focus on the button that adds one, and the values of the
   rows that stay. A time is entered with `fill('18:00')`: the keys a time
@@ -1454,7 +1475,7 @@ test.describe('the admin application', () => {
 - **A form in a dialog is worked with the keyboard from where the browser
   puts the focus**: the first control when the dialog opens, then Tab
   through the controls to the buttons, each stop asserted
-  (`tabToTheSendButton` in `review-readers.e2e.test.ts`). After the
+  (`tabToTheSendButton` in `portal/review-readers.e2e.test.ts`). After the
   dialog closed, the focus is on the button that opened it; after a
   second attempt that left one button, on that button; after the row
   went, and the dialog with it, on the heading of the part, and the next
@@ -1462,7 +1483,7 @@ test.describe('the admin application', () => {
   is in use again.
 - **How a state looks is asserted against the same control before it had
   the state**: the surface of a button that is pressed is not the surface
-  it had (`surfaceOf` in `review-readers.e2e.test.ts`). A colour is never
+  it had (`surfaceOf` in `portal/review-readers.e2e.test.ts`). A colour is never
   written into a test, and it is read when the control has stopped
   changing: the answer has arrived (`aria-busy` is gone: a button that
   waits has a colour of its own) and the transitions have ended
@@ -1473,36 +1494,36 @@ test.describe('the admin application', () => {
   it, a notification moves the page under it, and the control that lands
   there has the colour of one that is pointed at.
 - **Another device is another browser**: `browser.newPage()` opens one
-  that shares nothing with `page` (`src/security.e2e.test.ts`). When its
+  that shares nothing with `page` (`src/portal/security.e2e.test.ts`). When its
   session was ended elsewhere, a reload shows the sign-in screen.
 - **A password that was changed is asserted at the next sign-in**: out in
   the header, the old password refused, the new one taken. So is a second
   factor that was set up: out, and in with the code of the next 30
   seconds.
 - **A dialog with a form opens at its first control**, which the browser
-  gives the focus (`src/two-factor.e2e.test.ts`); one without a form at
+  gives the focus (`src/portal/two-factor.e2e.test.ts`); one without a form at
   its first button. Closed, it gives the focus back to the button that
   opened it.
 - **The browser may be in another time zone than the salon.** A test
   that says so has `test.use({ timezoneId: 'Pacific/Honolulu' })`
   (nineteen hours behind Tokyo, most of the time another day), and asserts
   the day of the salon, its times and the moments the API stored
-  (`src/admin-bookings.e2e.test.ts`).
+  (`src/admin/bookings.e2e.test.ts`).
 - **The first screen of the admin application is the bookings of a salon**
-  (`ADMIN_START` of `src/sign-in.ts`): a test that only signs in waits for
+  (`ADMIN_START` of `src/support/sign-in.ts`): a test that only signs in waits for
   that heading.
 - **What is printed is looked at as a printer gets it**:
   `page.emulateMedia({ media: 'print' })`, then the document is visible and
   the frame, the notifications and the controls are hidden
-  (`src/admin-checkout.e2e.test.ts`). A heading that took the focus while
+  (`src/admin/checkout.e2e.test.ts`). A heading that took the focus while
   the document was read keeps it once the document is shown: asserted
   with `toBeFocused()` after the document is there.
 - **A way of several steps is walked in one test, in order**
-  (`src/admin-sale-changes.e2e.test.ts`): the payment given back whole,
+  (`src/admin/sale-changes.e2e.test.ts`): the payment given back whole,
   the sale voided, the booking billed again, each asserted on the screen
   it leads to, and the database read once at the end.
 - **A record the test makes is found by a value the test chose**
-  (`src/admin-customers.e2e.test.ts`: the customer by the address of mail),
+  (`src/admin/customers.e2e.test.ts`: the customer by the address of mail),
   and read after each write, also when the way crosses the screens of two
   ledgers (a booking search that found nobody, the registration, the
   booking of the customer, the ledger and the change).
@@ -1519,7 +1540,7 @@ pnpm test:e2e:install   # once, and after Playwright was updated: its Chromium
 pnpm test:e2e           # builds the frontend packages, then runs every test
 
 # One file, on the packages as they were last built
-pnpm --filter @beauty-salon-frontend/e2e exec playwright test src/sign-in.e2e.test.ts
+pnpm --filter @beauty-salon-frontend/e2e exec playwright test src/admin/sign-in.e2e.test.ts
 # What the browser did in a test that failed
 pnpm --filter @beauty-salon-frontend/e2e exec playwright show-trace test-results/<directory of the test>/trace.zip
 ```
@@ -1541,7 +1562,7 @@ jsdom computes no layout, so the rule `color-contrast` is off there. Contrast
 is checked where the colours are defined: `tokens.test.ts` computes the ratio
 of every pair of tokens that is used as text on a background (4.5:1) or as the
 edge of a control (3:1). The browser tests measure it on the pages as they
-are painted (`findAccessibilityViolations(page)` of `frontend/e2e/src/checks.ts`
+are painted (`findAccessibilityViolations(page)` of `frontend/e2e/src/support/checks.ts`
 runs the same rules with `color-contrast` on), and the accessibility panel of
 the catalogue shows it for a single story.
 

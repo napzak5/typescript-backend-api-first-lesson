@@ -211,7 +211,11 @@ same names in every package: `api/` (the functions that call the API),
 `components/<name>/` (what only shows), `hooks/`, `screens/` (what knows the
 API, the session or the router) and `utils/` (pure functions, for the most
 part). A test is beside the module it tests. A package whose modules are all
-of one kind keeps them in `src/` (`fields`, `answers`, `theme`).
+of one kind keeps them in `src/` (`fields`, `answers`, `theme`). `testing`
+sorts its tools by what each is for (`setup/`, `stories/`, `accessibility/`,
+`screens/`, `fixtures/`, `api/`), and a browser test is in the folder of its
+application (`frontend/e2e/src/admin/`, `dashboard/`, `portal/`), beside
+`applications/`, `layout/` and `support/`.
 
 Styles are CSS Modules over the tokens of `theme`, layout is CSS Grid and
 never flex, and a component is tested from its stories, with an accessibility
