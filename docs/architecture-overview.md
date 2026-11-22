@@ -647,9 +647,11 @@ domain/src/
 ├── schemas/product.schema.ts          Zod schemas of the create, the update and the
 │                                      list request; the stock levels a request
 │                                      names are in order
-├── mappers/write/product.mapper.ts    Request → columns; the stock levels as text
+├── mappers/write/product.mapper.ts    Request → columns; the stock levels as text.
+│                                      The query of the list → its criteria
 ├── mappers/read/product.mapper.ts     Row → response; the stock levels as numbers,
-│                                      without the time it was deleted
+│                                      without the time it was deleted; the page
+│                                      of the list
 ├── repositories/product.repository.ts IProductRepository; what became of an update
 │                                      and of a delete is a sum type each
 │                                      (ProductUpdate, ProductRemoval)
@@ -676,21 +678,31 @@ row:
 ```
 domain/src/
 ├── models/inventory.ts                InventoryId, API and database types; the
-│                                      columns a create writes (DbNewInventory)
-│                                      and those an update may change
+│                                      columns a create writes (DbNewInventory),
+│                                      the row a request asks for, with its salon
+│                                      as a checked ID (RequestedInventory), and
+│                                      the columns an update may change
 │                                      (DbInventoryChanges)
 ├── schemas/inventory.schema.ts        Zod schemas of the create, the update, the
 │                                      three lists, a stock movement, the
 │                                      history, a stock count and the value
 │                                      report; only a movement and a count
 │                                      state the stock
-├── mappers/write/inventory.mapper.ts  Request → columns, as they are
+├── mappers/write/inventory.mapper.ts  Request → columns, as they are. The queries
+│                                      of the three lists → their criteria
 ├── mappers/write/inventory-transaction.mapper.ts
-│                                      Movement → columns, with the total cost
-├── mappers/read/inventory.mapper.ts   Row → response; the stock figures as numbers
+│                                      Movement → the row it moves and its columns,
+│                                      with the total cost. The query of the
+│                                      history → its criteria
+├── mappers/write/inventory-report.mapper.ts
+│                                      Count → what was counted of each row, as
+│                                      text. The query of the value report → the
+│                                      salon and the category
+├── mappers/read/inventory.mapper.ts   Row → response; the stock figures as numbers;
+│                                      the page of a list
 ├── mappers/read/inventory-transaction.mapper.ts
 │                                      Movement → response; the quantity and the
-│                                      balances as numbers
+│                                      balances as numbers; the page of the history
 ├── mappers/read/inventory-report.mapper.ts
 │                                      Count and value → responses; the yen only
 │                                      while a number holds them exactly
@@ -707,9 +719,9 @@ domain/src/
                                        the lot rule (lots.ts), the last day that
                                        expires soon (expiry.ts), the rules of the
                                        kinds of movement and the total cost
-                                       (movements.ts), the page (page.ts) and the
-                                       refusal of a salon that is not there
-                                       (refusals.ts)
+                                       (movements.ts), and the refusals of a salon
+                                       that is not there and of a cursor the list
+                                       does not reach (refusals.ts)
 
 infrastructure/src/
 └── repositories/inventory.repository.impl.ts

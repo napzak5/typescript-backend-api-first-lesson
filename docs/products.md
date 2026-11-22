@@ -275,7 +275,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/inventory.tsp`（`ProductResponse`、`ProductCreateRequest`、`ProductUpdateRequest`、`ProductSearchRequest`）、`specs/operations/inventory-operations.tsp`（`ProductCrud`） |
-| ドメイン | `backend/packages/domain/src/models/product.ts`、`schemas/product.schema.ts`、`mappers/read/product.mapper.ts`、`mappers/write/product.mapper.ts`、`repositories/product.repository.ts`、`business-logic/product/`（誰が読み、誰が管理するかは `_shared/authorization.ts`、在庫の水準の比較は `_shared/stock-levels.ts`） |
+| ドメイン | `backend/packages/domain/src/models/product.ts`、`schemas/product.schema.ts`、`mappers/read/product.mapper.ts`（商品のほかに、一覧のページも作る）、`mappers/write/product.mapper.ts`（作成と更新の行のほかに、一覧の条件も作る）、`repositories/product.repository.ts`、`business-logic/product/`（誰が読み、誰が管理するかは `_shared/authorization.ts`、在庫の水準の比較は `_shared/stock-levels.ts`） |
 | インフラ | `backend/packages/infrastructure/src/repositories/product.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/product/`（`/api/v1/salons/:salonId/products` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611171300_product_rules.sql` |
