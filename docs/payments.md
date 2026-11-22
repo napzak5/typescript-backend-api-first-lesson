@@ -362,7 +362,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | インフラ | `backend/packages/infrastructure/src/repositories/payment-method.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/payment-method/`（`/api/v1/salons/:salonId/payment-methods` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611160800_payment_method_rules.sql` |
-| テスト | `backend/packages/domain/src/__tests__/payment-method.schema.test.ts`、`payment-method.limits.test.ts`、`payment-method.mapper.test.ts`、`payment-method.usecase.test.ts`、`backend/packages/api/src/__tests__/payment-method.integration.test.ts` |
+| テスト | `backend/packages/domain/src/schemas/__tests__/payment-method.schema.test.ts`、`backend/packages/domain/src/business-logic/payment-method/__tests__/payment-method.limits.test.ts`、`backend/packages/domain/src/mappers/__tests__/payment-method.mapper.test.ts`、`backend/packages/domain/src/business-logic/payment-method/__tests__/payment-method.usecase.test.ts`、`backend/packages/api/src/__tests__/payment-method.integration.test.ts` |
 
 支払いの記録と返金:
 
@@ -373,4 +373,4 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | インフラ | `backend/packages/infrastructure/src/repositories/payment.repository.impl.ts`、`repositories/held-sale.ts`（売上の行のロック。売上の更新、取り消しと共有する）、`security/random-payment-number-issuer.ts` |
 | API | `backend/packages/api/src/routes/sale/process-sale.handler.ts`（支払いの記録）、`backend/packages/api/src/routes/payment/`（返金。`/api/v1/payments` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611160900_payment_transaction_rules.sql` |
-| テスト | `backend/packages/domain/src/__tests__/payment.schema.test.ts`、`payment.plan.test.ts`、`payment.mapper.test.ts`、`payment.usecase.test.ts`、`backend/packages/api/src/__tests__/payment.integration.test.ts` |
+| テスト | `backend/packages/domain/src/schemas/__tests__/payment.schema.test.ts`、`backend/packages/domain/src/business-logic/payment/__tests__/payment.plan.test.ts`、`backend/packages/domain/src/mappers/__tests__/payment.mapper.test.ts`、`backend/packages/domain/src/business-logic/payment/__tests__/payment.usecase.test.ts`、`backend/packages/api/src/__tests__/payment.integration.test.ts` |

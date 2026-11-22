@@ -598,16 +598,17 @@ MinIO は使いません。MinIO は、2026 年 4 月にリポジトリがアー
 
 | テスト | 確かめること |
 |---|---|
-| `backend/packages/domain/src/__tests__/attachment.rules.test.ts` | ファイルの規則、形式の判定、`Content-Disposition`、権限、スキーマ、マッパー |
-| `backend/packages/domain/src/__tests__/attachment.mapper.test.ts` | Write マッパー（保留の行、一覧の条件、ブラウザーで表示するか）と、Read マッパーの一覧のページ、アップロードとダウンロードの URL の答え、掃除の件数 |
-| `backend/packages/domain/src/__tests__/attachment.usecase.test.ts` | 7 つのユースケース（確認の順序、呼び出しの順序、失敗の伝え方） |
+| `backend/packages/domain/src/business-logic/attachment/__tests__/attachment.rules.test.ts` | ファイルの規則、形式の判定、`Content-Disposition`、権限 |
+| `backend/packages/domain/src/schemas/__tests__/attachment.schema.test.ts` | 3 つのリクエスト（アップロードの URL、一覧、ダウンロードの URL）のスキーマ |
+| `backend/packages/domain/src/mappers/__tests__/attachment.mapper.test.ts` | Write マッパー（保留の行、一覧の条件、ブラウザーで表示するか）と、Read マッパーの添付の答え、一覧のページ、アップロードとダウンロードの URL の答え、掃除の件数 |
+| `backend/packages/domain/src/business-logic/attachment/__tests__/attachment.usecase.test.ts` | 7 つのユースケース（確認の順序、呼び出しの順序、失敗の伝え方） |
 | `backend/packages/api/src/__tests__/attachment.integration.test.ts` | ルートとデータベース。ストレージは、メモリーの中の代役（`InMemoryFileStorage`）です |
 | `backend/packages/infrastructure/src/storage/__tests__/s3-file-storage.integration.test.ts` | `S3FileStorage` と、本物の S3 互換のストレージ。署名付き URL で実際に送り、取得します |
 | `backend/apps/server/src/__tests__/server.integration.test.ts` | 設定からストレージまでの配線。URL が設定のエンドポイントとバケットを指すこと、ストレージに届かないときの 500 とログ |
 | `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` | マイグレーションと制約（`attachments`、`share_links`） |
-| `backend/packages/domain/src/__tests__/share-link.usecase.test.ts` | 共有リンクの 6 つのユースケース（確認の順序、有効期限の境界、パスワードの規則、ロック、署名してから数えること） |
-| `backend/packages/domain/src/__tests__/share-link.mapper.test.ts` | 共有リンクの Write マッパー（作成の内容、一覧の条件、閲覧者が示すもの）と、Read マッパーの一覧のページ、作成の答え |
-| `backend/packages/domain/src/__tests__/password-blocklist.test.ts` | 推測しやすいパスワードの判定 |
+| `backend/packages/domain/src/business-logic/share-link/__tests__/share-link.usecase.test.ts` | 共有リンクの 6 つのユースケース（確認の順序、有効期限の境界、パスワードの規則、ロック、署名してから数えること） |
+| `backend/packages/domain/src/mappers/__tests__/share-link.mapper.test.ts` | 共有リンクの Write マッパー（作成の内容、一覧の条件、閲覧者が示すもの）と、Read マッパーの一覧のページ、作成の答え |
+| `backend/packages/domain/src/business-logic/auth/__tests__/password-blocklist.test.ts` | 推測しやすいパスワードの判定 |
 | `backend/packages/api/src/__tests__/share-link.integration.test.ts` | 共有リンクのルートとデータベース。同時のダウンロードと違うパスワード、開けないトークンの応答が同じであること、ログにトークンとパスワードが出ないこと、添付ファイルの削除と掃除 |
 
 フロントエンドのテスト（admin-app の `src/attachments/` の画面のテストと、ブラウザーのテスト）は、バックエンドのテストサーバーが testcontainers で起動する SeaweedFS に、ブラウザーと同じ署名付き URL でファイルを送り、取得します（[The Test Server](./api-testing-guide.md#the-test-server)）。

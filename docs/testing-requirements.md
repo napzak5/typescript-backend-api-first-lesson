@@ -15,6 +15,20 @@ reference for the tests of every domain that follows.
 | Integration | `pnpm test:integration` | `*.integration.test.ts` and, in the frontend, `*.integration.test.tsx` | A PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a container started through testcontainers (Docker). The frontend tests of this kind call the API through the test server of the backend, which uses the same PostgreSQL and always starts a SeaweedFS container for the files of its APIs, so they need Docker. The mail delivery tests and the file storage tests of the `infrastructure` package always need Docker: they start a Mailpit and a SeaweedFS container through testcontainers (the storage tests use another S3-compatible storage when `TEST_STORAGE_ENDPOINT` names one) |
 | Browser | `pnpm test:e2e` | `*.e2e.test.ts` in `frontend/e2e/src` | The Chromium of Playwright (`pnpm test:e2e:install`, once), a PostgreSQL as for the integration tests, Docker for the object storage of the test server, and the ports 4100 to 4103 of this machine. A run builds the three frontend applications and starts the test server of the backend |
 
+A backend test is in the `__tests__` directory of the folder whose code it
+tests. In the domain package, the tests of the request schemas are in
+`backend/packages/domain/src/schemas/__tests__/`, those of the two mappers of a
+domain in `backend/packages/domain/src/mappers/__tests__/`, and those of its
+use cases and of its pure rules in
+`backend/packages/domain/src/business-logic/<domain>/__tests__/`. A file holds
+tests of one of these kinds: a schema is not tested in the file of a use case.
+What the tests of more than one folder share (rows, requests, stand-ins for
+the repositories) is in `backend/packages/domain/src/__tests__/fixtures/`, one
+file per domain; beside it, `backend/packages/domain/src/__tests__/` holds only
+the test that reads the whole package (`use-case-flow.test.ts`). The
+integration tests of the API, which drive every layer, are in
+`backend/packages/api/src/__tests__/`.
+
 The unit and the integration tests run on Vitest. They resolve the workspace packages they import from
 source (the export condition `@beauty-salon-backend/source`, or
 `@beauty-salon-frontend/source` in the frontend, in the Vitest configuration),
@@ -42,12 +56,12 @@ What the repository does not have:
 
 | Subject | Kind | Reference |
 |---------|------|-----------|
-| Request schemas: every rule, with a value that passes and one that breaks it | Unit | `backend/packages/domain/src/__tests__/salon.schema.test.ts`, `auth.schema.test.ts`, `service-category.schema.test.ts`, `service.schema.test.ts`; the rules that the schemas share in `schema-rules.test.ts`, the IDs of a path in `path-parameters.test.ts` |
-| Rules that tie two properties of a request together, as the pure function that the use case and the repository both call: every rule kept and broken | Unit | `backend/packages/domain/src/__tests__/service.rules.test.ts` |
-| Mappers: both directions, `null` kept as `null`, the changes of representation, and the columns that must not reach a response left out | Unit | `backend/packages/domain/src/__tests__/salon.mapper.test.ts`, `user.mapper.test.ts`, `service.mapper.test.ts` |
+| Request schemas: every rule, with a value that passes and one that breaks it | Unit | `backend/packages/domain/src/schemas/__tests__/salon.schema.test.ts`, `auth.schema.test.ts`, `service-category.schema.test.ts`, `service.schema.test.ts`; the rules that the schemas share in `schema-rules.test.ts`, the IDs of a path in `backend/packages/domain/src/models/__tests__/path-parameters.test.ts` |
+| Rules that tie two properties of a request together, as the pure function that the use case and the repository both call: every rule kept and broken | Unit | `backend/packages/domain/src/business-logic/service/__tests__/service.rules.test.ts` |
+| Mappers: both directions, `null` kept as `null`, the changes of representation, and the columns that must not reach a response left out | Unit | `backend/packages/domain/src/mappers/__tests__/salon.mapper.test.ts`, `user.mapper.test.ts`, `service.mapper.test.ts` |
 | The flow of the use cases, read from their sources: a request that was checked goes to the write mapper of its domain and nowhere else, what the API answers with comes from a read mapper, the page of a list is made by the mappers, and a mapper file of one side has one of the same name on the other. The test reads every domain, and shows on sample sources what it reads as leaving the flow | Unit | `backend/packages/domain/src/__tests__/use-case-flow.test.ts` |
-| Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the interfaces the use case depends on stubbed | `backend/packages/domain/src/__tests__/salon.usecase.test.ts`, `auth.usecase.test.ts`, `service-category.usecase.test.ts`, `service.usecase.test.ts` |
-| Permission rules: every kind of actor, allowed or refused, and the repository left untouched by a refused one | Unit, through the use cases | `describe('who may change a salon', …)` in `backend/packages/domain/src/__tests__/salon.usecase.test.ts` |
+| Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the interfaces the use case depends on stubbed | `backend/packages/domain/src/business-logic/salon/__tests__/salon.usecase.test.ts`, `backend/packages/domain/src/business-logic/auth/__tests__/auth.usecase.test.ts`, `backend/packages/domain/src/business-logic/service-category/__tests__/service-category.usecase.test.ts`, `backend/packages/domain/src/business-logic/service/__tests__/service.usecase.test.ts` |
+| Permission rules: every kind of actor, allowed or refused, and the repository left untouched by a refused one | Unit, through the use cases | `describe('who may change a salon', …)` in `backend/packages/domain/src/business-logic/salon/__tests__/salon.usecase.test.ts` |
 | Password hashing, the generation of tokens, and the secrets, one-time passwords and backup codes of two-factor authentication | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
 | Mail delivery (`SmtpMailer`): what reaches the SMTP server, what is logged and what is kept out of the log, a delivery that fails, closing while deliveries are under way | Unit for what needs no server; integration against a Mailpit container | `backend/packages/infrastructure/src/mail/__tests__/` |
 | File storage (`S3FileStorage`): what a signed upload URL takes and refuses (another type, another length, a second upload, a URL that ran out), what is read of a stored file, what a signed download URL answers, removal, a public endpoint of its own, a storage that refuses or cannot be reached | Integration against a SeaweedFS container, with real uploads and downloads | `backend/packages/infrastructure/src/storage/__tests__/` |
@@ -205,11 +219,11 @@ a service.
 - **Unit tests of use cases stub only what the use case depends on**: the
   repository interface (`ISalonRepository`), with `vi.fn`
   (`salonRepositoryWith` in
-  `backend/packages/domain/src/__tests__/fixtures.ts`); for the
+  `backend/packages/domain/src/__tests__/fixtures/fixtures.ts`); for the
   authentication use cases the two repositories, the password hasher, the
   token issuer, the authenticator of two-factor authentication and the
   mailer, with the clock fixed (`authDependencies` in
-  `backend/packages/domain/src/__tests__/auth-fixtures.ts`; its
+  `backend/packages/domain/src/__tests__/fixtures/auth-fixtures.ts`; its
   `fakeTwoFactorAuthenticator` accepts the one code `APP_CODE`). Schemas and
   mappers are tested without any stub.
 - **Failures are asserted as values**: a use case or mapper through the
@@ -220,7 +234,7 @@ a service.
 - **Test data is explicit**: a builder returns a complete valid request and a
   test overrides what it is about (`salonRequest(overrides)` in the endpoint
   tests, `salonCreateRequest()` in
-  `backend/packages/domain/src/__tests__/fixtures.ts`). Dates are fixed, never
+  `backend/packages/domain/src/__tests__/fixtures/fixtures.ts`). Dates are fixed, never
   taken from the clock. The one exception is an instant that has to lie
   before or after the present of the running application, which reads the
   system clock: an expired token or the end of a lock in the authentication
@@ -239,10 +253,10 @@ a service.
 
 A new domain follows the Salon tests file by file:
 
-- [ ] Schema tests: every rule of every request schema, accepted and rejected
-- [ ] Mapper tests: write and read mappers, including `null`, every change of representation, the criteria of a list (a filter the request does not name, and one whose value is `false` or 0) and the page of a list
+- [ ] Schema tests (`schemas/__tests__/<domain>.schema.test.ts`): every rule of every request schema, accepted and rejected
+- [ ] Mapper tests (`mappers/__tests__/<domain>.mapper.test.ts`): write and read mappers, including `null`, every change of representation, the criteria of a list (a filter the request does not name, and one whose value is `false` or 0) and the page of a list
 - [ ] `use-case-flow.test.ts` passes: it reads the new domain as it reads every other, without being told of it
-- [ ] Use case tests: success, each error passed on, no repository call on invalid input; for an operation that is not public, every kind of actor allowed or refused
+- [ ] Use case tests (`business-logic/<domain>/__tests__/<domain>.usecase.test.ts`; the tests of pure rules beside them): success, each error passed on, no repository call on invalid input; for an operation that is not public, every kind of actor allowed or refused
 - [ ] `backend/packages/api/src/__tests__/<domain>.integration.test.ts` meeting the [requirements per endpoint](#requirements-per-endpoint)
 - [ ] `pnpm test` and `pnpm test:integration` pass
 
