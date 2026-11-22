@@ -1,3 +1,5 @@
+import { tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
+
 /*
  * A keyword that is searched for: kept in the query of the address, so a
  * reload and the way back show the same search.
@@ -6,10 +8,20 @@
 /** The longest keyword the API takes, of a salon and of a customer alike */
 export const LONGEST_KEYWORD = 100
 
+const KEYWORD_TOO_LONG = tooLongOf('キーワード', LONGEST_KEYWORD)
+
+/**
+ * What is wrong with the keyword of a search with other conditions, which
+ * says at its control what it does not take: none when nothing is. A
+ * keyword that was left empty is no keyword, and nothing is wrong with it.
+ */
+export const keywordError = (keyword: string): string | undefined =>
+  tooLongError(keyword, LONGEST_KEYWORD, KEYWORD_TOO_LONG)
+
 const keywordFrom = (value: string | null): string | undefined => {
   const keyword = (value ?? '').trim()
 
-  return keyword === '' || keyword.length > LONGEST_KEYWORD
+  return keyword === '' || keywordError(keyword) !== undefined
     ? undefined
     : keyword
 }

@@ -9,6 +9,7 @@ import type {
   ModelsAuthTwoFactorDisableRequest,
   ModelsUserResponse,
 } from '@beauty-salon-frontend/api-client'
+import { lengthOf } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormErrors,
@@ -73,7 +74,7 @@ const codeError = (code: string, kind: CodeKind): string | undefined =>
     .with('appOrBackup', () =>
       code === ''
         ? CODE_MISSING
-        : code.length > MAX_CODE_LENGTH
+        : lengthOf(code) > MAX_CODE_LENGTH
           ? CODE_TOO_LONG
           : undefined,
     )

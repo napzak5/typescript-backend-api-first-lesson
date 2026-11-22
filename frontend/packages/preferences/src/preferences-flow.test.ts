@@ -699,8 +699,8 @@ describe('readPreferencesChange', () => {
   })
 
   describe('the way to be talked to', () => {
-    it('should take 100 characters', () => {
-      const text = 'あ'.repeat(100)
+    it('should take 100 characters, counted as the API counts them', () => {
+      const text = '𠮷'.repeat(100)
 
       expect(sending({ ...OPENED, communicationStyle: text })).toEqual({
         type: 'valid',

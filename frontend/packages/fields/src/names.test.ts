@@ -25,9 +25,21 @@ describe('lastNameError and firstNameError', () => {
       undefined,
     ],
     [
+      'a last name of the longest length, of characters outside the basic plane',
+      lastNameError,
+      '𠮷'.repeat(100),
+      undefined,
+    ],
+    [
       'a last name one character too long',
       lastNameError,
       'あ'.repeat(101),
+      '100 文字以内で入力してください。',
+    ],
+    [
+      'a first name one character outside the basic plane too long',
+      firstNameError,
+      '𠮷'.repeat(101),
       '100 文字以内で入力してください。',
     ],
     [

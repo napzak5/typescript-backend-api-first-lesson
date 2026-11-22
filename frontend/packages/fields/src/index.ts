@@ -13,7 +13,18 @@ export {
 } from './customers'
 export { EARLIEST_DAY, isDay, LATEST_DAY } from './days'
 export { EMAIL_MALFORMED, emailError } from './email'
-export { lengthErrors, tooLong } from './lengths'
+export {
+  charactersOf,
+  eachTooLongOf,
+  lengthErrors,
+  lengthOf,
+  neededError,
+  neededWithin,
+  tooLong,
+  tooLongError,
+  tooLongOf,
+  upTo,
+} from './lengths'
 export { firstNameError, lastNameError } from './names'
 export { alternativePhoneError, phoneError } from './phones'
 export { webAddressOf } from './web-addresses'

@@ -1,6 +1,6 @@
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
-import { tooLong } from './lengths'
+import { lengthOf, tooLong } from './lengths'
 
 /** The longest address of mail the API takes */
 const MAX_EMAIL_LENGTH = 255
@@ -16,7 +16,7 @@ export const emailError = (email: string): string | undefined =>
   match(email)
     .with('', () => 'メールアドレスを入力してください。')
     .when(
-      (text) => text.length > MAX_EMAIL_LENGTH,
+      (text) => lengthOf(text) > MAX_EMAIL_LENGTH,
       () => tooLong(MAX_EMAIL_LENGTH),
     )
     .when(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { keywordIn, keywordOf, LONGEST_KEYWORD } from './keyword'
+import { keywordError, keywordIn, keywordOf, LONGEST_KEYWORD } from './keyword'
 
 const valuesOf = (entries: [string, string][]): FormData => {
   const values = new FormData()
@@ -11,7 +11,7 @@ const valuesOf = (entries: [string, string][]): FormData => {
 }
 
 describe('keywordIn', () => {
-  it.each([
+  it.each<[string, string, string | undefined]>([
     ['a keyword', 'keyword=%E6%B8%8B%E8%B0%B7', '渋谷'],
     ['a keyword between blanks', 'keyword=+cut+', 'cut'],
     ['no keyword', '', undefined],
@@ -26,6 +26,16 @@ describe('keywordIn', () => {
       'the longest keyword the API takes',
       `keyword=${'a'.repeat(LONGEST_KEYWORD)}`,
       'a'.repeat(LONGEST_KEYWORD),
+    ],
+    [
+      'the longest keyword of characters outside the basic plane',
+      `keyword=${encodeURIComponent('𠮷'.repeat(LONGEST_KEYWORD))}`,
+      '𠮷'.repeat(LONGEST_KEYWORD),
+    ],
+    [
+      'a keyword one such character too long',
+      `keyword=${encodeURIComponent('𠮷'.repeat(LONGEST_KEYWORD + 1))}`,
+      undefined,
     ],
   ])('should read %s', (_case, query, keyword) => {
     expect(keywordIn(new URLSearchParams(query), 'keyword')).toBe(keyword)
@@ -45,6 +55,30 @@ const FILLED_IN: [string, [string, string][], string | undefined][] = [
   ['an empty field', [['keyword', '']], undefined],
   ['no field', [], undefined],
 ]
+
+describe('keywordError', () => {
+  it.each<[string, string, string | undefined]>([
+    ['an empty keyword', '', undefined],
+    ['the longest keyword', 'あ'.repeat(100), undefined],
+    [
+      'a keyword one character too long',
+      'あ'.repeat(101),
+      'キーワードは、100 文字以内で入力してください。',
+    ],
+    [
+      'the longest keyword of characters outside the basic plane',
+      '😀'.repeat(100),
+      undefined,
+    ],
+    [
+      'a keyword one such character too long',
+      '😀'.repeat(101),
+      'キーワードは、100 文字以内で入力してください。',
+    ],
+  ])('should tell what is wrong with %s', (_case, keyword, said) => {
+    expect(keywordError(keyword)).toBe(said)
+  })
+})
 
 describe('keywordOf', () => {
   it.each(FILLED_IN)('should read %s', (_case, entries, keyword) => {

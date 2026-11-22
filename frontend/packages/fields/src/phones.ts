@@ -1,4 +1,5 @@
 import { match } from 'ts-pattern'
+import { lengthOf } from './lengths'
 
 const MAX_PHONE_LENGTH = 20
 const MIN_PHONE_DIGITS = 10
@@ -9,7 +10,7 @@ export const PHONE_MALFORMED =
 
 /** What the API takes for a phone number: digits with the usual separators, ten digits or more. */
 const isPhoneNumber = (text: string): boolean =>
-  text.length <= MAX_PHONE_LENGTH &&
+  lengthOf(text) <= MAX_PHONE_LENGTH &&
   /^[\d\s\-+()]+$/.test(text) &&
   text.replace(/\D/g, '').length >= MIN_PHONE_DIGITS
 

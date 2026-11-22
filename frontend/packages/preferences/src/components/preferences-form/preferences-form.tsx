@@ -1,4 +1,5 @@
 import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/api-client'
+import { charactersOf } from '@beauty-salon-frontend/fields'
 import {
   CheckboxGroup,
   Form,
@@ -138,7 +139,7 @@ export const PreferencesForm = ({
           label='接客の好み'
           name={COMMUNICATION_STYLE}
           autoComplete='off'
-          description={`会話の多さなどを、${MAX_COMMUNICATION_STYLE_LENGTH} 文字以内で書いてください。`}
+          description={`会話の多さなどを、${charactersOf(MAX_COMMUNICATION_STYLE_LENGTH)}以内で書いてください。`}
           defaultValue={entered.communicationStyle}
           error={errors[COMMUNICATION_STYLE]}
         />
