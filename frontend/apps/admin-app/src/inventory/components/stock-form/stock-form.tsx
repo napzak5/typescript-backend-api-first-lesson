@@ -15,9 +15,13 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useState } from 'react'
-import { LONGEST_LOT } from '../../lot-number'
-import { LONGEST_LOCATION, LONGEST_SHELF, showsLot } from '../../stock-form'
-import { productOf, REMOVED_PRODUCT } from '../../stock-format'
+import { LONGEST_LOT } from '../../utils/lot-number'
+import {
+  LONGEST_LOCATION,
+  LONGEST_SHELF,
+  showsLot,
+} from '../../utils/stock-form'
+import { productOf, REMOVED_PRODUCT } from '../../utils/stock-format'
 import styles from './stock-form.module.css'
 
 export type StockFormProps = Pick<

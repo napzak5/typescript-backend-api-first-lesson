@@ -9,7 +9,7 @@ import {
   TagList,
 } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
-import { addressOf } from '../../salon-format'
+import { addressOf } from '../../utils/salon-format'
 import styles from './salon-results.module.css'
 
 export type SalonResultsProps = {

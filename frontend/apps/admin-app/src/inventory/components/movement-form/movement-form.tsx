@@ -21,8 +21,8 @@ import {
   movementTypeNameOf,
   needsReason,
   wayOf,
-} from '../../movement-format'
-import { quantityNameOf, stockRowNameOf } from '../../stock-format'
+} from '../../utils/movement-format'
+import { quantityNameOf, stockRowNameOf } from '../../utils/stock-format'
 
 export type MovementFormProps = Pick<
   FormProps,

@@ -8,8 +8,8 @@ import {
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { ORDER_STATUS_OPTIONS } from '../../order-format'
-import { type OrderConditions, orderQueryOf } from '../../order-search'
+import { ORDER_STATUS_OPTIONS } from '../../utils/order-format'
+import { type OrderConditions, orderQueryOf } from '../../utils/order-search'
 
 export type OrderFilterProps = {
   /** The conditions that are shown: those of the address */

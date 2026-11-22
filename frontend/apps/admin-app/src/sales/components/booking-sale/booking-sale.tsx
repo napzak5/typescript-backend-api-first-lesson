@@ -12,9 +12,12 @@ import {
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
-import { saleOfBooking, whyNoCheckout } from '../../checkout'
-import { paymentStatusNameOf, paymentStatusToneOf } from '../../sale-format'
-import type { SalesOfBooking } from '../../sales-api'
+import type { SalesOfBooking } from '../../api/sales-api'
+import { saleOfBooking, whyNoCheckout } from '../../utils/checkout'
+import {
+  paymentStatusNameOf,
+  paymentStatusToneOf,
+} from '../../utils/sale-format'
 
 export type BookingSaleProps = {
   booking: Pick<ModelsBookingResponse, 'status'>

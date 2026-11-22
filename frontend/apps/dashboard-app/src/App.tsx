@@ -6,11 +6,11 @@ import { applications } from '@beauty-salon-frontend/brand'
 import { StartScreen } from '@beauty-salon-frontend/salon-screens'
 import { Route } from 'react-router'
 import { navigationFor, reportsHrefOf } from './navigation'
-import { CategorySalesScreen } from './reports/category-sales-screen'
-import { DailySalesScreen } from './reports/daily-sales-screen'
-import { SalesReportScreen } from './reports/sales-report-screen'
-import { SalesTrendsScreen } from './reports/sales-trends-screen'
-import { StaffSalesScreen } from './reports/staff-sales-screen'
+import { CategorySalesScreen } from './reports/screens/category-sales-screen'
+import { DailySalesScreen } from './reports/screens/daily-sales-screen'
+import { SalesReportScreen } from './reports/screens/sales-report-screen'
+import { SalesTrendsScreen } from './reports/screens/sales-trends-screen'
+import { StaffSalesScreen } from './reports/screens/staff-sales-screen'
 
 /** Who this application is for: those who run a salon, and the operator of the platform */
 const ROLES: StaffApplicationProps['roles'] = ['owner', 'manager', 'admin']

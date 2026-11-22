@@ -8,8 +8,8 @@ import {
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { EXPIRY_OPTIONS, productOptionsOf } from '../../stock-format'
-import { type StockView, stockQueryOf } from '../../stock-view'
+import { EXPIRY_OPTIONS, productOptionsOf } from '../../utils/stock-format'
+import { type StockView, stockQueryOf } from '../../utils/stock-view'
 
 export type StockFilterProps = {
   /** The view that is shown, from the address: every row, or the rows that expire soon */

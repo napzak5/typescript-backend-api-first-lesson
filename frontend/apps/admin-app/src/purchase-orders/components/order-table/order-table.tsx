@@ -6,7 +6,7 @@ import {
   orderDayNameOf,
   orderStatusNameOf,
   orderStatusToneOf,
-} from '../../order-format'
+} from '../../utils/order-format'
 
 export type OrderTableProps = {
   /** What the table lists: 「発注」 or 「条件に合う発注」 */

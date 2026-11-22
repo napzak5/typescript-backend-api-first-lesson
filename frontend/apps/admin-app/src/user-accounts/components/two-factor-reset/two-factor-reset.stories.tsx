@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { ADMINISTRATORS_ONLY } from '../../user-accounts'
+import { ADMINISTRATORS_ONLY } from '../../utils/user-accounts'
 import { EMAIL } from '../examples'
 import { TwoFactorReset } from './two-factor-reset'
 

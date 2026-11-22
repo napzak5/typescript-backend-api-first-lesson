@@ -11,8 +11,8 @@ import {
   TextArea,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
-import type { OrderAction } from '../../order-actions'
-import { orderStatusNameOf, orderStatusToneOf } from '../../order-format'
+import type { OrderAction } from '../../utils/order-actions'
+import { orderStatusNameOf, orderStatusToneOf } from '../../utils/order-format'
 import styles from './order-status-actions.module.css'
 
 /** The operations that are done at once: every one but the cancellation */

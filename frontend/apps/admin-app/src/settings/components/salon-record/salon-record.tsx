@@ -8,14 +8,14 @@ import {
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { weekdayNameOf } from '../../../shifts/shift-week'
+import { weekdayNameOf } from '../../../shifts/utils/shift-week'
 import {
   calendarFrom,
   coordinatesNameOf,
   ratingNameOf,
   taxRateNameOf,
   weekHoursOf,
-} from '../../settings-format'
+} from '../../utils/settings-format'
 import styles from './salon-record.module.css'
 
 export type SalonRecordProps = {

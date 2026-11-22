@@ -11,7 +11,7 @@ import {
   statusNameOf,
   statusNoteOf,
   twoFactorNameOf,
-} from '../../account-format'
+} from '../../utils/account-format'
 
 export type AccountRecordProps = {
   account: ModelsStaffAccountResponse

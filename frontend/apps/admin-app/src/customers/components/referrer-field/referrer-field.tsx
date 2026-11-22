@@ -5,7 +5,7 @@ import {
   type Referrer,
   referrerIdOf,
   referrerNameOf,
-} from '../../customer-form'
+} from '../../utils/customer-form'
 import styles from './referrer-field.module.css'
 
 export type ReferrerFieldProps = {

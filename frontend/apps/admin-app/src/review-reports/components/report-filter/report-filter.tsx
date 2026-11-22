@@ -1,5 +1,9 @@
 import { FilterForm, Select, useFilterValues } from '@beauty-salon-frontend/ui'
-import { REPORTS_SHOWN, type ReportsShown, SHOWN } from '../../review-reports'
+import {
+  REPORTS_SHOWN,
+  type ReportsShown,
+  SHOWN,
+} from '../../utils/review-reports'
 
 export type ReportFilterProps = {
   /** The reports that are shown: those of the address */

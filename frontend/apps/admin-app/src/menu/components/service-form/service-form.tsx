@@ -22,8 +22,8 @@ import {
   useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
 import { useState } from 'react'
-import { tagsTextOf } from '../../../customers/customer-ledger'
-import { LEVELS, levelNameOf } from '../../../staff/staff-format'
+import { tagsTextOf } from '../../../customers/utils/customer-ledger'
+import { LEVELS, levelNameOf } from '../../../staff/utils/staff-format'
 import {
   AVAILABILITY_OPTIONS,
   categoriesById,
@@ -34,7 +34,7 @@ import {
   packagesOf,
   REQUIREMENT_OPTIONS,
   SERVICE_STATUS_OPTIONS,
-} from '../../menu-format'
+} from '../../utils/menu-format'
 import {
   FEWEST_PACKAGED,
   LONGEST_NAME,
@@ -42,7 +42,7 @@ import {
   MOST_PACKAGED,
   optionControlOf,
   packagedControlOf,
-} from '../../service-form'
+} from '../../utils/service-form'
 
 export type ServiceFormProps = Pick<
   FormProps,

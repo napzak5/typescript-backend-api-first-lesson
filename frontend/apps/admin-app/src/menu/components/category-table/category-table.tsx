@@ -5,7 +5,7 @@ import {
   categoriesById,
   categoryPathOf,
   categoryStateOf,
-} from '../../menu-format'
+} from '../../utils/menu-format'
 
 export type CategoryTableProps = {
   /** The categories of the salon, in the order of the menu; at least one */

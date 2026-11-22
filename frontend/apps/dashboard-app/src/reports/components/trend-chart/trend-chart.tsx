@@ -7,7 +7,7 @@ import {
   shortPartNameOf,
   type TrendPart,
   type TrendUnit,
-} from '../../sales-trends'
+} from '../../utils/sales-trends'
 import styles from './trend-chart.module.css'
 
 export type TrendChartProps = {

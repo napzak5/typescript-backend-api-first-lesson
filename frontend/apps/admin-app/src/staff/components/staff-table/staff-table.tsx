@@ -6,7 +6,7 @@ import {
   bookingsNameOf,
   fullStaffNameOf,
   levelNameOf,
-} from '../../staff-format'
+} from '../../utils/staff-format'
 
 export type StaffTableProps = {
   /** The members that were read so far, in the order they were registered in; at least one */

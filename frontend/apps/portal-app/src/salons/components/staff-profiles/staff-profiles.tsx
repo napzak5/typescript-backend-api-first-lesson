@@ -10,7 +10,7 @@ import {
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { levelNameOf } from '../../salon-format'
+import { levelNameOf } from '../../utils/salon-format'
 import styles from './staff-profiles.module.css'
 
 export type StaffProfilesProps = {

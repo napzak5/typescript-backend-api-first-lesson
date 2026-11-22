@@ -6,7 +6,7 @@ import {
   feeNameOf,
   placesNameOf,
   usedNameOf,
-} from '../../payment-method-format'
+} from '../../utils/payment-method-format'
 
 export type PaymentMethodTableProps = {
   /** The payment methods of the salon, in their order */

@@ -23,8 +23,8 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { useId, useRef } from 'react'
 import { match } from 'ts-pattern'
-import { memberNameOf } from '../../../bookings/day-bookings'
-import { type Bill, type BillLine, NO_CASHIER } from '../../checkout'
+import { memberNameOf } from '../../../bookings/utils/day-bookings'
+import { type Bill, type BillLine, NO_CASHIER } from '../../utils/checkout'
 import styles from './checkout-form.module.css'
 
 export type CheckoutFormProps = Pick<

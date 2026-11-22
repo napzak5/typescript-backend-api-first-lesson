@@ -8,8 +8,8 @@ import {
   alertNameOf,
   severityNameOf,
   thresholdTermOf,
-} from '../../alert-format'
-import { expiryNameOf, quantityNameOf } from '../../stock-format'
+} from '../../utils/alert-format'
+import { expiryNameOf, quantityNameOf } from '../../utils/stock-format'
 
 export type AlertDialogProps = {
   /** The alert the dialog sees to; `undefined` while the dialog is closed */

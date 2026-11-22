@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { enteredForVisit, enteredOf } from '../../review-flow'
+import { enteredForVisit, enteredOf } from '../../utils/review-flow'
 import { plainReview, ratedReview, reviewers, visit } from '../examples'
 import { ReviewForm } from './review-form'
 

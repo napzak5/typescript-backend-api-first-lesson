@@ -2,8 +2,8 @@ import type { ModelsServiceResponse } from '@beauty-salon-frontend/api-client'
 import { Badge, Link, Note } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
 import { match } from 'ts-pattern'
-import { durationOf } from '../../salon-format'
-import { type MenuGroup, type Price, priceOf } from '../../salon-menu'
+import { durationOf } from '../../utils/salon-format'
+import { type MenuGroup, type Price, priceOf } from '../../utils/salon-menu'
 import styles from './service-menu.module.css'
 
 export type ServiceMenuProps = {

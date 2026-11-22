@@ -10,8 +10,8 @@ import {
   Link,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { whyUnrestorable } from '../../customer-history'
-import type { Removal } from '../../customer-history-api'
+import type { Removal } from '../../api/customer-history-api'
+import { whyUnrestorable } from '../../utils/customer-history'
 import { ledgerItemsOf } from '../customer-record/ledger-items'
 import styles from './removed-record.module.css'
 

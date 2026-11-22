@@ -1,7 +1,7 @@
 import type { ModelsCustomerStatisticsResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { DescriptionList, NONE, Table } from '@beauty-salon-frontend/ui'
-import { countNameOf, rateNameOf } from '../../customer-format'
+import { countNameOf, rateNameOf } from '../../utils/customer-format'
 import styles from './customer-statistics.module.css'
 
 export type CustomerStatisticsProps = {

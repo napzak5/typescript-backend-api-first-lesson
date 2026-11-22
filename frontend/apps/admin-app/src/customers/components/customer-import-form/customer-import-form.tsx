@@ -11,14 +11,14 @@ import {
   useErrorFocus,
 } from '@beauty-salon-frontend/ui'
 import { type FormEvent, useId } from 'react'
+import { customerKanaOf, customerNameOf } from '../../api/customers-api'
 import {
   type CustomerFileRead,
   type FileProblem,
   MOST_REGISTERED,
   problemTextOf,
-} from '../../customer-file'
-import { tierNameOf } from '../../customer-format'
-import { customerKanaOf, customerNameOf } from '../../customers-api'
+} from '../../utils/customer-file'
+import { tierNameOf } from '../../utils/customer-format'
 import styles from './customer-import-form.module.css'
 
 /** The file that was chosen: being read, or read */

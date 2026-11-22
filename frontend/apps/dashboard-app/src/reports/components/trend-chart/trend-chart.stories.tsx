@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { partsOf, type TrendPart } from '../../sales-trends'
+import { partsOf, type TrendPart } from '../../utils/sales-trends'
 import { trends } from '../examples'
 import { TrendChart } from './trend-chart'
 

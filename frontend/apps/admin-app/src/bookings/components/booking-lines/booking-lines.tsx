@@ -9,13 +9,13 @@ import {
   TextField,
   useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
+import type { LineCheck } from '../../api/bookings-api'
 import {
   lineControlOf,
   MOST_LINES,
   NO_STAFF,
   SAME_STAFF,
-} from '../../booking-entry'
-import type { LineCheck } from '../../bookings-api'
+} from '../../utils/booking-entry'
 import { LineCheckNote } from '../line-check-note/line-check-note'
 import styles from './booking-lines.module.css'
 

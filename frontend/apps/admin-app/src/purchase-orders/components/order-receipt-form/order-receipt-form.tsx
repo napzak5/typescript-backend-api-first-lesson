@@ -9,8 +9,8 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { itemQuantityNameOf } from '../../order-format'
-import { orderedTextOf, receivedControlOf } from '../../order-receipt'
+import { itemQuantityNameOf } from '../../utils/order-format'
+import { orderedTextOf, receivedControlOf } from '../../utils/order-receipt'
 
 export type OrderReceiptFormProps = Pick<
   FormProps,

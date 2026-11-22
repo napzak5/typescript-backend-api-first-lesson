@@ -5,7 +5,7 @@ import {
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
-import { countedControlOf } from '../../stock-count'
+import { countedControlOf } from '../../utils/stock-count'
 import { colourLot, expiredColour, glovesRow, shampooRow } from '../examples'
 import * as formStories from './count-form.stories'
 

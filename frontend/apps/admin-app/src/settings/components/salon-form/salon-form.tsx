@@ -14,7 +14,7 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { tagsTextOf } from '../../../customers/customer-ledger'
+import { tagsTextOf } from '../../../customers/utils/customer-ledger'
 import {
   CURRENCY_CHOICES,
   coordinateTextOf,
@@ -23,7 +23,7 @@ import {
   NEW_SALON,
   type SalonShown,
   TIME_ZONE_CHOICES,
-} from '../../salon-form'
+} from '../../utils/salon-form'
 
 /** What the form is opened for. */
 type SalonFormSubject =

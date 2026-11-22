@@ -1,8 +1,8 @@
 import type { ModelsPointExpiringResponse } from '@beauty-salon-frontend/api-client'
 import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { Card, Table } from '@beauty-salon-frontend/ui'
-import { countNameOf } from '../../customer-format'
-import { transactionNameOf } from '../../points'
+import { countNameOf } from '../../utils/customer-format'
+import { transactionNameOf } from '../../utils/points'
 import styles from './expiring-points.module.css'
 
 export type ExpiringPointsProps = {

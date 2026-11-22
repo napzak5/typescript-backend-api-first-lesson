@@ -8,12 +8,12 @@ import {
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { paymentStatusNameOf } from '../../sale-format'
+import { paymentStatusNameOf } from '../../utils/sale-format'
 import {
   type LedgerConditions,
   ledgerQueryOf,
   PAYMENT_STATUSES,
-} from '../../sales-ledger'
+} from '../../utils/sales-ledger'
 
 export type LedgerFilterProps = {
   /** The conditions that are shown: those of the address */

@@ -12,7 +12,7 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { useState } from 'react'
 import { match } from 'ts-pattern'
-import { DETAIL_RATINGS } from '../../../salons/salon-format'
+import { DETAIL_RATINGS } from '../../../salons/utils/salon-format'
 import {
   COMMENT,
   type Entered,
@@ -23,8 +23,8 @@ import {
   STAFF,
   STAFF_RATING,
   TITLE,
-} from '../../review-flow'
-import { NO_STAFF } from '../../review-format'
+} from '../../utils/review-flow'
+import { NO_STAFF } from '../../utils/review-format'
 import styles from './review-form.module.css'
 
 /** Whom a review rates, and whether the form asks. */

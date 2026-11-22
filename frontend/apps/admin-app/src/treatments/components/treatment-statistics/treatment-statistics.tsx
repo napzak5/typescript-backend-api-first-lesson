@@ -6,8 +6,8 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList, Note, Table } from '@beauty-salon-frontend/ui'
-import { serviceNameOf } from '../../../bookings/day-bookings'
-import { averageNameOf, countNameOf } from '../../treatment-statistics'
+import { serviceNameOf } from '../../../bookings/utils/day-bookings'
+import { averageNameOf, countNameOf } from '../../utils/treatment-statistics'
 import styles from './treatment-statistics.module.css'
 
 export type TreatmentStatisticsProps = {

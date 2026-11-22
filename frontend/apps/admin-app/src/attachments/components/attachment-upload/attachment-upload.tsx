@@ -5,7 +5,7 @@ import {
   type FormProps,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
-import { ACCEPTED_FILES, FILE } from '../../attachment-file'
+import { ACCEPTED_FILES, FILE } from '../../utils/attachment-file'
 
 export type AttachmentUploadProps = Pick<
   FormProps,

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
 import { PRODUCTS_OF_THE_SALON } from '../../../products/components/examples'
-import { countedControlOf } from '../../stock-count'
+import { countedControlOf } from '../../utils/stock-count'
 import { expiredColour, STOCK_OF_THE_SALON, shampooRow } from '../examples'
 import { CountForm } from './count-form'
 

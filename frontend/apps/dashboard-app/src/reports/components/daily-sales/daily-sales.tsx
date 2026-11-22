@@ -1,7 +1,7 @@
 import type { ModelsDailySalesResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList, Note } from '@beauty-salon-frontend/ui'
-import { countNameOf } from '../../sales-report'
+import { countNameOf } from '../../utils/sales-report'
 import styles from './daily-sales.module.css'
 
 export type DailySalesProps = {

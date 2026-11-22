@@ -1,7 +1,7 @@
 import { ButtonLink } from '@beauty-salon-frontend/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { hoursOf } from '../../hours-api'
+import { hoursOf } from '../../api/hours-api'
 import { aDescribedSalon, TODAY } from '../examples'
 import { HoursForm } from './hours-form'
 

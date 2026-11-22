@@ -10,8 +10,8 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { LONGEST_NAME } from '../../payment-method-form'
-import { KIND_OPTIONS } from '../../payment-method-format'
+import { LONGEST_NAME } from '../../utils/payment-method-form'
+import { KIND_OPTIONS } from '../../utils/payment-method-format'
 
 export type PaymentMethodFormProps = Pick<
   FormProps,

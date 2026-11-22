@@ -12,7 +12,7 @@ import {
   RATINGS,
   type ReviewConditions,
   reviewQueryOf,
-} from '../../review-search'
+} from '../../utils/review-search'
 
 export type ReviewFilterProps = {
   /** The conditions that are shown: those of the address */

@@ -11,7 +11,7 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { cardNameOf, methodNameOf } from '../../sale-format'
+import { cardNameOf, methodNameOf } from '../../utils/sale-format'
 import styles from './refund-form.module.css'
 
 export type RefundFormProps = Pick<

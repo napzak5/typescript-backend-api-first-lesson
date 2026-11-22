@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { ADDITION_TAKEN } from '../../booking-moves'
+import { ADDITION_TAKEN } from '../../utils/booking-moves'
 import { aBooking, moment, salon, services, staff } from '../examples'
 import { BookingLineForm } from './booking-line-form'
 

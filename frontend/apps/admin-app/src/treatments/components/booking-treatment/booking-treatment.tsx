@@ -9,7 +9,7 @@ import {
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
-import type { TreatmentOfBookingRead } from '../../treatments-api'
+import type { TreatmentOfBookingRead } from '../../api/treatments-api'
 import styles from './booking-treatment.module.css'
 
 export type BookingTreatmentProps = {

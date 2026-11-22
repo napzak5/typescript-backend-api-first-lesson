@@ -10,8 +10,8 @@ import {
   Select,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { SAME_STAFF } from '../../booking-entry'
-import type { LineCheck } from '../../bookings-api'
+import type { LineCheck } from '../../api/bookings-api'
+import { SAME_STAFF } from '../../utils/booking-entry'
 import {
   serviceOptionsOf,
   staffOptionsOf,

@@ -7,7 +7,7 @@ import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
-import type { SalonConditions } from '../../salon-search'
+import type { SalonConditions } from '../../utils/salon-search'
 import { SalonSearchForm, type SalonSearchFormProps } from './salon-search-form'
 import * as salonSearchFormStories from './salon-search-form.stories'
 

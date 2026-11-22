@@ -1,7 +1,7 @@
 import { WEB_ADDRESS_DESCRIPTION } from '@beauty-salon-frontend/fields'
 import { type FormErrors, TextArea, TextField } from '@beauty-salon-frontend/ui'
-import { tagsTextOf } from '../../../customers/customer-ledger'
-import type { Introduced } from '../../introduction'
+import { tagsTextOf } from '../../../customers/utils/customer-ledger'
+import type { Introduced } from '../../utils/introduction'
 
 export type IntroductionFieldsProps = {
   /** The introduction the controls open with; `null` for a new member, whose controls are empty */

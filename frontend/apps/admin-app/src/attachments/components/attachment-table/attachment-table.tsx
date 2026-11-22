@@ -1,7 +1,7 @@
 import type { ModelsAttachmentResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import { countOf, Link, type More } from '@beauty-salon-frontend/ui'
-import { contentTypeNameOf, sizeNameOf } from '../../attachment-file'
+import { contentTypeNameOf, sizeNameOf } from '../../utils/attachment-file'
 
 export type AttachmentTableProps = {
   /** The files that were read so far, the latest uploaded first; at least one */

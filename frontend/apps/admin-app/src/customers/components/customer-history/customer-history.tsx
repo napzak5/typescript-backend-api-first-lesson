@@ -1,7 +1,7 @@
 import type { ModelsCustomerHistoryEntryResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import { countOf, Link, type More, NONE } from '@beauty-salon-frontend/ui'
-import { operationNameOf } from '../../customer-history'
+import { operationNameOf } from '../../utils/customer-history'
 import { changedTermsOf } from '../customer-record/ledger-items'
 
 export type CustomerHistoryProps = {

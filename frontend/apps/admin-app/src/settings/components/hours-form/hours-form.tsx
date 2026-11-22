@@ -14,9 +14,9 @@ import {
   useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
 import { type ReactNode, useState } from 'react'
-import { timeInputOf } from '../../../shifts/schedule-form'
-import { weekdayNameOf } from '../../../shifts/shift-week'
-import type { Hours } from '../../hours-api'
+import { timeInputOf } from '../../../shifts/utils/schedule-form'
+import { weekdayNameOf } from '../../../shifts/utils/shift-week'
+import type { Hours } from '../../api/hours-api'
 import {
   CLOSED,
   calendarPartsOf,
@@ -26,8 +26,8 @@ import {
   OPEN,
   weekdayControlOf,
   weekPartsOf,
-} from '../../hours-form'
-import { periodNameOf } from '../../settings-format'
+} from '../../utils/hours-form'
+import { periodNameOf } from '../../utils/settings-format'
 
 export type HoursFormProps = {
   /** The hours the form was opened with, as the API keeps them */

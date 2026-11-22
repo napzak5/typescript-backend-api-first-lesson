@@ -3,7 +3,7 @@ import { ButtonLink, Card, DescriptionList } from '@beauty-salon-frontend/ui'
 import {
   customerKanaOf,
   customerNameOf,
-} from '../../../customers/customers-api'
+} from '../../../customers/api/customers-api'
 
 export type ChosenCustomerProps = {
   customer: Pick<

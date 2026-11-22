@@ -1,7 +1,7 @@
 import { Badge, BulletList, classNames } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { hoursOf } from '../../booking-format'
-import type { LineCheck } from '../../bookings-api'
+import type { LineCheck } from '../../api/bookings-api'
+import { hoursOf } from '../../utils/booking-format'
 import styles from './line-check-note.module.css'
 
 export type LineCheckNoteProps = {

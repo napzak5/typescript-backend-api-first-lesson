@@ -1,6 +1,6 @@
 import { Alert, Button, Card } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { ANSWERED_BY_OTHERS } from '../../customer-export'
+import { ANSWERED_BY_OTHERS } from '../../utils/customer-export'
 import styles from './customer-requests.module.css'
 
 /** The export of the data held of the customer */

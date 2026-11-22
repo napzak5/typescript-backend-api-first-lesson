@@ -15,7 +15,7 @@ import {
   REASON,
   REASONS,
   REPORTED_BEFORE,
-} from '../../review-actions'
+} from '../../utils/review-actions'
 import styles from './review-report.module.css'
 
 export type ReviewReportProps = {

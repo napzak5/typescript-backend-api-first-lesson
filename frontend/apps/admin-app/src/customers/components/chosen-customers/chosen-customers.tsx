@@ -11,7 +11,7 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useId, useLayoutEffect, useRef } from 'react'
-import { MOST_CHOSEN, TAG, TAG_WAY } from '../../customer-bulk'
+import { MOST_CHOSEN, TAG, TAG_WAY } from '../../utils/customer-bulk'
 import styles from './chosen-customers.module.css'
 
 /** The dialog that is open: none, the one that changes a tag, or the one that removes */

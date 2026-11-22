@@ -10,7 +10,7 @@ import {
   type InvitationState,
   invitationStateOf,
   roleNameOf,
-} from '../../account-format'
+} from '../../utils/account-format'
 
 export type InvitationRecordProps = {
   invitation: ModelsStaffInvitationResponse

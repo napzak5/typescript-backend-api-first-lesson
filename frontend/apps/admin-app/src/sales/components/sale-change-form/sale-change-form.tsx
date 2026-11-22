@@ -11,8 +11,8 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { NO_CASHIER } from '../../checkout'
-import { saleMomentOf } from '../../sale-changes'
+import { NO_CASHIER } from '../../utils/checkout'
+import { saleMomentOf } from '../../utils/sale-changes'
 
 export type SaleChangeFormProps = Pick<
   FormProps,

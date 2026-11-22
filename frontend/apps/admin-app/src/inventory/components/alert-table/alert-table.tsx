@@ -19,8 +19,8 @@ import {
   severityNameOf,
   severityToneOf,
   thresholdTermOf,
-} from '../../alert-format'
-import { expiryNameOf, quantityNameOf } from '../../stock-format'
+} from '../../utils/alert-format'
+import { expiryNameOf, quantityNameOf } from '../../utils/stock-format'
 import styles from './alert-table.module.css'
 
 export type AlertTableProps = {

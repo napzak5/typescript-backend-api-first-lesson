@@ -8,6 +8,7 @@ import {
   WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
+import { customerKanaOf, customerNameOf } from '../../api/customers-api'
 import {
   addressNameOf,
   categoriesNameOf,
@@ -17,8 +18,7 @@ import {
   genderNameOf,
   hairNameOf,
   tierNameOf,
-} from '../../customer-format'
-import { customerKanaOf, customerNameOf } from '../../customers-api'
+} from '../../utils/customer-format'
 
 /**
  * The values the ledger keeps of a customer and a version of them keeps

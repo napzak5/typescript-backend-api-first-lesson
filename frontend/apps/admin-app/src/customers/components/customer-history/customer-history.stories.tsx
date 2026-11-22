@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aCustomer, salon } from '../../../bookings/components/examples'
-import { changerNameOf } from '../../customer-history'
+import { changerNameOf } from '../../utils/customer-history'
 import { CUSTOMER_ACCOUNT, history, ME } from '../examples'
 import { CustomerHistory } from './customer-history'
 

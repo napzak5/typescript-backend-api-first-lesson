@@ -11,7 +11,7 @@ import {
   NONE,
   Rating,
 } from '@beauty-salon-frontend/ui'
-import { reviewDayNameOf, reviewNameOf } from '../../review-format'
+import { reviewDayNameOf, reviewNameOf } from '../../utils/review-format'
 
 export type ReviewTableProps = {
   /** What the table lists: 「レビュー」 or 「条件に合うレビュー」 */

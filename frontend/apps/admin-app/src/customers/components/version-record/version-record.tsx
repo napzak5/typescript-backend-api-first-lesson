@@ -8,7 +8,7 @@ import {
   Table,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { operationNameOf } from '../../customer-history'
+import { operationNameOf } from '../../utils/customer-history'
 import {
   changedItemsOf,
   type LedgerValues,

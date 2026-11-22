@@ -12,20 +12,20 @@ import {
   NO_ERRORS,
   Select,
 } from '@beauty-salon-frontend/ui'
-import { LEVELS, levelNameOf } from '../../../staff/staff-format'
+import { LEVELS, levelNameOf } from '../../../staff/utils/staff-format'
 import {
   AVAILABILITY_OPTIONS,
   categoriesById,
   categoryPathOf,
   SERVICE_STATUS_OPTIONS,
-} from '../../menu-format'
+} from '../../utils/menu-format'
 import {
   MOST_SERVICES,
   NONE,
   SWITCH_OFF,
   SWITCH_ON,
   serviceChoicesOf,
-} from '../../services-change'
+} from '../../utils/services-change'
 
 export type ServicesChangeFormProps = Pick<
   FormProps,

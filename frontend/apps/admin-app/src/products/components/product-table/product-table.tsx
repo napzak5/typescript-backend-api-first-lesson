@@ -1,7 +1,11 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
 import { PagedTable } from '@beauty-salon-frontend/salon-screens'
 import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
-import { carriedNameOf, priceNameOf, usesNameOf } from '../../product-format'
+import {
+  carriedNameOf,
+  priceNameOf,
+  usesNameOf,
+} from '../../utils/product-format'
 
 export type ProductTableProps = {
   /** What the table lists: 「商品台帳」, or 「条件に合う商品」 */

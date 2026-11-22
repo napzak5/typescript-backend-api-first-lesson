@@ -17,7 +17,7 @@ The styling and component rules are in the skill `frontend-ui`.
 |---------|------|---------|
 | A component | Its stories, composed and run by Vitest in jsdom | `frontend/packages/ui/src/components/button/button.test.tsx` |
 | What a form does with its values and with the answer of the API | Unit tests of the pure functions. The values a form was sent with are made by `formOf({ name: value })`, or by `formOfEntries([[name, value], …])` where a name has several values (`@beauty-salon-frontend/testing/forms`): a test does not fill a `FormData` itself, but for a form whose rows it has to lay out. The longest text a form takes is written in characters outside the basic plane (`'𠮷'.repeat(255)`): the API counts each as one, and a form that counted `text.length` would refuse it | `frontend/packages/session/src/utils/sign-in-flow.test.ts`, `frontend/packages/fields/src/lengths.test.ts` |
-| What a screen makes of its address and of what it read: the conditions of a search, dates and amounts, the pages of a list | The same | `frontend/apps/portal-app/src/salons/salon-format.test.ts` |
+| What a screen makes of its address and of what it read: the conditions of a search, dates and amounts, the pages of a list | The same | `frontend/apps/portal-app/src/salons/utils/salon-format.test.ts` |
 | The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx`, `frontend/packages/app-frame/src/screens/app-frame.test.tsx` |
 | The start of an application (`startApplication`): the element it is drawn in, the addresses of the browser, how its queries are read | Started in the document of jsdom, and ended after the test with the function it returns; no API | `frontend/packages/app-frame/src/screens/start-application.test.tsx` |
 | The style rules, for every package and app | One test in the theme package | `frontend/packages/theme/src/style-rules.test.ts` |
@@ -25,15 +25,16 @@ The styling and component rules are in the skill `frontend-ui`.
 | The typefaces: the dependencies, their imports and `--font-family` agree | Read from the files of the theme | `frontend/packages/theme/src/typefaces.test.ts` |
 | Modules without markup (configuration, the style rules) | Unit tests in Node | `frontend/packages/config/src/env/env.test.ts` |
 | The fetch function, the session and the generated client | In jsdom, over the real client and the real fetch function, with `fetch` itself stubbed | `frontend/packages/session/src/session.test.tsx` |
-| The functions of a screen that call the API, for the answers the real API cannot be made to give | The same | `frontend/apps/portal-app/src/account/account-api.test.ts` |
+| The functions of a screen that call the API, for the answers the real API cannot be made to give | The same | `frontend/apps/portal-app/src/account/api/account-api.test.ts` |
 | Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
 | A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/screens/sign-in.integration.test.tsx`, `frontend/packages/app-frame/src/screens/staff-application.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
 | A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/admin/sign-in.e2e.test.ts` |
 
-A test is beside the module it tests. In a shared package that is the folder
-of the kind of the module (`api/`, `components/<name>/`, `hooks/`,
-`screens/`, `utils/`: "Folders" in the skill `frontend-ui`), and the
-integration test of a screen is in `screens/`.
+A test is beside the module it tests. In a shared package and in an area of
+an application that is the folder of the kind of the module (`api/`,
+`components/<name>/`, `hooks/`, `screens/`, `utils/`: "Folders" in the skill
+`frontend-ui`), and the integration test of a screen is in `screens/`. What
+the tests of an area arrange together is in its `__tests__/`.
 
 `@beauty-salon-frontend/testing` holds what the tests share: the setup
 (`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, the
@@ -304,11 +305,11 @@ those answers alone: too many requests, an error of the server, no answer,
 and a status the contract does not name (502, 503 and 504 of a gateway,
 with a body that is no JSON), for which the function must answer `failed`
 and not reject
-(`frontend/apps/portal-app/src/account/account-api.test.ts`). One table
+(`frontend/apps/portal-app/src/account/api/account-api.test.ts`). One table
 of the operations and one of the answers show that every operation reads
 every answer. Functions that read are also asked what they ask for (the
 parameters and the cursor of each request) and how they read a list to its
-end: `frontend/apps/portal-app/src/salons/salons-api.test.ts`.
+end: `frontend/apps/portal-app/src/salons/api/salons-api.test.ts`.
 
 The answers such tests make up come from one module, in every application
 and package: `@beauty-salon-frontend/testing/answers`.
@@ -599,10 +600,10 @@ it('should show the screen that was asked for after signing in', async () => {
   )
   ```
 
-  `frontend/apps/portal-app/src/account/account.integration.test.tsx` is the
-  example to read. What the test starts from (a registration, an invitation
-  by the owner of a salon) is asked of the API with `fetch`; a link that ran
-  out is a statement with `testApi().query`.
+  `frontend/apps/portal-app/src/account/screens/account.integration.test.tsx`
+  is the example to read. What the test starts from (a registration, an
+  invitation by the owner of a salon) is asked of the API with `fetch`; a
+  link that ran out is a statement with `testApi().query`.
 - **That opening a screen asks the API for nothing**, or for a check alone,
   is asserted on the watched `fetch`: the paths below `/api/v1` that were
   asked for.
@@ -629,8 +630,9 @@ it('should show the screen that was asked for after signing in', async () => {
 
 ### A screen that reads
 
-`frontend/apps/portal-app/src/salons/salons.integration.test.tsx` is the
-example to read: a search and the page of a record, rendered at an address.
+`frontend/apps/portal-app/src/salons/screens/salons.integration.test.tsx` is
+the example to read: a search and the page of a record, rendered at an
+address.
 
 - **Render at the address** (`renderAt(path)`). The screen tools keep what
   the router says, beside `App`: a search is asserted on what is shown and
@@ -685,8 +687,8 @@ example to read: a search and the page of a record, rendered at an address.
 
 ### A screen that writes what it read
 
-`frontend/apps/portal-app/src/bookings/bookings.integration.test.tsx` is
-the example to read: a customer books a time that the screen read.
+`frontend/apps/portal-app/src/bookings/screens/bookings.integration.test.tsx`
+is the example to read: a customer books a time that the screen read.
 
 - **The day is arranged in the database, relative to today.** What is
   free on a day depends on the hours of the salon, on who works, and on
@@ -759,8 +761,8 @@ the example to read: a customer books a time that the screen read.
   test then holds on every day, and in whatever time zone it runs.
 
 A form that changes a record
-(`frontend/apps/portal-app/src/profile/profile.integration.test.tsx`) is
-tested for what it must leave alone as well:
+(`frontend/apps/portal-app/src/profile/screens/profile.integration.test.tsx`)
+is tested for what it must leave alone as well:
 
 - **What somebody else wrote while the form was open stays.** The test
   opens the form, writes another column of the row with a statement
@@ -818,7 +820,7 @@ tested for what it must leave alone as well:
   it, and why.
 
 A form with rows and with choices that it reads
-(`frontend/apps/portal-app/src/preferences/preferences.integration.test.tsx`)
+(`frontend/apps/portal-app/src/preferences/screens/preferences.integration.test.tsx`)
 adds:
 
 - **What a test starts from is written as somebody writes it.** What the
@@ -932,8 +934,9 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
   router. What it hands to the application is a `vi.fn()` (`onChanged`),
   and asserted. The tests of an application add what it does with them:
   where they are, for whom, and the ways between them
-  (`frontend/apps/portal-app/src/security/security.integration.test.tsx`,
-  and `frontend/packages/app-frame/src/screens/staff-application.integration.test.tsx`
+  (`frontend/apps/portal-app/src/security/screens/security.integration.test.tsx`,
+  and
+  `frontend/packages/app-frame/src/screens/staff-application.integration.test.tsx`
   for the admin and the dashboard application, whose
   `App.integration.test.tsx` go there from the header and no further).
 - **Another device is another session of the API.** It signs in through
@@ -1040,9 +1043,10 @@ changes and removes) add:
   that were sent since it is watched (`await sent(fetched)`); nothing
   changed is no body at all.
 
-The sales of a salon (`frontend/apps/admin-app/src/sales/sales.integration.test.tsx`:
-the checkout of a booking, the payments and the receipt of a sale, the
-ledger) add:
+The sales of a salon
+(`frontend/apps/admin-app/src/sales/screens/sales.integration.test.tsx`: the
+checkout of a booking, the payments and the receipt of a sale, the ledger)
+add:
 
 - **A sale is a row the test writes from its booking**
   (`arrangeSale` of `sales/__tests__/arrangements.ts`: the lines of the
@@ -1066,7 +1070,7 @@ ledger) add:
   nothing. What paper shows is a browser test.
 
 The change, the refund and the voiding of a sale
-(`frontend/apps/admin-app/src/sales/sale-changes.integration.test.tsx`)
+(`frontend/apps/admin-app/src/sales/screens/sale-changes.integration.test.tsx`)
 add:
 
 - **A payment given back meanwhile is a statement** (`refundSale`: the
@@ -1084,7 +1088,7 @@ add:
   day, the note, the voiding; `storedRefundsOf`).
 
 The ledger of the customers
-(`frontend/apps/admin-app/src/customers/customers.integration.test.tsx`)
+(`frontend/apps/admin-app/src/customers/screens/customers.integration.test.tsx`)
 adds:
 
 - **Rows written at one moment come in no order of their own.** The seed
@@ -1167,7 +1171,7 @@ adds:
   the screen answers by reading again.
 
 The sales report of the dashboard
-(`frontend/apps/dashboard-app/src/reports/sales-report.integration.test.tsx`)
+(`frontend/apps/dashboard-app/src/reports/screens/sales-report.integration.test.tsx`)
 adds:
 
 - **The sales a report counts are written by the test, as the checkout

@@ -9,9 +9,9 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { CATEGORY_OPTIONS } from '../../../customers/customer-format'
-import { LONGEST_NAME } from '../../category-form'
-import { categoriesById, categoryPathOf } from '../../menu-format'
+import { CATEGORY_OPTIONS } from '../../../customers/utils/customer-format'
+import { LONGEST_NAME } from '../../utils/category-form'
+import { categoriesById, categoryPathOf } from '../../utils/menu-format'
 
 export type CategoryFormProps = Pick<
   FormProps,

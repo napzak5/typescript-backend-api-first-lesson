@@ -1,6 +1,6 @@
 import { PagedTable } from '@beauty-salon-frontend/salon-screens'
 import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
-import { customerNameOf } from '../../../customers/customers-api'
+import { customerNameOf } from '../../../customers/api/customers-api'
 import {
   GONE_CUSTOMER,
   GONE_SERVICE,
@@ -8,8 +8,8 @@ import {
   statusNameOf,
   statusToneOf,
   UNLISTED_STAFF,
-} from '../../booking-format'
-import type { BookingRow } from '../../day-bookings'
+} from '../../utils/booking-format'
+import type { BookingRow } from '../../utils/day-bookings'
 
 export type DayBookingTableProps = {
   /** What the table lists: 「2026年11月20日（金）の予約」 */

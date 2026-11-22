@@ -11,7 +11,7 @@ import {
   productOf,
   quantityNameOf,
   REMOVED_PRODUCT,
-} from '../../stock-format'
+} from '../../utils/stock-format'
 import styles from './stock-table.module.css'
 
 export type StockTableProps = {

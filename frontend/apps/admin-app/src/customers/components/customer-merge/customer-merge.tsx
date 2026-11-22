@@ -10,7 +10,8 @@ import {
   Table,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { countNameOf } from '../../customer-format'
+import { customerNameOf } from '../../api/customers-api'
+import { countNameOf } from '../../utils/customer-format'
 import {
   MERGE_WAYS,
   type MergeObstacle,
@@ -20,8 +21,7 @@ import {
   mergeWayNameOf,
   obstacleTextOf,
   whoIs,
-} from '../../customer-merge'
-import { customerNameOf } from '../../customers-api'
+} from '../../utils/customer-merge'
 import {
   comparedItemsOf,
   type LedgerValues,

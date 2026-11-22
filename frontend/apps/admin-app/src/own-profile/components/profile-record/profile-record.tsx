@@ -7,7 +7,7 @@ import {
   WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
-import { bookingsNameOf, levelNameOf } from '../../../staff/staff-format'
+import { bookingsNameOf, levelNameOf } from '../../../staff/utils/staff-format'
 
 export type ProfileRecordProps = {
   profile: ModelsStaffProfileResponse

@@ -3,7 +3,7 @@ import { isAtOrBelow } from '@beauty-salon-frontend/app-frame'
 import { salonIdIn } from '@beauty-salon-frontend/salon-screens'
 import { worksAtSalon } from '@beauty-salon-frontend/session'
 import type { NavigationItem } from '@beauty-salon-frontend/ui'
-import { mayKeepStaffLedger } from './staff/staff-format'
+import { mayKeepStaffLedger } from './staff/utils/staff-format'
 
 /** The screen that adds a salon, for an administrator. */
 export const SALON_ENTRY_PATH = '/salons/new'

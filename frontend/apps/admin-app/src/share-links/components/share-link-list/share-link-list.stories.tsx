@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { consentForm } from '../../../attachments/components/examples'
 import { salon } from '../../../bookings/components/examples'
-import { NOT_UPLOADED_NOTE, SHARING_NOTE } from '../../share-link'
+import { NOT_UPLOADED_NOTE, SHARING_NOTE } from '../../utils/share-link'
 import { NOW, SHARE_LINKS_OF_THE_FILE } from '../examples'
 import { ShareLinkList } from './share-link-list'
 

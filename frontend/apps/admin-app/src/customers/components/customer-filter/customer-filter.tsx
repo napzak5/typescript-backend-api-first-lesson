@@ -8,12 +8,12 @@ import {
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { STATUS_OPTIONS, TIER_OPTIONS } from '../../customer-format'
+import { STATUS_OPTIONS, TIER_OPTIONS } from '../../utils/customer-format'
 import {
   type CustomerConditions,
   customerQueryOf,
   tagsTextOf,
-} from '../../customer-ledger'
+} from '../../utils/customer-ledger'
 
 export type CustomerFilterProps = {
   /** The conditions that are shown: those of the address */

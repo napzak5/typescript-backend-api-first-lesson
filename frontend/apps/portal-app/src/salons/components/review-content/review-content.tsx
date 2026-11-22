@@ -1,7 +1,7 @@
 import type { ModelsReviewResponse } from '@beauty-salon-frontend/api-client'
 import { webAddressOf } from '@beauty-salon-frontend/fields'
 import { Badge, Note, Rating, WrittenText } from '@beauty-salon-frontend/ui'
-import { dayOf, detailRatingsOf } from '../../salon-format'
+import { dayOf, detailRatingsOf } from '../../utils/salon-format'
 import styles from './review-content.module.css'
 
 export type ReviewContentProps = {

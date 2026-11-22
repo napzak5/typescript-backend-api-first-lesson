@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
 import { REVIEWS_OF_THE_SALON } from '../../../reviews/components/examples'
-import { reviewNameOf } from '../../../reviews/review-format'
+import { reviewNameOf } from '../../../reviews/utils/review-format'
 import { REPORTS, reportWithDetails, waitingReport } from '../examples'
 import { ReportTable } from './report-table'
 

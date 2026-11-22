@@ -8,7 +8,7 @@ import {
   fullNameOf,
   genderNameOf,
   kanaOf,
-} from '../../profile-format'
+} from '../../utils/profile-format'
 import styles from './profile-details.module.css'
 
 export type ProfileDetailsProps = {

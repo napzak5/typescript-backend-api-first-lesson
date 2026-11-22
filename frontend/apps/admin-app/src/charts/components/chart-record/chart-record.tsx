@@ -11,7 +11,7 @@ import {
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { treatmentNameOf } from '../../chart-form'
+import { treatmentNameOf } from '../../utils/chart-form'
 import styles from './chart-record.module.css'
 
 export type ChartRecordProps = {

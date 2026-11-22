@@ -16,7 +16,7 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { CATEGORY_OPTIONS, GENDER_OPTIONS } from '../../profile-format'
+import { CATEGORY_OPTIONS, GENDER_OPTIONS } from '../../utils/profile-format'
 
 export type ProfileFormProps = Pick<
   FormProps,

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
-import { reviewActionNoteOf } from '../../review-actions'
+import { reviewActionNoteOf } from '../../utils/review-actions'
 import { answeredReview, unansweredReview } from '../examples'
 import { ReviewAnswer } from './review-answer'
 

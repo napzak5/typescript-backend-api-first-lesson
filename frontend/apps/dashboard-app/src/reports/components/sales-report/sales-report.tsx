@@ -22,7 +22,7 @@ import {
   percentNameOf,
   rankNameOf,
   STAFF_SALES_NOTE,
-} from '../../sales-report'
+} from '../../utils/sales-report'
 import styles from './sales-report.module.css'
 
 export type SalesReportProps = {

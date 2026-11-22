@@ -1,8 +1,8 @@
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import { countOf, Link, type More, NONE } from '@beauty-salon-frontend/ui'
-import { tagsTextOf } from '../../../customers/customer-ledger'
-import { customerNameOf } from '../../../customers/customers-api'
-import type { FoundChart } from '../../charts-api'
+import { customerNameOf } from '../../../customers/api/customers-api'
+import { tagsTextOf } from '../../../customers/utils/customer-ledger'
+import type { FoundChart } from '../../api/charts-api'
 
 export type ChartTableProps = {
   /** What the table lists: 「カルテ」, or 「条件に合うカルテ」 */

@@ -27,8 +27,8 @@ import {
   timeInputOf,
   WORKS,
   weeklyControlOf,
-} from '../../schedule-form'
-import { weekdayNameOf } from '../../shift-week'
+} from '../../utils/schedule-form'
+import { weekdayNameOf } from '../../utils/shift-week'
 
 export type ScheduleFormProps = {
   /** The schedule the form was opened with, as the API lists it */

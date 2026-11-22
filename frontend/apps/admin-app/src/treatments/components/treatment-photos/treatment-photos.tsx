@@ -15,7 +15,7 @@ import {
   photoNameOf,
   photoUseOf,
   roomOf,
-} from '../../treatment-photos'
+} from '../../utils/treatment-photos'
 import styles from './treatment-photos.module.css'
 
 export type TreatmentPhotosProps = {

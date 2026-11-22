@@ -28,7 +28,7 @@ You start without the caller's conversation, and the caller reads only your fina
    - `frontend/packages/config` (the `env` object over `import.meta.env`)
    - `frontend/packages/brand`: the names of the applications (`applications.admin.name`), the icons and the image of a shared link with the drawings they are drawn from, and the Vite plugin that serves them and names them in the head of the page
 
-A shared package sorts the modules of its `src` by what they are (`api/`, `components/<name>/`, `hooks/`, `screens/`, `utils/`), and a test is beside the module it tests: "Folders" in the skill frontend-ui.
+A shared package sorts the modules of its `src` by what they are (`api/`, `components/<name>/`, `hooks/`, `screens/`, `utils/`), an application those of each of its areas (`src/<area>/`) in the same folders, and a test is beside the module it tests: "Folders" in the skill frontend-ui.
 
 ## What exists
 
@@ -48,7 +48,7 @@ Visual and interaction design comes from `senior-ui-designer`. You implement it,
 
 ## How you work
 
-- Server state is read with TanStack Query, over functions that call the generated client and never reject: each answers with a sum type of the outcomes a screen tells apart, and the screen matches on it (`frontend/apps/portal-app/src/salons/salons-api.ts`; the sections "A screen that reads from the API" and "A screen that writes what it read" of the skill `frontend-ui`). Local UI state is a discriminated union that is matched exhaustively, not a set of booleans.
+- Server state is read with TanStack Query, over functions that call the generated client and never reject: each answers with a sum type of the outcomes a screen tells apart, and the screen matches on it (`frontend/apps/portal-app/src/salons/api/salons-api.ts`; the sections "A screen that reads from the API" and "A screen that writes what it read" of the skill `frontend-ui`). Local UI state is a discriminated union that is matched exhaustively, not a set of booleans.
 - Every error response of the API is problem details, sent as `application/problem+json` (`ProblemDetails` in the generated models; its `errors` list names the field of each validation issue). Handle that one shape.
 - Lists use keyset pagination (`cursor`, `limit`, `meta.nextCursor`).
 - A component that several applications use goes into `frontend/packages/ui`, with stories and a test like the existing ones; a form that two applications write one record with is a package of its own, as `frontend/packages/preferences` is. A component of one application stays in that application, with the same files, and the catalogue shows its stories too. Styles and layout follow the skill `frontend-ui`.

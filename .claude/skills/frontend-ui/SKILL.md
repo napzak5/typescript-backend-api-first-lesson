@@ -35,7 +35,7 @@ this one: a component is not done without its stories and its test.
 | What a customer wishes for, which the portal and the admin application share: the form with the rows of time slots, how it is read and what a refusal says, the staff it offers, a list written a line each, and how the record is shown (`PreferencesDetails`) | `frontend/packages/preferences/src/components/`, `src/utils/` |
 | The rules of the values a form takes, in every application and package: a day and the days a control offers (`isDay`, `EARLIEST_DAY`, `LATEST_DAY`), a name (`lastNameError`, `firstNameError`), an address of mail (`emailError`, `EMAIL_MALFORMED`), a telephone number (`phoneError`, `alternativePhoneError`), the length of a text and what is said of one that is too long (`lengthOf`, `tooLong`, `tooLongOf`, `eachTooLongOf`, `neededWithin`, `tooLongError`, `neededError`, `lengthErrors`, `upTo`, `charactersOf`), a choice of a list (`choiceOf`, `UNLISTED_MESSAGE`), an address of the web (`webAddressError`, `webAddressLinesError`, `WEB_ADDRESS_ERROR`, `notWebAddress`, `LONGEST_WEB_ADDRESS`, `WEB_ADDRESS_DESCRIPTION`, and `webAddressOf` for a link), a list written a line each (`linesOf`), and the record of a customer (`CUSTOMER_LENGTHS`, `GENDERS`, `SERVICE_CATEGORIES`, `birthDateError`, `basicPreferencesIn`, `shownBasicPreferencesOf`, `customerControlOf`, `customerRefusalOf`) | `frontend/packages/fields/src/` (`@beauty-salon-frontend/fields`) |
 | The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one; what a reader of the page of a salon does with the reviews of others (`reader-flow.ts`, the dialog that reports one) | `frontend/apps/portal-app/src/reviews/` |
-| Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
+| What the screens of the portal share about the session: where a visitor signs in and where they go on to from there (`utils/sign-in-path.ts`), the roles a screen is for (`utils/roles.ts`), how the functions of the screens behind the guard read an answer that says nothing (`utils/behind-the-session.ts`), and the ways on for somebody who cannot sign in (`screens/sign-in-help.tsx`) | `frontend/apps/portal-app/src/session/` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
 | The salon of who is signed in (`useOwnSalon`), whether a role is one of a salon (`worksAtSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/hooks/own-salon.ts`, `src/components/no-salon-notice/` |
 | How an answer of the API is read, in every application and package: why nothing came of a request (`Unread`, `Unsent`, `unreadOf`, `whyUnread`), the values it refused (`refusedValuesOf`), the parts of the patterns of the answers (`UNANSWERED_PARTS`, `REFUSED_PARTS`, their `PUBLIC_` forms for an operation that needs no session, `UNREAD_TYPES`), an answer the contract does not name (`outsideTheContract`), a page and a list read to its end (`pageOf`, `from`, `toTheEnd`), a list that goes on (`listingOf`, `cursorAfter`, `firstCursor`), whether a read came to nothing (`isUnread`), the sentences of too many requests and of what was not read or not sent (`unreadMessageOf`, `unsentMessageOf`), and of the values it refused (`CHECK_THE_VALUES_MESSAGE` for the attempt, `REFUSED_VALUE_MESSAGE` at a control) | `frontend/packages/answers/src/` (`@beauty-salon-frontend/answers`) |
@@ -45,7 +45,7 @@ this one: a component is not done without its stories and its test.
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
 | The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording, the customers of a file, the merge, the exports, the requests to have the data erased | `frontend/apps/admin-app/src/customers/` |
 | The charts of the customers in the admin application: the chart, the form with the rows of the treatments had before, the search of the charts, the allergies of a customer with their form and their removal | `frontend/apps/admin-app/src/charts/` |
-| The treatment records in the admin application: the list, a record with its removal, the form with the rows of the products used, the part of the page of a booking, the photos of a record with their form and their removal, the statistics over a period; the products of a salon, read to the end | `frontend/apps/admin-app/src/treatments/`, `src/products/products-api.ts` |
+| The treatment records in the admin application: the list, a record with its removal, the form with the rows of the products used, the part of the page of a booking, the photos of a record with their form and their removal, the statistics over a period; the products of a salon, read to the end | `frontend/apps/admin-app/src/treatments/`, `src/products/api/products-api.ts` |
 | A file the API answers with, saved by the browser: its name, the file of an answer, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `fileOfAnswer`, `saveFile`) |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
 | The sales report of a salon in the dashboard: the screen with its period and its export as a CSV file, the four parts of a report, the words of its counts; the trends of the sales with their chart, the sales of one day, and the sales of every member of the staff and of every kind of service with a bar under an amount | `frontend/apps/dashboard-app/src/reports/` |
@@ -63,14 +63,15 @@ the router and the element the application is drawn in are those of
 
 ## Folders
 
-A shared package sorts the modules of its `src` by what they are, under the
-same names in every package. A folder is there when something is in it.
+A shared package sorts the modules of its `src` by what they are, and an
+application those of each of its areas (`src/<area>/`), under the same names
+everywhere. A folder is there when something is in it.
 
 | Folder | What is in it |
 |--------|---------------|
 | `api/` | The functions that call the API: `salons-api.ts`, `security-api.ts`, `sign-in.ts` and `sign-out.ts` of `session` |
 | `components/<name>/` | A component that only shows: what it shows comes in as props, and it calls no API, reads no session and knows no router. The four files of "Components", below, and what one component alone uses (`form-values.ts` in `form/` of `ui`) |
-| `hooks/` | A module whose subject is a hook: `use-session.ts`, `own-salon.ts`, `wide-screen.ts` of `ui` |
+| `hooks/` | A module whose subject is a hook: `use-session.ts`, `own-salon.ts`, `wide-screen.ts` of `ui`, `use-period-count.ts` of the reports of the dashboard |
 | `screens/` | A component that knows the API, the session or the router: a screen (`sign-in-screen.tsx`), what stands around screens (`require-session.tsx`, `with-salon.tsx`, `app-frame.tsx`), the start of an application (`start-application.tsx`) |
 | `utils/` | The functions that are none of these, pure ones for the most part: how the values of a form are read and what an answer makes it say (`sign-in-flow.ts`), formats, addresses, the clock of a salon, the class of a tone |
 
@@ -91,8 +92,20 @@ same names in every package. A folder is there when something is in it.
 - What the stories of several components share is in `__stories__/`
   (`frontend/packages/salon-screens/src/__stories__/examples.ts`) or in
   `components/examples.ts`.
-- An area of an application (`src/<area>/`) has its components in
-  `components/<name>/`, and its other modules lie in the area itself.
+- An area of an application has the same folders:
+  `frontend/apps/admin-app/src/customers/` has `api/`, `components/`,
+  `screens/` and `utils/`. In `screens/` is every component of the area that
+  knows the API, the session or the router, also one that is no screen of
+  its own: what stands around the screens of a record (`with-customer.tsx`),
+  a part of a page that reads for itself (`own-preferences.tsx` of the
+  portal), what two screens show of one read (`found-customers.tsx`). The
+  stylesheet of a screen is beside it (`receipt-screen.module.css`). What
+  the tests of an area arrange together stays in its `__tests__/`.
+- `src/` of an application keeps its entry (`main.tsx`, `App.tsx`), the
+  links of its header (`navigation.ts`), their tests, the types of its
+  environment (`vite-env.d.ts`) and what its tests share (`__tests__/`).
+  Everything else is in an area: what the screens of the portal share about
+  the session is its area `session/`.
 
 ## Styling rules
 
@@ -386,8 +399,8 @@ belong to the group.
 ## A form that calls the API
 
 The screens of an account in the portal are the example to read:
-`frontend/apps/portal-app/src/account/` (`register-screen.tsx` is the
-shortest).
+`frontend/apps/portal-app/src/account/` (`screens/register-screen.tsx` is
+the shortest).
 
 ```tsx
 <Form
@@ -560,8 +573,8 @@ shortest).
 ## A screen that reads from the API
 
 The screens of the salons in the portal are the example to read:
-`frontend/apps/portal-app/src/salons/` (`salon-search-screen.tsx` for a
-list, `salon-screen.tsx` for a record with its parts).
+`frontend/apps/portal-app/src/salons/` (`screens/salon-search-screen.tsx`
+for a list, `screens/salon-screen.tsx` for a record with its parts).
 
 - **The functions that read never reject** (`salons-api.ts`). Each answers
   with a sum type of what a screen tells apart: what was `found`, `notFound`
@@ -679,11 +692,11 @@ list, `salon-screen.tsx` for a record with its parts).
 ## A screen that writes what it read
 
 The booking screens of the portal are the example to read:
-`frontend/apps/portal-app/src/bookings/` (`booking-screen.tsx`). A customer
-chooses a member of the staff and a day, the screen reads the times that are
-free then, and one of them is booked. Everything of "A form that calls the
-API" and of "A screen that reads from the API" holds; this is what comes on
-top.
+`frontend/apps/portal-app/src/bookings/` (`screens/booking-screen.tsx`). A
+customer chooses a member of the staff and a day, the screen reads the times
+that are free then, and one of them is booked. Everything of "A form that
+calls the API" and of "A screen that reads from the API" holds; this is what
+comes on top.
 
 - **What decides what is read is in the address, and replaces its entry.**
   The member of the staff and the day are the query of the address
@@ -723,8 +736,8 @@ top.
   An account that was just registered has no profile, and the API books
   for a customer. The screen reads the profile first and shows the form
   for it in place of the times (`ProfileStep`); creating it writes the
-  query of the profile (`OWN_PROFILE` of `profile/profile-api.ts`, the key
-  every screen reads the profile under), and the screen goes on to the
+  query of the profile (`OWN_PROFILE` of `profile/api/profile-api.ts`, the
+  key every screen reads the profile under), and the screen goes on to the
   times of the address.
 - **A part that needs several reads says one thing.** The page of a
   booking (`booking-detail-screen.tsx`) reads the salon, the service and
@@ -820,9 +833,9 @@ page of a booking the ways to move it and to cancel it.
 ### A record is changed in a form
 
 The profile of a customer is the example to read
-(`frontend/apps/portal-app/src/profile/`: `my-page-screen.tsx` shows it,
-`profile-screen.tsx` changes it, and makes it for an account that has
-none).
+(`frontend/apps/portal-app/src/profile/`: `screens/my-page-screen.tsx` shows
+it, `screens/profile-screen.tsx` changes it, and makes it for an account
+that has none).
 
 - **A change sends what was changed, and nothing else.** `PATCH` leaves a
   property alone that the request does not name. A pure function compares
@@ -891,10 +904,10 @@ none).
 
 What a customer wishes for is the example to read: the form is the
 package `frontend/packages/preferences/`, and in the portal
-(`frontend/apps/portal-app/src/preferences/`) `own-preferences.tsx` is the
-part of the page and `preferences-screen.tsx` the screen of the form. It
-is changed as the profile is, above, and adds what the profile does not
-have.
+(`frontend/apps/portal-app/src/preferences/`) `screens/own-preferences.tsx`
+is the part of the page and `screens/preferences-screen.tsx` the screen of
+the form. It is changed as the profile is, above, and adds what the profile
+does not have.
 
 - **A form that two applications write with is a package**
   (`@beauty-salon-frontend/preferences`): the customer writes the same
@@ -957,7 +970,7 @@ have.
   booking at, the staff each of them shows, a stored member that is not
   among them, the names of the salons). The salon's screen reads the
   same way what it offers (`readPreferencesToChange` of
-  `admin-app/src/customers/customers-api.ts`): the staff of the salon of
+  `admin-app/src/customers/api/customers-api.ts`): the staff of the salon of
   the address, and the members of other salons the record names. One of them unread is the form
   unread: it never opens with half of its choices, and a choice that came
   later would not be compared with what the form opened with.
@@ -983,11 +996,12 @@ have.
 ### What was written is rated, listed, changed and removed
 
 The reviews of a customer are the example to read
-(`frontend/apps/portal-app/src/reviews/`: `booking-review.tsx` is the part
-of the page of a visit, `review-write-screen.tsx` the form of a new review,
-`own-reviews-screen.tsx` the list with the dialog that removes one,
-`review-change-screen.tsx` the form that changes one). They are written as
-the bookings and the profile are, above, and add what those do not have.
+(`frontend/apps/portal-app/src/reviews/`: `screens/booking-review.tsx` is
+the part of the page of a visit, `screens/review-write-screen.tsx` the form
+of a new review, `screens/own-reviews-screen.tsx` the list with the dialog
+that removes one, `screens/review-change-screen.tsx` the form that changes
+one). They are written as the bookings and the profile are, above, and add
+what those do not have.
 
 - **What stands in the way of a form is told apart by the read.** The
   function that reads what the form opens with answers with a sum type of
@@ -1069,8 +1083,8 @@ the bookings and the profile are, above, and add what those do not have.
 ### A public page offers more to who is signed in
 
 The reviews on the page of a salon are the example to read
-(`ReviewsSection` and `StaffSection` in `salons/salon-screen.tsx`, with
-`reviews/reader-flow.ts`, `reviews/review-cache.ts` and
+(`ReviewsSection` and `StaffSection` in `salons/screens/salon-screen.tsx`,
+with `reviews/utils/reader-flow.ts`, `reviews/utils/review-cache.ts` and
 `reviews/components/review-report/`). Everybody reads the page; a customer
 also says that a review of somebody else was helpful, and reports one.
 
@@ -1182,8 +1196,9 @@ over the values.
   portal is for everybody:
   it has the sign-in screen at `/sign-in` and the screens of an account
   beside it, and a screen for customers alone wraps itself
-  (`<RequireSession roles={CUSTOMERS}>`, with the constant of `roles.ts`;
-  `bookings/booking-screen.tsx`).
+  (`<RequireSession roles={CUSTOMERS}>`, with the constant of
+  `session/utils/roles.ts`;
+  `bookings/screens/booking-screen.tsx`).
 - **The roles of an application** are a constant in its `App.tsx`: admin is
   for `owner`, `manager`, `staff` and `admin`, the dashboard for `owner`,
   `manager` and `admin`. An account of another role is told so and offered
@@ -1306,15 +1321,17 @@ once, in `StaffApplication`).
 ## The screens of a salon
 
 The bookings of the admin application are the example to read:
-`frontend/apps/admin-app/src/bookings/` (`day-bookings-screen.tsx` for the
-list of a day, `booking-screen.tsx` for a booking and the operations of its
-state, `booking-entry-screen.tsx` for a booking the salon puts in,
-`booking-notes-screen.tsx` for the change of what it wrote down,
-`booking-move-screen.tsx`, `booking-line-entry-screen.tsx` and
-`booking-line-screen.tsx` for a move, a line added and a line taken away)
-and `SalonChoiceScreen` and `WithSalon` of `salon-screens` (the choice of a salon, the salon of an address).
-Everything of "A screen that reads from the API" and of "A screen that
-writes what it read" holds; this is what comes on top.
+`frontend/apps/admin-app/src/bookings/` (`screens/day-bookings-screen.tsx`
+for the list of a day, `screens/booking-screen.tsx` for a booking and the
+operations of its state, `screens/booking-entry-screen.tsx` for a booking
+the salon puts in, `screens/booking-notes-screen.tsx` for the change of what
+it wrote down, `screens/booking-move-screen.tsx`,
+`screens/booking-line-entry-screen.tsx` and
+`screens/booking-line-screen.tsx` for a move, a line added and a line taken
+away) and `SalonChoiceScreen` and `WithSalon` of `salon-screens` (the choice
+of a salon, the salon of an address). Everything of "A screen that reads
+from the API" and of "A screen that writes what it read" holds; this is what
+comes on top.
 
 - **The salon is in the address** (`/salons/:salonId/…`), so that a screen
   can be passed on. A member of the staff belongs to one salon:
@@ -1353,12 +1370,12 @@ writes what it read" holds; this is what comes on top.
   次の日 are links of a `nav` with a name of its own.
 - **A row names what its record holds as IDs, read in bulk.** The customers
   of a page are read in one request (`POST /customers/batch/get`,
-  `customers/customers-api.ts`). The API refuses the whole batch when one of
-  them was removed (404), and they are then read one by one. The staff and
-  the services come from the lists of the salon, read to their end. What is
-  not there is named as such (「削除された顧客」, 「一覧にないスタッフ」,
-  「削除されたメニュー」), and the row stays: its booking can still be
-  moved on.
+  `customers/api/customers-api.ts`). The API refuses the whole batch when
+  one of them was removed (404), and they are then read one by one. The
+  staff and the services come from the lists of the salon, read to their
+  end. What is not there is named as such (「削除された顧客」,
+  「一覧にないスタッフ」, 「削除されたメニュー」), and the row stays: its
+  booking can still be moved on.
 - **A table that goes on is `PagedTable`** (`salon-screens`):
   how many there are and how many are shown above the table, 50 rows at a
   time, 「さらに表示」 below it, and the focus on the link of the first row
@@ -1420,12 +1437,12 @@ writes what it read" holds; this is what comes on top.
   says so and runs the check itself.
 - **A change of a record is a screen of its own** (`…/edit`,
   `…/reschedule`, `…/services/new`), opened with the record read anew:
-  `WithBooking` of `bookings/with-booking.tsx` (`staleTime: 0`, shown once
-  `isFetchedAfterMount`, nothing read behind the form), which names the
-  booking below the heading. A change of some properties sends what
-  differs from what it was opened with and nothing else
-  (`readNotesChange`), so a property somebody else changed meanwhile
-  stays; when nothing differs it asks nothing, says so and goes back.
+  `WithBooking` of `bookings/screens/with-booking.tsx` (`staleTime: 0`,
+  shown once `isFetchedAfterMount`, nothing read behind the form), which
+  names the booking below the heading. A change of some properties sends
+  what differs from what it was opened with and nothing else
+  (`readNotesChange`), so a property somebody else changed meanwhile stays;
+  when nothing differs it asks nothing, says so and goes back.
 - **A change is offered in the states the API takes it in.** The links of
   the page of a booking follow the same rules as the API (`isMovable`,
   `mayAddLine`, `mayRemoveLine` of `booking-moves.ts`); a screen opened
@@ -1471,13 +1488,14 @@ writes what it read" holds; this is what comes on top.
 ### Money: a bill the API works out, payments in parts, a receipt on paper
 
 The sales of the admin application are the example to read:
-`frontend/apps/admin-app/src/sales/` (`checkout-screen.tsx` for the sale of
-a booking, `sales-ledger-screen.tsx` for the ledger, `sale-screen.tsx` for
-a sale, `payment-entry-screen.tsx` for a payment, `receipt-screen.tsx` for
-the receipt, `sale-change-screen.tsx` for the change of a sale,
-`refund-screen.tsx` for a refund, and the part 「取り消し」 of
-`sale-screen.tsx` for the voiding), and the part 「会計」 of the page of a
-booking (`components/booking-sale/`).
+`frontend/apps/admin-app/src/sales/` (`screens/checkout-screen.tsx` for the
+sale of a booking, `screens/sales-ledger-screen.tsx` for the ledger,
+`screens/sale-screen.tsx` for a sale, `screens/payment-entry-screen.tsx` for
+a payment, `screens/receipt-screen.tsx` for the receipt,
+`screens/sale-change-screen.tsx` for the change of a sale,
+`screens/refund-screen.tsx` for a refund, and the part 「取り消し」 of
+`screens/sale-screen.tsx` for the voiding), and the part 「会計」 of the
+page of a booking (`components/booking-sale/`).
 
 - **What belongs to a record is found from the record.** A booking has at
   most one sale that is not voided; the part 「会計」 of its page reads the
@@ -1547,19 +1565,22 @@ booking (`components/booking-sale/`).
 ### A ledger of the platform: found, registered, shown, changed, removed, merged, and its points
 
 The customers of the admin application are the example to read:
-`frontend/apps/admin-app/src/customers/` (`customer-ledger-screen.tsx` for
-the ledger, `customer-entry-screen.tsx` for a customer registered,
-`customer-screen.tsx` for the page of a customer, `customer-change-screen.tsx`
-for the change, `customer-preferences-screen.tsx` for the preferences a
-salon changes, `with-customer.tsx` for the customer of the address,
-`removed-customer.tsx` for one who left the ledger,
-`customer-history-screen.tsx` and `customer-version-screen.tsx` for the
-history and a version, `customer-points-screen.tsx` and
-`point-entry-screen.tsx` for the points and their recording,
-`customer-import-screen.tsx` for the customers of a file, the choice
-of `customer-ledger-screen.tsx` for customers written at once, and
-`customer-merge-screen.tsx` for two records of one customer made one,
-and `customer-export.ts` for the ledger and a customer saved as files).
+`frontend/apps/admin-app/src/customers/`
+(`screens/customer-ledger-screen.tsx` for the ledger,
+`screens/customer-entry-screen.tsx` for a customer registered,
+`screens/customer-screen.tsx` for the page of a customer,
+`screens/customer-change-screen.tsx` for the change,
+`screens/customer-preferences-screen.tsx` for the preferences a salon
+changes, `screens/with-customer.tsx` for the customer of the address,
+`screens/removed-customer.tsx` for one who left the ledger,
+`screens/customer-history-screen.tsx` and
+`screens/customer-version-screen.tsx` for the history and a version,
+`screens/customer-points-screen.tsx` and `screens/point-entry-screen.tsx`
+for the points and their recording, `screens/customer-import-screen.tsx` for
+the customers of a file, the choice of `screens/customer-ledger-screen.tsx`
+for customers written at once, and `screens/customer-merge-screen.tsx` for
+two records of one customer made one, and `utils/customer-export.ts` for the
+ledger and a customer saved as files).
 
 - **A ledger that belongs to no salon is still shown below one.** The
   customers are one ledger for the platform, and every address of the
@@ -1805,10 +1826,11 @@ and `customer-export.ts` for the ledger and a customer saved as files).
 ### A record a customer has once: shown, made, changed, searched
 
 The charts of the admin application are the example to read:
-`frontend/apps/admin-app/src/charts/` (`chart-screen.tsx` for the chart,
-`chart-entry-screen.tsx` and `chart-change-screen.tsx` for the form,
-`with-chart.tsx` for the chart of the customer of the address,
-`chart-search-screen.tsx` for the search).
+`frontend/apps/admin-app/src/charts/` (`screens/chart-screen.tsx` for the
+chart, `screens/chart-entry-screen.tsx` and
+`screens/chart-change-screen.tsx` for the form, `screens/with-chart.tsx` for
+the chart of the customer of the address, `screens/chart-search-screen.tsx`
+for the search).
 
 - **A record a customer has at most once is below the customer**
   (`/customers/:customerId/chart`), not below a list of its own: it has
@@ -1860,10 +1882,11 @@ The charts of the admin application are the example to read:
 ### A record of a visit: written from its booking, found, changed, removed
 
 The treatment records of the admin application are the example to read:
-`frontend/apps/admin-app/src/treatments/` (`treatments-screen.tsx` for
-the list, `treatment-screen.tsx` for a record and its removal,
-`treatment-entry-screen.tsx` and `treatment-change-screen.tsx` for the
-form, `with-treatment.tsx` for the record of the address with what it
+`frontend/apps/admin-app/src/treatments/` (`screens/treatments-screen.tsx`
+for the list, `screens/treatment-screen.tsx` for a record and its removal,
+`screens/treatment-entry-screen.tsx` and
+`screens/treatment-change-screen.tsx` for the form,
+`screens/with-treatment.tsx` for the record of the address with what it
 names, `components/booking-treatment/` for the part of the page of a
 booking).
 
@@ -1948,9 +1971,9 @@ with `components/treatment-statistics/`.
   both) is said under the table.
 
 The sales report of the dashboard is the example of a report of the
-salon: `reports/sales-report-screen.tsx` with `components/sales-report/`,
-`sales-report.ts` for its words and for what an export says, and
-`sales-report-api.ts`.
+salon: `reports/screens/sales-report-screen.tsx` with
+`components/sales-report/`, `utils/sales-report.ts` for its words and for
+what an export says, and `api/sales-report-api.ts`.
 
 - **A report starts with the days its readers look at most**: the month
   up to today at the salon (`monthUntil`), or the days of the address
@@ -2113,7 +2136,7 @@ The accounts of the staff are the example to read:
 
 The own profile is the example to read: `own-profile-screen.tsx`,
 `profile-api.ts` and `profile-form.ts`, with the controls it shares with
-the staff ledger (`staff/introduction.ts`,
+the staff ledger (`staff/utils/introduction.ts`,
 `staff/components/introduction-fields/`).
 
 - **Controls that two forms write are one part**, read by one pure

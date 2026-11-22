@@ -10,8 +10,8 @@ import {
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { treatmentQueryOf } from '../../treatment-search'
-import type { TreatmentConditions } from '../../treatments-api'
+import type { TreatmentConditions } from '../../api/treatments-api'
+import { treatmentQueryOf } from '../../utils/treatment-search'
 import styles from './treatment-filter.module.css'
 
 export type TreatmentFilterProps = {

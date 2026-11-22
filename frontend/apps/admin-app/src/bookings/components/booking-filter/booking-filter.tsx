@@ -7,8 +7,8 @@ import {
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { type DayConditions, queryOf, STATUSES } from '../../booking-day'
-import { statusNameOf } from '../../booking-format'
+import { type DayConditions, queryOf, STATUSES } from '../../utils/booking-day'
+import { statusNameOf } from '../../utils/booking-format'
 
 export type BookingFilterProps = {
   /** The conditions that are shown: those of the address */

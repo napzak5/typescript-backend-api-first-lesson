@@ -12,7 +12,7 @@ import {
   reasonNameOf,
   reportMomentOf,
   reportStateOf,
-} from '../../review-reports'
+} from '../../utils/review-reports'
 import styles from './report-table.module.css'
 
 type Report = ModelsReviewReportResponse

@@ -1,12 +1,12 @@
 import type { ModelsSalesByCategoryResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, categoryNameOf } from '@beauty-salon-frontend/salon-screens'
 import { Card, Note, Table } from '@beauty-salon-frontend/ui'
-import { perServiceOf } from '../../sales-breakdown'
+import { perServiceOf } from '../../utils/sales-breakdown'
 import {
   CATEGORY_SALES_NOTE,
   countNameOf,
   percentNameOf,
-} from '../../sales-report'
+} from '../../utils/sales-report'
 import { ShareBar } from '../share-bar/share-bar'
 import styles from './category-sales.module.css'
 

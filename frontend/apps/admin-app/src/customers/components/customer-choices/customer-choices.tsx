@@ -2,7 +2,7 @@ import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
 import { PagedTable } from '@beauty-salon-frontend/salon-screens'
 import { Button, countOf, Link, type More } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { customerKanaOf, customerNameOf } from '../../customers-api'
+import { customerKanaOf, customerNameOf } from '../../api/customers-api'
 
 /**
  * How a customer is chosen by their name: a link that leads on (to the

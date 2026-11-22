@@ -6,14 +6,14 @@ import type {
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import type { More } from '@beauty-salon-frontend/ui'
 import { countOf } from '@beauty-salon-frontend/ui'
-import { priceNameOf } from '../../../products/product-format'
+import { priceNameOf } from '../../../products/utils/product-format'
 import {
   changeNameOf,
   movementReasonOf,
   movementTypeNameOf,
   performerNameOf,
-} from '../../movement-format'
-import { quantityNameOf } from '../../stock-format'
+} from '../../utils/movement-format'
+import { quantityNameOf } from '../../utils/stock-format'
 
 export type MovementTableProps = {
   /** What the table lists: 「在庫の移動」 or 「条件に合う在庫の移動」 */

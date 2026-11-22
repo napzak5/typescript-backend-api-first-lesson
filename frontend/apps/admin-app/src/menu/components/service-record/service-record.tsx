@@ -13,8 +13,8 @@ import {
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { levelNameOf } from '../../../staff/staff-format'
-import { minutesNameOf } from '../../../treatments/treatment-format'
+import { levelNameOf } from '../../../staff/utils/staff-format'
+import { minutesNameOf } from '../../../treatments/utils/treatment-format'
 import {
   availabilityNameOf,
   categoriesById,
@@ -24,7 +24,7 @@ import {
   pricingNameOf,
   requirementNameOf,
   serviceStateOf,
-} from '../../menu-format'
+} from '../../utils/menu-format'
 import styles from './service-record.module.css'
 
 export type ServiceRecordProps = {

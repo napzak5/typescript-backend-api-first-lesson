@@ -11,13 +11,13 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { countedControlOf } from '../../stock-count'
+import { countedControlOf } from '../../utils/stock-count'
 import {
   placeNameOf,
   productOf,
   quantityNameOf,
   stockRowNameOf,
-} from '../../stock-format'
+} from '../../utils/stock-format'
 
 export type CountFormProps = Pick<
   FormProps,

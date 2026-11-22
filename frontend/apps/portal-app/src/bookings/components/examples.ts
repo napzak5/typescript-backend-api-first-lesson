@@ -1,7 +1,7 @@
 import type { ModelsCustomerBookingResponse } from '@beauty-salon-frontend/api-client'
 import { plainSalon, salon, staff } from '../../salons/components/examples'
-import type { Time } from '../booking-choice'
-import type { Row } from '../own-bookings'
+import type { Time } from '../utils/booking-choice'
+import type { Row } from '../utils/own-bookings'
 
 /*
  * What the stories of the booking components show: the salon, the services

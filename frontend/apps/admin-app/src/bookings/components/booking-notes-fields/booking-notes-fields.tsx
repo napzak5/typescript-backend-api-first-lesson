@@ -6,7 +6,7 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { SOURCES, sourceNameOf } from '../../booking-entry'
+import { SOURCES, sourceNameOf } from '../../utils/booking-entry'
 import styles from './booking-notes-fields.module.css'
 
 export type BookingNotesFieldsProps = {

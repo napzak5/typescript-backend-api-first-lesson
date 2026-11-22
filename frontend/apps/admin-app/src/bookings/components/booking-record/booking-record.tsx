@@ -8,15 +8,19 @@ import {
   momentNameAt,
 } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
-import { customerNameOf } from '../../../customers/customers-api'
-import { sourceNameOf } from '../../booking-entry'
-import { GONE_CUSTOMER, hoursOf, UNLISTED_STAFF } from '../../booking-format'
+import { customerNameOf } from '../../../customers/api/customers-api'
+import { sourceNameOf } from '../../utils/booking-entry'
+import {
+  GONE_CUSTOMER,
+  hoursOf,
+  UNLISTED_STAFF,
+} from '../../utils/booking-format'
 import {
   memberNameOf,
   type Names,
   serviceNameOf,
   staffNameOf,
-} from '../../day-bookings'
+} from '../../utils/day-bookings'
 import styles from './booking-record.module.css'
 
 export type BookingRecordProps = {
