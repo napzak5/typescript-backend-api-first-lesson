@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import { Link } from '../link/link'
 import styles from './navigation.module.css'
 

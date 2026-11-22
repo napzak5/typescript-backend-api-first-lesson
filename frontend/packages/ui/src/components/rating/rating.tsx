@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import styles from './rating.module.css'
 
 export type RatingProps = {

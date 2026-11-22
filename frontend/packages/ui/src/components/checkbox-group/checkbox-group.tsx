@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import type { ChoiceLayout, ChoiceOption } from '../field/choice'
 import choiceStyles from '../field/choice.module.css'
 import { FieldMessages, messageAttributes } from '../field/field'

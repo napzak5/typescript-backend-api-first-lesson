@@ -408,7 +408,7 @@ describe('readSourceFiles', () => {
       'tokens.css': ':root {}',
       'packages/ui/src/components/button/button.module.css': '.root {}',
       'packages/ui/src/components/button/button.tsx': 'export {}',
-      'packages/ui/src/tone.ts': 'export const TONE = 1',
+      'packages/ui/src/utils/tone.ts': 'export const TONE = 1',
     })
 
     // Act
@@ -424,7 +424,10 @@ describe('readSourceFiles', () => {
         path: 'packages/ui/src/components/button/button.tsx',
         content: 'export {}',
       },
-      { path: 'packages/ui/src/tone.ts', content: 'export const TONE = 1' },
+      {
+        path: 'packages/ui/src/utils/tone.ts',
+        content: 'export const TONE = 1',
+      },
       { path: 'tokens.css', content: ':root {}' },
     ])
   })
@@ -458,7 +461,7 @@ describe('readSourceFiles', () => {
       'src/page.tsx': 'export {}',
       [`${skipped}/library/styles.css`]: '.a {}',
       [`packages/ui/${skipped}/index.ts`]: 'export {}',
-      'packages/ui/src/tone.ts': 'export {}',
+      'packages/ui/src/utils/tone.ts': 'export {}',
     })
     close(path.join(directory, skipped))
     close(path.join(directory, 'packages/ui', skipped))
@@ -468,7 +471,7 @@ describe('readSourceFiles', () => {
 
     // Assert
     expect(paths.toSorted()).toEqual([
-      'packages/ui/src/tone.ts',
+      'packages/ui/src/utils/tone.ts',
       'src/page.tsx',
     ])
   })
@@ -515,7 +518,7 @@ describe('the styles of the frontend', () => {
         'packages/theme/src/tokens.css',
         'packages/ui/src/components/button/button.module.css',
         'packages/ui/src/components/button/button.tsx',
-        'packages/ui/src/tone.ts',
+        'packages/ui/src/utils/tone.ts',
         'packages/ui/src/components/app-shell/app-shell.module.css',
         'apps/admin-app/src/App.tsx',
       ]),

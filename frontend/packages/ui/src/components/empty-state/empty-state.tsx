@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import { Actions } from '../actions/actions'
 import { Note } from '../note/note'
 import styles from './empty-state.module.css'

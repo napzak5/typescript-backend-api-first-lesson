@@ -1,5 +1,5 @@
 import { type ReactNode, useId, useRef } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import { NotRecorded } from '../not-recorded/not-recorded'
 import { visuallyHiddenClass } from '../visually-hidden/visually-hidden'
 import { useScrollsSideways } from './scrolls-sideways'

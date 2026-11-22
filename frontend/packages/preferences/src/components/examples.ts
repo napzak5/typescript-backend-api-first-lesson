@@ -1,5 +1,5 @@
 import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/api-client'
-import type { StaffChoice } from '../staff-choices'
+import type { StaffChoice } from '../utils/staff-choices'
 
 /*
  * What the stories of the components of the preferences show: a customer

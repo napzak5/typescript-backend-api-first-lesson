@@ -12,7 +12,7 @@ import {
   browserOf,
   momentOf,
   sessionNameOf,
-} from '../../security-format'
+} from '../../utils/security-format'
 import styles from './session-list.module.css'
 
 export type SessionListProps = {

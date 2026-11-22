@@ -1,31 +1,37 @@
+export { type SignInOutcome, signIn } from './api/sign-in'
+export { signOut } from './api/sign-out'
 export { NoSalonNotice } from './components/no-salon-notice/no-salon-notice'
-export { keepQueriesOfOneUser } from './keep-queries-of-one-user'
-export { RequireSession, type RequireSessionProps } from './require-session'
 export {
   OWN_SALON,
   type OwnSalon,
   type OwnSalonState,
   useOwnSalon,
   worksAtSalon,
-} from './salon/own-salon'
+} from './hooks/own-salon'
+export { type Session, useSession } from './hooks/use-session'
+export {
+  RequireSession,
+  type RequireSessionProps,
+} from './screens/require-session'
+export {
+  SessionAccount,
+  type SessionAccountProps,
+} from './screens/session-account'
 export {
   AccountSecurityScreen,
   type AccountSecurityScreenProps,
-} from './security/account-security-screen'
+} from './security/screens/account-security-screen'
 export {
   PasswordChangeScreen,
   type PasswordChangeScreenProps,
-} from './security/password-change-screen'
+} from './security/screens/password-change-screen'
+export {
+  TwoFactorSetupScreen,
+  type TwoFactorSetupScreenProps,
+} from './security/screens/two-factor-setup-screen'
 export {
   newPasswordError,
   PASSWORD_RULE,
   refusedPasswordMessage,
-} from './security/password-rule'
-export {
-  TwoFactorSetupScreen,
-  type TwoFactorSetupScreenProps,
-} from './security/two-factor-setup-screen'
-export { SessionAccount, type SessionAccountProps } from './session-account'
-export { type SignInOutcome, signIn } from './sign-in'
-export { signOut } from './sign-out'
-export { type Session, useSession } from './use-session'
+} from './security/utils/password-rule'
+export { keepQueriesOfOneUser } from './utils/keep-queries-of-one-user'

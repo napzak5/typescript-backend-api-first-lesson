@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useState } from 'react'
-import { classNames } from '../../class-names'
-import { useWideScreen } from '../../wide-screen'
+import { useWideScreen } from '../../hooks/wide-screen'
+import { classNames } from '../../utils/class-names'
 import { Button } from '../button/button'
 import { Dialog } from '../dialog/dialog'
 import { Link } from '../link/link'

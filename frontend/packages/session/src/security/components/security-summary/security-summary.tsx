@@ -9,7 +9,10 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import { match } from 'ts-pattern'
-import { passwordChangedOf, twoFactorStateOf } from '../../security-format'
+import {
+  passwordChangedOf,
+  twoFactorStateOf,
+} from '../../utils/security-format'
 
 export type SecuritySummaryProps = {
   /** The account of the session, as the API has it now */

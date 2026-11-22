@@ -7,7 +7,7 @@ import {
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { type Period, periodQueryOf } from '../../period'
+import { type Period, periodQueryOf } from '../../utils/period'
 
 export type StatisticsPeriodProps = {
   /** The period that is shown: that of the address */

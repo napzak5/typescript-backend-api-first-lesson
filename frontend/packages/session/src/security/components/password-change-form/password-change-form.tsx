@@ -5,8 +5,8 @@ import {
   NO_ERRORS,
   PasswordField,
 } from '@beauty-salon-frontend/ui'
-import { PASSWORD_RULE } from '../../password-rule'
-import { CURRENT_PASSWORD, NEW_PASSWORD } from '../../security-flow'
+import { PASSWORD_RULE } from '../../utils/password-rule'
+import { CURRENT_PASSWORD, NEW_PASSWORD } from '../../utils/security-flow'
 
 export type PasswordChangeFormProps = {
   /** What went wrong with the attempt as a whole */

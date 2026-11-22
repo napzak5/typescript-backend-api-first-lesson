@@ -7,8 +7,8 @@ import {
   useRef,
   useState,
 } from 'react'
-import { classNames } from '../../class-names'
-import { type Tone, toneClass } from '../../tone'
+import { classNames } from '../../utils/class-names'
+import { type Tone, toneClass } from '../../utils/tone'
 import { Button } from '../button/button'
 import styles from './notifications.module.css'
 

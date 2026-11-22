@@ -6,7 +6,7 @@ import {
   VisuallyHidden,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { Session } from '../../use-session'
+import type { Session } from '../../hooks/use-session'
 import styles from './account-menu.module.css'
 
 export type AccountMenuProps = {

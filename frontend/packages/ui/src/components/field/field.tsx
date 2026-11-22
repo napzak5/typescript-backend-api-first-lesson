@@ -1,5 +1,5 @@
 import { type ReactNode, useId } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import { Note } from '../note/note'
 import controlStyles from './control.module.css'
 import styles from './field.module.css'

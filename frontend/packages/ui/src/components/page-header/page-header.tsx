@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react'
-import { useWideScreen } from '../../wide-screen'
+import { useWideScreen } from '../../hooks/wide-screen'
 import { useScreen } from '../app-shell/screens'
 import { Button } from '../button/button'
 import { Dialog } from '../dialog/dialog'

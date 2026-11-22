@@ -1,4 +1,11 @@
 export {
+  findSalons,
+  readSalon,
+  type SalonPage,
+  type SalonRead,
+  salonKeyOf,
+} from './api/salons-api'
+export {
   KeywordSearch,
   type KeywordSearchProps,
 } from './components/keyword-search/keyword-search'
@@ -15,16 +22,31 @@ export {
   type StatisticsPeriodProps,
 } from './components/statistics-period/statistics-period'
 export {
+  SALON_CHOICES,
+  SalonChoiceScreen,
+  type SalonChoiceScreenProps,
+} from './screens/salon-choice-screen'
+export {
+  StartScreen,
+  type StartScreenProps,
+} from './screens/start-screen'
+export {
+  OtherSalonNotice,
+  type OtherSalonNoticeProps,
+  WithSalon,
+  type WithSalonProps,
+} from './screens/with-salon'
+export {
   amountOf,
   categoryNameOf,
   methodKindNameOf,
-} from './format'
+} from './utils/format'
 export {
   keywordError,
   keywordIn,
   keywordOf,
   LONGEST_KEYWORD,
-} from './keyword'
+} from './utils/keyword'
 export {
   daysErrorsOf,
   lastYearUntil,
@@ -35,17 +57,12 @@ export {
   periodQueryOf,
   readDays,
   readPeriod,
-} from './period'
-export { salonIdIn } from './salon-address'
+} from './utils/period'
+export { salonIdIn } from './utils/salon-address'
 export {
   KEYWORD,
   queryOfKeyword,
-} from './salon-choice'
-export {
-  SALON_CHOICES,
-  SalonChoiceScreen,
-  type SalonChoiceScreenProps,
-} from './salon-choice-screen'
+} from './utils/salon-choice'
 export {
   dayAfter,
   dayAt,
@@ -54,21 +71,4 @@ export {
   momentOf,
   startOfDayAt,
   timeOfDayAt,
-} from './salon-time'
-export {
-  findSalons,
-  readSalon,
-  type SalonPage,
-  type SalonRead,
-  salonKeyOf,
-} from './salons-api'
-export {
-  StartScreen,
-  type StartScreenProps,
-} from './start-screen'
-export {
-  OtherSalonNotice,
-  type OtherSalonNoticeProps,
-  WithSalon,
-  type WithSalonProps,
-} from './with-salon'
+} from './utils/salon-time'

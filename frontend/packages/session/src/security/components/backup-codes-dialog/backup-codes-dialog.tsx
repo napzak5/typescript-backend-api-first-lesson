@@ -4,7 +4,7 @@ import {
   NO_ERRORS,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { CODE } from '../../two-factor-flow'
+import { CODE } from '../../utils/two-factor-flow'
 import { BackupCodeList } from '../backup-code-list/backup-code-list'
 
 export type BackupCodesDialogProps = {

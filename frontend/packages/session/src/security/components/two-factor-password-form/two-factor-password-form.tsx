@@ -5,7 +5,7 @@ import {
   NO_ERRORS,
   PasswordField,
 } from '@beauty-salon-frontend/ui'
-import { PASSWORD } from '../../two-factor-flow'
+import { PASSWORD } from '../../utils/two-factor-flow'
 
 export type TwoFactorPasswordFormProps = {
   /** What went wrong with the attempt as a whole */

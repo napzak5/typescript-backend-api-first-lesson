@@ -5,7 +5,7 @@ import {
   PasswordField,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { CODE, PASSWORD } from '../../two-factor-flow'
+import { CODE, PASSWORD } from '../../utils/two-factor-flow'
 
 export type TwoFactorStopDialogProps = {
   open: boolean

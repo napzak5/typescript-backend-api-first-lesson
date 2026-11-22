@@ -6,7 +6,7 @@ import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
-import type { Period } from '../../period'
+import type { Period } from '../../utils/period'
 import {
   StatisticsPeriod,
   type StatisticsPeriodProps,

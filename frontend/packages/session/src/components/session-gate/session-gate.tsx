@@ -2,7 +2,7 @@ import type { ModelsUserRoleType } from '@beauty-salon-frontend/api-client'
 import { Button, LoadingIndicator, PageHeader } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { match } from 'ts-pattern'
-import type { Session } from '../../use-session'
+import type { Session } from '../../hooks/use-session'
 
 export type SessionGateProps = {
   /** Who uses the application now: what `useSession` returns */

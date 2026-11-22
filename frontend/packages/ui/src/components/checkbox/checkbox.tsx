@@ -1,5 +1,5 @@
 import { type ComponentProps, useId } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import choiceStyles from '../field/choice.module.css'
 import { FieldMessages, messageAttributes, RequiredMark } from '../field/field'
 import fieldStyles from '../field/field.module.css'
