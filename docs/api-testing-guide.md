@@ -526,7 +526,10 @@ The kinds of error an endpoint test meets:
 Every 401 also carries a `WWW-Authenticate` header.
 `backend/packages/api/src/shared/problem-details.ts` defines these and the
 errors of the HTTP layer itself (unknown route, unreadable body, rate limit),
-which `app.integration.test.ts` covers once for all routes.
+which `app.integration.test.ts` covers once for all routes. The same file
+covers the language of an error (`Accept-Language`, `Content-Language`): a
+test of an endpoint sends no `Accept-Language`, so what it reads is in
+English.
 
 Invalid inputs that differ only in the value go into one table. Each row is
 one of the five or more error scenarios the endpoint needs (three of the seven

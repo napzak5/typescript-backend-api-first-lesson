@@ -12,7 +12,7 @@ shortened; the file named above each one is the authority.
 | [Query parameters](#query-parameters) | `backend/packages/api/src/shared/query-parameters.ts`, `backend/packages/api/src/routes/salon/_shared/query.ts`, `backend/packages/api/src/routes/customer/list-customers.handler.ts` (a list with a permission check) |
 | [Pagination](#pagination) | `list-salons.usecase.ts`, `salon.repository.impl.ts`, `backend/packages/api/src/shared/page-links.ts` |
 | [Response formatting](#response-formatting) | `backend/packages/api/src/shared/responses.ts` |
-| [Error handling](#error-handling) | `backend/packages/api/src/shared/problem-details.ts`, `backend/packages/api/src/middleware/errors.ts` |
+| [Error handling](#error-handling) | `backend/packages/api/src/shared/problem-details.ts`, `backend/packages/api/src/shared/language.ts`, `backend/packages/api/src/middleware/errors.ts`, `shared-i18n/src/messages/api/problems.ts` |
 | [Logging](#logging) | `backend/packages/infrastructure/src/logging/logger.ts`, `backend/packages/api/src/middleware/request-logging.ts` |
 | [Date and time](#date-and-time) | `backend/packages/domain/src/mappers/read/columns.ts`, `salon.schema.ts`, `customer.schema.ts`, `customer.repository.impl.ts` |
 | [Authorization](#authorization) | `backend/packages/api/src/shared/authentication.ts`, `backend/packages/domain/src/business-logic/salon/_shared/authorization.ts` |
@@ -460,7 +460,7 @@ one by one, 401, 403, 429 and 500 through `PublicErrors`, `SessionErrors` or
 // backend/packages/api/src/shared/problem-details.ts
 .with({ type: 'alreadyExists' }, ({ entity, field, value }) => ({
   type: 'urn:beauty-salon:problem:already-exists',
-  title: 'Resource already exists',
+  title: said(problemMessages.alreadyExists.title),
   status: 409,
   detail: `${entity} with ${field} ${value} already exists`,
   code: '3002',
@@ -469,7 +469,7 @@ one by one, 401, 403, 429 and 500 through `PublicErrors`, `SessionErrors` or
 // The cause stays on the server: it may name tables, columns or data.
 .with({ type: 'database' }, () => ({
   type: 'urn:beauty-salon:problem:database',
-  title: 'Internal server error',
+  title: said(problemMessages.internal.title),
   status: 500,
   detail: null,
   code: '4003',
@@ -483,6 +483,19 @@ one by one, 401, 403, 429 and 500 through `PublicErrors`, `SessionErrors` or
 the media type `application/problem+json` (RFC 9457); a successful response is
 `application/json`. A 401 also carries a `WWW-Authenticate: Bearer` header,
 which `sendProblem` takes from `toBearerChallenge` in `problem-details.ts`.
+
+The `title` and the `detail` are told in the language the request asks for
+(`Accept-Language`, read by `languageAsked` in `language.ts`; English when
+the header is absent or names no language of the API). Their texts are
+`problemMessages` of `@beauty-salon-shared/i18n/messages/api`, each written in
+English and in Japanese, and `said` reads one in the language of the answer.
+An error whose detail the domain writes (`validation`, `notFound`,
+`alreadyExists`, `conflict`) is told in English as a whole, title included,
+whatever was asked for: the domain writes in English alone, and no answer is
+in two languages. `sendProblem` names the language of the answer in
+`Content-Language` and adds `Accept-Language` to `Vary`. Nothing else of a
+problem depends on the language, and a successful response does not depend
+on it at all. See [i18n](./i18n.md).
 
 A `database`, `storage` or `unexpected` error never shows its cause to the
 client. It is logged instead: `sendProblem` logs a `database` and a `storage`

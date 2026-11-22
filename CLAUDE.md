@@ -225,6 +225,17 @@ test for every story. The rules are two skills,
 [frontend-testing](.claude/skills/frontend-testing/SKILL.md): read them before
 changing anything under `frontend/`. `pnpm test` fails on a broken style rule.
 
+### Shared Packages
+```
+shared-config/            # @beauty-salon-shared/config: tsconfig files, the build of the packages, Biome plugins
+shared-i18n/              # @beauty-salon-shared/i18n: the languages (en, ja), how one is chosen from Accept-Language, and the messages
+```
+
+A text that is told in more than one language is a message of
+`shared-i18n/src/messages/<who says it>/` (`api/`, for what the API says),
+written in every language with `text({ en, ja })`: one that lacks a language
+does not compile. Read [docs/i18n.md](docs/i18n.md) before adding one.
+
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`
 - Frontend: `@beauty-salon-frontend/*`
@@ -361,6 +372,7 @@ The full index is [docs/README.md](docs/README.md).
 - [Medical Charts](docs/medical-charts.md)
 - [Attachments](docs/attachments.md)
 - [Email](docs/email.md)
+- [i18n](docs/i18n.md)
 - [Testing Requirements](docs/testing-requirements.md)
 - [Multi-Agent Collaboration](docs/multi-agent-collaboration-framework.md)
 
@@ -540,7 +552,7 @@ export const startServer = (config: AppConfig, logger: Logger, shutdownGraceMs?:
 - **Validation** happens once, in the use case, with the Zod schema of the request. Cross-field rules use `.check()`; a rule that ties two properties of which a partial update may name only one cannot be checked on the request and is a pure function of the domain instead (the services, below)
 - **Mappers** stand on both sides of every domain: `mappers/write/` (API request → what the repository takes: a row, the changes of one, the criteria of a list) and `mappers/read/` (rows → API response, the page of a list too). A use case gives a request it has checked (`request.data`) to its write mapper and to nothing else, and what it answers with comes from a read mapper, also where nothing is converted: there the mapper is where the compiler checks that the request and the row agree. `use-case-flow.test.ts` of the domain package reads the sources of every domain and fails when a use case leaves this flow
 - **Authentication** is the wrapper `authenticated`: it turns `Authorization: Bearer <access token>` into an `Actor` (`backend/packages/domain/src/models/auth.ts`) or answers 401. **Authorization** is decided in the use case, first, from the actor; the rules are pure functions in `business-logic/<domain>/_shared/authorization.ts`, and a refusal is `DomainErrors.forbidden()` (403). In TypeSpec a public operation has `@useAuth(NoAuth)` and `PublicErrors`, one that any signed-in user may call has `SessionErrors`, and one with a permission check has `CommonErrors`. See [docs/authentication.md](docs/authentication.md)
-- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response of the API is problem details (a system probe that fails answers 503 with its own body)
+- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. `sendProblem` tells a problem in the language of `Accept-Language` (English without it) and names it in `Content-Language`; an error whose detail the domain writes is in English as a whole (see [docs/i18n.md](docs/i18n.md)). What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response of the API is problem details (a system probe that fails answers 503 with its own body)
 - **Logging** is structured (pino): `req.log` inside a request, the injected `Logger` elsewhere, never `console`. `sendProblem` logs a `database` error with its cause; headers, bodies and bound SQL values are never logged
 - **Request ID**: `req.id` (the caller's `X-Request-Id` or a new UUID) is on every log line of the request, in the response header and in `meta.correlationId` / `correlationId`
 - **Configuration** is read once, by `parseAppConfig`, and passed down as values; application code does not read `process.env`. A new variable is added to the schema, to every `.env.*` file and to the README table

@@ -148,6 +148,7 @@ accounts and their roles are listed in
 │   └── e2e/                  # Browser tests of the applications (Playwright)
 │
 ├── shared-config/              # Shared TypeScript configuration, the build of the packages, Biome plugins
+├── shared-i18n/                # The languages (English, Japanese), how one is chosen, and the messages
 ├── scripts/                    # Repository scripts (run with node)
 └── docs/                      # Documentation
 ```
@@ -319,6 +320,14 @@ valid access token to an operation that needs one is answered with 401 and a
 `WWW-Authenticate: Bearer` header, and a signed-in user who lacks the
 permission with 403. The probes below are the one exception: a probe that
 fails answers 503 with its own body.
+
+An error is told in English or in Japanese: the `title` and the `detail` of
+the problem follow the `Accept-Language` header of the request, and
+`Content-Language` names the language of the answer. Without the header the
+answer is in English. The errors that say what was wrong with a request or
+with what it acts on (a value that breaks a rule, something that is not
+there or is there already, a state that does not allow the operation) are in
+English alone as yet. See [docs/i18n.md](docs/i18n.md).
 
 ### Probes and Shutdown
 
