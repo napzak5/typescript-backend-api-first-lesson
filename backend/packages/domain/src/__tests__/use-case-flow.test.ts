@@ -21,10 +21,14 @@ const DOMAINS = readdirSync(LOGIC, { withFileTypes: true })
   .map((entry) => entry.name)
   .toSorted()
 
-/** The sources of a domain, its shared ones among them: their paths below the domain, and their text. */
+/**
+ * The sources of a domain, its shared ones among them: their paths below
+ * the domain, and their text. The tests of the domain (`__tests__/…`) are
+ * none of its sources.
+ */
 const sourcesOf = (domain: string): [string, string][] =>
   readdirSync(join(LOGIC, domain), { recursive: true, encoding: 'utf8' })
-    .filter((file) => file.endsWith('.ts'))
+    .filter((file) => file.endsWith('.ts') && !file.startsWith('__tests__'))
     .toSorted()
     .map((file) => [file, readFileSync(join(LOGIC, domain, file), 'utf8')])
 
@@ -119,6 +123,16 @@ const FOLLOWING = `
   }
 `
 const ANSWER = 'return SalonReadMapper.toApiSalon(salon)'
+
+describe('what is read of a domain', () => {
+  it('reads its use cases and what they share, and none of its tests', () => {
+    const files = sourcesOf('salon').map(([file]) => file)
+
+    expect(files).toContain('create-salon.usecase.ts')
+    expect(files).toContain('_shared/authorization.ts')
+    expect(files.filter((file) => file.includes('__tests__'))).toEqual([])
+  })
+})
 
 describe('what is read as leaving the flow', () => {
   it('finds nothing in a use case that follows the flow', () => {
