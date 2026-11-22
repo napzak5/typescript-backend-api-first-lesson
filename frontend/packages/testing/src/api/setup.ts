@@ -15,7 +15,9 @@ import { openTestApi } from './test-api'
 // password is checked with argon2, which takes more than the second the
 // queries wait by default on a runner that runs other tests besides
 configure({ asyncUtilTimeout: 5_000 })
-vi.setConfig({ testTimeout: 30_000 })
+// What follows a test is work of the same kind: the server copies the seeded
+// database and drops the one before. It is given the time of a test
+vi.setConfig({ testTimeout: 30_000, hookTimeout: 30_000 })
 
 const api = await openTestApi(inject('testServer'))
 

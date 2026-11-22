@@ -142,15 +142,7 @@ export const renewSession = (
   return renewal
 }
 
-/**
- * What to go on with after the API said that the access token of `used`
- * belongs to no session. If another session has been stored since the request
- * was sent, the token was replaced by a renewal: that session. Otherwise the
- * session is over: it is removed, and the user is signed out.
- */
-export const sessionAfterRejectionOf = (
-  used: StoredSession,
-): StoredSession | null => {
+const afterRejectionOf = (used: StoredSession): StoredSession | null => {
   const current = sessionStore.read()
   if (current === null) {
     return null
@@ -161,4 +153,26 @@ export const sessionAfterRejectionOf = (
   sessionStore.clear()
 
   return null
+}
+
+/**
+ * What to go on with after the API said that the access token of `used`
+ * belongs to no session.
+ *
+ * The API replaces the tokens of a session when it takes the refresh token,
+ * and the session it issued is stored here when its answer has arrived: a
+ * request that reaches the API in between is told that its token belongs to
+ * no session. So the renewal that is under way, in this tab or in another, is
+ * waited for first.
+ *
+ * If another session is stored by then, the token was replaced by a renewal:
+ * that session. Otherwise the session is over: it is removed, and the user is
+ * signed out.
+ */
+export const sessionAfterRejectionOf = async (
+  used: StoredSession,
+): Promise<StoredSession | null> => {
+  await renewal
+
+  return whileNoOtherTabRenews(async () => afterRejectionOf(used))
 }

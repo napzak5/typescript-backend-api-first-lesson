@@ -494,7 +494,10 @@ describe('readSourceFiles', () => {
   })
 })
 
-describe('the styles of the frontend', () => {
+// These tests read the sources of the frontend, two of them every one: a
+// fraction of a second, and more than the 5 seconds of a test on a runner
+// that runs the tests of the other packages besides
+describe('the styles of the frontend', { timeout: 30_000 }, () => {
   // frontend/, from frontend/packages/theme/src
   const frontend = path.join(import.meta.dirname, '../../..')
 

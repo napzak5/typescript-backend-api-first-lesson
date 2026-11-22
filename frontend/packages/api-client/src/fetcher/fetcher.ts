@@ -89,7 +89,7 @@ const sessionToRetryWith = (
       .with(ModelsErrorCodeType.NUMBER_1003, () =>
         renewSession(origin, session),
       )
-      .with(ModelsErrorCodeType.NUMBER_1004, async () =>
+      .with(ModelsErrorCodeType.NUMBER_1004, () =>
         sessionAfterRejectionOf(session),
       )
       .otherwise(async () => null)
@@ -113,7 +113,10 @@ const sessionToRetryWith = (
  * gets the answer to that second request. When the session cannot be renewed
  * the caller gets the 401, and where the API said that the session is over,
  * the stored session is gone: whoever listens to `sessionStore` sees the user
- * signed out.
+ * signed out. When the API answers that the token belongs to no session, a
+ * renewal that is under way is waited for: if it stored another session, the
+ * request is sent once more with that one, and otherwise the stored session
+ * is gone in the same way.
  *
  * `T` is the response type that the generated code names for the operation.
  * The body is not checked against it at runtime: the OpenAPI document that
