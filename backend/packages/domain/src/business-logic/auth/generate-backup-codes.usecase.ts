@@ -1,4 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserReadMapper } from '../../mappers/read/user.mapper'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type {
   Actor,
   ApiAuthTwoFactorBackupCodesResponse,
@@ -38,6 +40,9 @@ export class GenerateBackupCodesUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { code } = UserWriteMapper.fromTwoFactorBackupCodesRequest(
+      request.data,
+    )
 
     const {
       userRepository,
@@ -62,7 +67,7 @@ export class GenerateBackupCodesUseCase {
     const checked = await checkSecondFactor(
       this.dependencies,
       user,
-      request.data.code,
+      code,
       clock(),
     )
     if (checked.type === 'error') {
@@ -98,6 +103,6 @@ export class GenerateBackupCodesUseCase {
     }
     mailer.deliver(backupCodesRegeneratedMail(user.email))
 
-    return Result.success({ backupCodes })
+    return Result.success(UserReadMapper.toApiTwoFactorBackupCodes(backupCodes))
   }
 }

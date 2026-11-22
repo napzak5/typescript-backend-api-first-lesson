@@ -1,7 +1,7 @@
 import type { components } from '@beauty-salon-backend/generated'
 
 // API types, generated from TypeSpec
-export type ApiPaginationMeta = components['schemas']['Models.PaginationMeta']
+type ApiPaginationMeta = components['schemas']['Models.PaginationMeta']
 
 /** A page of a list, as the API presents it: its items, and where the list goes on. */
 export type ApiPage<Item> = {

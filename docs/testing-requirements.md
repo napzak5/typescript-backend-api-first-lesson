@@ -45,7 +45,7 @@ What the repository does not have:
 | Request schemas: every rule, with a value that passes and one that breaks it | Unit | `backend/packages/domain/src/__tests__/salon.schema.test.ts`, `auth.schema.test.ts`, `service-category.schema.test.ts`, `service.schema.test.ts`; the rules that the schemas share in `schema-rules.test.ts`, the IDs of a path in `path-parameters.test.ts` |
 | Rules that tie two properties of a request together, as the pure function that the use case and the repository both call: every rule kept and broken | Unit | `backend/packages/domain/src/__tests__/service.rules.test.ts` |
 | Mappers: both directions, `null` kept as `null`, the changes of representation, and the columns that must not reach a response left out | Unit | `backend/packages/domain/src/__tests__/salon.mapper.test.ts`, `user.mapper.test.ts`, `service.mapper.test.ts` |
-| The flow of the use cases, read from their sources: a request that was checked goes to the write mapper of its domain and nowhere else, what the API answers with comes from a read mapper, the page of a list is made by the mappers, and a mapper file of one side has one of the same name on the other. The domains and the mappers that are not there yet are two lists in the test, and a listed domain that follows the flow fails it | Unit | `backend/packages/domain/src/__tests__/use-case-flow.test.ts` |
+| The flow of the use cases, read from their sources: a request that was checked goes to the write mapper of its domain and nowhere else, what the API answers with comes from a read mapper, the page of a list is made by the mappers, and a mapper file of one side has one of the same name on the other. The test reads every domain, and shows on sample sources what it reads as leaving the flow | Unit | `backend/packages/domain/src/__tests__/use-case-flow.test.ts` |
 | Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the interfaces the use case depends on stubbed | `backend/packages/domain/src/__tests__/salon.usecase.test.ts`, `auth.usecase.test.ts`, `service-category.usecase.test.ts`, `service.usecase.test.ts` |
 | Permission rules: every kind of actor, allowed or refused, and the repository left untouched by a refused one | Unit, through the use cases | `describe('who may change a salon', …)` in `backend/packages/domain/src/__tests__/salon.usecase.test.ts` |
 | Password hashing, the generation of tokens, and the secrets, one-time passwords and backup codes of two-factor authentication | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
@@ -241,7 +241,7 @@ A new domain follows the Salon tests file by file:
 
 - [ ] Schema tests: every rule of every request schema, accepted and rejected
 - [ ] Mapper tests: write and read mappers, including `null`, every change of representation, the criteria of a list (a filter the request does not name, and one whose value is `false` or 0) and the page of a list
-- [ ] The domain is in neither list of `use-case-flow.test.ts`
+- [ ] `use-case-flow.test.ts` passes: it reads the new domain as it reads every other, without being told of it
 - [ ] Use case tests: success, each error passed on, no repository call on invalid input; for an operation that is not public, every kind of actor allowed or refused
 - [ ] `backend/packages/api/src/__tests__/<domain>.integration.test.ts` meeting the [requirements per endpoint](#requirements-per-endpoint)
 - [ ] `pnpm test` and `pnpm test:integration` pass

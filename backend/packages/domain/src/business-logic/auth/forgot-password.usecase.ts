@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authPasswordForgotRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
@@ -29,7 +30,7 @@ export class ForgotPasswordUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { email } = request.data
+    const { email } = UserWriteMapper.fromPasswordForgotRequest(request.data)
 
     const { userRepository, tokenIssuer, mailer, publicAppUrl, clock } =
       this.dependencies

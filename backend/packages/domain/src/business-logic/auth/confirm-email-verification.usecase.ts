@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authEmailVerificationConfirmRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
@@ -21,10 +22,13 @@ export class ConfirmEmailVerificationUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { token } = UserWriteMapper.fromEmailVerificationConfirmRequest(
+      request.data,
+    )
 
     const { userRepository, tokenIssuer, clock } = this.dependencies
     const confirmed = await userRepository.confirmEmail(
-      tokenIssuer.hashOf(request.data.token),
+      tokenIssuer.hashOf(token),
       clock().toISOString(),
     )
     if (confirmed.type === 'error') {

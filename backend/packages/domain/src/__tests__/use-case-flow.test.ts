@@ -15,16 +15,6 @@ import { describe, expect, it } from 'vitest'
 const SOURCES = join(import.meta.dirname, '..')
 const LOGIC = join(SOURCES, 'business-logic')
 
-/**
- * The domains whose use cases do not follow the flow yet. A domain is taken
- * off this list by the change that makes it follow: one that follows and is
- * still listed fails below.
- */
-const NOT_YET = ['auth']
-
-/** The read mappers that have no write mapper of their name yet. */
-const WITHOUT_WRITE_MAPPER = ['session', 'user']
-
 /** The folders of `business-logic` that hold the use cases of a domain. */
 const DOMAINS = readdirSync(LOGIC, { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && !entry.name.startsWith('_'))
@@ -109,22 +99,135 @@ const mappersOf = (side: 'read' | 'write'): string[] =>
     .toSorted()
 
 describe('the flow of a use case', () => {
-  it.each(DOMAINS.filter((domain) => !NOT_YET.includes(domain)))(
+  it.each(DOMAINS)(
     '%s: a checked request goes to a write mapper alone, and an answer comes from a read mapper',
     (domain) => {
       expect(departuresIn(domain)).toEqual([])
     },
   )
+})
 
-  it.each(NOT_YET)(
-    '%s is listed because it does not follow the flow yet',
-    (domain) => {
-      expect(departuresIn(domain)).not.toEqual([])
-    },
-  )
+/** A use case that follows the flow, as the sources write one. */
+const FOLLOWING = `
+  async execute(
+    actor: Actor,
+    input: unknown,
+  ): Promise<Result<ApiSalonResponse, DomainError>> {
+    const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+    const { salon } = SalonWriteMapper.fromCreateRequest(request.data)
+    return SalonReadMapper.toApiSalon(salon)
+  }
+`
+const ANSWER = 'return SalonReadMapper.toApiSalon(salon)'
 
-  it('lists no domain that is not there', () => {
-    expect(NOT_YET.filter((domain) => !DOMAINS.includes(domain))).toEqual([])
+describe('what is read as leaving the flow', () => {
+  it('finds nothing in a use case that follows the flow', () => {
+    expect(departuresOf('create-salon.usecase.ts', FOLLOWING, [])).toEqual([])
+  })
+
+  it.each<[string, string, string, string]>([
+    [
+      'a checked request under another name',
+      'const request = parseWith(',
+      'const parsed = parseWith(',
+      'a request that was checked is not named `request`',
+    ],
+    [
+      'a checked request that is read beside its write mapper',
+      ANSWER,
+      `log(request.data.name)\n    ${ANSWER}`,
+      'a request that was checked goes past its write mapper',
+    ],
+    [
+      'a checked request that is given to something else than a write mapper',
+      'SalonWriteMapper.fromCreateRequest(request.data)',
+      'planSalon(request.data)',
+      'a request that was checked goes past its write mapper',
+    ],
+    [
+      'a page that the use case makes',
+      ANSWER,
+      'return Result.map(SalonReadMapper.toApiSalons(salons), (data) => ({ data, meta: { prevCursor: null } }))',
+      'a page of a list is made outside the mappers',
+    ],
+    [
+      'a number of items that the use case decides',
+      'const { salon }',
+      'const limit = request.limit ?? DEFAULT_LIMIT\n    const { salon }',
+      'a page of a list is made outside the mappers',
+    ],
+    [
+      'an answer that no read mapper makes',
+      ANSWER,
+      'return Result.success(salon)',
+      'an answer of the API is made without a read mapper',
+    ],
+    [
+      'an answer for which a read mapper only reads a stored value',
+      ANSWER,
+      'return Result.success(SalonReadMapper.toBusinessHours(salon))',
+      'an answer of the API is made without a read mapper',
+    ],
+  ])('finds %s', (_departure, followed, left, message) => {
+    expect(
+      departuresOf(
+        'create-salon.usecase.ts',
+        FOLLOWING.replace(followed, left),
+        [],
+      ),
+    ).toEqual([`create-salon.usecase.ts: ${message}`])
+  })
+
+  it('reads the shared sources of its domain that a source imports, and no other source', () => {
+    expect(
+      sharedSourcesOf(
+        [
+          "import { SalonReadMapper } from '../../mappers/read/salon.mapper'",
+          "import { answerWith } from './_shared/answer'",
+          "import { planOf } from './_shared/opening-plan'",
+          "import { ListSalonsUseCase } from './list-salons.usecase'",
+        ].join('\n'),
+        [
+          ['_shared/answer.ts', 'the source of the answer'],
+          ['_shared/authorization.ts', 'the source of the permissions'],
+          ['_shared/opening-plan.ts', 'the source of the plan'],
+          ['create-salon.usecase.ts', 'the source itself'],
+          ['list-salons.usecase.ts', 'the source of another use case'],
+        ],
+      ),
+    ).toEqual(['the source of the answer', 'the source of the plan'])
+  })
+
+  it('lets a shared source of the domain make the answer', () => {
+    expect(
+      departuresOf(
+        'create-salon.usecase.ts',
+        FOLLOWING.replace(ANSWER, 'return answerWith(salon)'),
+        [
+          'export const answerWith = (salon) => SalonReadMapper.toApiSalon(salon)',
+        ],
+      ),
+    ).toEqual([])
+  })
+
+  it('asks no read mapper of a use case that answers with no model of the API, nor of a source that is no use case', () => {
+    expect(
+      departuresOf(
+        'delete-salon.usecase.ts',
+        FOLLOWING.replace('ApiSalonResponse', 'null').replace(
+          ANSWER,
+          'return Result.success(null)',
+        ),
+        [],
+      ),
+    ).toEqual([])
+    expect(
+      departuresOf(
+        '_shared/plan.ts',
+        FOLLOWING.replace(ANSWER, 'return Result.success(salon)'),
+        [],
+      ),
+    ).toEqual([])
   })
 })
 
@@ -137,11 +240,11 @@ describe('the two sides of the mappers', () => {
     )
   })
 
-  it('has a write mapper for every read mapper, but for those that are listed', () => {
+  it('has a write mapper for every read mapper', () => {
     const write = mappersOf('write')
 
     expect(mappersOf('read').filter((name) => !write.includes(name))).toEqual(
-      WITHOUT_WRITE_MAPPER,
+      [],
     )
   })
 })

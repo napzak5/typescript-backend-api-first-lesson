@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authPasswordResetVerifyRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
@@ -20,10 +21,13 @@ export class VerifyResetTokenUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { token } = UserWriteMapper.fromPasswordResetVerifyRequest(
+      request.data,
+    )
 
     const { userRepository, tokenIssuer, clock } = this.dependencies
     const found = await userRepository.findByPasswordResetToken(
-      tokenIssuer.hashOf(request.data.token),
+      tokenIssuer.hashOf(token),
       clock().toISOString(),
     )
     if (found.type === 'error') {

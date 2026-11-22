@@ -1,11 +1,13 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserReadMapper } from '../../mappers/read/user.mapper'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type { Actor, ApiAuthTwoFactorSetupResponse } from '../../models/auth'
 import { authTwoFactorEnableRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
 import { checkPassword } from './_shared/password-check'
 import { sessionGone } from './_shared/session-gone'
-import { hashBackupCodes, otpauthUri } from './_shared/two-factor-setup'
+import { hashBackupCodes } from './_shared/two-factor-setup'
 
 const MESSAGE = 'Invalid two-factor authentication setup'
 
@@ -32,6 +34,9 @@ export class EnableTwoFactorUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { password } = UserWriteMapper.fromTwoFactorEnableRequest(
+      request.data,
+    )
 
     const { userRepository, passwordHasher, twoFactorAuthenticator, clock } =
       this.dependencies
@@ -48,7 +53,7 @@ export class EnableTwoFactorUseCase {
     const checked = await checkPassword(
       this.dependencies,
       user,
-      request.data.password,
+      password,
       clock(),
     )
     if (checked.type === 'error') {
@@ -85,11 +90,9 @@ export class EnableTwoFactorUseCase {
     }
 
     return started.data
-      ? Result.success({
-          qrCodeUrl: otpauthUri(user.email, secret),
-          secret,
-          backupCodes,
-        })
+      ? Result.success(
+          UserReadMapper.toApiTwoFactorSetup(user.email, secret, backupCodes),
+        )
       : alreadyEnabled
   }
 }

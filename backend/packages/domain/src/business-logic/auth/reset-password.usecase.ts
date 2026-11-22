@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authPasswordResetConfirmRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
@@ -27,7 +28,8 @@ export class ResetPasswordUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { token, newPassword } = request.data
+    const { token, newPassword } =
+      UserWriteMapper.fromPasswordResetConfirmRequest(request.data)
 
     const { userRepository, passwordHasher, tokenIssuer, mailer, clock } =
       this.dependencies

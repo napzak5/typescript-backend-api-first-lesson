@@ -335,7 +335,7 @@ Schemas are run through `parseWith(schema, input, message)` in `backend/packages
 
 Property names are the column names, so a mapper never renames. It converts the representation of three kinds of column: `numeric`, `timestamp` and `jsonb` (step 3).
 
-A domain has a mapper on each side, also where nothing is converted. A use case gives a request it has checked to its write mapper and to nothing else, and what it answers with comes from a read mapper (step 9). The domains that are not there yet are listed in `backend/packages/domain/src/__tests__/use-case-flow.test.ts`.
+A domain has a mapper on each side, also where nothing is converted. A use case gives a request it has checked to its write mapper and to nothing else, and what it answers with comes from a read mapper (step 9). `backend/packages/domain/src/__tests__/use-case-flow.test.ts` fails when a mapper file of one side has none of the same name on the other.
 
 API request → rows (`backend/packages/domain/src/mappers/write/salon.mapper.ts`):
 
@@ -672,7 +672,7 @@ export class UpdateSalonUseCase {
 - **The use case decides what "not found" is.** The repository reported `null`; the use case names the entity and the ID.
 - **No uniqueness check here.** The use case relies on the repository to report `alreadyExists` (step 8).
 - **The return value is the API model**, mapped from the rows the repository read back.
-- **The request is used once.** `request.data` goes to the write mapper and nowhere else; every later step works with what the mapper returned. `backend/packages/domain/src/__tests__/use-case-flow.test.ts` reads the sources of the use cases and fails when one leaves this flow. A use case may leave its answer to a shared source of its domain (`./_shared/…`) that calls the read mapper, as the four use cases of the customer preferences and the actions on the status of a booking do. What makes an answer is a function of a read mapper named `toApi…`: one that reads a stored value for a rule (`SalonReadMapper.toBusinessHours`) does not count. The domains that do not follow the flow yet are listed in that test.
+- **The request is used once.** `request.data` goes to the write mapper and nowhere else; every later step works with what the mapper returned. `backend/packages/domain/src/__tests__/use-case-flow.test.ts` reads the sources of the use cases and fails when one leaves this flow. A use case may leave its answer to a shared source of its domain (`./_shared/…`) that calls the read mapper, as the four use cases of the customer preferences and the actions on the status of a booking do. What makes an answer is a function of a read mapper named `toApi…`: one that reads a stored value for a rule (`SalonReadMapper.toBusinessHours`) does not count. The test reads every domain, and shows on sample sources what it reads as leaving the flow.
 
 | Use case | `execute` | Permission | Success data |
 |----------|-----------|------------|--------------|

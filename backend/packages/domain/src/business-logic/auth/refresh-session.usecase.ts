@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { parseISO } from 'date-fns'
-import { UserReadMapper } from '../../mappers/read/user.mapper'
+import { SessionReadMapper } from '../../mappers/read/session.mapper'
+import { SessionWriteMapper } from '../../mappers/write/session.mapper'
 import type { ApiAuthLoginResponse } from '../../models/auth'
 import { authTokenRefreshRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -34,10 +35,13 @@ export class RefreshSessionUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { refreshToken } = SessionWriteMapper.fromTokenRefreshRequest(
+      request.data,
+    )
 
     const { sessionRepository, tokenIssuer, clock } = this.dependencies
     const now = clock()
-    const refreshTokenHash = tokenIssuer.hashOf(request.data.refreshToken)
+    const refreshTokenHash = tokenIssuer.hashOf(refreshToken)
 
     const found =
       await sessionRepository.findByRefreshTokenHash(refreshTokenHash)
@@ -69,12 +73,6 @@ export class RefreshSessionUseCase {
       return refreshFailed
     }
 
-    return Result.map(UserReadMapper.toApiUser(account.user), (apiUser) => ({
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      token: 'Bearer',
-      expiresIn: tokens.expiresIn,
-      user: apiUser,
-    }))
+    return SessionReadMapper.toApiLogin(tokens, account.user)
   }
 }

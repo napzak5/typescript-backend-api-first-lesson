@@ -1,12 +1,19 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import type { IssuedSessionTokens } from '../../business-logic/auth/_shared/session-policy'
 import type {
+  ApiAuthLoginResponse,
   ApiSessionResponse,
   DbSession,
+  DbUser,
   SessionId,
 } from '../../models/auth'
+import type { ApiPage, Paging } from '../../models/page'
+import type { SessionList } from '../../repositories/session.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { timestampSchema } from './columns'
+import { toApiPage } from './page'
+import { UserReadMapper } from './user.mapper'
 
 /**
  * A row of `sessions` → API response. The columns that go out are named one
@@ -68,5 +75,35 @@ export const SessionReadMapper = {
       apiSessions.push(mapped.data)
     }
     return Result.success(apiSessions)
+  },
+
+  /** The sessions a list found as a page of it; `currentSessionId` is the one that asks. */
+  toApiSessionPage(
+    { sessions, total, hasMore }: SessionList,
+    paging: Paging<SessionId>,
+    currentSessionId: SessionId,
+  ): Result<ApiPage<ApiSessionResponse>, DomainError> {
+    return Result.map(
+      SessionReadMapper.toApiSessions(sessions, currentSessionId),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
+  },
+
+  /**
+   * What a login and a refresh answer with: the tokens of the session as
+   * they were issued, which is the only time they are shown, and the
+   * account they are for. What is stored of the tokens is left out.
+   */
+  toApiLogin(
+    { accessToken, refreshToken, expiresIn }: IssuedSessionTokens,
+    user: DbUser,
+  ): Result<ApiAuthLoginResponse, DomainError> {
+    return Result.map(UserReadMapper.toApiUser(user), (apiUser) => ({
+      accessToken,
+      refreshToken,
+      token: 'Bearer',
+      expiresIn,
+      user: apiUser,
+    }))
   },
 }

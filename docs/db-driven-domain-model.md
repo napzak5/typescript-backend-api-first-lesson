@@ -190,7 +190,7 @@ DB の型と API の型は、2 つのマッパーでつなぐ。
 - 入力の検証はマッパーの仕事ではない。ユースケースが Zod スキーマで検証したあとの値を、Write マッパーが受け取る
 - Read マッパーは `Result` を返す。保存されている値が API のモデルに合わなければ `database` エラーになる
 - null を空文字や既定値に読み替えない
-- Write マッパーは、どのドメインにもある。ユースケースは、検証済みのリクエストを Write マッパーに渡し、ほかの所では使わない。Write マッパーが返すのは、リポジトリが受け取るもの（新しい行、変更、一覧の条件）である。まだそうなっていないドメインは、`backend/packages/domain/src/__tests__/use-case-flow.test.ts` の一覧にある
+- Write マッパーは、どのドメインにもある。ユースケースは、検証済みのリクエストを Write マッパーに渡し、ほかの所では使わない。Write マッパーが返すのは、リポジトリが受け取るもの（新しい行、変更、一覧の条件）である。`backend/packages/domain/src/__tests__/use-case-flow.test.ts` が、すべてのドメインのユースケースのソースを読んで、これを確かめる
 - Write マッパーがリクエストを作り替えるのは、リクエストで書けるカラムに表現を変えるものがあるときと、リクエストが複数のテーブルの行を含むときだけである。サービスカテゴリーにはどちらもないので、`ServiceCategoryWriteMapper`（`backend/packages/domain/src/mappers/write/service-category.mapper.ts`）は、リクエストをそのまま行として返す。プロパティ名と表現が行と一致していることを、型検査がここで確認する。Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）は、タイムスタンプを変換する
 - サービスにも表現を変えるカラムはないが、リクエストが `services` の行と、オプション（`service_options`）の行を含む。`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）は値を変換せず、この 2 つを分ける
 - 顧客にも表現を変えるカラムはなく、リクエストは `customers` の 1 行である。`CustomerWriteMapper`（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）は何も変換せず、リクエストをそのまま行として返す。プロパティ名と表現が行と一致していることを、型検査がここで確認する。Read マッパー（`backend/packages/domain/src/mappers/read/customer.mapper.ts`）は、タイムスタンプのほかに、`jsonb` の `preferences` と、DB では文字列で API では Enum の `gender` を検査する

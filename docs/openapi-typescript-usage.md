@@ -45,7 +45,6 @@ export type ApiSalonSearchRequest = NonNullable<
 >
 export type ApiOpeningHours = components['schemas']['Models.OpeningHours']
 export type ApiBusinessHours = components['schemas']['Models.BusinessHours']
-export type ApiPaginationMeta = components['schemas']['Models.PaginationMeta']
 ```
 
 - API 型には `Api`、Drizzle スキーマから推論した DB 型には `Db` の接頭辞を付けます（`DbSalon`、`DbNewSalon`）。どちらも推論・参照だけで、手書きの型定義はありません。

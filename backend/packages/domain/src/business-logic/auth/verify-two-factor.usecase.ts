@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type { Actor } from '../../models/auth'
 import { authTwoFactorVerifyRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -30,6 +31,7 @@ export class VerifyTwoFactorUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { code } = UserWriteMapper.fromTwoFactorVerifyRequest(request.data)
 
     const { userRepository, mailer, clock } = this.dependencies
 
@@ -46,12 +48,7 @@ export class VerifyTwoFactorUseCase {
       return nothingPending
     }
 
-    const checked = await checkAppCode(
-      this.dependencies,
-      user,
-      request.data.code,
-      clock(),
-    )
+    const checked = await checkAppCode(this.dependencies, user, code, clock())
     if (checked.type === 'error') {
       return checked
     }
