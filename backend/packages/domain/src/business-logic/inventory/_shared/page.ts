@@ -4,7 +4,7 @@ import type {
   ApiInventoryResponse,
   InventoryId,
 } from '../../../models/inventory'
-import type { ApiPaginationMeta } from '../../../models/salon'
+import type { ApiPaginationMeta } from '../../../models/page'
 import type { InventoryList } from '../../../repositories/inventory.repository'
 import { type DomainError, DomainErrors } from '../../../shared'
 

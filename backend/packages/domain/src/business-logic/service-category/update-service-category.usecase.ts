@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { ServiceCategoryReadMapper } from '../../mappers/read/service-category.mapper'
+import { ServiceCategoryWriteMapper } from '../../mappers/write/service-category.mapper'
 import type { Actor } from '../../models/auth'
 import { parseSalonIdOfPath } from '../../models/salon'
 import {
@@ -62,7 +63,7 @@ export class UpdateServiceCategoryUseCase {
     const updated = await serviceCategoryRepository.update(
       salonId.data,
       categoryId.data,
-      request.data,
+      ServiceCategoryWriteMapper.fromUpdateRequest(request.data),
     )
     if (updated.type === 'error') {
       return updated

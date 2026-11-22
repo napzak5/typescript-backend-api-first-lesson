@@ -6,7 +6,7 @@ import {
   type ApiInventoryTransactionResponse,
   parseInventoryId,
 } from '../../models/inventory'
-import type { ApiPaginationMeta } from '../../models/salon'
+import type { ApiPaginationMeta } from '../../models/page'
 import { inventoryTransactionSearchRequestSchema } from '../../schemas/inventory.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { inventoryReachOf } from './_shared/authorization'

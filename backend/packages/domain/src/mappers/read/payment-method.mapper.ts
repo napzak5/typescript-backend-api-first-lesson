@@ -1,11 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import type { ApiPage, Paging } from '../../models/page'
 import type {
   ApiPaymentMethodResponse,
   DbPaymentMethod,
+  PaymentMethodId,
 } from '../../models/payment-method'
+import type { PaymentMethodList } from '../../repositories/payment-method.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * A row of `payment_methods` → API response. Property names are the column
@@ -77,5 +81,16 @@ export const PaymentMethodReadMapper = {
       apiPaymentMethods.push(mapped.data)
     }
     return Result.success(apiPaymentMethods)
+  },
+
+  /** The payment methods of a list as a page of it. */
+  toApiPaymentMethodPage(
+    { paymentMethods, total, hasMore }: PaymentMethodList,
+    paging: Paging<PaymentMethodId>,
+  ): Result<ApiPage<ApiPaymentMethodResponse>, DomainError> {
+    return Result.map(
+      PaymentMethodReadMapper.toApiPaymentMethods(paymentMethods),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

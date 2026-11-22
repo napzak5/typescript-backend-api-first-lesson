@@ -60,3 +60,6 @@ export const staffSearchRequestSchema = z.strictObject({
   limit: z.number().int().min(1).max(100).exactOptional(),
   cursor: staffIdSchema.exactOptional(),
 }) satisfies z.ZodType<ApiStaffSearchRequest>
+
+/** A search that was checked: its cursor is the ID of a staff member. */
+export type StaffSearchRequest = z.infer<typeof staffSearchRequestSchema>

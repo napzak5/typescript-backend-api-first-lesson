@@ -1,18 +1,13 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { StaffProfileReadMapper } from '../../mappers/read/staff-profile.mapper'
-import type { ApiPaginationMeta } from '../../models/salon'
+import { StaffProfileWriteMapper } from '../../mappers/write/staff-profile.mapper'
+import type { ApiPage } from '../../models/page'
 import type { ApiStaffProfileResponse } from '../../models/staff-profile'
 import { staffProfileSearchRequestSchema } from '../../schemas/staff-profile.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import type { StaffProfileUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid staff profile search'
-
-export type StaffProfilePage = {
-  data: ApiStaffProfileResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListStaffProfilesUseCase {
   constructor(private readonly dependencies: StaffProfileUseCaseDependencies) {}
@@ -26,21 +21,14 @@ export class ListStaffProfilesUseCase {
    */
   async execute(
     input: unknown,
-  ): Promise<Result<StaffProfilePage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiStaffProfileResponse>, DomainError>> {
     const request = parseWith(staffProfileSearchRequestSchema, input, MESSAGE)
     if (request.type === 'error') {
       return request
     }
-    const { cursor, salonId, specialty, city } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = StaffProfileWriteMapper.fromSearchRequest(request.data)
 
-    const listed = await this.dependencies.staffProfileRepository.list({
-      limit,
-      after: cursor ?? null,
-      salonId: salonId ?? null,
-      specialty: specialty ?? null,
-      city: city ?? null,
-    })
+    const listed = await this.dependencies.staffProfileRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -56,20 +44,8 @@ export class ListStaffProfilesUseCase {
       )
     }
 
-    const { profiles, total, hasMore } = listed.data
-    const lastStaffId = profiles.at(-1)?.id ?? null
-
-    return Result.success({
-      data: profiles.map(StaffProfileReadMapper.toApiStaffProfile),
-      meta: {
-        total,
-        limit,
-        hasMore,
-        cursor: cursor ?? null,
-        nextCursor: hasMore ? lastStaffId : null,
-        // Pages are only walked forwards.
-        prevCursor: null,
-      },
-    })
+    return Result.success(
+      StaffProfileReadMapper.toApiStaffProfilePage(listed.data, criteria),
+    )
   }
 }

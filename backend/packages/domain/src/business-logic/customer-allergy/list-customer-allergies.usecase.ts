@@ -6,7 +6,7 @@ import {
   type ApiCustomerAllergyResponse,
   parseAllergyCustomerId,
 } from '../../models/customer-allergy'
-import type { ApiPaginationMeta } from '../../models/salon'
+import type { ApiPaginationMeta } from '../../models/page'
 import { customerAllergySearchRequestSchema } from '../../schemas/customer-allergy.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayHandleCustomers } from '../customer/_shared/authorization'

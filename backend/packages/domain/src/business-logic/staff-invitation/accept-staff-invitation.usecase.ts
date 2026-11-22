@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
+import { StaffInvitationWriteMapper } from '../../mappers/write/staff-invitation.mapper'
 import { authStaffInvitationAcceptRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { blocklistIssue } from '../auth/_shared/password-blocklist'
@@ -31,7 +32,9 @@ export class AcceptStaffInvitationUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { token, password } = request.data
+    const { token, password } = StaffInvitationWriteMapper.fromAcceptRequest(
+      request.data,
+    )
 
     const { staffInvitationRepository, passwordHasher, tokenIssuer, clock } =
       this.dependencies

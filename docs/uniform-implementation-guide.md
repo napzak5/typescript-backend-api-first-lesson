@@ -243,26 +243,37 @@ Lists use keyset pagination. There is no page number and no offset.
 | Response | `meta.prevCursor` | Always `null`: pages are only walked forwards |
 | Response | `links` | `self`, `first` and `next` as URLs that keep the filters (`next` is `null` on the last page); `prev` and `last` are always `null` |
 
-The use case builds `meta`:
+The mappers make the place of the page and the page, the same way for every list:
 
 ```typescript
-// backend/packages/domain/src/business-logic/salon/list-salons.usecase.ts
-const { salons, total, hasMore } = listed.data
-const lastSalonId = salons.at(-1)?.salon.id ?? null
+// backend/packages/domain/src/mappers/write/page.ts: the request → where the page starts
+export const toPaging = <Id>(request: {
+  limit?: number
+  cursor?: Id
+}): Paging<Id> => ({
+  limit: request.limit ?? DEFAULT_LIMIT,
+  after: request.cursor ?? null,
+})
 
-return Result.map(SalonReadMapper.toApiSalons(salons), (data) => ({
+// backend/packages/domain/src/mappers/read/page.ts: the items of the list → the page
+export const toApiPage = <Item extends { id: string }>(
+  data: Item[],
+  { total, hasMore }: { total: number; hasMore: boolean },
+  { limit, after }: Paging<string>,
+): ApiPage<Item> => ({
   data,
   meta: {
     total,
     limit,
     hasMore,
-    cursor: cursor ?? null,
-    nextCursor: hasMore ? lastSalonId : null,
-    // Pages are only walked forwards.
+    cursor: after,
+    nextCursor: hasMore ? (data.at(-1)?.id ?? null) : null,
     prevCursor: null,
   },
-}))
+})
 ```
+
+A use case calls neither: the write mapper of its domain makes the criteria of the list (`SalonWriteMapper.fromSearchRequest`) and the read mapper makes the page (`SalonReadMapper.toApiSalonPage`). A list that has not been changed to this yet builds `meta` in its use case, with the same values.
 
 The salon repository orders by `(createdAt, id)` descending, starts after
 the row the cursor names, and reads one row more than the limit to learn

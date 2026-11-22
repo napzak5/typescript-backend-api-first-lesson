@@ -4,7 +4,7 @@ import { CustomerVersionReadMapper } from '../../mappers/read/customer-version.m
 import type { Actor } from '../../models/auth'
 import { parseCustomerId } from '../../models/customer'
 import type { ApiCustomerHistoryEntryResponse } from '../../models/customer-version'
-import type { ApiPaginationMeta } from '../../models/salon'
+import type { ApiPaginationMeta } from '../../models/page'
 import { customerVersionSearchRequestSchema } from '../../schemas/customer-version.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayDeleteCustomers } from '../customer/_shared/authorization'

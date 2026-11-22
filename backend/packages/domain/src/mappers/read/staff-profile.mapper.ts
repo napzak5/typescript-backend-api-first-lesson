@@ -1,7 +1,11 @@
+import type { ApiPage, Paging } from '../../models/page'
+import type { StaffId } from '../../models/staff'
 import type {
   ApiStaffProfileResponse,
   DbStaffProfile,
 } from '../../models/staff-profile'
+import type { StaffProfileList } from '../../repositories/staff-profile.repository'
+import { toApiPage } from './page'
 
 /**
  * A row of `staff` → the profile customers are shown. Every property is
@@ -25,5 +29,17 @@ export const StaffProfileReadMapper = {
       certifications: profile.certifications,
       canReceiveBookings: profile.canReceiveBookings,
     }
+  },
+
+  /** The profiles of a list as a page of it. */
+  toApiStaffProfilePage(
+    { profiles, total, hasMore }: StaffProfileList,
+    paging: Paging<StaffId>,
+  ): ApiPage<ApiStaffProfileResponse> {
+    return toApiPage(
+      profiles.map(StaffProfileReadMapper.toApiStaffProfile),
+      { total, hasMore },
+      paging,
+    )
   },
 }

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { StaffReadMapper } from '../mappers/read/staff.mapper'
 import { StaffWriteMapper } from '../mappers/write/staff.mapper'
+import { salonIdSchema } from '../models/salon'
+import { staffIdSchema } from '../models/staff'
+import { staffSearchRequestSchema } from '../schemas/staff.schema'
 import { USER_ID } from './auth-fixtures'
+import { SALON_ID } from './fixtures'
 import {
   apiStaff,
   dbStaff,
@@ -279,6 +283,72 @@ describe('StaffReadMapper.toApiStaffList', () => {
         type: 'database',
         message: `Stored staff member ${OTHER_STAFF_MEMBER_ID} does not match the API model`,
       },
+    })
+  })
+})
+
+describe('StaffReadMapper.toApiStaffPage', () => {
+  it('answers with the staff members of the list and where the list goes on', () => {
+    const result = StaffReadMapper.toApiStaffPage(
+      {
+        staff: [dbStaff(), dbStaff({ id: OTHER_STAFF_MEMBER_ID })],
+        total: 6,
+        hasMore: true,
+      },
+      { limit: 2, after: staffIdSchema.parse(STAFF_MEMBER_ID) },
+    )
+
+    expect(result).toMatchObject({
+      type: 'success',
+      data: {
+        data: [{ id: STAFF_MEMBER_ID }, { id: OTHER_STAFF_MEMBER_ID }],
+        meta: {
+          total: 6,
+          limit: 2,
+          hasMore: true,
+          cursor: STAFF_MEMBER_ID,
+          nextCursor: OTHER_STAFF_MEMBER_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('fails as a whole when one stored staff member is invalid', () => {
+    const result = StaffReadMapper.toApiStaffPage(
+      {
+        staff: [dbStaff({ updatedAt: 'recently' })],
+        total: 1,
+        hasMore: false,
+      },
+      { limit: 20, after: null },
+    )
+
+    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+  })
+})
+
+describe('StaffWriteMapper.fromSearchRequest', () => {
+  const salonId = salonIdSchema.parse(SALON_ID)
+
+  it('asks for the first 20 staff members of the salon when the request names nothing', () => {
+    expect(StaffWriteMapper.fromSearchRequest({}, salonId)).toEqual({
+      salonId: SALON_ID,
+      limit: 20,
+      after: null,
+    })
+  })
+
+  it('takes the place the request names', () => {
+    const request = staffSearchRequestSchema.parse({
+      limit: 3,
+      cursor: STAFF_MEMBER_ID,
+    })
+
+    expect(StaffWriteMapper.fromSearchRequest(request, salonId)).toEqual({
+      salonId: SALON_ID,
+      limit: 3,
+      after: STAFF_MEMBER_ID,
     })
   })
 })

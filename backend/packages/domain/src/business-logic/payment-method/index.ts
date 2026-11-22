@@ -3,8 +3,5 @@ export { limitsAfter, limitsAreInOrder } from './_shared/limits'
 export { CreatePaymentMethodUseCase } from './create-payment-method.usecase'
 export { DeletePaymentMethodUseCase } from './delete-payment-method.usecase'
 export { GetPaymentMethodUseCase } from './get-payment-method.usecase'
-export {
-  ListPaymentMethodsUseCase,
-  type PaymentMethodPage,
-} from './list-payment-methods.usecase'
+export { ListPaymentMethodsUseCase } from './list-payment-methods.usecase'
 export { UpdatePaymentMethodUseCase } from './update-payment-method.usecase'

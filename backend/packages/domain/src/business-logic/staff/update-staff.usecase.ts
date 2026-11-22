@@ -46,10 +46,8 @@ export class UpdateStaffUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (
-      request.data.isActive === false &&
-      isOwnStaffRecord(actor, staffId.data)
-    ) {
+    const changes = StaffWriteMapper.fromUpdateRequest(request.data)
+    if (changes.isActive === false && isOwnStaffRecord(actor, staffId.data)) {
       return Result.error(ownRecordStaysActive())
     }
 
@@ -62,7 +60,7 @@ export class UpdateStaffUseCase {
     const updated = await staffRepository.update(
       salonId.data,
       staffId.data,
-      StaffWriteMapper.fromUpdateRequest(request.data),
+      changes,
     )
     if (updated.type === 'error') {
       return updated

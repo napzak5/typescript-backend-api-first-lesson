@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { StaffProfileReadMapper } from '../../mappers/read/staff-profile.mapper'
+import { StaffProfileWriteMapper } from '../../mappers/write/staff-profile.mapper'
 import type { Actor } from '../../models/auth'
 import type { StaffId } from '../../models/staff'
 import type { ApiStaffProfileResponse } from '../../models/staff-profile'
@@ -51,7 +52,7 @@ export class UpdateOwnStaffProfileUseCase {
 
     const updated = await this.dependencies.staffProfileRepository.update(
       staffId,
-      request.data,
+      StaffProfileWriteMapper.fromUpdateRequest(request.data),
     )
     if (updated.type === 'error') {
       return updated

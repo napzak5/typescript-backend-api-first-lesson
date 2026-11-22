@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { StaffInvitationReadMapper } from '../mappers/read/staff-invitation.mapper'
+import { StaffInvitationWriteMapper } from '../mappers/write/staff-invitation.mapper'
 import type { SalonRole } from '../models/staff-invitation'
 import {
   apiStaffInvitation,
@@ -58,4 +59,38 @@ describe('StaffInvitationReadMapper.toApiStaffInvitation', () => {
       })
     },
   )
+})
+
+describe('StaffInvitationWriteMapper', () => {
+  const token = 'the-token-of-the-mail'
+
+  it.each<SalonRole>(['owner', 'manager', 'staff'])(
+    'invites with the role %s the request names',
+    (role) => {
+      expect(
+        StaffInvitationWriteMapper.fromCreateRequest({ role }),
+      ).toStrictEqual({ role })
+    },
+  )
+
+  it('verifies the token as it is presented', () => {
+    expect(
+      StaffInvitationWriteMapper.fromVerifyRequest({ token }),
+    ).toStrictEqual({ token })
+  })
+
+  it('accepts with the token and the password as they are presented', () => {
+    expect(
+      StaffInvitationWriteMapper.fromAcceptRequest({
+        token,
+        password: 'a long enough password',
+      }),
+    ).toStrictEqual({ token, password: 'a long enough password' })
+  })
+
+  it('joins with the token as it is presented', () => {
+    expect(StaffInvitationWriteMapper.fromJoinRequest({ token })).toStrictEqual(
+      { token },
+    )
+  })
 })

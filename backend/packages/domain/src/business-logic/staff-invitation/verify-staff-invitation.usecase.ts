@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { StaffInvitationReadMapper } from '../../mappers/read/staff-invitation.mapper'
+import { StaffInvitationWriteMapper } from '../../mappers/write/staff-invitation.mapper'
 import type {
   ApiStaffInvitationResponse,
   DbStaffInvitation,
@@ -52,10 +53,11 @@ export class VerifyStaffInvitationUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { token } = StaffInvitationWriteMapper.fromVerifyRequest(request.data)
 
     const { staffInvitationRepository, tokenIssuer, clock } = this.dependencies
     const found = await staffInvitationRepository.findUsable(
-      tokenIssuer.hashOf(request.data.token),
+      tokenIssuer.hashOf(token),
       clock().toISOString(),
     )
     if (found.type === 'error') {

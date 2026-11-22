@@ -1,16 +1,20 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import type { ApiPage, Paging } from '../../models/page'
 import type {
   ApiBusinessHours,
   ApiOpeningHours,
   ApiSalonResponse,
   DbOpeningHours,
   DbSalon,
+  SalonId,
   SalonWithOpeningHours,
 } from '../../models/salon'
+import type { SalonList } from '../../repositories/salon.repository'
 import { storedBusinessHoursSchema } from '../../schemas/salon.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * Database rows → API response. Property names are the column names; what
@@ -116,5 +120,15 @@ export const SalonReadMapper = {
       apiSalons.push(mapped.data)
     }
     return Result.success(apiSalons)
+  },
+
+  /** The salons of a list as a page of it. */
+  toApiSalonPage(
+    { salons, total, hasMore }: SalonList,
+    paging: Paging<SalonId>,
+  ): Result<ApiPage<ApiSalonResponse>, DomainError> {
+    return Result.map(SalonReadMapper.toApiSalons(salons), (data) =>
+      toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

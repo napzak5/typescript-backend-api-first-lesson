@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { StaffAccountReadMapper } from '../mappers/read/staff-account.mapper'
+import { StaffAccountWriteMapper } from '../mappers/write/staff-account.mapper'
 import type { DbStaffAccount } from '../models/staff-account'
 import type { SalonRole } from '../models/staff-invitation'
 import { dbUser } from './auth-fixtures'
@@ -107,6 +108,19 @@ describe('StaffAccountReadMapper.toApiStaffAccount', () => {
         type: 'error',
         error: { type: 'database' },
       })
+    },
+  )
+})
+
+describe('StaffAccountWriteMapper.fromUpdateRequest', () => {
+  it.each<SalonRole>(['owner', 'manager', 'staff'])(
+    'changes the role to %s',
+    (role) => {
+      expect(StaffAccountWriteMapper.fromUpdateRequest({ role })).toStrictEqual(
+        {
+          role,
+        },
+      )
     },
   )
 })

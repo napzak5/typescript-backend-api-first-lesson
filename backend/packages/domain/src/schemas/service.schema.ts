@@ -97,7 +97,15 @@ export const serviceSearchRequestSchema = z.strictObject({
   isActive: z.boolean().exactOptional(),
 }) satisfies z.ZodType<ApiServiceSearchRequest>
 
+/** A search that was checked: its cursor and its category are IDs. */
+export type ServiceSearchRequest = z.infer<typeof serviceSearchRequestSchema>
+
 export const serviceBulkUpdateRequestSchema = z.strictObject({
   serviceIds: z.array(serviceIdSchema).min(1).max(100).check(noRepeatedEntries),
   updates: serviceUpdateRequestSchema,
 }) satisfies z.ZodType<ApiServiceBulkUpdateRequest>
+
+/** A bulk update that was checked: it names its services by their IDs. */
+export type ServiceBulkUpdateRequest = z.infer<
+  typeof serviceBulkUpdateRequestSchema
+>

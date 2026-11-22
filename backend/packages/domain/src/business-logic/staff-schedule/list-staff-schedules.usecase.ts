@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { StaffScheduleReadMapper } from '../../mappers/read/staff-schedule.mapper'
+import { StaffScheduleWriteMapper } from '../../mappers/write/staff-schedule.mapper'
 import type { Actor } from '../../models/auth'
 import { parseSalonIdOfPath } from '../../models/salon'
 import { parseStaffId } from '../../models/staff'
@@ -53,6 +54,7 @@ export class ListStaffSchedulesUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { date } = StaffScheduleWriteMapper.fromSearchRequest(request.data)
 
     const { staffScheduleRepository, salonRepository } = this.dependencies
     const salonExists = await requireSalon(salonRepository, salonId.data)
@@ -71,8 +73,7 @@ export class ListStaffSchedulesUseCase {
       return Result.error(DomainErrors.notFound('Staff member', staffId.data))
     }
 
-    const { date } = request.data
-    if (date === undefined) {
+    if (date === null) {
       return Result.success(
         found.data.map(StaffScheduleReadMapper.toApiStaffSchedule),
       )

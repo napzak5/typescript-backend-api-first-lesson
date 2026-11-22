@@ -21,6 +21,11 @@ export const staffProfileSearchRequestSchema = z.strictObject({
   city: nonBlankText.max(100).exactOptional(),
 }) satisfies z.ZodType<ApiStaffProfileSearchRequest>
 
+/** A search that was checked: its cursor and its salon are IDs. */
+export type StaffProfileSearchRequest = z.infer<
+  typeof staffProfileSearchRequestSchema
+>
+
 /**
  * What a staff member writes about themselves: the properties of their
  * entry in the ledger that describe them, under the rules of the ledger.

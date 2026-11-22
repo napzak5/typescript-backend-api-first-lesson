@@ -1,7 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { SessionReadMapper } from '../../mappers/read/session.mapper'
 import type { Actor, ApiSessionResponse } from '../../models/auth'
-import type { ApiPaginationMeta } from '../../models/salon'
+import type { ApiPaginationMeta } from '../../models/page'
 import { sessionSearchRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'

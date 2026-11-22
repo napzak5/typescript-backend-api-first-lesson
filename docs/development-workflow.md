@@ -292,7 +292,7 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 | 2 | モデルと操作を TypeSpec に定義し、生成する（[TypeSpec を変更する](#typespec-を変更する)） | `specs/models/salon.tsp`、`specs/operations/salon-operations.tsp` |
 | 3 | モデルの型（DB スキーマと生成された API 型から導出） | `backend/packages/domain/src/models/salon.ts` |
 | 4 | リクエストの Zod スキーマ | `backend/packages/domain/src/schemas/salon.schema.ts` |
-| 5 | マッパー（Write マッパーがリクエストを作り替えるのは、表現を変える列があるときと、リクエストが複数のテーブルの行を含むときだけ。どちらもないサービスカテゴリーには Write マッパーがなく、顧客の Write マッパーはリクエストをそのまま行として返す） | `backend/packages/domain/src/mappers/read/salon.mapper.ts`、`backend/packages/domain/src/mappers/write/salon.mapper.ts` |
+| 5 | マッパー（Read マッパーと Write マッパーの両方を書く。Write マッパーがリクエストを作り替えるのは、表現を変える列があるときと、リクエストが複数のテーブルの行を含むときだけ。どちらもないサービスカテゴリーと顧客の Write マッパーは、リクエストをそのまま行として返す。一覧の条件とページも、マッパーが作る） | `backend/packages/domain/src/mappers/read/salon.mapper.ts`、`backend/packages/domain/src/mappers/write/salon.mapper.ts` |
 | 6 | リポジトリのインターフェースと実装 | `backend/packages/domain/src/repositories/salon.repository.ts`、`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts` |
 | 7 | ユースケースと権限の判定（公開でないオペレーションは `actor` を受け取り、最初に権限を判定する） | `backend/packages/domain/src/business-logic/salon/`、その中の `_shared/authorization.ts` |
 | 8 | ハンドラーとルーター、アプリへの登録（公開でないオペレーションのハンドラーは `authenticated` で包む） | `backend/packages/api/src/routes/salon/`、`backend/packages/api/src/index.ts` |

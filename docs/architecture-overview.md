@@ -85,7 +85,11 @@ shape the system, and why:
   resource have different shapes. Property names never change between the API
   and the database; the mappers only convert representations (`numeric` to
   number, `timestamptz` to ISO 8601) and check `jsonb` values against the API
-  model.
+  model. A domain has both: a request that was checked goes to its write
+  mapper and nowhere else, and what the API answers with comes from a read
+  mapper, also where nothing is converted. The domains that do not follow
+  this yet are listed in `domain/src/__tests__/use-case-flow.test.ts`, which
+  fails when a use case of any other domain leaves the flow.
 - **Nothing is passed through a global.** Dependencies are built once at
   start-up and handed down as arguments, and only the server's entry point
   reads the environment. The integration tests call the same `createApp` with
@@ -129,13 +133,17 @@ Salon files show the pattern:
 ```
 domain/src/
 ├── models/salon.ts                    ID, API and database types
+├── models/page.ts                     ApiPage, ApiPaginationMeta, Paging (every list)
 ├── schemas/salon.schema.ts            Zod schema of each request
 ├── schemas/rules.ts                   nonBlankText, lowerCaseEmail, phoneNumber, MAX_INTEGER,
 │                                      noRepeatedEntries, atLeastOneProperty (the schemas of
 │                                      more than one domain)
-├── mappers/write/salon.mapper.ts      API request → rows
-├── mappers/read/salon.mapper.ts       Rows → API response
+├── mappers/write/salon.mapper.ts      API request → rows, changes, the criteria of a list
+├── mappers/write/page.ts              toPaging: limit and cursor → the place of a page
+│                                      (every list)
+├── mappers/read/salon.mapper.ts       Rows → API response; a list → a page
 ├── mappers/read/columns.ts            numericSchema, timestampSchema (every read mapper)
+├── mappers/read/page.ts               toApiPage: the items of a list → a page (every list)
 ├── repositories/salon.repository.ts   ISalonRepository
 ├── business-logic/salon/              One *.usecase.ts per operation;
 │                                      _shared/authorization.ts decides who may
@@ -201,9 +209,11 @@ domain/src/
 ├── models/service-category.ts         CategoryId, API and database types
 ├── models/salon.ts                    parseSalonIdOfPath: the salon that the path names
 ├── schemas/service-category.schema.ts Zod schema of each request
+├── mappers/write/service-category.mapper.ts
+│                                      API request → row, as it is: no column needs
+│                                      converting; the criteria of the list
 ├── mappers/read/service-category.mapper.ts
-│                                      Rows → API response. There is no write mapper:
-│                                      no column needs converting
+│                                      Rows → API response; a list → a page
 ├── repositories/service-category.repository.ts
 │                                      IServiceCategoryRepository; every method takes
 │                                      the salon ID
@@ -325,7 +335,7 @@ api/src/
 ```
 
 The staff ledger belongs to a salon and has the layout of the service
-categories, with a write mapper:
+categories; its write mapper converts a column:
 
 ```
 domain/src/
@@ -391,6 +401,9 @@ domain/src/
 ├── schemas/staff-invitation.schema.ts Zod schema of the create request (the role); the
 │                                      three requests that carry the token are in
 │                                      auth.schema.ts
+├── mappers/write/staff-invitation.mapper.ts
+│                                      Request → the role, the token and the password,
+│                                      as they are
 ├── mappers/read/staff-invitation.mapper.ts
 │                                      Row → response, without the hash of the token
 ├── repositories/staff-invitation.repository.ts
@@ -426,6 +439,8 @@ domain/src/
 │                                      is shown (DbStaffAccount); no ID type, because
 │                                      no route names an account
 ├── schemas/staff-account.schema.ts    Zod schema of the update request (the role)
+├── mappers/write/staff-account.mapper.ts
+│                                      Request → changes, as it is
 ├── mappers/read/staff-account.mapper.ts
 │                                      Columns → response; names every property
 ├── repositories/staff-account.repository.ts
@@ -452,7 +467,7 @@ api/src/
 The staff profiles read the table of the ledger. The list and the get are
 public, so they decide no permission. The own profile writes five columns
 of the row the account belongs to; the request names them as they are
-stored, so there is no write mapper:
+stored, so the write mapper returns it as the changes:
 
 ```
 domain/src/
@@ -460,6 +475,9 @@ domain/src/
 │                                      staff row that customers are shown
 ├── schemas/staff-profile.schema.ts    Zod schemas of the list request and of the
 │                                      update of the own profile
+├── mappers/write/staff-profile.mapper.ts
+│                                      Request → changes, as it is; the criteria of
+│                                      the list
 ├── mappers/read/staff-profile.mapper.ts
 │                                      Row → API response; names every property
 ├── repositories/staff-profile.repository.ts
@@ -1199,8 +1217,11 @@ through the layers, with one use case per operation
 - **Nothing of another salon.** Every method of
   `IServiceCategoryRepository` takes the salon ID, so a category of another
   salon is answered like one that does not exist: 404.
-- **No write mapper.** The properties of the request are the columns, and
-  none needs converting, so the repository stores the validated request.
+- **A write mapper that converts nothing.** The properties of the request
+  are the columns, and none needs converting, so `ServiceCategoryWriteMapper`
+  (`mappers/write/service-category.mapper.ts`) returns the request as the
+  row: the mapper is where the compiler checks that the two agree. It also
+  makes the criteria of the list, from the query and the salon of the path.
 - **Order of the list.** The list is in the order a menu shows the
   categories: by `displayOrder`, then by ID.
 

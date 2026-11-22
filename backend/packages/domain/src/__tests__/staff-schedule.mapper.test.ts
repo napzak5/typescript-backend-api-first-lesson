@@ -102,3 +102,17 @@ describe('StaffScheduleWriteMapper.fromUpdateRequest', () => {
     ])
   })
 })
+
+describe('StaffScheduleWriteMapper.fromSearchRequest', () => {
+  it('asks about the day the request names', () => {
+    expect(
+      StaffScheduleWriteMapper.fromSearchRequest({ date: '2026-11-16' }),
+    ).toStrictEqual({ date: '2026-11-16' })
+  })
+
+  it('asks about no day, the whole schedule, when the request names none', () => {
+    expect(StaffScheduleWriteMapper.fromSearchRequest({})).toStrictEqual({
+      date: null,
+    })
+  })
+})
