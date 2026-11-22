@@ -10,6 +10,7 @@ import { ADMIN } from './applications'
 import { HIROSHI, LADIES_CUT, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { chooseWithTheKeyboard, part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -88,21 +89,6 @@ const storedSale = async (api: TestApi, bookingId: string) =>
       [bookingId],
     ),
   )[0]
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Chooses a radio button as somebody does who works with the keyboard alone. */
-const chooseWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Space')
-}
-
-const part = (page: Page, name: string): Locator =>
-  page.getByRole('region', { name })
 
 const amounts = (page: Page): Locator => part(page, '金額')
 

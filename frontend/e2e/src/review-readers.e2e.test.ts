@@ -7,9 +7,10 @@ import {
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { PORTAL } from './applications'
-import { HIROSHI, part, salonId } from './bookings'
+import { HIROSHI, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import { accessTokenOf, enterCredentials, heading } from './sign-in'
 
 /*
@@ -177,8 +178,9 @@ test.describe('the reviews of a salon and who reads them, in a browser', () => {
     await expectSoundPage(page)
 
     // Act: to the sign-in by the link of the reviews, and the Enter key
-    await reviews(page).getByRole('link', { name: 'サインイン' }).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(
+      reviews(page).getByRole('link', { name: 'サインイン' }),
+    )
     await enterCredentials(page, KENJI.email, api.seedPassword)
 
     // Assert: back on the page of the salon, with the buttons of a customer
@@ -316,8 +318,7 @@ test.describe('the reviews of a salon and who reads them, in a browser', () => {
     // reports it from the page that still shows it
     const satisfied = review(page, SATISFIED)
     await remove(request, api, (await stored(api, SATISFIED)).id)
-    await reportButton(satisfied).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(reportButton(satisfied))
     await expect(reason(page, FIRST_REASON)).toBeFocused()
     await page.keyboard.press('Space')
     await tabToTheSendButton(page)

@@ -11,6 +11,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage, sidewaysScrollOf } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard, typeInto } from './screen'
 import { ADMIN_START, enterCredentials, heading } from './sign-in'
 
 /*
@@ -43,12 +44,6 @@ const storedCustomer = async (api: TestApi) =>
     ),
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 const textbox = (page: Page, name: string): Locator =>
   page.getByRole('textbox', { name, exact: true })
 
@@ -74,8 +69,10 @@ test.describe('the ledger of the customers, in a browser', () => {
     // Act: the booking search finds nobody
     await pressWithTheKeyboard(page.getByRole('link', { name: '予約を入れる' }))
     await expect(heading(page, '予約を入れる')).toBeFocused()
-    await page.getByRole('searchbox', { name: 'キーワード' }).focus()
-    await page.keyboard.type('ヤマダ')
+    await typeInto(
+      page.getByRole('searchbox', { name: 'キーワード' }),
+      'ヤマダ',
+    )
     await page.keyboard.press('Enter')
 
     // Assert
@@ -122,15 +119,15 @@ test.describe('the ledger of the customers, in a browser', () => {
 
     // Assert: the customer is chosen
     await expect(heading(page, '予約を入れる')).toBeFocused()
-    await expect(page.getByRole('region', { name: 'お客様' })).toContainText(
-      NAME,
-    )
+    await expect(part(page, 'お客様')).toContainText(NAME)
 
     // Act: the ledger, from the header
     await pressWithTheKeyboard(page.getByRole('link', { name: '顧客' }))
     await expect(heading(page, '顧客台帳')).toBeFocused()
-    await page.getByRole('searchbox', { name: 'キーワード' }).focus()
-    await page.keyboard.type('ハナコ')
+    await typeInto(
+      page.getByRole('searchbox', { name: 'キーワード' }),
+      'ハナコ',
+    )
     await page.keyboard.press('Enter')
 
     // Assert
@@ -277,9 +274,7 @@ test.describe('the referrer and the preferences of a customer, in a browser', ()
     await expect(heading(page, 'お客様の台帳')).toBeFocused()
     await expect(page.getByText('好み設定を直しました。')).toBeVisible()
     await expect(
-      page
-        .getByRole('region', { name: '好み設定' })
-        .getByText('静かに過ごしたい'),
+      part(page, '好み設定').getByText('静かに過ごしたい'),
     ).toBeVisible()
     expect(await storedReferrerAndWishes(api, SAKURA.email)).toEqual([
       {
@@ -370,9 +365,7 @@ test.describe('the removal and the history of a customer, in a browser', () => {
     await expect(
       page.getByText(`${KENJI.name} 様を台帳から削除しました。`),
     ).toBeVisible()
-    await expect(
-      page.getByRole('region', { name: '削除されたときの台帳' }),
-    ).toBeVisible()
+    await expect(part(page, '削除されたときの台帳')).toBeVisible()
     await expectSoundPage(page)
     expect(await isInLedger(api, kenji)).toBe(false)
 
@@ -495,10 +488,7 @@ test.describe('the ledger of the customers, on a screen as narrow as a phone', (
     await expect(heading(page, 'お客様の台帳')).toBeVisible()
     await expect(recorded(page, 'スタッフ間の申し送り')).toHaveText(UNBROKEN)
     await expect(
-      page
-        .getByRole('region', { name: '好み設定' })
-        .getByText(UNBROKEN)
-        .first(),
+      part(page, '好み設定').getByText(UNBROKEN).first(),
     ).toBeVisible()
     await expect(
       page.getByRole('table', { name: 'よく受けたメニュー' }),
@@ -537,9 +527,7 @@ test.describe('the ledger of the customers, on a screen as narrow as a phone', (
     await dialog.getByRole('button', { name: '削除する' }).click()
 
     // Act, Assert: the page of the customer who left the ledger
-    await expect(
-      page.getByRole('region', { name: '削除されたときの台帳' }),
-    ).toBeVisible()
+    await expect(part(page, '削除されたときの台帳')).toBeVisible()
     await expectSoundPage(page)
 
     // Act, Assert: the history

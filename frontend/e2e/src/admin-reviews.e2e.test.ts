@@ -2,9 +2,15 @@ import { MANAGER, OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN, PORTAL } from './applications'
-import { part, salonId } from './bookings'
+import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import {
+  chooseWithTheKeyboard,
+  part,
+  pressWithTheKeyboard,
+  typeInto,
+} from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -51,12 +57,6 @@ const reviewPathOf = async (api: TestApi): Promise<string> =>
     [GOOD],
   )}`
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 const answerPart = (page: Page): Locator => part(page, 'サロンからの返信')
 
 const reportPart = (page: Page): Locator => part(page, '運営への通報')
@@ -87,8 +87,7 @@ test.describe('the reviews of a salon, in a browser', () => {
     await expect(heading(page, 'レビューに返信する')).toBeFocused()
 
     // Act
-    await page.getByRole('textbox', { name: '返信' }).focus()
-    await page.keyboard.type(ANSWER)
+    await typeInto(page.getByRole('textbox', { name: '返信' }), ANSWER)
     await pressWithTheKeyboard(page.getByRole('button', { name: '返信する' }))
 
     // Assert
@@ -123,10 +122,13 @@ test.describe('the reviews of a salon, in a browser', () => {
       reportPart(page).getByRole('button', { name: '通報する' }),
     )
     const dialog = page.getByRole('dialog', { name: 'レビューを通報する' })
-    await dialog.getByRole('radio', { name: '事実と違う内容' }).focus()
-    await page.keyboard.press('Space')
-    await dialog.getByRole('textbox', { name: '詳しい内容' }).focus()
-    await page.keyboard.type('予約の時間どおりにご案内しています。')
+    await chooseWithTheKeyboard(
+      dialog.getByRole('radio', { name: '事実と違う内容' }),
+    )
+    await typeInto(
+      dialog.getByRole('textbox', { name: '詳しい内容' }),
+      '予約の時間どおりにご案内しています。',
+    )
     await pressWithTheKeyboard(dialog.getByRole('button', { name: '通報する' }))
 
     // Assert

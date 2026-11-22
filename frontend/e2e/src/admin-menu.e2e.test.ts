@@ -6,6 +6,7 @@ import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
+import { pressWithTheKeyboard, typeInto } from './screen'
 import { ADMIN_START, enterCredentials, heading } from './sign-in'
 
 /*
@@ -35,18 +36,6 @@ const storedOf = async (api: TestApi, name: string) =>
       [name],
     ),
   )
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Types into a control after moving the focus to it. */
-const typeInto = async (control: Locator, value: string): Promise<void> => {
-  await control.focus()
-  await control.pressSequentially(value)
-}
 
 const categories = (page: Page): Locator =>
   page.getByRole('table', { name: 'カテゴリー', exact: true })

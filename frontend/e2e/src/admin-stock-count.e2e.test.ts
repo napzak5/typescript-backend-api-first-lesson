@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { pressWithTheKeyboard, writeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -74,12 +75,6 @@ const rowsOf = (page: Page, caption: string): Locator =>
     .getByRole('row')
     .filter({ has: page.getByRole('rowheader') })
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 test.describe('the count and the value of the stock, in a browser', () => {
   test('should let the manager count the colour from the stock, with the keyboard, and show the value read anew', async ({
     page,
@@ -94,8 +89,7 @@ test.describe('the count and the value of the stock, in a browser', () => {
 
     // Act
     const colour = counted(page, COLOUR)
-    await colour.focus()
-    await colour.fill('17.5')
+    await writeInto(colour, '17.5')
     await expectSoundPage(page)
     await pressWithTheKeyboard(page.getByRole('button', { name: '記録する' }))
 

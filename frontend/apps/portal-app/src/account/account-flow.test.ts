@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   afterRefusal,
@@ -6,15 +7,6 @@ import {
   readNewPassword,
   readRegistration,
 } from './account-flow'
-
-const formOf = (values: Record<string, string>): FormData => {
-  const form = new FormData()
-  for (const [name, value] of Object.entries(values)) {
-    form.append(name, value)
-  }
-
-  return form
-}
 
 const TOO_SHORT = 'パスワードが短すぎます。15 文字以上で入力してください。'
 

@@ -4,7 +4,8 @@ import { DASHBOARD } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import { mainMenuLink, pressInTheMenu } from './main-menu'
-import { pressWithTheKeyboard, sellACutToday } from './sales'
+import { sellACutToday } from './sales'
+import { pressWithTheKeyboard } from './screen'
 import { DASHBOARD_START, enterCredentials, heading } from './sign-in'
 
 /*

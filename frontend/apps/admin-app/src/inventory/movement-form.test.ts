@@ -1,18 +1,10 @@
 import type { ModelsInventoryTransactionType } from '@beauty-salon-frontend/api-client'
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { colour, shampoo } from '../products/components/examples'
 import { colourLot, shampooRow } from './components/examples'
 import { afterMovementRecord, readMovement } from './movement-form'
 import { recordedKindsOf } from './movement-format'
-
-const formOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-
-  return values
-}
 
 /** The form of a movement, as a browser sends it */
 const movementForm = (values: {
@@ -22,7 +14,9 @@ const movementForm = (values: {
   unitCost?: string
   reason?: string
 }): FormData =>
-  formOf(Object.entries({ quantity: '', unitCost: '', reason: '', ...values }))
+  formOfEntries(
+    Object.entries({ quantity: '', unitCost: '', reason: '', ...values }),
+  )
 
 const EVERY_KIND = recordedKindsOf(true)
 const EVERY_DAY = recordedKindsOf(false)

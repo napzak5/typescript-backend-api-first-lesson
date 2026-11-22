@@ -3,7 +3,8 @@ import { DASHBOARD } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import { mainMenuLink, pressInTheMenu } from './main-menu'
-import { pressWithTheKeyboard, sellACutToday } from './sales'
+import { sellACutToday } from './sales'
+import { part, pressWithTheKeyboard } from './screen'
 import { DASHBOARD_START, enterCredentials, heading } from './sign-in'
 
 /*
@@ -48,17 +49,18 @@ test.describe('the trends and the sales of a day, in a browser', () => {
     // Act
     await pressWithTheKeyboard(mainMenuLink(page, '1 日の売上'))
     await expect(heading(page, '1 日の売上')).toBeFocused()
-    await expect(page.getByRole('region', { name: /の売上$/ })).toContainText(
-      '￥5,500',
-    )
+    await expect(part(page, /の売上$/)).toContainText('￥5,500')
     await pressWithTheKeyboard(page.getByRole('link', { name: '前の日' }))
 
     // Assert
     await expect(page).toHaveURL(new RegExp(`[?&]date=${yesterday}$`))
     await expect(page.getByLabel('日付')).toHaveValue(yesterday)
-    await expect(
-      page.getByRole('region', { name: /の売上$/ }).getByRole('definition'),
-    ).toHaveText(['￥0', '0 件', '￥0', '￥0'])
+    await expect(part(page, /の売上$/).getByRole('definition')).toHaveText([
+      '￥0',
+      '0 件',
+      '￥0',
+      '￥0',
+    ])
     await expect(page.getByRole('link', { name: '次の日' })).toBeVisible()
   })
 
@@ -122,9 +124,7 @@ test.describe('the trends and the sales of a day, on a screen as narrow as a pho
     await pressInTheMenu(page, '1 日の売上')
 
     // Assert
-    await expect(page.getByRole('region', { name: /の売上$/ })).toContainText(
-      '￥5,500',
-    )
+    await expect(part(page, /の売上$/)).toContainText('￥5,500')
     await expectSoundPage(page)
   })
 })

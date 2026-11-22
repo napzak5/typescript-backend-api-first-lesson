@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { bookThroughApi, HIROSHI, MIKA, openDay, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -42,12 +43,6 @@ const storedLines = async (api: TestApi, id: string) =>
       [id],
     ),
   )
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
 
 const combobox = (page: Page, name: string): Locator =>
   page.getByRole('combobox', { name })
@@ -102,9 +97,9 @@ test.describe('the bookings a salon changes, in a browser', () => {
     await page.getByLabel('開始の時刻').fill('10:30')
 
     // Assert: where the line would be
-    await expect(
-      page.getByRole('region', { name: '動かしたあとの明細' }),
-    ).toContainText(`明細 1 Ladies Cut10:30〜11:30 担当 ${MIKA}`)
+    await expect(part(page, '動かしたあとの明細')).toContainText(
+      `明細 1 Ladies Cut10:30〜11:30 担当 ${MIKA}`,
+    )
 
     // Act
     await pressWithTheKeyboard(

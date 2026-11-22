@@ -12,6 +12,7 @@ import { ADMIN } from './applications'
 import { HIROSHI, LADIES_CUT, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard, typeInto } from './screen'
 import { ADMIN_START, enterCredentials, heading } from './sign-in'
 
 /*
@@ -99,14 +100,7 @@ const todayInTokyo = async (api: TestApi): Promise<string> =>
       ),
     )[0].day
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-const statusPart = (page: Page): Locator =>
-  page.getByRole('region', { name: '状態' })
+const statusPart = (page: Page): Locator => part(page, '状態')
 
 const statusHeading = (page: Page): Locator =>
   statusPart(page).getByRole('heading', { name: '状態' })
@@ -129,8 +123,10 @@ test.describe('the bookings of a salon, in a browser', () => {
     const id = await arrangeToday(api, '10:00')
     const tokyo = await salonId(api)
     await page.goto(ADMIN.origin)
-    await page.getByRole('textbox', { name: 'メールアドレス' }).focus()
-    await page.keyboard.type(STYLIST)
+    await typeInto(
+      page.getByRole('textbox', { name: 'メールアドレス' }),
+      STYLIST,
+    )
     await page.keyboard.press('Tab')
     await page.keyboard.type(api.seedPassword)
     await page.keyboard.press('Enter')
@@ -254,9 +250,7 @@ test.describe('the bookings of a salon, in a browser', () => {
       cancellationReason: 'お客様から電話で連絡',
     })
     await expect(
-      page
-        .getByRole('region', { name: '予約' })
-        .getByText('お客様から電話で連絡'),
+      part(page, '予約').getByText('お客様から電話で連絡'),
     ).toBeVisible()
   })
 
@@ -328,9 +322,7 @@ test.describe('the bookings of a salon, in a browser in another time zone', () =
       actualStartTime: `${today}T01:05Z`,
       actualEndTime: `${today}T02:10Z`,
     })
-    await expect(
-      page.getByRole('region', { name: '予約' }).getByText(/ 10:05$/),
-    ).toBeVisible()
+    await expect(part(page, '予約').getByText(/ 10:05$/)).toBeVisible()
   })
 })
 

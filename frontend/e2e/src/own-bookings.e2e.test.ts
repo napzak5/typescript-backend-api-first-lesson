@@ -8,7 +8,6 @@ import {
   HIROSHI,
   MIKA,
   openDay,
-  part,
   salonId,
   serviceId,
   staffControl,
@@ -19,6 +18,7 @@ import {
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading, PORTAL_START } from './sign-in'
 
 /*
@@ -152,8 +152,7 @@ test.describe('the bookings of a customer, in a browser', () => {
     ])
 
     // Act: the dialog is opened with the keyboard
-    await cancelButton(page).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(cancelButton(page))
 
     // Assert: it takes the focus, at its first control
     await expect(dialog(page)).toBeVisible()

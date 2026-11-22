@@ -1,3 +1,4 @@
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   afterEntry,
@@ -30,15 +31,6 @@ const MEMBER = '7c4a9e2b-1f3d-4b8a-9e6c-5d2f8a1b3c70'
 const OTHER_MEMBER = '8d5b0f3c-2a4e-4c9b-8f7d-6e3a9b2c4d81'
 const CUT = '9e6c1a4d-3b5f-4dac-9a8e-7f4b0c3d5e92'
 const COLOR = 'af7d2b5e-4c6a-4ebd-8b9f-8a5c1d4e6fa3'
-
-const valuesOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-
-  return values
-}
 
 /** The values of the notes, empty unless they are given. */
 const notesValues = (
@@ -152,7 +144,7 @@ describe('readLines', () => {
   it('should begin every line on the day of the visit, on the clock of the salon, in the order of the form', () => {
     // Act
     const read = readLines(
-      valuesOf(
+      formOfEntries(
         linesValues([
           [CUT, 'same', '10:00', ' 前髪は短めに '],
           [COLOR, OTHER_MEMBER, '11:30', ''],
@@ -194,7 +186,7 @@ describe('readLines', () => {
   it('should say at its control what each line lacks, with what the booking lacks', () => {
     // Act
     const read = readLines(
-      valuesOf(
+      formOfEntries(
         linesValues(
           [
             [CUT, 'same', '10:00', ''],
@@ -221,7 +213,7 @@ describe('readLines', () => {
   it('should refuse a time the clock of the salon skips on the day', () => {
     // Act: New York moves from 2:00 to 3:00 on 8 March 2026
     const read = readLines(
-      valuesOf(
+      formOfEntries(
         linesValues([[CUT, 'same', '02:30', '']], { date: '2026-03-08' }),
       ),
       'America/New_York',
@@ -240,7 +232,7 @@ describe('readLines', () => {
   it('should read a time that comes twice on the day as the first', () => {
     // Act: New York moves from 2:00 back to 1:00 on 1 November 2026
     const read = readLines(
-      valuesOf(
+      formOfEntries(
         linesValues([[CUT, 'same', '01:30', '']], { date: '2026-11-01' }),
       ),
       'America/New_York',
@@ -264,7 +256,7 @@ describe('readNotes', () => {
     ['the largest amount', '2147483647', 2147483647],
   ])('should read a deposit of %s', (_, typed, depositAmount) => {
     // Act
-    const read = readNotes(valuesOf(notesValues({ depositAmount: typed })))
+    const read = readNotes(formOfEntries(notesValues({ depositAmount: typed })))
 
     // Assert
     expect(read).toEqual({
@@ -285,7 +277,7 @@ describe('readNotes', () => {
     ['an amount larger than a booking holds', '2147483648'],
   ])('should refuse %s as a deposit', (_, typed) => {
     // Act
-    const read = readNotes(valuesOf(notesValues({ depositAmount: typed })))
+    const read = readNotes(formOfEntries(notesValues({ depositAmount: typed })))
 
     // Assert
     expect(read).toEqual({
@@ -297,7 +289,7 @@ describe('readNotes', () => {
   it('should read the way and the notes without the blanks around them', () => {
     // Act
     const read = readNotes(
-      valuesOf(
+      formOfEntries(
         notesValues({
           source: 'phone',
           customerRequest: ' 短めに\n',
@@ -323,7 +315,7 @@ describe('readEntry', () => {
   it('should put the salon, the customer, the lines and the notes into one booking', () => {
     // Act
     const read = readEntry(
-      valuesOf([
+      formOfEntries([
         ...linesValues([[CUT, 'same', '10:00', '']]),
         ...notesValues({ source: 'walk_in', depositAmount: '1000' }),
       ]),
@@ -356,7 +348,7 @@ describe('readEntry', () => {
   it('should say what is wrong with the lines and the notes at once', () => {
     // Act
     const read = readEntry(
-      valuesOf([
+      formOfEntries([
         ...linesValues([[CUT, 'same', '', '']]),
         ...notesValues({ depositAmount: '-1' }),
       ]),
@@ -385,7 +377,7 @@ describe('readNotesChange', () => {
   it('should ask for nothing when the form is sent as it was opened', () => {
     // Act
     const change = readNotesChange(
-      valuesOf(
+      formOfEntries(
         notesValues({
           source: 'online',
           depositAmount: '3,000',
@@ -402,7 +394,7 @@ describe('readNotesChange', () => {
   it('should ask for what was changed alone, and for null for what was emptied', () => {
     // Act
     const change = readNotesChange(
-      valuesOf(
+      formOfEntries(
         notesValues({
           source: 'phone',
           depositAmount: '3000',
@@ -427,7 +419,7 @@ describe('readNotesChange', () => {
   it('should take a note the booking holds with blanks around it for the same note', () => {
     // Act
     const change = readNotesChange(
-      valuesOf(notesValues({ internalNotes: 'メモ' })),
+      formOfEntries(notesValues({ internalNotes: 'メモ' })),
       {
         ...shown,
         source: null,
@@ -444,7 +436,7 @@ describe('readNotesChange', () => {
   it('should refuse a deposit that is no amount, and ask for nothing', () => {
     // Act
     const change = readNotesChange(
-      valuesOf(notesValues({ depositAmount: 'abc' })),
+      formOfEntries(notesValues({ depositAmount: 'abc' })),
       shown,
     )
 

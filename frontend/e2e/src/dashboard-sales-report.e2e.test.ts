@@ -10,7 +10,8 @@ import { DASHBOARD } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
-import { pressWithTheKeyboard, sellACutToday } from './sales'
+import { sellACutToday } from './sales'
+import { part, pressWithTheKeyboard, writeInto } from './screen'
 import { DASHBOARD_START, enterCredentials, heading } from './sign-in'
 
 /*
@@ -54,7 +55,7 @@ const dateNameOf = (day: string): string =>
 
 /** What the sums of the period say, term by term, once they are shown */
 const sumsOf = (page: Page): Locator =>
-  page.getByRole('region', { name: '期間の合計' }).locator('dt, dd')
+  part(page, '期間の合計').locator('dt, dd')
 
 test.describe('the sales report, in a browser', () => {
   test('should let a manager count the sales of days they choose and save them as a CSV file, with the keyboard', async ({
@@ -68,12 +69,11 @@ test.describe('the sales report, in a browser', () => {
     await page.goto(DASHBOARD.origin)
     await enterCredentials(page, MANAGER, api.seedPassword)
     await expect(heading(page, DASHBOARD_START)).toBeFocused()
-    await expect(page.getByRole('region', { name: '期間の合計' })).toBeVisible()
+    await expect(part(page, '期間の合計')).toBeVisible()
 
     // Act
     const from = page.getByLabel('集計する期間（から）')
-    await from.focus()
-    await from.fill(yesterday)
+    await writeInto(from, yesterday)
     await pressWithTheKeyboard(page.getByRole('button', { name: '集計する' }))
     await expect(page).toHaveURL(
       new RegExp(`/reports\\?from=${yesterday}&to=${today}$`),

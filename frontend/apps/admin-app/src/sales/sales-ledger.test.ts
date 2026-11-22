@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   type LedgerConditions,
@@ -8,15 +9,6 @@ import {
 } from './sales-ledger'
 
 const TODAY = '2026-11-20'
-
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 describe('ledgerConditionsIn', () => {
   it.each<[string, string, LedgerConditions]>([

@@ -3,6 +3,7 @@ import type {
   ModelsBookingStatusType,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { service } from '../bookings/components/examples'
 import {
@@ -23,15 +24,6 @@ import { aBooking, aSale, services, staff } from './components/examples'
 
 const [cut, colour] = services
 const [misaki, ken] = staff
-
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 /** A line of a bill that costs so much before the tax, with the tax in its price or not. */
 const line = (net: number, taxIncluded = false): BillLine => ({

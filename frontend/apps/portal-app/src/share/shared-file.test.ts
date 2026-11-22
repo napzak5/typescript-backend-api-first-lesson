@@ -1,4 +1,5 @@
 import type { ModelsAttachmentContentType } from '@beauty-salon-frontend/api-client'
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { photo } from './components/examples'
 import {
@@ -10,14 +11,6 @@ import {
   readPassword,
   sizeNameOf,
 } from './shared-file'
-
-const formWith = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-  return values
-}
 
 describe('contentTypeNameOf and isImage', () => {
   it.each<[ModelsAttachmentContentType, string, boolean]>([
@@ -61,7 +54,7 @@ describe('readPassword', () => {
     ['with the spaces at its ends, which may be of it', '  umi  '],
     ['of one character, which the API takes to look at', 'x'],
   ])('should send a password %s', (_, password) => {
-    expect(readPassword(formWith([['password', password]]))).toEqual({
+    expect(readPassword(formOfEntries([['password', password]]))).toEqual({
       type: 'valid',
       value: password,
     })
@@ -73,7 +66,7 @@ describe('readPassword', () => {
   ])(
     'should say at the control that a password %s is missing',
     (_, entries) => {
-      expect(readPassword(formWith(entries))).toEqual({
+      expect(readPassword(formOfEntries(entries))).toEqual({
         type: 'invalid',
         errors: { password: 'パスワードを入力してください。' },
       })

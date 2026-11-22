@@ -6,6 +6,7 @@ import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
+import { part, pressWithTheKeyboard, writeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -75,18 +76,6 @@ const renamedMeanwhile = (
     [TOKYO, displayName, renamed],
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Writes into a control after moving the focus to it. */
-const writeInto = async (control: Locator, value: string): Promise<void> => {
-  await control.focus()
-  await control.fill(value)
-}
-
 /** The methods the screen that records a payment offers */
 const offered = (page: Page): Locator =>
   page.getByRole('radiogroup', { name: '支払い方法' }).getByRole('radio')
@@ -133,9 +122,7 @@ test.describe('the payment methods of a salon, in a browser', () => {
       page.getByText('支払い方法「PayPay（店頭）」を足しました。'),
     ).toBeVisible()
     await expect(heading(page, '支払い方法の内容')).toBeFocused()
-    await expect(
-      page.getByRole('region', { name: '支払い方法' }),
-    ).toContainText('￥50,000まで')
+    await expect(part(page, '支払い方法')).toContainText('￥50,000まで')
     expect(await storedMethodsNamed(api, 'PayPay（店頭）')).toEqual([
       {
         method: 'qr_payment',

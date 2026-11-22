@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { salon } from '../bookings/components/examples'
 import {
@@ -15,16 +16,6 @@ import {
   taxAt,
   unitPriceControlOf,
 } from './order-entry'
-
-/** The values of a form, under the names of its controls */
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 /** A form with a supplier and a tax, every row priced and none ordered, and what else is given */
 const filled = (entries: Record<string, string>): FormData =>

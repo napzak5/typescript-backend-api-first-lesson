@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -43,12 +44,6 @@ const seeTo = (page: Page, product: string): Locator =>
   page.getByRole('button', {
     name: new RegExp(`^${product}（ロット .+）の期限切れを確認済みにする$`),
   })
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
 
 test.describe('the alerts of the stock, in a browser', () => {
   test('should let the stylist see to the expiry of the colour from the stock, with the keyboard, and read the alerts anew', async ({

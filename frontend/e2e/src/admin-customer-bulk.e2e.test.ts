@@ -1,10 +1,11 @@
 import { OWNER } from '@beauty-salon-frontend/testing/seed'
-import type { Locator, Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { chooseWithTheKeyboard, part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -47,25 +48,12 @@ const storedCustomers = async (api: TestApi) =>
     ),
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 /** Chooses a customer in the ledger with the keyboard. */
-const chooseWithTheKeyboard = async (
-  page: Page,
-  name: string,
-): Promise<void> => {
+const chooseCustomer = async (page: Page, name: string): Promise<void> => {
   const choice = page.getByRole('checkbox', { name: `${name} 様を選ぶ` })
-  await choice.focus()
-  await choice.press('Space')
+  await chooseWithTheKeyboard(choice)
   await expect(choice).toBeChecked()
 }
-
-const part = (page: Page, name: string): Locator =>
-  page.getByRole('region', { name })
 
 test.describe('writing customers at once, in a browser', () => {
   test('should register the customers of a file, give them a tag and remove them from the ledger, with the keyboard', async ({
@@ -98,8 +86,8 @@ test.describe('writing customers at once, in a browser', () => {
     expect(page.url()).toBe(`${ADMIN.origin}/salons/${salon}/customers`)
 
     // Act: a tag given to both
-    await chooseWithTheKeyboard(page, HANAKO.name)
-    await chooseWithTheKeyboard(page, ICHIRO.name)
+    await chooseCustomer(page, HANAKO.name)
+    await chooseCustomer(page, ICHIRO.name)
     const tagButton = part(page, '2 人を選んでいます').getByRole('button', {
       name: 'タグを付ける・外す',
     })

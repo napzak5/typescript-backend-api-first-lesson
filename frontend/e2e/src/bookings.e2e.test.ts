@@ -8,7 +8,6 @@ import {
   LADIES_CUT,
   MIKA,
   openDay,
-  part,
   salonId,
   serviceId,
   staffControl,
@@ -18,6 +17,7 @@ import {
 } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part } from './screen'
 import {
   enterCredentials,
   heading,

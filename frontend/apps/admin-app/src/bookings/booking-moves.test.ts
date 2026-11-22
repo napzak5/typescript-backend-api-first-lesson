@@ -2,6 +2,7 @@ import type {
   ModelsBookingResponse,
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   ADDITION_TAKEN,
@@ -32,15 +33,6 @@ const OTHER_MEMBER = '8d5b0f3c-2a4e-4c9b-8f7d-6e3a9b2c4d81'
 const THIRD_MEMBER = '5a3e8c1f-0b2d-4f6a-8c9e-4d1b7a0c2e53'
 const CUT = '9e6c1a4d-3b5f-4dac-9a8e-7f4b0c3d5e92'
 const COLOR = 'af7d2b5e-4c6a-4ebd-8b9f-8a5c1d4e6fa3'
-
-const valuesOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-
-  return values
-}
 
 type Line = ModelsBookingResponse['services'][number]
 
@@ -218,7 +210,7 @@ describe('readMove', () => {
   it('should read the member and the beginning on the clock of the salon', () => {
     // Act
     const read = readMove(
-      valuesOf([
+      formOfEntries([
         ['staffId', OTHER_MEMBER],
         ['date', '2026-11-21'],
         ['startTime', '11:30'],
@@ -239,7 +231,7 @@ describe('readMove', () => {
   it('should say at its control what each value lacks', () => {
     // Act
     const read = readMove(
-      valuesOf([
+      formOfEntries([
         ['staffId', ''],
         ['date', ''],
         ['startTime', ''],
@@ -261,7 +253,7 @@ describe('readMove', () => {
   it('should refuse a time the clock of the salon skips on the day', () => {
     // Act: New York moves from 2:00 to 3:00 on 8 March 2026
     const read = readMove(
-      valuesOf([
+      formOfEntries([
         ['staffId', MEMBER],
         ['date', '2026-03-08'],
         ['startTime', '02:30'],
@@ -288,7 +280,7 @@ describe('readAddition', () => {
   })
 
   const lineValues = (startTime: string, staffId = 'same'): FormData =>
-    valuesOf([
+    formOfEntries([
       ['serviceId', COLOR],
       ['staffId', staffId],
       ['startTime', startTime],
@@ -325,7 +317,7 @@ describe('readAddition', () => {
   it('should say at its control what the line lacks', () => {
     // Act
     const read = readAddition(
-      valuesOf([
+      formOfEntries([
         ['serviceId', ''],
         ['staffId', 'same'],
         ['startTime', ''],

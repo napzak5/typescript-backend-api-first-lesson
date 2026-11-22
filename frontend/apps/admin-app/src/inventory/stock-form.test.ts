@@ -1,3 +1,4 @@
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   colour,
@@ -17,21 +18,12 @@ import {
 
 const SALON_ID = '3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60'
 
-const formOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-
-  return values
-}
-
 /** The values of a form of a row, as it was opened with the row, then changed */
 const rowForm = (
   row: typeof colourLot,
   changed: Record<string, string>,
 ): FormData =>
-  formOf(
+  formOfEntries(
     Object.entries({
       ...(row.lotNumber === null ? {} : { lotNumber: row.lotNumber }),
       expiryDate: row.expiryDate ?? '',
@@ -75,7 +67,7 @@ describe('readStockEntry', () => {
   it('should take a lot, a place and a shelf as long as the API takes them, counted as it counts them', () => {
     expect(
       readStockEntry(
-        formOf([
+        formOfEntries([
           ['productId', colour.id],
           ['lotNumber', '𠮷'.repeat(100)],
           ['expiryDate', ''],
@@ -99,7 +91,7 @@ describe('readStockEntry', () => {
   it('should read a row of a product kept by lots, with its lot', () => {
     expect(
       readStockEntry(
-        formOf([
+        formOfEntries([
           ['productId', colour.id],
           ['lotNumber', ' LOT-2026-050 '],
           ['expiryDate', '2027-06-30'],
@@ -127,7 +119,7 @@ describe('readStockEntry', () => {
   it('should read a row of a product without lots with no lot, whatever was left in the form', () => {
     expect(
       readStockEntry(
-        formOf([
+        formOfEntries([
           ['productId', gloves.id],
           ['lotNumber', 'LOT-1'],
           ['expiryDate', ''],
@@ -152,7 +144,7 @@ describe('readStockEntry', () => {
   it('should ask for a product and for the lot of a product kept by lots', () => {
     expect(
       readStockEntry(
-        formOf([['productId', '']]),
+        formOfEntries([['productId', '']]),
         SALON_ID,
         PRODUCTS_OF_THE_SALON,
       ),
@@ -162,7 +154,7 @@ describe('readStockEntry', () => {
     })
     expect(
       readStockEntry(
-        formOf([
+        formOfEntries([
           ['productId', colour.id],
           ['lotNumber', '  '],
         ]),
@@ -175,7 +167,7 @@ describe('readStockEntry', () => {
   it('should say what is wrong with each value, by the limits of the API', () => {
     expect(
       readStockEntry(
-        formOf([
+        formOfEntries([
           ['productId', colour.id],
           ['lotNumber', 'L'.repeat(101)],
           ['expiryDate', '2027-02-30'],
@@ -200,7 +192,7 @@ describe('readStockEntry', () => {
   it('should take the longest values the API takes, counted in characters', () => {
     expect(
       readStockEntry(
-        formOf([
+        formOfEntries([
           ['productId', colour.id],
           ['lotNumber', '𠮷'.repeat(100)],
           ['location', '𠮷'.repeat(100)],
@@ -325,7 +317,7 @@ describe('readStockChange', () => {
   it('should not read a lot the form of a row without lots does not show', () => {
     expect(
       readStockChange(
-        formOf([
+        formOfEntries([
           ['lotNumber', 'LOT-1'],
           ['expiryDate', ''],
           ['location', '店頭の棚'],

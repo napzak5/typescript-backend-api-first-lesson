@@ -6,10 +6,9 @@ import {
 } from '@beauty-salon-frontend/testing/seed'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { part } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { pressWithTheKeyboard } from './sales'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*

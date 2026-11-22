@@ -1,10 +1,15 @@
 import { OWNER } from '@beauty-salon-frontend/testing/seed'
-import type { Locator } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import {
+  chooseWithTheKeyboard,
+  part,
+  pressWithTheKeyboard,
+  typeInto,
+} from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -33,18 +38,6 @@ const storedOf = async (api: TestApi, email: string) =>
 /** A member of the seed data, by their staff code. */
 const staffIdOf = (api: TestApi, staffCode: string): Promise<string> =>
   api.idOf('select id::text from staff where "staffCode" = $1', [staffCode])
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Types into a control after moving the focus to it. */
-const typeInto = async (control: Locator, value: string): Promise<void> => {
-  await control.focus()
-  await control.pressSequentially(value)
-}
 
 test.describe('the staff ledger, in a browser', () => {
   test('should register a member, make them inactive and remove them, with the keyboard', async ({
@@ -99,8 +92,9 @@ test.describe('the staff ledger, in a browser', () => {
       page.getByRole('link', { name: 'スタッフ情報を直す' }),
     )
     await expect(heading(page, 'スタッフ情報を直す')).toBeFocused()
-    await page.getByRole('checkbox', { name: '有効なスタッフ' }).focus()
-    await page.keyboard.press('Space')
+    await chooseWithTheKeyboard(
+      page.getByRole('checkbox', { name: '有効なスタッフ' }),
+    )
     await pressWithTheKeyboard(
       page.getByRole('button', { name: '変更を保存する' }),
     )
@@ -160,9 +154,7 @@ test.describe('the staff ledger, on a screen as narrow as a phone', () => {
     await page.goto(
       `${ADMIN.origin}/salons/${salon}/staff/${await staffIdOf(api, 'STF001')}`,
     )
-    await expect(
-      page.getByRole('region', { name: '予約の受け方' }),
-    ).toBeVisible()
+    await expect(part(page, '予約の受け方')).toBeVisible()
 
     // Assert
     await expectSoundPage(page)

@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { aStaffMember } from '../staff/components/examples'
 import {
@@ -13,14 +14,8 @@ import { anAccount, anInvitation } from './components/examples'
 const CALLED = '田中 美咲 さん'
 
 /** A form sent with the role chosen in it, or with none. */
-const formWith = (role?: string): FormData => {
-  const values = new FormData()
-  if (role !== undefined) {
-    values.set('role', role)
-  }
-
-  return values
-}
+const formWith = (role?: string): FormData =>
+  formOf(role === undefined ? {} : { role })
 
 describe('readRole', () => {
   it('should give the role chosen', () => {

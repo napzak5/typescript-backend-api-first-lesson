@@ -16,7 +16,7 @@ The styling and component rules are in the skill `frontend-ui`.
 | Subject | Test | Example |
 |---------|------|---------|
 | A component | Its stories, composed and run by Vitest in jsdom | `frontend/packages/ui/src/components/button/button.test.tsx` |
-| What a form does with its values and with the answer of the API | Unit tests of the pure functions. The longest text a form takes is written in characters outside the basic plane (`'𠮷'.repeat(255)`): the API counts each as one, and a form that counted `text.length` would refuse it | `frontend/packages/session/src/components/sign-in-screen/sign-in-flow.test.ts`, `frontend/packages/fields/src/lengths.test.ts` |
+| What a form does with its values and with the answer of the API | Unit tests of the pure functions. The values a form was sent with are made by `formOf({ name: value })`, or by `formOfEntries([[name, value], …])` where a name has several values (`@beauty-salon-frontend/testing/forms`): a test does not fill a `FormData` itself, but for a form whose rows it has to lay out. The longest text a form takes is written in characters outside the basic plane (`'𠮷'.repeat(255)`): the API counts each as one, and a form that counted `text.length` would refuse it | `frontend/packages/session/src/components/sign-in-screen/sign-in-flow.test.ts`, `frontend/packages/fields/src/lengths.test.ts` |
 | What a screen makes of its address and of what it read: the conditions of a search, dates and amounts, the pages of a list | The same | `frontend/apps/portal-app/src/salons/salon-format.test.ts` |
 | The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx`, `frontend/packages/app-frame/src/app-frame.test.tsx` |
 | The start of an application (`startApplication`): the element it is drawn in, the addresses of the browser, how its queries are read | Started in the document of jsdom, and ended after the test with the function it returns; no API | `frontend/packages/app-frame/src/start-application.test.tsx` |
@@ -38,7 +38,9 @@ every story (`@beauty-salon-frontend/testing/stories`), `savedFiles`,
 `setWindowWidth`, `findAccessibilityViolations`,
 `itShouldBeAccessibleInEveryStory` and `itShouldBeSentByTheEnterKey`, what
 the tests of screens share (`@beauty-salon-frontend/testing/screens`, under
-"A screen"), the files a test sends (`PNG_BYTES`, `PDF_TEXT`, `PDF_BYTES`),
+"A screen"), the values a form was sent with
+(`@beauty-salon-frontend/testing/forms`: `formOf`, `formOfEntries`), the
+files a test sends (`PNG_BYTES`, `PDF_TEXT`, `PDF_BYTES`),
 the names of the seed data (`@beauty-salon-frontend/testing/seed`), and the
 real API of the integration tests with what a test reads from its database
 and the sign-in on the screen (`@beauty-salon-frontend/testing/api`:
@@ -1227,7 +1229,15 @@ test.describe('the admin application', () => {
   does not have: registered and confirmed through the API, without a
   profile); the applications, their origins and their titles in
   `src/applications.ts`; a file the owner uploads through the API and the
-  storage, in `src/files.ts`. A test that reads the clipboard grants
+  storage, in `src/files.ts`. The parts of a screen and the steps of
+  somebody who has the keyboard alone are in `src/screen.ts`:
+  `part(page, name)` is the region of a heading,
+  `pressWithTheKeyboard(control)` moves the focus to a link or a button
+  and presses Enter, `chooseWithTheKeyboard(control)` presses Space on a
+  box or a radio button, `writeInto(control, value)` writes into a control
+  at once and `typeInto(control, value)` a key at a time. A test does not
+  write `focus()` and the key itself, nor
+  `getByRole('region', { name })`. A test that reads the clipboard grants
   `clipboard-read` and `clipboard-write` to the origin of the application
   (`page.context().grantPermissions`). A link of the portal is opened in
   a page of its own (`page.context().newPage()`): opened again in the

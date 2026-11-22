@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { bookThroughApi, MIKA, openDay, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard, typeInto } from './screen'
 import { ADMIN_START, enterCredentials, heading } from './sign-in'
 
 /*
@@ -56,19 +57,12 @@ const storedBookings = async (api: TestApi, before: string[]) =>
     ),
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 const combobox = (page: Page, name: string): Locator =>
   page.getByRole('combobox', { name })
 
 /** Searches the customers by a keyword, from the field of the keyword. */
 const search = async (page: Page, keyword: string): Promise<void> => {
-  await page.getByRole('searchbox', { name: 'キーワード' }).focus()
-  await page.keyboard.type(keyword)
+  await typeInto(page.getByRole('searchbox', { name: 'キーワード' }), keyword)
   await page.keyboard.press('Enter')
 }
 
@@ -105,9 +99,7 @@ test.describe('the bookings a salon puts in, in a browser', () => {
 
     // Assert
     await expect(heading(page, '予約を入れる')).toBeFocused()
-    await expect(page.getByRole('region', { name: 'お客様' })).toContainText(
-      CUSTOMER_NAME,
-    )
+    await expect(part(page, 'お客様')).toContainText(CUSTOMER_NAME)
 
     // Act: two lines, the second without a member, and the check
     await combobox(page, '担当スタッフ').selectOption({ label: MIKA })
@@ -171,9 +163,7 @@ test.describe('the bookings a salon puts in, in a browser', () => {
     // Assert
     await expect(heading(page, '予約の内容')).toBeFocused()
     await expect(page.getByText('予約の記録を変えました。')).toBeVisible()
-    await expect(
-      page.getByRole('region', { name: '予約' }).getByText('次回はカラーも'),
-    ).toBeVisible()
+    await expect(part(page, '予約').getByText('次回はカラーも')).toBeVisible()
     expect((await storedBookings(api, seeded))[0]?.internalNotes).toBe(
       '次回はカラーも',
     )

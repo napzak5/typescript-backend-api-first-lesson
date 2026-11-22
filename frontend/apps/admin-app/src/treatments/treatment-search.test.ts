@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   readTreatmentConditions,
@@ -8,14 +9,6 @@ import type { TreatmentConditions } from './treatments-api'
 
 const STAFF = '7c4a9e2b-1f3d-4b8a-9e6c-5d2f8a1b3c70'
 const CUSTOMER = 'b08e3c6f-5d7b-4fce-9cad-9b6d2e5f7ab4'
-
-const formOf = (fields: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(fields)) {
-    values.set(name, value)
-  }
-  return values
-}
 
 describe('treatmentConditionsIn', () => {
   it('should read every condition of the query', () => {

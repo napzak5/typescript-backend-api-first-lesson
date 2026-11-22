@@ -1,3 +1,4 @@
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   conditionsIn,
@@ -11,15 +12,6 @@ import {
 
 const TODAY = '2026-11-20'
 const STAFF_ID = '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c03'
-
-const valuesOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-
-  return values
-}
 
 describe('conditionsIn', () => {
   it('should read the day, the state and the member of the staff', () => {
@@ -60,7 +52,7 @@ describe('conditionsOf', () => {
   it('should read what was filled in', () => {
     expect(
       conditionsOf(
-        valuesOf([
+        formOfEntries([
           ['date', '2026-11-24'],
           ['status', 'no_show'],
           ['staffId', STAFF_ID],
@@ -73,7 +65,7 @@ describe('conditionsOf', () => {
   it('should read the choices of every state and every member as no condition', () => {
     expect(
       conditionsOf(
-        valuesOf([
+        formOfEntries([
           ['date', '2026-11-24'],
           ['status', ''],
           ['staffId', ''],
@@ -84,7 +76,7 @@ describe('conditionsOf', () => {
   })
 
   it('should show today for an empty day', () => {
-    expect(conditionsOf(valuesOf([['date', '']]), TODAY)).toEqual({
+    expect(conditionsOf(formOfEntries([['date', '']]), TODAY)).toEqual({
       date: TODAY,
     })
   })

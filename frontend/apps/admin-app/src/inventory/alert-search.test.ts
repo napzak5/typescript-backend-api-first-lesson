@@ -1,3 +1,4 @@
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   type AlertConditions,
@@ -6,15 +7,6 @@ import {
   isNarrowedAlerts,
   readAlertConditions,
 } from './alert-search'
-
-const formOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-
-  return values
-}
 
 describe('alertConditionsIn', () => {
   it.each<[string, AlertConditions]>([
@@ -45,7 +37,7 @@ describe('readAlertConditions', () => {
   it('should read the conditions chosen, and none of those left as all', () => {
     expect(
       readAlertConditions(
-        formOf([
+        formOfEntries([
           ['alert', ''],
           ['severity', 'warning'],
           ['acknowledged', 'false'],
@@ -54,7 +46,7 @@ describe('readAlertConditions', () => {
     ).toEqual({ severity: 'warning', acknowledged: false })
     expect(
       readAlertConditions(
-        formOf([
+        formOfEntries([
           ['alert', 'expiring'],
           ['severity', ''],
           ['acknowledged', ''],

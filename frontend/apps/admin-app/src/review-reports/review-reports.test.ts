@@ -1,4 +1,5 @@
 import type { ModelsReviewReportReasonType } from '@beauty-salon-frontend/api-client'
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import type { ReviewRemoval } from '../reviews/reviews-api'
 import { dismissedReport, waitingReport } from './components/examples'
@@ -18,14 +19,6 @@ import {
 import type { Dismissal } from './review-reports-api'
 
 const TOKYO = 'Asia/Tokyo'
-
-const formOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-  return values
-}
 
 describe('handlesReports', () => {
   it.each<[string, boolean]>([
@@ -57,7 +50,7 @@ describe('reportsShownIn and readReportsShown', () => {
     [[['status', '']], 'pending'],
     [[], 'pending'],
   ])('should read from the form %j the reports %s', (entries, shown) => {
-    expect(readReportsShown(formOf(entries))).toBe(shown)
+    expect(readReportsShown(formOfEntries(entries))).toBe(shown)
   })
 })
 

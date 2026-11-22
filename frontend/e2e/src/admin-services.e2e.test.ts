@@ -5,6 +5,12 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import {
+  chooseWithTheKeyboard,
+  part,
+  pressWithTheKeyboard,
+  typeInto,
+} from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -40,25 +46,13 @@ const storedOf = async (api: TestApi, name: string) =>
     ),
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Types into a control after moving the focus to it. */
-const typeInto = async (control: Locator, value: string): Promise<void> => {
-  await control.focus()
-  await control.pressSequentially(value)
-}
-
 /** Chooses an option of a select after moving the focus to it. */
 const chooseIn = async (control: Locator, label: string): Promise<void> => {
   await control.focus()
   await control.selectOption({ label })
 }
 
-const part = (page: Page, name: string): Locator =>
+const group = (page: Page, name: string): Locator =>
   page.getByRole('group', { name, exact: true })
 
 test.describe('the services of the menu, in a browser', () => {
@@ -77,29 +71,30 @@ test.describe('the services of the menu, in a browser', () => {
     )
     await expect(heading(page, 'サービスを足す')).toBeFocused()
     await typeInto(
-      part(page, 'サービス').getByRole('textbox', { name: '名前' }),
+      group(page, 'サービス').getByRole('textbox', { name: '名前' }),
       DUO,
     )
     await typeInto(
-      part(page, '時間と料金').getByRole('textbox', { name: '所要時間（分）' }),
+      group(page, '時間と料金').getByRole('textbox', {
+        name: '所要時間（分）',
+      }),
       '150',
     )
     await typeInto(
-      part(page, '時間と料金').getByRole('textbox', {
+      group(page, '時間と料金').getByRole('textbox', {
         name: '料金',
         exact: true,
       }),
       '15000',
     )
     const box = page.getByRole('checkbox', { name: 'パッケージにする' })
-    await box.focus()
-    await box.press('Space')
+    await chooseWithTheKeyboard(box)
     await chooseIn(
-      part(page, '構成サービス 1').getByRole('combobox', { name: 'サービス' }),
+      group(page, '構成サービス 1').getByRole('combobox', { name: 'サービス' }),
       'Ladies Cut',
     )
     await chooseIn(
-      part(page, '構成サービス 2').getByRole('combobox', { name: 'サービス' }),
+      group(page, '構成サービス 2').getByRole('combobox', { name: 'サービス' }),
       'Full Color',
     )
     await pressWithTheKeyboard(
@@ -111,9 +106,7 @@ test.describe('the services of the menu, in a browser', () => {
       page.getByText(`サービス「${DUO}」を、メニューに足しました。`),
     ).toBeVisible()
     await expect(heading(page, 'サービスの内容')).toBeFocused()
-    await expect(
-      page.getByRole('region', { name: 'パッケージのサービス' }),
-    ).toContainText('Ladies Cut')
+    await expect(part(page, 'パッケージのサービス')).toContainText('Ladies Cut')
     expect(await storedOf(api, DUO)).toEqual([
       { price: 15000, packaged: ['Ladies Cut', 'Full Color'], removed: false },
     ])
@@ -123,7 +116,7 @@ test.describe('the services of the menu, in a browser', () => {
       page.getByRole('link', { name: 'サービスを直す' }),
     )
     await expect(heading(page, 'サービスを直す')).toBeFocused()
-    const price = part(page, '時間と料金').getByRole('textbox', {
+    const price = group(page, '時間と料金').getByRole('textbox', {
       name: '料金',
       exact: true,
     })
@@ -178,7 +171,7 @@ test.describe('the services of the menu, on a screen as narrow as a phone', () =
     const salon = await salonId(api)
     await page.goto(`${ADMIN.origin}/salons/${salon}/menu/services/new`)
     await enterCredentials(page, MANAGER, api.seedPassword)
-    await expect(part(page, 'サービス')).toBeVisible()
+    await expect(group(page, 'サービス')).toBeVisible()
 
     // Act
     await page.getByRole('checkbox', { name: 'パッケージにする' }).check()
@@ -187,12 +180,12 @@ test.describe('the services of the menu, on a screen as narrow as a phone', () =
 
     // Assert
     await expect(
-      part(page, 'サービス').getByRole('textbox', { name: '名前' }),
+      group(page, 'サービス').getByRole('textbox', { name: '名前' }),
     ).toHaveAccessibleDescription(
       /サービスの名前を、255 文字以内で入力してください。/,
     )
     await expect(
-      part(page, '構成サービス 1').getByRole('combobox', { name: 'サービス' }),
+      group(page, '構成サービス 1').getByRole('combobox', { name: 'サービス' }),
     ).toHaveAccessibleDescription(/サービスを選んでください。/)
     await expectSoundPage(page)
   })

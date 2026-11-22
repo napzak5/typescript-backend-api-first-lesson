@@ -1,3 +1,4 @@
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   aDiscountedColour,
@@ -14,15 +15,6 @@ import {
   readServiceEntry,
   refusesChoice,
 } from './service-form'
-
-/** The values of a form, as a browser hands them over: a name may come more than once */
-const formOf = (entries: readonly [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-  return values
-}
 
 /** The cut, as the form opens with it: a checkbox that is not checked is not handed over */
 const SHOWN: Record<string, string | undefined> = {
@@ -63,7 +55,7 @@ const formWith = (
   changes: Record<string, string | undefined> = {},
   more: readonly [string, string][] = [],
 ): FormData =>
-  formOf([
+  formOfEntries([
     ...Object.entries({ ...SHOWN, ...changes }).flatMap(
       ([name, value]): [string, string][] =>
         value === undefined ? [] : [[name, value]],

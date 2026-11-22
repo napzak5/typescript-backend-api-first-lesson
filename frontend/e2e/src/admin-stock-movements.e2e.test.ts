@@ -6,6 +6,11 @@ import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
+import {
+  chooseWithTheKeyboard,
+  pressWithTheKeyboard,
+  writeInto,
+} from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -76,18 +81,6 @@ const movementRows = (page: Page, caption = '在庫の移動'): Locator =>
     .getByRole('row')
     .filter({ has: page.getByRole('rowheader') })
 
-/** Presses a link, a button or a choice as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Writes into a control after moving the focus to it. */
-const writeInto = async (control: Locator, value: string): Promise<void> => {
-  await control.focus()
-  await control.fill(value)
-}
-
 test.describe('the movements of the stock, in a browser', () => {
   test('should let the stylist record a purchase from the row, with the keyboard, and show it in the history and the stock', async ({
     page,
@@ -106,8 +99,7 @@ test.describe('the movements of the stock, in a browser', () => {
     )
     await expect(heading(page, '在庫の移動を記録する')).toBeFocused()
     const purchase = page.getByRole('radio', { name: '仕入れ' })
-    await purchase.focus()
-    await purchase.press('Space')
+    await chooseWithTheKeyboard(purchase)
     await writeInto(page.getByRole('textbox', { name: /^数量/ }), '12')
     await writeInto(page.getByRole('textbox', { name: '単価（円）' }), '1,250')
     await expectSoundPage(page)

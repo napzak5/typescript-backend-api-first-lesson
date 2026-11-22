@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   type CustomerConditions,
@@ -9,15 +10,6 @@ import {
   tagsIn,
   tagsTextOf,
 } from './customer-ledger'
-
-const formOf = (values: Record<string, string>): FormData => {
-  const form = new FormData()
-  for (const [name, value] of Object.entries(values)) {
-    form.append(name, value)
-  }
-
-  return form
-}
 
 const EMPTY_FORM = {
   search: '',

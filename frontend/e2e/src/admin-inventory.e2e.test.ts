@@ -6,6 +6,7 @@ import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
+import { part, pressWithTheKeyboard, writeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -63,18 +64,6 @@ const stockRows = (page: Page, caption: string): Locator =>
     .getByRole('row')
     .filter({ has: page.getByRole('rowheader') })
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Writes into a control after moving the focus to it. */
-const writeInto = async (control: Locator, value: string): Promise<void> => {
-  await control.focus()
-  await control.fill(value)
-}
-
 /** A link of the views of the stock */
 const viewLink = (page: Page, name: string): Locator =>
   page
@@ -122,9 +111,7 @@ test.describe('the stock of a salon, in a browser', () => {
       ),
     ).toBeVisible()
     await expect(heading(page, '在庫の行')).toBeFocused()
-    await expect(page.getByRole('region', { name: '在庫の行' })).toContainText(
-      '2027年6月30日',
-    )
+    await expect(part(page, '在庫の行')).toContainText('2027年6月30日')
     expect(
       (await storedRowsOf(api, 'COLOR001')).filter(
         ({ lotNumber }) => lotNumber === 'LOT-2026-050',

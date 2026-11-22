@@ -1,10 +1,10 @@
 import { OWNER } from '@beauty-salon-frontend/testing/seed'
-import type { Locator } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { pressWithTheKeyboard, writeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -35,18 +35,6 @@ const storedDateOf = async (api: TestApi, date: string) =>
       [date],
     ),
   )
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Writes into a control after moving the focus to it. */
-const writeInto = async (control: Locator, value: string): Promise<void> => {
-  await control.focus()
-  await control.fill(value)
-}
 
 test.describe('the hours of a salon, in a browser', () => {
   test('should let the owner put a day off into the calendar, with the keyboard, and show it in the settings', async ({

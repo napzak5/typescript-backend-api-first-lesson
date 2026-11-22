@@ -5,6 +5,7 @@ import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
 import { box, saveButton, text, value } from './mypage'
+import { chooseWithTheKeyboard, pressWithTheKeyboard } from './screen'
 import {
   enterCredentials,
   heading,
@@ -65,8 +66,7 @@ test.describe('the page and the profile of a customer, in a browser', () => {
     await expectSoundPage(page)
 
     // Act: to the form, by its link and the Enter key
-    await changeLink(page).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(changeLink(page))
 
     // Assert
     await expect(heading(page, 'お客様の情報')).toBeFocused()
@@ -96,10 +96,8 @@ test.describe('the page and the profile of a customer, in a browser', () => {
 
     // Act: another occupation, one kind of service more, no SMS, and the
     // Enter key in a control sends the form
-    await box(page, 'スパ').focus()
-    await page.keyboard.press('Space')
-    await box(page, 'SMS での連絡を受け取る').focus()
-    await page.keyboard.press('Space')
+    await chooseWithTheKeyboard(box(page, 'スパ'))
+    await chooseWithTheKeyboard(box(page, 'SMS での連絡を受け取る'))
     await text(page, '職業').focus()
     await page.keyboard.press('ControlOrMeta+A')
     await page.keyboard.type('Illustrator')

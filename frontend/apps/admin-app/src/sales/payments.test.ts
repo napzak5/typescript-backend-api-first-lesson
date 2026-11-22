@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { aPayment, aSale, paymentMethods } from './components/examples'
 import {
@@ -10,15 +11,6 @@ import {
 } from './payments'
 
 const [cash, card, money, qr] = paymentMethods
-
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 describe('methodsInUse', () => {
   it('should offer the methods the salon uses, in its order', () => {

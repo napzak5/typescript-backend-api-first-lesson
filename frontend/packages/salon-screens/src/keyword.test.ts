@@ -1,14 +1,6 @@
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { keywordError, keywordIn, keywordOf, LONGEST_KEYWORD } from './keyword'
-
-const valuesOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-
-  return values
-}
 
 describe('keywordIn', () => {
   it.each<[string, string, string | undefined]>([
@@ -82,6 +74,6 @@ describe('keywordError', () => {
 
 describe('keywordOf', () => {
   it.each(FILLED_IN)('should read %s', (_case, entries, keyword) => {
-    expect(keywordOf(valuesOf(entries))).toBe(keyword)
+    expect(keywordOf(formOfEntries(entries))).toBe(keyword)
   })
 })

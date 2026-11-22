@@ -1,3 +1,4 @@
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { colour } from '../products/components/examples'
 import {
@@ -8,15 +9,6 @@ import {
   stockQueryOf,
   stockViewIn,
 } from './stock-view'
-
-const formOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-
-  return values
-}
 
 describe('stockViewIn', () => {
   it.each<[string, string, StockView]>([
@@ -84,7 +76,7 @@ describe('readStockConditions', () => {
   it('should read the product and the lot, without the spaces around the lot', () => {
     expect(
       readStockConditions(
-        formOf([
+        formOfEntries([
           ['productId', colour.id],
           ['lotNumber', ' LOT-1 '],
         ]),
@@ -98,7 +90,7 @@ describe('readStockConditions', () => {
   it('should read empty conditions as every row', () => {
     expect(
       readStockConditions(
-        formOf([
+        formOfEntries([
           ['productId', ''],
           ['lotNumber', '  '],
         ]),
@@ -108,7 +100,7 @@ describe('readStockConditions', () => {
 
   it('should say that a lot is too long', () => {
     expect(
-      readStockConditions(formOf([['lotNumber', 'L'.repeat(101)]])),
+      readStockConditions(formOfEntries([['lotNumber', 'L'.repeat(101)]])),
     ).toEqual({
       type: 'invalid',
       errors: { lotNumber: 'ロット番号は、100 文字以内で入力してください。' },
@@ -123,7 +115,7 @@ describe('readExpiryWindow', () => {
     ['90', 90],
     ['45', 30],
   ])('should read the window %s as %i days', (days, window) => {
-    expect(readExpiryWindow(formOf([['days', days]]))).toEqual({
+    expect(readExpiryWindow(formOfEntries([['days', days]]))).toEqual({
       type: 'expiring',
       days: window,
     })

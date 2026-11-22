@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   daysErrorsOf,
@@ -12,14 +13,6 @@ import {
 } from './period'
 
 const TODAY = '2026-11-20'
-
-const formOf = (from: string, to: string): FormData => {
-  const form = new FormData()
-  form.append('from', from)
-  form.append('to', to)
-
-  return form
-}
 
 describe('monthUntil', () => {
   it.each<[string, Period]>([
@@ -82,7 +75,9 @@ describe('periodIn', () => {
 describe('readPeriod', () => {
   it('should read a period of 366 days', () => {
     // Act, Assert
-    expect(readPeriod(formOf('2024-01-01', '2024-12-31'))).toEqual({
+    expect(
+      readPeriod(formOf({ from: '2024-01-01', to: '2024-12-31' })),
+    ).toEqual({
       type: 'valid',
       value: { from: '2024-01-01', to: '2024-12-31' },
     })
@@ -109,7 +104,10 @@ describe('readPeriod', () => {
     ],
   ])('should say what is wrong with %s', (_case, from, to, errors) => {
     // Act, Assert
-    expect(readPeriod(formOf(from, to))).toEqual({ type: 'invalid', errors })
+    expect(readPeriod(formOf({ from, to }))).toEqual({
+      type: 'invalid',
+      errors,
+    })
   })
 })
 
@@ -138,7 +136,7 @@ describe('daysErrorsOf', () => {
 describe('readDays', () => {
   it('should read days as many as they are', () => {
     // Act, Assert
-    expect(readDays(formOf('2020-01-01', '2026-11-20'))).toEqual({
+    expect(readDays(formOf({ from: '2020-01-01', to: '2026-11-20' }))).toEqual({
       type: 'valid',
       value: { from: '2020-01-01', to: '2026-11-20' },
     })
@@ -146,7 +144,7 @@ describe('readDays', () => {
 
   it('should say what is wrong with an end before the start', () => {
     // Act, Assert
-    expect(readDays(formOf('2026-11-20', '2026-11-19'))).toEqual({
+    expect(readDays(formOf({ from: '2026-11-20', to: '2026-11-19' }))).toEqual({
       type: 'invalid',
       errors: {
         to: '終わりの日は、始まりの日と同じか、その後にしてください。',

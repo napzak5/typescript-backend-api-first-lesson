@@ -1,10 +1,10 @@
 import { MANAGER } from '@beauty-salon-frontend/testing/seed'
-import type { Locator } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { chooseWithTheKeyboard, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -30,18 +30,6 @@ const notGivenOf = async (api: TestApi) =>
     ),
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Checks a box as somebody does who works with the keyboard alone. */
-const checkWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Space')
-}
-
 test.describe('several services of the menu, in a browser', () => {
   test('should let the manager give two services a state at once, with the keyboard', async ({
     page,
@@ -57,10 +45,10 @@ test.describe('several services of the menu, in a browser', () => {
       page.getByRole('link', { name: 'まとめて変える' }),
     )
     await expect(heading(page, 'サービスをまとめて変える')).toBeFocused()
-    await checkWithTheKeyboard(
+    await chooseWithTheKeyboard(
       page.getByRole('checkbox', { name: 'Straight Perm（Perm）' }),
     )
-    await checkWithTheKeyboard(
+    await chooseWithTheKeyboard(
       page.getByRole('checkbox', { name: 'Digital Perm（Perm）' }),
     )
     const state = page.getByRole('combobox', { name: '提供の状態' })

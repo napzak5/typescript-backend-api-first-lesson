@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { aDeletionRequest, ME } from './components/examples'
 import {
@@ -8,19 +9,13 @@ import {
 } from './customer-erasure'
 import type { ErasureAsking, ErasureCancelling } from './customer-erasure-api'
 
-const form = (reason: string): FormData => {
-  const values = new FormData()
-  values.set('reason', reason)
-  return values
-}
-
 const BY_OTHERS =
   'ご本人からのデータの開示と消去の請求には、オーナーとマネージャーが応えます。'
 
 describe('readErasureAsk', () => {
   it('should keep the reason as it was written', () => {
     // Act
-    const read = readErasureAsk(form(' 店頭で\nお申し出 '))
+    const read = readErasureAsk(formOf({ reason: ' 店頭で\nお申し出 ' }))
 
     // Assert
     expect(read).toEqual({
@@ -34,7 +29,7 @@ describe('readErasureAsk', () => {
     ['blanks alone', ' \n　'],
   ])('should take no reason of %s', (_, reason) => {
     // Act
-    const read = readErasureAsk(form(reason))
+    const read = readErasureAsk(formOf({ reason }))
 
     // Assert
     expect(read).toEqual({
@@ -45,8 +40,8 @@ describe('readErasureAsk', () => {
 
   it('should take a reason of 1,000 characters, counted as the API counts them, and none longer', () => {
     // Act
-    const longest = readErasureAsk(form('𠮷'.repeat(1_000)))
-    const longer = readErasureAsk(form('あ'.repeat(1_001)))
+    const longest = readErasureAsk(formOf({ reason: '𠮷'.repeat(1_000) }))
+    const longer = readErasureAsk(formOf({ reason: 'あ'.repeat(1_001) }))
 
     // Assert
     expect(longest).toMatchObject({ type: 'valid' })

@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { pressWithTheKeyboard, typeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -39,12 +40,6 @@ const storedChart = async (api: TestApi, customer: string) =>
     ),
   )[0]
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 const treatment = (page: Page, place: number): Locator =>
   page.getByRole('group', { name: `${place} 件目の施術` })
 
@@ -65,8 +60,10 @@ test.describe('the charts of the customers, in a browser', () => {
     await expect(heading(page, 'カルテ')).toBeFocused()
     await pressWithTheKeyboard(page.getByRole('link', { name: 'カルテを作る' }))
     await expect(heading(page, 'カルテを作る')).toBeFocused()
-    await page.getByRole('textbox', { name: '持病や体調' }).focus()
-    await page.keyboard.type('肩こりがひどい')
+    await typeInto(
+      page.getByRole('textbox', { name: '持病や体調' }),
+      '肩こりがひどい',
+    )
     await pressWithTheKeyboard(page.getByRole('button', { name: '施術を足す' }))
     const first = treatment(page, 1).getByRole('combobox', { name: '施術' })
     await expect(first).toBeFocused()
@@ -121,8 +118,10 @@ test.describe('the charts of the customers, in a browser', () => {
     await expect(heading(page, '顧客台帳')).toBeFocused()
     await pressWithTheKeyboard(page.getByRole('link', { name: 'カルテを探す' }))
     await expect(heading(page, 'カルテを探す')).toBeFocused()
-    await page.getByRole('searchbox', { name: 'キーワード' }).focus()
-    await page.keyboard.type('肩こり')
+    await typeInto(
+      page.getByRole('searchbox', { name: 'キーワード' }),
+      '肩こり',
+    )
     await page.keyboard.press('Enter')
 
     // Assert

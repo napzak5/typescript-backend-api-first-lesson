@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -20,12 +21,6 @@ const yukiId = (api: TestApi): Promise<string> =>
     [YUKI.email],
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 /** Presses the control, and waits for the file the browser saves. */
 const saveWith = async (page: Page, control: Locator): Promise<Download> => {
   const saving = page.waitForEvent('download')
@@ -33,9 +28,6 @@ const saveWith = async (page: Page, control: Locator): Promise<Download> => {
 
   return saving
 }
-
-const part = (page: Page, name: string): Locator =>
-  page.getByRole('region', { name })
 
 test.describe('exporting customers, in a browser', () => {
   test('should save the customers who meet the conditions of the ledger as a CSV file, with the keyboard', async ({

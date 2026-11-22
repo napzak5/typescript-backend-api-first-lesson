@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test'
-import { part } from './bookings'
+import { part } from './screen'
 
 /*
  * What the tests of the page of a customer and of the forms it leads to

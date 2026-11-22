@@ -5,6 +5,7 @@ import { ADMIN, PORTAL } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { chooseWithTheKeyboard, pressWithTheKeyboard } from './screen'
 import {
   ADMIN_START,
   enterCredentials,
@@ -47,18 +48,6 @@ const storedAccountOf = async (api: TestApi, email: string) =>
 /** The heading of a card: where the focus is after a write changed what the screen shows. */
 const cardHeading = (page: Page, name: string): Locator =>
   page.getByRole('heading', { level: 2, name, exact: true })
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Chooses a radio button with the keyboard. */
-const chooseWithTheKeyboard = async (radio: Locator): Promise<void> => {
-  await radio.focus()
-  await radio.press('Space')
-}
 
 test.describe('the accounts of the staff, in a browser', () => {
   test('should invite a member, let her make her account and sign in, and give her another role, with the keyboard', async ({

@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import type { Time } from './booking-choice'
 import {
@@ -31,19 +32,10 @@ const ASKED: Asked = {
   times: TIMES,
 }
 
-const form = (values: Record<string, string | Blob>): FormData => {
-  const data = new FormData()
-  for (const [name, value] of Object.entries(values)) {
-    data.append(name, value)
-  }
-
-  return data
-}
-
 describe('readBooking', () => {
   it('should book the time that was chosen, at the salon and for the service of the screen', () => {
     expect(
-      readBooking(form({ startTime: TEN, customerRequest: '' }), ASKED),
+      readBooking(formOf({ startTime: TEN, customerRequest: '' }), ASKED),
     ).toEqual({
       type: 'valid',
       value: {
@@ -58,13 +50,13 @@ describe('readBooking', () => {
 
   it('should book with the first member of the staff who is free then, when nobody in particular was asked for', () => {
     expect(
-      readBooking(form({ startTime: HALF_PAST_TEN }), ASKED),
+      readBooking(formOf({ startTime: HALF_PAST_TEN }), ASKED),
     ).toMatchObject({ value: { staffId: FIRST, startTime: HALF_PAST_TEN } })
   })
 
   it('should book with the member of the staff who was asked for', () => {
     expect(
-      readBooking(form({ startTime: HALF_PAST_TEN }), {
+      readBooking(formOf({ startTime: HALF_PAST_TEN }), {
         ...ASKED,
         staffId: SECOND,
       }),
@@ -74,7 +66,7 @@ describe('readBooking', () => {
   it('should pass on what was written for the salon, without the spaces around it', () => {
     expect(
       readBooking(
-        form({
+        formOf({
           startTime: TEN,
           customerRequest: '  前髪は短めに。\nカラーの相談もしたいです。 \n',
         }),
@@ -90,12 +82,12 @@ describe('readBooking', () => {
     ['spaces alone were written', ' \n　\t'],
   ])('should book without a request when %s', (_case, customerRequest) => {
     expect(
-      readBooking(form({ startTime: TEN, customerRequest }), ASKED),
+      readBooking(formOf({ startTime: TEN, customerRequest }), ASKED),
     ).toMatchObject({ value: { customerRequest: null } })
   })
 
   it('should book without a request when the form has no such control', () => {
-    expect(readBooking(form({ startTime: TEN }), ASKED)).toMatchObject({
+    expect(readBooking(formOf({ startTime: TEN }), ASKED)).toMatchObject({
       value: { customerRequest: null },
     })
   })
@@ -110,7 +102,7 @@ describe('readBooking', () => {
     ['the time is a time of day and no moment', { startTime: '10:00' }],
     ['the time is no text', { startTime: new Blob(['10:00']) }],
   ])('should ask for a time, and book nothing, when %s', (_case, values) => {
-    expect(readBooking(form(values), ASKED)).toEqual({
+    expect(readBooking(formOf(values), ASKED)).toEqual({
       type: 'invalid',
       errors: { startTime: '開始時刻を選択してください。' },
     })
@@ -118,7 +110,7 @@ describe('readBooking', () => {
 
   it('should ask for a time when the day has none', () => {
     expect(
-      readBooking(form({ startTime: TEN }), { ...ASKED, times: [] }),
+      readBooking(formOf({ startTime: TEN }), { ...ASKED, times: [] }),
     ).toMatchObject({ type: 'invalid' })
   })
 })
@@ -168,14 +160,14 @@ describe('afterBooking', () => {
 describe('readCancellation', () => {
   it('should send the reason that was written', () => {
     expect(
-      readCancellation(form({ cancellationReason: '都合が悪くなりました' })),
+      readCancellation(formOf({ cancellationReason: '都合が悪くなりました' })),
     ).toEqual({ cancellationReason: '都合が悪くなりました' })
   })
 
   it('should send the reason without the space around it, and with the lines it was written in', () => {
     expect(
       readCancellation(
-        form({
+        formOf({
           cancellationReason: '  体調がすぐれません。\n\nまた予約します。\n',
         }),
       ),
@@ -190,7 +182,7 @@ describe('readCancellation', () => {
     ['the dialog has no such control', {}],
     ['the value is a file', { cancellationReason: new Blob(['理由']) }],
   ])('should send that there is no reason when %s', (_case, values) => {
-    expect(readCancellation(form(values))).toEqual({
+    expect(readCancellation(formOf(values))).toEqual({
       cancellationReason: null,
     })
   })
@@ -231,7 +223,7 @@ describe('readMove', () => {
 
   it('should move the booking to the time that was chosen, with the member of the staff who was asked for', () => {
     expect(
-      readMove(form({ startTime: HALF_PAST_TEN }), {
+      readMove(formOf({ startTime: HALF_PAST_TEN }), {
         ...TO_MOVE,
         staffId: FIRST,
       }),
@@ -242,11 +234,11 @@ describe('readMove', () => {
   })
 
   it('should give a customer who asked for nobody the first member of the staff who is free then', () => {
-    expect(readMove(form({ startTime: HALF_PAST_TEN }), TO_MOVE)).toEqual({
+    expect(readMove(formOf({ startTime: HALF_PAST_TEN }), TO_MOVE)).toEqual({
       type: 'valid',
       value: { startTime: HALF_PAST_TEN, staffId: FIRST },
     })
-    expect(readMove(form({ startTime: TEN }), TO_MOVE)).toEqual({
+    expect(readMove(formOf({ startTime: TEN }), TO_MOVE)).toEqual({
       type: 'valid',
       value: { startTime: TEN, staffId: SECOND },
     })
@@ -261,7 +253,7 @@ describe('readMove', () => {
     ['the time is empty', { startTime: '' }],
     ['the value is a file', { startTime: new Blob([TEN]) }],
   ])('should ask for a time when %s', (_case, values) => {
-    expect(readMove(form(values), TO_MOVE)).toEqual({
+    expect(readMove(formOf(values), TO_MOVE)).toEqual({
       type: 'invalid',
       errors: { startTime: '開始時刻を選択してください。' },
     })
@@ -269,7 +261,7 @@ describe('readMove', () => {
 
   it('should ask for a time when the time that was chosen has nobody who is free', () => {
     expect(
-      readMove(form({ startTime: TEN }), {
+      readMove(formOf({ startTime: TEN }), {
         staffId: undefined,
         times: [{ startTime: TEN, label: '10:00', staffIds: [] }],
       }),
@@ -282,7 +274,7 @@ describe('readMove', () => {
   it('should send nothing but the time and the member of the staff, whatever else the form holds', () => {
     expect(
       readMove(
-        form({ startTime: TEN, customerRequest: '静かな席を希望します' }),
+        formOf({ startTime: TEN, customerRequest: '静かな席を希望します' }),
         TO_MOVE,
       ),
     ).toEqual({ type: 'valid', value: { startTime: TEN, staffId: SECOND } })

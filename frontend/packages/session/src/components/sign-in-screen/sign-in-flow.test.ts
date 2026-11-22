@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import type { SignInOutcome } from '../../sign-in'
 import {
@@ -19,22 +20,13 @@ const AT_THE_CODE: SignInState = {
   errors: {},
 }
 
-const valuesOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
-
 describe('readAttempt', () => {
   describe('at the first step', () => {
     it('should read the credentials, without a code', () => {
       // Act
       const read = readAttempt(
         { type: 'credentials' },
-        valuesOf({ email: CREDENTIALS.email, password: CREDENTIALS.password }),
+        formOf({ email: CREDENTIALS.email, password: CREDENTIALS.password }),
       )
 
       // Assert
@@ -48,7 +40,7 @@ describe('readAttempt', () => {
       // Act
       const read = readAttempt(
         { type: 'credentials' },
-        valuesOf({ ...CREDENTIALS, rememberMe: 'on' }),
+        formOf({ ...CREDENTIALS, rememberMe: 'on' }),
       )
 
       // Assert
@@ -61,7 +53,7 @@ describe('readAttempt', () => {
       // Act
       const read = readAttempt(
         { type: 'credentials' },
-        valuesOf({ email: '  hanako@example.com ', password: ' a b ' }),
+        formOf({ email: '  hanako@example.com ', password: ' a b ' }),
       )
 
       // Assert
@@ -92,7 +84,7 @@ describe('readAttempt', () => {
       // Act
       const read = readAttempt(
         { type: 'credentials' },
-        valuesOf({ email, password: CREDENTIALS.password }),
+        formOf({ email, password: CREDENTIALS.password }),
       )
 
       // Assert
@@ -118,7 +110,7 @@ describe('readAttempt', () => {
 
     it('should take a file for no value', () => {
       // Arrange
-      const values = valuesOf({ password: CREDENTIALS.password })
+      const values = formOf({ password: CREDENTIALS.password })
       values.set('email', new File(['hanako@example.com'], 'email.txt'))
 
       // Act
@@ -137,7 +129,7 @@ describe('readAttempt', () => {
       // Act
       const read = readAttempt(
         AT_THE_CODE.step,
-        valuesOf({ twoFactorCode: ' 123456 ' }),
+        formOf({ twoFactorCode: ' 123456 ' }),
       )
 
       // Assert
@@ -149,10 +141,7 @@ describe('readAttempt', () => {
 
     it('should say that the code is missing', () => {
       // Act
-      const read = readAttempt(
-        AT_THE_CODE.step,
-        valuesOf({ twoFactorCode: ' ' }),
-      )
+      const read = readAttempt(AT_THE_CODE.step, formOf({ twoFactorCode: ' ' }))
 
       // Assert
       expect(read).toEqual({

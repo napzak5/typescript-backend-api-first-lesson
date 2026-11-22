@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -50,17 +51,10 @@ const orderAt = async (api: TestApi, orderNumber: string): Promise<string> => {
   return `${ADMIN.origin}/salons/${await salonId(api)}/purchase-orders/${order?.id ?? ''}`
 }
 
-const status = (page: Page): Locator =>
-  page.getByRole('region', { name: '状態' })
+const status = (page: Page): Locator => part(page, '状態')
 
 const statusHeading = (page: Page): Locator =>
   page.getByRole('heading', { name: '状態' })
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
 
 const CANCELLATION = '発注を取り消しますか？'
 

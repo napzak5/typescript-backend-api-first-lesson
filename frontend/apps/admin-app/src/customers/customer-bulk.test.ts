@@ -1,3 +1,4 @@
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { aCustomer, customers } from '../bookings/components/examples'
 import {
@@ -16,14 +17,6 @@ import {
 } from './customer-bulk'
 
 const [hanako = aCustomer(), ichiro = aCustomer()] = customers
-
-const valuesOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-  return values
-}
 
 const BOTH: Chosen = new Map([
   [hanako.id, hanako],
@@ -72,7 +65,7 @@ describe('readTagChange', () => {
     ],
   ])('should read %s', (_, entries, change) => {
     // Act
-    const read = readTagChange(valuesOf(entries))
+    const read = readTagChange(formOfEntries(entries))
 
     // Assert
     expect(read).toEqual({ type: 'valid', value: change })
@@ -93,7 +86,7 @@ describe('readTagChange', () => {
   ])('should refuse %s', (_, tag, error) => {
     // Act
     const read = readTagChange(
-      valuesOf([
+      formOfEntries([
         ['way', 'add'],
         ['tag', tag],
       ]),
