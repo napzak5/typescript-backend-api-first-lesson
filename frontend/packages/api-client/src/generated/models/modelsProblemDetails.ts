@@ -15,12 +15,12 @@ import type { ModelsValidationError } from './modelsValidationError';
 export interface ModelsProblemDetails {
   /** エラー種別を特定するための URI。参照することで関連ドキュメントに誘導できる。 */
   type: string;
-  /** ユーザーに短く要点を伝えるエラー概要メッセージ。 */
+  /** ユーザーに短く要点を伝えるエラー概要メッセージ。言語は、レスポンスの Content-Language ヘッダーのとおり。 */
   title: string;
   /** レスポンスに付与される HTTP ステータスコード。 */
   status: number;
   /**
-     * 今回の発生状況に固有の詳細説明。サポート対応時の一次情報となる。詳細が不要な場合はnull
+     * 今回の発生状況に固有の詳細説明。サポート対応時の一次情報となる。言語は、レスポンスの Content-Language ヘッダーのとおり。詳細が不要な場合はnull
      * @nullable
      */
   detail: string | null;

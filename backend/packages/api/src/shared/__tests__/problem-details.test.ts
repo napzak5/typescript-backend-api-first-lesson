@@ -1,8 +1,10 @@
 import { type DomainError, DomainErrors } from '@beauty-salon-backend/domain'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   type ApiError,
   type HttpError,
+  languageOf,
   type ProblemDetails,
   toBearerChallenge,
   toProblemDetails,
@@ -22,6 +24,7 @@ describe('toProblemDetails', () => {
         { field: 'openingHours.0.date', rule: 'custom', message: 'Repeated' },
       ]),
       context,
+      'en',
     )
 
     expect(problem).toEqual({
@@ -54,6 +57,7 @@ describe('toProblemDetails', () => {
     const problem = toProblemDetails(
       DomainErrors.notFound('Salon', '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c'),
       context,
+      'en',
     )
 
     expect(problem).toMatchObject({
@@ -69,6 +73,7 @@ describe('toProblemDetails', () => {
     const problem = toProblemDetails(
       DomainErrors.alreadyExists('Salon', 'email', 'aoyama@example.com'),
       context,
+      'en',
     )
 
     expect(problem).toMatchObject({
@@ -87,6 +92,7 @@ describe('toProblemDetails', () => {
         new Error('relation "salons" does not exist'),
       ),
       context,
+      'en',
     )
 
     expect(problem).toEqual({
@@ -170,7 +176,7 @@ describe('toProblemDetails', () => {
   ])(
     'presents the HTTP error %j with its own type, status and code',
     (error, expected) => {
-      expect(toProblemDetails(error, context)).toEqual({
+      expect(toProblemDetails(error, context, 'en')).toEqual({
         ...expected,
         title: expect.any(String),
         errors: null,
@@ -228,7 +234,7 @@ describe('toProblemDetails for authentication and authorization', () => {
   ])(
     'presents %s with its own type, status and code',
     (_case, error, expected) => {
-      expect(toProblemDetails(error, context)).toEqual({
+      expect(toProblemDetails(error, context, 'en')).toEqual({
         ...expected,
         title: expect.any(String),
         detail: expect.any(String),
@@ -242,6 +248,7 @@ describe('toProblemDetails for authentication and authorization', () => {
     const problem = toProblemDetails(
       DomainErrors.unauthenticated('invalidCredentials'),
       context,
+      'en',
     )
 
     expect(problem.detail).toBe('Invalid email or password')
@@ -251,6 +258,7 @@ describe('toProblemDetails for authentication and authorization', () => {
     const problem = toProblemDetails(
       DomainErrors.unauthenticated('twoFactorRequired'),
       context,
+      'en',
     )
 
     expect(problem).toEqual({
@@ -268,10 +276,12 @@ describe('toProblemDetails for authentication and authorization', () => {
     const needsCode = toProblemDetails(
       DomainErrors.unauthenticated('twoFactorRequired'),
       context,
+      'en',
     )
     const failed = toProblemDetails(
       DomainErrors.unauthenticated('invalidCredentials'),
       context,
+      'en',
     )
 
     expect(needsCode.code).not.toBe(failed.code)
@@ -284,6 +294,7 @@ describe('toProblemDetails for authentication and authorization', () => {
     const problem = toProblemDetails(
       DomainErrors.unauthenticated('twoFactorRequired'),
       context,
+      'en',
     )
 
     expect(problem.detail).not.toMatch(
@@ -297,6 +308,7 @@ describe('toProblemDetails for an operation that the state does not allow', () =
     const problem = toProblemDetails(
       DomainErrors.conflict('Two-factor authentication is already enabled'),
       context,
+      'en',
     )
 
     expect(problem).toEqual({
@@ -317,23 +329,342 @@ describe('toProblemDetails for an operation that the state does not allow', () =
   ])(
     'gives the message %j of a conflict as the detail, unchanged',
     (message) => {
-      const problem = toProblemDetails(DomainErrors.conflict(message), context)
+      const problem = toProblemDetails(
+        DomainErrors.conflict(message),
+        context,
+        'en',
+      )
 
       expect(problem.detail).toBe(message)
     },
   )
 
   it('does not present a conflict as a duplicate, which is the other 409', () => {
-    const conflict = toProblemDetails(DomainErrors.conflict('No'), context)
+    const conflict = toProblemDetails(
+      DomainErrors.conflict('No'),
+      context,
+      'en',
+    )
     const duplicate = toProblemDetails(
       DomainErrors.alreadyExists('Salon', 'email', 'aoyama@example.com'),
       context,
+      'en',
     )
 
     expect(conflict.status).toBe(duplicate.status)
     expect(conflict.code).not.toBe(duplicate.code)
     expect(conflict.type).not.toBe(duplicate.type)
   })
+})
+
+/** What a problem reads: its title and its detail. */
+type Told = Pick<ProblemDetails, 'title' | 'detail'>
+
+/** The errors whose title and detail the HTTP layer writes, in each language. */
+const TOLD_BY_THE_API: [string, ApiError, Told, Told][] = [
+  [
+    'a request without credentials',
+    DomainErrors.unauthenticated('missingCredentials'),
+    {
+      title: 'Authentication required',
+      detail:
+        'Send the access token in the Authorization header as a Bearer token',
+    },
+    {
+      title: '認証が必要です',
+      detail:
+        'アクセストークンを、Authorization ヘッダーに Bearer トークンとして送ってください',
+    },
+  ],
+  [
+    'a token that cannot be used',
+    DomainErrors.unauthenticated('invalidToken'),
+    {
+      title: 'Invalid token',
+      detail: 'The token cannot be used; sign in again',
+    },
+    {
+      title: 'トークンが無効です',
+      detail: 'このトークンは使えません。もう一度サインインしてください',
+    },
+  ],
+  [
+    'an access token that has expired',
+    DomainErrors.unauthenticated('expiredToken'),
+    {
+      title: 'Token expired',
+      detail:
+        'The access token has expired; get a new one with the refresh token',
+    },
+    {
+      title: 'トークンの有効期限が切れています',
+      detail:
+        'アクセストークンの有効期限が切れています。リフレッシュトークンで、新しいトークンを受け取ってください',
+    },
+  ],
+  [
+    'a failed login',
+    DomainErrors.unauthenticated('invalidCredentials'),
+    { title: 'Login failed', detail: 'Invalid email or password' },
+    {
+      title: 'サインインできませんでした',
+      detail: 'メールアドレスかパスワードが正しくありません',
+    },
+  ],
+  [
+    'a login that needs a two-factor code',
+    DomainErrors.unauthenticated('twoFactorRequired'),
+    {
+      title: 'Two-factor authentication required',
+      detail:
+        'Send a valid code of the authenticator app, or a backup code, as twoFactorCode',
+    },
+    {
+      title: '2 要素認証が必要です',
+      detail:
+        '認証アプリの有効なコードかバックアップコードを、twoFactorCode として送ってください',
+    },
+  ],
+  [
+    'an actor who may not do this',
+    DomainErrors.forbidden(),
+    { title: 'Forbidden', detail: 'This account is not allowed to do this' },
+    {
+      title: '許可されていません',
+      detail: 'このアカウントでは、この操作はできません',
+    },
+  ],
+  [
+    'a share link whose password is missing or wrong',
+    DomainErrors.passwordRequired(),
+    {
+      title: 'Password required',
+      detail:
+        'Send the password of the share link; one that was sent was not accepted',
+    },
+    {
+      title: 'パスワードが必要です',
+      detail:
+        '共有リンクのパスワードを送ってください。送られたパスワードは、受け付けられませんでした',
+    },
+  ],
+  [
+    'a database error',
+    DomainErrors.database('Failed to create salon', null),
+    { title: 'Internal server error', detail: null },
+    { title: 'サーバーでエラーが起きました', detail: null },
+  ],
+  [
+    'an error of the object storage',
+    DomainErrors.storage('Failed to store the file', null),
+    { title: 'Internal server error', detail: null },
+    { title: 'サーバーでエラーが起きました', detail: null },
+  ],
+  [
+    'an unknown route',
+    { type: 'routeNotFound', method: 'PUT', path: '/api/v1/salons' },
+    {
+      title: 'Route not found',
+      detail: 'PUT /api/v1/salons is not part of the API',
+    },
+    {
+      title: 'ルートが見つかりません',
+      detail: 'PUT /api/v1/salons は、この API にありません',
+    },
+  ],
+  [
+    'a malformed body',
+    { type: 'malformedBody' },
+    {
+      title: 'Malformed request body',
+      detail: 'The request body is not valid JSON',
+    },
+    {
+      title: 'リクエストの本文を読めません',
+      detail: 'リクエストの本文が、正しい JSON ではありません',
+    },
+  ],
+  [
+    'a media type the API does not read',
+    { type: 'unsupportedMediaType' },
+    {
+      title: 'Unsupported media type',
+      detail: 'The request body must be application/json in UTF-8',
+    },
+    {
+      title: '受け付けていないメディアタイプです',
+      detail: 'リクエストの本文は、UTF-8 の application/json にしてください',
+    },
+  ],
+  [
+    'a body over the size limit',
+    { type: 'bodyTooLarge' },
+    {
+      title: 'Request body too large',
+      detail: 'The request body exceeds 100000 bytes',
+    },
+    {
+      title: 'リクエストの本文が大きすぎます',
+      detail: 'リクエストの本文が 100000 バイトを超えています',
+    },
+  ],
+  [
+    'a request the API cannot read',
+    { type: 'badRequest' },
+    { title: 'Bad request', detail: null },
+    { title: 'リクエストが正しくありません', detail: null },
+  ],
+  [
+    'the rate limit',
+    { type: 'rateLimited' },
+    {
+      title: 'Too many requests',
+      detail: 'Wait for the time in the Retry-After header before retrying',
+    },
+    {
+      title: 'リクエストが多すぎます',
+      detail:
+        'Retry-After ヘッダーの時間だけ待ってから、もう一度送ってください',
+    },
+  ],
+  [
+    'an unexpected failure',
+    { type: 'unexpected' },
+    { title: 'Internal server error', detail: null },
+    { title: 'サーバーでエラーが起きました', detail: null },
+  ],
+]
+
+/** The errors whose detail the domain writes, with what they read. */
+const TOLD_BY_THE_DOMAIN: [string, DomainError, Told][] = [
+  [
+    'a validation error',
+    DomainErrors.validation('Invalid salon', []),
+    { title: 'Validation failed', detail: 'Invalid salon' },
+  ],
+  [
+    'a missing entity',
+    DomainErrors.notFound('Salon', '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c'),
+    {
+      title: 'Resource not found',
+      detail: 'Salon 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c was not found',
+    },
+  ],
+  [
+    'a duplicate',
+    DomainErrors.alreadyExists('Salon', 'email', 'aoyama@example.com'),
+    {
+      title: 'Resource already exists',
+      detail: 'Salon with email aoyama@example.com already exists',
+    },
+  ],
+  [
+    'a conflict',
+    DomainErrors.conflict('Two-factor authentication is already enabled'),
+    {
+      title: 'Operation not allowed',
+      detail: 'Two-factor authentication is already enabled',
+    },
+  ],
+]
+
+const LANGUAGES: Locale[] = ['en', 'ja']
+
+describe('toProblemDetails in the language that is asked for', () => {
+  it.each(TOLD_BY_THE_API)(
+    'should tell %s in English when English is asked for',
+    (_case, error, english) => {
+      // Act
+      const problem = toProblemDetails(error, context, 'en')
+
+      // Assert
+      expect(problem).toMatchObject(english)
+    },
+  )
+
+  it.each(TOLD_BY_THE_API)(
+    'should tell %s in Japanese when Japanese is asked for',
+    (_case, error, _english, japanese) => {
+      // Act
+      const problem = toProblemDetails(error, context, 'ja')
+
+      // Assert
+      expect(problem).toMatchObject(japanese)
+    },
+  )
+
+  it.each(TOLD_BY_THE_API)(
+    'should change nothing of %s but its title and its detail',
+    (_case, error) => {
+      // Act
+      const english = toProblemDetails(error, context, 'en')
+      const japanese = toProblemDetails(error, context, 'ja')
+
+      // Assert
+      expect(japanese).toEqual({
+        ...english,
+        title: japanese.title,
+        detail: japanese.detail,
+      })
+    },
+  )
+
+  it.each(
+    TOLD_BY_THE_DOMAIN.flatMap(([name, error, told]) =>
+      LANGUAGES.map((asked): [string, Locale, DomainError, Told] => [
+        name,
+        asked,
+        error,
+        told,
+      ]),
+    ),
+  )(
+    'should tell %s, whose detail the domain writes, in English when %s is asked for',
+    (_case, asked, error, english) => {
+      // Act
+      const problem = toProblemDetails(error, context, asked)
+
+      // Assert
+      expect(problem).toMatchObject(english)
+    },
+  )
+})
+
+describe('languageOf', () => {
+  it.each(
+    TOLD_BY_THE_API.flatMap(([name, error]) =>
+      LANGUAGES.map((asked): [string, Locale, ApiError] => [
+        name,
+        asked,
+        error,
+      ]),
+    ),
+  )('should tell %s in the language asked for (%s)', (_case, asked, error) => {
+    // Act
+    const language = languageOf(error, asked)
+
+    // Assert
+    expect(language).toBe(asked)
+  })
+
+  it.each(
+    TOLD_BY_THE_DOMAIN.flatMap(([name, error]) =>
+      LANGUAGES.map((asked): [string, Locale, ApiError] => [
+        name,
+        asked,
+        error,
+      ]),
+    ),
+  )(
+    'should tell %s in English whatever is asked for (%s)',
+    (_case, asked, error) => {
+      // Act
+      const language = languageOf(error, asked)
+
+      // Assert
+      expect(language).toBe('en')
+    },
+  )
 })
 
 describe('toBearerChallenge', () => {

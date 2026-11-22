@@ -1,6 +1,12 @@
 import type { DomainError } from '@beauty-salon-backend/domain'
 import type { components } from '@beauty-salon-backend/generated'
-import { match } from 'ts-pattern'
+import {
+  type Locale,
+  type LocalizedText,
+  textIn,
+} from '@beauty-salon-shared/i18n'
+import { problemMessages } from '@beauty-salon-shared/i18n/messages/api'
+import { match, P } from 'ts-pattern'
 
 export type ProblemDetails = components['schemas']['Models.ProblemDetails']
 
@@ -32,191 +38,212 @@ export type ProblemContext = Pick<
   'instance' | 'correlationId' | 'timestamp'
 >
 
-const toProblem = (error: ApiError): Problem =>
+/**
+ * The language of what the domain writes of an error: the detail of an
+ * error that names what was wrong with the request or with what it acts on.
+ */
+const LANGUAGE_OF_THE_DOMAIN: Locale = 'en'
+
+/**
+ * The language a problem is told in: the one that was asked for, but for
+ * the errors whose detail the domain writes. The domain writes in one
+ * language, and such an error is told in that language as a whole: no
+ * answer is in two languages, and `Content-Language` names the one it is in.
+ */
+export const languageOf = (error: ApiError, asked: Locale): Locale =>
   match(error)
-    .returnType<Problem>()
-    .with({ type: 'validation' }, ({ message, issues }) => ({
-      type: 'urn:beauty-salon:problem:validation',
-      title: 'Validation failed',
-      status: 400,
-      detail: message,
-      code: '2001',
-      errors: issues.map(({ field, rule, message: issueMessage }) => ({
-        field,
-        rule,
-        message: issueMessage,
-        value: null,
-        constraint: null,
-      })),
-    }))
-    .with({ type: 'unauthenticated', reason: 'missingCredentials' }, () => ({
-      type: 'urn:beauty-salon:problem:authentication-required',
-      title: 'Authentication required',
-      status: 401,
-      detail:
-        'Send the access token in the Authorization header as a Bearer token',
-      code: '1001',
-      errors: null,
-    }))
-    .with({ type: 'unauthenticated', reason: 'invalidToken' }, () => ({
-      type: 'urn:beauty-salon:problem:invalid-token',
-      title: 'Invalid token',
-      status: 401,
-      detail: 'The token cannot be used; sign in again',
-      code: '1004',
-      errors: null,
-    }))
-    .with({ type: 'unauthenticated', reason: 'expiredToken' }, () => ({
-      type: 'urn:beauty-salon:problem:token-expired',
-      title: 'Token expired',
-      status: 401,
-      detail:
-        'The access token has expired; get a new one with the refresh token',
-      code: '1003',
-      errors: null,
-    }))
-    // The same for every cause, so that the answer does not say whether the
-    // email is registered or what is wrong with the account.
-    .with({ type: 'unauthenticated', reason: 'invalidCredentials' }, () => ({
-      type: 'urn:beauty-salon:problem:invalid-credentials',
-      title: 'Login failed',
-      status: 401,
-      detail: 'Invalid email or password',
-      code: '1002',
-      errors: null,
-    }))
-    // The password was right. Says nothing about the code: missing, wrong and
-    // already used are answered alike.
-    .with({ type: 'unauthenticated', reason: 'twoFactorRequired' }, () => ({
-      type: 'urn:beauty-salon:problem:two-factor-required',
-      title: 'Two-factor authentication required',
-      status: 401,
-      detail:
-        'Send a valid code of the authenticator app, or a backup code, as twoFactorCode',
-      code: '1007',
-      errors: null,
-    }))
-    .with({ type: 'forbidden' }, () => ({
-      type: 'urn:beauty-salon:problem:forbidden',
-      title: 'Forbidden',
-      status: 403,
-      detail: 'This account is not allowed to do this',
-      code: '1005',
-      errors: null,
-    }))
-    // 403 and not 401: the password travels in the body, so there is no
-    // challenge to send with a 401 (RFC 9110, 15.5.2), and a 403 is what
-    // tells a client that other credentials may do (15.5.4). The same for a
-    // missing password, a wrong one and a locked link.
-    .with({ type: 'passwordRequired' }, () => ({
-      type: 'urn:beauty-salon:problem:password-required',
-      title: 'Password required',
-      status: 403,
-      detail:
-        'Send the password of the share link; one that was sent was not accepted',
-      code: '1002',
-      errors: null,
-    }))
-    .with({ type: 'notFound' }, ({ entity, id }) => ({
-      type: 'urn:beauty-salon:problem:not-found',
-      title: 'Resource not found',
-      status: 404,
-      detail: `${entity} ${id} was not found`,
-      code: '3001',
-      errors: null,
-    }))
-    .with({ type: 'alreadyExists' }, ({ entity, field, value }) => ({
-      type: 'urn:beauty-salon:problem:already-exists',
-      title: 'Resource already exists',
-      status: 409,
-      detail: `${entity} with ${field} ${value} already exists`,
-      code: '3002',
-      errors: null,
-    }))
-    .with({ type: 'conflict' }, ({ message }) => ({
-      type: 'urn:beauty-salon:problem:operation-not-allowed',
-      title: 'Operation not allowed',
-      status: 409,
-      detail: message,
-      code: '3003',
-      errors: null,
-    }))
-    // The cause stays on the server: it may name tables, columns or data.
-    .with({ type: 'database' }, () => ({
-      type: 'urn:beauty-salon:problem:database',
-      title: 'Internal server error',
-      status: 500,
-      detail: null,
-      code: '4003',
-      errors: null,
-    }))
-    // So does the cause of a failure of the object storage.
-    .with({ type: 'storage' }, () => ({
-      type: 'urn:beauty-salon:problem:storage',
-      title: 'Internal server error',
-      status: 500,
-      detail: null,
-      code: '4004',
-      errors: null,
-    }))
-    .with({ type: 'routeNotFound' }, ({ method, path }) => ({
-      type: 'urn:beauty-salon:problem:route-not-found',
-      title: 'Route not found',
-      status: 404,
-      detail: `${method} ${path} is not part of the API`,
-      code: '3001',
-      errors: null,
-    }))
-    .with({ type: 'malformedBody' }, () => ({
-      type: 'urn:beauty-salon:problem:malformed-body',
-      title: 'Malformed request body',
-      status: 400,
-      detail: 'The request body is not valid JSON',
-      code: '2002',
-      errors: null,
-    }))
-    .with({ type: 'unsupportedMediaType' }, () => ({
-      type: 'urn:beauty-salon:problem:unsupported-media-type',
-      title: 'Unsupported media type',
-      status: 415,
-      detail: 'The request body must be application/json in UTF-8',
-      code: '2002',
-      errors: null,
-    }))
-    .with({ type: 'bodyTooLarge' }, () => ({
-      type: 'urn:beauty-salon:problem:body-too-large',
-      title: 'Request body too large',
-      status: 413,
-      detail: `The request body exceeds ${BODY_LIMIT_BYTES} bytes`,
-      code: '2004',
-      errors: null,
-    }))
-    .with({ type: 'badRequest' }, () => ({
-      type: 'urn:beauty-salon:problem:bad-request',
-      title: 'Bad request',
-      status: 400,
-      detail: null,
-      code: '2002',
-      errors: null,
-    }))
-    .with({ type: 'rateLimited' }, () => ({
-      type: 'urn:beauty-salon:problem:rate-limited',
-      title: 'Too many requests',
-      status: 429,
-      detail: 'Wait for the time in the Retry-After header before retrying',
-      code: '4005',
-      errors: null,
-    }))
-    // Nothing about a failure nobody anticipated is safe to show.
-    .with({ type: 'unexpected' }, () => ({
-      type: 'urn:beauty-salon:problem:internal',
-      title: 'Internal server error',
-      status: 500,
-      detail: null,
-      code: '4001',
-      errors: null,
-    }))
-    .exhaustive()
+    .with(
+      { type: P.union('validation', 'notFound', 'alreadyExists', 'conflict') },
+      () => LANGUAGE_OF_THE_DOMAIN,
+    )
+    .otherwise(() => asked)
+
+const toProblem = (error: ApiError, language: Locale): Problem => {
+  const said = (text: LocalizedText): string => textIn(text, language)
+
+  return (
+    match(error)
+      .returnType<Problem>()
+      .with({ type: 'validation' }, ({ message, issues }) => ({
+        type: 'urn:beauty-salon:problem:validation',
+        title: said(problemMessages.validation.title),
+        status: 400,
+        detail: message,
+        code: '2001',
+        errors: issues.map(({ field, rule, message: issueMessage }) => ({
+          field,
+          rule,
+          message: issueMessage,
+          value: null,
+          constraint: null,
+        })),
+      }))
+      .with({ type: 'unauthenticated', reason: 'missingCredentials' }, () => ({
+        type: 'urn:beauty-salon:problem:authentication-required',
+        title: said(problemMessages.authenticationRequired.title),
+        status: 401,
+        detail: said(problemMessages.authenticationRequired.detail),
+        code: '1001',
+        errors: null,
+      }))
+      .with({ type: 'unauthenticated', reason: 'invalidToken' }, () => ({
+        type: 'urn:beauty-salon:problem:invalid-token',
+        title: said(problemMessages.invalidToken.title),
+        status: 401,
+        detail: said(problemMessages.invalidToken.detail),
+        code: '1004',
+        errors: null,
+      }))
+      .with({ type: 'unauthenticated', reason: 'expiredToken' }, () => ({
+        type: 'urn:beauty-salon:problem:token-expired',
+        title: said(problemMessages.tokenExpired.title),
+        status: 401,
+        detail: said(problemMessages.tokenExpired.detail),
+        code: '1003',
+        errors: null,
+      }))
+      // The same for every cause, so that the answer does not say whether the
+      // email is registered or what is wrong with the account.
+      .with({ type: 'unauthenticated', reason: 'invalidCredentials' }, () => ({
+        type: 'urn:beauty-salon:problem:invalid-credentials',
+        title: said(problemMessages.invalidCredentials.title),
+        status: 401,
+        detail: said(problemMessages.invalidCredentials.detail),
+        code: '1002',
+        errors: null,
+      }))
+      // The password was right. Says nothing about the code: missing, wrong and
+      // already used are answered alike.
+      .with({ type: 'unauthenticated', reason: 'twoFactorRequired' }, () => ({
+        type: 'urn:beauty-salon:problem:two-factor-required',
+        title: said(problemMessages.twoFactorRequired.title),
+        status: 401,
+        detail: said(problemMessages.twoFactorRequired.detail),
+        code: '1007',
+        errors: null,
+      }))
+      .with({ type: 'forbidden' }, () => ({
+        type: 'urn:beauty-salon:problem:forbidden',
+        title: said(problemMessages.forbidden.title),
+        status: 403,
+        detail: said(problemMessages.forbidden.detail),
+        code: '1005',
+        errors: null,
+      }))
+      // 403 and not 401: the password travels in the body, so there is no
+      // challenge to send with a 401 (RFC 9110, 15.5.2), and a 403 is what
+      // tells a client that other credentials may do (15.5.4). The same for a
+      // missing password, a wrong one and a locked link.
+      .with({ type: 'passwordRequired' }, () => ({
+        type: 'urn:beauty-salon:problem:password-required',
+        title: said(problemMessages.passwordRequired.title),
+        status: 403,
+        detail: said(problemMessages.passwordRequired.detail),
+        code: '1002',
+        errors: null,
+      }))
+      .with({ type: 'notFound' }, ({ entity, id }) => ({
+        type: 'urn:beauty-salon:problem:not-found',
+        title: said(problemMessages.notFound.title),
+        status: 404,
+        detail: `${entity} ${id} was not found`,
+        code: '3001',
+        errors: null,
+      }))
+      .with({ type: 'alreadyExists' }, ({ entity, field, value }) => ({
+        type: 'urn:beauty-salon:problem:already-exists',
+        title: said(problemMessages.alreadyExists.title),
+        status: 409,
+        detail: `${entity} with ${field} ${value} already exists`,
+        code: '3002',
+        errors: null,
+      }))
+      .with({ type: 'conflict' }, ({ message }) => ({
+        type: 'urn:beauty-salon:problem:operation-not-allowed',
+        title: said(problemMessages.conflict.title),
+        status: 409,
+        detail: message,
+        code: '3003',
+        errors: null,
+      }))
+      // The cause stays on the server: it may name tables, columns or data.
+      .with({ type: 'database' }, () => ({
+        type: 'urn:beauty-salon:problem:database',
+        title: said(problemMessages.internal.title),
+        status: 500,
+        detail: null,
+        code: '4003',
+        errors: null,
+      }))
+      // So does the cause of a failure of the object storage.
+      .with({ type: 'storage' }, () => ({
+        type: 'urn:beauty-salon:problem:storage',
+        title: said(problemMessages.internal.title),
+        status: 500,
+        detail: null,
+        code: '4004',
+        errors: null,
+      }))
+      .with({ type: 'routeNotFound' }, ({ method, path }) => ({
+        type: 'urn:beauty-salon:problem:route-not-found',
+        title: said(problemMessages.routeNotFound.title),
+        status: 404,
+        detail: said(problemMessages.routeNotFound.detail(method, path)),
+        code: '3001',
+        errors: null,
+      }))
+      .with({ type: 'malformedBody' }, () => ({
+        type: 'urn:beauty-salon:problem:malformed-body',
+        title: said(problemMessages.malformedBody.title),
+        status: 400,
+        detail: said(problemMessages.malformedBody.detail),
+        code: '2002',
+        errors: null,
+      }))
+      .with({ type: 'unsupportedMediaType' }, () => ({
+        type: 'urn:beauty-salon:problem:unsupported-media-type',
+        title: said(problemMessages.unsupportedMediaType.title),
+        status: 415,
+        detail: said(problemMessages.unsupportedMediaType.detail),
+        code: '2002',
+        errors: null,
+      }))
+      .with({ type: 'bodyTooLarge' }, () => ({
+        type: 'urn:beauty-salon:problem:body-too-large',
+        title: said(problemMessages.bodyTooLarge.title),
+        status: 413,
+        detail: said(problemMessages.bodyTooLarge.detail(BODY_LIMIT_BYTES)),
+        code: '2004',
+        errors: null,
+      }))
+      .with({ type: 'badRequest' }, () => ({
+        type: 'urn:beauty-salon:problem:bad-request',
+        title: said(problemMessages.badRequest.title),
+        status: 400,
+        detail: null,
+        code: '2002',
+        errors: null,
+      }))
+      .with({ type: 'rateLimited' }, () => ({
+        type: 'urn:beauty-salon:problem:rate-limited',
+        title: said(problemMessages.rateLimited.title),
+        status: 429,
+        detail: said(problemMessages.rateLimited.detail),
+        code: '4005',
+        errors: null,
+      }))
+      // Nothing about a failure nobody anticipated is safe to show.
+      .with({ type: 'unexpected' }, () => ({
+        type: 'urn:beauty-salon:problem:internal',
+        title: said(problemMessages.internal.title),
+        status: 500,
+        detail: null,
+        code: '4001',
+        errors: null,
+      }))
+      .exhaustive()
+  )
+}
 
 const BEARER_REALM = 'beauty-salon-api'
 
@@ -243,8 +270,15 @@ export const toBearerChallenge = (error: ApiError): string | null =>
         .exhaustive()
     : null
 
-/** Error → RFC 9457 problem details. */
+/**
+ * Error → RFC 9457 problem details, told in the language that was asked
+ * for where the error is written in it (`languageOf`).
+ */
 export const toProblemDetails = (
   error: ApiError,
   context: ProblemContext,
-): ProblemDetails => ({ ...toProblem(error), ...context })
+  asked: Locale,
+): ProblemDetails => ({
+  ...toProblem(error, languageOf(error, asked)),
+  ...context,
+})

@@ -10,6 +10,7 @@ import {
   insertUser,
   loginBody,
   minutesFromNow,
+  PASSWORD,
   type Session,
   sha256,
   signedInUser,
@@ -235,6 +236,278 @@ describe('media type of a response', () => {
 
     expect(response.status).toBe(200)
     expect(response.headers['content-type']).toBe(JSON_UTF8)
+  })
+})
+
+describe('the language of an error', () => {
+  const UNKNOWN_PATH = '/api/v1/stylists'
+  const ROUTE_NOT_FOUND = {
+    en: 'Route not found',
+    ja: 'ルートが見つかりません',
+  }
+
+  it('should answer a request that asks for no language in English, and say so', async () => {
+    // Act
+    const response = await request(createTestApp()).get(UNKNOWN_PATH)
+
+    // Assert
+    expect(response.status).toBe(404)
+    expect(response.headers['content-language']).toBe('en')
+    expect(response.body).toMatchObject({
+      title: 'Route not found',
+      detail: `GET ${UNKNOWN_PATH} is not part of the API`,
+    })
+  })
+
+  it.each<[string, string, 'en' | 'ja']>([
+    ['Japanese', 'ja', 'ja'],
+    ['Japanese of Japan before English', 'ja-JP,ja;q=0.9,en;q=0.8', 'ja'],
+    ['English', 'en', 'en'],
+    ['English before Japanese', 'en-US,en;q=0.9,ja;q=0.8', 'en'],
+    ['Japanese with more weight than English', 'en;q=0.5,ja;q=0.6', 'ja'],
+    ['a language the API is not written in', 'fr-FR,fr;q=0.9', 'en'],
+    ['any language', '*', 'en'],
+    ['anything but English', 'en;q=0', 'ja'],
+    ['what is no language range', 'ja_JP', 'en'],
+  ])(
+    'should answer a request that asks for %s (%j) in the language %s',
+    async (_case, acceptLanguage, language) => {
+      // Act
+      const response = await request(createTestApp())
+        .get(UNKNOWN_PATH)
+        .set('Accept-Language', acceptLanguage)
+
+      // Assert
+      expect(response.status).toBe(404)
+      expect(response.headers['content-language']).toBe(language)
+      expect(response.body.title).toBe(ROUTE_NOT_FOUND[language])
+    },
+  )
+
+  it.each<[string, (app: Express) => Test, number, string, string | null]>([
+    [
+      'a path that is no route',
+      (app) => request(app).get(UNKNOWN_PATH),
+      404,
+      'ルートが見つかりません',
+      `GET ${UNKNOWN_PATH} は、この API にありません`,
+    ],
+    [
+      'a body that is not valid JSON',
+      (app) =>
+        request(app)
+          .post(SALONS)
+          .set('Content-Type', 'application/json')
+          .send('{"name": '),
+      400,
+      'リクエストの本文を読めません',
+      'リクエストの本文が、正しい JSON ではありません',
+    ],
+    [
+      'a body that is no JSON',
+      (app) =>
+        request(app)
+          .post(SALONS)
+          .set('Content-Type', 'text/plain')
+          .send(JSON.stringify(salon)),
+      415,
+      '受け付けていないメディアタイプです',
+      'リクエストの本文は、UTF-8 の application/json にしてください',
+    ],
+    [
+      'a body over the size limit',
+      (app) =>
+        request(app)
+          .post(SALONS)
+          .send({ ...salon, description: 'a'.repeat(100_000) }),
+      413,
+      'リクエストの本文が大きすぎます',
+      'リクエストの本文が 100000 バイトを超えています',
+    ],
+    [
+      'a path that cannot be decoded',
+      (app) => request(app).get(`${SALONS}/%E0%A4%A`),
+      400,
+      'リクエストが正しくありません',
+      null,
+    ],
+    [
+      'a request without an access token',
+      (app) => request(app).post(SALONS).send(salon),
+      401,
+      '認証が必要です',
+      'アクセストークンを、Authorization ヘッダーに Bearer トークンとして送ってください',
+    ],
+    [
+      'an access token that names no session',
+      (app) =>
+        request(app)
+          .post(SALONS)
+          .set('Authorization', 'Bearer no-such-token')
+          .send(salon),
+      401,
+      'トークンが無効です',
+      'このトークンは使えません。もう一度サインインしてください',
+    ],
+    [
+      'a login of nobody',
+      (app) =>
+        request(app)
+          .post(`${AUTH}/login`)
+          .send(loginBody('nobody@example.com')),
+      401,
+      'サインインできませんでした',
+      'メールアドレスかパスワードが正しくありません',
+    ],
+  ])(
+    'should answer %s in Japanese when Japanese is asked for',
+    async (_case, send, status, title, detail) => {
+      // Act
+      const response = await send(createTestApp()).set('Accept-Language', 'ja')
+
+      // Assert
+      expect(response.status).toBe(status)
+      expect(response.headers['content-type']).toBe(PROBLEM_JSON)
+      expect(response.headers['content-language']).toBe('ja')
+      expect(response.body).toMatchObject({ status, title, detail })
+    },
+  )
+
+  it('should tell a signed-in user what they may not do in Japanese', async () => {
+    // Arrange
+    const app = createTestApp()
+    const customer = await signedInUser(app, getTestDb())
+
+    // Act
+    const response = await request(app)
+      .post(SALONS)
+      .set('Authorization', customer.authorization)
+      .set('Accept-Language', 'ja')
+      .send(salon)
+
+    // Assert
+    expect(response.status).toBe(403)
+    expect(response.headers['content-language']).toBe('ja')
+    expect(response.body).toMatchObject({
+      title: '許可されていません',
+      detail: 'このアカウントでは、この操作はできません',
+    })
+  })
+
+  it('should answer the request over the rate limit in Japanese', async () => {
+    // Arrange
+    const app = createTestApp({
+      rateLimit: { windowMs: 60_000, maxRequests: 1 },
+    })
+    await request(app).get(SALONS)
+
+    // Act
+    const response = await request(app).get(SALONS).set('Accept-Language', 'ja')
+
+    // Assert
+    expect(response.status).toBe(429)
+    expect(response.headers['content-language']).toBe('ja')
+    expect(response.body).toMatchObject({
+      title: 'リクエストが多すぎます',
+      detail:
+        'Retry-After ヘッダーの時間だけ待ってから、もう一度送ってください',
+    })
+  })
+
+  it('should answer a failing database in Japanese, and log it in English', async () => {
+    // Arrange
+    const connection = connectUnreachableDatabase()
+    const logs: unknown[] = []
+    const app = createTestApp({ database: connection.database, logs })
+
+    // Act
+    const response = await request(app).get(SALONS).set('Accept-Language', 'ja')
+    await connection.close()
+
+    // Assert
+    expect(response.status).toBe(500)
+    expect(response.headers['content-language']).toBe('ja')
+    expect(response.body).toMatchObject({
+      title: 'サーバーでエラーが起きました',
+      detail: null,
+    })
+    expect(logs).toContainEqual(
+      expect.objectContaining({ level: 'error', msg: 'Failed to list salons' }),
+    )
+  })
+
+  it.each<
+    [string, (app: Express, authorization: string) => Test, number, string]
+  >([
+    [
+      'a salon that is not there',
+      (app) => request(app).get(`${SALONS}/${UNKNOWN_ID}`),
+      404,
+      'Resource not found',
+    ],
+    [
+      'a value that breaks a rule',
+      (app) => request(app).get(`${SALONS}?limit=0`),
+      400,
+      'Validation failed',
+    ],
+    [
+      'an address of mail that another salon has',
+      (app, authorization) =>
+        request(app)
+          .post(SALONS)
+          .set('Authorization', authorization)
+          .send(salon),
+      409,
+      'Resource already exists',
+    ],
+    [
+      'a second factor that is not on',
+      (app, authorization) =>
+        request(app)
+          .post(`${AUTH}/2fa/disable`)
+          .set('Authorization', authorization)
+          .send({ password: PASSWORD, code: '123456' }),
+      409,
+      'Operation not allowed',
+    ],
+  ])(
+    'should answer %s, which the domain writes of, in English though Japanese is asked for',
+    async (_case, send, status, title) => {
+      // Arrange
+      const app = createTestApp()
+      const asAdmin = await signInAsAdmin(app, getTestDb())
+      await request(app).post(SALONS).set('Authorization', asAdmin).send(salon)
+      const unasked = await send(app, asAdmin)
+
+      // Act
+      const response = await send(app, asAdmin).set('Accept-Language', 'ja')
+
+      // Assert
+      expect(response.status).toBe(status)
+      expect(response.headers['content-language']).toBe('en')
+      expect(response.body).toEqual({
+        ...unasked.body,
+        title,
+        correlationId: response.headers['x-request-id'],
+        timestamp: expect.any(String),
+      })
+    },
+  )
+
+  it('should say that an error depends on the language asked for, and that a success does not', async () => {
+    // Arrange
+    const app = createTestApp()
+
+    // Act
+    const error = await request(app).get(UNKNOWN_PATH)
+    const success = await request(app).get(SALONS).set('Accept-Language', 'ja')
+
+    // Assert
+    expect(error.headers['vary']).toMatch(/\bAccept-Language\b/)
+    expect(success.status).toBe(200)
+    expect(success.headers['vary']).not.toMatch(/Accept-Language/)
+    expect(success.headers).not.toHaveProperty('content-language')
   })
 })
 

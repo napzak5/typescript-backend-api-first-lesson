@@ -678,6 +678,27 @@ export type InventoryTransactionType = z.infer<typeof InventoryTransactionTypeSc
 
 /**
  * @description
+ * エラーの文の言語区分 - エラーレスポンスの title、detail、errors[].message を書く言語
+ *
+ *
+ * en: 英語 - Accept-Language ヘッダーがない、または合う言語がないリクエストにも、この言語で答える
+ *
+ * ja: 日本語
+ */
+export const LanguageTypeSchema = z.enum(['en', 'ja'])
+/**
+ * @description
+ * エラーの文の言語区分 - エラーレスポンスの title、detail、errors[].message を書く言語
+ *
+ *
+ * en: 英語 - Accept-Language ヘッダーがない、または合う言語がないリクエストにも、この言語で答える
+ *
+ * ja: 日本語
+ */
+export type LanguageType = z.infer<typeof LanguageTypeSchema>
+
+/**
+ * @description
  * 会員ランク区分 - 顧客の会員ランクを表し、特典・優待内容を決定する区分
  *
  *

@@ -1,0 +1,43 @@
+{
+  "name": "@beauty-salon-shared/i18n",
+  "version": "1.0.0",
+  "description": "Languages and messages of the Beauty Salon Reservation App",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "@beauty-salon-backend/source": "./src/index.ts",
+      "@beauty-salon-frontend/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./messages/api": {
+      "@beauty-salon-backend/source": "./src/messages/api/index.ts",
+      "types": "./dist/messages/api/index.d.ts",
+      "import": "./dist/messages/api/index.js",
+      "default": "./dist/messages/api/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "build:dev": "vite build --mode development",
+    "build:test": "vite build --mode test",
+    "build:stg": "vite build --mode staging",
+    "build:prod": "vite build --mode production",
+    "build:watch": "vite build --watch --mode development",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@beauty-salon-shared/config": "workspace:*",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  }
+}

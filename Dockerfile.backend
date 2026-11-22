@@ -15,6 +15,7 @@ FROM base AS builder
 # Copy package files for better caching
 COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY shared-config/package.json ./shared-config/
+COPY shared-i18n/package.json ./shared-i18n/
 
 # Copy backend package.json files
 COPY backend/packages/api/package.json ./backend/packages/api/
@@ -37,8 +38,9 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build the backend packages and the server in dependency order
-RUN pnpm --filter "./backend/**" run build:prod
+# Build the shared package the backend depends on, the backend packages and
+# the server, in dependency order
+RUN pnpm --filter "./shared-i18n" --filter "./backend/**" run build:prod
 
 # Development stage
 FROM base AS development
@@ -55,7 +57,7 @@ COPY --chown=appuser:appuser . .
 RUN pnpm install --frozen-lockfile
 
 # Build all packages in development for tsx to work properly
-RUN pnpm --filter "./backend/packages/**" run build:prod
+RUN pnpm --filter "./shared-i18n" --filter "./backend/packages/**" run build:prod
 
 # Switch to non-root user
 USER appuser
@@ -79,6 +81,7 @@ RUN adduser -D -s /bin/sh appuser
 # Copy remaining package files
 COPY --chown=appuser:appuser pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY --chown=appuser:appuser shared-config/package.json ./shared-config/
+COPY --chown=appuser:appuser shared-i18n/package.json ./shared-i18n/
 
 # Copy backend package.json files
 COPY --chown=appuser:appuser backend/packages/api/package.json ./backend/packages/api/
@@ -108,6 +111,7 @@ COPY --from=builder --chown=appuser:appuser /app/backend/packages/generated/dist
 COPY --from=builder --chown=appuser:appuser /app/backend/packages/infrastructure/dist ./backend/packages/infrastructure/dist/
 COPY --from=builder --chown=appuser:appuser /app/backend/packages/utility/dist ./backend/packages/utility/dist/
 COPY --from=builder --chown=appuser:appuser /app/backend/apps/server/dist ./backend/apps/server/dist/
+COPY --from=builder --chown=appuser:appuser /app/shared-i18n/dist ./shared-i18n/dist/
 
 # Switch to non-root user
 USER appuser

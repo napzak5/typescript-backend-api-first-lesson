@@ -358,6 +358,7 @@ export * from './modelsInventoryValueReportCategory';
 export * from './modelsInventoryValueReportRequestCategoryParameter';
 export * from './modelsInventoryValueReportRequestSalonIdParameter';
 export * from './modelsInventoryValueReportResponse';
+export * from './modelsLanguageType';
 export * from './modelsMedicalChartCreateRequest';
 export * from './modelsMedicalChartId';
 export * from './modelsMedicalChartResponse';

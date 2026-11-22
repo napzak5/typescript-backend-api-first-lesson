@@ -5961,6 +5961,27 @@ export interface components {
             /** @description カテゴリ別の集計。在庫のある商品のないカテゴリは含めない。評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後) */
             categories: components["schemas"]["Models.InventoryValueReportCategory"][];
         };
+        /**
+
+         * @description
+
+         * エラーの文の言語区分 - エラーレスポンスの title、detail、errors[].message を書く言語
+
+         *
+
+         *
+
+         * en: 英語 - Accept-Language ヘッダーがない、または合う言語がないリクエストにも、この言語で答える
+
+         *
+
+         * ja: 日本語
+
+         * @enum {string}
+
+         */
+
+        "Models.LanguageType": "en" | "ja";
         /** @description カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する */
         "Models.MedicalChartCreateRequest": {
             /** @description 対象の顧客 ID。削除されていない、カルテをまだ持たない顧客を指定する */
@@ -6768,14 +6789,14 @@ export interface components {
         "Models.ProblemDetails": {
             /** @description エラー種別を特定するための URI。参照することで関連ドキュメントに誘導できる。 */
             type: string;
-            /** @description ユーザーに短く要点を伝えるエラー概要メッセージ。 */
+            /** @description ユーザーに短く要点を伝えるエラー概要メッセージ。言語は、レスポンスの Content-Language ヘッダーのとおり。 */
             title: string;
             /**
              * Format: int32
              * @description レスポンスに付与される HTTP ステータスコード。
              */
             status: number;
-            /** @description 今回の発生状況に固有の詳細説明。サポート対応時の一次情報となる。詳細が不要な場合はnull */
+            /** @description 今回の発生状況に固有の詳細説明。サポート対応時の一次情報となる。言語は、レスポンスの Content-Language ヘッダーのとおり。詳細が不要な場合はnull */
             detail: string | null;
             /** @description この事象を一意に識別するための URI。監査ログやダッシュボードと連携する。URIが不要な場合はnull */
             instance: string | null;
@@ -10051,7 +10072,7 @@ export interface components {
             field: string;
             /** @description 違反した検証ルール名またはコード。 */
             rule: string;
-            /** @description ユーザーに提示する具体的なエラーメッセージ。 */
+            /** @description ユーザーに提示する具体的なエラーメッセージ。言語は、レスポンスの Content-Language ヘッダーのとおり。 */
             message: string;
             /** @description 検証対象となった実際の値。セキュリティ観点で出力が許容される場合のみ利用する。出力不可の場合はnull */
             value: unknown;
@@ -10506,6 +10527,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10519,6 +10542,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -10530,6 +10555,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10539,6 +10566,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10548,6 +10577,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10560,6 +10591,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -10571,6 +10604,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10611,6 +10646,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10624,6 +10661,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -10635,6 +10674,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10644,6 +10685,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10653,6 +10696,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10665,6 +10710,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -10676,6 +10723,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10716,6 +10765,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10729,6 +10780,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -10740,6 +10793,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10749,6 +10804,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10761,6 +10818,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -10772,6 +10831,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10815,6 +10876,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10828,6 +10891,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -10839,6 +10904,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10851,6 +10918,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -10862,6 +10931,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10904,6 +10975,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -10915,6 +10988,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10927,6 +11002,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -10938,6 +11015,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10978,6 +11057,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -10991,6 +11072,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -11002,6 +11085,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11011,6 +11096,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11023,6 +11110,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -11034,6 +11123,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11063,6 +11154,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11076,6 +11169,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -11087,6 +11182,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11096,6 +11193,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11108,6 +11207,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -11119,6 +11220,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11162,6 +11265,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11175,6 +11280,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -11186,6 +11293,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11195,6 +11304,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11204,6 +11315,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11216,6 +11329,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -11227,6 +11342,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11267,6 +11384,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11280,6 +11399,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -11291,6 +11412,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11300,6 +11423,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11312,6 +11437,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -11323,6 +11450,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11352,6 +11481,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11365,6 +11496,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -11376,6 +11509,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11385,6 +11520,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11397,6 +11534,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -11408,6 +11547,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11448,6 +11589,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11461,6 +11604,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -11472,6 +11617,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11481,6 +11628,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11490,6 +11639,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11502,6 +11653,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -11513,6 +11666,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11556,6 +11711,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11569,6 +11726,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -11580,6 +11739,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11589,6 +11750,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11598,6 +11761,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11610,6 +11775,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -11621,6 +11788,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11664,6 +11833,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11677,6 +11848,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -11688,6 +11861,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11697,6 +11872,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11709,6 +11886,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -11720,6 +11899,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11765,6 +11946,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11778,6 +11961,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -11789,6 +11974,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11798,6 +11985,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11807,6 +11996,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11816,6 +12007,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11825,6 +12018,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11837,6 +12032,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -11848,6 +12045,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11890,6 +12089,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11903,6 +12104,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -11914,6 +12117,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11923,6 +12128,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11932,6 +12139,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11944,6 +12153,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -11955,6 +12166,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11986,6 +12199,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -11999,6 +12214,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -12010,6 +12227,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12019,6 +12238,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12028,6 +12249,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12040,6 +12263,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12051,6 +12276,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12093,6 +12320,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12106,6 +12335,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -12117,6 +12348,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12126,6 +12359,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12135,6 +12370,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12147,6 +12384,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12158,6 +12397,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12189,6 +12430,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12202,6 +12445,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -12213,6 +12458,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12222,6 +12469,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12231,6 +12480,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12243,6 +12494,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12254,6 +12507,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12285,6 +12540,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12298,6 +12555,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -12309,6 +12568,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12318,6 +12579,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12330,6 +12593,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12341,6 +12606,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12372,6 +12639,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12381,6 +12650,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12390,6 +12661,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12402,6 +12675,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12413,6 +12688,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12455,6 +12732,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12468,6 +12747,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -12479,6 +12760,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12488,6 +12771,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12500,6 +12785,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12511,6 +12798,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12542,6 +12831,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -12556,6 +12847,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12567,6 +12860,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12598,6 +12893,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -12612,6 +12909,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12623,6 +12922,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12665,6 +12966,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -12679,6 +12982,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12690,6 +12995,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12732,6 +13039,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12745,6 +13054,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -12756,6 +13067,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12765,6 +13078,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12777,6 +13092,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12788,6 +13105,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12819,6 +13138,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12828,6 +13149,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12837,6 +13160,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12849,6 +13174,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12860,6 +13187,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12891,6 +13220,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12900,6 +13231,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12909,6 +13242,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12921,6 +13256,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -12932,6 +13269,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12963,6 +13302,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12972,6 +13313,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12981,6 +13324,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -12993,6 +13338,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13004,6 +13351,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13045,6 +13394,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13058,6 +13409,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -13072,6 +13425,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13083,6 +13438,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13112,6 +13469,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13125,6 +13484,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -13136,6 +13497,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13148,6 +13511,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13159,6 +13524,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13190,6 +13557,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13199,6 +13568,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13208,6 +13579,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13217,6 +13590,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13229,6 +13604,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13240,6 +13617,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13271,6 +13650,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13284,6 +13665,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -13295,6 +13678,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13304,6 +13689,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13313,6 +13700,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13322,6 +13711,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13334,6 +13725,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13345,6 +13738,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13387,6 +13782,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13396,6 +13793,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13405,6 +13804,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13414,6 +13815,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13426,6 +13829,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13437,6 +13842,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13468,6 +13875,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13477,6 +13886,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13486,6 +13897,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13498,6 +13911,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13509,6 +13924,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13540,6 +13957,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13549,6 +13968,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13558,6 +13979,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13570,6 +13993,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13581,6 +14006,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13634,6 +14061,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13647,6 +14076,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -13658,6 +14089,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13670,6 +14103,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13681,6 +14116,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13724,6 +14161,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13737,6 +14176,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -13748,6 +14189,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13757,6 +14200,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13766,6 +14211,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13775,6 +14222,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13787,6 +14236,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13798,6 +14249,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13843,6 +14296,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13856,6 +14311,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -13867,6 +14324,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13876,6 +14335,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13885,6 +14346,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13894,6 +14357,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13903,6 +14368,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13915,6 +14382,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -13926,6 +14395,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13967,6 +14438,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -13980,6 +14453,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -13991,6 +14466,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14000,6 +14477,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14012,6 +14491,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -14023,6 +14504,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14053,6 +14536,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14066,6 +14551,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -14077,6 +14564,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14086,6 +14575,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14095,6 +14586,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14107,6 +14600,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -14118,6 +14613,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14158,6 +14655,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14171,6 +14670,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -14182,6 +14683,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14191,6 +14694,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14203,6 +14708,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -14214,6 +14721,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14243,6 +14752,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14256,6 +14767,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -14267,6 +14780,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14276,6 +14791,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14285,6 +14802,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14297,6 +14816,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -14308,6 +14829,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14352,6 +14875,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14365,6 +14890,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -14376,6 +14903,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14385,6 +14914,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14394,6 +14925,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14403,6 +14936,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14415,6 +14950,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -14426,6 +14963,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14470,6 +15009,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14483,6 +15024,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -14494,6 +15037,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14503,6 +15048,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14512,6 +15059,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14521,6 +15070,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14530,6 +15081,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14542,6 +15095,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -14553,6 +15108,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14597,6 +15154,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14610,6 +15169,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -14621,6 +15182,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14630,6 +15193,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14639,6 +15204,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14648,6 +15215,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14657,6 +15226,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14669,6 +15240,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -14680,6 +15253,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14720,6 +15295,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14733,6 +15310,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -14744,6 +15323,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14753,6 +15334,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14762,6 +15345,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14774,6 +15359,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -14785,6 +15372,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14825,6 +15414,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14838,6 +15429,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -14849,6 +15442,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14858,6 +15453,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14867,6 +15464,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14879,6 +15478,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -14890,6 +15491,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14934,6 +15537,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14947,6 +15552,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -14958,6 +15565,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14967,6 +15576,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14976,6 +15587,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14985,6 +15598,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -14994,6 +15609,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15006,6 +15623,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -15017,6 +15636,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15057,6 +15678,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15070,6 +15693,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -15081,6 +15706,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15090,6 +15717,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15099,6 +15728,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15111,6 +15742,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -15122,6 +15755,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15175,6 +15810,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15188,6 +15825,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -15199,6 +15838,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15211,6 +15852,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -15222,6 +15865,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15265,6 +15910,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15278,6 +15925,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -15289,6 +15938,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15298,6 +15949,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15307,6 +15960,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15316,6 +15971,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15328,6 +15985,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -15339,6 +15998,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15381,6 +16042,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15394,6 +16057,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -15405,6 +16070,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15414,6 +16081,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15423,6 +16092,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15432,6 +16103,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15444,6 +16117,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -15455,6 +16130,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15497,6 +16174,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15510,6 +16189,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -15521,6 +16202,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15530,6 +16213,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15539,6 +16224,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15548,6 +16235,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15560,6 +16249,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -15571,6 +16262,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15613,6 +16306,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15626,6 +16321,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -15637,6 +16334,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15646,6 +16345,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15655,6 +16356,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15664,6 +16367,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15673,6 +16378,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15685,6 +16392,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -15696,6 +16405,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15738,6 +16449,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15751,6 +16464,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -15762,6 +16477,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15771,6 +16488,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15780,6 +16499,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15789,6 +16510,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15798,6 +16521,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15810,6 +16535,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -15821,6 +16548,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15863,6 +16592,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -15874,6 +16605,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15886,6 +16619,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -15897,6 +16632,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15941,6 +16678,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15954,6 +16693,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -15965,6 +16706,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15974,6 +16717,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -15986,6 +16731,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -15997,6 +16744,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16039,6 +16788,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -16050,6 +16801,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16059,6 +16812,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16071,6 +16826,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -16082,6 +16839,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16125,6 +16884,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16138,6 +16899,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -16149,6 +16912,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16158,6 +16923,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16167,6 +16934,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16176,6 +16945,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16188,6 +16959,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -16199,6 +16972,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16241,6 +17016,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16254,6 +17031,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -16265,6 +17044,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16274,6 +17055,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16283,6 +17066,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16292,6 +17077,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16304,6 +17091,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -16315,6 +17104,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16362,6 +17153,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16375,6 +17168,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -16386,6 +17181,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16395,6 +17192,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16407,6 +17206,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -16418,6 +17219,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16461,6 +17264,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16474,6 +17279,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -16485,6 +17292,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16494,6 +17303,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16503,6 +17314,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16512,6 +17325,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16521,6 +17336,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16533,6 +17350,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -16544,6 +17363,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16584,6 +17405,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16597,6 +17420,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -16608,6 +17433,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16617,6 +17444,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16629,6 +17458,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -16640,6 +17471,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16684,6 +17517,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16697,6 +17532,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -16708,6 +17545,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16717,6 +17556,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16726,6 +17567,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16735,6 +17578,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16744,6 +17589,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16756,6 +17603,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -16767,6 +17616,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16811,6 +17662,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16824,6 +17677,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -16835,6 +17690,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16844,6 +17701,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16853,6 +17712,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16862,6 +17723,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16871,6 +17734,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16883,6 +17748,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -16894,6 +17761,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16936,6 +17805,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -16947,6 +17818,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16956,6 +17829,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -16968,6 +17843,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -16979,6 +17856,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17021,6 +17900,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17034,6 +17915,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -17045,6 +17928,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17054,6 +17939,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17063,6 +17950,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17072,6 +17961,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17084,6 +17975,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -17095,6 +17988,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17137,6 +18032,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17150,6 +18047,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -17161,6 +18060,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17170,6 +18071,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17179,6 +18082,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17188,6 +18093,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17200,6 +18107,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -17211,6 +18120,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17251,6 +18162,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17264,6 +18177,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -17275,6 +18190,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17284,6 +18201,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17296,6 +18215,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -17307,6 +18228,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17336,6 +18259,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17349,6 +18274,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -17360,6 +18287,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17369,6 +18298,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17378,6 +18309,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17390,6 +18323,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -17401,6 +18336,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17445,6 +18382,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17458,6 +18397,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -17469,6 +18410,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17478,6 +18421,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17487,6 +18432,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17496,6 +18443,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17505,6 +18454,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17517,6 +18468,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -17528,6 +18481,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17568,6 +18523,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17581,6 +18538,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -17592,6 +18551,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17601,6 +18562,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17613,6 +18576,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -17624,6 +18589,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17668,6 +18635,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17681,6 +18650,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -17692,6 +18663,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17701,6 +18674,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17710,6 +18685,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17719,6 +18696,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17728,6 +18707,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17740,6 +18721,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -17751,6 +18734,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17791,6 +18776,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17804,6 +18791,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -17815,6 +18804,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17824,6 +18815,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17836,6 +18829,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -17847,6 +18842,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17880,6 +18877,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17893,6 +18892,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -17904,6 +18905,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17913,6 +18916,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17925,6 +18930,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -17936,6 +18943,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17979,6 +18988,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -17992,6 +19003,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -18003,6 +19016,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18012,6 +19027,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18024,6 +19041,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -18035,6 +19054,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18075,6 +19096,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18088,6 +19111,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -18099,6 +19124,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18108,6 +19135,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18120,6 +19149,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -18131,6 +19162,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18175,6 +19208,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18188,6 +19223,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -18199,6 +19236,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18208,6 +19247,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18217,6 +19258,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18226,6 +19269,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18238,6 +19283,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -18249,6 +19296,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18289,6 +19338,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18302,6 +19353,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -18313,6 +19366,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18322,6 +19377,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18331,6 +19388,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18343,6 +19402,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -18354,6 +19415,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18401,6 +19464,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18414,6 +19479,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -18425,6 +19492,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18434,6 +19503,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18446,6 +19517,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -18457,6 +19530,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18499,6 +19574,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18512,6 +19589,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -18523,6 +19602,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18532,6 +19613,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18544,6 +19627,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -18555,6 +19640,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18602,6 +19689,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18615,6 +19704,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -18626,6 +19717,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18638,6 +19731,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -18649,6 +19744,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18692,6 +19789,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18705,6 +19804,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -18716,6 +19817,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18725,6 +19828,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18734,6 +19839,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18743,6 +19850,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18755,6 +19864,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -18766,6 +19877,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18815,6 +19928,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18828,6 +19943,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -18839,6 +19956,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18851,6 +19970,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -18862,6 +19983,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18904,6 +20027,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18917,6 +20042,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -18928,6 +20055,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18937,6 +20066,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18946,6 +20077,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18955,6 +20088,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18964,6 +20099,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -18976,6 +20113,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -18987,6 +20126,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19027,6 +20168,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19040,6 +20183,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -19051,6 +20196,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19063,6 +20210,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -19074,6 +20223,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19119,6 +20270,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19132,6 +20285,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -19143,6 +20298,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19155,6 +20312,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -19166,6 +20325,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19211,6 +20372,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19224,6 +20387,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -19235,6 +20400,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19247,6 +20414,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -19258,6 +20427,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19300,6 +20471,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19313,6 +20486,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -19324,6 +20499,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19333,6 +20510,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19342,6 +20521,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19351,6 +20532,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19363,6 +20546,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -19374,6 +20559,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19416,6 +20603,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19429,6 +20618,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -19440,6 +20631,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19449,6 +20642,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19458,6 +20653,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19467,6 +20664,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19479,6 +20678,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -19490,6 +20691,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19533,6 +20736,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19546,6 +20751,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -19557,6 +20764,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19569,6 +20778,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -19580,6 +20791,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19620,6 +20833,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19633,6 +20848,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -19644,6 +20861,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19653,6 +20872,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19665,6 +20886,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -19676,6 +20899,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19705,6 +20930,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19718,6 +20945,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -19729,6 +20958,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19738,6 +20969,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19747,6 +20980,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19759,6 +20994,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -19770,6 +21007,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19814,6 +21053,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19827,6 +21068,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -19838,6 +21081,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19847,6 +21092,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19856,6 +21103,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19865,6 +21114,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19874,6 +21125,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19886,6 +21139,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -19897,6 +21152,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19946,6 +21203,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19959,6 +21218,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -19970,6 +21231,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19979,6 +21242,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -19991,6 +21256,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -20002,6 +21269,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20047,6 +21316,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20060,6 +21331,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -20071,6 +21344,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20083,6 +21358,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -20094,6 +21371,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20137,6 +21416,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20150,6 +21431,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -20161,6 +21444,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20170,6 +21455,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20179,6 +21466,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20188,6 +21477,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20200,6 +21491,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -20211,6 +21504,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20251,6 +21546,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20264,6 +21561,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -20275,6 +21574,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20284,6 +21585,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20296,6 +21599,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -20307,6 +21612,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20350,6 +21657,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20363,6 +21672,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -20374,6 +21685,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20383,6 +21696,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20395,6 +21710,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -20406,6 +21723,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20450,6 +21769,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20463,6 +21784,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -20474,6 +21797,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20483,6 +21808,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20492,6 +21819,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20501,6 +21830,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20510,6 +21841,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20522,6 +21855,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -20533,6 +21868,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20563,6 +21900,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20576,6 +21915,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -20587,6 +21928,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20596,6 +21939,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20608,6 +21953,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -20619,6 +21966,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20664,6 +22013,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20677,6 +22028,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -20688,6 +22041,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20697,6 +22052,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20706,6 +22063,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20715,6 +22074,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20724,6 +22085,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20736,6 +22099,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -20747,6 +22112,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20791,6 +22158,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20804,6 +22173,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -20815,6 +22186,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20824,6 +22197,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20833,6 +22208,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20842,6 +22219,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20854,6 +22233,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -20865,6 +22246,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20909,6 +22292,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20922,6 +22307,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -20933,6 +22320,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20942,6 +22331,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20951,6 +22342,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20960,6 +22353,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20969,6 +22364,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -20981,6 +22378,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -20992,6 +22391,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21034,6 +22435,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21047,6 +22450,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -21058,6 +22463,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21067,6 +22474,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21076,6 +22485,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21085,6 +22496,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21097,6 +22510,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -21108,6 +22523,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21148,6 +22565,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21161,6 +22580,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -21172,6 +22593,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21181,6 +22604,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21193,6 +22618,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -21204,6 +22631,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21247,6 +22676,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21260,6 +22691,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -21271,6 +22704,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21280,6 +22715,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21292,6 +22729,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -21303,6 +22742,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21350,6 +22791,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21363,6 +22806,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -21374,6 +22819,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21383,6 +22830,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21395,6 +22844,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -21406,6 +22857,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21448,6 +22901,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21461,6 +22916,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -21472,6 +22929,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21481,6 +22940,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21490,6 +22951,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21499,6 +22962,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21511,6 +22976,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -21522,6 +22989,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21564,6 +23033,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21577,6 +23048,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -21588,6 +23061,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21597,6 +23072,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21606,6 +23083,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21618,6 +23097,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -21629,6 +23110,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21671,6 +23154,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21684,6 +23169,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -21695,6 +23182,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21704,6 +23193,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21713,6 +23204,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21722,6 +23215,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21734,6 +23229,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -21745,6 +23242,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21796,6 +23295,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21809,6 +23310,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -21820,6 +23323,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21832,6 +23337,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -21843,6 +23350,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21886,6 +23395,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21899,6 +23410,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -21910,6 +23423,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21919,6 +23434,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21928,6 +23445,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21940,6 +23459,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -21951,6 +23472,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -21994,6 +23517,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22007,6 +23532,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -22018,6 +23545,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22030,6 +23559,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -22041,6 +23572,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22081,6 +23614,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22094,6 +23629,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -22105,6 +23642,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22114,6 +23653,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22126,6 +23667,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -22137,6 +23680,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22181,6 +23726,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22194,6 +23741,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -22205,6 +23754,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22214,6 +23765,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22223,6 +23776,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22232,6 +23787,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22241,6 +23798,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22253,6 +23812,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -22264,6 +23825,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22304,6 +23867,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22317,6 +23882,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -22328,6 +23895,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22337,6 +23906,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22346,6 +23917,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22358,6 +23931,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -22369,6 +23944,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22413,6 +23990,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22426,6 +24005,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -22437,6 +24018,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22446,6 +24029,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22455,6 +24040,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22464,6 +24051,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22473,6 +24062,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22485,6 +24076,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -22496,6 +24089,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22540,6 +24135,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22553,6 +24150,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -22564,6 +24163,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22573,6 +24174,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22582,6 +24185,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22591,6 +24196,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22600,6 +24207,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22612,6 +24221,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -22623,6 +24234,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22670,6 +24283,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22683,6 +24298,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -22694,6 +24311,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22706,6 +24325,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -22717,6 +24338,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22757,6 +24380,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22770,6 +24395,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -22781,6 +24408,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22790,6 +24419,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22799,6 +24430,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22811,6 +24444,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -22822,6 +24457,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22879,6 +24516,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22891,6 +24530,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -22902,6 +24543,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22945,6 +24588,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22958,6 +24603,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -22969,6 +24616,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22978,6 +24627,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22987,6 +24638,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -22996,6 +24649,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23008,6 +24663,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -23019,6 +24676,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23059,6 +24718,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23068,6 +24729,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23080,6 +24743,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -23091,6 +24756,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23120,6 +24787,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23133,6 +24802,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -23144,6 +24815,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23153,6 +24826,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23165,6 +24840,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -23176,6 +24853,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23220,6 +24899,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23233,6 +24914,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -23244,6 +24927,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23253,6 +24938,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23262,6 +24949,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23271,6 +24960,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23283,6 +24974,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -23294,6 +24987,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23334,6 +25029,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23347,6 +25044,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -23358,6 +25057,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23367,6 +25068,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23379,6 +25082,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -23390,6 +25095,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23434,6 +25141,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23447,6 +25156,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -23458,6 +25169,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23467,6 +25180,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23476,6 +25191,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23485,6 +25202,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23494,6 +25213,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23506,6 +25227,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -23517,6 +25240,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23561,6 +25286,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23574,6 +25301,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -23585,6 +25314,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23594,6 +25325,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23603,6 +25336,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23612,6 +25347,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23624,6 +25361,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -23635,6 +25374,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23688,6 +25429,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23701,6 +25444,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -23712,6 +25457,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23724,6 +25471,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -23735,6 +25484,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23778,6 +25529,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23791,6 +25544,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -23802,6 +25557,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23811,6 +25568,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23820,6 +25579,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23829,6 +25590,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23841,6 +25604,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -23852,6 +25617,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23897,6 +25664,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23910,6 +25679,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -23921,6 +25692,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23933,6 +25706,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -23944,6 +25719,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -23989,6 +25766,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24002,6 +25781,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -24013,6 +25794,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24025,6 +25808,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -24036,6 +25821,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24081,6 +25868,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24094,6 +25883,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -24105,6 +25896,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24117,6 +25910,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -24128,6 +25923,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24171,6 +25968,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24184,6 +25983,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -24195,6 +25996,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24207,6 +26010,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -24218,6 +26023,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24256,6 +26063,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24269,6 +26078,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -24280,6 +26091,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24292,6 +26105,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -24303,6 +26118,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24350,6 +26167,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24363,6 +26182,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -24374,6 +26195,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24386,6 +26209,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -24397,6 +26222,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24439,6 +26266,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24452,6 +26281,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -24463,6 +26294,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24472,6 +26305,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24481,6 +26316,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24493,6 +26330,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -24504,6 +26343,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24544,6 +26385,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24557,6 +26400,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -24568,6 +26413,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24577,6 +26424,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24589,6 +26438,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -24600,6 +26451,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24644,6 +26497,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24657,6 +26512,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -24668,6 +26525,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24677,6 +26536,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24686,6 +26547,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24695,6 +26558,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24704,6 +26569,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24716,6 +26583,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -24727,6 +26596,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24771,6 +26642,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24784,6 +26657,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -24795,6 +26670,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24804,6 +26681,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24813,6 +26692,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24822,6 +26703,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24831,6 +26714,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24843,6 +26728,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -24854,6 +26741,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24894,6 +26783,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24907,6 +26798,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -24918,6 +26811,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24927,6 +26822,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24936,6 +26833,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -24948,6 +26847,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -24959,6 +26860,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25003,6 +26906,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25016,6 +26921,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -25027,6 +26934,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25036,6 +26945,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25045,6 +26956,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25054,6 +26967,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25063,6 +26978,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25075,6 +26992,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -25086,6 +27005,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25139,6 +27060,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25151,6 +27074,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -25162,6 +27087,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25205,6 +27132,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25218,6 +27147,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -25229,6 +27160,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25238,6 +27171,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25247,6 +27182,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25256,6 +27193,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25268,6 +27207,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -25279,6 +27220,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25319,6 +27262,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25328,6 +27273,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25340,6 +27287,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -25351,6 +27300,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25380,6 +27331,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25393,6 +27346,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -25404,6 +27359,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25413,6 +27370,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25422,6 +27381,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25434,6 +27395,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -25445,6 +27408,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25489,6 +27454,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25502,6 +27469,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -25513,6 +27482,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25522,6 +27493,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25531,6 +27504,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25540,6 +27515,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25549,6 +27526,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25561,6 +27540,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -25572,6 +27553,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25623,6 +27606,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25636,6 +27621,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -25647,6 +27634,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25656,6 +27645,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25665,6 +27656,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25677,6 +27670,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -25688,6 +27683,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25732,6 +27729,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25745,6 +27744,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -25756,6 +27757,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25765,6 +27768,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25774,6 +27779,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25783,6 +27790,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25795,6 +27804,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -25806,6 +27817,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25853,6 +27866,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25866,6 +27881,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -25877,6 +27894,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25886,6 +27905,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25898,6 +27919,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -25909,6 +27932,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25954,6 +27979,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25967,6 +27994,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -25978,6 +28007,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25987,6 +28018,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -25996,6 +28029,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26005,6 +28040,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26017,6 +28054,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -26028,6 +28067,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26069,6 +28110,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26082,6 +28125,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -26093,6 +28138,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26102,6 +28149,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26114,6 +28163,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -26125,6 +28176,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26155,6 +28208,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26168,6 +28223,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -26179,6 +28236,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26188,6 +28247,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26197,6 +28258,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26209,6 +28272,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -26220,6 +28285,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26265,6 +28332,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26278,6 +28347,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -26289,6 +28360,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26298,6 +28371,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26307,6 +28382,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26316,6 +28393,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26328,6 +28407,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -26339,6 +28420,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26394,6 +28477,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26407,6 +28492,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -26418,6 +28505,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26427,6 +28516,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26439,6 +28530,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -26450,6 +28543,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26495,6 +28590,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26508,6 +28605,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -26519,6 +28618,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26528,6 +28629,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26537,6 +28640,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26546,6 +28651,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26555,6 +28662,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26567,6 +28676,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -26578,6 +28689,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26619,6 +28732,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26632,6 +28747,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -26643,6 +28760,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26652,6 +28771,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26664,6 +28785,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -26675,6 +28798,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26705,6 +28830,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26718,6 +28845,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -26729,6 +28858,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26738,6 +28869,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26747,6 +28880,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26759,6 +28894,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -26770,6 +28907,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26815,6 +28954,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26828,6 +28969,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -26839,6 +28982,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26848,6 +28993,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26857,6 +29004,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26866,6 +29015,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26875,6 +29026,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26887,6 +29040,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -26898,6 +29053,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26938,6 +29095,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26947,6 +29106,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -26959,6 +29120,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -26970,6 +29133,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27015,6 +29180,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27024,6 +29191,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27036,6 +29205,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -27047,6 +29218,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27092,6 +29265,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27105,6 +29280,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -27116,6 +29293,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27125,6 +29304,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27134,6 +29315,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27143,6 +29326,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27155,6 +29340,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -27166,6 +29353,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27207,6 +29396,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27216,6 +29407,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27228,6 +29421,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -27239,6 +29434,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27269,6 +29466,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27282,6 +29481,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -27293,6 +29494,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27302,6 +29505,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27314,6 +29519,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -27325,6 +29532,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27370,6 +29579,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27383,6 +29594,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -27394,6 +29607,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27403,6 +29618,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27412,6 +29629,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27421,6 +29640,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27433,6 +29654,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -27444,6 +29667,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27491,6 +29716,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27500,6 +29727,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27512,6 +29741,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -27523,6 +29754,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27568,6 +29801,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27581,6 +29816,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -27592,6 +29829,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27601,6 +29840,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27610,6 +29851,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27619,6 +29862,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27631,6 +29876,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -27642,6 +29889,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27686,6 +29935,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27699,6 +29950,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -27710,6 +29963,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27719,6 +29974,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27728,6 +29985,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27737,6 +29996,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27749,6 +30010,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -27760,6 +30023,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27801,6 +30066,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27810,6 +30077,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27822,6 +30091,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -27833,6 +30104,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27863,6 +30136,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27876,6 +30151,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -27887,6 +30164,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27896,6 +30175,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27905,6 +30186,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27917,6 +30200,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -27928,6 +30213,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27973,6 +30260,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -27986,6 +30275,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -27997,6 +30288,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28006,6 +30299,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28015,6 +30310,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28024,6 +30321,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28036,6 +30335,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -28047,6 +30348,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28090,6 +30393,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28103,6 +30408,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -28114,6 +30421,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28123,6 +30432,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28135,6 +30446,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -28146,6 +30459,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28191,6 +30506,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28204,6 +30521,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -28215,6 +30534,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28224,6 +30545,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28233,6 +30556,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28242,6 +30567,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28251,6 +30578,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28263,6 +30592,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -28274,6 +30605,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28315,6 +30648,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28328,6 +30663,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -28339,6 +30676,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28348,6 +30687,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28360,6 +30701,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -28371,6 +30714,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28401,6 +30746,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28414,6 +30761,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -28425,6 +30774,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28434,6 +30785,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28443,6 +30796,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28455,6 +30810,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -28466,6 +30823,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28511,6 +30870,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28524,6 +30885,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -28535,6 +30898,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28544,6 +30909,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28553,6 +30920,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28562,6 +30931,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28571,6 +30942,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28583,6 +30956,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -28594,6 +30969,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28635,6 +31012,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28648,6 +31027,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -28659,6 +31040,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28668,6 +31051,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28680,6 +31065,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -28691,6 +31078,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28721,6 +31110,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28734,6 +31125,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -28745,6 +31138,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28754,6 +31149,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28763,6 +31160,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28775,6 +31174,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -28786,6 +31187,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28831,6 +31234,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28844,6 +31249,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -28855,6 +31262,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28864,6 +31273,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28873,6 +31284,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28882,6 +31295,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28891,6 +31306,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28903,6 +31320,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -28914,6 +31333,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28955,6 +31376,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28968,6 +31391,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -28979,6 +31404,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -28988,6 +31415,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29000,6 +31429,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29011,6 +31442,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29057,6 +31490,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29070,6 +31505,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -29081,6 +31518,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29090,6 +31529,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29099,6 +31540,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29108,6 +31551,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29117,6 +31562,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29129,6 +31576,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29140,6 +31589,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29170,6 +31621,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29183,6 +31636,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -29194,6 +31649,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29203,6 +31660,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29215,6 +31674,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29226,6 +31687,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29270,6 +31733,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29283,6 +31748,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -29294,6 +31761,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29303,6 +31772,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29315,6 +31786,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29326,6 +31799,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29371,6 +31846,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29384,6 +31861,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -29395,6 +31874,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29404,6 +31885,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29413,6 +31896,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29422,6 +31907,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29434,6 +31921,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29445,6 +31934,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29487,6 +31978,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29496,6 +31989,8 @@ export interface operations {
             /** @description Access is forbidden. */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29505,6 +32000,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29514,6 +32011,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29523,6 +32022,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29535,6 +32036,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29546,6 +32049,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29588,6 +32093,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29597,6 +32104,8 @@ export interface operations {
             /** @description Access is forbidden. */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29606,6 +32115,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29615,6 +32126,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29624,6 +32137,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29636,6 +32151,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29647,6 +32164,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29694,6 +32213,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29706,6 +32227,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29717,6 +32240,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29759,6 +32284,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -29770,6 +32297,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29779,6 +32308,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29791,6 +32322,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29802,6 +32335,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29844,6 +32379,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29857,6 +32394,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -29868,6 +32407,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29877,6 +32418,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29886,6 +32429,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29895,6 +32440,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29907,6 +32454,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29918,6 +32467,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29958,6 +32509,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29967,6 +32520,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -29979,6 +32534,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -29990,6 +32547,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30030,6 +32589,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30039,6 +32600,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30051,6 +32614,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -30062,6 +32627,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30113,6 +32680,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30126,6 +32695,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -30137,6 +32708,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30149,6 +32722,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -30160,6 +32735,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30203,6 +32780,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30216,6 +32795,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -30227,6 +32808,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30236,6 +32819,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30245,6 +32830,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30254,6 +32841,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30266,6 +32855,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -30277,6 +32868,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30322,6 +32915,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30335,6 +32930,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -30346,6 +32943,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30358,6 +32957,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -30369,6 +32970,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30409,6 +33012,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30422,6 +33027,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -30433,6 +33040,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30442,6 +33051,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30454,6 +33065,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -30465,6 +33078,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30494,6 +33109,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30507,6 +33124,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -30518,6 +33137,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30527,6 +33148,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30539,6 +33162,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -30550,6 +33175,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30594,6 +33221,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30607,6 +33236,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -30618,6 +33249,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30627,6 +33260,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30636,6 +33271,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30645,6 +33282,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30657,6 +33296,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -30668,6 +33309,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30712,6 +33355,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30725,6 +33370,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -30736,6 +33383,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30745,6 +33394,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30754,6 +33405,8 @@ export interface operations {
             /** @description The request conflicts with the current state of the server. */
             409: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30763,6 +33416,8 @@ export interface operations {
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30772,6 +33427,8 @@ export interface operations {
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30784,6 +33441,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -30795,6 +33454,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30825,6 +33486,8 @@ export interface operations {
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30838,6 +33501,8 @@ export interface operations {
              */
             401: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
                     "WWW-Authenticate": string;
                     [name: string]: unknown;
@@ -30849,6 +33514,8 @@ export interface operations {
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30858,6 +33525,8 @@ export interface operations {
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {
@@ -30870,6 +33539,8 @@ export interface operations {
              */
             429: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     /** @description 再試行できるようになるまでの秒数。 */
                     "Retry-After": number;
                     [name: string]: unknown;
@@ -30881,6 +33552,8 @@ export interface operations {
             /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
             500: {
                 headers: {
+                    /** @description 本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。 */
+                    "Content-Language": components["schemas"]["Models.LanguageType"];
                     [name: string]: unknown;
                 };
                 content: {

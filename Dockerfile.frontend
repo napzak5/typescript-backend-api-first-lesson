@@ -30,6 +30,7 @@ RUN npm install -g "pnpm@$(node -p "require('./package.json').packageManager.spl
 # Copy package files for better caching
 COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY shared-config/package.json ./shared-config/
+COPY shared-i18n/package.json ./shared-i18n/
 
 # Copy backend packages needed for type generation
 COPY backend/packages/api/package.json ./backend/packages/api/
