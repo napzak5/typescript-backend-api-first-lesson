@@ -40,7 +40,9 @@ every story (`@beauty-salon-frontend/testing/stories`), `savedFiles`,
 the tests of screens share (`@beauty-salon-frontend/testing/screens`, under
 "A screen"), the values a form was sent with
 (`@beauty-salon-frontend/testing/forms`: `formOf`, `formOfEntries`), the
-files a test sends (`PNG_BYTES`, `PDF_TEXT`, `PDF_BYTES`),
+answers of the API a test makes up
+(`@beauty-salon-frontend/testing/answers`, under "Code that calls the
+API"), the files a test sends (`PNG_BYTES`, `PDF_TEXT`, `PDF_BYTES`),
 the names of the seed data (`@beauty-salon-frontend/testing/seed`), and the
 real API of the integration tests with what a test reads from its database
 and the sign-in on the screen (`@beauty-salon-frontend/testing/api`:
@@ -292,14 +294,39 @@ and not reject
 of the operations and one of the answers show that every operation reads
 every answer. Functions that read are also asked what they ask for (the
 parameters and the cursor of each request) and how they read a list to its
-end: `frontend/apps/portal-app/src/salons/salons-api.test.ts`. The answers
-such tests make up are one module of the application
-(`frontend/apps/portal-app/src/__tests__/api-answers.ts`: `problem`,
-`record`, `page`, `answering`, and `asked` and `sent` for what a function
-asked for). The admin and the dashboard applications and the packages take
-theirs from `@beauty-salon-frontend/testing/answers` (`json`, `problem`,
-`answering`, and `UNREAD`, the answers that say nothing with what a read
-makes of them).
+end: `frontend/apps/portal-app/src/salons/salons-api.test.ts`.
+
+The answers such tests make up come from one module, in every application
+and package: `@beauty-salon-frontend/testing/answers`.
+
+| What the API answers with | Written as |
+|---|---|
+| A problem of a status, naming the values the API refused when the test names them | `problem(status)`, `problem(422, [{ field, rule }])` |
+| A problem with the code the API gives its kind, and with a detail when the test is about what the API says | `problemWithCode(status, code)`, `problemWithCode(status, code, detail)` |
+| One record, as the API wraps it | `record(status, data)` |
+| A page of a list: its items, the cursor of the page after it, and how many items the list has in all (those of the page, unless the test says) | `page(items)`, `page(items, nextCursor)`, `page(items, nextCursor, total)` |
+| No body: a removal, and what a storage says | `empty(status)` |
+| The page of a gateway, which is no JSON | `pageOfAGateway(status)` |
+| A body of the test's own | `json(status, body)` |
+
+`answering((request) => …)` stands in for `fetch` and hands the test each
+request; an answer that depends on the address reads it with
+`new URL(request.url)`. `asked(fetched)` and `sent(fetched)` say what a
+function asked for. Three tables are the rows of an `it.each`: `UNREAD`
+(the answers that say nothing, with what a read makes of them),
+`UNWRITTEN` (the same after the bodies the API does not take, 413 and 415)
+and `OUTSIDE_THE_CONTRACT` (the statuses of what stands in front of the
+API).
+
+A test file builds an answer itself only where the answer is what the file
+is about: a file or a CSV, a body the storage sends, the links of a record.
+It does not wrap `data` in `meta` and `links` itself.
+
+That these answers are answers of the contract is checked where its types
+are: `frontend/packages/api-client/src/made-up-answers.test.ts` compares
+each with a value of the generated type, in full, so a property the
+contract gains, loses or types otherwise fails that file. The `testing`
+package cannot import the generated types (above).
 
 ## Against the real API
 
