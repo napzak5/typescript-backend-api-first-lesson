@@ -4,14 +4,17 @@ import { LOCALES, type Locale } from './locale'
 type LanguageRange = { tag: string; weight: number }
 
 /**
- * A language range with the weight it may have (RFC 9110, sections 12.4.2
- * and 12.5.4): `ja`, `en-US;q=0.8`, `*;q=0`. The weight is 0 to 1 with at
- * most three decimals.
+ * A language range that names a language, with the weight it may have
+ * (RFC 9110, sections 12.4.2 and 12.5.4): `ja`, `en-US;q=0.8`. The weight
+ * is 0 to 1 with at most three decimals.
  */
 const LANGUAGE_RANGE =
-  /^([a-z]{1,8}(?:-[a-z0-9]{1,8})*|\*)(?:[ \t]*;[ \t]*q=(0(?:\.\d{0,3})?|1(?:\.0{0,3})?))?$/i
+  /^([a-z]{1,8}(?:-[a-z0-9]{1,8})*)(?:[ \t]*;[ \t]*q=(0(?:\.\d{0,3})?|1(?:\.0{0,3})?))?$/i
 
-/** A range that is not written as the grammar has it is left out. */
+/**
+ * A range that is not written as the grammar has it is left out, and so is
+ * `*`, which names no language.
+ */
 const languageRangesOf = (element: string): LanguageRange[] => {
   const [, tag, weight = '1'] = LANGUAGE_RANGE.exec(element.trim()) ?? []
 

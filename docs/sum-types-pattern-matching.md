@@ -362,7 +362,7 @@ if (error.type === 'database' || error.type === 'storage') {
 `DomainError` または `HttpError` にケースを足す手順です。
 
 1. 型にケースを足す（`DomainError` なら `DomainErrors` にファクトリも足す）
-2. `toProblem` の `.exhaustive()` がコンパイルエラーになるので、ステータス・`code`・`detail` を決めて分岐を足す。`title` と、API の層が決める `detail` は、`shared-i18n/src/messages/api/problems.ts` に、英語と日本語で書く。api パッケージは domain パッケージの型をビルド成果物から読むため、ビルドしてから `pnpm typecheck` を実行する（理由は [TypeScript設定ガイド](./typescript-configuration.md)）
+2. `toProblem` と `languageOf`（そのエラーを言う言語）の `.exhaustive()` がコンパイルエラーになるので、ステータス・`code`・`detail` と、`detail` をだれが書くか（ドメインか、API の層か）を決めて、両方に分岐を足す。`title` と、API の層が決める `detail` は、`shared-i18n/src/messages/api/problems.ts` に、英語と日本語で書く。api パッケージは domain パッケージの型をビルド成果物から読むため、ビルドしてから `pnpm typecheck` を実行する（理由は [TypeScript設定ガイド](./typescript-configuration.md)）
 3. `backend/packages/api/src/shared/__tests__/problem-details.test.ts` に、そのケースのテストを足す
 
 `.otherwise()` で終えている `match`（`toHttpError` など）は、ケースを足してもコンパイラが教えてくれません。`HttpError` にケースを足したときは、それを作る場所も自分で足します。

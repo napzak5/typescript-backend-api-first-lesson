@@ -49,6 +49,8 @@ const LANGUAGE_OF_THE_DOMAIN: Locale = 'en'
  * the errors whose detail the domain writes. The domain writes in one
  * language, and such an error is told in that language as a whole: no
  * answer is in two languages, and `Content-Language` names the one it is in.
+ * Every kind of error is named, so a new one does not compile until it is
+ * said who writes its detail.
  */
 export const languageOf = (error: ApiError, asked: Locale): Locale =>
   match(error)
@@ -56,7 +58,26 @@ export const languageOf = (error: ApiError, asked: Locale): Locale =>
       { type: P.union('validation', 'notFound', 'alreadyExists', 'conflict') },
       () => LANGUAGE_OF_THE_DOMAIN,
     )
-    .otherwise(() => asked)
+    .with(
+      {
+        type: P.union(
+          'unauthenticated',
+          'forbidden',
+          'passwordRequired',
+          'database',
+          'storage',
+          'routeNotFound',
+          'malformedBody',
+          'unsupportedMediaType',
+          'bodyTooLarge',
+          'badRequest',
+          'rateLimited',
+          'unexpected',
+        ),
+      },
+      () => asked,
+    )
+    .exhaustive()
 
 const toProblem = (error: ApiError, language: Locale): Problem => {
   const said = (text: LocalizedText): string => textIn(text, language)
