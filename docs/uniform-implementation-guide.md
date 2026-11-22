@@ -255,11 +255,13 @@ export const toPaging = <Id>(request: {
   after: request.cursor ?? null,
 })
 
-// backend/packages/domain/src/mappers/read/page.ts: the items of the list → the page
-export const toApiPage = <Item extends { id: string }>(
+// backend/packages/domain/src/mappers/read/page.ts: the items of the list → the page.
+// `last` is the cursor of the last item of the page
+export const toApiPageEndingAt = <Item>(
   data: Item[],
   { total, hasMore }: { total: number; hasMore: boolean },
   { limit, after }: Paging<string>,
+  last: string | null,
 ): ApiPage<Item> => ({
   data,
   meta: {
@@ -267,11 +269,21 @@ export const toApiPage = <Item extends { id: string }>(
     limit,
     hasMore,
     cursor: after,
-    nextCursor: hasMore ? (data.at(-1)?.id ?? null) : null,
+    nextCursor: hasMore ? last : null,
     prevCursor: null,
   },
 })
+
+// The cursor of an item is its ID
+export const toApiPage = <Item extends { id: string }>(
+  data: Item[],
+  list: { total: number; hasMore: boolean },
+  paging: Paging<string>,
+): ApiPage<Item> =>
+  toApiPageEndingAt(data, list, paging, data.at(-1)?.id ?? null)
 ```
+
+A list whose items have no ID calls `toApiPageEndingAt` itself: the cursor of a page of available slots is its last slot (`AvailableSlotReadMapper.toApiAvailableSlotPage`).
 
 A use case calls neither: the write mapper of its domain makes the criteria of the list (`SalonWriteMapper.fromSearchRequest`) and the read mapper makes the page (`SalonReadMapper.toApiSalonPage`). A list that has not been changed to this yet builds `meta` in its use case, with the same values.
 
