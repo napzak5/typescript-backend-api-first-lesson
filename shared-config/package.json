@@ -9,6 +9,18 @@
     "./backend.json": "./tsconfig/backend.json",
     "./frontend.json": "./tsconfig/frontend.json",
     "./tsconfig.lib.json": "./tsconfig/tsconfig.lib.json",
-    "./tsconfig.app.json": "./tsconfig/tsconfig.app.json"
+    "./tsconfig.app.json": "./tsconfig/tsconfig.app.json",
+    "./vite": "./vite/library.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
   }
 }

@@ -295,9 +295,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@testcontainers/postgresql':
         specifier: ^12.2.1
         version: 12.2.1(bare-buffer@3.7.3)(supports-color@10.2.2)
@@ -334,6 +331,9 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      vite:
+        specifier: ^8.3.8
+        version: 8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
       vitest:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@26.6.6)(@vitest/ui@5.1.0)(jsdom@31.0.1(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -353,15 +353,15 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      vite:
+        specifier: ^8.3.8
+        version: 8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
       vitest:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@26.6.6)(@vitest/ui@5.1.0)(jsdom@31.0.1(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -390,9 +390,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@testcontainers/postgresql':
         specifier: ^12.2.1
         version: 12.2.1(bare-buffer@3.7.3)(supports-color@10.2.2)
@@ -408,6 +405,9 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      vite:
+        specifier: ^8.3.8
+        version: 8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
       vitest:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@26.6.6)(@vitest/ui@5.1.0)(jsdom@31.0.1(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -445,15 +445,15 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      vite:
+        specifier: ^8.3.8
+        version: 8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
       vitest:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@26.6.6)(@vitest/ui@5.1.0)(jsdom@31.0.1(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -467,9 +467,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@5.9.3)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -482,6 +479,9 @@ importers:
       typescript:
         specifier: 5.9.3
         version: 5.9.3
+      vite:
+        specifier: ^8.3.8
+        version: 8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
       yaml:
         specifier: ^2.9.1
         version: 2.9.1
@@ -525,9 +525,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -537,6 +534,9 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      vite:
+        specifier: ^8.3.8
+        version: 8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
       vitest:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@26.6.6)(@vitest/ui@5.1.0)(jsdom@31.0.1(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -550,9 +550,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -565,6 +562,9 @@ importers:
       utility-types:
         specifier: ^3.11.0
         version: 3.11.0
+      vite:
+        specifier: ^8.3.8
+        version: 8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
       vitest:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@26.6.6)(@vitest/ui@5.1.0)(jsdom@31.0.1(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -917,9 +917,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -957,9 +954,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -1003,9 +997,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@storybook/react-vite':
         specifier: ^10.6.7
         version: 10.6.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(storybook@10.6.7(@types/react@19.3.0)(prettier@3.10.1)(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -1067,9 +1058,6 @@ importers:
       '@playwright/test':
         specifier: ^1.65.1
         version: 1.65.1
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -1088,9 +1076,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -1122,9 +1107,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -1146,9 +1128,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -1189,9 +1168,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@storybook/react-vite':
         specifier: ^10.6.7
         version: 10.6.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(storybook@10.6.7(@types/react@19.3.0)(prettier@3.10.1)(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -1262,9 +1238,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@storybook/react-vite':
         specifier: ^10.6.7
         version: 10.6.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(storybook@10.6.7(@types/react@19.3.0)(prettier@3.10.1)(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -1338,9 +1311,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@storybook/react-vite':
         specifier: ^10.6.7
         version: 10.6.7(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(storybook@10.6.7(@types/react@19.3.0)(prettier@3.10.1)(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -1500,9 +1470,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@storybook/addon-a11y':
         specifier: ^10.6.7
         version: 10.6.7(storybook@10.6.7(@types/react@19.3.0)(prettier@3.10.1)(react@19.3.1))
@@ -1543,7 +1510,20 @@ importers:
         specifier: ^5.1.0
         version: 5.1.0(@types/node@26.6.6)(@vitest/ui@5.1.0)(jsdom@31.0.1(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
-  shared-config: {}
+  shared-config:
+    devDependencies:
+      '@types/node':
+        specifier: ^26.6.6
+        version: 26.6.6
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite:
+        specifier: ^8.3.8
+        version: 8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
+      vitest:
+        specifier: ^5.1.0
+        version: 5.1.0(@types/node@26.6.6)(@vitest/ui@5.1.0)(jsdom@31.0.1(@noble/hashes@1.8.0))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 
   specs:
     devDependencies:
@@ -1575,68 +1555,6 @@ packages:
     resolution: {integrity: sha512-vRZX+aPd9UzUMjsCeH0CR4ldbCwwGaKjbotF7PBRyZdbZRZJz3Em+HXUNaxGWcdajRpTBL1HQ0KECudftPs7CQ==}
     engines: {node: '>=20.19.0'}
     hasBin: true
-
-  '@ast-grep/napi-darwin-arm64@0.51.1':
-    resolution: {integrity: sha512-kc9phT4a0wpM2GAjqn+RySI/pS7hET78TOvsjTdFeEnZ7tdh887wyqjp6+J1ZxVw+/N66m7TauoSLIzkqdeR1Q==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@ast-grep/napi-darwin-x64@0.51.1':
-    resolution: {integrity: sha512-dB8Dm+B/aNPAxt6YUQEL3RWF/De9kbW/gdkG780lOpPOMD72injLbupiH/D1k6M76z6mTvqPQlTzTlXGmuxu3Q==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [darwin]
-
-  '@ast-grep/napi-linux-arm64-gnu@0.51.1':
-    resolution: {integrity: sha512-oUV+9XSdBwgMOneaG4qrDgDlbKOex/nwZ/xxN/LtrxHAN3y2DvUqG5Ds952F/shXJUxjqPRqsGUnB4chTpoj4Q==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-    libc: [glibc]
-
-  '@ast-grep/napi-linux-arm64-musl@0.51.1':
-    resolution: {integrity: sha512-KvCR7JDFMAeEz7Ev84wkQOxCl8xJ/hZ3K2ps2Y0ZM52VrrAheT4Z7VmCTcYp8PZgO+DdocUP6WomCrYv1iEdFA==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [linux]
-    libc: [musl]
-
-  '@ast-grep/napi-linux-x64-gnu@0.51.1':
-    resolution: {integrity: sha512-qjPDrnHd6mO3JfQS4VZRN5/W1as58y2jgb6sdZcSHvKvpwpYgt9Rlr37r6cwH8riA4uNpATrVH4jMnsAgZGYKg==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-    libc: [glibc]
-
-  '@ast-grep/napi-linux-x64-musl@0.51.1':
-    resolution: {integrity: sha512-KOmiN+hwt83aldhV7YvczKZb4hBDk+cksECV7r3Mtc67MkpBHt1scrp7NsjGS8jZf8NRLTptpODVy9tyFG4znw==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-    libc: [musl]
-
-  '@ast-grep/napi-win32-arm64-msvc@0.51.1':
-    resolution: {integrity: sha512-cMeOau20XOTpPoiAfwdE/ZhowXuxJerqn8MweyJOVxMwSMinQwAyrixeFXC/2oBff0j/UC5/DhnLL/Vg385MFA==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [win32]
-
-  '@ast-grep/napi-win32-ia32-msvc@0.51.1':
-    resolution: {integrity: sha512-eOnpllchxkhlWLMOUk0gZNACVwLn+j50foGScB7RF312ApHhPMjY+hIlTpTFUKgDqF74U7AODOba7Xsg52M1MQ==}
-    engines: {node: '>= 10'}
-    cpu: [ia32]
-    os: [win32]
-
-  '@ast-grep/napi-win32-x64-msvc@0.51.1':
-    resolution: {integrity: sha512-MVgY2fgh/VHFLa+gpIPZLgwoXWeBIwz7gfJh79l71b9pJJm1F3c5fKzZNClnP362gV1e+svtJ0XiJXTUnCf52w==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [win32]
-
-  '@ast-grep/napi@0.51.1':
-    resolution: {integrity: sha512-pdIyBOsQy9E46s8W9qcEH9ZDjx5nacxnn0cP+17qTuM6D1YoIvKlaz8n8yE1dkTAP59yjCp2t3cpMnacq2YJkw==}
-    engines: {node: '>= 10'}
 
   '@aws-sdk/checksums@3.1002.5':
     resolution: {integrity: sha512-OHlfkNzDFjYnwNPABhwAkDTUi0HPjfsKUHJDR0bSMORpCXNzRpInPCNCIT08xKDhjaPlcLJ+2Av+Sk7hHnuC8A==}
@@ -1899,9 +1817,6 @@ packages:
   '@emnapi/core@2.0.0-beta.2':
     resolution: {integrity: sha512-MzCVoWtcg4Pm2B3je5mMvYMvj3MmBKw+fU7vbsJc9/iT8ip6/eYIHo/Dsm/mr+wsHB6SEyJDuxB09Yy6r/8+4A==}
 
-  '@emnapi/core@2.0.0-beta.3':
-    resolution: {integrity: sha512-KA+gOBtbifRATmUa/Gpf5C2B2EJ0r4brHUT3XSgACeHREcuiObXH56xd+B3fFsEFbUT04VBEe6MuZiCtMp0tQg==}
-
   '@emnapi/runtime@1.11.0':
     resolution: {integrity: sha512-55coeOFKHv1ywEcUXJtWU5f+Jr/W5tZDvZig8DLKSwUN1JpROQ4rk/SNOQiFWmaR/VKF4zuFyW1B8JduOSv6Pg==}
 
@@ -1913,9 +1828,6 @@ packages:
 
   '@emnapi/runtime@2.0.0-beta.2':
     resolution: {integrity: sha512-JcrSPzPvZuNZvJqPTF9Fw25LbOJ8avzFVlaf2grmH4Cku0oGP47tRgqPZadcfj3YoZMHkFVnCYFbQM8I+i5QEw==}
-
-  '@emnapi/runtime@2.0.0-beta.3':
-    resolution: {integrity: sha512-ayb/PyyLzpwRyFVxeC0uoEHu59QlB1iWGcGsOpXQcaB/Dc+uGfBmNmpCHp3HmTT0t8lSsMmg3j7+tdJW/TlHjQ==}
 
   '@emnapi/wasi-threads@1.2.1':
     resolution: {integrity: sha512-uTII7OYF+/Mes/MrcIOYp5yOtSMLBWSIoLPpcgwipoiKbli6k322tcoFsxoIIxPDqW01SQGAgko4EzZi2BNv2w==}
@@ -3158,121 +3070,6 @@ packages:
       rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
     peerDependenciesMeta:
       rollup:
-        optional: true
-
-  '@rsbuild/core@2.3.3':
-    resolution: {integrity: sha512-IdbBXZrIY16RxnQduXRrsRBQtJ/X7JkYESrk6D46WA918wrckYTBxE09vHvDxR+3JoCLE02vOm2NPBNxqaUw5A==}
-    engines: {node: ^20.19.0 || >=22.12.0}
-    hasBin: true
-    peerDependencies:
-      core-js: '>= 3.0.0'
-    peerDependenciesMeta:
-      core-js:
-        optional: true
-
-  '@rslib/core@1.0.7':
-    resolution: {integrity: sha512-ew5zQApPo/MuNgsOoE//33gNzWJZEQopLX5/wDUdSxIZ5aKcW/ZDYZxuAWiw16EI6L51bh6WEKB9im1CeQQEAA==}
-    engines: {node: ^20.19.0 || >=22.12.0}
-    hasBin: true
-    peerDependencies:
-      '@microsoft/api-extractor': ^7
-      typescript: ^5 || ^6 || ^7 || ^7.1.0-0
-    peerDependenciesMeta:
-      '@microsoft/api-extractor':
-        optional: true
-      typescript:
-        optional: true
-
-  '@rspack/binding-darwin-arm64@2.3.3':
-    resolution: {integrity: sha512-G9WcBOP/6ZWeqTM/G0/rkJRY4DWmYQvk2untzcpj92uO12tqjZ9BSMgtBFvwElwagfQBkX8PPutkAZgtnlAoWA==}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@rspack/binding-darwin-x64@2.3.3':
-    resolution: {integrity: sha512-6agI5XDoihay+84vzZgIwwpQQ3xBWbe2HTWBRc0n42LzynIj9h7Qv8CJzf1gSDV1Ts0jzDgAJCYUFJ6Ya5F6MA==}
-    cpu: [x64]
-    os: [darwin]
-
-  '@rspack/binding-linux-arm64-gnu@2.3.3':
-    resolution: {integrity: sha512-VdjK1mDq+GBexd041lmWBFmAvcWIZy7kepTJbJgxLeHYYOnI3KmBG15kemhlK0pBySa+bePX7p2w8uYtl1HsCA==}
-    cpu: [arm64]
-    os: [linux]
-    libc: [glibc]
-
-  '@rspack/binding-linux-arm64-musl@2.3.3':
-    resolution: {integrity: sha512-xF4Wy4XwGjC3m13tFm1q9p9Qpm31qrk6f5zEMPZC31UVabb+2jrgTI1pfZ8IRuo9x/Qw9s+Zq3hyDbtJvvD8Pg==}
-    cpu: [arm64]
-    os: [linux]
-    libc: [musl]
-
-  '@rspack/binding-linux-ppc64-gnu@2.3.3':
-    resolution: {integrity: sha512-jVmn+LpF44D4FdZyT91rlT/tPMdHIfPfQTgVzwPB5nDICp4b57SFjVBApuAPIxnLT1pKLkv/LIcdvGSdAeX12w==}
-    cpu: [ppc64]
-    os: [linux]
-    libc: [glibc]
-
-  '@rspack/binding-linux-riscv64-gnu@2.3.3':
-    resolution: {integrity: sha512-JcQJm8M634jkbG6zJ3TfziKYsCINEAh3FwKuxLljvBgGDEupBxPuB0n2bXBIUeI8P9C33B45IYX6BwWYXll/zw==}
-    cpu: [riscv64]
-    os: [linux]
-    libc: [glibc]
-
-  '@rspack/binding-linux-riscv64-musl@2.3.3':
-    resolution: {integrity: sha512-YMIOS7rFvCDnpeyxoVEVbM7U/TwcC2VDtN3Oiq9BenRsNTEvk0imINhuVRFanh15+wkiQHk9h0b+pzcggYLAsA==}
-    cpu: [riscv64]
-    os: [linux]
-    libc: [musl]
-
-  '@rspack/binding-linux-s390x-gnu@2.3.3':
-    resolution: {integrity: sha512-tHGtIG6GGHsk2KvSleQp/BrVqiGdjDsLJuMKR7hE7W1uJW6WDJ+a+Z23Rk5kHXh5BjeFLjXxcufGuokvmLmTag==}
-    cpu: [s390x]
-    os: [linux]
-    libc: [glibc]
-
-  '@rspack/binding-linux-x64-gnu@2.3.3':
-    resolution: {integrity: sha512-spe8SjywfO+dD7Sk+vIpPaOXf56wstrgeuztfJdiI9zTeQmf/lhdaNUUSUAXlGIaLjrN/PhV8i5kbQ7VaAkenw==}
-    cpu: [x64]
-    os: [linux]
-    libc: [glibc]
-
-  '@rspack/binding-linux-x64-musl@2.3.3':
-    resolution: {integrity: sha512-4E4OJodrmsS52zkSAWShG/F07etr0OG4oSrIN+/2BBgc0qR2wwu2T+rAs308IL3lbywlS+J+cynrRcsSFMD+Kg==}
-    cpu: [x64]
-    os: [linux]
-    libc: [musl]
-
-  '@rspack/binding-wasm32-wasi@2.3.3':
-    resolution: {integrity: sha512-AhlsPjW31TGP8N+J7OmbCPaamARUl+OQNiT3xo0PL5Dz5oMm+bEfYLostpehKyy8MNDrmJcY97M9pDb5MDMA0w==}
-    cpu: [wasm32]
-
-  '@rspack/binding-win32-arm64-msvc@2.3.3':
-    resolution: {integrity: sha512-Zqbj7GBPtkJ8GlUKAjFgvmOxKkQwjfS3XfjwGBcmoIAUb4IxUsmMqvi+gfKrvI45SjYVFZaJnTpOJw6GL79K+Q==}
-    cpu: [arm64]
-    os: [win32]
-
-  '@rspack/binding-win32-ia32-msvc@2.3.3':
-    resolution: {integrity: sha512-sJJmbrdzH6kI48mCsUu5a2+BzEktLmHrHUmWGkAPAi0zhi4anA7sOdS1+uERbkkd/XAzs0bdn3JXyT2djY+3IA==}
-    cpu: [ia32]
-    os: [win32]
-
-  '@rspack/binding-win32-x64-msvc@2.3.3':
-    resolution: {integrity: sha512-1r3wxV1pBNykqpbEbZWqcrZd13PKLq0e7Ku6qv8IGKKeftuf3RUxTkeM5AzppGMGEIA9sw8mRdN7NvEXxqLLxw==}
-    cpu: [x64]
-    os: [win32]
-
-  '@rspack/binding@2.3.3':
-    resolution: {integrity: sha512-wwF++36a3rqYi0G9zj+rUavn/GIMzbzXehelGS1jkYeKPHyPXrVYwRHqwEKNKMD9z+FdW4YJKQcfFkPlHEiwUg==}
-
-  '@rspack/core@2.3.3':
-    resolution: {integrity: sha512-stAYr0SXf+ZFXFsWTv+Ljxoj/nQs2p7gX9V1kBwlO2IXlRAAhabLONYibT3ZeEGybx3kowrs7uJkcOQsuHgghw==}
-    engines: {node: ^20.19.0 || >=22.12.0}
-    peerDependencies:
-      '@module-federation/runtime-tools': ^0.24.1 || ^2.0.0
-      '@swc/helpers': ^0.5.23
-    peerDependenciesMeta:
-      '@module-federation/runtime-tools':
-        optional: true
-      '@swc/helpers':
         optional: true
 
   '@scalar/helpers@0.16.4':
@@ -5563,19 +5360,6 @@ packages:
     resolution: {integrity: sha512-bpowRfGjEPe8t9R6fJIzhwmyCGAXwKvxBUsgJm+bJukwdcWmUXbMo7p22w7aYmQBPQTUMNqMV39YX0kMou3z8w==}
     engines: {node: '>= 18'}
 
-  rsbuild-plugin-dts@1.0.7:
-    resolution: {integrity: sha512-r9+bGoY0EmOB5Jisxd7qFQNTTcMTtB0Ke0oDZDYEEAvrpzTCvjWH2UtsscUnOwyPeUauXR2fBME+Vny8aVD66w==}
-    engines: {node: ^20.19.0 || >=22.12.0}
-    peerDependencies:
-      '@microsoft/api-extractor': ^7
-      '@rsbuild/core': ^2.0.0
-      typescript: ^5 || ^6 || ^7 || ^7.1.0-0
-    peerDependenciesMeta:
-      '@microsoft/api-extractor':
-        optional: true
-      typescript:
-        optional: true
-
   run-applescript@7.1.0:
     resolution: {integrity: sha512-DPe5pVFaAsinSaV6QjQ6gdiedWDcRCbUuiQfQa2wmWV7+xC9bGulGI8+TdRmoFkAPaBXk8CrAbnlY2ISniJ47Q==}
     engines: {node: '>=18'}
@@ -6303,45 +6087,6 @@ snapshots:
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
 
-  '@ast-grep/napi-darwin-arm64@0.51.1':
-    optional: true
-
-  '@ast-grep/napi-darwin-x64@0.51.1':
-    optional: true
-
-  '@ast-grep/napi-linux-arm64-gnu@0.51.1':
-    optional: true
-
-  '@ast-grep/napi-linux-arm64-musl@0.51.1':
-    optional: true
-
-  '@ast-grep/napi-linux-x64-gnu@0.51.1':
-    optional: true
-
-  '@ast-grep/napi-linux-x64-musl@0.51.1':
-    optional: true
-
-  '@ast-grep/napi-win32-arm64-msvc@0.51.1':
-    optional: true
-
-  '@ast-grep/napi-win32-ia32-msvc@0.51.1':
-    optional: true
-
-  '@ast-grep/napi-win32-x64-msvc@0.51.1':
-    optional: true
-
-  '@ast-grep/napi@0.51.1':
-    optionalDependencies:
-      '@ast-grep/napi-darwin-arm64': 0.51.1
-      '@ast-grep/napi-darwin-x64': 0.51.1
-      '@ast-grep/napi-linux-arm64-gnu': 0.51.1
-      '@ast-grep/napi-linux-arm64-musl': 0.51.1
-      '@ast-grep/napi-linux-x64-gnu': 0.51.1
-      '@ast-grep/napi-linux-x64-musl': 0.51.1
-      '@ast-grep/napi-win32-arm64-msvc': 0.51.1
-      '@ast-grep/napi-win32-ia32-msvc': 0.51.1
-      '@ast-grep/napi-win32-x64-msvc': 0.51.1
-
   '@aws-sdk/checksums@3.1002.5':
     dependencies:
       '@aws-sdk/core': 3.981.0
@@ -6712,12 +6457,6 @@ snapshots:
       tslib: 2.9.1
     optional: true
 
-  '@emnapi/core@2.0.0-beta.3':
-    dependencies:
-      '@emnapi/wasi-threads': 2.2.0
-      tslib: 2.9.1
-    optional: true
-
   '@emnapi/runtime@1.11.0':
     dependencies:
       tslib: 2.9.1
@@ -6734,11 +6473,6 @@ snapshots:
     optional: true
 
   '@emnapi/runtime@2.0.0-beta.2':
-    dependencies:
-      tslib: 2.9.1
-    optional: true
-
-  '@emnapi/runtime@2.0.0-beta.3':
     dependencies:
       tslib: 2.9.1
     optional: true
@@ -7114,13 +6848,6 @@ snapshots:
     dependencies:
       '@emnapi/core': 1.9.2
       '@emnapi/runtime': 1.9.2
-      '@tybys/wasm-util': 0.10.5
-    optional: true
-
-  '@napi-rs/wasm-runtime@1.2.7(@emnapi/core@2.0.0-beta.3)(@emnapi/runtime@2.0.0-beta.3)':
-    dependencies:
-      '@emnapi/core': 2.0.0-beta.3
-      '@emnapi/runtime': 2.0.0-beta.3
       '@tybys/wasm-util': 0.10.5
     optional: true
 
@@ -7610,102 +7337,6 @@ snapshots:
       '@types/estree': 1.0.10
       estree-walker: 2.0.2
       picomatch: 4.0.7
-
-  '@rsbuild/core@2.3.3':
-    dependencies:
-      '@rspack/core': 2.3.3(@swc/helpers@0.5.24)
-      '@swc/helpers': 0.5.24
-    transitivePeerDependencies:
-      - '@module-federation/runtime-tools'
-
-  '@rslib/core@1.0.7(typescript@5.9.3)':
-    dependencies:
-      '@rsbuild/core': 2.3.3
-      rsbuild-plugin-dts: 1.0.7(@rsbuild/core@2.3.3)(typescript@5.9.3)
-    optionalDependencies:
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - '@module-federation/runtime-tools'
-      - core-js
-
-  '@rslib/core@1.0.7(typescript@7.0.2)':
-    dependencies:
-      '@rsbuild/core': 2.3.3
-      rsbuild-plugin-dts: 1.0.7(@rsbuild/core@2.3.3)(typescript@7.0.2)
-    optionalDependencies:
-      typescript: 7.0.2
-    transitivePeerDependencies:
-      - '@module-federation/runtime-tools'
-      - core-js
-
-  '@rspack/binding-darwin-arm64@2.3.3':
-    optional: true
-
-  '@rspack/binding-darwin-x64@2.3.3':
-    optional: true
-
-  '@rspack/binding-linux-arm64-gnu@2.3.3':
-    optional: true
-
-  '@rspack/binding-linux-arm64-musl@2.3.3':
-    optional: true
-
-  '@rspack/binding-linux-ppc64-gnu@2.3.3':
-    optional: true
-
-  '@rspack/binding-linux-riscv64-gnu@2.3.3':
-    optional: true
-
-  '@rspack/binding-linux-riscv64-musl@2.3.3':
-    optional: true
-
-  '@rspack/binding-linux-s390x-gnu@2.3.3':
-    optional: true
-
-  '@rspack/binding-linux-x64-gnu@2.3.3':
-    optional: true
-
-  '@rspack/binding-linux-x64-musl@2.3.3':
-    optional: true
-
-  '@rspack/binding-wasm32-wasi@2.3.3':
-    dependencies:
-      '@emnapi/core': 2.0.0-beta.3
-      '@emnapi/runtime': 2.0.0-beta.3
-      '@napi-rs/wasm-runtime': 1.2.7(@emnapi/core@2.0.0-beta.3)(@emnapi/runtime@2.0.0-beta.3)
-    optional: true
-
-  '@rspack/binding-win32-arm64-msvc@2.3.3':
-    optional: true
-
-  '@rspack/binding-win32-ia32-msvc@2.3.3':
-    optional: true
-
-  '@rspack/binding-win32-x64-msvc@2.3.3':
-    optional: true
-
-  '@rspack/binding@2.3.3':
-    optionalDependencies:
-      '@rspack/binding-darwin-arm64': 2.3.3
-      '@rspack/binding-darwin-x64': 2.3.3
-      '@rspack/binding-linux-arm64-gnu': 2.3.3
-      '@rspack/binding-linux-arm64-musl': 2.3.3
-      '@rspack/binding-linux-ppc64-gnu': 2.3.3
-      '@rspack/binding-linux-riscv64-gnu': 2.3.3
-      '@rspack/binding-linux-riscv64-musl': 2.3.3
-      '@rspack/binding-linux-s390x-gnu': 2.3.3
-      '@rspack/binding-linux-x64-gnu': 2.3.3
-      '@rspack/binding-linux-x64-musl': 2.3.3
-      '@rspack/binding-wasm32-wasi': 2.3.3
-      '@rspack/binding-win32-arm64-msvc': 2.3.3
-      '@rspack/binding-win32-ia32-msvc': 2.3.3
-      '@rspack/binding-win32-x64-msvc': 2.3.3
-
-  '@rspack/core@2.3.3(@swc/helpers@0.5.24)':
-    dependencies:
-      '@rspack/binding': 2.3.3
-    optionalDependencies:
-      '@swc/helpers': 0.5.24
 
   '@scalar/helpers@0.16.4': {}
 
@@ -10024,20 +9655,6 @@ snapshots:
       path-to-regexp: 8.4.2
     transitivePeerDependencies:
       - supports-color
-
-  rsbuild-plugin-dts@1.0.7(@rsbuild/core@2.3.3)(typescript@5.9.3):
-    dependencies:
-      '@ast-grep/napi': 0.51.1
-      '@rsbuild/core': 2.3.3
-    optionalDependencies:
-      typescript: 5.9.3
-
-  rsbuild-plugin-dts@1.0.7(@rsbuild/core@2.3.3)(typescript@7.0.2):
-    dependencies:
-      '@ast-grep/napi': 0.51.1
-      '@rsbuild/core': 2.3.3
-    optionalDependencies:
-      typescript: 7.0.2
 
   run-applescript@7.1.0: {}
 

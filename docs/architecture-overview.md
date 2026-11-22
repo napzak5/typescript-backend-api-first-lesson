@@ -116,7 +116,7 @@ shape the system, and why:
 ├── frontend/
 │   ├── packages/            Shared packages, including the generated API client
 │   └── apps/                admin-app, portal-app, dashboard-app
-├── shared-config/           Shared tsconfig files
+├── shared-config/           Shared tsconfig files, the build of the packages, Biome plugins
 ├── scripts/                 Repository scripts, run with node
 ├── docs/
 ├── Dockerfile.backend, Dockerfile.frontend, docker-compose.yml
@@ -930,8 +930,10 @@ Each backend package has a single entry point with two targets:
   no build.
 - Everything else resolves to `dist`: the built server, and `pnpm typecheck`,
   which is why a build must come first.
-- The packages are built by rslib. The server application is built by `tsc`
-  alone.
+- The packages are built by Vite in library mode, all of them with the one
+  configuration in `shared-config/vite/library.ts` (see
+  [TypeScript Configuration](./typescript-configuration.md)). The server
+  application is built by `tsc` alone.
 
 ## Type Generation Pipeline
 

@@ -7,7 +7,6 @@
     "declarationMap": true,
     "rootDir": ".",
     "outDir": "./dist",
-    "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
     "lib": ["ESNEXT", "DOM"],
     "types": ["node"]
   },

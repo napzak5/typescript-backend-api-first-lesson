@@ -98,11 +98,50 @@
 
 | 対象 | JavaScript の出力 | 型定義（`.d.ts`）の出力 |
 |------|-------------------|-------------------------|
-| `backend/packages/{api,config,database,domain,infrastructure,utility}` | rslib（`dist/index.js` に束ねる） | `tsc --emitDeclarationOnly --project tsconfig.build.json` |
-| `backend/packages/generated` | rslib | rslib（`dts: true`） |
+| `backend/packages/*` | Vite のライブラリー モード（`dist/index.js` に束ねる） | `tsc --emitDeclarationOnly --project tsconfig.build.json`（ビルドの中で呼ぶ） |
 | `backend/apps/server` | `tsc --project tsconfig.build.json` | 同左 |
-| `frontend/packages/*` | rslib | rslib（`dts: true`。`tsconfig.build.json` を使う） |
+| `frontend/packages/*`（`theme` と `testing` のほか） | Vite のライブラリー モード（モジュールごとに 1 ファイルか、1 ファイルに束ねる） | `tsc --emitDeclarationOnly --project tsconfig.build.json`（ビルドの中で呼ぶ） |
 | `frontend/apps/*` | Vite | 出力しない |
+
+### パッケージのビルド
+
+パッケージのビルドは、Vite のライブラリー モードです。設定は `shared-config/vite/library.ts`（`@beauty-salon-shared/config/vite`）の 1 か所にあり、各パッケージの `vite.config.ts` は、形を選んで呼ぶだけです。
+
+| 形 | 関数 | パッケージ |
+|---|---|---|
+| `src` のモジュールごとに 1 ファイル | `moduleLibrary()` | `ui`、`session`、`app-frame`、`preferences`、`salon-screens` |
+| 入口ごとに 1 ファイルに束ねる（ブラウザー向け） | `bundledLibrary(manifest, 'browser')` | `answers`、`api-client`、`config`、`fields`、`io` |
+| 入口ごとに 1 ファイルに束ねる（Node.js 向け） | `bundledLibrary(manifest, 'node')` | `backend/packages/*` の 7 つと、入口が 2 つの `brand` |
+
+```ts
+// frontend/packages/answers/vite.config.ts
+import { bundledLibrary } from '@beauty-salon-shared/config/vite'
+import manifest from './package.json' with { type: 'json' }
+
+export default bundledLibrary(manifest, 'browser')
+```
+
+どの形にも共通の決まり:
+
+- スクリプトは `vite build --mode <モード>` です（`build:dev` は `development`、`build:test` は `test`、`build:stg` は `staging`、`build:prod` は `production`、バックエンドの `build:localhost` は `localhost`）。`production` のときだけ minify し、そのほかはソースマップを出力します。`build:watch` は、変更のたびにビルドし直します
+- 型定義は、モジュールを書き出した後に、ビルドが `tsc --emitDeclarationOnly --project tsconfig.build.json` を呼んで出力します。型の誤りがあるパッケージは、ビルドが失敗します。`tsBuildInfoFile` は `dist` の中に置きます（Vite が `dist` を空にしたら、型定義も出し直すため）
+- テスト（`*.test.ts(x)`、`__tests__/`）、ストーリー（`*.stories.tsx`、`__stories__/`）、`*.d.ts` は、ビルドしません
+- 構文は、書いたままにします（`target: 'esnext'`）。どこまで下げるかは、アプリのビルドが決めます
+- `import.meta.env.*` は、書いたままに残します。値は、アプリのビルドのものです
+- JSX は、`NODE_ENV` が何であっても `react/jsx-runtime` で組み立てます。開発用のランタイムは、本番のアプリにはありません
+- `public/` の中身は、`dist` に写しません
+- 設定は、ビルドのときだけ効きます。Vitest の設定を持たないパッケージ（`brand`、`config`）では、Vitest も `vite.config.ts` を読みますが、何も設定されず、テストはこのファイルがないときと同じに動きます
+
+外に残す `import`:
+
+- モジュールごとの形は、パッケージを指す `import` をすべて残します。依存は `package.json` に書きます（書いていない依存は、`pnpm knip` が見つけます）
+- 束ねる形は、`package.json` の `dependencies` と `peerDependencies`（と、その下のパス）を残し、そのほかは出力に含めます。Node.js 向けでは、Node.js の組み込みのモジュールも残します
+
+モジュールごとの形では、コンポーネントのスタイルシートを、モジュールの隣に `*.module.built.css` という名前で書き出し、モジュールがそれを `import` します。`*.module.css` のままだと、アプリのバンドラーがクラス名をもう一度付け直し、スタイルが外れます。
+
+`database` は、ビルドの後に `sql/` を `dist/sql` に写します（`backend/packages/database/vite.config.ts`）。
+
+設定のテストは `shared-config/vite/library.test.ts` です。`shared-config/vite/__fixtures__/` の小さなライブラリーをビルドして、`dist` の中身を確かめます。各パッケージの `vite.config.ts` の型は、ルートの `tsconfig.json` が検査します。
 
 ### バックエンドのパッケージ
 
@@ -130,11 +169,11 @@
 }
 ```
 
-ビルドスクリプトは `rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json` です。rslib（設定は各パッケージの `rslib.config.ts`）が JavaScript を出力し、`tsc` が型定義だけを `dist` に出力します。`tsconfig.build.json` はこの `tsconfig.json` を継承し、`src/**/__tests__/**` を除外するだけのファイルです（テストの型定義を `dist` に出さないため）。型検査（`pnpm typecheck`）は `tsconfig.json` を使うので、テストも検査されます。
+ビルドスクリプトは `vite build --mode <モード>` です（[パッケージのビルド](#パッケージのビルド)）。Vite が JavaScript を出力し、その後に `tsc` が型定義だけを `dist` に出力します。`tsconfig.build.json` はこの `tsconfig.json` を継承し、`src/**/__tests__/**` を除外するだけのファイルです（テストの型定義を `dist` に出さないため）。型検査（`pnpm typecheck`）は `tsconfig.json` を使うので、テストも検査されます。
 
 ### サーバーアプリ
 
-`backend/apps/server` は rslib を使わず、`tsc` だけでビルドします。
+`backend/apps/server` は Vite を使わず、`tsc` だけでビルドします。
 
 ```json
 // backend/apps/server/tsconfig.build.json
@@ -155,7 +194,7 @@
 import { startServer } from './server.js'
 ```
 
-付け忘れても型検査は通り（`moduleResolution: "bundler"` は拡張子なしを許すため）、`pnpm start:backend` で起動したときに初めて失敗します。rslib が1ファイルに束ねるパッケージと、Vitest が実行するテストでは、拡張子は付けません。
+付け忘れても型検査は通り（`moduleResolution: "bundler"` は拡張子なしを許すため）、`pnpm start:backend` で起動したときに初めて失敗します。Vite が1ファイルに束ねるパッケージと、Vitest が実行するテストでは、拡張子は付けません。
 
 ### ワークスペースパッケージの解決（`@beauty-salon-backend/source`）
 
@@ -190,7 +229,7 @@ import { startServer } from './server.js'
 ### フロントエンド
 
 - アプリ（`frontend/apps/*`）の `tsconfig.json` は `references` だけを持ち、`tsconfig.app.json`（`src` 用。`@/*` を `./src/*` に対応させる `paths` を持つ）と `tsconfig.node.json`（`vite.config.ts` 用）に分かれています。型検査は `tsc --build`、ビルドは Vite です
-- パッケージ（`frontend/packages/*`）は `tsconfig.lib.json` を継承し、必要に応じて `lib` に DOM、`jsx: "react-jsx"` を足しています。rslib は `tsconfig.build.json`（`*.test.ts(x)` と `*.stories.tsx` を除外）で型定義を出力するので、テストの型定義は `dist` に入りません。型検査（`pnpm typecheck`）は `tsconfig.json` を使い、テストも検査します
+- パッケージ（`frontend/packages/*`）は `tsconfig.lib.json` を継承し、必要に応じて `lib` に DOM、`jsx: "react-jsx"` を足しています。ビルドは `tsconfig.build.json`（`*.test.ts(x)` と `*.stories.tsx` を除外）で型定義を出力するので、テストの型定義は `dist` に入りません。型検査（`pnpm typecheck`）は `tsconfig.json` を使い、テストも検査します
 
 ### Node.js が直接実行するスクリプト
 

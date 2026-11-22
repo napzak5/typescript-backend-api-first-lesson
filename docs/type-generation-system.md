@@ -127,7 +127,7 @@ backend/packages/generated/
 │   ├── api-types.ts        # paths, components, operations
 │   ├── schema.ts           # one Zod schema and type per string enum
 │   └── index.ts            # re-exports both files
-├── rslib.config.ts         # builds src/ to dist/
+├── vite.config.ts          # builds src/ to dist/
 └── package.json
 ```
 
