@@ -11,6 +11,11 @@ import {
 } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
+import type { BookingId } from './booking'
+import type { CustomerId } from './customer'
+import type { SalonId } from './salon'
+import type { ServiceId } from './service'
+import type { StaffId } from './staff'
 
 // ID: a UUID that has been checked.
 export const saleIdSchema = uuidSchema.brand<'SaleId'>()
@@ -74,6 +79,68 @@ export type SaleWithDetails = {
   sale: DbSale
   details: DbSalesDetail[]
   payments: DbPaymentTransaction[]
+}
+
+/**
+ * A line of a sale as a request states it: what was sold, with its name
+ * and its amounts. The row it becomes is made by `linesOf`.
+ */
+export type RequestedSalesDetail = {
+  itemType: string
+  /** The service or the product that was sold; null for a line of neither. */
+  itemId: string | null
+  itemName: string
+  quantity: number
+  unitPrice: number
+  discountAmount: number
+  taxAmount: number
+  totalAmount: number
+  staffId: StaffId | null
+  /** In per cent, with two decimal places at most. */
+  commissionRate: number | null
+  commissionAmount: number | null
+  notes: string | null
+  sortOrder: number
+}
+
+/**
+ * The sale a request asks to enter. What a sale says of its lines taken
+ * together, its day and its number are not among it: they are worked out
+ * (`planSale`).
+ */
+export type RequestedSale = {
+  salonId: SalonId
+  customerId: CustomerId | null
+  staffId: StaffId | null
+  bookingId: BookingId | null
+  /** When the sale was made: in UTC, in one spelling. */
+  saleTime: string
+  pointsUsed: number | null
+  pointsEarned: number | null
+  notes: string | null
+  details: RequestedSalesDetail[]
+}
+
+/**
+ * The correction a request asks for: of what a sale is entered with, the
+ * properties the request names, and no others. The salon is not among
+ * them: a sale does not move.
+ */
+export type RequestedSaleChange = Partial<Omit<RequestedSale, 'salonId'>>
+
+/** The void a request asks for: why the sale is taken back, when it says. */
+export type RequestedSaleVoid = {
+  voidReason: string | null
+}
+
+/**
+ * The calculation a request asks for: the salon, the booking whose service
+ * lines count, and the services that are added to them, each a line.
+ */
+export type RequestedCalculation = {
+  salonId: SalonId
+  bookingId: BookingId | null
+  services: ServiceId[]
 }
 
 /** What the entry of a sale writes. */

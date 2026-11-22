@@ -1,7 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
+import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
 import type { Actor } from '../../models/auth'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import type { ApiSaleResponse } from '../../models/sale'
 import { saleSearchRequestSchema } from '../../schemas/sale.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -9,13 +10,7 @@ import { isWithin } from '../booking/_shared/authorization'
 import { saleReachOf } from './_shared/authorization'
 import type { SaleUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid sale search'
-
-export type SalePage = {
-  data: ApiSaleResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListSalesUseCase {
   constructor(private readonly dependencies: SaleUseCaseDependencies) {}
@@ -35,7 +30,7 @@ export class ListSalesUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<SalePage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiSaleResponse>, DomainError>> {
     const reach = saleReachOf(actor)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
@@ -48,31 +43,12 @@ export class ListSalesUseCase {
     if (request.type === 'error') {
       return request
     }
-    const {
-      cursor,
-      salonId,
-      customerId,
-      bookingId,
-      paymentStatus,
-      startDate,
-      endDate,
-    } = request.data
-    if (salonId !== undefined && !isWithin(reach, salonId)) {
+    const criteria = SaleWriteMapper.fromSearchRequest(request.data, reach)
+    if (criteria.salonId !== null && !isWithin(reach, criteria.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
-    const limit = request.data.limit ?? DEFAULT_LIMIT
 
-    const listed = await this.dependencies.saleRepository.list({
-      reach,
-      limit,
-      after: cursor ?? null,
-      salonId: salonId ?? null,
-      customerId: customerId ?? null,
-      bookingId: bookingId ?? null,
-      paymentStatus: paymentStatus ?? null,
-      startDate: startDate ?? null,
-      endDate: endDate ?? null,
-    })
+    const listed = await this.dependencies.saleRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -88,20 +64,6 @@ export class ListSalesUseCase {
       )
     }
 
-    const { sales, total, hasMore } = listed.data
-    const lastSaleId = sales.at(-1)?.sale.id ?? null
-
-    return Result.map(SaleReadMapper.toApiSales(sales), (data) => ({
-      data,
-      meta: {
-        total,
-        limit,
-        hasMore,
-        cursor: cursor ?? null,
-        nextCursor: hasMore ? lastSaleId : null,
-        // Pages are only walked forwards.
-        prevCursor: null,
-      },
-    }))
+    return SaleReadMapper.toApiSalePage(listed.data, criteria)
   }
 }

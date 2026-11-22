@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { PaymentReadMapper } from '../mappers/read/payment.mapper'
+import { PaymentWriteMapper } from '../mappers/write/payment.mapper'
 import type { DbPaymentTransaction } from '../models/sale'
-import { apiRefundedPayment, refundedPayment } from './payment-fixtures'
+import { saleProcessRequestSchema } from '../schemas/payment.schema'
+import {
+  apiRefundedPayment,
+  paymentRefundRequest,
+  refundedPayment,
+  saleProcessRequest,
+} from './payment-fixtures'
+import { PAYMENT_METHOD_ID } from './payment-method-fixtures'
 import { apiPayment, dbPayment, PAYMENT_ID } from './sale-fixtures'
 
 /** The properties of a PaymentResponse. */
@@ -121,4 +129,45 @@ describe('PaymentReadMapper.toApiPayment', () => {
       storedRowIsCorrupt(OTHER_PAYMENT_ID),
     )
   })
+})
+
+describe('PaymentWriteMapper', () => {
+  it('returns the request of a payment as the payment that is asked for', () => {
+    const request = saleProcessRequestSchema.parse(saleProcessRequest())
+
+    expect(PaymentWriteMapper.fromSaleProcessRequest(request)).toStrictEqual({
+      paymentMethodId: PAYMENT_METHOD_ID,
+      amount: 12650,
+      cardLastFour: '4242',
+      cardBrand: 'visa',
+    })
+  })
+
+  it('keeps a payment without a card as it is', () => {
+    const request = saleProcessRequestSchema.parse({
+      ...saleProcessRequest(),
+      cardLastFour: null,
+      cardBrand: null,
+    })
+
+    expect(PaymentWriteMapper.fromSaleProcessRequest(request)).toMatchObject({
+      cardLastFour: null,
+      cardBrand: null,
+    })
+  })
+
+  it.each<[string, string | null]>([
+    ['the reason the request gives', '商品の返品'],
+    ['no reason', null],
+  ])(
+    'returns a refund request as the refund that is asked for, with %s',
+    (_named, refundReason) => {
+      expect(
+        PaymentWriteMapper.fromRefundRequest({
+          ...paymentRefundRequest(),
+          refundReason,
+        }),
+      ).toStrictEqual({ refundAmount: 5500, refundReason })
+    },
+  )
 })

@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
+import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiSaleResponse } from '../../models/sale'
 import { saleCreateRequestSchema } from '../../schemas/sale.schema'
@@ -41,14 +42,15 @@ export class CreateSaleUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (!isWithin(reach, request.data.salonId)) {
+    const requested = SaleWriteMapper.fromCreateRequest(request.data)
+    if (!isWithin(reach, requested.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
 
     const { saleRepository, saleNumberIssuer } = this.dependencies
 
     return underFreeNumber('sale', saleNumberIssuer, async (saleNumber) => {
-      const created = await saleRepository.create(request.data, { saleNumber })
+      const created = await saleRepository.create(requested, { saleNumber })
       if (created.type === 'error') {
         return created
       }

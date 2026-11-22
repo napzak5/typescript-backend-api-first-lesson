@@ -14,7 +14,7 @@ import {
   bookingIdSchema,
   type DomainError,
   type LedgerReach,
-  type SaleUpdateRequest,
+  type RequestedSaleChange,
   saleIdSchema,
   salonIdSchema,
   staffIdSchema,
@@ -2787,7 +2787,7 @@ describe('Sale changes API', () => {
       type: 'salon',
       salonId: salonIdSchema.parse(id),
     })
-    type Line = NonNullable<SaleUpdateRequest['details']>[number]
+    type Line = NonNullable<RequestedSaleChange['details']>[number]
     /** A line as the use case hands it on: a fee of 500 yen and 50 of tax. */
     const feeOf = (): Line => ({
       itemType: 'fee',
@@ -2861,7 +2861,7 @@ describe('Sale changes API', () => {
         const bookingId = await insertBooking()
         await created({ bookingId })
         const entered = await created()
-        const corrected = (id: string, change: SaleUpdateRequest) =>
+        const corrected = (id: string, change: RequestedSaleChange) =>
           repository()
             .update(saleIdSchema.parse(id), everySalon, change)
             .then(dataOf)

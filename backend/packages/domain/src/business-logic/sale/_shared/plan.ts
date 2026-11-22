@@ -1,14 +1,14 @@
 import { format, isValid, parseISO } from 'date-fns'
 import type { DbBooking } from '../../../models/booking'
-import type { DbNewSalesDetail, SaleWrite } from '../../../models/sale'
+import type {
+  DbNewSalesDetail,
+  RequestedSale,
+  RequestedSalesDetail,
+  SaleWrite,
+} from '../../../models/sale'
 import type { DbSalon } from '../../../models/salon'
 import { inTimeZone, MAX_INTEGER } from '../../../schemas/rules'
-import {
-  PRODUCT_ITEM,
-  type SaleCreateRequest,
-  type SalesDetailRequest,
-  SERVICE_ITEM,
-} from '../../../schemas/sale.schema'
+import { PRODUCT_ITEM, SERVICE_ITEM } from '../../../schemas/sale.schema'
 import type { ValidationIssue } from '../../../shared'
 import { notFound } from '../../booking/_shared/plan'
 
@@ -78,7 +78,7 @@ const sumOf = (amounts: readonly number[]): number =>
  * those of every line are; neither needs a look of its own.
  */
 export const summed = (
-  details: readonly SalesDetailRequest[],
+  details: readonly RequestedSalesDetail[],
 ): Pick<
   SaleWrite['sale'],
   'subtotal' | 'discountAmount' | 'taxAmount' | 'totalAmount'
@@ -95,7 +95,7 @@ export const summed = (
 
 /** What the line of a request names that is not there. */
 export const issuesOfLine = (
-  line: SalesDetailRequest,
+  line: RequestedSalesDetail,
   index: number,
   references: SaleReferences,
 ): ValidationIssue[] => [
@@ -136,7 +136,7 @@ export const dayOfSale = (
 
 /** The rows of the lines a request states. */
 export const linesOf = (
-  details: readonly SalesDetailRequest[],
+  details: readonly RequestedSalesDetail[],
 ): DbNewSalesDetail[] =>
   details.map((line) => ({
     itemType: line.itemType,
@@ -168,7 +168,7 @@ export const linesOf = (
  * booking of this sale.
  */
 export const planSale = (
-  request: SaleCreateRequest,
+  request: RequestedSale,
   references: SaleReferences,
   origin: SaleOrigin,
 ): SalePlan => {

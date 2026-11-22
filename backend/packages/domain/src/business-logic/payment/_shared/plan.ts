@@ -1,10 +1,11 @@
-import type { PaymentWrite, RefundWrite } from '../../../models/payment'
+import type {
+  PaymentWrite,
+  RefundWrite,
+  RequestedPayment,
+  RequestedRefund,
+} from '../../../models/payment'
 import type { DbPaymentMethod } from '../../../models/payment-method'
 import type { DbPaymentTransaction, DbSale } from '../../../models/sale'
-import type {
-  PaymentRefundRequest,
-  SaleProcessRequest,
-} from '../../../schemas/payment.schema'
 import type { ValidationIssue } from '../../../shared'
 import { notFound } from '../../booking/_shared/plan'
 
@@ -142,7 +143,7 @@ export const NOT_A_CARD =
  */
 const issuesOfMethod = (
   paymentMethod: PaymentMethodOfPayment,
-  request: SaleProcessRequest,
+  request: RequestedPayment,
 ): ValidationIssue[] => [
   ...(CARDS.includes(paymentMethod.method)
     ? []
@@ -187,7 +188,7 @@ export const planPayment = (
   sale: Pick<DbSale, 'id' | 'totalAmount'>,
   payments: readonly MoneyOfPayment[],
   paymentMethod: PaymentMethodOfPayment | null,
-  request: SaleProcessRequest,
+  request: RequestedPayment,
   origin: PaymentOrigin,
 ): PaymentPlan => {
   const left = sale.totalAmount - moneyOf(payments).received
@@ -257,7 +258,7 @@ export const planRefund = (
   sale: Pick<DbSale, 'totalAmount'>,
   payment: MoneyOfPayment,
   others: readonly MoneyOfPayment[],
-  request: PaymentRefundRequest,
+  request: RequestedRefund,
 ): RefundPlan => {
   if (payment.status !== 'completed') {
     return { type: 'notCompleted' }

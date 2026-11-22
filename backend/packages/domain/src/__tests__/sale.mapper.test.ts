@@ -1,10 +1,24 @@
 import { describe, expect, it } from 'vitest'
+import type { CalculatedSale } from '../business-logic/sale/_shared/calculation'
 import { SaleReadMapper } from '../mappers/read/sale.mapper'
-import type {
-  DbPaymentTransaction,
-  DbSale,
-  DbSalesDetail,
+import { SaleWriteMapper } from '../mappers/write/sale.mapper'
+import { bookingIdSchema, type LedgerReach } from '../models/booking'
+import {
+  type DbPaymentTransaction,
+  type DbSale,
+  type DbSalesDetail,
+  saleIdSchema,
 } from '../models/sale'
+import { salonIdSchema } from '../models/salon'
+import {
+  saleCalculateRequestSchema,
+  saleCreateRequestSchema,
+  saleSearchRequestSchema,
+  saleUpdateRequestSchema,
+} from '../schemas/sale.schema'
+import { CUSTOMER_ID } from './auth-fixtures'
+import { BOOKING_ID } from './booking-fixtures'
+import { SALON_ID } from './fixtures'
 import {
   apiPayment,
   apiSale,
@@ -12,8 +26,13 @@ import {
   dbPayment,
   dbSalesDetails,
   OTHER_SALE_ID,
+  RECEIPT_TIME,
   SALE_ID,
+  SALE_NUMBER,
+  saleCalculateRequest,
+  saleCreateRequest,
   saleWithDetails,
+  TREATMENT_ID,
 } from './sale-fixtures'
 
 /** The properties of a SaleResponse. */
@@ -350,5 +369,294 @@ describe('SaleReadMapper.toApiSales', () => {
     ])
 
     expect(result).toEqual(storedRowIsCorrupt(OTHER_SALE_ID))
+  })
+})
+
+describe('SaleReadMapper.toApiSalePage', () => {
+  const paging = { limit: 2, after: saleIdSchema.parse(SALE_ID) }
+
+  it('answers with the sales, the counts of the list and the place of the page', () => {
+    expect(
+      SaleReadMapper.toApiSalePage(
+        {
+          sales: [saleWithDetails({ id: OTHER_SALE_ID }), saleWithDetails()],
+          total: 5,
+          hasMore: true,
+        },
+        paging,
+      ),
+    ).toEqual({
+      type: 'success',
+      data: {
+        data: [apiSale({ id: OTHER_SALE_ID }), apiSale()],
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: SALE_ID,
+          nextCursor: SALE_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('names no next page when the list ends with this one', () => {
+    expect(
+      SaleReadMapper.toApiSalePage(
+        { sales: [saleWithDetails()], total: 1, hasMore: false },
+        { limit: 20, after: null },
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        meta: {
+          total: 1,
+          limit: 20,
+          hasMore: false,
+          cursor: null,
+          nextCursor: null,
+        },
+      },
+    })
+  })
+
+  it('reports the first sale whose stored row is at fault', () => {
+    expect(
+      SaleReadMapper.toApiSalePage(
+        {
+          sales: [
+            saleWithDetails(),
+            saleWithDetails({ id: OTHER_SALE_ID, saleTime: 'noon' }),
+          ],
+          total: 2,
+          hasMore: false,
+        },
+        paging,
+      ),
+    ).toEqual(storedRowIsCorrupt(OTHER_SALE_ID))
+  })
+})
+
+describe('SaleReadMapper.toApiSaleReceipt', () => {
+  it('answers with the sale under its own number and the moment the receipt was made', () => {
+    expect(
+      SaleReadMapper.toApiSaleReceipt(
+        saleWithDetails({}, dbSalesDetails(), [dbPayment()]),
+        RECEIPT_TIME,
+      ),
+    ).toEqual({
+      type: 'success',
+      data: {
+        receiptNumber: SALE_NUMBER,
+        sale: apiSale({ payments: [apiPayment()] }),
+        issuedAt: '2026-11-20T04:00:00.000Z',
+      },
+    })
+  })
+
+  it('takes the number of the receipt from the sale, whatever it is', () => {
+    expect(
+      SaleReadMapper.toApiSaleReceipt(
+        saleWithDetails({ saleNumber: 'SL-0000-0001' }),
+        new Date('2027-01-01T00:00:00.000Z'),
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        receiptNumber: 'SL-0000-0001',
+        sale: { saleNumber: 'SL-0000-0001' },
+        issuedAt: '2027-01-01T00:00:00.000Z',
+      },
+    })
+  })
+
+  it('reports a sale whose stored row is at fault', () => {
+    expect(
+      SaleReadMapper.toApiSaleReceipt(
+        saleWithDetails({ saleTime: 'noon' }),
+        RECEIPT_TIME,
+      ),
+    ).toEqual(storedRowIsCorrupt())
+  })
+})
+
+describe('SaleReadMapper.toApiSaleCalculation', () => {
+  const calculated = (
+    overrides: Partial<CalculatedSale> = {},
+  ): CalculatedSale => ({
+    salonId: salonIdSchema.parse(SALON_ID),
+    bookingId: bookingIdSchema.parse(BOOKING_ID),
+    breakdown: {
+      subtotal: 12310,
+      discountAmount: 300,
+      taxAmount: 1201,
+      totalAmount: 13211,
+    },
+    recommendedMethods: ['cash', 'credit_card'],
+    ...overrides,
+  })
+
+  it('answers with what the sale was calculated for, its amounts and the kinds of payment method that take them', () => {
+    expect(SaleReadMapper.toApiSaleCalculation(calculated())).toStrictEqual({
+      salonId: SALON_ID,
+      bookingId: BOOKING_ID,
+      breakdown: {
+        subtotal: 12310,
+        discountAmount: 300,
+        taxAmount: 1201,
+        totalAmount: 13211,
+      },
+      recommendedMethods: ['cash', 'credit_card'],
+    })
+  })
+
+  it('keeps a calculation without a booking and without a payment method as it is', () => {
+    expect(
+      SaleReadMapper.toApiSaleCalculation(
+        calculated({ bookingId: null, recommendedMethods: [] }),
+      ),
+    ).toMatchObject({ bookingId: null, recommendedMethods: [] })
+  })
+
+  it('names every amount of the breakdown: what else the sums carry is not shown', () => {
+    const sums = {
+      subtotal: 1000,
+      discountAmount: 0,
+      taxAmount: 100,
+      totalAmount: 1100,
+      roundedPerLine: 99,
+    }
+
+    expect(
+      SaleReadMapper.toApiSaleCalculation(calculated({ breakdown: sums }))
+        .breakdown,
+    ).toStrictEqual({
+      subtotal: 1000,
+      discountAmount: 0,
+      taxAmount: 100,
+      totalAmount: 1100,
+    })
+  })
+})
+
+describe('SaleWriteMapper', () => {
+  it('returns a create request as the sale that is asked for, its lines among it', () => {
+    const request = saleCreateRequestSchema.parse(saleCreateRequest())
+
+    expect(SaleWriteMapper.fromCreateRequest(request)).toStrictEqual(request)
+  })
+
+  it('returns an update request as the correction it names, and nothing else', () => {
+    const request = saleUpdateRequestSchema.parse({
+      notes: null,
+      pointsEarned: 0,
+    })
+
+    expect(SaleWriteMapper.fromUpdateRequest(request)).toStrictEqual({
+      notes: null,
+      pointsEarned: 0,
+    })
+  })
+
+  it.each<[string, string | null]>([
+    ['the reason the request gives', 'Entered twice'],
+    ['no reason', null],
+  ])(
+    'returns a void request as the void of the sale, with %s',
+    (_named, voidReason) => {
+      expect(SaleWriteMapper.fromVoidRequest({ voidReason })).toStrictEqual({
+        voidReason,
+      })
+    },
+  )
+
+  it('returns a calculate request as what the sale is calculated from, a service as often as it is named', () => {
+    const request = saleCalculateRequestSchema.parse(saleCalculateRequest())
+
+    expect(SaleWriteMapper.fromCalculateRequest(request)).toStrictEqual({
+      salonId: SALON_ID,
+      bookingId: BOOKING_ID,
+      services: [TREATMENT_ID, TREATMENT_ID],
+    })
+  })
+})
+
+describe('SaleWriteMapper.fromSearchRequest', () => {
+  const ofTheSalon: LedgerReach = {
+    type: 'salon',
+    salonId: salonIdSchema.parse(SALON_ID),
+  }
+  const unfiltered = {
+    salonId: null,
+    customerId: null,
+    bookingId: null,
+    paymentStatus: null,
+    startDate: null,
+    endDate: null,
+  }
+
+  it('lists the first 20 sales within the reach when the request names nothing', () => {
+    expect(
+      SaleWriteMapper.fromSearchRequest(
+        saleSearchRequestSchema.parse({}),
+        ofTheSalon,
+      ),
+    ).toStrictEqual({
+      reach: ofTheSalon,
+      limit: 20,
+      after: null,
+      ...unfiltered,
+    })
+  })
+
+  it('takes the place of the page and every filter the request names', () => {
+    expect(
+      SaleWriteMapper.fromSearchRequest(
+        saleSearchRequestSchema.parse({
+          limit: 5,
+          cursor: SALE_ID,
+          salonId: SALON_ID,
+          customerId: CUSTOMER_ID,
+          bookingId: BOOKING_ID,
+          paymentStatus: 'completed',
+          startDate: '2026-11-01',
+          endDate: '2026-11-30',
+        }),
+        { type: 'everySalon' },
+      ),
+    ).toStrictEqual({
+      reach: { type: 'everySalon' },
+      limit: 5,
+      after: SALE_ID,
+      salonId: SALON_ID,
+      customerId: CUSTOMER_ID,
+      bookingId: BOOKING_ID,
+      paymentStatus: 'completed',
+      startDate: '2026-11-01',
+      endDate: '2026-11-30',
+    })
+  })
+
+  it.each<[string, Record<string, string>]>([
+    ['the salon', { salonId: SALON_ID }],
+    ['the customer', { customerId: CUSTOMER_ID }],
+    ['the booking', { bookingId: BOOKING_ID }],
+    ['the payment status', { paymentStatus: 'pending' }],
+    ['the first day', { startDate: '2026-11-01' }],
+    ['the last day', { endDate: '2026-11-30' }],
+  ])('narrows the list by %s alone', (_named, filter) => {
+    expect(
+      SaleWriteMapper.fromSearchRequest(
+        saleSearchRequestSchema.parse(filter),
+        ofTheSalon,
+      ),
+    ).toStrictEqual({
+      reach: ofTheSalon,
+      limit: 20,
+      after: null,
+      ...unfiltered,
+      ...filter,
+    })
   })
 })

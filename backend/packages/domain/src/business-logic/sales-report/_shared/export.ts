@@ -1,9 +1,9 @@
+import { SalesReportReadMapper } from '../../../mappers/read/sales-report.mapper'
 import type {
   DayFigures,
   SalesPeriod,
 } from '../../../repositories/sales-report.repository'
 import { datesOf } from './calendar'
-import { dailyOf } from './report'
 
 /** A sales report as a file: what it is called and what it says. */
 export type SalesReportFile = {
@@ -13,8 +13,8 @@ export type SalesReportFile = {
 
 /**
  * The columns of the file, in their order: the properties of the sales of
- * a day (`dailyOf`), with the tax and the discounts of the day after the
- * sales.
+ * a day as the API answers with them (`toApiDailySales`), with the tax and
+ * the discounts of the day after the sales.
  */
 export const EXPORT_COLUMNS = [
   'date',
@@ -34,9 +34,10 @@ const totalOf = (
   amountOf: (day: DayFigures) => number,
 ): number => days.reduce((sum, day) => sum + amountOf(day), 0)
 
-/** The line of one day: the sales of the day as `dailyOf` counts them. */
+/** The line of one day: the sales of the day as `toApiDailySales` counts them. */
 const lineOf = (date: string, days: readonly DayFigures[]): string => {
-  const { sales, transactions, refunds, net } = dailyOf(date, days)
+  const { sales, transactions, refunds, net } =
+    SalesReportReadMapper.toApiDailySales(date, days)
   const ofTheDay = days.filter(({ saleDate }) => saleDate === date)
 
   return [

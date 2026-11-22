@@ -1,12 +1,12 @@
 import type {
   DbPaymentTransaction,
   DbSale,
+  RequestedSaleChange,
   SaleChange,
 } from '../../../models/sale'
 import {
   NO_POINTS_FOR_NOBODY,
   POINTS_OF_A_CUSTOMER,
-  type SaleUpdateRequest,
 } from '../../../schemas/sale.schema'
 import type { ValidationIssue } from '../../../shared'
 import { notFound } from '../../booking/_shared/plan'
@@ -39,7 +39,7 @@ export type SaleChangeRefusal = { type: 'void' } | { type: 'paymentBegun' }
 
 export const refusalOfChange = (
   sale: Pick<DbSale, 'isVoid' | 'paymentStatus'>,
-  request: SaleUpdateRequest,
+  request: RequestedSaleChange,
 ): SaleChangeRefusal | null => {
   if (sale.isVoid) {
     return { type: 'void' }
@@ -62,7 +62,7 @@ const after = <Value>(named: Value | undefined, kept: Value): Value =>
  */
 export const bookingToHold = (
   sale: Pick<DbSale, 'bookingId'>,
-  request: SaleUpdateRequest,
+  request: RequestedSaleChange,
 ): string | null =>
   request.bookingId === undefined && request.customerId === undefined
     ? null
@@ -95,7 +95,7 @@ export type SaleChangePlan =
  * customer, unless the customer is not there, which it has been told.
  */
 const issuesOfBooking = (
-  request: SaleUpdateRequest,
+  request: RequestedSaleChange,
   customerId: string | null,
   customerIsThere: boolean,
   { booking }: SaleChangeReferences,
@@ -125,7 +125,7 @@ const issuesOfBooking = (
  */
 export const planSaleChange = (
   sale: DbSale,
-  request: SaleUpdateRequest,
+  request: RequestedSaleChange,
   references: SaleChangeReferences,
 ): SaleChangePlan => {
   const { details, ...columns } = request

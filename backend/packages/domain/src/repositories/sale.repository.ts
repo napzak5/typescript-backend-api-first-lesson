@@ -8,14 +8,16 @@ import type {
 import type { SaleOrigin, SalePlan } from '../business-logic/sale/_shared/plan'
 import type { BookingId, LedgerReach } from '../models/booking'
 import type { CustomerId } from '../models/customer'
-import type { DbSale, SaleId, SaleWithDetails } from '../models/sale'
-import type { SalonId } from '../models/salon'
 import type {
-  SaleCalculateRequest,
-  SaleCreateRequest,
-  SaleUpdateRequest,
-  SaleVoidRequest,
-} from '../schemas/sale.schema'
+  DbSale,
+  RequestedCalculation,
+  RequestedSale,
+  RequestedSaleChange,
+  RequestedSaleVoid,
+  SaleId,
+  SaleWithDetails,
+} from '../models/sale'
+import type { SalonId } from '../models/salon'
 import type { DomainError } from '../shared'
 
 /**
@@ -90,7 +92,7 @@ export interface ISaleRepository {
    * moment the second meets the sale of the first.
    */
   create(
-    request: SaleCreateRequest,
+    request: RequestedSale,
     origin: SaleOrigin,
   ): Promise<Result<SaleCreation, DomainError>>
 
@@ -108,7 +110,7 @@ export interface ISaleRepository {
   update(
     id: SaleId,
     reach: LedgerReach,
-    request: SaleUpdateRequest,
+    request: RequestedSaleChange,
   ): Promise<Result<SaleUpdate, DomainError>>
 
   /**
@@ -118,7 +120,7 @@ export interface ISaleRepository {
   voidSale(
     id: SaleId,
     reach: LedgerReach,
-    request: SaleVoidRequest,
+    request: RequestedSaleVoid,
   ): Promise<Result<SaleVoiding, DomainError>>
 
   /**
@@ -136,6 +138,6 @@ export interface ISaleRepository {
    * payment methods of the salon. Nothing is held and nothing is written.
    */
   findCalculationReferences(
-    request: SaleCalculateRequest,
+    request: RequestedCalculation,
   ): Promise<Result<CalculationReferences, DomainError>>
 }

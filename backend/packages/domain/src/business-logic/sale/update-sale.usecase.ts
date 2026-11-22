@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
+import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiSaleResponse, parseSaleId } from '../../models/sale'
 import { saleUpdateRequestSchema } from '../../schemas/sale.schema'
@@ -43,7 +44,7 @@ export class UpdateSaleUseCase {
     const updated = await this.dependencies.saleRepository.update(
       saleId.data,
       reach,
-      request.data,
+      SaleWriteMapper.fromUpdateRequest(request.data),
     )
     if (updated.type === 'error') {
       return updated

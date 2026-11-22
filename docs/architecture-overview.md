@@ -554,13 +554,18 @@ as well, so the rows are checked more than worked out:
 
 ```
 domain/src/
-├── models/sale.ts                     SaleId, API and database types; SaleWrite (the
-│                                      rows of one sale), SaleChange (what an update
-│                                      writes) and SaleWithDetails (a sale, its lines
-│                                      and its payments)
+├── models/sale.ts                     SaleId, API and database types; what a request
+│                                      asks for (RequestedSale, RequestedSaleChange),
+│                                      SaleWrite (the rows of one sale), SaleChange
+│                                      (what an update writes) and SaleWithDetails (a
+│                                      sale, its lines and its payments)
 ├── schemas/sale.schema.ts             Zod schemas of the create, the list, the update
 │                                      and the void request; a line agrees with itself
-├── mappers/read/sale.mapper.ts        A sale, its lines and its payments → API response
+├── mappers/write/sale.mapper.ts       API request → what the ledger is asked with: the
+│                                      sale that is asked for, the correction, the
+│                                      void, the calculation, the criteria of the list
+├── mappers/read/sale.mapper.ts        A sale, its lines and its payments → API response;
+│                                      the page of the list, the receipt, the calculation
 ├── repositories/sale.repository.ts    ISaleRepository; what became of a create, of an
 │                                      update and of a void is a sum type each
 │                                      (SaleCreation, SaleUpdate, SaleVoiding)
@@ -725,10 +730,13 @@ of the sale is counted from them:
 ```
 domain/src/
 ├── models/payment.ts                  PaymentId, API types of the two requests;
-│                                      what a payment and a refund write
-│                                      (PaymentWrite, RefundWrite)
+│                                      what a request asks for (RequestedPayment,
+│                                      RequestedRefund) and what a payment and a
+│                                      refund write (PaymentWrite, RefundWrite)
 ├── schemas/payment.schema.ts          Zod schemas of the payment and the refund
 │                                      request
+├── mappers/write/payment.mapper.ts    API request → the payment and the refund that
+│                                      are asked for
 ├── mappers/read/payment.mapper.ts     Row → response; the sale mapper uses it for
 │                                      the payments of a sale
 ├── repositories/payment.repository.ts IPaymentRepository; what became of a payment
@@ -759,7 +767,7 @@ api/src/
 ```
 
 The sales reports write nothing and have no table of their own: the
-repository reads sums of the sales ledger, and pure functions build a
+repository reads sums of the sales ledger, and the read mapper builds a
 report from them:
 
 ```
@@ -767,6 +775,11 @@ domain/src/
 ├── models/sales-report.ts             API types of the reports and of their queries
 ├── schemas/sales-report.schema.ts     Zod schemas of the queries; the period is in
 │                                      order and at most 366 days long
+├── mappers/write/sales-report.mapper.ts
+│                                      Query → the salon and the days the sums are
+│                                      read over
+├── mappers/read/sales-report.mapper.ts
+│                                      The sums → the reports
 ├── repositories/sales-report.repository.ts
 │                                      ISalesReportRepository; the sums it reads
 │                                      (SalesFigures: by day, by kind of payment
@@ -774,9 +787,10 @@ domain/src/
 └── business-logic/sales-report/       One *.usecase.ts per operation; _shared/ holds
                                        the dependencies, whom the reports are for
                                        (authorization.ts), the reach and the salon
-                                       before the sums are read (figures.ts), what
-                                       a report says of the sums (report.ts) and
-                                       the days, weeks and months (calendar.ts)
+                                       before the sums are read (figures.ts), how a
+                                       sum is averaged and divided (report.ts), the
+                                       file of a report (export.ts) and the days,
+                                       weeks and months (calendar.ts)
 
 infrastructure/src/
 └── repositories/sales-report.repository.impl.ts
@@ -2079,9 +2093,9 @@ query (400). What differs:
   sums of the sales of the period that are not void (by day, by kind of
   payment method, by kind of category, by staff member) in one read-only
   `REPEATABLE READ` transaction without a lock, so every sum is of the same
-  sales and nothing waits for a writer. `reportOf`, `dailyOf`,
-  `staffRowsOf`, `categoryRowsOf` and `trendsOf` (`_shared/report.ts`) are
-  pure functions that add the sums up, divide them and put them in order;
+  sales and nothing waits for a writer. The read mapper
+  (`mappers/read/sales-report.mapper.ts`) adds the sums up, divides them
+  and puts them in order, with the arithmetic of `_shared/report.ts`;
   the days, the weeks beginning on a Monday and the months are counted in
   UTC by `_shared/calendar.ts`, whatever the time zone of the server. No
   table keeps a summary: every change of a sale or a payment would have to

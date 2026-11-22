@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { SalesReportWriteMapper } from '../../mappers/write/sales-report.mapper'
 import type { Actor } from '../../models/auth'
 import { salesReportGetRequestSchema } from '../../schemas/sales-report.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -30,10 +31,11 @@ export class ExportSalesReportUseCase {
     if (request.type === 'error') {
       return request
     }
+    const period = SalesReportWriteMapper.fromGetRequest(request.data)
 
     return Result.map(
-      await figuresOf(this.dependencies, reach, request.data, MESSAGE),
-      ({ days }) => exportOf(request.data, days),
+      await figuresOf(this.dependencies, reach, period, MESSAGE),
+      ({ days }) => exportOf(period, days),
     )
   }
 }

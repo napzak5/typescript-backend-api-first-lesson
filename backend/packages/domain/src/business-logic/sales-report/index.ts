@@ -5,17 +5,7 @@ export {
   exportOf,
   type SalesReportFile,
 } from './_shared/export'
-export {
-  averageOf,
-  categoryRowsOf,
-  dailyOf,
-  methodRowsOf,
-  percentageOf,
-  reportOf,
-  staffRowsOf,
-  TOP_STAFF,
-  trendsOf,
-} from './_shared/report'
+export { averageOf, percentageOf, TOP_STAFF } from './_shared/report'
 export { ExportSalesReportUseCase } from './export-sales-report.usecase'
 export { GetDailySalesUseCase } from './get-daily-sales.usecase'
 export { GetSalesByCategoryUseCase } from './get-sales-by-category.usecase'
