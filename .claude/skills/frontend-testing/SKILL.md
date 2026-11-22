@@ -471,7 +471,15 @@ it('should show the screen that was asked for after signing in', async () => {
   | `notifications()` | What the `status` regions say, without the empty ones |
   | `statusMessages()` | What the `status` regions of `main` say, the empty ones too |
   | `termsOf(card)`, `termsOnceThere(card)` | What a card says, term by term; the second awaits the card |
+  | `rowsOf(table)` | What the rows of a table say below the row of its column headers: a row is the text of its cells in their order, the header of the row among them. The table is its caption, or the element (a table once awaited, the part of a page that holds one) |
+  | `optionsOf(select)` | What a select offers, option by option. The select is its label, or the element |
   | `queryClientOfATest()`, `asTheApplicationKeeps()` | A client that tries a read once; the same with the five minutes an application keeps what it read |
+
+  A test that leaves a cell out says which and why, in a function of its
+  own over `rowsOf` (`recordsOf` of the treatment records drops the moment
+  a record was written, which is the time of the seeding). A test that
+  needs the element of a row (the focus, a link of the row), or the value
+  of an option beside its text, reads it itself.
 
   `signInAs(email)` of `@beauty-salon-frontend/testing/api` signs in on
   the screen as an account of the seed data, and `openAs(path, email)` of
@@ -1063,9 +1071,9 @@ adds:
 - **A write of many is asserted on those it left alone too**: their row
   equals the row read before the test acted, `updatedAt` included
   (`storedCustomerOf`), which shows they were not sent.
-- **The text of a row holds the hidden label of its checkbox.** A row of
-  a table read by `textContent` (`rowsOf`) has 「山田 花子 様を選ぶ」 in the
-  cell of the choice: write it out in the expected row.
+- **The text of a row holds the hidden label of its checkbox.** A row
+  read by `rowsOf` has 「山田 花子 様を選ぶ」 in the cell of the choice,
+  the first of the row, before the name: write it out in the expected row.
 - **What the API refuses is arranged as the API would have kept it**
   (`askedForErasure`, `arrangeChart`, `keepBalance` of
   `customers/__tests__/arrangements.ts`), so the screen says why before
