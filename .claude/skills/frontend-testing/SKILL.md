@@ -38,11 +38,14 @@ every story (`@beauty-salon-frontend/testing/stories`), `savedFiles`,
 `setWindowWidth`, `findAccessibilityViolations`,
 `itShouldBeAccessibleInEveryStory` and `itShouldBeSentByTheEnterKey`, what
 the tests of screens share (`@beauty-salon-frontend/testing/screens`, under
-"A screen"), and the real API of the integration tests with the sign-in on
-the screen (`@beauty-salon-frontend/testing/api`: `testApi`, `signInAs`).
-The browser tests take from it
-what knows no test runner: how to start the test server and what to ask it
-for (`@beauty-salon-frontend/testing/api/test-server`), and the rules of the
+"A screen"), the files a test sends (`PNG_BYTES`, `PDF_TEXT`, `PDF_BYTES`),
+the names of the seed data (`@beauty-salon-frontend/testing/seed`), and the
+real API of the integration tests with what a test reads from its database
+and the sign-in on the screen (`@beauty-salon-frontend/testing/api`:
+`testApi`, `idOf`, `idsOf`, `countOf`, `dayFromToday`, `salonIdOf`,
+`signInAs`). The browser tests take from it what knows no test runner: the
+names of the seed data, how to start the test server and the API of a test
+(`@beauty-salon-frontend/testing/api/test-server`), and the rules of the
 accessibility check (`@beauty-salon-frontend/testing/accessibility`).
 
 ## Stories
@@ -341,11 +344,25 @@ describe('the session against the API', () => {
   `localStorage` and `sessionStorage` are emptied. A test starts from the seed
   data and never from what another test left.
 - The data is the seed data (`backend/packages/database/src/seeds/seed-data/`):
-  two salons, and accounts of every role (`customer1@example.com`,
-  `owner@beautysalon.jp`, `manager@beautysalon.jp`, `stylist1@beautysalon.jp`,
-  `admin@beautysalon.jp`), all with the password `testApi().seedPassword`.
-  What a test needs beyond it, it creates the way a user would: through the
+  two salons, and accounts of every role, all with the password
+  `testApi().seedPassword`. A test names them by the constants of
+  `@beauty-salon-frontend/testing/seed` and writes no name or address of
+  the seed data itself: the salons `TOKYO` and `OSAKA`, the accounts
+  `OWNER`, `MANAGER`, `STYLIST`, `THERAPIST` and `OPERATOR` (the operator
+  of the platform), the customers `YUKI`, `KENJI`, `SAKURA` and `VIP` (each
+  an address of mail and the name the ledger shows), and `CUSTOMER` for the
+  customer who signs in. A name inside a statement stays text. What a test
+  needs beyond the seed data, it creates the way a user would: through the
   screen or the API.
+- **What a test reads from the database is a function of
+  `@beauty-salon-frontend/testing/api`** where one fits:
+  `idOf(statement, values)` is the `id` of the one row a statement returns
+  (the test fails with the statement when it returns none, or more than
+  one), `idsOf` the `id` of every row in their order, `countOf` the
+  `count` of the one row as a number, `dayFromToday(days)` the day in
+  Tokyo and `salonIdOf(name)` the ID of a salon. A row of another shape is
+  read with a Zod schema of the test's own. A browser test calls the same
+  on its fixture: `api.idOf(…)`.
 - `testApi().query(text, values)` runs a statement on the database of the API
   and returns its rows. It is for what neither the screen nor the API can
   bring about in the steps of a test (time that has passed:
@@ -612,8 +629,8 @@ the example to read: a customer books a time that the screen read.
   browser test fills it (`fill(date)`). The date is the one the database
   gave (`dayAhead`).
 - **What the tests of several screens arrange is one module**:
-  `src/bookings/__tests__/arrangements.ts` has the names of the seed data,
-  who is signed in, the day and a booking made through the API, for the
+  `src/bookings/__tests__/arrangements.ts` has what the tests book and
+  with whom, who is signed in, the day and a booking made through the API, for the
   tests of the screen that books and of those that list, cancel and move.
   The browser tests have theirs in `frontend/e2e/src/bookings.ts`.
 - **The times a screen must offer follow from the rows of the staff, too.**
@@ -738,9 +755,9 @@ What a customer wrote, listed with what can be done with each, changed
 and removed (`frontend/apps/portal-app/src/reviews/`) adds:
 
 - **The tests of an area may be several files with one module of
-  arrangements** (`__tests__/arrangements.tsx`: the seed data the tests
-  name, what they ask of the database and of the API, what they read on a
-  screen of the reviews). One file
+  arrangements** (`__tests__/arrangements.tsx`: what the tests ask of
+  the database and of the API, what they read on a screen of the
+  reviews). One file
   per thing that is done (`review-writing…`, `own-reviews…`), and one for
   who the screens are for and where they stand (`review-screens…`:
   `describe.each` over the screens, with somebody who is not signed in,
@@ -1160,7 +1177,8 @@ at the root builds them first; `playwright test` in `frontend/e2e` does not.
 import { ADMIN } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
-import { enterCredentials, heading, STAFF } from './sign-in'
+import { STYLIST } from '@beauty-salon-frontend/testing/seed'
+import { enterCredentials, heading } from './sign-in'
 
 test.describe('the admin application', () => {
   test('should open for a member of the staff of a salon', async ({
@@ -1171,7 +1189,7 @@ test.describe('the admin application', () => {
     await page.goto(ADMIN.origin)
 
     // Act
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
 
     // Assert
     await expect(heading(page, ADMIN.title)).toBeFocused()
@@ -1194,8 +1212,12 @@ test.describe('the admin application', () => {
   `src/admin-treatment-photos.e2e.test.ts`): the API takes addresses of
   domain names only, so an address of the application under test will
   not do.
-- The fixture `api` is what `testApi()` is in an integration test: `origin`,
-  `seedPassword`, `query`, `authenticatorCode`, `mails` and `mailedLink`.
+- The fixture `api` is what `testApi()` is in an integration test, one
+  type (`TestApi`) that one function builds (`apiOf` of the client of the
+  test server): `origin`, `seedPassword`, `query`, what a test reads from
+  the database (`idOf`, `idsOf`, `countOf`, `dayFromToday`, `salonIdOf`),
+  `authenticatorCode`, `mails` and `mailedLink`. The accounts and the
+  salons are named by `@beauty-salon-frontend/testing/seed`.
   `await page.goto(await api.mailedLink(email))` is the person pressing the
   link of a mail (`src/account.e2e.test.ts`).
 - Elements are found as a user finds them: `getByRole`, `getByLabel`,
