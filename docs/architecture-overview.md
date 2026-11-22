@@ -809,11 +809,15 @@ holds:
 ```
 domain/src/
 ├── models/point.ts                    API types of the transactions, the balance and
-│                                      the requests; DbPointTransaction
+│                                      the requests; DbPointTransaction; what a request
+│                                      asks for (RequestedPoints, RequestedPointExpiry)
 ├── schemas/point.schema.ts            Zod schemas of the requests and of the query of
 │                                      the history; a record is a kind and an ID together
+├── mappers/write/point.mapper.ts      PointWriteMapper: a request as the movement, the
+│                                      expiry or the criteria it asks for
 ├── mappers/read/point.mapper.ts       PointReadMapper: a stored transaction as the API
-│                                      returns it
+│                                      returns it; the page of the history, the balance,
+│                                      the points about to expire, what an expiry did
 ├── repositories/point.repository.ts   IPointRepository; what recording a movement can
 │                                      come to (PointRecording)
 └── business-logic/point/              One *.usecase.ts per operation; _shared/ holds
@@ -848,12 +852,23 @@ from what the repository holds:
 ```
 domain/src/
 ├── models/review.ts                   API types of a review, the requests and the
-│                                      summary; DbReview, ReviewWrite, ReviewTally
+│                                      summary; DbReview, ReviewWrite, ReviewTally; what
+│                                      a request asks for (RequestedReview,
+│                                      RequestedReviewChange, RequestedReviewResponse)
 ├── schemas/review.schema.ts           Zod schemas of the create, the update and the
 │                                      query of the list; a staff rating needs a
 │                                      staff member
+├── mappers/write/review.mapper.ts     ReviewWriteMapper: a request as the review, the
+│                                      change, the response or the criteria it asks for
 ├── mappers/read/review.mapper.ts      ReviewReadMapper: a stored review and a tally as
-│                                      the API returns them
+│                                      the API returns them; the page of the list, the
+│                                      count of a mark
+├── mappers/write/review-report.mapper.ts
+│                                      ReviewReportWriteMapper: a request as the report
+│                                      or the criteria of the queue it asks for
+├── mappers/read/review-report.mapper.ts
+│                                      ReviewReportReadMapper: a stored report as the
+│                                      API returns it; the page of the queue
 ├── repositories/review.repository.ts  IReviewRepository; what writing, changing and
 │                                      removing a review can come to (ReviewCreation,
 │                                      ReviewChange, ReviewRemoval, ReviewMark,
@@ -2112,8 +2127,8 @@ Earning, using and adjusting points (`POST /api/v1/points/earn`, `/use`,
 `/adjust`, `business-logic/point/`) take the path of a write, with the
 customer named in the body: the reach of the actor is decided first
 (`pointReachOf`, or `pointAdjustReachOf` for an adjustment, which leaves
-out the staff), then the body is parsed, and the repository records the
-movement. What differs:
+out the staff), then the body is parsed, the write mapper makes the
+movement it asks for, and the repository records it. What differs:
 
 - **A ledger of the whole platform.** Points are a customer's, so any
   member of a salon reaches every customer; what the reach limits is the

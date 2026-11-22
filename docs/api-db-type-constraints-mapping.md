@@ -167,7 +167,7 @@ export const SalonWriteMapper = {
 
 `...columns` でリクエストをそのまま行にできるのは、プロパティ名と NULL 許可が DB と一致しているからである。どちらかがずれると、`DbNewSalon` に代入できず型検査で失敗する。
 
-リクエストで書けるカラムに上の 3 種類がないテーブルでは、Write マッパーは何も変換せず、リクエストをそのまま行として返す。`service_categories` がその例である（`backend/packages/domain/src/mappers/write/service-category.mapper.ts`。行の型は `backend/packages/domain/src/models/service-category.ts` の `DbNewServiceCategory`）。Read マッパーが変換するのは `createdAt` と `updatedAt` だけである。Write マッパーは、どのドメインにも書く。下の「Write マッパーがない」という記述は、まだそうなっていないドメイン（`backend/packages/domain/src/__tests__/use-case-flow.test.ts` の一覧）の、いまの状態である。
+リクエストで書けるカラムに上の 3 種類がないテーブルでは、Write マッパーは何も変換せず、リクエストをそのまま行として返す。`service_categories` がその例である（`backend/packages/domain/src/mappers/write/service-category.mapper.ts`。行の型は `backend/packages/domain/src/models/service-category.ts` の `DbNewServiceCategory`）。Read マッパーが変換するのは `createdAt` と `updatedAt` だけである。Write マッパーは、どのドメインにも書く。まだそうなっていないドメインは、`backend/packages/domain/src/__tests__/use-case-flow.test.ts` の一覧にある。
 
 `services` も、リクエストで書けるカラムに上の 3 種類がない。それでも Write マッパー（`backend/packages/domain/src/mappers/write/service.mapper.ts`）があるのは、リクエストが `services` の行と `service_options` の行を含むからで、マッパーは値を変換せず、2 つのテーブルの行に分ける。Read マッパーが変換するのは、ここでも `createdAt` と `updatedAt` だけである。
 
