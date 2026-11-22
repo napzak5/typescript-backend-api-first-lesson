@@ -1,8 +1,10 @@
 import {
   answering,
-  json,
+  page,
   problem,
+  record,
   UNREAD,
+  UNWRITTEN,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { salon } from '../bookings/components/examples'
@@ -35,12 +37,6 @@ afterEach(() => {
 })
 
 type Answer = () => Response | Promise<Response>
-
-const NOT_SENT: [string, Answer, string][] = [
-  ['a body that is too large', () => problem(413), 'failed'],
-  ['a body of another type', () => problem(415), 'failed'],
-  ...UNREAD,
-]
 
 describe('mayKeepMenu', () => {
   it.each<[string, boolean]>([
@@ -95,11 +91,7 @@ describe('readCategories', () => {
     const asked: string[] = []
     answering((request) => {
       asked.push(new URL(request.url).search)
-      return json(200, {
-        data: [aCategory()],
-        meta: { total: 1, nextCursor: null },
-        links: { self: '/' },
-      })
+      return page([aCategory()])
     })
 
     // Act
@@ -164,7 +156,7 @@ describe('readService', () => {
 describe('addCategory', () => {
   it.each<[string, Answer, string]>([
     ['a salon removed meanwhile', () => problem(404), 'notFound'],
-    ...NOT_SENT,
+    ...UNWRITTEN,
   ])('should add no category after %s', async (_, given, type) => {
     // Arrange
     answering(given)
@@ -192,7 +184,7 @@ describe('changeCategory', () => {
     const sent: unknown[] = []
     answering(async (asked) => {
       sent.push(await asked.json())
-      return json(200, { data: aCategory(), meta: null, links: { self: '/' } })
+      return record(200, aCategory())
     })
 
     // Act
@@ -205,7 +197,7 @@ describe('changeCategory', () => {
     expect(sent).toEqual([{ color: null }])
   })
 
-  it.each(NOT_SENT)(
+  it.each(UNWRITTEN)(
     'should change no category after %s',
     async (_, given, type) => {
       // Arrange
@@ -241,7 +233,7 @@ describe('removeCategory', () => {
 describe('addService', () => {
   it.each<[string, Answer, string]>([
     ['a salon removed meanwhile', () => problem(404), 'notFound'],
-    ...NOT_SENT,
+    ...UNWRITTEN,
   ])('should add no service after %s', async (_, given, type) => {
     // Arrange
     answering(given)
@@ -267,7 +259,7 @@ describe('changeService', () => {
     const sent: unknown[] = []
     answering(async (asked) => {
       sent.push(await asked.json())
-      return json(200, { data: aService(), meta: null, links: { self: '/' } })
+      return record(200, aService())
     })
 
     // Act
@@ -280,7 +272,7 @@ describe('changeService', () => {
     expect(sent).toEqual([{ discountPrice: null }])
   })
 
-  it.each(NOT_SENT)(
+  it.each(UNWRITTEN)(
     'should change no service after %s',
     async (_, given, type) => {
       // Arrange
@@ -320,11 +312,7 @@ describe('changeServices', () => {
     const sent: unknown[] = []
     answering(async (asked) => {
       sent.push(await asked.json())
-      return json(200, {
-        data: { updated: ['b', 'a'] },
-        meta: null,
-        links: { list: '/' },
-      })
+      return record(200, { updated: ['b', 'a'] })
     })
 
     // Act
@@ -342,7 +330,7 @@ describe('changeServices', () => {
 
   it.each<[string, Answer, string]>([
     ['a service removed meanwhile', () => problem(404), 'servicesGone'],
-    ...NOT_SENT,
+    ...UNWRITTEN,
   ])('should change no service after %s', async (_, given, type) => {
     // Arrange
     answering(given)

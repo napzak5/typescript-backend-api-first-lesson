@@ -1,4 +1,9 @@
-import { answering, json, UNREAD } from '@beauty-salon-frontend/testing/answers'
+import {
+  answering,
+  json,
+  page,
+  UNREAD,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { aCustomer } from '../bookings/components/examples'
 import {
@@ -110,13 +115,7 @@ describe('readRemoved', () => {
 
   it('should take a history without a version for a customer who is not there', async () => {
     // Arrange
-    answering(() =>
-      json(200, {
-        data: [],
-        meta: { total: 0, nextCursor: null, prevCursor: null },
-        links: { self: `/api/v1/customers/${id}/history` },
-      }),
-    )
+    answering(() => page([]))
 
     // Act, Assert
     expect(await readRemoved(id)).toEqual({ type: 'notFound' })

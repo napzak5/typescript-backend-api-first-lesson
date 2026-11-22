@@ -2,7 +2,6 @@ import type {
   ModelsCustomerProfileCreateRequest,
   ModelsCustomerProfileUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   answering,
   asked,
@@ -11,7 +10,8 @@ import {
   problem,
   record,
   sent,
-} from '../__tests__/api-answers'
+} from '@beauty-salon-frontend/testing/answers'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createOwnProfile,
   readOwnProfile,

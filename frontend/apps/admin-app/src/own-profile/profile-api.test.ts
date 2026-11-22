@@ -1,7 +1,7 @@
 import {
   answering,
-  json,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -48,7 +48,7 @@ describe('saveOwnProfile', () => {
     const sent: unknown[] = []
     answering(async (asked) => {
       sent.push(await asked.json())
-      return json(200, { data: aProfile(), meta: null, links: { self: '/' } })
+      return record(200, aProfile())
     })
 
     // Act

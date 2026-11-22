@@ -1,7 +1,8 @@
 import {
   answering,
-  json,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -94,13 +95,6 @@ const READS: [string, () => Promise<{ type: string }>][] = [
   ['readReceipt', () => readReceipt(sale.id)],
   ['readPaymentMethods', () => readPaymentMethods(salon.id)],
 ]
-
-const page = (data: unknown[], nextCursor: string | null = null) =>
-  json(200, {
-    data,
-    meta: { total: data.length, nextCursor },
-    links: { self: '/api/v1/sales' },
-  })
 
 /** The answer of a request to a path that ends so, with the method named */
 const answerOf =
@@ -329,8 +323,7 @@ describe('the attempts that find out why the API refused', () => {
     answering(
       answerOf({
         [`POST ${SALES}/${sale.id}/process`]: () => problem(409),
-        [`GET ${SALES}/${sale.id}`]: () =>
-          json(200, { data: voided, meta: {}, links: { self: '' } }),
+        [`GET ${SALES}/${sale.id}`]: () => record(200, voided),
       }),
     )
 
@@ -361,8 +354,7 @@ describe('the attempts that find out why the API refused', () => {
     answering(
       answerOf({
         [`GET ${SALES}/${sale.id}/receipt`]: () => problem(409),
-        [`GET ${SALES}/${sale.id}`]: () =>
-          json(200, { data: sale, meta: {}, links: { self: '' } }),
+        [`GET ${SALES}/${sale.id}`]: () => record(200, sale),
       }),
     )
 
@@ -376,8 +368,7 @@ describe('the attempts that find out why the API refused', () => {
     answering(
       answerOf({
         [`PATCH ${SALES}/${sale.id}`]: () => problem(409),
-        [`GET ${SALES}/${sale.id}`]: () =>
-          json(200, { data: voided, meta: {}, links: { self: '' } }),
+        [`GET ${SALES}/${sale.id}`]: () => record(200, voided),
       }),
     )
 
@@ -393,8 +384,7 @@ describe('the attempts that find out why the API refused', () => {
     answering(
       answerOf({
         [`PATCH ${SALES}/${sale.id}`]: () => problem(409),
-        [`GET ${SALES}/${sale.id}`]: () =>
-          json(200, { data: sale, meta: {}, links: { self: '' } }),
+        [`GET ${SALES}/${sale.id}`]: () => record(200, sale),
       }),
     )
 
@@ -425,8 +415,7 @@ describe('the attempts that find out why the API refused', () => {
     answering(
       answerOf({
         [`POST ${SALES}/${sale.id}/void`]: () => problem(409),
-        [`GET ${SALES}/${sale.id}`]: () =>
-          json(200, { data: paid, meta: {}, links: { self: '' } }),
+        [`GET ${SALES}/${sale.id}`]: () => record(200, paid),
       }),
     )
 
@@ -445,8 +434,7 @@ describe('the attempts that find out why the API refused', () => {
     answering(
       answerOf({
         [`POST /api/v1/payments/${payment.id}/refund`]: () => problem(409),
-        [`GET ${SALES}/${sale.id}`]: () =>
-          json(200, { data: given, meta: {}, links: { self: '' } }),
+        [`GET ${SALES}/${sale.id}`]: () => record(200, given),
       }),
     )
 
@@ -459,9 +447,7 @@ describe('the attempts that find out why the API refused', () => {
 
   it('should not read again what was given back', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: payment, meta: {}, links: { self: '' } }),
-    )
+    const fetched = answering(() => record(200, payment))
 
     // Act, Assert
     expect(await attemptRefund(sale.id, payment.id, REFUND)).toEqual({

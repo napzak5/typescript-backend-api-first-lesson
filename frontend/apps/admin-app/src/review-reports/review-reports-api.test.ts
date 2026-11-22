@@ -1,7 +1,8 @@
 import {
   answering,
-  json,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -55,23 +56,17 @@ describe('reviewReportsKeyOf', () => {
 describe('readReportPage', () => {
   it('should ask for a page of twenty reports of the salon, of a state and of a review, after the cursor', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: REPORTS,
-        meta: { total: 23, nextCursor: 'next', prevCursor: null },
-        links: null,
-      }),
-    )
+    const fetched = answering(() => page(REPORTS, 'next', 23))
 
     // Act
-    const page = await readReportPage(
+    const read = await readReportPage(
       salon.id,
       { status: 'pending', reviewId: waitingReport.reviewId },
       'cursor',
     )
 
     // Assert
-    expect(page).toEqual({
+    expect(read).toEqual({
       type: 'found',
       items: REPORTS,
       total: 23,
@@ -102,19 +97,17 @@ describe('readReportPage', () => {
     answering(given)
 
     // Act
-    const page = await readReportPage(salon.id, {}, undefined)
+    const read = await readReportPage(salon.id, {}, undefined)
 
     // Assert
-    expect(page).toEqual({ type })
+    expect(read).toEqual({ type })
   })
 })
 
 describe('dismissReport', () => {
   it('should dismiss the report by its ID, and hand over the report as it is now', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: dismissedReport, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, dismissedReport))
 
     // Act
     const dismissal = await dismissReport(waitingReport.id)

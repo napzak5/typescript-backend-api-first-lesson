@@ -1,8 +1,9 @@
 import type { ModelsCustomerCreateRequest } from '@beauty-salon-frontend/api-client'
 import {
   answering,
-  json,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -44,13 +45,7 @@ describe('readCustomers', () => {
 
   it('should ask for each customer once', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: customers,
-        meta: null,
-        links: { list: '/api/v1/customers' },
-      }),
-    )
+    const fetched = answering(() => record(200, customers))
 
     // Act
     const read = await readCustomers([...ids, ...ids])
@@ -103,7 +98,7 @@ describe('readCustomers', () => {
       request.method === 'POST'
         ? problem(404)
         : request.url.endsWith(hanako?.id ?? '')
-          ? json(200, { data: hanako, meta: null, links: {} })
+          ? record(200, hanako)
           : problem(429),
     )
 
@@ -116,7 +111,7 @@ describe('readCustomers', () => {
     answering((request) =>
       request.method === 'POST' || !request.url.endsWith(hanako?.id ?? '')
         ? problem(404)
-        : json(200, { data: hanako, meta: null, links: {} }),
+        : record(200, hanako),
     )
 
     // Act
@@ -162,19 +157,13 @@ describe('findCustomers', () => {
 
   it('should ask for the customers that have the keyword, 20 at a time, after the cursor', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: customers,
-        meta: { total: 42, nextCursor: ichiro?.id ?? null },
-        links: { self: '/api/v1/customers' },
-      }),
-    )
+    const fetched = answering(() => page(customers, ichiro?.id ?? null, 42))
 
     // Act
-    const page = await findCustomers('山田', hanako?.id)
+    const read = await findCustomers('山田', hanako?.id)
 
     // Assert
-    expect(page).toEqual({
+    expect(read).toEqual({
       type: 'found',
       items: customers,
       total: 42,
@@ -253,13 +242,6 @@ const ENTRY: ModelsCustomerCreateRequest = {
 
 const CUSTOMERS = '/api/v1/customers'
 
-const listed = (data: unknown[]) =>
-  json(200, {
-    data,
-    meta: { total: data.length, nextCursor: null },
-    links: { self: CUSTOMERS },
-  })
-
 /** The answer of a request with the method and the path named */
 const answerOf =
   (answers: Record<string, () => Response>) =>
@@ -274,10 +256,10 @@ describe('readCustomerPage', () => {
 
   it('should ask for the customers that meet the conditions, 20 at a time, after the cursor', async () => {
     // Arrange
-    const fetched = answering(() => listed(customers))
+    const fetched = answering(() => page(customers))
 
     // Act
-    const page = await readCustomerPage(
+    const read = await readCustomerPage(
       {
         search: '山田',
         tags: ['VIP', '常連'],
@@ -289,7 +271,7 @@ describe('readCustomerPage', () => {
     )
 
     // Assert
-    expect(page).toEqual({
+    expect(read).toEqual({
       type: 'found',
       items: customers,
       total: 2,
@@ -387,7 +369,7 @@ describe('attemptCustomerEntry and attemptCustomerChange', () => {
       answerOf({
         [`POST ${CUSTOMERS}`]: () => problem(409),
         [`GET ${CUSTOMERS}`]: () =>
-          listed([aCustomer({ id: 'other', email: 'hanako@example.com' })]),
+          page([aCustomer({ id: 'other', email: 'hanako@example.com' })]),
       }),
     )
 
@@ -410,7 +392,7 @@ describe('attemptCustomerEntry and attemptCustomerChange', () => {
         [`PATCH ${CUSTOMERS}/${customer.id}`]: () => problem(409),
         // The customer who is changed has the address, and one has an address that holds it
         [`GET ${CUSTOMERS}`]: () =>
-          listed([
+          page([
             customer,
             aCustomer({ id: 'other', email: `x.${customer.email}` }),
           ]),
@@ -490,21 +472,17 @@ describe('readPreferences and readPreferencesToChange', () => {
     preferredStaffId: string | null,
     avoidStaffIds: string[],
   ) =>
-    json(200, {
-      data: {
-        preferredStaffId,
-        avoidStaffIds,
-        preferredTimeSlots: [],
-        stylePreferences: null,
-        communicationStyle: null,
-        specialRequests: null,
-      },
-      meta: null,
-      links: { self: PREFERENCES, customer: `${CUSTOMERS}/${customer.id}` },
+    record(200, {
+      preferredStaffId,
+      avoidStaffIds,
+      preferredTimeSlots: [],
+      stylePreferences: null,
+      communicationStyle: null,
+      specialRequests: null,
     })
 
   const profile = (member: (typeof staff)[number] | undefined) => () =>
-    json(200, { data: member, meta: null, links: {} })
+    record(200, member)
 
   it('should read the members the preferences name, each once, and leave out one who is not shown', async () => {
     // Arrange
@@ -556,7 +534,7 @@ describe('readPreferences and readPreferencesToChange', () => {
       answerOf({
         [`GET ${PREFERENCES}`]: () =>
           preferences(misaki?.id ?? '', [ken?.id ?? '']),
-        'GET /api/v1/staff-profiles': () => listed([]),
+        'GET /api/v1/staff-profiles': () => page([]),
         [`GET /api/v1/staff-profiles/${misaki?.id}`]: profile(misaki),
         [`GET /api/v1/staff-profiles/${ken?.id}`]: () => problem(429),
       }),
@@ -576,21 +554,13 @@ describe('readPreferences and readPreferencesToChange', () => {
       answerOf({
         [`GET ${PREFERENCES}`]: () =>
           preferences(misaki?.id ?? '', [ken?.id ?? '']),
-        'GET /api/v1/staff-profiles': () => listed([]),
+        'GET /api/v1/staff-profiles': () => page([]),
         [`GET /api/v1/staff-profiles/${misaki?.id}`]: () =>
-          json(200, {
-            data: { ...misaki, salonId: OTHER },
-            meta: null,
-            links: {},
-          }),
+          record(200, { ...misaki, salonId: OTHER }),
         [`GET /api/v1/staff-profiles/${ken?.id}`]: () =>
-          json(200, {
-            data: { ...ken, salonId: ANOTHER },
-            meta: null,
-            links: {},
-          }),
+          record(200, { ...ken, salonId: ANOTHER }),
         [`GET /api/v1/salons/${OTHER}`]: () =>
-          json(200, { data: { ...salon, id: OTHER }, meta: null, links: {} }),
+          record(200, { ...salon, id: OTHER }),
         [`GET /api/v1/salons/${ANOTHER}`]: () => problem(429),
       }),
     )

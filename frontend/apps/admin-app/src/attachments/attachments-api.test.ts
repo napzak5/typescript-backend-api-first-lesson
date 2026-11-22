@@ -1,7 +1,9 @@
 import {
   answering,
-  json,
+  empty,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -53,20 +55,15 @@ const pending = { ...photo, status: 'pending', uploadedAt: null }
 
 /** The answer to the request of the URL of an upload */
 const issued = (): Response =>
-  json(201, {
-    data: {
-      attachment: pending,
-      uploadUrl: UPLOAD_URL,
-      uploadHeaders: { 'Content-Type': 'image/jpeg', 'If-None-Match': '*' },
-    },
-    meta: null,
-    links: null,
+  record(201, {
+    attachment: pending,
+    uploadUrl: UPLOAD_URL,
+    uploadHeaders: { 'Content-Type': 'image/jpeg', 'If-None-Match': '*' },
   })
 
-const completed = (): Response =>
-  json(200, { data: photo, meta: null, links: null })
+const completed = (): Response => record(200, photo)
 
-const stored = (): Response => new Response(null, { status: 200 })
+const stored = (): Response => empty(200)
 
 const BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]).buffer
 
@@ -106,19 +103,13 @@ describe('attachmentsKeyOf and attachmentKeyOf', () => {
 describe('readAttachmentPage', () => {
   it('should ask for a page of twenty files of the salon after the cursor', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: FILES_OF_THE_SALON,
-        meta: { total: 23, nextCursor: 'next', prevCursor: null },
-        links: null,
-      }),
-    )
+    const fetched = answering(() => page(FILES_OF_THE_SALON, 'next', 23))
 
     // Act
-    const page = await readAttachmentPage(salon.id, 'cursor')
+    const read = await readAttachmentPage(salon.id, 'cursor')
 
     // Assert
-    expect(page).toEqual({
+    expect(read).toEqual({
       type: 'found',
       items: FILES_OF_THE_SALON,
       total: 23,
@@ -143,19 +134,17 @@ describe('readAttachmentPage', () => {
     answering(given)
 
     // Act
-    const page = await readAttachmentPage(salon.id, undefined)
+    const read = await readAttachmentPage(salon.id, undefined)
 
     // Assert
-    expect(page).toEqual({ type })
+    expect(read).toEqual({ type })
   })
 })
 
 describe('readAttachment', () => {
   it('should ask for the file by its ID', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: photo, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, photo))
 
     // Act
     const read = await readAttachment(photo.id)
@@ -195,13 +184,9 @@ describe('readDownloadUrl', () => {
   ])('should ask for the URL that %s', async (_, inline, asked) => {
     // Arrange
     const fetched = answering(() =>
-      json(200, {
-        data: {
-          downloadUrl: `${STORAGE}/file`,
-          expiresAt: '2026-11-21T03:05:00.000Z',
-        },
-        meta: null,
-        links: null,
+      record(200, {
+        downloadUrl: `${STORAGE}/file`,
+        expiresAt: '2026-11-21T03:05:00.000Z',
       }),
     )
 
@@ -322,8 +307,8 @@ describe('uploadAttachment', () => {
   )
 
   it.each<[string, Answer]>([
-    ['a signature it refused', () => new Response(null, { status: 403 })],
-    ['a file it holds already', () => new Response(null, { status: 412 })],
+    ['a signature it refused', () => empty(403)],
+    ['a file it holds already', () => empty(412)],
     ['no answer', () => Promise.reject(new TypeError('Failed to fetch'))],
   ])(
     'should not finish an upload that the storage did not take, after %s',
@@ -367,7 +352,7 @@ describe('uploadAttachment', () => {
 describe('removeAttachment', () => {
   it('should ask for the removal of the file', async () => {
     // Arrange
-    const fetched = answering(() => new Response(null, { status: 204 }))
+    const fetched = answering(() => empty(204))
 
     // Act
     const removal = await removeAttachment(photo.id)

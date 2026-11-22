@@ -2,6 +2,7 @@ import {
   answering,
   problem,
   UNREAD,
+  UNWRITTEN,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { salon } from '../bookings/components/examples'
@@ -25,12 +26,6 @@ afterEach(() => {
 })
 
 type Answer = () => Response | Promise<Response>
-
-const NOT_SENT: [string, Answer, string][] = [
-  ['a body that is too large', () => problem(413), 'failed'],
-  ['a body of another type', () => problem(415), 'failed'],
-  ...UNREAD,
-]
 
 describe('mayKeepPaymentMethods', () => {
   it.each<[string, boolean]>([
@@ -61,32 +56,35 @@ describe('readPaymentMethod', () => {
 })
 
 describe('addPaymentMethod', () => {
-  it.each(NOT_SENT)('should add no method after %s', async (_, given, type) => {
-    // Arrange
-    answering(given)
+  it.each(UNWRITTEN)(
+    'should add no method after %s',
+    async (_, given, type) => {
+      // Arrange
+      answering(given)
 
-    // Act
-    const written = await addPaymentMethod(salon.id, {
-      method: 'cash',
-      displayName: '現金',
-      description: null,
-      processorName: null,
-      fee: null,
-      minimumAmount: null,
-      maximumAmount: null,
-      isOnlineEnabled: false,
-      isOfflineEnabled: true,
-      sortOrder: 1,
-      isActive: true,
-    })
+      // Act
+      const written = await addPaymentMethod(salon.id, {
+        method: 'cash',
+        displayName: '現金',
+        description: null,
+        processorName: null,
+        fee: null,
+        minimumAmount: null,
+        maximumAmount: null,
+        isOnlineEnabled: false,
+        isOfflineEnabled: true,
+        sortOrder: 1,
+        isActive: true,
+      })
 
-    // Assert
-    expect(written).toEqual({ type })
-  })
+      // Assert
+      expect(written).toEqual({ type })
+    },
+  )
 })
 
 describe('changePaymentMethod', () => {
-  it.each(NOT_SENT)(
+  it.each(UNWRITTEN)(
     'should change no method after %s',
     async (_, given, type) => {
       // Arrange

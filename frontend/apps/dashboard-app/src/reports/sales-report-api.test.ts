@@ -1,7 +1,7 @@
 import {
   answering,
-  json,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -97,9 +97,7 @@ describe('the sales report', () => {
 
   it('should ask for the sales of the salon whose day is in the period', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: report, meta: null, links: { self: '/' } }),
-    )
+    const fetched = answering(() => record(200, report))
 
     // Act
     const read = await readSalesReport(SALON_ID, PERIOD)
@@ -117,9 +115,7 @@ describe('the sales report', () => {
 
   it('should ask for the trend of the period, cut into the parts chosen', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: trends, meta: null, links: { self: '/' } }),
-    )
+    const fetched = answering(() => record(200, trends))
 
     // Act
     const read = await readSalesTrends(SALON_ID, PERIOD, 'weekly')
@@ -155,9 +151,7 @@ describe('the sales report', () => {
     'should ask for the sales of the period of %s',
     async (_case, readOf, data, path, found) => {
       // Arrange
-      const fetched = answering(() =>
-        json(200, { data, meta: null, links: { self: '/' } }),
-      )
+      const fetched = answering(() => record(200, data))
 
       // Act
       const read = await readOf()
@@ -195,9 +189,7 @@ describe('the sales report', () => {
 
   it('should ask for the sales of one day', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: daily, meta: null, links: { self: '/' } }),
-    )
+    const fetched = answering(() => record(200, daily))
 
     // Act
     const read = await readDailySales(SALON_ID, '2026-11-21')

@@ -1,8 +1,8 @@
 import type { ModelsStaffSchedule } from '@beauty-salon-frontend/api-client'
 import {
   answering,
-  json,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -25,8 +25,7 @@ const SALON = 'salon'
 const MEMBER = 'member'
 
 /** A schedule as the API answers it */
-const schedule = (rows: ModelsStaffSchedule[]): Response =>
-  json(200, { data: rows, meta: null, links: { self: '/' } })
+const schedule = (rows: ModelsStaffSchedule[]): Response => record(200, rows)
 
 afterEach(() => {
   vi.unstubAllGlobals()

@@ -1,11 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   answering,
+  empty,
   OUTSIDE_THE_CONTRACT,
   pageOfAGateway,
   problem,
   record,
-} from '../__tests__/api-answers'
+} from '@beauty-salon-frontend/testing/answers'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { consent, photo } from './components/examples'
 import { loadSharedFile, readSharedFile } from './share-api'
 
@@ -113,7 +114,8 @@ describe('readSharedFile', () => {
 describe('loadSharedFile', () => {
   /** Answers the URL of the download, and the storage at it */
   const answeringLoad = (answers: { issue?: Answer; fetch?: Answer }) =>
-    answering((url) => {
+    answering((request) => {
+      const url = new URL(request.url)
       if (url.origin === STORAGE) {
         return (answers.fetch ?? (() => new Response(PNG, { status: 200 })))()
       }
@@ -200,8 +202,8 @@ describe('loadSharedFile', () => {
   )
 
   it.each<[string, Answer]>([
-    ['a file it does not have', () => new Response(null, { status: 404 })],
-    ['a signature that expired', () => new Response(null, { status: 403 })],
+    ['a file it does not have', () => empty(404)],
+    ['a signature that expired', () => empty(403)],
     ['no answer', () => Promise.reject(new TypeError('Failed to fetch'))],
     [
       'a file it could not send to its end',

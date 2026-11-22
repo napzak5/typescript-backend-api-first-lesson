@@ -1,4 +1,12 @@
 import type { ModelsReviewSortType } from '@beauty-salon-frontend/api-client'
+import {
+  answering,
+  OUTSIDE_THE_CONTRACT,
+  page,
+  pageOfAGateway,
+  problem,
+  record,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   findSalons,
@@ -22,55 +30,6 @@ const SALON_ID = '0b7f5c1e-3a52-4d8e-9c41-6f2e8d1a7b90'
 const HIROSHI = '6f81a3c4-e075-429b-93bd-5f7193acc0ce'
 const MIKA = '7092b4d5-f186-43ac-a4ce-60829bbdd1df'
 const TAKESHI = '81a3c5e6-0297-44bd-b5df-7193acce02e0'
-
-const answer = (status: number, body: unknown): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type':
-        status === 200
-          ? 'application/json; charset=utf-8'
-          : 'application/problem+json; charset=utf-8',
-    },
-  })
-
-const problem = (status: number): Response =>
-  answer(status, {
-    type: 'urn:beauty-salon:problem',
-    title: 'Problem',
-    status,
-    detail: null,
-    instance: null,
-    code: '2001',
-    errors: null,
-    correlationId: null,
-    timestamp: '2026-11-19T00:00:00.000Z',
-  })
-
-/** A page of a list: its items, and the cursor of the page after it. */
-const page = (items: unknown[], nextCursor: string | null = null): Response =>
-  answer(200, {
-    data: items,
-    meta: {
-      total: 7,
-      limit: 100,
-      hasMore: nextCursor !== null,
-      cursor: null,
-      nextCursor,
-      prevCursor: null,
-    },
-    links: null,
-  })
-
-/** Lets the API answer every request with what `respond` makes of its address. */
-const answering = (respond: (url: URL) => Response | Promise<Response>) => {
-  const fetched = vi.fn<typeof fetch>(async (input) =>
-    respond(new URL(String(input))),
-  )
-  vi.stubGlobal('fetch', fetched)
-
-  return fetched
-}
 
 /** What was asked for: the path below `/api/v1`, with its query. */
 const asked = (fetched: ReturnType<typeof answering>): string[] =>
@@ -128,21 +87,10 @@ describe('the operations of the screens of the salons', () => {
       expect(await call()).toEqual({ type: 'failed' })
     })
 
-    it.each([
-      ['a gateway that does not reach the API', 502],
-      ['an API that is not there', 503],
-      ['a gateway that waited too long', 504],
-      ['a status of no meaning here', 418],
-    ])(
+    it.each(OUTSIDE_THE_CONTRACT)(
       'should have failed, and not reject, when the answer is %s: a status the contract does not name',
       async (_case, status) => {
-        answering(
-          () =>
-            new Response('<html><body>Bad Gateway</body></html>', {
-              status,
-              headers: { 'Content-Type': 'text/html' },
-            }),
-        )
+        answering(() => pageOfAGateway(status))
 
         expect(await call()).toEqual({ type: 'failed' })
       },
@@ -159,7 +107,7 @@ describe('the operations of the screens of the salons', () => {
 
   describe('findSalons', () => {
     it('should ask for the salons that take bookings and meet the conditions, a page of twenty', async () => {
-      const fetched = answering(() => page([{ id: 'a' }, { id: 'b' }], 'b'))
+      const fetched = answering(() => page([{ id: 'a' }, { id: 'b' }], 'b', 7))
 
       const found = await findSalons(
         {
@@ -195,9 +143,7 @@ describe('the operations of the screens of the salons', () => {
 
   describe('readSalon', () => {
     it('should hand over the salon of the answer', async () => {
-      const fetched = answering(() =>
-        answer(200, { data: { id: SALON_ID }, meta: null, links: null }),
-      )
+      const fetched = answering(() => record(200, { id: SALON_ID }))
 
       expect(await readSalon(SALON_ID)).toEqual({
         type: 'found',
@@ -219,8 +165,8 @@ describe('the operations of the screens of the salons', () => {
 
   describe('readMenu', () => {
     it('should ask for the categories and the services that are switched on, in the largest pages', async () => {
-      const fetched = answering(({ pathname }) =>
-        pathname.endsWith('/service-categories')
+      const fetched = answering((request) =>
+        new URL(request.url).pathname.endsWith('/service-categories')
           ? page([{ id: 'cut' }])
           : page([{ id: 'ladies-cut' }]),
       )
@@ -239,7 +185,8 @@ describe('the operations of the screens of the salons', () => {
     })
 
     it('should read both lists to their ends, a page after the other', async () => {
-      const fetched = answering(({ pathname, searchParams }) => {
+      const fetched = answering((request) => {
+        const { pathname, searchParams } = new URL(request.url)
         const cursor = searchParams.get('cursor')
         const list = pathname.endsWith('/services') ? 'service' : 'category'
 
@@ -267,17 +214,20 @@ describe('the operations of the screens of the salons', () => {
     })
 
     it('should have no menu, and not half of one, when a later page is not read', async () => {
-      answering(({ pathname, searchParams }) =>
-        pathname.endsWith('/services') && searchParams.has('cursor')
+      answering((request) => {
+        const { pathname, searchParams } = new URL(request.url)
+
+        return pathname.endsWith('/services') && searchParams.has('cursor')
           ? problem(500)
-          : page([{ id: 'one' }], 'one'),
-      )
+          : page([{ id: 'one' }], 'one')
+      })
 
       expect(await readMenu(SALON_ID)).toEqual({ type: 'failed' })
     })
 
     it('should stop after ten pages of a list that does not end', async () => {
-      const fetched = answering(({ searchParams }) => {
+      const fetched = answering((request) => {
+        const { searchParams } = new URL(request.url)
         const read = Number(searchParams.get('cursor') ?? '0')
 
         return page([{ id: String(read + 1) }], String(read + 1))
@@ -293,8 +243,8 @@ describe('the operations of the screens of the salons', () => {
 
   describe('readStaff', () => {
     it('should ask for the people of the salon, and read them to the end', async () => {
-      const fetched = answering(({ searchParams }) =>
-        searchParams.has('cursor')
+      const fetched = answering((request) =>
+        new URL(request.url).searchParams.has('cursor')
           ? page([{ id: 'second' }])
           : page([{ id: 'first' }], 'first'),
       )
@@ -317,9 +267,7 @@ describe('the operations of the screens of the salons', () => {
         totalReviews: 5,
         ratingDistribution: { '4': 3, '5': 2 },
       }
-      const fetched = answering(() =>
-        answer(200, { data: summary, meta: null, links: null }),
-      )
+      const fetched = answering(() => record(200, summary))
 
       expect(await readReviewSummary(SALON_ID)).toEqual({
         type: 'found',
@@ -343,15 +291,15 @@ describe('the operations of the screens of the salons', () => {
 
     /** The API answers for each member with what `answers` holds under their ID. */
     const rating = (answers: Record<string, () => Response>) =>
-      answering(({ pathname }) => {
+      answering((request) => {
+        const { pathname } = new URL(request.url)
         const [, staffId = ''] =
           /\/staff\/([^/]+)\/reviews\/summary$/.exec(pathname) ?? []
 
         return (answers[staffId] ?? (() => problem(404)))()
       })
 
-    const summaryOf = (summary: unknown) => () =>
-      answer(200, { data: summary, meta: null, links: null })
+    const summaryOf = (summary: unknown) => () => record(200, summary)
 
     it('should ask for the summary of each member once, and hand the summaries over under their IDs', async () => {
       const fetched = rating({
@@ -401,10 +349,10 @@ describe('the operations of the screens of the salons', () => {
     ])(
       'should hand over no rating at all when one member alone got %s',
       async (_case, respond, type) => {
-        answering(({ pathname }) =>
-          pathname.includes(MIKA)
+        answering((request) =>
+          new URL(request.url).pathname.includes(MIKA)
             ? respond()
-            : answer(200, { data: RATED, meta: null, links: null }),
+            : record(200, RATED),
         )
 
         expect(await readStaffRatings([HIROSHI, MIKA, TAKESHI])).toEqual({
@@ -414,8 +362,10 @@ describe('the operations of the screens of the salons', () => {
     )
 
     it('should say that there were too many requests when one member got that and another got no answer', async () => {
-      answering(({ pathname }) =>
-        pathname.includes(MIKA) ? problem(429) : problem(500),
+      answering((request) =>
+        new URL(request.url).pathname.includes(MIKA)
+          ? problem(429)
+          : problem(500),
       )
 
       expect(await readStaffRatings([HIROSHI, MIKA])).toEqual({
@@ -428,7 +378,7 @@ describe('the operations of the screens of the salons', () => {
     it.each(ORDERS)(
       'should ask for the reviews of the salon in the order %s, a page of ten',
       async (sortBy) => {
-        const fetched = answering(() => page([{ id: 'a' }], 'a'))
+        const fetched = answering(() => page([{ id: 'a' }], 'a', 7))
 
         const reviews = await readReviews(SALON_ID, sortBy, undefined)
 

@@ -1,8 +1,9 @@
 import type { ModelsTreatmentPhotoCreateRequest } from '@beauty-salon-frontend/api-client'
 import {
   answering,
-  json,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -27,7 +28,7 @@ import {
  * bring about there.
  */
 
-const record = aTreatment()
+const treatment = aTreatment()
 
 const {
   id: _id,
@@ -35,26 +36,7 @@ const {
   createdAt: _c,
   updatedAt: _u,
   ...written
-} = record
-
-/** A page of records as the API answers it */
-const page = (
-  items: ReturnType<typeof aTreatment>[],
-  nextCursor: string | null,
-): Response =>
-  json(200, {
-    data: items,
-    meta: {
-      total: items.length,
-      limit: 100,
-      cursor: null,
-      nextCursor,
-      prevCursor: null,
-      hasMore: nextCursor !== null,
-      correlationId: null,
-    },
-    links: { self: '/', next: null, prev: null },
-  })
+} = treatment
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -118,7 +100,7 @@ describe('readTreatmentPage', () => {
   it('should read nothing when the customers of the page could not be read', async () => {
     // Arrange
     answering((request) =>
-      request.method === 'POST' ? problem(500) : page([record], null),
+      request.method === 'POST' ? problem(500) : page([treatment]),
     )
 
     // Act
@@ -132,8 +114,8 @@ describe('readTreatmentPage', () => {
 describe('findTreatmentOfBooking', () => {
   const of = {
     salonId: salon.id,
-    customerId: record.customerId,
-    bookingId: record.bookingId,
+    customerId: treatment.customerId,
+    bookingId: treatment.bookingId,
   }
 
   it('should read the records of the customer at the salon to their end in their largest pages, and find the one of the booking', async () => {
@@ -144,7 +126,7 @@ describe('findTreatmentOfBooking', () => {
     })
     const fetched = answering((request) =>
       new URL(request.url).searchParams.has('cursor')
-        ? page([record], null)
+        ? page([treatment])
         : page([other], other.id),
     )
 
@@ -152,16 +134,16 @@ describe('findTreatmentOfBooking', () => {
     const read = await findTreatmentOfBooking(of)
 
     // Assert
-    expect(read).toEqual({ type: 'found', record })
+    expect(read).toEqual({ type: 'found', record: treatment })
     expect(
       fetched.mock.calls.map(([asked]) =>
         Object.fromEntries(new URL(new Request(asked).url).searchParams),
       ),
     ).toEqual([
-      { salonId: salon.id, customerId: record.customerId, limit: '100' },
+      { salonId: salon.id, customerId: treatment.customerId, limit: '100' },
       {
         salonId: salon.id,
-        customerId: record.customerId,
+        customerId: treatment.customerId,
         cursor: other.id,
         limit: '100',
       },
@@ -170,7 +152,7 @@ describe('findTreatmentOfBooking', () => {
 
   it('should find no record of a booking that has none', async () => {
     // Arrange
-    answering(() => page([], null))
+    answering(() => page([]))
 
     // Act
     const read = await findTreatmentOfBooking(of)
@@ -194,7 +176,7 @@ describe('findTreatmentOfBooking', () => {
 describe('readTreatment', () => {
   it('should ask for nothing with an ID that is none', async () => {
     // Arrange
-    const fetched = answering(() => json(200, { data: record }))
+    const fetched = answering(() => record(200, treatment))
 
     // Act
     const read = await readTreatment('latest')
@@ -212,7 +194,7 @@ describe('readTreatment', () => {
     answering(answer)
 
     // Act
-    const read = await readTreatment(record.id)
+    const read = await readTreatment(treatment.id)
 
     // Assert
     expect(read).toEqual({ type: 'failed' })
@@ -223,7 +205,7 @@ describe('readTreatment', () => {
     answering(answer)
 
     // Act
-    const read = await readTreatment(record.id)
+    const read = await readTreatment(treatment.id)
 
     // Assert
     expect(read).toEqual({ type })
@@ -281,7 +263,7 @@ describe('updateTreatment', () => {
     answering(answer)
 
     // Act
-    const outcome = await updateTreatment(record.id, { processingTime: 60 })
+    const outcome = await updateTreatment(treatment.id, { processingTime: 60 })
 
     // Assert
     expect(outcome).toEqual({ type })
@@ -292,7 +274,7 @@ describe('updateTreatment', () => {
     answering(answer)
 
     // Act
-    const outcome = await updateTreatment(record.id, { processingTime: 60 })
+    const outcome = await updateTreatment(treatment.id, { processingTime: 60 })
 
     // Assert
     expect(outcome).toEqual({ type })
@@ -308,7 +290,7 @@ describe('removeTreatment', () => {
     answering(answer)
 
     // Act
-    const outcome = await removeTreatment(record.id)
+    const outcome = await removeTreatment(treatment.id)
 
     // Assert
     expect(outcome).toEqual({ type })
@@ -319,7 +301,7 @@ describe('removeTreatment', () => {
     answering(answer)
 
     // Act
-    const outcome = await removeTreatment(record.id)
+    const outcome = await removeTreatment(treatment.id)
 
     // Assert
     expect(outcome).toEqual({ type })
@@ -347,7 +329,7 @@ describe('addTreatmentPhotos', () => {
     answering(answer)
 
     // Act
-    const outcome = await addTreatmentPhotos(record.id, { photos: [photo] })
+    const outcome = await addTreatmentPhotos(treatment.id, { photos: [photo] })
 
     // Assert
     expect(outcome).toEqual({ type })
@@ -358,7 +340,7 @@ describe('addTreatmentPhotos', () => {
     answering(answer)
 
     // Act
-    const outcome = await addTreatmentPhotos(record.id, { photos: [photo] })
+    const outcome = await addTreatmentPhotos(treatment.id, { photos: [photo] })
 
     // Assert
     expect(outcome).toEqual({ type })
@@ -376,7 +358,9 @@ describe('addTreatmentPhotos', () => {
       )
 
       // Act
-      const outcome = await addTreatmentPhotos(record.id, { photos: [photo] })
+      const outcome = await addTreatmentPhotos(treatment.id, {
+        photos: [photo],
+      })
 
       // Assert
       expect(outcome).toEqual({ type })
@@ -393,7 +377,7 @@ describe('removeTreatmentPhoto', () => {
     answering(answer)
 
     // Act
-    const outcome = await removeTreatmentPhoto(record.id, aPhoto().id)
+    const outcome = await removeTreatmentPhoto(treatment.id, aPhoto().id)
 
     // Assert
     expect(outcome).toEqual({ type })
@@ -406,7 +390,7 @@ describe('removeTreatmentPhoto', () => {
       answering(answer)
 
       // Act
-      const outcome = await removeTreatmentPhoto(record.id, aPhoto().id)
+      const outcome = await removeTreatmentPhoto(treatment.id, aPhoto().id)
 
       // Assert
       expect(outcome).toEqual({ type })
@@ -418,14 +402,11 @@ describe('readTreatmentStatistics', () => {
   it('should count the records of the salon from the start of the first day to the end of the last, at the salon', async () => {
     // Arrange
     const fetched = answering(() =>
-      json(200, {
-        data: {
-          totalTreatments: 0,
-          treatmentsByCategory: [],
-          averageProcessingTime: null,
-          topServices: [],
-        },
-        links: { self: '/' },
+      record(200, {
+        totalTreatments: 0,
+        treatmentsByCategory: [],
+        averageProcessingTime: null,
+        topServices: [],
       }),
     )
 

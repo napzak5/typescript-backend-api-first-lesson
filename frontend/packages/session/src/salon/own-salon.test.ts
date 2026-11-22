@@ -1,4 +1,9 @@
 import type { ModelsUserRoleType } from '@beauty-salon-frontend/api-client'
+import {
+  answering,
+  problem,
+  record,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readOwnSalon, worksAtSalon } from './own-salon'
 
@@ -10,29 +15,6 @@ import { readOwnSalon, worksAtSalon } from './own-salon'
  */
 
 const SALON_ID = '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01'
-
-const json = (status: number, body: unknown, type = 'application/json') =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': `${type}; charset=utf-8` },
-  })
-
-const problem = (status: number) =>
-  json(
-    status,
-    {
-      type: 'urn:beauty-salon:problem',
-      title: 'Problem',
-      status,
-      detail: null,
-      instance: null,
-      code: '2001',
-      errors: null,
-      correlationId: null,
-      timestamp: '2026-11-20T00:00:00.000Z',
-    },
-    'application/problem+json',
-  )
 
 const profile = {
   id: '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c02',
@@ -46,14 +28,6 @@ const profile = {
   yearsOfExperience: null,
   certifications: [],
   canReceiveBookings: true,
-}
-
-/** Lets the API answer every request with what `answer` returns. */
-const answering = (answer: () => Response | Promise<Response>) => {
-  const fetched = vi.fn<typeof fetch>(async () => answer())
-  vi.stubGlobal('fetch', fetched)
-
-  return fetched
 }
 
 describe('worksAtSalon', () => {
@@ -80,13 +54,7 @@ describe('readOwnSalon', () => {
 
   it('should give the salon of the member of the staff the account is linked to', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: profile,
-        meta: null,
-        links: { self: '/api/v1/staff-profiles/me' },
-      }),
-    )
+    const fetched = answering(() => record(200, profile))
 
     // Act
     const read = await readOwnSalon()

@@ -1,6 +1,6 @@
 import {
   answering,
-  json,
+  page,
   problem,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
@@ -27,25 +27,6 @@ const allergy = anAllergy()
 
 const { id: _id, createdAt: _c, updatedAt: _u, ...recorded } = allergy
 
-/** A page of allergies as the API answers it */
-const page = (
-  items: ReturnType<typeof allergies>,
-  nextCursor: string | null,
-): Response =>
-  json(200, {
-    data: items,
-    meta: {
-      total: 3,
-      limit: 100,
-      cursor: null,
-      nextCursor,
-      prevCursor: null,
-      hasMore: nextCursor !== null,
-      correlationId: null,
-    },
-    links: { self: '/', next: null, prev: null },
-  })
-
 afterEach(() => {
   vi.unstubAllGlobals()
 })
@@ -53,7 +34,7 @@ afterEach(() => {
 describe('readAllergyPage', () => {
   it('should ask for the page after the cursor, twenty at a time', async () => {
     // Arrange
-    const fetched = answering(() => page(allergies(), null))
+    const fetched = answering(() => page(allergies()))
 
     // Act
     const read = await readAllergyPage(customer.id, allergy.id)
@@ -111,7 +92,7 @@ describe('findAllergy', () => {
     const cursor = listed.at(1)?.id ?? null
     const fetched = answering((request) =>
       new URL(request.url).searchParams.has('cursor')
-        ? page(listed.slice(2), null)
+        ? page(listed.slice(2))
         : page(listed.slice(0, 2), cursor),
     )
 
@@ -129,7 +110,7 @@ describe('findAllergy', () => {
 
   it('should not find an allergy that is not among those of the customer', async () => {
     // Arrange
-    answering(() => page(allergies(), null))
+    answering(() => page(allergies()))
 
     // Act
     const read = await findAllergy(
@@ -143,7 +124,7 @@ describe('findAllergy', () => {
 
   it('should ask for nothing with an ID that is none', async () => {
     // Arrange
-    const fetched = answering(() => page(allergies(), null))
+    const fetched = answering(() => page(allergies()))
 
     // Act
     const read = await findAllergy(customer.id, 'peanuts')

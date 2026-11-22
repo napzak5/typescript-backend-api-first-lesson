@@ -1,7 +1,8 @@
 import {
   answering,
-  json,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -84,22 +85,16 @@ describe('purchaseOrdersKeyOf and purchaseOrderKeyOf', () => {
 describe('readOrderPage', () => {
   it('should ask for a page of twenty orders of the conditions after the cursor', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: ORDERS_OF_THE_SALON,
-        meta: { total: 23, nextCursor: 'next', prevCursor: null },
-        links: null,
-      }),
-    )
+    const fetched = answering(() => page(ORDERS_OF_THE_SALON, 'next', 23))
 
     // Act
-    const page = await readOrderPage(
+    const read = await readOrderPage(
       { salonId: salon.id, status: 'pending', supplier: 'A&B 商事' },
       'cursor',
     )
 
     // Assert
-    expect(page).toEqual({
+    expect(read).toEqual({
       type: 'found',
       items: ORDERS_OF_THE_SALON,
       total: 23,
@@ -128,19 +123,17 @@ describe('readOrderPage', () => {
     answering(given)
 
     // Act
-    const page = await readOrderPage({ salonId: salon.id }, undefined)
+    const read = await readOrderPage({ salonId: salon.id }, undefined)
 
     // Assert
-    expect(page).toEqual({ type })
+    expect(read).toEqual({ type })
   })
 })
 
 describe('readOrder', () => {
   it('should ask for the order by its ID', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: pendingOrder, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, pendingOrder))
 
     // Act
     const read = await readOrder(pendingOrder.id)
@@ -176,9 +169,7 @@ describe('readOrder', () => {
 describe('makeOrder', () => {
   it('should send the order, and hand over the draft that was made', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(201, { data: pendingOrder, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(201, pendingOrder))
 
     // Act
     const made = await makeOrder(ORDER)
@@ -289,9 +280,7 @@ const STEPS: [string, () => Promise<OrderStep>, unknown[]][] = [
 describe.each(STEPS)('%s', (_, step, sent) => {
   it('should send the operation, and hand over the order it changed', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: APPROVED, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, APPROVED))
 
     // Act
     const changed = await step()
@@ -332,9 +321,7 @@ describe.each(STEPS)('%s', (_, step, sent) => {
 describe('changeOrder', () => {
   it('should send what was changed, and hand over the order it changed', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: pendingOrder, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, pendingOrder))
 
     // Act
     const changed = await changeOrder(pendingOrder.id, {
@@ -399,9 +386,7 @@ describe('receiveOrder', () => {
   it('should send the goods that came, and hand over the order it delivered', async () => {
     // Arrange
     const delivered = { ...shippedOrder, status: 'delivered' }
-    const fetched = answering(() =>
-      json(200, { data: delivered, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, delivered))
 
     // Act
     const received = await receiveOrder(shippedOrder.id, RECEIPT)
@@ -476,16 +461,8 @@ describe('readEverySuggestion', () => {
     const [colour, shampoo, gloves] = SUGGESTIONS_OF_THE_SALON
     const fetched = answering((request) =>
       new URL(request.url).searchParams.has('cursor')
-        ? json(200, {
-            data: [gloves],
-            meta: { total: 3, nextCursor: null, prevCursor: null },
-            links: null,
-          })
-        : json(200, {
-            data: [colour, shampoo],
-            meta: { total: 3, nextCursor: 'next', prevCursor: null },
-            links: null,
-          }),
+        ? page([gloves], null, 3)
+        : page([colour, shampoo], 'next', 3),
     )
 
     // Act

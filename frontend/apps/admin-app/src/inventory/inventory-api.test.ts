@@ -1,9 +1,9 @@
-import type { ModelsInventoryResponse } from '@beauty-salon-frontend/api-client'
 import {
   answering,
-  json,
+  page,
   problem,
   UNREAD,
+  UNWRITTEN,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { salon } from '../bookings/components/examples'
@@ -27,32 +27,7 @@ import type { StockView } from './stock-view'
  * bring about there.
  */
 
-/** A page of the stock, as the API answers with it. */
-const page = (
-  items: ModelsInventoryResponse[],
-  nextCursor: string | null,
-): Response =>
-  json(200, {
-    data: items,
-    meta: {
-      total: items.length,
-      limit: 20,
-      cursor: null,
-      nextCursor,
-      prevCursor: null,
-      hasMore: nextCursor !== null,
-      correlationId: null,
-    },
-    links: { self: '/', next: null, prev: null },
-  })
-
 type Answer = () => Response | Promise<Response>
-
-const NOT_SENT: [string, Answer, string][] = [
-  ['a body that is too large', () => problem(413), 'failed'],
-  ['a body of another type', () => problem(415), 'failed'],
-  ...UNREAD,
-]
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -87,7 +62,7 @@ describe('readEveryStockRow', () => {
     const [first, ...rest] = STOCK_OF_THE_SALON
     const fetched = answering((request) =>
       new URL(request.url).searchParams.has('cursor')
-        ? page(rest, null)
+        ? page(rest)
         : page(first === undefined ? [] : [first], first?.id ?? null),
     )
 
@@ -160,7 +135,7 @@ describe('readStockPage', () => {
     'should ask for a page of %s, after the cursor',
     async (_, view, path, query) => {
       // Arrange
-      const fetched = answering(() => page([colourLot], null))
+      const fetched = answering(() => page([colourLot]))
 
       // Act
       const read = await readStockPage(
@@ -228,7 +203,7 @@ describe('addStockRow', () => {
       () => problem(400, [{ field: 'salonId', rule: 'not_found' }]),
       'notFound',
     ],
-    ...NOT_SENT,
+    ...UNWRITTEN,
   ])('should add no row after %s', async (_, given, type) => {
     // Arrange
     answering(given)
@@ -250,16 +225,19 @@ describe('addStockRow', () => {
 })
 
 describe('changeStockRow', () => {
-  it.each(NOT_SENT)('should change no row after %s', async (_, given, type) => {
-    // Arrange
-    answering(given)
+  it.each(UNWRITTEN)(
+    'should change no row after %s',
+    async (_, given, type) => {
+      // Arrange
+      answering(given)
 
-    // Act
-    const written = await changeStockRow(colourLot.id, { shelf: 'B-3' })
+      // Act
+      const written = await changeStockRow(colourLot.id, { shelf: 'B-3' })
 
-    // Assert
-    expect(written).toEqual({ type })
-  })
+      // Assert
+      expect(written).toEqual({ type })
+    },
+  )
 })
 
 describe('removeStockRow', () => {

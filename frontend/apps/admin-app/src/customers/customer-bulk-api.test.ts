@@ -1,7 +1,8 @@
 import {
   answering,
-  json,
   problem,
+  problemWithCode,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -62,25 +63,7 @@ const FILE: FileCustomer[] = [
 ]
 
 /** The answer of the batch read, with the customers given */
-const readAnswer = (found: readonly unknown[]): Response =>
-  json(200, { data: found, meta: null, links: { list: '/api/v1/customers' } })
-
-const problemSaying = (status: number, detail: string): Response =>
-  json(
-    status,
-    {
-      type: 'urn:beauty-salon:problem',
-      title: 'Problem',
-      status,
-      detail,
-      instance: null,
-      code: '3003',
-      errors: null,
-      correlationId: null,
-      timestamp: '2026-11-20T00:00:00.000Z',
-    },
-    'application/problem+json',
-  )
+const readAnswer = (found: readonly unknown[]): Response => record(200, found)
 
 describe('registerCustomers', () => {
   afterEach(() => {
@@ -89,13 +72,7 @@ describe('registerCustomers', () => {
 
   it('should send the customers of the file in the order of their rows', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(201, {
-        data: { created: [hanako.id] },
-        meta: null,
-        links: { list: '/api/v1/customers' },
-      }),
-    )
+    const fetched = answering(() => record(201, { created: [hanako.id] }))
 
     // Act
     const attempt = await registerCustomers(FILE)
@@ -195,11 +172,29 @@ describe('removeCustomers', () => {
     vi.unstubAllGlobals()
   })
 
+  it('should name the customer the API names, however it writes the ID', async () => {
+    // Arrange
+    answering(() =>
+      problemWithCode(
+        409,
+        '3003',
+        `Customer ${ichiro.id.toUpperCase()} cannot be deleted`,
+      ),
+    )
+
+    // Act
+    const attempt = await removeCustomers(ids)
+
+    // Assert
+    expect(attempt).toEqual({ type: 'unfinished', id: ichiro.id })
+  })
+
   it('should name no customer when the API names none of the chosen', async () => {
     // Arrange
     answering(() =>
-      problemSaying(
+      problemWithCode(
         409,
+        '3003',
         'Customer 00000000-0000-4000-8000-000000000000 cannot be deleted',
       ),
     )

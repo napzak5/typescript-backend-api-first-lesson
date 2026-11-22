@@ -1,4 +1,12 @@
 import { sessionStore } from '@beauty-salon-frontend/io'
+import {
+  answering,
+  empty,
+  OUTSIDE_THE_CONTRACT,
+  pageOfAGateway,
+  problem,
+  record,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { twoFactorSetup } from './components/examples'
 import {
@@ -20,41 +28,6 @@ import {
  * status the contract does not name), and that every operation reads its
  * answers alike.
  */
-
-type RefusedValue = { field: string; rule: string }
-
-const problem = (status: number, errors: RefusedValue[] | null = null) =>
-  new Response(
-    JSON.stringify({
-      type: 'urn:beauty-salon:problem',
-      title: 'Problem',
-      status,
-      detail: null,
-      instance: null,
-      code: '2001',
-      errors:
-        errors?.map((error) => ({
-          ...error,
-          message: 'Invalid',
-          value: null,
-          constraint: null,
-        })) ?? null,
-      correlationId: null,
-      timestamp: '2026-11-20T00:00:00.000Z',
-    }),
-    {
-      status,
-      headers: { 'Content-Type': 'application/problem+json; charset=utf-8' },
-    },
-  )
-
-/** Lets the API answer every request with what `answer` returns. */
-const answering = (answer: () => Response | Promise<Response>) => {
-  const fetched = vi.fn<typeof fetch>(async () => answer())
-  vi.stubGlobal('fetch', fetched)
-
-  return fetched
-}
 
 const SESSION_ID = '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c02'
 
@@ -148,21 +121,10 @@ describe('the operations of the security of an account', () => {
       expect(await call()).toEqual({ type: 'failed' })
     })
 
-    it.each([
-      ['a gateway that does not reach the API', 502],
-      ['an API that is not there', 503],
-      ['a gateway that waited too long', 504],
-      ['a status of no meaning here', 418],
-    ])(
+    it.each(OUTSIDE_THE_CONTRACT)(
       'should have failed, and not reject, when the answer is %s: a status the contract does not name',
       async (_case, status) => {
-        answering(
-          () =>
-            new Response('<html><body>Bad Gateway</body></html>', {
-              status,
-              headers: { 'Content-Type': 'text/html' },
-            }),
-        )
+        answering(() => pageOfAGateway(status))
 
         expect(await call()).toEqual({ type: 'failed' })
       },
@@ -275,14 +237,7 @@ describe('the operations of the security of an account', () => {
 
   describe('the answers that change the second factor', () => {
     const answered = (status: number, data: unknown = null) =>
-      answering(() =>
-        status === 204
-          ? new Response(null, { status })
-          : new Response(JSON.stringify({ data, meta: null, links: null }), {
-              status,
-              headers: { 'Content-Type': 'application/json; charset=utf-8' },
-            }),
-      )
+      answering(() => (status === 204 ? empty(status) : record(status, data)))
 
     it('should hand over the secret, the address for the app and the backup codes the set-up issued', async () => {
       const setup = twoFactorSetup
@@ -330,7 +285,7 @@ describe('the operations of the security of an account', () => {
 
     it('should remove the session of this browser when the API ended them all', async () => {
       signedIn()
-      answering(() => new Response(null, { status: 204 }))
+      answering(() => empty(204))
 
       expect(await signOutEverywhere()).toEqual({ type: 'signedOut' })
       expect(sessionStore.userId()).toBeNull()

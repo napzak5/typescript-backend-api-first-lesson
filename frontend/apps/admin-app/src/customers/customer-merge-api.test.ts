@@ -4,8 +4,8 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   answering,
-  json,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -23,12 +23,7 @@ const [hanako = aCustomer(), ichiro = aCustomer()] = customers
 
 const PAIR: MergePair = { primary: hanako, secondary: ichiro }
 
-const customerAnswer = (): Response =>
-  json(200, {
-    data: ichiro,
-    meta: null,
-    links: { self: `/api/v1/customers/${ichiro.id}` },
-  })
+const customerAnswer = (): Response => record(200, ichiro)
 
 /** A request of the customer of the ID to have their data erased, in the state given */
 const erasureRequestOf = (
@@ -66,11 +61,7 @@ describe('readMerge', () => {
           ? hanako.id
           : ichiro.id
         if (request.url.includes('/deletion-request')) {
-          return json(200, {
-            data: erasureRequestOf(customerId, status),
-            meta: null,
-            links: { self: `/api/v1/customers/${customerId}/deletion-request` },
-          })
+          return record(200, erasureRequestOf(customerId, status))
         }
         return request.url.includes('/medical-charts/customer/')
           ? problem(404)
