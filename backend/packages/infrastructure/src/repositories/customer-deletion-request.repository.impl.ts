@@ -20,7 +20,7 @@ import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { eraseCustomerOf } from './customer-erasure'
+import { eraseCustomerOf } from './_shared/customer-erasure'
 
 /**
  * Each write reads what is committed at each statement, so a write that

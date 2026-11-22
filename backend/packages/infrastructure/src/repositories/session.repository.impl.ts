@@ -21,7 +21,7 @@ import {
   salonOfStaff,
   staffOfUser,
   userNotDeleted,
-} from './account'
+} from './_shared/account'
 
 export class SessionRepository implements ISessionRepository {
   constructor(private readonly db: Database) {}

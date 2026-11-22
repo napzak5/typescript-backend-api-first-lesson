@@ -28,8 +28,8 @@ import { and, eq, gt, isNull, or, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { salonOfStaff, staffOfUser, userNotDeleted } from './account'
-import { staffMemberOf } from './staff-member'
+import { salonOfStaff, staffOfUser, userNotDeleted } from './_shared/account'
+import { staffMemberOf } from './_shared/staff-member'
 
 /**
  * Whether the staff member has an account. The ledger says so in

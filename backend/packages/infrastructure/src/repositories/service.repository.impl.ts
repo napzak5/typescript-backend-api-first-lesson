@@ -43,7 +43,7 @@ import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { hasLineOfUnfinishedBooking } from './unfinished-bookings'
+import { hasLineOfUnfinishedBooking } from './_shared/unfinished-bookings'
 
 const notDeleted = isNull(services.deletedAt)
 

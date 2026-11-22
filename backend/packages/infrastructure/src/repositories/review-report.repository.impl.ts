@@ -15,7 +15,7 @@ import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { countReportsOf } from './review-report-count'
+import { countReportsOf } from './_shared/review-report-count'
 
 /**
  * A read of a page of reports in one snapshot: the cursor, the page and

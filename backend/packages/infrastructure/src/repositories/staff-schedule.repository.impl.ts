@@ -11,7 +11,7 @@ import type { Result } from '@beauty-salon-backend/utility'
 import { asc, desc, eq } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { staffMemberOf } from './staff-member'
+import { staffMemberOf } from './_shared/staff-member'
 
 /**
  * The weekly rows from Monday to Sunday, which is the order of the

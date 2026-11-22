@@ -16,27 +16,40 @@ for the test instead of sending them.
 backend/packages/api/
 ├── vitest.config.ts                 # unit tests: src/**/*.test.ts
 ├── vitest.integration.config.ts     # integration tests: src/**/*.integration.test.ts
-└── src/__tests__/
-    ├── _shared/
-    │   ├── setup.ts                 # the PostgreSQL instance of the run, a database for each test
-    │   ├── test-databases.ts        # the template with the schema; copies and drops the databases
-    │   ├── test-helpers.ts          # createTestApp, getTestDb, request
-    │   ├── auth-helpers.ts          # users, staff, salons and sessions as rows; signing in
-    │   └── two-factor-helpers.ts    # one-time passwords, stored secrets, a user with two-factor authentication
-    ├── test-server/                 # what the tests of the frontend call instead of a stub (see below)
-    │   ├── main.ts                  # the program: the PostgreSQL instance, the template with the seed data
-    │   ├── test-apis.ts             # the APIs it runs: createApp on a port and a database copy each
-    │   └── control.ts               # the requests it answers: start, reset, query and remove an API
-    ├── salon.integration.test.ts              # the Salon endpoints: the reference
-    ├── service-category.integration.test.ts   # the service category endpoints: the reference for routes below a salon
-    ├── service.integration.test.ts            # the service endpoints: a bulk operation, a soft delete below a salon, the repository called directly
-    ├── auth.integration.test.ts               # signing in, tokens, the seeded accounts
-    ├── auth-registration.integration.test.ts  # registration, email verification, passwords
-    ├── auth-sessions.integration.test.ts      # the sessions of the signed-in user
-    ├── auth-two-factor.integration.test.ts    # two-factor authentication
-    ├── admin-auth.integration.test.ts         # what an administrator does to accounts
-    └── app.integration.test.ts                # what the application does for every route
+└── src/
+    ├── routes/                      # the tests of the endpoints of a route are in its folder
+    │   ├── salon/__tests__/salon.integration.test.ts                        # the Salon endpoints: the reference
+    │   ├── service-category/__tests__/service-category.integration.test.ts  # the service category endpoints: the reference for routes below a salon
+    │   ├── service/__tests__/service.integration.test.ts                    # the service endpoints: a bulk operation, a soft delete below a salon, the repository called directly
+    │   ├── auth/__tests__/auth.integration.test.ts                          # signing in, tokens, the seeded accounts
+    │   ├── auth/__tests__/auth-registration.integration.test.ts             # registration, email verification, passwords
+    │   ├── auth/__tests__/auth-sessions.integration.test.ts                 # the sessions of the signed-in user
+    │   ├── auth/__tests__/auth-two-factor.integration.test.ts               # two-factor authentication
+    │   └── admin-auth/__tests__/admin-auth.integration.test.ts              # what an administrator does to accounts
+    └── __tests__/                   # what is about no single route, and what all the tests share
+        ├── _shared/
+        │   ├── setup.ts                 # the PostgreSQL instance of the run, a database for each test
+        │   ├── test-databases.ts        # the template with the schema; copies and drops the databases
+        │   ├── test-helpers.ts          # createTestApp, getTestDb, request
+        │   ├── auth-helpers.ts          # users, staff, salons and sessions as rows; signing in
+        │   └── two-factor-helpers.ts    # one-time passwords, stored secrets, a user with two-factor authentication
+        ├── test-server/                 # what the tests of the frontend call instead of a stub (see below)
+        │   ├── main.ts                  # the program: the PostgreSQL instance, the template with the seed data
+        │   ├── test-apis.ts             # the APIs it runs: createApp on a port and a database copy each
+        │   └── control.ts               # the requests it answers: start, reset, query and remove an API
+        ├── app.integration.test.ts            # what the application does for every route
+        ├── request-dates.integration.test.ts  # the dates and moments a request may name, at the operations that take one
+        └── write-stamps.integration.test.ts   # the time of a write that waited for another write of its row
 ```
+
+An integration test is in the `__tests__` of the route folder whose handlers
+it calls. Its file is named after the route, or after the part of the route
+it covers (`auth-sessions`, `booking-status`). Where the name of a file
+begins with no route, the file is where the handlers are: the tests of the
+allergies of a customer are in `routes/medical-chart/__tests__/`, those of the
+profile of the signed-in staff member in `routes/staff-profile/__tests__/`,
+and those of the photos and the statistics of treatments in
+`routes/treatment-record/__tests__/`.
 
 Unit tests of the same package (problem details, middleware, links, query
 decoding) sit in `__tests__` directories beside the code they test and need no
@@ -336,7 +349,7 @@ rules).
 ## Writing a Test
 
 The excerpts are from
-`backend/packages/api/src/__tests__/salon.integration.test.ts`.
+`backend/packages/api/src/routes/salon/__tests__/salon.integration.test.ts`.
 
 ### 1. Set up the application
 
@@ -617,7 +630,7 @@ role at another salon, and the block also has the scenarios that succeed for
 somebody other than an admin (the owner and a manager change their salon, the
 owner deletes it). What the server does with a token (an expired one, one of
 a signed-out session, one of a suspended user) is tested in
-`auth.integration.test.ts` on the authentication endpoints. The Salon file
+`backend/packages/api/src/routes/auth/__tests__/auth.integration.test.ts` on the authentication endpoints. The Salon file
 repeats one such case only, a token that names no session.
 
 ### 6. Write to the database only for what the API cannot produce
@@ -672,7 +685,7 @@ it('should answer 500 without the cause and log the cause under the request ID',
 
 ## Tests for a New Domain
 
-1. Create `backend/packages/api/src/__tests__/<domain>.integration.test.ts`;
+1. Create `backend/packages/api/src/routes/<domain>/__tests__/<domain>.integration.test.ts`;
    the name must end in `.integration.test.ts` to be picked up.
 2. Start from the structure of the Salon file: the `beforeEach` that signs
    in, a builder for a valid request, helpers that create state through the

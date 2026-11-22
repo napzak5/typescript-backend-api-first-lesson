@@ -25,9 +25,17 @@ tests of one of these kinds: a schema is not tested in the file of a use case.
 What the tests of more than one folder share (rows, requests, stand-ins for
 the repositories) is in `backend/packages/domain/src/__tests__/fixtures/`, one
 file per domain; beside it, `backend/packages/domain/src/__tests__/` holds only
-the test that reads the whole package (`use-case-flow.test.ts`). The
-integration tests of the API, which drive every layer, are in
-`backend/packages/api/src/__tests__/`.
+the test that reads the whole package (`use-case-flow.test.ts`).
+
+The integration tests of the API drive every layer from an endpoint, so they
+are in the `__tests__` of the folder of its route:
+`backend/packages/api/src/routes/<domain>/__tests__/`, in a file named after
+the route or after the part of it the file covers
+(`booking-status.integration.test.ts`). `backend/packages/api/src/__tests__/`
+holds the three that are about no single route (`app.integration.test.ts`,
+`request-dates.integration.test.ts`, `write-stamps.integration.test.ts`), what
+all the integration tests share (`_shared/`) and the test server
+(`test-server/`).
 
 The unit and the integration tests run on Vitest. They resolve the workspace packages they import from
 source (the export condition `@beauty-salon-backend/source`, or
@@ -66,8 +74,8 @@ What the repository does not have:
 | Mail delivery (`SmtpMailer`): what reaches the SMTP server, what is logged and what is kept out of the log, a delivery that fails, closing while deliveries are under way | Unit for what needs no server; integration against a Mailpit container | `backend/packages/infrastructure/src/mail/__tests__/` |
 | File storage (`S3FileStorage`): what a signed upload URL takes and refuses (another type, another length, a second upload, a URL that ran out), what is read of a stored file, what a signed download URL answers, removal, a public endpoint of its own, a storage that refuses or cannot be reached | Integration against a SeaweedFS container, with real uploads and downloads | `backend/packages/infrastructure/src/storage/__tests__/` |
 | Pure helpers of the HTTP layer: links, query decoding, problem details, middleware | Unit | `backend/packages/api/src/routes/salon/_shared/__tests__/`, `backend/packages/api/src/routes/service-category/_shared/__tests__/`, `backend/packages/api/src/routes/service/_shared/__tests__/`, `backend/packages/api/src/shared/__tests__/`, `backend/packages/api/src/middleware/__tests__/middleware.test.ts` |
-| Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/__tests__/salon.integration.test.ts`, `auth.integration.test.ts`, `service-category.integration.test.ts` (routes below a salon), `service.integration.test.ts` (a bulk operation, a soft delete below a salon) |
-| The seeded accounts: one of each role signs in with `SEED_PASSWORD`, and the owner and the manager can change the first seeded salon but not the second | Integration | `describe('the seeded accounts', …)` in `backend/packages/api/src/__tests__/auth.integration.test.ts` |
+| Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/routes/salon/__tests__/salon.integration.test.ts`, `backend/packages/api/src/routes/auth/__tests__/auth.integration.test.ts`, `backend/packages/api/src/routes/service-category/__tests__/service-category.integration.test.ts` (routes below a salon), `backend/packages/api/src/routes/service/__tests__/service.integration.test.ts` (a bulk operation, a soft delete below a salon) |
+| The seeded accounts: one of each role signs in with `SEED_PASSWORD`, and the owner and the manager can change the first seeded salon but not the second | Integration | `describe('the seeded accounts', …)` in `backend/packages/api/src/routes/auth/__tests__/auth.integration.test.ts` |
 | What the application does for every route: request IDs, requests it cannot read, a failing database, CORS, the rate limit, the probes, security headers | Integration | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | Server start-up and shutdown | Integration | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 | The migration runner, and the migrations of the repository | Integration | `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
@@ -80,7 +88,7 @@ their own. Their behaviour — transactions, the unique violation that becomes
 `alreadyExists`, soft delete, keyset pagination, a refresh token that only one
 of several parallel requests can use — is required to be covered through the
 endpoint tests, against a real database.
-`backend/packages/api/src/__tests__/service.integration.test.ts` also calls
+`backend/packages/api/src/routes/service/__tests__/service.integration.test.ts` also calls
 `ServiceRepository` directly, method by method, and writes rows past it to
 show what the constraints of `services` and `service_options` refuse.
 
@@ -164,7 +172,7 @@ Every endpoint has integration tests in the `api` package that cover:
 
 ### The Salon Endpoints as the Example
 
-Error scenarios in `backend/packages/api/src/__tests__/salon.integration.test.ts`:
+Error scenarios in `backend/packages/api/src/routes/salon/__tests__/salon.integration.test.ts`:
 
 | Endpoint | Error scenarios | Count |
 |----------|-----------------|-------|
@@ -177,9 +185,9 @@ Error scenarios in `backend/packages/api/src/__tests__/salon.integration.test.ts
 The two `GET` endpoints are public and have no scenario for a token. What the
 server does with a token that has expired, belongs to a signed-out session or
 belongs to a suspended, inactive or deleted user is covered in
-`backend/packages/api/src/__tests__/auth.integration.test.ts`. The 409 of a
+`backend/packages/api/src/routes/auth/__tests__/auth.integration.test.ts`. The 409 of a
 delete while a booking of the salon is not finished is covered in
-`backend/packages/api/src/__tests__/booking-references.integration.test.ts`,
+`backend/packages/api/src/routes/booking/__tests__/booking-references.integration.test.ts`,
 together with the same rule of the deletes of a customer, a staff member and
 a service.
 
@@ -257,7 +265,7 @@ A new domain follows the Salon tests file by file:
 - [ ] Mapper tests (`mappers/__tests__/<domain>.mapper.test.ts`): write and read mappers, including `null`, every change of representation, the criteria of a list (a filter the request does not name, and one whose value is `false` or 0) and the page of a list
 - [ ] `use-case-flow.test.ts` passes: it reads the new domain as it reads every other, without being told of it
 - [ ] Use case tests (`business-logic/<domain>/__tests__/<domain>.usecase.test.ts`; the tests of pure rules beside them): success, each error passed on, no repository call on invalid input; for an operation that is not public, every kind of actor allowed or refused
-- [ ] `backend/packages/api/src/__tests__/<domain>.integration.test.ts` meeting the [requirements per endpoint](#requirements-per-endpoint)
+- [ ] `backend/packages/api/src/routes/<domain>/__tests__/<domain>.integration.test.ts` meeting the [requirements per endpoint](#requirements-per-endpoint)
 - [ ] `pnpm test` and `pnpm test:integration` pass
 
 ## Running the Tests

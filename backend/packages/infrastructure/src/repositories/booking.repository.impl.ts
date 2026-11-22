@@ -87,8 +87,8 @@ import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { bookingsWithServices } from './booking-services'
-import { countBookingsOf } from './customer-counters'
+import { bookingsWithServices } from './_shared/booking-services'
+import { countBookingsOf } from './_shared/customer-counters'
 import {
   calendarDaysOf,
   millisecondsOf,
@@ -97,7 +97,7 @@ import {
   serviceLineStartsOf,
   takenOf,
   takesTime,
-} from './slot-reads'
+} from './_shared/slot-reads'
 
 /** The condition that keeps a query to the bookings a reader reaches. */
 const within = (reach: BookingReach): SQL | undefined =>
