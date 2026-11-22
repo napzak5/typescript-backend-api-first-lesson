@@ -188,7 +188,7 @@ test.describe('the services of the menu, on a screen as narrow as a phone', () =
     await expect(
       part(page, 'サービス').getByRole('textbox', { name: '名前' }),
     ).toHaveAccessibleDescription(
-      /サービスの名前を、255 文字までで入力してください。/,
+      /サービスの名前を、255 文字以内で入力してください。/,
     )
     await expect(
       part(page, '構成サービス 1').getByRole('combobox', { name: 'サービス' }),

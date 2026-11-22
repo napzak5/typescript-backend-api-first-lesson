@@ -32,7 +32,7 @@ this one: a component is not done without its stories and its test.
 | The page of a customer in the portal, and the form of their profile | `frontend/apps/portal-app/src/profile/` |
 | What a customer wishes for in the portal: the part of their page, and the screen of the form | `frontend/apps/portal-app/src/preferences/` |
 | What a customer wishes for, which the portal and the admin application share: the form with the rows of time slots, how it is read and what a refusal says, the staff it offers, a list written a line each, and how the record is shown (`PreferencesDetails`) | `frontend/packages/preferences/src/` |
-| The rules of the values a form takes, in every application and package: a day and the days a control offers (`isDay`, `EARLIEST_DAY`, `LATEST_DAY`), a name (`lastNameError`, `firstNameError`), an address of mail (`emailError`, `EMAIL_MALFORMED`), a telephone number (`phoneError`, `alternativePhoneError`), a text that is too long (`tooLong`, `lengthErrors`), a choice of a list (`choiceOf`, `UNLISTED_MESSAGE`), an address of the web (`webAddressOf`), and the record of a customer (`CUSTOMER_LENGTHS`, `GENDERS`, `SERVICE_CATEGORIES`, `birthDateError`, `basicPreferencesIn`, `shownBasicPreferencesOf`, `customerControlOf`, `customerRefusalOf`) | `frontend/packages/fields/src/` (`@beauty-salon-frontend/fields`) |
+| The rules of the values a form takes, in every application and package: a day and the days a control offers (`isDay`, `EARLIEST_DAY`, `LATEST_DAY`), a name (`lastNameError`, `firstNameError`), an address of mail (`emailError`, `EMAIL_MALFORMED`), a telephone number (`phoneError`, `alternativePhoneError`), the length of a text and what is said of one that is too long (`lengthOf`, `tooLong`, `tooLongOf`, `eachTooLongOf`, `neededWithin`, `tooLongError`, `neededError`, `lengthErrors`, `upTo`, `charactersOf`), a choice of a list (`choiceOf`, `UNLISTED_MESSAGE`), an address of the web (`webAddressOf`), and the record of a customer (`CUSTOMER_LENGTHS`, `GENDERS`, `SERVICE_CATEGORIES`, `birthDateError`, `basicPreferencesIn`, `shownBasicPreferencesOf`, `customerControlOf`, `customerRefusalOf`) | `frontend/packages/fields/src/` (`@beauty-salon-frontend/fields`) |
 | The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one; what a reader of the page of a salon does with the reviews of others (`reader-flow.ts`, the dialog that reports one) | `frontend/apps/portal-app/src/reviews/` |
 | Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
@@ -461,8 +461,7 @@ shortest).
 - **The rule of a value is written once**, in
   `@beauty-salon-frontend/fields`, with the sentence it says: a name, an
   address of mail, a telephone number, a day, a text that is too long
-  (`tooLong(most)`, and `lengthErrors` for the controls of a form that may
-  be left empty), a choice that is none of a list. A form calls the rule
+  (below), a choice that is none of a list. A form calls the rule
   and writes neither the pattern nor the sentence again, so the same value
   is told the same in the portal, in the ledger of a salon and where a
   member signs in. A record that two applications write (the customer:
@@ -471,6 +470,36 @@ shortest).
   (`customerControlOf`, `customerRefusalOf`); a form adds what it alone
   holds (the referrer and the referral code of the ledger). The package
   has no components and knows no screen.
+- **A length is counted in characters, as the API counts them**:
+  `lengthOf(text)` of `fields`, the code points, so 「𠮷」 and an emoji are
+  one where `text.length` says two. No form compares `text.length` with a
+  limit: it calls `lengthOf`, or `tooLongError(text, most, message)` for a
+  text that may be left empty (`null`) and `neededError(text, most,
+  message)` for one that has to be written. (A password is counted by a
+  rule of its own, after NFC: `password-rule.ts` of `session`.)
+- **The sentence of a text that is too long is one of four**, all of
+  `fields`, and none is written by hand: `tooLong(most)`
+  (「255 文字以内で入力してください。」) below a control that says it alone;
+  `tooLongOf(what, most)` (「仕入先は、255 文字以内で入力してください。」)
+  where the sentence names the text; `eachTooLongOf(what, most)`
+  (「技法の名前は、1 つ 100 文字以内で入力してください。」) for the entries
+  of a list; `neededWithin(what, most)`
+  (「商品名を、255 文字以内で入力してください。」) for a text that has to
+  be written, which says the same of one that is missing and of one too
+  long. A number of characters is written with its separator
+  (「2,000 文字」, `charactersOf(count)` for a sentence of another form).
+- **A description that names a length** is `upTo(most)` (「255 文字まで。」)
+  with the constant the check uses, exported by the module that reads the
+  form (`LONGEST_NAME` of `salon-form.ts`), never the number written again.
+  A `maxLength` of a control is counted by the browser in units of UTF-16:
+  it stops a text of characters outside the basic plane before the length
+  the API takes, and lets nothing through that the API refuses.
+- **A rule that two modules of a feature need is in one of them or in a
+  module of its own**, with its sentence: the keyword of a search
+  (`keywordError` of `salon-screens`), the supplier of a purchase order
+  (`supplierError` of `order-entry.ts`, which the list of the orders looks
+  for a supplier by), the lot number of a stock row (`lot-number.ts`, for
+  the form of a row and the view of the stock).
 - A form that stands alone on a screen is one column,
   `max-inline-size: var(--size-form-column)`.
 
@@ -1287,7 +1316,10 @@ writes what it read" holds; this is what comes on top.
 - **A search by a keyword is `KeywordSearch`** (`salon-screens`), a
   `FilterForm` with one control: a `search` landmark named after what it finds, the keyword (`keywordIn`
   of `keyword.ts` there: trimmed, at most 100 characters, none when blank) in
-  a parameter of the address, and a link that clears it. Nothing is asked
+  a parameter of the address, and a link that clears it. A search with
+  other conditions (the customer ledger, the product ledger, the charts)
+  says a keyword that is too long at its control, with `keywordError` of
+  the same module. Nothing is asked
   of the API without a keyword where the list would be the whole ledger
   (the customers).
 - **A screen of steps keeps its steps in the address**
