@@ -1,5 +1,6 @@
 import {
   answering,
+  asked,
   problem,
   record,
   UNREAD,
@@ -104,13 +105,9 @@ describe('the sales report', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', report })
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(asked.pathname).toBe('/api/v1/sales-reports')
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      salonId: SALON_ID,
-      startDate: '2026-11-01',
-      endDate: '2026-11-21',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /sales-reports?endDate=2026-11-21&salonId=${SALON_ID}&startDate=2026-11-01`,
+    ])
   })
 
   it('should ask for the trend of the period, cut into the parts chosen', async () => {
@@ -122,14 +119,9 @@ describe('the sales report', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', trends })
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(asked.pathname).toBe('/api/v1/sales-reports/trends')
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      salonId: SALON_ID,
-      startDate: '2026-11-01',
-      endDate: '2026-11-21',
-      period: 'weekly',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /sales-reports/trends?endDate=2026-11-21&period=weekly&salonId=${SALON_ID}&startDate=2026-11-01`,
+    ])
   })
 
   it.each<[string, () => Promise<unknown>, unknown, string, unknown]>([
@@ -137,19 +129,19 @@ describe('the sales report', () => {
       'every member of the staff',
       () => readSalesByStaff(SALON_ID, PERIOD),
       byStaff,
-      '/api/v1/sales-reports/by-staff',
+      'by-staff',
       { type: 'found', staff: byStaff },
     ],
     [
       'every kind of service',
       () => readSalesByCategory(SALON_ID, PERIOD),
       byCategory,
-      '/api/v1/sales-reports/by-category',
+      'by-category',
       { type: 'found', categories: byCategory },
     ],
   ])(
     'should ask for the sales of the period of %s',
-    async (_case, readOf, data, path, found) => {
+    async (_case, readOf, data, operation, found) => {
       // Arrange
       const fetched = answering(() => record(200, data))
 
@@ -158,13 +150,9 @@ describe('the sales report', () => {
 
       // Assert
       expect(read).toEqual(found)
-      const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-      expect(asked.pathname).toBe(path)
-      expect(Object.fromEntries(asked.searchParams)).toEqual({
-        salonId: SALON_ID,
-        startDate: '2026-11-01',
-        endDate: '2026-11-21',
-      })
+      expect(asked(fetched)).toEqual([
+        `GET /sales-reports/${operation}?endDate=2026-11-21&salonId=${SALON_ID}&startDate=2026-11-01`,
+      ])
     },
   )
 
@@ -196,12 +184,9 @@ describe('the sales report', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', sales: daily })
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(asked.pathname).toBe('/api/v1/sales-reports/daily')
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      salonId: SALON_ID,
-      date: '2026-11-21',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /sales-reports/daily?date=2026-11-21&salonId=${SALON_ID}`,
+    ])
   })
 
   it('should keep the file of the period as the API wrote it, under the name it gave', async () => {
@@ -222,13 +207,9 @@ describe('the sales report', () => {
         content: CSV,
       },
     })
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(asked.pathname).toBe('/api/v1/sales-reports/export')
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      salonId: SALON_ID,
-      startDate: '2026-11-01',
-      endDate: '2026-11-21',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /sales-reports/export?endDate=2026-11-21&salonId=${SALON_ID}&startDate=2026-11-01`,
+    ])
   })
 
   it('should save nothing of a file the answer names no name for', async () => {

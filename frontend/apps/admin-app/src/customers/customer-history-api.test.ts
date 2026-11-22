@@ -1,5 +1,6 @@
 import {
   answering,
+  asked,
   json,
   page,
   UNREAD,
@@ -82,9 +83,7 @@ describe('readVersion', () => {
     await readVersion(id, '2147483647')
 
     // Assert
-    expect(new URL(String(fetched.mock.calls[0]?.[0])).pathname).toBe(
-      `/api/v1/customers/${id}/versions/2147483647`,
-    )
+    expect(asked(fetched)).toEqual([`GET /customers/${id}/versions/2147483647`])
   })
 })
 

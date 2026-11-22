@@ -1,5 +1,6 @@
 import {
   answering,
+  asked,
   page,
   problem,
   UNREAD,
@@ -46,15 +47,9 @@ describe('readAllergyPage', () => {
       total: 3,
       nextCursor: null,
     })
-    const [asked] = fetched.mock.calls[0] ?? []
-    const url = new URL(new Request(asked ?? '').url)
-    expect(url.pathname).toMatch(
-      new RegExp(`/medical-charts/customer/${customer.id}/allergies$`),
-    )
-    expect(Object.fromEntries(url.searchParams)).toEqual({
-      cursor: allergy.id,
-      limit: '20',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /medical-charts/customer/${customer.id}/allergies?cursor=${allergy.id}&limit=20`,
+    ])
   })
 
   it.each<[string, () => Response]>([
@@ -101,11 +96,10 @@ describe('findAllergy', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', allergy: last })
-    expect(
-      fetched.mock.calls.map(([asked]) =>
-        Object.fromEntries(new URL(new Request(asked).url).searchParams),
-      ),
-    ).toEqual([{ limit: '100' }, { cursor, limit: '100' }])
+    expect(asked(fetched)).toEqual([
+      `GET /medical-charts/customer/${customer.id}/allergies?limit=100`,
+      `GET /medical-charts/customer/${customer.id}/allergies?cursor=${cursor}&limit=100`,
+    ])
   })
 
   it('should not find an allergy that is not among those of the customer', async () => {

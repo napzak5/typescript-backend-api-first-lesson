@@ -1,10 +1,12 @@
 import {
   answering,
+  asked,
   empty,
   OUTSIDE_THE_CONTRACT,
   pageOfAGateway,
   problem,
   record,
+  sent,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { consent, photo } from './components/examples'
@@ -27,22 +29,6 @@ const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 afterEach(() => {
   vi.unstubAllGlobals()
 })
-
-/** The methods, the addresses and the bodies of the requests that were sent */
-const askedOf = (fetched: ReturnType<typeof answering>) =>
-  Promise.all(
-    fetched.mock.calls.map(async ([asked, init]) => {
-      const request = new Request(asked, init)
-      const url = new URL(request.url)
-      const body = await request.text()
-
-      return [
-        request.method,
-        url.origin === STORAGE ? `${url.origin}${url.pathname}` : url.pathname,
-        body === '' ? body : JSON.parse(body),
-      ]
-    }),
-  )
 
 const UNREAD: [string, Answer, string][] = [
   ['too many requests', () => problem(429), 'tooManyRequests'],
@@ -76,9 +62,8 @@ describe('readSharedFile', () => {
 
       // Assert
       expect(read).toEqual({ type: 'found', file: photo })
-      expect(await askedOf(fetched)).toEqual([
-        ['POST', '/api/v1/share/file', { token: TOKEN, password }],
-      ])
+      expect(asked(fetched)).toEqual(['POST /share/file'])
+      expect(await sent(fetched)).toEqual([{ token: TOKEN, password }])
     },
   )
 
@@ -147,13 +132,12 @@ describe('loadSharedFile', () => {
     const content = load.type === 'loaded' ? load.content : new Blob()
     expect(content.type).toBe('image/png')
     expect(new Uint8Array(await content.arrayBuffer())).toEqual(PNG)
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'POST',
-        '/api/v1/share/download-url',
-        { token: TOKEN, password: 'umi no mieru heya', inline: false },
-      ],
-      ['GET', `${STORAGE}/attachments-of-a-salon/attachments/1`, ''],
+    expect(asked(fetched)).toEqual([
+      'POST /share/download-url',
+      `GET ${DOWNLOAD_URL}`,
+    ])
+    expect(await sent(fetched)).toEqual([
+      { token: TOKEN, password: 'umi no mieru heya', inline: false },
     ])
     const [, toStorage] = fetched.mock.calls[1] ?? []
     expect(toStorage).toBeUndefined()
@@ -167,9 +151,7 @@ describe('loadSharedFile', () => {
     await loadSharedFile(TOKEN, null, consent)
 
     // Assert
-    expect(await askedOf(fetched)).toContainEqual([
-      'POST',
-      '/api/v1/share/download-url',
+    expect(await sent(fetched)).toEqual([
       { token: TOKEN, password: null, inline: false },
     ])
   })

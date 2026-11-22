@@ -1,9 +1,11 @@
 import type { ModelsCustomerCreateRequest } from '@beauty-salon-frontend/api-client'
 import {
   answering,
+  asked,
   page,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -52,10 +54,8 @@ describe('readCustomers', () => {
 
     // Assert
     expect(read.type === 'found' && [...read.customers.keys()]).toEqual(ids)
-    expect(fetched).toHaveBeenCalledTimes(1)
-    expect(JSON.parse(String(fetched.mock.calls[0]?.[1]?.body))).toEqual({
-      ids,
-    })
+    expect(asked(fetched)).toEqual(['POST /customers/batch/get'])
+    expect(await sent(fetched)).toEqual([{ ids }])
   })
 
   it('should ask for nothing when there is nobody to read', async () => {
@@ -169,13 +169,9 @@ describe('findCustomers', () => {
       total: 42,
       nextCursor: ichiro?.id,
     })
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(asked.pathname).toBe('/api/v1/customers')
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      search: '山田',
-      cursor: hanako?.id,
-      limit: '20',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /customers?cursor=${hanako?.id}&limit=20&search=山田`,
+    ])
   })
 
   it.each([
@@ -277,16 +273,8 @@ describe('readCustomerPage', () => {
       total: 2,
       nextCursor: null,
     })
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(asked.pathname).toBe(CUSTOMERS)
-    expect([...asked.searchParams]).toEqual([
-      ['search', '山田'],
-      ['tags', 'VIP'],
-      ['tags', '常連'],
-      ['registeredFrom', '2026-10-31T15:00:00.000Z'],
-      ['customerStatus', 'vip'],
-      ['cursor', hanako?.id],
-      ['limit', '20'],
+    expect(asked(fetched)).toEqual([
+      `GET /customers?cursor=${hanako?.id}&customerStatus=vip&limit=20&registeredFrom=2026-10-31T15:00:00.000Z&search=山田&tags=VIP&tags=常連`,
     ])
   })
 
@@ -314,22 +302,20 @@ describe('attemptCustomerEntry and attemptCustomerChange', () => {
 
   const customer = aCustomer()
 
-  it.each<[string, () => Promise<{ type: string }>, string, string, unknown]>([
+  it.each<[string, () => Promise<{ type: string }>, string, unknown]>([
     [
       'a registration',
       () => attemptCustomerEntry(ENTRY),
-      CUSTOMERS,
-      'POST',
+      'POST /customers',
       ENTRY,
     ],
     [
       'a change',
       () => attemptCustomerChange(customer.id, { tags: ['VIP'] }),
-      `${CUSTOMERS}/${customer.id}`,
-      'PATCH',
+      `PATCH /customers/${customer.id}`,
       { tags: ['VIP'] },
     ],
-  ])('should send %s', async (_what, call, path, method, body) => {
+  ])('should send %s', async (_what, call, line, body) => {
     // Arrange
     const fetched = answering(() => problem(500))
 
@@ -337,10 +323,8 @@ describe('attemptCustomerEntry and attemptCustomerChange', () => {
     await call()
 
     // Assert
-    const [input, init] = fetched.mock.calls[0] ?? []
-    expect(new URL(String(input)).pathname).toBe(path)
-    expect(init?.method).toBe(method)
-    expect(JSON.parse(String(init?.body))).toEqual(body)
+    expect(asked(fetched)).toEqual([line])
+    expect(await sent(fetched)).toEqual([body])
   })
 
   describe.each<[string, () => Promise<{ type: string }>]>([
@@ -378,11 +362,10 @@ describe('attemptCustomerEntry and attemptCustomerChange', () => {
 
     // Assert
     expect(attempt).toEqual({ type: 'duplicate', field: 'email' })
-    const asked = new URL(String(fetched.mock.calls[1]?.[0]))
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      search: 'Hanako@Example.com',
-      limit: '100',
-    })
+    expect(asked(fetched)).toEqual([
+      'POST /customers',
+      'GET /customers?limit=100&search=Hanako@Example.com',
+    ])
   })
 
   it("should say the referral code is another customer's, when nobody else has the address of mail", async () => {
@@ -602,13 +585,9 @@ describe('readStatistics', () => {
     })
 
     // Assert
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(asked.pathname).toBe(`${CUSTOMERS}/${customer.id}/statistics`)
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      salonId: 'salon',
-      startDate: '2025-11-20',
-      endDate: '2026-11-20',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /customers/${customer.id}/statistics?endDate=2026-11-20&salonId=salon&startDate=2025-11-20`,
+    ])
   })
 
   it.each([

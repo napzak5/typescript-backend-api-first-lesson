@@ -1,6 +1,7 @@
 import type { ModelsTreatmentPhotoCreateRequest } from '@beauty-salon-frontend/api-client'
 import {
   answering,
+  asked,
   page,
   problem,
   record,
@@ -135,18 +136,9 @@ describe('findTreatmentOfBooking', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', record: treatment })
-    expect(
-      fetched.mock.calls.map(([asked]) =>
-        Object.fromEntries(new URL(new Request(asked).url).searchParams),
-      ),
-    ).toEqual([
-      { salonId: salon.id, customerId: treatment.customerId, limit: '100' },
-      {
-        salonId: salon.id,
-        customerId: treatment.customerId,
-        cursor: other.id,
-        limit: '100',
-      },
+    expect(asked(fetched)).toEqual([
+      `GET /treatments?customerId=${treatment.customerId}&limit=100&salonId=${salon.id}`,
+      `GET /treatments?cursor=${other.id}&customerId=${treatment.customerId}&limit=100&salonId=${salon.id}`,
     ])
   })
 
@@ -427,16 +419,8 @@ describe('readTreatmentStatistics', () => {
         topServices: [],
       },
     })
-    expect(
-      fetched.mock.calls.map(([asked]) =>
-        Object.fromEntries(new URL(new Request(asked).url).searchParams),
-      ),
-    ).toEqual([
-      {
-        salonId: salon.id,
-        startDate: '2026-10-31T15:00:00.000Z',
-        endDate: '2026-11-20T14:59:59.999Z',
-      },
+    expect(asked(fetched)).toEqual([
+      `GET /treatments/statistics?endDate=2026-11-20T14:59:59.999Z&salonId=${salon.id}&startDate=2026-10-31T15:00:00.000Z`,
     ])
   })
 

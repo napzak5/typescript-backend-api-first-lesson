@@ -1,10 +1,12 @@
 import {
   answering,
+  asked,
   empty,
   json,
   OUTSIDE_THE_CONTRACT,
   pageOfAGateway,
   problem,
+  sent,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -231,11 +233,9 @@ describe('the operations of an account', () => {
 
     await resetPassword(TOKEN, PASSWORD)
 
-    const [url, init] = fetched.mock.calls[0] ?? []
-    expect(String(url)).toBe('http://localhost:3000/api/v1/auth/reset-password')
-    expect(init).toMatchObject({
-      method: 'POST',
-      body: JSON.stringify({ token: TOKEN, newPassword: PASSWORD }),
-    })
+    expect(asked(fetched)).toEqual(['POST /auth/reset-password'])
+    expect(await sent(fetched)).toEqual([
+      { token: TOKEN, newPassword: PASSWORD },
+    ])
   })
 })

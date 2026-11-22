@@ -1,9 +1,11 @@
 import {
   answering,
+  asked,
   empty,
   page,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -172,16 +174,9 @@ describe('the functions that call the API', () => {
     )
 
     // Assert
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      salonId: salon.id,
-      bookingDateFrom: '2026-11-20',
-      bookingDateTo: '2026-11-20',
-      status: 'confirmed',
-      staffId: booking.staffId,
-      cursor: booking.id,
-      limit: '50',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /bookings?bookingDateFrom=2026-11-20&bookingDateTo=2026-11-20&cursor=${booking.id}&limit=50&salonId=${salon.id}&staffId=${booking.staffId}&status=confirmed`,
+    ])
   })
 
   it.each<[string, string, string]>([
@@ -242,10 +237,10 @@ describe('the functions that call the API', () => {
 
       // Assert
       expect(outcome).toEqual({ type: 'conflict' })
-      expect(String(fetched.mock.calls[0]?.[0])).toBe(
-        `http://localhost:3000/api/v1/bookings/${booking.id}/${operation}`,
-      )
-      expect(JSON.parse(String(fetched.mock.calls[0]?.[1]?.body))).toEqual(body)
+      expect(asked(fetched)).toEqual([
+        `POST /bookings/${booking.id}/${operation}`,
+      ])
+      expect(await sent(fetched)).toEqual([body])
     },
   )
 
@@ -293,10 +288,8 @@ describe('the functions that call the API', () => {
 
     // Assert
     expect(outcome).toEqual({ type: 'created', booking })
-    const [input, init] = fetched.mock.calls[0] ?? []
-    expect(String(input)).toBe('http://localhost:3000/api/v1/bookings')
-    expect(init?.method).toBe('POST')
-    expect(JSON.parse(String(init?.body))).toEqual(CREATION)
+    expect(asked(fetched)).toEqual(['POST /bookings'])
+    expect(await sent(fetched)).toEqual([CREATION])
   })
 
   it('createBooking should say that a member is taken, without telling it from the other conflict', async () => {
@@ -322,15 +315,10 @@ describe('the functions that call the API', () => {
 
     // Assert
     expect(outcome).toEqual({ type: 'notFound' })
-    const [input, init] = fetched.mock.calls[0] ?? []
-    expect(String(input)).toBe(
-      `http://localhost:3000/api/v1/bookings/${booking.id}`,
-    )
-    expect(init?.method).toBe('PATCH')
-    expect(JSON.parse(String(init?.body))).toEqual({
-      customerRequest: null,
-      source: 'walk_in',
-    })
+    expect(asked(fetched)).toEqual([`PATCH /bookings/${booking.id}`])
+    expect(await sent(fetched)).toEqual([
+      { customerRequest: null, source: 'walk_in' },
+    ])
   })
 
   it.each([
@@ -350,7 +338,7 @@ describe('the functions that call the API', () => {
 
     // Assert
     expect(outcome).toEqual(removal)
-    expect(fetched.mock.calls[0]?.[1]?.method).toBe('DELETE')
+    expect(asked(fetched)).toEqual([`DELETE /bookings/${booking.id}`])
   })
 
   it.each([403, 404, 400])(
@@ -414,11 +402,12 @@ describe('the functions that call the API', () => {
 
       // Assert
       expect(check).toEqual({ type: 'taken', overlapping: [taken] })
-      const [input, init] = fetched.mock.calls[0] ?? []
-      expect(String(input)).toBe(
-        `http://localhost:3000/api/v1/salons/${salon.id}/available-slots/check`,
-      )
-      expect(JSON.parse(String(init?.body))).toEqual(SLOT)
+      expect(asked(fetched)).toEqual([
+        `POST /salons/${salon.id}/available-slots/check`,
+        `GET /bookings/${taken.id}`,
+        `GET /bookings/${GONE}`,
+      ])
+      expect(await sent(fetched)).toEqual([SLOT])
     })
 
     it('should say that the member is free beside the bookings that overlap', async () => {
@@ -542,11 +531,10 @@ describe('the attempts that find out why the API refused', () => {
 
     // Assert
     expect(attempt).toEqual({ type: 'unmovable', booking: begun })
-    expect(
-      fetched.mock.calls.filter(([input]) =>
-        String(input).endsWith('/available-slots/check'),
-      ),
-    ).toEqual([])
+    expect(asked(fetched)).toEqual([
+      `POST /bookings/${booking.id}/reschedule`,
+      `GET /bookings/${booking.id}`,
+    ])
   })
 
   it.each<[string, () => Response | Promise<Response>, string]>([

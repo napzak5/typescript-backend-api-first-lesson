@@ -3,6 +3,7 @@ import {
   answering,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -123,14 +124,9 @@ describe('sameSchedule', () => {
 describe('attemptScheduleSave', () => {
   it('should replace a schedule that is as the form opened it, and give what the API holds then', async () => {
     // Arrange
-    const sent: unknown[] = []
-    const fetched = answering(async (asked) => {
-      if (asked.method === 'PUT') {
-        sent.push(await asked.json())
-        return schedule(aWeek())
-      }
-      return schedule(aSchedule())
-    })
+    const fetched = answering((request) =>
+      request.method === 'PUT' ? schedule(aWeek()) : schedule(aSchedule()),
+    )
 
     // Act
     const outcome = await attemptScheduleSave(
@@ -142,7 +138,7 @@ describe('attemptScheduleSave', () => {
 
     // Assert
     expect(outcome).toEqual({ type: 'saved', rows: aWeek() })
-    expect(sent).toEqual([aWeek()])
+    expect(await sent(fetched)).toEqual([aWeek()])
     expect(fetched).toHaveBeenCalledTimes(2)
   })
 
@@ -182,7 +178,7 @@ describe('attemptScheduleSave', () => {
     ...UNREAD,
   ])('should fail after %s', async (_, answer, type) => {
     // Arrange
-    answering((asked) => (asked.method === 'PUT' ? answer() : schedule([])))
+    answering((request) => (request.method === 'PUT' ? answer() : schedule([])))
 
     // Act
     const outcome = await attemptScheduleSave(SALON, MEMBER, [], aWeek())
@@ -193,8 +189,8 @@ describe('attemptScheduleSave', () => {
 
   it('should give the values the API refused, by their places in the request', async () => {
     // Arrange
-    answering((asked) =>
-      asked.method === 'PUT'
+    answering((request) =>
+      request.method === 'PUT'
         ? problem(400, [{ field: '0.endTime', rule: 'custom' }])
         : schedule([]),
     )

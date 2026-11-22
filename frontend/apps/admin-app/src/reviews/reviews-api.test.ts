@@ -1,9 +1,11 @@
 import {
   answering,
+  asked,
   empty,
   page,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -36,23 +38,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** The methods, the paths, the queries and the bodies of the requests that were sent */
-const askedOf = (fetched: ReturnType<typeof answering>) =>
-  Promise.all(
-    fetched.mock.calls.map(async ([asked, init]) => {
-      const request = new Request(asked, init)
-      const url = new URL(request.url)
-      const body = await request.text()
-
-      return [
-        request.method,
-        url.pathname,
-        Object.fromEntries(url.searchParams),
-        body === '' ? null : JSON.parse(body),
-      ]
-    }),
-  )
-
 describe('reviewsKeyOf and reviewKeyOf', () => {
   it('should read the reviews below the salon, and a review by its ID in small letters', () => {
     expect(reviewsKeyOf(salon.id)).toEqual(['salons', salon.id, 'reviews'])
@@ -73,9 +58,7 @@ describe('readReviewSummary', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', summary: summaryOfTheSalon })
-    expect(await askedOf(fetched)).toEqual([
-      ['GET', `/api/v1/salons/${salon.id}/reviews/summary`, {}, null],
-    ])
+    expect(asked(fetched)).toEqual([`GET /salons/${salon.id}/reviews/summary`])
   })
 
   it.each<[string, Answer, string]>([
@@ -118,21 +101,8 @@ describe('readReviewPage', () => {
       total: 23,
       nextCursor: 'next',
     })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'GET',
-        '/api/v1/reviews',
-        {
-          salonId: salon.id,
-          minRating: '2',
-          maxRating: '4',
-          staffId: staff[0]?.id,
-          sortBy: 'helpful',
-          cursor: 'cursor',
-          limit: '20',
-        },
-        null,
-      ],
+    expect(asked(fetched)).toEqual([
+      `GET /reviews?cursor=cursor&limit=20&maxRating=4&minRating=2&salonId=${salon.id}&sortBy=helpful&staffId=${staff[0]?.id}`,
     ])
   })
 
@@ -161,9 +131,7 @@ describe('readReview', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', review: answeredReview })
-    expect(await askedOf(fetched)).toEqual([
-      ['GET', `/api/v1/reviews/${answeredReview.id}`, {}, null],
-    ])
+    expect(asked(fetched)).toEqual([`GET /reviews/${answeredReview.id}`])
   })
 
   it.each<[string, Answer, string]>([
@@ -195,14 +163,10 @@ describe('respondToReview', () => {
 
     // Assert
     expect(responding).toEqual({ type: 'responded', review: answeredReview })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'POST',
-        `/api/v1/reviews/${answeredReview.id}/respond`,
-        {},
-        { ownerResponse },
-      ],
+    expect(asked(fetched)).toEqual([
+      `POST /reviews/${answeredReview.id}/respond`,
     ])
+    expect(await sent(fetched)).toEqual([{ ownerResponse }])
   })
 
   it('should hand over the values the API refused', async () => {
@@ -252,13 +216,11 @@ describe('reportReview', () => {
 
     // Assert
     expect(reporting).toEqual({ type: 'reported' })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'POST',
-        `/api/v1/reviews/${answeredReview.id}/report`,
-        {},
-        { reason: 'other', details: '同じ内容が 3 回投稿されています。' },
-      ],
+    expect(asked(fetched)).toEqual([
+      `POST /reviews/${answeredReview.id}/report`,
+    ])
+    expect(await sent(fetched)).toEqual([
+      { reason: 'other', details: '同じ内容が 3 回投稿されています。' },
     ])
   })
 
@@ -311,9 +273,8 @@ describe('removeReview', () => {
 
     // Assert
     expect(removal).toEqual({ type: 'removed' })
-    expect(await askedOf(fetched)).toEqual([
-      ['DELETE', `/api/v1/reviews/${answeredReview.id}`, {}, null],
-    ])
+    expect(asked(fetched)).toEqual([`DELETE /reviews/${answeredReview.id}`])
+    expect(await sent(fetched)).toEqual([])
   })
 
   it.each<[string, Answer, string]>([

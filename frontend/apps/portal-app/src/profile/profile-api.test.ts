@@ -172,7 +172,7 @@ describe('the operations of the screens of a profile', () => {
         profile: { id: 'me' },
       })
       expect(asked(fetched)).toEqual(['POST /customers/me'])
-      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(PROFILE) })
+      expect(await sent(fetched)).toEqual([PROFILE])
     })
 
     it('should say that the API refused it when it answers with a conflict', async () => {
@@ -191,7 +191,7 @@ describe('the operations of the screens of a profile', () => {
         profile: { id: 'me' },
       })
       expect(asked(fetched)).toEqual(['PATCH /customers/me'])
-      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(CHANGES) })
+      expect(await sent(fetched)).toEqual([CHANGES])
     })
 
     it('should say that the profile is gone when the API finds none', async () => {

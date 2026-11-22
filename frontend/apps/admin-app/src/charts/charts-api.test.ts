@@ -1,8 +1,10 @@
 import {
   answering,
+  asked,
   page,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -48,10 +50,9 @@ describe('readChart', () => {
 
     // Assert
     expect(read).toEqual({ type: 'read', chart })
-    const [asked] = fetched.mock.calls[0] ?? []
-    expect(new Request(asked ?? '').url).toMatch(
-      new RegExp(`/medical-charts/customer/${customer.id}$`),
-    )
+    expect(asked(fetched)).toEqual([
+      `GET /medical-charts/customer/${customer.id}`,
+    ])
   })
 
   it('should take 404 as no chart', async () => {
@@ -103,10 +104,10 @@ describe('chartListParamsOf', () => {
     ],
   ])('should ask for %s', (_, conditions, params) => {
     // Act
-    const asked = chartListParamsOf(conditions)
+    const made = chartListParamsOf(conditions)
 
     // Assert
-    expect(asked).toEqual(params)
+    expect(made).toEqual(params)
   })
 })
 
@@ -233,11 +234,8 @@ describe('updateChart', () => {
 
     // Assert
     expect(outcome).toEqual({ type: 'written', chart })
-    const [asked, init] = fetched.mock.calls[0] ?? []
-    const sent = new Request(asked ?? '', init)
-    expect(sent.method).toBe('PATCH')
-    expect(sent.url).toMatch(new RegExp(`/medical-charts/${chart.id}$`))
-    expect(await sent.json()).toEqual({ notes: null })
+    expect(asked(fetched)).toEqual([`PATCH /medical-charts/${chart.id}`])
+    expect(await sent(fetched)).toEqual([{ notes: null }])
   })
 
   it.each<[string, () => Response, string]>([

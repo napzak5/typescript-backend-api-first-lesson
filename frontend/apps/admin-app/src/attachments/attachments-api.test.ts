@@ -1,9 +1,11 @@
 import {
   answering,
+  asked,
   empty,
   page,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -30,23 +32,6 @@ type Answer = () => Response | Promise<Response>
 afterEach(() => {
   vi.unstubAllGlobals()
 })
-
-/** The methods, the addresses, the queries and the bodies of the requests that were sent */
-const askedOf = (fetched: ReturnType<typeof answering>) =>
-  Promise.all(
-    fetched.mock.calls.map(async ([asked, init]) => {
-      const request = new Request(asked, init)
-      const url = new URL(request.url)
-      const body = await request.text()
-
-      return [
-        request.method,
-        `${url.origin === 'https://storage.salon.example' ? url.origin : ''}${url.pathname}`,
-        Object.fromEntries(url.searchParams),
-        body === '' || request.method === 'PUT' ? body : JSON.parse(body),
-      ]
-    }),
-  )
 
 const STORAGE = 'https://storage.salon.example'
 const UPLOAD_URL = `${STORAGE}/attachments-of-a-salon/attachments/${photo.id}?X-Amz-Signature=abc`
@@ -115,13 +100,8 @@ describe('readAttachmentPage', () => {
       total: 23,
       nextCursor: 'next',
     })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'GET',
-        '/api/v1/attachments',
-        { salonId: salon.id, cursor: 'cursor', limit: '20' },
-        '',
-      ],
+    expect(asked(fetched)).toEqual([
+      `GET /attachments?cursor=cursor&limit=20&salonId=${salon.id}`,
     ])
   })
 
@@ -151,9 +131,7 @@ describe('readAttachment', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', attachment: photo })
-    expect(await askedOf(fetched)).toEqual([
-      ['GET', `/api/v1/attachments/${photo.id}`, {}, ''],
-    ])
+    expect(asked(fetched)).toEqual([`GET /attachments/${photo.id}`])
   })
 
   it.each<[string, Answer, string]>([
@@ -181,7 +159,7 @@ describe('readDownloadUrl', () => {
   it.each<[string, boolean, string]>([
     ['shows the file in the browser', true, 'true'],
     ['saves the file under its name', false, 'false'],
-  ])('should ask for the URL that %s', async (_, inline, asked) => {
+  ])('should ask for the URL that %s', async (_, inline, written) => {
     // Arrange
     const fetched = answering(() =>
       record(200, {
@@ -199,13 +177,8 @@ describe('readDownloadUrl', () => {
       url: `${STORAGE}/file`,
       expiresAt: '2026-11-21T03:05:00.000Z',
     })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'GET',
-        `/api/v1/attachments/${photo.id}/download-url`,
-        { inline: asked },
-        '',
-      ],
+    expect(asked(fetched)).toEqual([
+      `GET /attachments/${photo.id}/download-url?inline=${written}`,
     ])
   })
 
@@ -236,28 +209,22 @@ describe('uploadAttachment', () => {
 
     // Assert
     expect(uploading).toEqual({ type: 'uploaded', attachment: photo })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'POST',
-        '/api/v1/attachments/upload-url',
-        {},
-        {
-          filename: '施術前.jpg',
-          contentType: 'image/jpeg',
-          size: 6,
-          salonId: salon.id,
-        },
-      ],
-      [
-        'PUT',
-        `${STORAGE}/attachments-of-a-salon/attachments/${photo.id}`,
-        { 'X-Amz-Signature': 'abc' },
-        new TextDecoder().decode(BYTES),
-      ],
-      ['POST', `/api/v1/attachments/${photo.id}/complete`, {}, ''],
+    expect(asked(fetched)).toEqual([
+      'POST /attachments/upload-url',
+      `PUT ${UPLOAD_URL}`,
+      `POST /attachments/${photo.id}/complete`,
     ])
-    const [, sent] = fetched.mock.calls[1] ?? []
-    const headers = new Headers(sent?.headers)
+    expect(await sent(fetched)).toEqual([
+      {
+        filename: '施術前.jpg',
+        contentType: 'image/jpeg',
+        size: 6,
+        salonId: salon.id,
+      },
+      [...new Uint8Array(BYTES)],
+    ])
+    const [, toStorage] = fetched.mock.calls[1] ?? []
+    const headers = new Headers(toStorage?.headers)
     expect(headers.get('content-type')).toBe('image/jpeg')
     expect(headers.get('if-none-match')).toBe('*')
   })
@@ -359,9 +326,8 @@ describe('removeAttachment', () => {
 
     // Assert
     expect(removal).toEqual({ type: 'removed' })
-    expect(await askedOf(fetched)).toEqual([
-      ['DELETE', `/api/v1/attachments/${photo.id}`, {}, ''],
-    ])
+    expect(asked(fetched)).toEqual([`DELETE /attachments/${photo.id}`])
+    expect(await sent(fetched)).toEqual([])
   })
 
   it.each<[string, Answer, string]>([

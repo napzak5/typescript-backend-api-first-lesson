@@ -1,8 +1,10 @@
 import {
   answering,
+  asked,
   problem,
   problemWithCode,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -79,9 +81,9 @@ describe('registerCustomers', () => {
 
     // Assert
     expect(attempt).toEqual({ type: 'registered', count: 1 })
-    expect(JSON.parse(String(fetched.mock.calls[0]?.[1]?.body))).toEqual({
-      items: FILE.map(({ request }) => request),
-    })
+    expect(await sent(fetched)).toEqual([
+      { items: FILE.map(({ request }) => request) },
+    ])
   })
 
   it.each<[string, () => Response | Promise<Response>, string]>([
@@ -140,11 +142,7 @@ describe('retagCustomers', () => {
 
       // Assert
       expect(attempt).toEqual({ type })
-      expect(
-        fetched.mock.calls.every(([input]) =>
-          String(input).endsWith('/batch/get'),
-        ),
-      ).toBe(true)
+      expect(asked(fetched)).toEqual(['POST /customers/batch/get'])
     },
   )
 

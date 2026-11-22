@@ -3,6 +3,7 @@ import {
   empty,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -44,18 +45,14 @@ describe('mayKeepSalon', () => {
 describe('changeSalon', () => {
   it('should send only what it is given, and give the salon the API wrote', async () => {
     // Arrange
-    const sent: unknown[] = []
-    answering(async (asked) => {
-      sent.push(await asked.json())
-      return record(200, salon)
-    })
+    const fetched = answering(() => record(200, salon))
 
     // Act
     const written = await changeSalon(salon.id, { taxRate: 8 })
 
     // Assert
     expect(written).toEqual({ type: 'written', salon })
-    expect(sent).toEqual([{ taxRate: 8 }])
+    expect(await sent(fetched)).toEqual([{ taxRate: 8 }])
   })
 
   it.each<[string, Answer, string]>([
@@ -130,18 +127,14 @@ const NEW_SALON_REQUEST = {
 describe('addSalon', () => {
   it('should send what it is given, and give the salon the API wrote', async () => {
     // Arrange
-    const sent: unknown[] = []
-    answering(async (asked) => {
-      sent.push(await asked.json())
-      return record(201, salon)
-    })
+    const fetched = answering(() => record(201, salon))
 
     // Act
     const added = await addSalon(NEW_SALON_REQUEST)
 
     // Assert
     expect(added).toEqual({ type: 'added', salon })
-    expect(sent).toEqual([NEW_SALON_REQUEST])
+    expect(await sent(fetched)).toEqual([NEW_SALON_REQUEST])
   })
 
   it.each<[string, Answer, string]>([

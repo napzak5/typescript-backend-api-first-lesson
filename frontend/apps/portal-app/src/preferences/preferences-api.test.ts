@@ -384,8 +384,8 @@ describe('the operations of the screens of the preferences', () => {
         [
           'GET /customers/me/preferences',
           'GET /customers/me/bookings?limit=100',
-          `GET /staff-profiles?salonId=${TOKYO.id}&limit=100`,
-          `GET /staff-profiles?salonId=${OSAKA.id}&limit=100`,
+          `GET /staff-profiles?limit=100&salonId=${TOKYO.id}`,
+          `GET /staff-profiles?limit=100&salonId=${OSAKA.id}`,
           `GET /salons/${TOKYO.id}`,
           `GET /salons/${OSAKA.id}`,
         ].toSorted(),
@@ -494,7 +494,7 @@ describe('the operations of the screens of the preferences', () => {
         preferences: noPreferences,
       })
       expect(asked(fetched)).toEqual(['PATCH /customers/me/preferences'])
-      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(CHANGES) })
+      expect(await sent(fetched)).toEqual([CHANGES])
     })
 
     it.each([

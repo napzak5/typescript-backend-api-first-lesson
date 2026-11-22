@@ -1,8 +1,10 @@
 import {
   answering,
+  asked,
   json,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -26,21 +28,6 @@ type Answer = () => Response | Promise<Response>
 afterEach(() => {
   vi.unstubAllGlobals()
 })
-
-/** The methods, the paths and the bodies of the requests that were sent */
-const askedOf = (fetched: ReturnType<typeof answering>) =>
-  Promise.all(
-    fetched.mock.calls.map(async ([asked, init]) => {
-      const request = new Request(asked, init)
-      const body = await request.text()
-
-      return [
-        request.method,
-        new URL(request.url).pathname,
-        body === '' ? null : JSON.parse(body),
-      ]
-    }),
-  )
 
 const NO_ANSWER: Answer = () => Promise.reject(new TypeError('Failed to fetch'))
 
@@ -70,10 +57,10 @@ describe('readSystemState', () => {
       readiness: { type: 'ready' },
       health: { type: 'reported', health },
     })
-    expect((await askedOf(fetched)).toSorted()).toEqual([
-      ['GET', '/api/system/alive', null],
-      ['GET', '/api/system/health', null],
-      ['GET', '/api/system/ready', null],
+    expect(asked(fetched).toSorted()).toEqual([
+      'GET http://localhost:3000/api/system/alive',
+      'GET http://localhost:3000/api/system/health',
+      'GET http://localhost:3000/api/system/ready',
     ])
   })
 
@@ -176,12 +163,9 @@ describe('expirePoints', () => {
       processedCount: 3,
       totalPoints: 1250,
     })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'POST',
-        '/api/v1/points/expire',
-        { customerId: null, processBefore: null },
-      ],
+    expect(asked(fetched)).toEqual(['POST /points/expire'])
+    expect(await sent(fetched)).toEqual([
+      { customerId: null, processBefore: null },
     ])
   })
 
@@ -221,9 +205,10 @@ describe('executeDeletionRequests', () => {
 
     // Assert
     expect(erasure).toEqual({ type: 'erased', requests })
-    expect(await askedOf(fetched)).toEqual([
-      ['POST', '/api/v1/customers/deletion-requests/execute', null],
+    expect(asked(fetched)).toEqual([
+      'POST /customers/deletion-requests/execute',
     ])
+    expect(await sent(fetched)).toEqual([])
   })
 
   it.each<[string, Answer, string]>([
@@ -255,9 +240,8 @@ describe('purgeAttachments', () => {
 
     // Assert
     expect(purge).toEqual({ type: 'purged', purgedCount: 4 })
-    expect(await askedOf(fetched)).toEqual([
-      ['POST', '/api/v1/attachments/purge', null],
-    ])
+    expect(asked(fetched)).toEqual(['POST /attachments/purge'])
+    expect(await sent(fetched)).toEqual([])
   })
 
   it.each<[string, Answer, string]>([

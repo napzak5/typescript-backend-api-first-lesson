@@ -1,5 +1,6 @@
 import {
   answering,
+  asked,
   page,
   problem,
   UNREAD,
@@ -55,23 +56,8 @@ describe('readMovementPage', () => {
       total: 5,
       nextCursor: null,
     })
-    expect(
-      fetched.mock.calls.map(([asked]) => {
-        const url = new URL(new Request(asked).url)
-
-        return [url.pathname, Object.fromEntries(url.searchParams)]
-      }),
-    ).toEqual([
-      [
-        `/api/v1/inventory/${colourLot.id}/movements`,
-        {
-          transactionType: 'use',
-          startDate: '2026-10-31T15:00:00.000Z',
-          endDate: '2026-11-30T14:59:59.999Z',
-          cursor: 'a1b2c3d4-0003-4e6f-8a7b-9c0d1e2f3a4b',
-          limit: '20',
-        },
-      ],
+    expect(asked(fetched)).toEqual([
+      `GET /inventory/${colourLot.id}/movements?cursor=a1b2c3d4-0003-4e6f-8a7b-9c0d1e2f3a4b&endDate=2026-11-30T14:59:59.999Z&limit=20&startDate=2026-10-31T15:00:00.000Z&transactionType=use`,
     ])
   })
 

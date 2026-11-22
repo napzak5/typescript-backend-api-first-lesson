@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { type MockInstance, vi } from 'vitest'
 
 /*
  * Answers of the API for the tests of the functions that call it: those a
@@ -124,17 +124,82 @@ export const answering = (
   return fetched
 }
 
-/** What was asked for: the method, and the path below `/api/v1` with its query. */
-export const asked = (fetched: ReturnType<typeof answering>): string[] =>
-  fetched.mock.calls.map(([input, init]) => {
-    const [, operation] = String(input).split('/api/v1')
+/** Where the API is, below its origin: a line of what was asked leaves it out. */
+const API_PATH = '/api/v1'
 
-    return `${init?.method ?? 'GET'} ${decodeURIComponent(operation ?? '')}`
-  })
+/**
+ * A name or a value of a query as it reads. What would read as the
+ * punctuation of the query itself (`&`, `=`, `%`) stays encoded, so that a
+ * line says one thing.
+ */
+const written = (text: string): string =>
+  text.replace(/[%&=]/g, encodeURIComponent)
 
-/** What was sent with the first request. */
-export const sent = (fetched: ReturnType<typeof answering>): unknown =>
-  fetched.mock.calls.at(0)?.at(1)
+/**
+ * The query of an address as it reads, its values in the order of their
+ * names: the order they were written in is nothing the API is told. Values
+ * of one name stay in the order they were sent in.
+ */
+const queryOf = (url: URL): string =>
+  [...url.searchParams]
+    .toSorted(([one], [other]) => Number(one > other) - Number(one < other))
+    .map(([name, value]) => `${written(name)}=${written(value)}`)
+    .join('&')
+
+/** One request as a line: its method, and where it went, with its query. */
+const lineOf = ([input, init]: Parameters<typeof fetch>): string => {
+  const request = new Request(input, init)
+  const url = new URL(request.url)
+  const path = decodeURI(url.pathname)
+  const query = queryOf(url)
+
+  return [
+    `${request.method} `,
+    path.startsWith(`${API_PATH}/`)
+      ? path.slice(API_PATH.length)
+      : `${url.origin}${path}`,
+    query === '' ? '' : `?${query}`,
+  ].join('')
+}
+
+/** The body of one request, when it has one: JSON as the value it reads as, anything else as its bytes. */
+const bodyOf = async ([input, init]: Parameters<typeof fetch>): Promise<
+  unknown[]
+> => {
+  const request = new Request(input, init)
+  const type = request.headers.get('Content-Type') ?? ''
+  const bytes = new Uint8Array(await request.arrayBuffer())
+  if (bytes.length === 0) {
+    return []
+  }
+
+  return [
+    type.includes('json')
+      ? JSON.parse(new TextDecoder().decode(bytes))
+      : [...bytes],
+  ]
+}
+
+/**
+ * What was asked for, a line for each request in the order they were sent:
+ * `METHOD path?query`, the path and the query as they read. The path of a
+ * request to the API is the one below `/api/v1`; a request that went
+ * elsewhere (a storage, a probe of the system) is named with its whole
+ * address. `fetched` is the stub `answering` returns, or a `fetch`
+ * that a test watches (`vi.spyOn(globalThis, 'fetch')`).
+ */
+export const asked = (fetched: MockInstance<typeof fetch>): string[] =>
+  fetched.mock.calls.map(lineOf)
+
+/**
+ * What was sent: the bodies of the requests that had one, in the order they
+ * were sent. A JSON body is the value it reads as, so that the order of its
+ * properties says nothing; any other body is its bytes.
+ */
+export const sent = async (
+  fetched: MockInstance<typeof fetch>,
+): Promise<unknown[]> =>
+  (await Promise.all(fetched.mock.calls.map(bodyOf))).flat()
 
 /** What a read does not show, and why, for each answer that says nothing. */
 export const UNREAD: [string, Answer, string][] = [

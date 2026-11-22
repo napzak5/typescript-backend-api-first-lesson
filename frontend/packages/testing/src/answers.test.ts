@@ -58,6 +58,7 @@ const SAYING_NOTHING: [string, number | string, string][] = [
 describe('the answers of the API a test makes up', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.restoreAllMocks()
   })
 
   describe('json', () => {
@@ -324,30 +325,122 @@ describe('the answers of the API a test makes up', () => {
   })
 
   describe('asked', () => {
-    it('should say the method of each request and its path below the API, with the query as it reads', async () => {
+    it('should say the method of each request and its path below the API, in the order they were sent', async () => {
       // Arrange
       const fetched = answering(() => page([]))
 
       // Act
-      await fetch(`${API}/salons?keyword=%E3%82%AB%E3%83%83%E3%83%88&limit=20`)
+      await fetch(`${API}/salons`)
       await fetch(`${API}/reviews/a`, { method: 'DELETE' })
+      await fetch(`${API}/salons`, { method: 'POST', body: '{}' })
 
       // Assert
       expect(asked(fetched)).toEqual([
-        'GET /salons?keyword=カット&limit=20',
+        'GET /salons',
         'DELETE /reviews/a',
+        'POST /salons',
       ])
     })
 
-    it('should say the method alone of a request that went elsewhere', async () => {
+    it('should say the query as it reads, its values in the order of their names', async () => {
       // Arrange
-      const fetched = answering(() => new Response(null, { status: 200 }))
+      const fetched = answering(() => page([]))
 
       // Act
-      await fetch('https://storage.salon.example/file', { method: 'PUT' })
+      await fetch(
+        `${API}/salons?limit=20&keyword=%E3%82%AB%E3%83%83%E3%83%88+%E3%82%AB%E3%83%A9%E3%83%BC&Zone=a&cursor=b`,
+      )
 
       // Assert
-      expect(asked(fetched)).toEqual(['PUT '])
+      expect(asked(fetched)).toEqual([
+        'GET /salons?Zone=a&cursor=b&keyword=カット カラー&limit=20',
+      ])
+    })
+
+    it('should leave the values of one name in the order they were sent in', async () => {
+      // Arrange
+      const fetched = answering(() => page([]))
+
+      // Act
+      await fetch(`${API}/customers?tags=b&search=x&tags=a&tags=c`)
+
+      // Assert
+      expect(asked(fetched)).toEqual([
+        'GET /customers?search=x&tags=b&tags=a&tags=c',
+      ])
+    })
+
+    it('should keep encoded what would read as the punctuation of the query, in a name and in a value', async () => {
+      // Arrange
+      const fetched = answering(() => page([]))
+
+      // Act
+      await fetch(
+        `${API}/purchase-orders?supplier=A%26B+%E5%95%86%E4%BA%8B&note=a%3Db&rate=5%25&a%26b%3Dc=d`,
+      )
+
+      // Assert
+      expect(asked(fetched)).toEqual([
+        'GET /purchase-orders?a%26b%3Dc=d&note=a%3Db&rate=5%25&supplier=A%26B 商事',
+      ])
+    })
+
+    it('should say the path as it reads, and keep encoded what would read as its punctuation', async () => {
+      // Arrange
+      const fetched = answering(() => page([]))
+
+      // Act
+      await fetch(`${API}/files/%E5%86%99%E7%9C%9F%201.jpg`)
+      await fetch(`${API}/files/a%2Fb%3Fc`)
+
+      // Assert
+      expect(asked(fetched)).toEqual([
+        'GET /files/写真 1.jpg',
+        'GET /files/a%2Fb%3Fc',
+      ])
+    })
+
+    it.each<[string, string, string]>([
+      [
+        'a storage',
+        'https://storage.salon.example/bucket/file?X-Amz-Signature=abc',
+        'PUT https://storage.salon.example/bucket/file?X-Amz-Signature=abc',
+      ],
+      [
+        'a path that only begins like that of the API',
+        'https://api.salon.example/api/v10/salons',
+        'PUT https://api.salon.example/api/v10/salons',
+      ],
+      [
+        'a path that holds that of the API further down',
+        'https://storage.salon.example/copies/api/v1/salons',
+        'PUT https://storage.salon.example/copies/api/v1/salons',
+      ],
+    ])(
+      'should name a request that went elsewhere with its whole address: %s',
+      async (_, address, line) => {
+        // Arrange
+        const fetched = answering(() => empty(200))
+
+        // Act
+        await fetch(address, { method: 'PUT' })
+
+        // Assert
+        expect(asked(fetched)).toEqual([line])
+      },
+    )
+
+    it('should read a fetch that a test watches as it reads one it stands in for', async () => {
+      // Arrange
+      const fetched = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async () => page([]))
+
+      // Act
+      await fetch(`${API}/salons?limit=20`)
+
+      // Assert
+      expect(asked(fetched)).toEqual(['GET /salons?limit=20'])
     })
 
     it('should say nothing when nothing was asked', () => {
@@ -356,20 +449,122 @@ describe('the answers of the API a test makes up', () => {
   })
 
   describe('sent', () => {
-    it('should give what the first request was sent with', async () => {
+    const JSON_BODY = { 'Content-Type': 'application/json' }
+
+    it('should give the bodies of the requests that had one, in the order they were sent', async () => {
       // Arrange
       const fetched = answering(() => record(200, {}))
 
       // Act
-      await fetch(`${API}/salons`, { method: 'POST', body: 'first' })
-      await fetch(`${API}/salons`, { method: 'PUT', body: 'second' })
+      await fetch(`${API}/salons`, {
+        method: 'POST',
+        headers: JSON_BODY,
+        body: JSON.stringify({ name: 'first' }),
+      })
+      await fetch(`${API}/salons`)
+      await fetch(`${API}/salons/a`, { method: 'DELETE' })
+      await fetch(`${API}/salons/a`, {
+        method: 'PATCH',
+        headers: JSON_BODY,
+        body: JSON.stringify({ name: 'second' }),
+      })
 
       // Assert
-      expect(sent(fetched)).toEqual({ method: 'POST', body: 'first' })
+      expect(await sent(fetched)).toEqual([
+        { name: 'first' },
+        { name: 'second' },
+      ])
     })
 
-    it('should give nothing when nothing was asked', () => {
-      expect(sent(answering(() => record(200, {})))).toBeUndefined()
+    it('should give a JSON body as the value it reads as, whatever the order of its properties', async () => {
+      // Arrange
+      const fetched = answering(() => record(200, {}))
+
+      // Act
+      await fetch(`${API}/salons`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: '{"b":[1,null],"a":"あ"}',
+      })
+
+      // Assert
+      expect(await sent(fetched)).toStrictEqual([{ a: 'あ', b: [1, null] }])
+    })
+
+    it.each<[string, BodyInit, number[]]>([
+      [
+        'the bytes of a file',
+        new Uint8Array([0, 255, 16]).buffer,
+        [0, 255, 16],
+      ],
+      ['a file', new Blob([new Uint8Array([7, 8])]), [7, 8]],
+      ['a text', 'ab', [97, 98]],
+    ])(
+      'should give a body that is no JSON as its bytes: %s',
+      async (_, body, bytes) => {
+        // Arrange
+        const fetched = answering(() => empty(200))
+
+        // Act
+        await fetch('https://storage.salon.example/file', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'image/jpeg' },
+          body,
+        })
+
+        // Assert
+        expect(await sent(fetched)).toStrictEqual([bytes])
+      },
+    )
+
+    it('should tell the bytes of one file from those of another', async () => {
+      // Arrange
+      const fetched = answering(() => empty(200))
+
+      // Act
+      await fetch('https://storage.salon.example/file', {
+        method: 'PUT',
+        body: new Uint8Array([1, 2, 3]).buffer,
+      })
+
+      // Assert
+      expect(await sent(fetched)).not.toEqual([[1, 2, 4]])
+    })
+
+    it.each<[string, RequestInit]>([
+      ['a request without one', { method: 'POST' }],
+      ['a body of no byte', { method: 'POST', headers: JSON_BODY, body: '' }],
+      ['a read', {}],
+    ])('should give no body of %s', async (_, init) => {
+      // Arrange
+      const fetched = answering(() => empty(204))
+
+      // Act
+      await fetch(`${API}/reviews/a/helpful`, init)
+
+      // Assert
+      expect(await sent(fetched)).toEqual([])
+    })
+
+    it('should read a fetch that a test watches as it reads one it stands in for', async () => {
+      // Arrange
+      const fetched = vi
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation(async () => record(200, {}))
+
+      // Act
+      await fetch(`${API}/salons`, {
+        method: 'POST',
+        headers: JSON_BODY,
+        body: JSON.stringify({ name: 'a' }),
+      })
+
+      // Assert
+      expect(await sent(fetched)).toEqual([{ name: 'a' }])
+    })
+
+    it('should give nothing when nothing was asked', async () => {
+      expect(await sent(answering(() => record(200, {})))).toEqual([])
     })
   })
 
