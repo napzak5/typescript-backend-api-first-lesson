@@ -173,8 +173,8 @@ describe('readReport', () => {
     },
   )
 
-  it('should take details as long as the column, counted without the spaces around them', () => {
-    const details = 'あ'.repeat(MAX_DETAILS_LENGTH)
+  it('should take details as long as the column, counted as the API counts them and without the spaces around them', () => {
+    const details = '𠮷'.repeat(MAX_DETAILS_LENGTH)
 
     expect(readReport(formOf('other', ` ${details} `))).toEqual({
       type: 'valid',
@@ -187,7 +187,7 @@ describe('readReport', () => {
       readReport(formOf('spam', 'あ'.repeat(MAX_DETAILS_LENGTH + 1))),
     ).toEqual({
       type: 'invalid',
-      errors: { details: '2000 文字以内で入力してください。' },
+      errors: { details: '2,000 文字以内で入力してください。' },
     })
   })
 
@@ -218,7 +218,7 @@ describe('afterReport', () => {
       'custom',
       '「その他」を選んだときは、何が問題かを入力してください。',
     ],
-    ['their length', 'too_big', '2000 文字以内で入力してください。'],
+    ['their length', 'too_big', '2,000 文字以内で入力してください。'],
     [
       'another rule',
       'too_small',
@@ -261,7 +261,7 @@ describe('afterReport', () => {
       message: undefined,
       errors: {
         reason: '通報の理由を選んでください。',
-        details: '2000 文字以内で入力してください。',
+        details: '2,000 文字以内で入力してください。',
       },
     })
   })

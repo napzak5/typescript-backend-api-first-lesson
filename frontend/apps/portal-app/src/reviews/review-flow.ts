@@ -10,7 +10,7 @@ import type {
   ModelsReviewResponse,
   ModelsReviewUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { tooLong } from '@beauty-salon-frontend/fields'
+import { lengthOf, tooLong } from '@beauty-salon-frontend/fields'
 import {
   linesOf,
   pictureAddressesError,
@@ -180,7 +180,7 @@ const errorsOf = (entered: Entered): FormErrors => {
     ...(ratingOf(entered.overallRating) === null
       ? [[OVERALL_RATING, OVERALL_RATING_MISSING]]
       : []),
-    ...(entered.title.trim().length > MAX_TITLE_LENGTH
+    ...(lengthOf(entered.title.trim()) > MAX_TITLE_LENGTH
       ? [[TITLE, TITLE_TOO_LONG]]
       : []),
     ...(images === undefined ? [] : [[IMAGES, images]]),

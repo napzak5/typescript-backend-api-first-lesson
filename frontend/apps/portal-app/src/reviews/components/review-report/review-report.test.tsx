@@ -83,7 +83,7 @@ describe('ReviewReport', () => {
     expect(details()).toHaveAttribute('maxlength', '2000')
     expect(details()).not.toBeRequired()
     expect(details()).toHaveAccessibleDescription(
-      'どこが問題かを、2000 文字以内でご記入ください。理由が「その他」のときは、必ずご記入ください。',
+      'どこが問題かを、2,000 文字以内でご記入ください。理由が「その他」のときは、必ずご記入ください。',
     )
   })
 
@@ -222,7 +222,7 @@ describe('ReviewReport', () => {
     // Assert
     expect(details()).toHaveAttribute('aria-invalid', 'true')
     expect(details()).toHaveAccessibleDescription(
-      'どこが問題かを、2000 文字以内でご記入ください。理由が「その他」のときは、必ずご記入ください。 「その他」を選んだときは、何が問題かを入力してください。',
+      'どこが問題かを、2,000 文字以内でご記入ください。理由が「その他」のときは、必ずご記入ください。 「その他」を選んだときは、何が問題かを入力してください。',
     )
     expect(details()).toHaveFocus()
     expect(reasons()).not.toHaveAttribute('aria-invalid')

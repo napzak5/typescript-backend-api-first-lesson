@@ -382,4 +382,14 @@ describe('ReviewForm', () => {
     expect(button).toHaveAttribute('aria-busy', 'true')
     expect(stories.Pending.args.onSubmit).not.toHaveBeenCalled()
   })
+
+  it('should say at the title how long it may be', async () => {
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(text('タイトル')).toHaveAccessibleDescription(
+      '255 文字以内で書いてください。空欄のままでも、かまいません。',
+    )
+  })
 })
