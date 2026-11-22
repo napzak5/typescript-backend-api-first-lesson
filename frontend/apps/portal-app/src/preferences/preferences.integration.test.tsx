@@ -1,6 +1,7 @@
 import type { ModelsCustomerPreferencesUpdateRequest } from '@beauty-salon-frontend/api-client'
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   address,
@@ -26,15 +27,7 @@ import {
 } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type MockInstance,
-  vi,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import { renderAt } from '../__tests__/screens'
 import {
@@ -259,19 +252,13 @@ const NOTHING_SAID = {
 }
 
 /**
- * What was asked of the API about the preferences and about what the form
- * offers, since `fetch` is watched: the method and the path of each.
+ * A line of what was asked that is about the preferences, or about what
+ * the form offers: the screen asks for more than them.
  */
-const askedOfTheApi = (fetched: MockInstance<typeof fetch>): string[] =>
-  fetched.mock.calls.flatMap(([input, init]) => {
-    const [, path = ''] = new URL(String(input)).pathname.split('/api/v1')
-
-    return ['/customers/me', '/staff-profiles', '/salons'].some((asked) =>
-      path.startsWith(asked),
-    )
-      ? [`${init?.method ?? 'GET'} ${path}`]
-      : []
-  })
+const ofThePreferences = (line: string): boolean =>
+  ['/customers/me', '/staff-profiles', '/salons'].some((path) =>
+    line.includes(` ${path}`),
+  )
 
 const text = (name: string) => screen.getByRole('textbox', { name })
 const box = (name: string) => screen.getByRole('checkbox', { name })
@@ -565,7 +552,9 @@ describe('the preferences of a customer, against the API', () => {
         await screen.findByText('お客様の情報は、まだ登録されていません'),
       ).toBeVisible()
       expect(screen.queryByRole('region', { name: '好みの設定' })).toBeNull()
-      expect(askedOfTheApi(fetched)).toEqual(['GET /customers/me'])
+      expect(asked(fetched).filter(ofThePreferences)).toEqual([
+        'GET /customers/me',
+      ])
     })
 
     it('should say that preferences need a profile when the account has none: the API finds no preferences for it', async () => {
@@ -1000,7 +989,7 @@ describe('the preferences of a customer, against the API', () => {
 
       // Assert
       expect(await screen.findByRole('alert')).toHaveTextContent(NOT_SENT)
-      expect(askedOfTheApi(fetched)).toEqual([
+      expect(asked(fetched).filter(ofThePreferences)).toEqual([
         'PATCH /customers/me/preferences',
       ])
       expect(text('特別な要望')).toHaveValue('A towel under the neck, please.')

@@ -1,4 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
@@ -247,9 +248,9 @@ describe('the accounts of the users, against the API', () => {
         expect(
           screen.getByRole('link', { name: 'トップへ戻る' }),
         ).toHaveAttribute('href', '/')
-        expect(
-          fetched.mock.calls.map(([asked]) => new Request(asked).url),
-        ).not.toContainEqual(expect.stringContaining('/admin/auth'))
+        expect(asked(fetched)).not.toContainEqual(
+          expect.stringContaining('/admin/auth'),
+        )
       },
     )
 

@@ -1,4 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
 import { heading, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -12,15 +13,7 @@ import {
 } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type MockInstance,
-  vi,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../__tests__/screens'
 import { refuse } from '../bookings/__tests__/arrangements'
 import {
@@ -65,11 +58,6 @@ const stateOf = (): string[][] => {
       descriptions[index]?.textContent ?? '',
     ])
 }
-
-/** The requests sent to a probe, by its path */
-const probed = (fetched: MockInstance<typeof fetch>, path: string): number =>
-  fetched.mock.calls.filter(([input]) => new Request(input).url.endsWith(path))
-    .length
 
 /** Runs an operation from its part: its button, then that of its dialog. */
 const run = async (
@@ -174,7 +162,9 @@ describe('the operations of the platform, against the API', () => {
       const fetched = vi.spyOn(globalThis, 'fetch')
       await openOperations()
       await waitFor(() => {
-        expect(probed(fetched, '/api/system/health')).toBe(1)
+        expect(
+          asked(fetched).filter((line) => line.endsWith('/api/system/health')),
+        ).toHaveLength(1)
       })
 
       // Act
@@ -183,8 +173,11 @@ describe('the operations of the platform, against the API', () => {
       // Assert
       await waitFor(() => {
         expect(
-          ['alive', 'ready', 'health'].map((probe) =>
-            probed(fetched, `/api/system/${probe}`),
+          ['alive', 'ready', 'health'].map(
+            (probe) =>
+              asked(fetched).filter((line) =>
+                line.endsWith(`/api/system/${probe}`),
+              ).length,
           ),
         ).toEqual([2, 2, 2])
       })
@@ -372,9 +365,7 @@ describe('the operations of the platform, against the API', () => {
           screen.queryByRole('region', { name: 'システムの状態' }),
         ).toBeNull()
         expect(
-          fetched.mock.calls.filter(([input]) =>
-            new Request(input).url.includes('/api/system/'),
-          ),
+          asked(fetched).filter((line) => line.includes('/api/system/')),
         ).toEqual([])
       },
     )

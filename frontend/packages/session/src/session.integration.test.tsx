@@ -1,5 +1,6 @@
 import { authCrudGetCurrentUser } from '@beauty-salon-frontend/api-client'
 import { sessionStore } from '@beauty-salon-frontend/io'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
@@ -9,7 +10,7 @@ import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { signIn, signOut, useSession } from '.'
 
-const RENEWAL = '/api/v1/auth/refresh'
+const RENEWAL = 'POST /auth/refresh'
 
 const signInAs = (email: string, password = testApi().seedPassword) =>
   signIn({ email, password, rememberMe: false, twoFactorCode: null })
@@ -100,7 +101,7 @@ describe('the session against the API', () => {
     // Arrange
     await signInAs(CUSTOMER)
     await letTheAccessTokensExpire()
-    const sent = vi.spyOn(globalThis, 'fetch')
+    const fetched = vi.spyOn(globalThis, 'fetch')
 
     // Act
     const responses = await Promise.all(
@@ -111,10 +112,7 @@ describe('the session against the API', () => {
     expect(responses.map((response) => response.status)).toEqual([
       200, 200, 200, 200, 200,
     ])
-    const renewals = sent.mock.calls.filter(([url]) =>
-      String(url).endsWith(RENEWAL),
-    )
-    expect(renewals).toHaveLength(1)
+    expect(asked(fetched).filter((line) => line === RENEWAL)).toHaveLength(1)
     expect(await sessionsOfTheApi()).toHaveLength(1)
   })
 

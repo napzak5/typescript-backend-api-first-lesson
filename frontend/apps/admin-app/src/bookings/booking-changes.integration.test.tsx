@@ -1,4 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import {
   dayFromToday,
   idsOf,
@@ -151,18 +152,6 @@ const addLine = (
          "totalAmount" = bookings."totalAmount" + made.price
      from made where bookings.id = made."bookingId"`,
     [id, service, staffCode, at, minutes],
-  )
-
-/** What the screen sent to the API, a request each, by the end of their address. */
-const sent = (
-  fetched: MockInstance<typeof fetch>,
-  method: string,
-  ending: string,
-): unknown[] =>
-  fetched.mock.calls.flatMap(([input, init]) =>
-    init?.method === method && String(input).endsWith(ending)
-      ? [init.body === undefined ? null : JSON.parse(String(init.body))]
-      : [],
   )
 
 /** The days from today the tests put their bookings on: no seeded booking is then */
@@ -410,7 +399,9 @@ describe('moving a booking and changing its lines, against the API', () => {
       // Assert
       expect(await heading('予約の内容')).toHaveFocus()
       expect(notifications()).toContain('変更された項目はありません。')
-      expect(sent(fetched, 'POST', '/reschedule')).toEqual([])
+      expect(
+        asked(fetched).filter((line) => line.endsWith('/reschedule')),
+      ).toEqual([])
     })
 
     it('should say at the controls what is missing, move the focus to the first, and send nothing', async () => {
@@ -436,7 +427,9 @@ describe('moving a booking and changing its lines, against the API', () => {
       ).toHaveTextContent(
         '担当スタッフ、来店日、開始の時刻を入れると、動かしたあとの明細を出します。',
       )
-      expect(sent(fetched, 'POST', '/reschedule')).toEqual([])
+      expect(
+        asked(fetched).filter((line) => line.endsWith('/reschedule')),
+      ).toEqual([])
     })
 
     it('should offer no move for a booking whose treatment began, and say why at its address', async () => {
@@ -658,7 +651,11 @@ describe('moving a booking and changing its lines, against the API', () => {
       expect(field('開始の時刻')).toHaveAccessibleDescription(
         expect.stringContaining('開始の時刻を入力してください。'),
       )
-      expect(sent(fetched, 'POST', '/services')).toEqual([])
+      expect(
+        asked(fetched).filter(
+          (line) => line.startsWith('POST ') && line.endsWith('/services'),
+        ),
+      ).toEqual([])
     })
 
     it('should offer no line for a completed booking, and say why at its address', async () => {

@@ -1,4 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
   address,
@@ -524,8 +525,8 @@ describe('removing customers, bringing them back, and their history, against the
         ),
       ).toBeVisible()
       expect(
-        fetched.mock.calls.filter(([input]) =>
-          String(input).includes(`/customers/${kenji}/history`),
+        asked(fetched).filter((line) =>
+          line.includes(`/customers/${kenji}/history`),
         ),
       ).toEqual([])
     })

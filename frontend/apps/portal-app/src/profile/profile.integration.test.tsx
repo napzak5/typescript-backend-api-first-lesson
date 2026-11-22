@@ -1,5 +1,6 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import {
   address,
@@ -13,15 +14,7 @@ import { CUSTOMER, STYLIST, YUKI } from '@beauty-salon-frontend/testing/seed'
 import { focusManager, onlineManager } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type MockInstance,
-  vi,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import { renderAt } from '../__tests__/screens'
 import {
@@ -113,17 +106,6 @@ const detailsIn = (within_: HTMLElement): Record<string, string | null> =>
         term.textContent,
         term.nextElementSibling?.textContent ?? null,
       ]),
-  )
-
-/**
- * The requests about the profile of the account that were sent since
- * `fetch` is watched: the method of each, in their order.
- */
-const askedOfTheProfile = (
-  fetched: MockInstance<typeof fetch>,
-): (string | undefined)[] =>
-  fetched.mock.calls.flatMap(([input, init]) =>
-    String(input).endsWith('/api/v1/customers/me') ? [init?.method] : [],
   )
 
 /** A day of the calendar, as the page writes it. */
@@ -658,7 +640,9 @@ describe('the page and the profile of a customer, against the API', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(
         '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
       )
-      expect(askedOfTheProfile(fetched)).toEqual(['PATCH'])
+      expect(
+        asked(fetched).filter((line) => line.endsWith(' /customers/me')),
+      ).toEqual(['PATCH /customers/me'])
       expect(await text('職業')).toHaveValue('Designer and Illustrator')
       await giveBack('customers')
     })

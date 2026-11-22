@@ -1,4 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked, sent } from '@beauty-salon-frontend/testing/answers'
 import {
   address,
   asTheApplicationKeeps,
@@ -16,15 +17,7 @@ import {
 import { focusManager, onlineManager } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type MockInstance,
-  vi,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
 import {
   giveBack,
@@ -117,24 +110,8 @@ const confirmButton = () =>
 
 const saveButton = () => button('変更を保存する')
 
-/**
- * What was asked of the API about reviews since `fetch` is watched: the
- * method and the path of each request.
- */
-const askedOfTheReviews = (fetched: MockInstance<typeof fetch>): string[] =>
-  fetched.mock.calls.flatMap(([input, init]) => {
-    const [, path = ''] = new URL(String(input)).pathname.split('/api/v1')
-
-    return path.startsWith('/reviews')
-      ? [`${init?.method ?? 'GET'} ${path}`]
-      : []
-  })
-
-/** What the requests that write were sent with, as they were read from their bodies. */
-const sentWith = (fetched: MockInstance<typeof fetch>): unknown[] =>
-  fetched.mock.calls.flatMap(([, init]) =>
-    typeof init?.body === 'string' ? [JSON.parse(init.body)] : [],
-  )
+/** A line of what was asked that is about the reviews: the screen asks for more than them. */
+const ofTheReviews = (line: string): boolean => line.includes(' /reviews')
 
 describe('what a customer wrote, against the API', () => {
   beforeEach(async () => {
@@ -600,14 +577,14 @@ describe('what a customer wrote, against the API', () => {
       expect(await heading(LIST_TITLE)).toHaveFocus()
       expect(address()).toBe(LIST)
       expect(statusMessages()).toContain(CHANGED)
-      expect(sentWith(fetched)).toEqual([
+      expect(await sent(fetched)).toEqual([
         {
           overallRating: 3,
           atmosphereRating: null,
           comment: '思い返すと、待ち時間が長めでした。',
         },
       ])
-      expect(askedOfTheReviews(fetched).at(0)).toBe(
+      expect(asked(fetched).filter(ofTheReviews).at(0)).toBe(
         `PATCH /reviews/${visit.reviewId}`,
       )
       const [review] = await listed()
@@ -647,9 +624,7 @@ describe('what a customer wrote, against the API', () => {
       expect(await heading(LIST_TITLE)).toHaveFocus()
       expect(statusMessages()).toContain('変更された項目はありません。')
       expect(
-        askedOfTheReviews(fetched).filter((request) =>
-          request.startsWith('PATCH'),
-        ),
+        asked(fetched).filter((line) => line.startsWith('PATCH ')),
       ).toEqual([])
       expect(await storedReviewOf(visit.id)).toEqual(before)
     })
@@ -845,7 +820,7 @@ describe('what a customer wrote, against the API', () => {
       // Assert: by the time the failure of the form is said, a read that
       // the focus or the network started would have been asked for
       expect(await screen.findByRole('alert')).toHaveTextContent(NOT_SENT)
-      expect(askedOfTheReviews(fetched)).toEqual([
+      expect(asked(fetched).filter(ofTheReviews)).toEqual([
         `PATCH /reviews/${visit.reviewId}`,
       ])
       expect(text('本文')).toHaveValue(`${WRITTEN.comment} 追記です。`)

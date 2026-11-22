@@ -1,4 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
@@ -459,9 +460,9 @@ describe('the reports of reviews', () => {
         'href',
         reviewsHrefOf(await salonIdOf(TOKYO)),
       )
-      expect(
-        fetched.mock.calls.map(([asked]) => new Request(asked).url),
-      ).not.toContainEqual(expect.stringContaining('/review-reports'))
+      expect(asked(fetched)).not.toContainEqual(
+        expect.stringContaining('/review-reports'),
+      )
     },
   )
 

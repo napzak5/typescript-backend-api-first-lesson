@@ -1,20 +1,13 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { address, goTo, heading } from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER, OWNER, STYLIST } from '@beauty-salon-frontend/testing/seed'
 import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type MockInstance,
-  vi,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import { renderAt } from '../__tests__/screens'
 import { accessTokenOf } from '../bookings/__tests__/arrangements'
@@ -138,13 +131,8 @@ const letTheMinutePass = (column: string, email: string) =>
     [email],
   )
 
-/** The operations of the API that were asked for, as the paths below `/api/v1`. */
-const operationsAsked = (fetched: MockInstance<typeof fetch>): string[] =>
-  fetched.mock.calls.flatMap(([input]) => {
-    const [, operation] = String(input).split('/api/v1')
-
-    return operation === undefined ? [] : [operation]
-  })
+/** A line of what was asked of the API: a test reads its mails from another address. */
+const ofTheApi = (line: string): boolean => !line.includes('://')
 
 const subjectsTo = async (to: string): Promise<string[]> =>
   (await testApi().mails())
@@ -334,7 +322,7 @@ describe('the screens of an account, against the API', () => {
       expect(address()).toBe('/verify-email')
       expect(await findAccessibilityViolations()).toEqual([])
       // Software that opens the links of a mail ahead of its reader uses nothing up
-      expect(operationsAsked(fetched)).toEqual([])
+      expect(asked(fetched).filter(ofTheApi)).toEqual([])
       expect(await accountOf(VISITOR)).toEqual([
         { status: 'unverified', emailVerified: false },
       ])
@@ -530,7 +518,9 @@ describe('the screens of an account, against the API', () => {
       expect(address()).toBe('/reset-password')
       expect(await findAccessibilityViolations()).toEqual([])
       // Asking whether the link works is all that opening it does
-      expect(operationsAsked(fetched)).toEqual(['/auth/reset-password/verify'])
+      expect(asked(fetched).filter(ofTheApi)).toEqual([
+        'POST /auth/reset-password/verify',
+      ])
     })
 
     it('should set the password: the new one signs in, the old one no more, and the owner is told by mail', async () => {
@@ -703,7 +693,7 @@ describe('the screens of an account, against the API', () => {
       const shown = {
         address: address(),
         // Asking what the invitation is is all that opening the link does
-        asked: operationsAsked(fetched),
+        asked: asked(fetched).filter(ofTheApi),
         email: emailField().getAttribute('value'),
         readOnly: emailField().hasAttribute('readonly'),
         role: main().getByText('スタッフ').tagName,
@@ -717,7 +707,7 @@ describe('the screens of an account, against the API', () => {
       expect(await heading('アカウントを作りました')).toHaveFocus()
       expect(shown).toEqual({
         address: '/accept-staff-invitation',
-        asked: ['/auth/staff-invitation/verify'],
+        asked: ['POST /auth/staff-invitation/verify'],
         email: STAFF_WITHOUT_ACCOUNT,
         readOnly: true,
         role: 'DD',
