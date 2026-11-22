@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { ShareLinkReadMapper } from '../../mappers/read/share-link.mapper'
+import { ShareLinkWriteMapper } from '../../mappers/write/share-link.mapper'
 import type { ApiSharedFileResponse } from '../../models/share-link'
 import { sharedFileGetRequestSchema } from '../../schemas/share-link.schema'
 import { type DomainError, parseWith } from '../../shared'
@@ -29,7 +30,7 @@ export class GetSharedFileUseCase {
 
     const opened = await openSharedFile(
       this.dependencies,
-      request.data,
+      ShareLinkWriteMapper.fromSharedFileGetRequest(request.data),
       this.dependencies.clock(),
     )
 

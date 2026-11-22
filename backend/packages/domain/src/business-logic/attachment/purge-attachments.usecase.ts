@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
 import type { ApiAttachmentPurgeResponse } from '../../models/attachment'
 import type { Actor } from '../../models/auth'
 import { type DomainError, DomainErrors } from '../../shared'
@@ -45,6 +46,6 @@ export class PurgeAttachmentsUseCase {
       }
     }
 
-    return Result.success({ purgedCount })
+    return Result.success(AttachmentReadMapper.toApiPurge(purgedCount))
   }
 }

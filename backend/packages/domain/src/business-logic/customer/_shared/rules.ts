@@ -46,7 +46,7 @@ export const customerRuleIssues = (
 /** A customer is not the one who referred them. */
 export const referredByItself = (
   customerId: CustomerId,
-  customer: { referredBy?: CustomerId | null },
+  customer: { referredBy?: string | null },
 ): ValidationIssue[] =>
   customer.referredBy === customerId
     ? [

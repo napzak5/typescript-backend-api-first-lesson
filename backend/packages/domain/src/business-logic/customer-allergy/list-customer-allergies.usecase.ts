@@ -1,25 +1,19 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { CustomerAllergyReadMapper } from '../../mappers/read/customer-allergy.mapper'
+import { CustomerAllergyWriteMapper } from '../../mappers/write/customer-allergy.mapper'
 import type { Actor } from '../../models/auth'
 import {
   type ApiCustomerAllergyResponse,
   parseAllergyCustomerId,
 } from '../../models/customer-allergy'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import { customerAllergySearchRequestSchema } from '../../schemas/customer-allergy.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayHandleCustomers } from '../customer/_shared/authorization'
 import type { CustomerAllergyUseCaseDependencies } from './_shared/dependencies'
 
 const MESSAGE = 'Invalid customer allergy search'
-
-const DEFAULT_LIMIT = 20
-
-export type CustomerAllergyPage = {
-  data: ApiCustomerAllergyResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListCustomerAllergiesUseCase {
   constructor(
@@ -38,7 +32,7 @@ export class ListCustomerAllergiesUseCase {
     actor: Actor,
     customerId: unknown,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<CustomerAllergyPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiCustomerAllergyResponse>, DomainError>> {
     if (!mayHandleCustomers(actor)) {
       return Result.error(DomainErrors.forbidden())
     }
@@ -57,20 +51,19 @@ export class ListCustomerAllergiesUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = CustomerAllergyWriteMapper.fromSearchRequest(
+      request.data,
+      id.data,
+    )
 
-    const listed = await this.dependencies.customerAllergyRepository.list({
-      customerId: id.data,
-      limit,
-      after: cursor ?? null,
-    })
+    const listed =
+      await this.dependencies.customerAllergyRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
 
     return match(listed.data)
-      .returnType<Result<CustomerAllergyPage, DomainError>>()
+      .returnType<Result<ApiPage<ApiCustomerAllergyResponse>, DomainError>>()
       .with({ type: 'customerNotFound' }, () =>
         Result.error(DomainErrors.notFound('Customer', id.data)),
       )
@@ -85,22 +78,8 @@ export class ListCustomerAllergiesUseCase {
           ]),
         ),
       )
-      .with({ type: 'listed' }, ({ allergies, total, hasMore }) =>
-        Result.map(
-          CustomerAllergyReadMapper.toApiCustomerAllergies(allergies),
-          (data) => ({
-            data,
-            meta: {
-              total,
-              limit,
-              hasMore,
-              cursor: cursor ?? null,
-              nextCursor: hasMore ? (allergies.at(-1)?.id ?? null) : null,
-              // Pages are only walked forwards.
-              prevCursor: null,
-            },
-          }),
-        ),
+      .with({ type: 'listed' }, (list) =>
+        CustomerAllergyReadMapper.toApiCustomerAllergyPage(list, criteria),
       )
       .exhaustive()
   }

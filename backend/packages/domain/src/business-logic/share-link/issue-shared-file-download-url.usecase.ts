@@ -1,5 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { addMinutes, min, parseISO } from 'date-fns'
+import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
+import { ShareLinkWriteMapper } from '../../mappers/write/share-link.mapper'
 import type { ApiAttachmentDownloadUrlResponse } from '../../models/attachment'
 import { sharedFileDownloadUrlRequestSchema } from '../../schemas/share-link.schema'
 import { type DomainError, parseWith } from '../../shared'
@@ -38,9 +40,12 @@ export class IssueSharedFileDownloadUrlUseCase {
       return request
     }
 
+    const { inline, ...credentials } =
+      ShareLinkWriteMapper.fromSharedFileDownloadUrlRequest(request.data)
+
     const { shareLinkRepository, fileStorage, clock } = this.dependencies
     const now = clock()
-    const opened = await openSharedFile(this.dependencies, request.data, now)
+    const opened = await openSharedFile(this.dependencies, credentials, now)
     if (opened.type === 'error') {
       return opened
     }
@@ -54,10 +59,7 @@ export class IssueSharedFileDownloadUrlUseCase {
       {
         key: storageKeyOf(attachment.id),
         contentType: attachment.contentType,
-        contentDisposition: contentDispositionOf(
-          attachment.filename,
-          request.data.inline,
-        ),
+        contentDisposition: contentDispositionOf(attachment.filename, inline),
       },
       expiresAt,
     )
@@ -72,9 +74,8 @@ export class IssueSharedFileDownloadUrlUseCase {
       return Result.error(noSharedFile)
     }
 
-    return Result.success({
-      downloadUrl: issued.data,
-      expiresAt: expiresAt.toISOString(),
-    })
+    return Result.success(
+      AttachmentReadMapper.toApiDownloadUrl(issued.data, expiresAt),
+    )
   }
 }

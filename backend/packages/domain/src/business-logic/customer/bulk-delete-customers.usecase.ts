@@ -1,5 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
+import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
+import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiCustomerBulkDeleteResponse } from '../../models/customer'
 import { customerBulkDeleteRequestSchema } from '../../schemas/customer-bulk.schema'
@@ -30,7 +32,7 @@ export class BulkDeleteCustomersUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { ids } = request.data
+    const ids = CustomerWriteMapper.fromBulkDeleteRequest(request.data)
 
     const deleted = await this.dependencies.customerRepository.deleteMany(
       ids,
@@ -42,7 +44,9 @@ export class BulkDeleteCustomersUseCase {
 
     return match(deleted.data)
       .returnType<Result<ApiCustomerBulkDeleteResponse, DomainError>>()
-      .with({ type: 'deleted' }, () => Result.success({ deleted: ids }))
+      .with({ type: 'deleted' }, () =>
+        Result.success(CustomerReadMapper.toApiBulkDelete(ids)),
+      )
       .with({ type: 'customersNotFound' }, ({ missing }) =>
         Result.error(customerNotFound(ids, missing)),
       )

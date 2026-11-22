@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { CustomerReadMapper } from '../mappers/read/customer.mapper'
 import { CustomerWriteMapper } from '../mappers/write/customer.mapper'
-import type {
-  ApiCustomerCreateRequest,
-  ApiCustomerResponse,
+import {
+  type ApiCustomerCreateRequest,
+  type ApiCustomerResponse,
+  customerIdSchema,
 } from '../models/customer'
 import { CUSTOMER_ID } from './auth-fixtures'
 import {
@@ -387,6 +388,221 @@ describe('CustomerReadMapper.toApiCustomers', () => {
         type: 'database',
         message: expect.stringContaining(OTHER_CUSTOMER_ID),
       },
+    })
+  })
+})
+
+describe('CustomerReadMapper.toApiCustomerPage', () => {
+  it('answers with the customers of the list and where the list goes on', () => {
+    const result = CustomerReadMapper.toApiCustomerPage(
+      {
+        customers: [dbCustomer(), dbCustomer({ id: OTHER_CUSTOMER_ID })],
+        total: 5,
+        hasMore: true,
+      },
+      { limit: 2, after: customerIdSchema.parse(REFERRER_ID) },
+    )
+
+    expect(result).toMatchObject({
+      type: 'success',
+      data: {
+        data: [{ id: CUSTOMER_ID }, { id: OTHER_CUSTOMER_ID }],
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: REFERRER_ID,
+          nextCursor: OTHER_CUSTOMER_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('ends the list with a page that has no next cursor', () => {
+    const result = CustomerReadMapper.toApiCustomerPage(
+      { customers: [dbCustomer()], total: 1, hasMore: false },
+      { limit: 20, after: null },
+    )
+
+    expect(result).toMatchObject({
+      type: 'success',
+      data: { meta: { cursor: null, nextCursor: null, hasMore: false } },
+    })
+  })
+
+  it('fails as a whole when one stored customer is invalid', () => {
+    const result = CustomerReadMapper.toApiCustomerPage(
+      {
+        customers: [dbCustomer({ updatedAt: 'recently' })],
+        total: 1,
+        hasMore: false,
+      },
+      { limit: 20, after: null },
+    )
+
+    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+  })
+})
+
+describe('the answers of CustomerReadMapper to a request for several customers', () => {
+  const both = [dbCustomer({ id: OTHER_CUSTOMER_ID }), dbCustomer()]
+
+  it('names the customers that were added, in the order they were written', () => {
+    expect(CustomerReadMapper.toApiBulkCreate(both)).toStrictEqual({
+      created: [OTHER_CUSTOMER_ID, CUSTOMER_ID],
+    })
+  })
+
+  it('names the customers that were changed, in the order they were written', () => {
+    expect(CustomerReadMapper.toApiBulkUpdate(both)).toStrictEqual({
+      updated: [OTHER_CUSTOMER_ID, CUSTOMER_ID],
+    })
+  })
+
+  it('names the customers that were deleted, in the order of the request', () => {
+    expect(
+      CustomerReadMapper.toApiBulkDelete([
+        customerIdSchema.parse(OTHER_CUSTOMER_ID),
+        customerIdSchema.parse(CUSTOMER_ID),
+      ]),
+    ).toStrictEqual({ deleted: [OTHER_CUSTOMER_ID, CUSTOMER_ID] })
+  })
+})
+
+describe('CustomerWriteMapper.fromSearchRequest', () => {
+  it('asks for the first 20 customers, by no filter, when the request names nothing', () => {
+    expect(CustomerWriteMapper.fromSearchRequest({})).toStrictEqual({
+      limit: 20,
+      after: null,
+      search: null,
+      phoneDigits: null,
+      tags: [],
+      registeredFrom: null,
+      registeredTo: null,
+      customerStatus: null,
+      membershipTier: null,
+    })
+  })
+
+  it('takes the place and every filter the request names, as they are', () => {
+    expect(
+      CustomerWriteMapper.fromSearchRequest({
+        limit: 3,
+        cursor: customerIdSchema.parse(OTHER_CUSTOMER_ID),
+        search: '山田',
+        tags: ['regular', 'vip'],
+        registeredFrom: '2026-01-01T00:00:00.000Z',
+        registeredTo: '2026-12-31T23:59:59.999Z',
+        customerStatus: 'active',
+        membershipTier: 'gold',
+      }),
+    ).toStrictEqual({
+      limit: 3,
+      after: OTHER_CUSTOMER_ID,
+      search: '山田',
+      phoneDigits: null,
+      tags: ['regular', 'vip'],
+      registeredFrom: '2026-01-01T00:00:00.000Z',
+      registeredTo: '2026-12-31T23:59:59.999Z',
+      customerStatus: 'active',
+      membershipTier: 'gold',
+    })
+  })
+
+  it('compares a keyword that is written like a phone number with the digits of the phone numbers too', () => {
+    expect(
+      CustomerWriteMapper.fromSearchRequest({ search: '090-1234 5678' }),
+    ).toMatchObject({ search: '090-1234 5678', phoneDigits: '09012345678' })
+  })
+})
+
+describe('CustomerWriteMapper.fromExportRequest', () => {
+  it('filters by nothing when the request names nothing, and has no page', () => {
+    expect(CustomerWriteMapper.fromExportRequest({})).toStrictEqual({
+      search: null,
+      phoneDigits: null,
+      tags: [],
+      registeredFrom: null,
+      registeredTo: null,
+      customerStatus: null,
+      membershipTier: null,
+    })
+  })
+
+  it('takes every filter of the list', () => {
+    expect(
+      CustomerWriteMapper.fromExportRequest({
+        search: '(03) 1234',
+        tags: ['vip'],
+        registeredFrom: '2026-01-01T00:00:00.000Z',
+        registeredTo: '2026-06-30T00:00:00.000Z',
+        customerStatus: 'inactive',
+        membershipTier: 'regular',
+      }),
+    ).toStrictEqual({
+      search: '(03) 1234',
+      phoneDigits: '031234',
+      tags: ['vip'],
+      registeredFrom: '2026-01-01T00:00:00.000Z',
+      registeredTo: '2026-06-30T00:00:00.000Z',
+      customerStatus: 'inactive',
+      membershipTier: 'regular',
+    })
+  })
+})
+
+describe('the requests of CustomerWriteMapper for several customers', () => {
+  const first = customerIdSchema.parse(OTHER_CUSTOMER_ID)
+  const second = customerIdSchema.parse(CUSTOMER_ID)
+
+  it('reads the customers in the order the request names them', () => {
+    expect(
+      CustomerWriteMapper.fromBatchGetRequest({ ids: [first, second] }),
+    ).toStrictEqual([OTHER_CUSTOMER_ID, CUSTOMER_ID])
+  })
+
+  it('makes a row of every item to add, in the order of the request', () => {
+    const other = { ...customerCreateRequest(), firstName: '太郎', tags: [] }
+
+    expect(
+      CustomerWriteMapper.fromBulkCreateRequest({
+        items: [other, customerCreateRequest()],
+      }),
+    ).toStrictEqual([other, customerCreateRequest()])
+  })
+
+  it('makes the changes of every item to change, in the order of the request, and nothing an item does not name', () => {
+    expect(
+      CustomerWriteMapper.fromBulkUpdateRequest({
+        items: [
+          { id: first, updates: { firstName: '太郎' } },
+          { id: second, updates: { notes: null, tags: [] } },
+        ],
+      }),
+    ).toStrictEqual([
+      { id: OTHER_CUSTOMER_ID, changes: { firstName: '太郎' } },
+      { id: CUSTOMER_ID, changes: { notes: null, tags: [] } },
+    ])
+  })
+
+  it('deletes the customers in the order the request names them', () => {
+    expect(
+      CustomerWriteMapper.fromBulkDeleteRequest({ ids: [first, second] }),
+    ).toStrictEqual([OTHER_CUSTOMER_ID, CUSTOMER_ID])
+  })
+
+  it('merges the two customers the request names, by the resolution it names', () => {
+    expect(
+      CustomerWriteMapper.fromMergeRequest({
+        primaryCustomerId: first,
+        secondaryCustomerId: second,
+        conflictResolution: 'keep_newest',
+      }),
+    ).toStrictEqual({
+      primaryCustomerId: OTHER_CUSTOMER_ID,
+      secondaryCustomerId: CUSTOMER_ID,
+      conflictResolution: 'keep_newest',
     })
   })
 })

@@ -54,6 +54,9 @@ export type ApiCustomerBulkDeleteResponse =
   components['schemas']['Models.CustomerBulkDeleteResponse']
 export type ApiCustomerMergeRequest =
   components['schemas']['Models.CustomerMergeRequest']
+/** Whose value a merge keeps where the two customers differ. */
+export type CustomerMergeConflictResolution =
+  ApiCustomerMergeRequest['conflictResolution']
 export type ApiCustomerExportRequest =
   components['schemas']['Models.CustomerExportRequest']
 export type ApiCustomerDataExportResponse =

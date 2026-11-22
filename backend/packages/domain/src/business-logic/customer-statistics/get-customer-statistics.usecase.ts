@@ -1,5 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
+import { CustomerStatisticsReadMapper } from '../../mappers/read/customer-statistics.mapper'
+import { CustomerStatisticsWriteMapper } from '../../mappers/write/customer-statistics.mapper'
 import type { Actor } from '../../models/auth'
 import { parseCustomerId } from '../../models/customer'
 import type { ApiCustomerStatisticsResponse } from '../../models/customer-statistics'
@@ -9,7 +11,6 @@ import { isWithin } from '../booking/_shared/authorization'
 import { notFound } from '../booking/_shared/plan'
 import { saleReachOf } from '../sale/_shared/authorization'
 import type { CustomerStatisticsUseCaseDependencies } from './_shared/dependencies'
-import { statisticsOf } from './_shared/statistics'
 
 const MESSAGE = 'Invalid customer statistics'
 
@@ -19,7 +20,7 @@ export class GetCustomerStatisticsUseCase {
   ) {}
 
   /**
-   * The statistics of a customer at a salon in a period (`statisticsOf`).
+   * The statistics of a customer at a salon in a period (`toApiStatistics`).
    * They show what the customer spent at the salon, so they are read by
    * those who keep its sales ledger (`saleReachOf`): whether the actor
    * keeps one at all is decided before the ID and the query are read, and
@@ -48,14 +49,15 @@ export class GetCustomerStatisticsUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (!isWithin(reach, request.data.salonId)) {
+    const period = CustomerStatisticsWriteMapper.fromGetRequest(request.data)
+    if (!isWithin(reach, period.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
 
     const found =
       await this.dependencies.customerStatisticsRepository.findStatistics(
         customerId.data,
-        request.data,
+        period,
       )
     if (found.type === 'error') {
       return found
@@ -72,7 +74,11 @@ export class GetCustomerStatisticsUseCase {
         Result.error(DomainErrors.notFound('Customer', customerId.data)),
       )
       .with({ type: 'found' }, ({ figures }) =>
-        statisticsOf(customerId.data, request.data, figures),
+        CustomerStatisticsReadMapper.toApiStatistics(
+          customerId.data,
+          period,
+          figures,
+        ),
       )
       .exhaustive()
   }

@@ -22,3 +22,8 @@ export const customerVersionNumberSchema = z.strictObject({
     .transform(Number)
     .pipe(z.number().int().min(1).max(LAST_VERSION)),
 }) satisfies z.ZodType<Pick<ApiCustomerVersionPathParameters, 'version'>>
+
+/** A search that was checked: its cursor is the ID of a version. */
+export type CustomerVersionSearchRequest = z.infer<
+  typeof customerVersionSearchRequestSchema
+>

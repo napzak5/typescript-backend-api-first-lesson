@@ -1,14 +1,22 @@
+import type { LedgerReach } from '../../models/booking'
 import type {
   DbNewTreatmentMaterial,
   DbNewTreatmentPhoto,
   DbNewTreatmentRecord,
 } from '../../models/treatment-record'
-import type { TreatmentRecordUpdateCriteria } from '../../repositories/treatment-record.repository'
+import type {
+  TreatmentRecordListCriteria,
+  TreatmentRecordUpdateCriteria,
+  TreatmentStatisticsCriteria,
+} from '../../repositories/treatment-record.repository'
 import type { TreatmentPhotoBulkCreateRequest } from '../../schemas/treatment-photo.schema'
 import type {
   TreatmentRecordCreateRequest,
+  TreatmentRecordSearchRequest,
   TreatmentRecordUpdateRequest,
+  TreatmentStatisticsGetRequest,
 } from '../../schemas/treatment-record.schema'
+import { toPaging } from './page'
 
 type MaterialOfRequest = TreatmentRecordCreateRequest['materials'][number]
 
@@ -79,5 +87,35 @@ export const TreatmentRecordWriteMapper = {
       customerConsent: photo.customerConsent,
       sortOrder: photo.sortOrder,
     }))
+  },
+
+  /**
+   * The records the reader reaches (`reach`); a filter the request does not
+   * name is none.
+   */
+  fromSearchRequest(
+    request: TreatmentRecordSearchRequest,
+    reach: LedgerReach,
+  ): TreatmentRecordListCriteria {
+    return {
+      reach,
+      ...toPaging(request),
+      salonId: request.salonId ?? null,
+      customerId: request.customerId ?? null,
+      staffId: request.staffId ?? null,
+      startDate: request.startDate ?? null,
+      endDate: request.endDate ?? null,
+    }
+  },
+
+  /** The salon, and the period: an end the request does not name is open. */
+  fromStatisticsGetRequest(
+    request: TreatmentStatisticsGetRequest,
+  ): TreatmentStatisticsCriteria {
+    return {
+      salonId: request.salonId,
+      startDate: request.startDate ?? null,
+      endDate: request.endDate ?? null,
+    }
   },
 }

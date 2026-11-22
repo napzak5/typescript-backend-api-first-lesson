@@ -151,3 +151,11 @@ export const treatmentStatisticsGetRequestSchema = z
       startDate === undefined || endDate === undefined || startDate <= endDate,
     { path: ['endDate'], message: 'Must not be earlier than startDate' },
   ) satisfies z.ZodType<ApiTreatmentStatisticsGetRequest>
+
+/** The queries that were checked: the IDs they name are IDs of what they name. */
+export type TreatmentRecordSearchRequest = z.infer<
+  typeof treatmentRecordSearchRequestSchema
+>
+export type TreatmentStatisticsGetRequest = z.infer<
+  typeof treatmentStatisticsGetRequestSchema
+>

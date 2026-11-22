@@ -1,20 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
+import { AttachmentWriteMapper } from '../../mappers/write/attachment.mapper'
 import type { ApiAttachmentResponse } from '../../models/attachment'
 import type { Actor } from '../../models/auth'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import { attachmentSearchRequestSchema } from '../../schemas/attachment.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { attachmentReachOf, reachesFilesOf } from './_shared/authorization'
 import type { AttachmentUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid attachment search'
-
-export type AttachmentPage = {
-  data: ApiAttachmentResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListAttachmentsUseCase {
   constructor(private readonly dependencies: AttachmentUseCaseDependencies) {}
@@ -33,7 +28,7 @@ export class ListAttachmentsUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<AttachmentPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiAttachmentResponse>, DomainError>> {
     const reach = attachmentReachOf(actor)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
@@ -50,18 +45,15 @@ export class ListAttachmentsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, salonId } = request.data
-    if (salonId !== undefined && !reachesFilesOf(reach, salonId)) {
+    const criteria = AttachmentWriteMapper.fromSearchRequest(
+      request.data,
+      reach,
+    )
+    if (criteria.salonId !== null && !reachesFilesOf(reach, criteria.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
-    const limit = request.data.limit ?? DEFAULT_LIMIT
 
-    const listed = await this.dependencies.attachmentRepository.list({
-      reach,
-      limit,
-      after: cursor ?? null,
-      salonId: salonId ?? null,
-    })
+    const listed = await this.dependencies.attachmentRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -77,23 +69,6 @@ export class ListAttachmentsUseCase {
       )
     }
 
-    const { attachments, total, hasMore } = listed.data
-    const lastAttachmentId = attachments.at(-1)?.id ?? null
-
-    return Result.map(
-      AttachmentReadMapper.toApiAttachments(attachments),
-      (data) => ({
-        data,
-        meta: {
-          total,
-          limit,
-          hasMore,
-          cursor: cursor ?? null,
-          nextCursor: hasMore ? lastAttachmentId : null,
-          // Pages are only walked forwards.
-          prevCursor: null,
-        },
-      }),
-    )
+    return AttachmentReadMapper.toApiAttachmentPage(listed.data, criteria)
   }
 }

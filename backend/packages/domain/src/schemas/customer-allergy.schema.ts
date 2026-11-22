@@ -52,3 +52,8 @@ export const customerAllergySearchRequestSchema = z.strictObject({
   limit: z.number().int().min(1).max(100).exactOptional(),
   cursor: customerAllergyIdSchema.exactOptional(),
 }) satisfies z.ZodType<ApiCustomerAllergySearchRequest>
+
+/** A search that was checked: its cursor is the ID of an allergy. */
+export type CustomerAllergySearchRequest = z.infer<
+  typeof customerAllergySearchRequestSchema
+>

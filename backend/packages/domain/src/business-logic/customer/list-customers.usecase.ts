@@ -1,21 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
+import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiCustomerResponse } from '../../models/customer'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import { customerSearchRequestSchema } from '../../schemas/customer.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayHandleCustomers } from './_shared/authorization'
 import type { CustomerUseCaseDependencies } from './_shared/dependencies'
-import { phoneDigitsOf } from './_shared/search'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid customer search'
-
-export type CustomerPage = {
-  data: ApiCustomerResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListCustomersUseCase {
   constructor(private readonly dependencies: CustomerUseCaseDependencies) {}
@@ -34,7 +28,7 @@ export class ListCustomersUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<CustomerPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiCustomerResponse>, DomainError>> {
     if (!mayHandleCustomers(actor)) {
       return Result.error(DomainErrors.forbidden())
     }
@@ -46,28 +40,9 @@ export class ListCustomersUseCase {
     if (request.type === 'error') {
       return request
     }
-    const {
-      cursor,
-      search,
-      tags,
-      registeredFrom,
-      registeredTo,
-      customerStatus,
-      membershipTier,
-    } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = CustomerWriteMapper.fromSearchRequest(request.data)
 
-    const listed = await this.dependencies.customerRepository.list({
-      limit,
-      after: cursor ?? null,
-      search: search ?? null,
-      phoneDigits: search === undefined ? null : phoneDigitsOf(search),
-      tags: tags ?? [],
-      registeredFrom: registeredFrom ?? null,
-      registeredTo: registeredTo ?? null,
-      customerStatus: customerStatus ?? null,
-      membershipTier: membershipTier ?? null,
-    })
+    const listed = await this.dependencies.customerRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -83,20 +58,6 @@ export class ListCustomersUseCase {
       )
     }
 
-    const { customers, total, hasMore } = listed.data
-    const lastCustomerId = customers.at(-1)?.id ?? null
-
-    return Result.map(CustomerReadMapper.toApiCustomers(customers), (data) => ({
-      data,
-      meta: {
-        total,
-        limit,
-        hasMore,
-        cursor: cursor ?? null,
-        nextCursor: hasMore ? lastCustomerId : null,
-        // Pages are only walked forwards.
-        prevCursor: null,
-      },
-    }))
+    return CustomerReadMapper.toApiCustomerPage(listed.data, criteria)
   }
 }

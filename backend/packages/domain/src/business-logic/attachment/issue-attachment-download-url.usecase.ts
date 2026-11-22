@@ -1,5 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { addMinutes } from 'date-fns'
+import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
+import { AttachmentWriteMapper } from '../../mappers/write/attachment.mapper'
 import {
   type ApiAttachmentDownloadUrlResponse,
   parseAttachmentId,
@@ -53,6 +55,9 @@ export class IssueAttachmentDownloadUrlUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { inline } = AttachmentWriteMapper.fromDownloadUrlRequest(
+      request.data,
+    )
 
     const { attachmentRepository, fileStorage, clock } = this.dependencies
     const found = await attachmentRepository.findById(reach, attachmentId.data)
@@ -76,17 +81,13 @@ export class IssueAttachmentDownloadUrlUseCase {
       {
         key: storageKeyOf(attachment.id),
         contentType: attachment.contentType,
-        contentDisposition: contentDispositionOf(
-          attachment.filename,
-          request.data.inline ?? false,
-        ),
+        contentDisposition: contentDispositionOf(attachment.filename, inline),
       },
       expiresAt,
     )
 
-    return Result.map(issued, (downloadUrl) => ({
-      downloadUrl,
-      expiresAt: expiresAt.toISOString(),
-    }))
+    return Result.map(issued, (downloadUrl) =>
+      AttachmentReadMapper.toApiDownloadUrl(downloadUrl, expiresAt),
+    )
   }
 }

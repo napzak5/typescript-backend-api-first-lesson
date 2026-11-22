@@ -3,10 +3,14 @@ import { z } from 'zod'
 import type {
   ApiMedicalChartResponse,
   DbMedicalChart,
+  MedicalChartId,
 } from '../../models/medical-chart'
+import type { ApiPage, Paging } from '../../models/page'
+import type { MedicalChartListing } from '../../repositories/medical-chart.repository'
 import { previousTreatmentSchema } from '../../schemas/medical-chart.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * A row of `medical_charts` → API response. Property names are the column
@@ -71,5 +75,20 @@ export const MedicalChartReadMapper = {
       apiCharts.push(mapped.data)
     }
     return Result.success(apiCharts)
+  },
+
+  /** The charts a list found as a page of it. */
+  toApiMedicalChartPage(
+    {
+      charts,
+      total,
+      hasMore,
+    }: Extract<MedicalChartListing, { type: 'listed' }>,
+    paging: Paging<MedicalChartId>,
+  ): Result<ApiPage<ApiMedicalChartResponse>, DomainError> {
+    return Result.map(
+      MedicalChartReadMapper.toApiMedicalCharts(charts),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

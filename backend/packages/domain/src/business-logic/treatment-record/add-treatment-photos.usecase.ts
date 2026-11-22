@@ -68,7 +68,7 @@ export class AddTreatmentPhotosUseCase {
       .with({ type: 'added' }, ({ recordId: addedTo, photos }) =>
         Result.success({
           recordId: addedTo,
-          response: { created: TreatmentRecordReadMapper.toApiPhotos(photos) },
+          response: TreatmentRecordReadMapper.toApiPhotoBulkCreate(photos),
         }),
       )
       .with({ type: 'notFound' }, () =>

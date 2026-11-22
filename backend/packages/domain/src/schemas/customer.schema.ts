@@ -164,6 +164,9 @@ export const customerSearchRequestSchema = z
     REGISTERED_IN_ORDER,
   ) satisfies z.ZodType<ApiCustomerSearchRequest>
 
+/** A search that was checked: its cursor is the ID of a customer. */
+export type CustomerSearchRequest = z.infer<typeof customerSearchRequestSchema>
+
 /** The CSV export takes the filters of the list, and no page. */
 export const customerExportRequestSchema = z
   .strictObject(customerFilters)

@@ -4,7 +4,4 @@ export { DeleteShareLinkUseCase } from './delete-share-link.usecase'
 export { GetShareLinkUseCase } from './get-share-link.usecase'
 export { GetSharedFileUseCase } from './get-shared-file.usecase'
 export { IssueSharedFileDownloadUrlUseCase } from './issue-shared-file-download-url.usecase'
-export {
-  ListShareLinksUseCase,
-  type ShareLinkPage,
-} from './list-share-links.usecase'
+export { ListShareLinksUseCase } from './list-share-links.usecase'

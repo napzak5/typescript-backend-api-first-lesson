@@ -1,23 +1,8 @@
-import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
-import { BookingReadMapper } from '../../../mappers/read/booking.mapper'
-import { CustomerReadMapper } from '../../../mappers/read/customer.mapper'
-import { CustomerAllergyReadMapper } from '../../../mappers/read/customer-allergy.mapper'
-import { CustomerPreferencesReadMapper } from '../../../mappers/read/customer-preferences.mapper'
-import { CustomerVersionReadMapper } from '../../../mappers/read/customer-version.mapper'
-import { MedicalChartReadMapper } from '../../../mappers/read/medical-chart.mapper'
-import { PointReadMapper } from '../../../mappers/read/point.mapper'
-import { ReviewReadMapper } from '../../../mappers/read/review.mapper'
-import { SaleReadMapper } from '../../../mappers/read/sale.mapper'
-import { TreatmentRecordReadMapper } from '../../../mappers/read/treatment-record.mapper'
-import { UserReadMapper } from '../../../mappers/read/user.mapper'
 import type {
   ApiCustomerDataExportResponse,
   ApiCustomerResponse,
-  CustomerId,
 } from '../../../models/customer'
-import type { CustomerData } from '../../../repositories/customer.repository'
-import type { DomainError } from '../../../shared'
 
 /** An export as a file: what it is called and what it says. */
 export type CustomerFile = {
@@ -135,112 +120,6 @@ export const customersFileOf = (
       .map((line) => line + LINE_END)
       .join(''),
 })
-
-/** Each of a list mapped, or the first error. */
-const each = <T, U>(
-  items: readonly T[],
-  toApi: (item: T) => Result<U, DomainError>,
-): Result<U[], DomainError> => {
-  const mapped: U[] = []
-  for (const item of items) {
-    const one = toApi(item)
-    if (one.type === 'error') {
-      return one
-    }
-    mapped.push(one.data)
-  }
-  return Result.success(mapped)
-}
-
-/**
- * Everything held of a customer as the API shows each part of it. A
- * stored row that does not match its API model is a database error, as it
- * is for each part on its own.
- */
-export const customerDataExportOf = (
-  id: CustomerId,
-  data: CustomerData,
-  exportedAt: string,
-): Result<ApiCustomerDataExportResponse, DomainError> => {
-  const customer = CustomerReadMapper.toApiCustomer(data.customer)
-  if (customer.type === 'error') {
-    return customer
-  }
-  const account =
-    data.account === null
-      ? Result.success(null)
-      : UserReadMapper.toApiUser(data.account)
-  if (account.type === 'error') {
-    return account
-  }
-  const preferences =
-    data.preferences === null
-      ? Result.success(null)
-      : CustomerPreferencesReadMapper.toApiPreferences(id, data.preferences)
-  if (preferences.type === 'error') {
-    return preferences
-  }
-  const medicalChart =
-    data.medicalChart === null
-      ? Result.success(null)
-      : MedicalChartReadMapper.toApiMedicalChart(data.medicalChart)
-  if (medicalChart.type === 'error') {
-    return medicalChart
-  }
-  const allergies = CustomerAllergyReadMapper.toApiCustomerAllergies(
-    data.allergies,
-  )
-  if (allergies.type === 'error') {
-    return allergies
-  }
-  const bookings = BookingReadMapper.toApiBookings(data.bookings)
-  if (bookings.type === 'error') {
-    return bookings
-  }
-  const sales = SaleReadMapper.toApiSales(data.sales)
-  if (sales.type === 'error') {
-    return sales
-  }
-  const pointTransactions = PointReadMapper.toApiPointTransactions(
-    data.pointTransactions,
-  )
-  if (pointTransactions.type === 'error') {
-    return pointTransactions
-  }
-  const reviews = ReviewReadMapper.toApiReviews(data.reviews)
-  if (reviews.type === 'error') {
-    return reviews
-  }
-  const treatmentRecords = TreatmentRecordReadMapper.toApiTreatmentRecords(
-    data.treatmentRecords,
-  )
-  if (treatmentRecords.type === 'error') {
-    return treatmentRecords
-  }
-  const versions = each(
-    data.versions,
-    CustomerVersionReadMapper.toApiCustomerVersion,
-  )
-  if (versions.type === 'error') {
-    return versions
-  }
-
-  return Result.success({
-    exportedAt,
-    customer: customer.data,
-    account: account.data,
-    preferences: preferences.data,
-    medicalChart: medicalChart.data,
-    allergies: allergies.data,
-    bookings: bookings.data,
-    sales: sales.data,
-    pointTransactions: pointTransactions.data,
-    reviews: reviews.data,
-    helpfulReviewIds: data.helpfulReviewIds,
-    treatmentRecords: treatmentRecords.data,
-    versions: versions.data,
-  })
-}
 
 /**
  * Everything held of a customer as a JSON file, named by the customer and

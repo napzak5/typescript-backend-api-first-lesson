@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { CustomerDeletionRequestReadMapper } from '../../mappers/read/customer-deletion-request.mapper'
+import { CustomerDeletionRequestWriteMapper } from '../../mappers/write/customer-deletion-request.mapper'
 import type { Actor } from '../../models/auth'
 import { parseCustomerId } from '../../models/customer'
 import type { ApiCustomerDeletionRequestResponse } from '../../models/customer-deletion-request'
@@ -45,10 +46,14 @@ export class RequestCustomerDeletionUseCase {
       return request
     }
 
+    const { reason } = CustomerDeletionRequestWriteMapper.fromCreateRequest(
+      request.data,
+    )
+
     const taken =
       await this.dependencies.customerDeletionRequestRepository.request(
         customerId.data,
-        request.data.reason,
+        reason,
         actor.userId,
       )
     if (taken.type === 'error') {

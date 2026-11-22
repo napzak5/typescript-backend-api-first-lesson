@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
+import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiCustomerResponse } from '../../models/customer'
 import { customerBatchGetRequestSchema } from '../../schemas/customer-bulk.schema'
@@ -29,7 +30,7 @@ export class BatchGetCustomersUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { ids } = request.data
+    const ids = CustomerWriteMapper.fromBatchGetRequest(request.data)
 
     const found = await this.dependencies.customerRepository.findByIds(ids)
     if (found.type === 'error') {

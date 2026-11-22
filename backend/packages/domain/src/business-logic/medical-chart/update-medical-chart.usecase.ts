@@ -39,17 +39,15 @@ export class UpdateMedicalChartUseCase {
     if (request.type === 'error') {
       return request
     }
-    const issues = medicalChartRuleIssues(
-      request.data,
-      this.dependencies.clock(),
-    )
+    const changes = MedicalChartWriteMapper.fromUpdateRequest(request.data)
+    const issues = medicalChartRuleIssues(changes, this.dependencies.clock())
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
 
     const changed = await this.dependencies.medicalChartRepository.update(
       chartId.data,
-      MedicalChartWriteMapper.fromUpdateRequest(request.data),
+      changes,
     )
     if (changed.type === 'error') {
       return changed

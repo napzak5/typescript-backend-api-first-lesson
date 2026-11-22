@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { parseISO } from 'date-fns'
 import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
+import { AttachmentWriteMapper } from '../../mappers/write/attachment.mapper'
 import type { ApiAttachmentUploadUrlResponse } from '../../models/attachment'
 import type { Actor } from '../../models/auth'
 import { attachmentUploadUrlRequestSchema } from '../../schemas/attachment.schema'
@@ -38,7 +39,11 @@ export class IssueAttachmentUploadUrlUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { salonId } = request.data
+    const announced = AttachmentWriteMapper.fromUploadUrlRequest(
+      request.data,
+      actor.userId,
+    )
+    const { salonId } = announced
     if (!reachesFilesOf(reach, salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
@@ -64,7 +69,7 @@ export class IssueAttachmentUploadUrlUseCase {
     }
 
     const created = await attachmentRepository.create(
-      { ...request.data, uploadedBy: actor.userId },
+      announced,
       UPLOAD_URL_MINUTES,
     )
     if (created.type === 'error') {
@@ -85,10 +90,8 @@ export class IssueAttachmentUploadUrlUseCase {
       parseISO(attachment.data.uploadExpiresAt),
     )
 
-    return Result.map(ticket, ({ url, headers }) => ({
-      attachment: attachment.data,
-      uploadUrl: url,
-      uploadHeaders: headers,
-    }))
+    return Result.map(ticket, (issued) =>
+      AttachmentReadMapper.toApiUploadUrl(attachment.data, issued),
+    )
   }
 }

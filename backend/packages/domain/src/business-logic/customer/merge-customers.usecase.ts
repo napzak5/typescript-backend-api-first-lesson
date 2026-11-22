@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
+import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiCustomerResponse } from '../../models/customer'
 import { customerMergeRequestSchema } from '../../schemas/customer-merge.schema'
@@ -33,7 +34,7 @@ export class MergeCustomersUseCase {
     }
 
     const merged = await this.dependencies.customerRepository.merge(
-      request.data,
+      CustomerWriteMapper.fromMergeRequest(request.data),
       actor.userId,
     )
     if (merged.type === 'error') {

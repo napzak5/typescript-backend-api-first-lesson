@@ -72,3 +72,14 @@ export const customerBulkUpdateRequestSchema = z.strictObject({
 export const customerBulkDeleteRequestSchema = z.strictObject({
   ids: customerIds,
 }) satisfies z.ZodType<ApiCustomerBulkDeleteRequest>
+
+/** The requests that were checked: the customers they name are IDs of customers. */
+export type CustomerBatchGetRequest = z.infer<
+  typeof customerBatchGetRequestSchema
+>
+export type CustomerBulkUpdateRequest = z.infer<
+  typeof customerBulkUpdateRequestSchema
+>
+export type CustomerBulkDeleteRequest = z.infer<
+  typeof customerBulkDeleteRequestSchema
+>

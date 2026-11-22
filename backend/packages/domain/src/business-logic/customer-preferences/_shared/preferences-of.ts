@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
 import { CustomerPreferencesReadMapper } from '../../../mappers/read/customer-preferences.mapper'
+import { CustomerPreferencesWriteMapper } from '../../../mappers/write/customer-preferences.mapper'
 import type { CustomerId } from '../../../models/customer'
 import type { ApiCustomerPreferencesResponse } from '../../../models/customer-preferences'
 import type { ICustomerPreferencesRepository } from '../../../repositories/customer-preferences.repository'
@@ -57,7 +58,8 @@ export const changePreferencesOf = async (
   if (request.type === 'error') {
     return request
   }
-  const { preferredStaffId, avoidStaffIds } = request.data
+  const changes = CustomerPreferencesWriteMapper.fromUpdateRequest(request.data)
+  const { preferredStaffId, avoidStaffIds } = changes
   if (preferredStaffId !== undefined && avoidStaffIds !== undefined) {
     const issues = customerPreferencesRuleIssues({
       preferredStaffId,
@@ -68,7 +70,7 @@ export const changePreferencesOf = async (
     }
   }
 
-  const updated = await repository.update(customerId, request.data)
+  const updated = await repository.update(customerId, changes)
   if (updated.type === 'error') {
     return updated
   }
@@ -79,9 +81,7 @@ export const changePreferencesOf = async (
       CustomerPreferencesReadMapper.toApiPreferences(customerId, preferences),
     )
     .with({ type: P.not('updated') }, (refusal) =>
-      Result.error(
-        toRefusalError(refusal, request.data, MESSAGE, customerNotFound),
-      ),
+      Result.error(toRefusalError(refusal, changes, MESSAGE, customerNotFound)),
     )
     .exhaustive()
 }

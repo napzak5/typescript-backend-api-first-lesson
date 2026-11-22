@@ -86,3 +86,11 @@ export const attachmentSearchRequestSchema = z.strictObject({
 export const attachmentDownloadUrlRequestSchema = z.strictObject({
   inline: z.boolean().exactOptional(),
 }) satisfies z.ZodType<ApiAttachmentDownloadUrlRequest>
+
+/** The requests that were checked: the IDs they name are IDs of what they name. */
+export type AttachmentUploadUrlRequest = z.infer<
+  typeof attachmentUploadUrlRequestSchema
+>
+export type AttachmentSearchRequest = z.infer<
+  typeof attachmentSearchRequestSchema
+>

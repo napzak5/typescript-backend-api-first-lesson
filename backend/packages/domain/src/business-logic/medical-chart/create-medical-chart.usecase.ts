@@ -33,25 +33,21 @@ export class CreateMedicalChartUseCase {
     if (request.type === 'error') {
       return request
     }
-    const issues = medicalChartRuleIssues(
-      request.data,
-      this.dependencies.clock(),
-    )
+    const chart = MedicalChartWriteMapper.fromCreateRequest(request.data)
+    const issues = medicalChartRuleIssues(chart, this.dependencies.clock())
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
 
-    const created = await this.dependencies.medicalChartRepository.create(
-      MedicalChartWriteMapper.fromCreateRequest(request.data),
-    )
+    const created = await this.dependencies.medicalChartRepository.create(chart)
     if (created.type === 'error') {
       return created
     }
 
     return match(created.data)
       .returnType<Result<ApiMedicalChartResponse, DomainError>>()
-      .with({ type: 'created' }, ({ chart }) =>
-        MedicalChartReadMapper.toApiMedicalChart(chart),
+      .with({ type: 'created' }, ({ chart: opened }) =>
+        MedicalChartReadMapper.toApiMedicalChart(opened),
       )
       .with({ type: 'customerNotFound' }, () =>
         Result.error(

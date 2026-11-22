@@ -18,7 +18,6 @@ import { TreatmentRecordReadMapper } from '../mappers/read/treatment-record.mapp
 import { UserReadMapper } from '../mappers/read/user.mapper'
 import type { Actor } from '../models/auth'
 import { customerIdSchema } from '../models/customer'
-import type { DbCustomerVersion } from '../models/customer-version'
 import type {
   CustomerData,
   CustomerExport,
@@ -36,6 +35,7 @@ import {
   REFERRER_ID,
 } from './customer-fixtures'
 import { dbCustomerPreferences } from './customer-preferences-fixtures'
+import { dbCustomerVersion } from './customer-version-fixtures'
 import { brokenRules } from './fixtures'
 import { dbMedicalChart } from './medical-chart-fixtures'
 import { dbPointTransaction } from './point-fixtures'
@@ -505,49 +505,6 @@ describe('ExportCustomersUseCase', () => {
   })
 })
 
-/** A version of the customer of the fixtures, as the driver returns it. */
-const dbVersion = (
-  overrides: Partial<DbCustomerVersion> = {},
-): DbCustomerVersion => ({
-  id: '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f6a01',
-  customerId: CUSTOMER_ID,
-  version: 1,
-  operation: 'create',
-  changedBy: USER_ID,
-  changedAt: '2026-11-14 18:00:00.123456+09',
-  firstName: '花子',
-  lastName: '山田',
-  firstNameKana: 'ハナコ',
-  lastNameKana: null,
-  email: 'hanako.yamada@example.com',
-  phoneNumber: '090-1234-5678',
-  alternativePhone: null,
-  postalCode: '107-0062',
-  prefecture: '東京都',
-  city: '港区',
-  address: null,
-  building: null,
-  birthDate: '1990-04-01',
-  gender: 'female',
-  occupation: null,
-  membershipTier: 'gold',
-  preferences: { preferredServices: ['cut'], notes: null },
-  notes: null,
-  internalNotes: null,
-  tags: ['regular'],
-  referredBy: REFERRER_ID,
-  referralCode: 'HANAKO2026',
-  allowMarketing: true,
-  allowSms: false,
-  allowEmail: true,
-  isActive: true,
-  hairType: 'wavy',
-  hairThickness: null,
-  scalpCondition: null,
-  customerStatus: 'active',
-  ...overrides,
-})
-
 /** Everything held of the customer of the fixtures, of every kind. */
 const everything = (overrides: Partial<CustomerData> = {}): CustomerData => ({
   customer: dbCustomer({ userId: USER_ID }),
@@ -561,7 +518,10 @@ const everything = (overrides: Partial<CustomerData> = {}): CustomerData => ({
   reviews: [dbReview()],
   helpfulReviewIds: ['0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f6b01'],
   treatmentRecords: [storedTreatmentRecord()],
-  versions: [dbVersion(), dbVersion({ version: 2, operation: 'update' })],
+  versions: [
+    dbCustomerVersion(),
+    dbCustomerVersion({ version: 2, operation: 'update' }),
+  ],
   ...overrides,
 })
 
@@ -744,8 +704,8 @@ describe('ExportCustomerDataUseCase', () => {
       'a version',
       {
         versions: [
-          dbVersion(),
-          dbVersion({ version: 2, changedAt: 'recently' }),
+          dbCustomerVersion(),
+          dbCustomerVersion({ version: 2, changedAt: 'recently' }),
         ],
       },
     ],

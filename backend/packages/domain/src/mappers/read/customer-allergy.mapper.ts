@@ -2,10 +2,14 @@ import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import type {
   ApiCustomerAllergyResponse,
+  CustomerAllergyId,
   DbCustomerAllergy,
 } from '../../models/customer-allergy'
+import type { ApiPage, Paging } from '../../models/page'
+import type { CustomerAllergyListing } from '../../repositories/customer-allergy.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * A row of `customer_allergies` → API response. Property names are the
@@ -69,5 +73,20 @@ export const CustomerAllergyReadMapper = {
       apiAllergies.push(mapped.data)
     }
     return Result.success(apiAllergies)
+  },
+
+  /** The allergies a list found as a page of it. */
+  toApiCustomerAllergyPage(
+    {
+      allergies,
+      total,
+      hasMore,
+    }: Extract<CustomerAllergyListing, { type: 'listed' }>,
+    paging: Paging<CustomerAllergyId>,
+  ): Result<ApiPage<ApiCustomerAllergyResponse>, DomainError> {
+    return Result.map(
+      CustomerAllergyReadMapper.toApiCustomerAllergies(allergies),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

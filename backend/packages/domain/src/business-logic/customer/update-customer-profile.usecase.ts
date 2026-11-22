@@ -55,14 +55,15 @@ export class UpdateCustomerProfileUseCase {
       return request
     }
     const { customerRepository, clock } = this.dependencies
-    const issues = customerRuleIssues(request.data, clock())
+    const changes = CustomerProfileWriteMapper.fromUpdateRequest(request.data)
+    const issues = customerRuleIssues(changes, clock())
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
 
     const updated = await customerRepository.update(
       customerId,
-      CustomerProfileWriteMapper.fromUpdateRequest(request.data),
+      changes,
       actor.userId,
     )
     if (updated.type === 'error') {

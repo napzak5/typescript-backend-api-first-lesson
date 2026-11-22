@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { TreatmentRecordReadMapper } from '../mappers/read/treatment-record.mapper'
 import { TreatmentRecordWriteMapper } from '../mappers/write/treatment-record.mapper'
-import type { DbTreatmentPhoto } from '../models/treatment-record'
+import type { LedgerReach } from '../models/booking'
+import { salonIdSchema } from '../models/salon'
+import {
+  type DbTreatmentPhoto,
+  treatmentRecordIdSchema,
+} from '../models/treatment-record'
 import {
   treatmentRecordCreateRequestSchema,
+  treatmentRecordSearchRequestSchema,
   treatmentRecordUpdateRequestSchema,
 } from '../schemas/treatment-record.schema'
 import { CUSTOMER_ID, STAFF_ID } from './auth-fixtures'
 import { BOOKING_ID, COLOR_ID, CUT_ID } from './booking-fixtures'
+import { SALON_ID } from './fixtures'
 import { OTHER_PRODUCT_ID, PRODUCT_ID } from './product-fixtures'
 import {
   dbTreatmentMaterials,
@@ -289,6 +296,124 @@ describe('TreatmentRecordWriteMapper', () => {
     expect(TreatmentRecordWriteMapper.fromUpdateRequest(none)).toEqual({
       changes: {},
       materials: [],
+    })
+  })
+})
+
+describe('TreatmentRecordReadMapper.toApiTreatmentRecordPage', () => {
+  it('answers with the records of the list and where the list goes on', () => {
+    const result = TreatmentRecordReadMapper.toApiTreatmentRecordPage(
+      {
+        type: 'listed',
+        records: [
+          storedTreatmentRecord(),
+          storedTreatmentRecord({ id: OTHER_TREATMENT_RECORD_ID }),
+        ],
+        total: 7,
+        hasMore: true,
+      },
+      { limit: 2, after: treatmentRecordIdSchema.parse(TREATMENT_RECORD_ID) },
+    )
+
+    expect(result).toMatchObject({
+      type: 'success',
+      data: {
+        data: [{ id: TREATMENT_RECORD_ID }, { id: OTHER_TREATMENT_RECORD_ID }],
+        meta: {
+          total: 7,
+          limit: 2,
+          hasMore: true,
+          cursor: TREATMENT_RECORD_ID,
+          nextCursor: OTHER_TREATMENT_RECORD_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('fails as a whole when one stored record is invalid', () => {
+    const result = TreatmentRecordReadMapper.toApiTreatmentRecordPage(
+      {
+        type: 'listed',
+        records: [storedTreatmentRecord({ updatedAt: 'later' })],
+        total: 1,
+        hasMore: false,
+      },
+      { limit: 20, after: null },
+    )
+
+    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+  })
+})
+
+describe('TreatmentRecordWriteMapper.fromSearchRequest', () => {
+  const everySalon: LedgerReach = { type: 'everySalon' }
+  const ownSalon: LedgerReach = {
+    type: 'salon',
+    salonId: salonIdSchema.parse(SALON_ID),
+  }
+
+  it('asks for the first 20 records within the reach, by no filter, when the request names nothing', () => {
+    expect(
+      TreatmentRecordWriteMapper.fromSearchRequest({}, everySalon),
+    ).toStrictEqual({
+      reach: { type: 'everySalon' },
+      limit: 20,
+      after: null,
+      salonId: null,
+      customerId: null,
+      staffId: null,
+      startDate: null,
+      endDate: null,
+    })
+  })
+
+  it('takes the place and every filter the request names, as they are', () => {
+    const request = treatmentRecordSearchRequestSchema.parse({
+      limit: 5,
+      cursor: TREATMENT_RECORD_ID,
+      salonId: SALON_ID,
+      customerId: CUSTOMER_ID,
+      staffId: STAFF_ID,
+      startDate: '2026-11-01T00:00:00.000Z',
+      endDate: '2026-11-30T23:59:59.999Z',
+    })
+
+    expect(
+      TreatmentRecordWriteMapper.fromSearchRequest(request, ownSalon),
+    ).toStrictEqual({
+      reach: { type: 'salon', salonId: SALON_ID },
+      limit: 5,
+      after: TREATMENT_RECORD_ID,
+      salonId: SALON_ID,
+      customerId: CUSTOMER_ID,
+      staffId: STAFF_ID,
+      startDate: '2026-11-01T00:00:00.000Z',
+      endDate: '2026-11-30T23:59:59.999Z',
+    })
+  })
+})
+
+describe('TreatmentRecordWriteMapper.fromStatisticsGetRequest', () => {
+  const salonId = salonIdSchema.parse(SALON_ID)
+
+  it('leaves the period open where the request names no end of it', () => {
+    expect(
+      TreatmentRecordWriteMapper.fromStatisticsGetRequest({ salonId }),
+    ).toStrictEqual({ salonId: SALON_ID, startDate: null, endDate: null })
+  })
+
+  it('takes the salon and the period the request names', () => {
+    expect(
+      TreatmentRecordWriteMapper.fromStatisticsGetRequest({
+        salonId,
+        startDate: '2026-11-01T00:00:00.000Z',
+        endDate: '2026-11-30T23:59:59.999Z',
+      }),
+    ).toStrictEqual({
+      salonId: SALON_ID,
+      startDate: '2026-11-01T00:00:00.000Z',
+      endDate: '2026-11-30T23:59:59.999Z',
     })
   })
 })
