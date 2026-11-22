@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { BookingWriteMapper } from '../../mappers/write/booking.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiBookingResponse } from '../../models/booking'
 import { bookingCancelRequestSchema } from '../../schemas/booking.schema'
@@ -21,15 +22,17 @@ export class CancelBookingUseCase {
     id: unknown,
     input: unknown,
   ): Promise<Result<ApiBookingResponse, DomainError>> {
-    return changeBookingStatus(this.dependencies, actor, id, () =>
-      Result.map(
-        parseWith(
-          bookingCancelRequestSchema,
-          input,
-          'Invalid booking cancellation',
-        ),
-        ({ cancellationReason }) => ({ type: 'cancel', cancellationReason }),
-      ),
-    )
+    return changeBookingStatus(this.dependencies, actor, id, () => {
+      const request = parseWith(
+        bookingCancelRequestSchema,
+        input,
+        'Invalid booking cancellation',
+      )
+      if (request.type === 'error') {
+        return request
+      }
+
+      return Result.success(BookingWriteMapper.fromCancelRequest(request.data))
+    })
   }
 }

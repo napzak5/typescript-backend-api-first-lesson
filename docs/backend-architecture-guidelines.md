@@ -260,7 +260,7 @@ const storedDoesNotMatch = (id: string, cause: unknown): DomainError =>
 - Update では、リクエストに存在するプロパティだけを変更にします（`fromUpdateRequest`）。プロパティがなければその列に触れず、`null` なら列を NULL にします。
 - Write マッパーは、どのドメインにも書きます（まだないドメインは、`backend/packages/domain/src/__tests__/use-case-flow.test.ts` の一覧にあります）。ユースケースは、検証を通ったリクエスト（`request.data`）を Write マッパーに渡し、ほかの所では使いません。Write マッパーが返すのは、リポジトリが受け取るもの（新しい行、変更、一覧の条件）です。値を写すだけのときも、Write マッパーを通します。サービスカテゴリーには表現を変える列がなく、リクエストも 1 つのテーブルの行だけなので、`ServiceCategoryWriteMapper`（`backend/packages/domain/src/mappers/write/service-category.mapper.ts`）は、リクエストをそのまま行として返します。リクエストの型と行の型が合っていることを、コンパイラがここで検査します。顧客の `CustomerWriteMapper`（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）も同じです。サービスにも表現を変える列はありませんが、リクエストがサービスの行とオプション（`service_options`）の行を含むので、`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）がその 2 つを分けます。スタッフには表現を変える列が 1 つあります。`numeric` 列の `commissionRate` で、`StaffWriteMapper`（`backend/packages/domain/src/mappers/write/staff.mapper.ts`）が number を文字列に変えます。ほかの項目はそのまま渡します。
 - 一覧の条件も、Write マッパーが作ります（`fromSearchRequest`）。件数（リクエストが言わなければ 20）とカーソルは、どの一覧でも `toPaging`（`backend/packages/domain/src/mappers/write/page.ts`）が決めます。リクエストが言わない絞り込みは `null` にします。サロンの下にあるデータの一覧は、パスのサロンの ID を 2 つ目の引数で受け取ります（`ServiceCategoryWriteMapper.fromSearchRequest`）。
-- 一覧のページ（`data` と `meta`）は、Read マッパーが作ります（`toApiSalonPage`）。`meta` を組み立てるのは、どの一覧でも `toApiPage`（`backend/packages/domain/src/mappers/read/page.ts`）です。次のページのカーソルは、ページの最後の項目の ID です。
+- 一覧のページ（`data` と `meta`）は、Read マッパーが作ります（`toApiSalonPage`）。`meta` を組み立てるのは、どの一覧でも `toApiPage`（`backend/packages/domain/src/mappers/read/page.ts`）です。次のページのカーソルは、ページの最後の項目の ID です。項目に ID がない一覧（空き枠）は、最後の項目のカーソルを自分で言います（同じファイルの `toApiPageEndingAt`。`toApiPage` は、その上に作ってあります）。
 
 
 

@@ -5,8 +5,11 @@ import {
   isValid,
   parseISO,
 } from 'date-fns'
-import type { BookingRescheduleWrite, DbBooking } from '../../../models/booking'
-import type { BookingRescheduleRequest } from '../../../schemas/booking.schema'
+import type {
+  BookingRescheduleWrite,
+  DbBooking,
+  RequestedBookingMove,
+} from '../../../models/booking'
 import { inTimeZone } from '../../../schemas/rules'
 import type { ValidationIssue } from '../../../shared'
 import { notFound, type StaffDemand, type StaffOfBooking } from './plan'
@@ -71,7 +74,7 @@ export type BookingMove =
 /** Moves a booking to the time and the staff member a request names. */
 export const moveBooking = (
   booking: BookingToMove,
-  request: BookingRescheduleRequest,
+  request: RequestedBookingMove,
 ): BookingMove => {
   if (!MOVABLE_STATUSES.includes(booking.status)) {
     return {

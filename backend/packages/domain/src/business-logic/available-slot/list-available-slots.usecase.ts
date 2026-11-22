@@ -1,24 +1,19 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { AvailableSlotReadMapper } from '../../mappers/read/available-slot.mapper'
 import { SalonReadMapper } from '../../mappers/read/salon.mapper'
+import { AvailableSlotWriteMapper } from '../../mappers/write/available-slot.mapper'
 import type { ApiAvailableSlotResponse } from '../../models/available-slot'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import { parseSalonIdOfPath } from '../../models/salon'
 import { availableSlotSearchRequestSchema } from '../../schemas/available-slot.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { notFound } from '../booking/_shared/plan'
 import type { AvailableSlotUseCaseDependencies } from './_shared/dependencies'
-import { comesAfter, slotCursorOf, slotPositionOf } from './_shared/page'
+import { comesAfter, slotPositionOf } from './_shared/page'
 import { timeZoneUnknown } from './_shared/refusals'
 import { slotsOf } from './_shared/slots'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid available slot search'
-
-export type AvailableSlotPage = {
-  data: ApiAvailableSlotResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListAvailableSlotsUseCase {
   constructor(
@@ -37,7 +32,7 @@ export class ListAvailableSlotsUseCase {
   async execute(
     salon: unknown,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<AvailableSlotPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiAvailableSlotResponse>, DomainError>> {
     const salonId = parseSalonIdOfPath(salon)
     if (salonId.type === 'error') {
       return salonId
@@ -53,16 +48,14 @@ export class ListAvailableSlotsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, serviceId, date } = request.data
-    const staffId = request.data.staffId ?? null
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const search = AvailableSlotWriteMapper.fromSearchRequest(
+      request.data,
+      salonId.data,
+    )
 
-    const found = await this.dependencies.availableSlotRepository.findDay({
-      salonId: salonId.data,
-      serviceId,
-      staffId,
-      date,
-    })
+    const found = await this.dependencies.availableSlotRepository.findDay(
+      search.day,
+    )
     if (found.type === 'error') {
       return found
     }
@@ -72,7 +65,7 @@ export class ListAvailableSlotsUseCase {
 
     const { salon: stored, service, staff } = found.data
     const issues = [
-      ...(staffId !== null && staff.length === 0
+      ...(search.day.staffId !== null && staff.length === 0
         ? [notFound('staffId', 'a staff member of the salon')]
         : []),
       ...(service === null
@@ -89,9 +82,9 @@ export class ListAvailableSlotsUseCase {
     }
 
     const day = slotsOf({
-      date,
+      date: search.day.date,
       now: this.dependencies.clock(),
-      duration: request.data.duration ?? service.duration,
+      duration: search.duration ?? service.duration,
       salon: {
         isActive: stored.isActive,
         timezone: stored.timezone,
@@ -106,26 +99,19 @@ export class ListAvailableSlotsUseCase {
       return Result.error(timeZoneUnknown())
     }
 
-    const position = cursor === undefined ? null : slotPositionOf(cursor)
+    const position = search.after === null ? null : slotPositionOf(search.after)
     const rest =
       position === null
         ? day.slots
         : day.slots.filter((slot) => comesAfter(slot, position))
-    const page = rest.slice(0, limit)
-    const hasMore = rest.length > page.length
-    const last = page.at(-1)
+    const page = rest.slice(0, search.limit)
 
-    return Result.success({
-      data: page.map(AvailableSlotReadMapper.toApiAvailableSlot),
-      meta: {
-        total: day.slots.length,
-        limit,
-        hasMore,
-        cursor: cursor ?? null,
-        nextCursor: hasMore && last !== undefined ? slotCursorOf(last) : null,
-        // Pages are only walked forwards.
-        prevCursor: null,
-      },
-    })
+    return Result.success(
+      AvailableSlotReadMapper.toApiAvailableSlotPage(
+        page,
+        { total: day.slots.length, hasMore: rest.length > page.length },
+        search,
+      ),
+    )
   }
 }

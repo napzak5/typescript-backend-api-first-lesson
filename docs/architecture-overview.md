@@ -143,7 +143,8 @@ domain/src/
 │                                      (every list)
 ├── mappers/read/salon.mapper.ts       Rows → API response; a list → a page
 ├── mappers/read/columns.ts            numericSchema, timestampSchema (every read mapper)
-├── mappers/read/page.ts               toApiPage: the items of a list → a page (every list)
+├── mappers/read/page.ts               toApiPage: the items of a list → a page (every list);
+│                                      toApiPageEndingAt for a list whose items have no ID
 ├── repositories/salon.repository.ts   ISalonRepository
 ├── business-logic/salon/              One *.usecase.ts per operation;
 │                                      _shared/authorization.ts decides who may
@@ -506,16 +507,23 @@ api/src/
 
 The booking ledger is a salon's, but its routes are not below a salon. A
 create request states little, and the rows that are written are worked out
-from what it refers to, so there is no write mapper:
+from what it refers to, so the write mapper makes no row: it returns what
+the plan of the rows is made from:
 
 ```
 domain/src/
-├── models/booking.ts                  BookingId, API and database types; BookingWrite
-│                                      (the rows of one booking) and BookingReach (the
-│                                      bookings an actor reaches: those of the ledger,
-│                                      LedgerReach, or a customer's own, CustomerReach)
+├── models/booking.ts                  BookingId, API and database types; what a request
+│                                      asks for (RequestedBooking, RequestedBookingMove),
+│                                      BookingWrite (the rows of one booking) and
+│                                      BookingReach (the bookings an actor reaches: those
+│                                      of the ledger, LedgerReach, or a customer's own,
+│                                      CustomerReach)
 ├── schemas/booking.schema.ts          Zod schemas of the create and the list request
-├── mappers/read/booking.mapper.ts     A booking and its lines → API response
+├── mappers/write/booking.mapper.ts    API request → what the ledger is asked with: the
+│                                      booking that is asked for, the notes, the move,
+│                                      the action on the status, the criteria of the list
+├── mappers/read/booking.mapper.ts     A booking and its lines → API response; the page
+│                                      of the list
 ├── repositories/booking.repository.ts IBookingRepository; what became of a create is
 │                                      a sum type (BookingCreation)
 ├── services/booking-number-issuer.ts  IBookingNumberIssuer

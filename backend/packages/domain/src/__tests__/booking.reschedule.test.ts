@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  type BookingRescheduleRequest,
   type BookingToMove,
   moveBooking,
   planReschedule,
@@ -8,7 +7,10 @@ import {
   staffOfMoved,
 } from '../business-logic/booking'
 import type { DbBooking } from '../models/booking'
-import { bookingRescheduleRequestSchema } from '../schemas/booking.schema'
+import {
+  type BookingRescheduleRequest,
+  bookingRescheduleRequestSchema,
+} from '../schemas/booking.schema'
 import { OTHER_STAFF_MEMBER_ID, STAFF_MEMBER_ID } from './staff-fixtures'
 
 type Status = DbBooking['status']

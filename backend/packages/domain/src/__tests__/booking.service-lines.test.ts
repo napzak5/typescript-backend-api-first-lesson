@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
   type BookingOfLines,
-  type BookingServiceCreateRequest,
   planServiceAddition,
   planServiceRemoval,
   type ServiceLineReferences,
 } from '../business-logic/booking'
 import type { DbBooking } from '../models/booking'
-import { bookingServiceCreateRequestSchema } from '../schemas/booking.schema'
+import {
+  type BookingServiceCreateRequest,
+  bookingServiceCreateRequestSchema,
+} from '../schemas/booking.schema'
 import { COLOR_ID, CUT_ID } from './booking-fixtures'
 import { OTHER_STAFF_MEMBER_ID, STAFF_MEMBER_ID } from './staff-fixtures'
 

@@ -1,20 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { BookingReadMapper } from '../../mappers/read/booking.mapper'
+import { BookingWriteMapper } from '../../mappers/write/booking.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiBookingResponse } from '../../models/booking'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import { bookingSearchRequestSchema } from '../../schemas/booking.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { bookingReachOf, isWithin } from './_shared/authorization'
 import type { BookingUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid booking search'
-
-export type BookingPage = {
-  data: ApiBookingResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListBookingsUseCase {
   constructor(private readonly dependencies: BookingUseCaseDependencies) {}
@@ -33,7 +28,7 @@ export class ListBookingsUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<BookingPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiBookingResponse>, DomainError>> {
     const reach = bookingReachOf(actor)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
@@ -46,31 +41,12 @@ export class ListBookingsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const {
-      cursor,
-      salonId,
-      customerId,
-      staffId,
-      status,
-      bookingDateFrom,
-      bookingDateTo,
-    } = request.data
-    if (salonId !== undefined && !isWithin(reach, salonId)) {
+    const criteria = BookingWriteMapper.fromSearchRequest(request.data, reach)
+    if (criteria.salonId !== null && !isWithin(reach, criteria.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
-    const limit = request.data.limit ?? DEFAULT_LIMIT
 
-    const listed = await this.dependencies.bookingRepository.list({
-      reach,
-      limit,
-      after: cursor ?? null,
-      salonId: salonId ?? null,
-      customerId: customerId ?? null,
-      staffId: staffId ?? null,
-      status: status ?? null,
-      bookingDateFrom: bookingDateFrom ?? null,
-      bookingDateTo: bookingDateTo ?? null,
-    })
+    const listed = await this.dependencies.bookingRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -86,20 +62,6 @@ export class ListBookingsUseCase {
       )
     }
 
-    const { bookings, total, hasMore } = listed.data
-    const lastBookingId = bookings.at(-1)?.booking.id ?? null
-
-    return Result.map(BookingReadMapper.toApiBookings(bookings), (data) => ({
-      data,
-      meta: {
-        total,
-        limit,
-        hasMore,
-        cursor: cursor ?? null,
-        nextCursor: hasMore ? lastBookingId : null,
-        // Pages are only walked forwards.
-        prevCursor: null,
-      },
-    }))
+    return BookingReadMapper.toApiBookingPage(listed.data, criteria)
   }
 }

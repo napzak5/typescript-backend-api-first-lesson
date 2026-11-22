@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
 import { BookingReadMapper } from '../../mappers/read/booking.mapper'
+import { BookingWriteMapper } from '../../mappers/write/booking.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiBookingResponse, parseBookingId } from '../../models/booking'
 import { bookingRescheduleRequestSchema } from '../../schemas/booking.schema'
@@ -47,7 +48,7 @@ export class RescheduleBookingUseCase {
     const rescheduled = await this.dependencies.bookingRepository.reschedule(
       bookingId.data,
       reach,
-      request.data,
+      BookingWriteMapper.fromRescheduleRequest(request.data),
     )
     if (rescheduled.type === 'error') {
       return rescheduled

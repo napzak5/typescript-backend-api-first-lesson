@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
 import { CustomerBookingReadMapper } from '../../mappers/read/customer-booking.mapper'
+import { CustomerBookingWriteMapper } from '../../mappers/write/customer-booking.mapper'
 import type { Actor } from '../../models/auth'
 import {
   type ApiCustomerBookingResponse,
@@ -56,10 +57,7 @@ export class CancelCustomerBookingUseCase {
     const changed = await this.dependencies.bookingRepository.changeStatus(
       bookingId.data,
       reach.data,
-      {
-        type: 'cancelAsCustomer',
-        cancellationReason: request.data.cancellationReason,
-      },
+      CustomerBookingWriteMapper.fromCancelRequest(request.data),
       actor.userId,
     )
     if (changed.type === 'error') {

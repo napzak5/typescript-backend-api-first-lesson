@@ -189,6 +189,9 @@ export const bookingSearchRequestSchema = bookingSearch.refine(
   DAYS_OUT_OF_ORDER,
 ) satisfies z.ZodType<ApiBookingSearchRequest>
 
+/** A search request that passed the rules of its own. */
+export type BookingSearchRequest = z.infer<typeof bookingSearchRequestSchema>
+
 /**
  * What a customer asks for when they book by themself: one slot of the
  * available slots of a salon, for one service. The rest of a booking is
@@ -217,3 +220,8 @@ export const customerBookingSearchRequestSchema = bookingSearch
     daysAreInOrder,
     DAYS_OUT_OF_ORDER,
   ) satisfies z.ZodType<ApiCustomerBookingSearchRequest>
+
+/** A search request of a customer that passed the rules of its own. */
+export type CustomerBookingSearchRequest = z.infer<
+  typeof customerBookingSearchRequestSchema
+>

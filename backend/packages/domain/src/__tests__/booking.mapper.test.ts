@@ -1,15 +1,32 @@
 import { describe, expect, it } from 'vitest'
 import { BookingReadMapper } from '../mappers/read/booking.mapper'
-import type { DbBooking, DbBookingService } from '../models/booking'
-import { USER_ID } from './auth-fixtures'
+import { BookingWriteMapper } from '../mappers/write/booking.mapper'
+import {
+  bookingIdSchema,
+  type DbBooking,
+  type DbBookingService,
+  type LedgerReach,
+} from '../models/booking'
+import { salonIdSchema } from '../models/salon'
+import {
+  bookingCreateRequestSchema,
+  bookingRescheduleRequestSchema,
+  bookingSearchRequestSchema,
+  bookingServiceCreateRequestSchema,
+} from '../schemas/booking.schema'
+import { CUSTOMER_ID, USER_ID } from './auth-fixtures'
 import {
   apiBooking,
   apiBookingServices,
   BOOKING_ID,
+  bookingCreateRequest,
   bookingWithServices,
+  CUT_ID,
   dbBookingServices,
   OTHER_BOOKING_ID,
 } from './booking-fixtures'
+import { SALON_ID } from './fixtures'
+import { STAFF_MEMBER_ID } from './staff-fixtures'
 
 /** The properties of a BookingResponse. */
 const RESPONSE_PROPERTIES = [
@@ -365,5 +382,224 @@ describe('BookingReadMapper.toApiBookings', () => {
     ])
 
     expect(result).toEqual(storedRowIsCorrupt(OTHER_BOOKING_ID))
+  })
+})
+
+describe('BookingReadMapper.toApiBookingPage', () => {
+  const paging = { limit: 2, after: bookingIdSchema.parse(BOOKING_ID) }
+
+  it('answers with the bookings, the counts of the list and the place of the page', () => {
+    expect(
+      BookingReadMapper.toApiBookingPage(
+        {
+          bookings: [
+            bookingWithServices({ id: OTHER_BOOKING_ID }),
+            bookingWithServices(),
+          ],
+          total: 5,
+          hasMore: true,
+        },
+        paging,
+      ),
+    ).toEqual({
+      type: 'success',
+      data: {
+        data: [apiBooking({ id: OTHER_BOOKING_ID }), apiBooking()],
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: BOOKING_ID,
+          nextCursor: BOOKING_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('names no next page when the list ends with this one', () => {
+    expect(
+      BookingReadMapper.toApiBookingPage(
+        { bookings: [bookingWithServices()], total: 1, hasMore: false },
+        { limit: 20, after: null },
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        meta: { total: 1, limit: 20, hasMore: false, nextCursor: null },
+      },
+    })
+  })
+
+  it('reports the first booking whose stored row is at fault', () => {
+    expect(
+      BookingReadMapper.toApiBookingPage(
+        {
+          bookings: [
+            bookingWithServices(),
+            bookingWithServices({
+              id: OTHER_BOOKING_ID,
+              startTime: 'tomorrow',
+            }),
+          ],
+          total: 2,
+          hasMore: false,
+        },
+        paging,
+      ),
+    ).toEqual(storedRowIsCorrupt(OTHER_BOOKING_ID))
+  })
+})
+
+describe('BookingWriteMapper', () => {
+  it('returns a create request as the booking that is asked for, its lines among it', () => {
+    const request = bookingCreateRequestSchema.parse(bookingCreateRequest())
+
+    expect(BookingWriteMapper.fromCreateRequest(request)).toStrictEqual(request)
+  })
+
+  it('returns an update request as the notes it names, and no others', () => {
+    expect(
+      BookingWriteMapper.fromUpdateRequest({
+        internalNotes: null,
+        depositAmount: 0,
+      }),
+    ).toStrictEqual({ internalNotes: null, depositAmount: 0 })
+  })
+
+  it('returns a reschedule request as the time and the staff member the booking is moved to', () => {
+    const request = bookingRescheduleRequestSchema.parse({
+      startTime: '2026-11-20T01:00:00Z',
+      staffId: STAFF_MEMBER_ID,
+    })
+
+    expect(BookingWriteMapper.fromRescheduleRequest(request)).toStrictEqual({
+      startTime: '2026-11-20T01:00:00.000Z',
+      staffId: STAFF_MEMBER_ID,
+    })
+  })
+
+  it.each<[string, string | null]>([
+    ['the reason the request gives', 'The customer is ill'],
+    ['no reason', null],
+  ])(
+    'makes a cancel request the cancellation by the ledger, with %s',
+    (_named, cancellationReason) => {
+      expect(
+        BookingWriteMapper.fromCancelRequest({ cancellationReason }),
+      ).toStrictEqual({ type: 'cancel', cancellationReason })
+    },
+  )
+
+  it.each<[string, string | null, string | null]>([
+    ['both times', '2026-11-20T01:05:00.000Z', '2026-11-20T02:10:00.000Z'],
+    ['the end alone', null, '2026-11-20T02:10:00.000Z'],
+    ['the start alone', '2026-11-20T01:05:00.000Z', null],
+    ['neither time', null, null],
+  ])(
+    'makes a complete request the completion of the visit, with %s',
+    (_named, actualStartTime, actualEndTime) => {
+      expect(
+        BookingWriteMapper.fromCompleteRequest({
+          actualStartTime,
+          actualEndTime,
+        }),
+      ).toStrictEqual({ type: 'complete', actualStartTime, actualEndTime })
+    },
+  )
+
+  it('returns the request of a service line as the line that is asked for', () => {
+    const request = bookingServiceCreateRequestSchema.parse({
+      serviceId: CUT_ID,
+      staffId: null,
+      startTime: '2026-11-20T03:30:00Z',
+      notes: 'After the colouring',
+    })
+
+    expect(BookingWriteMapper.fromServiceCreateRequest(request)).toStrictEqual({
+      serviceId: CUT_ID,
+      staffId: null,
+      startTime: '2026-11-20T03:30:00.000Z',
+      notes: 'After the colouring',
+    })
+  })
+})
+
+describe('BookingWriteMapper.fromSearchRequest', () => {
+  const ofTheSalon: LedgerReach = {
+    type: 'salon',
+    salonId: salonIdSchema.parse(SALON_ID),
+  }
+  const unfiltered = {
+    salonId: null,
+    customerId: null,
+    staffId: null,
+    status: null,
+    bookingDateFrom: null,
+    bookingDateTo: null,
+  }
+
+  it('lists the first 20 bookings within the reach when the request names nothing', () => {
+    expect(
+      BookingWriteMapper.fromSearchRequest(
+        bookingSearchRequestSchema.parse({}),
+        ofTheSalon,
+      ),
+    ).toStrictEqual({
+      reach: ofTheSalon,
+      limit: 20,
+      after: null,
+      ...unfiltered,
+    })
+  })
+
+  it('takes the place of the page and every filter the request names', () => {
+    expect(
+      BookingWriteMapper.fromSearchRequest(
+        bookingSearchRequestSchema.parse({
+          limit: 5,
+          cursor: BOOKING_ID,
+          salonId: SALON_ID,
+          customerId: CUSTOMER_ID,
+          staffId: STAFF_MEMBER_ID,
+          status: 'confirmed',
+          bookingDateFrom: '2026-11-01',
+          bookingDateTo: '2026-11-30',
+        }),
+        { type: 'everySalon' },
+      ),
+    ).toStrictEqual({
+      reach: { type: 'everySalon' },
+      limit: 5,
+      after: BOOKING_ID,
+      salonId: SALON_ID,
+      customerId: CUSTOMER_ID,
+      staffId: STAFF_MEMBER_ID,
+      status: 'confirmed',
+      bookingDateFrom: '2026-11-01',
+      bookingDateTo: '2026-11-30',
+    })
+  })
+
+  it.each<[string, Record<string, string>]>([
+    ['the salon', { salonId: SALON_ID }],
+    ['the customer', { customerId: CUSTOMER_ID }],
+    ['the staff member', { staffId: STAFF_MEMBER_ID }],
+    ['the status', { status: 'cancelled' }],
+    ['the first day', { bookingDateFrom: '2026-11-01' }],
+    ['the last day', { bookingDateTo: '2026-11-30' }],
+  ])('narrows the list by %s alone', (_named, filter) => {
+    expect(
+      BookingWriteMapper.fromSearchRequest(
+        bookingSearchRequestSchema.parse(filter),
+        ofTheSalon,
+      ),
+    ).toStrictEqual({
+      reach: ofTheSalon,
+      limit: 20,
+      after: null,
+      ...unfiltered,
+      ...filter,
+    })
   })
 })

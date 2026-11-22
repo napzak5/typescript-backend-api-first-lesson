@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
 import { CustomerBookingReadMapper } from '../../mappers/read/customer-booking.mapper'
+import { CustomerBookingWriteMapper } from '../../mappers/write/customer-booking.mapper'
 import type { Actor } from '../../models/auth'
 import {
   type ApiCustomerBookingResponse,
@@ -60,7 +61,7 @@ export class RescheduleCustomerBookingUseCase {
     const rebooked = await bookingRepository.rebook(
       bookingId.data,
       reach.data,
-      request.data,
+      CustomerBookingWriteMapper.fromRescheduleRequest(request.data),
       { changedBy: actor.userId, now: clock() },
     )
     if (rebooked.type === 'error') {

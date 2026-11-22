@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
 import { CustomerBookingReadMapper } from '../../mappers/read/customer-booking.mapper'
+import { CustomerBookingWriteMapper } from '../../mappers/write/customer-booking.mapper'
 import type { Actor, ClientInfo } from '../../models/auth'
 import type { ApiCustomerBookingResponse } from '../../models/booking'
 import { customerBookingCreateRequestSchema } from '../../schemas/booking.schema'
@@ -47,6 +48,8 @@ export class CreateCustomerBookingUseCase {
       return request
     }
 
+    const requested = CustomerBookingWriteMapper.fromCreateRequest(request.data)
+
     const { bookingRepository, bookingNumberIssuer, clock } = this.dependencies
     const { customerId } = reach.data
 
@@ -55,7 +58,7 @@ export class CreateCustomerBookingUseCase {
       bookingNumberIssuer,
       async (bookingNumber) => {
         const booked = await bookingRepository.book(
-          request.data,
+          requested,
           { customerId, now: clock() },
           { bookingNumber, createdBy: actor.userId, client },
         )

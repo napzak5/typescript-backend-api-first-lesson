@@ -22,9 +22,6 @@ const LOGIC = join(SOURCES, 'business-logic')
  */
 const NOT_YET = [
   'auth',
-  'available-slot',
-  'booking',
-  'customer-booking',
   'inventory',
   'inventory-alert',
   'payment',
@@ -39,9 +36,6 @@ const NOT_YET = [
 
 /** The read mappers that have no write mapper of their name yet. */
 const WITHOUT_WRITE_MAPPER = [
-  'available-slot',
-  'booking',
-  'customer-booking',
   'inventory-alert',
   'inventory-report',
   'payment',
@@ -75,8 +69,13 @@ const answerOf = (source: string): string =>
     source,
   )?.[1] ?? ''
 
-const callsAReadMapper = (source: string): boolean =>
-  /\b\w+ReadMapper\.to\w+/.test(source)
+/**
+ * Whether a source lets a read mapper make an answer of the API: such a
+ * function is named `toApi…`. One that reads a stored value for a rule
+ * (`toBusinessHours`) makes no answer.
+ */
+const letsAReadMapperAnswer = (source: string): boolean =>
+  /\b\w+ReadMapper\.toApi\w+/.test(source)
 
 /**
  * The shared sources of its domain (`./_shared/…`) that a source imports:
@@ -111,7 +110,7 @@ const departuresOf = (
     : []),
   ...(file.endsWith('.usecase.ts') &&
   /\bApi[A-Z]/.test(answerOf(source)) &&
-  ![source, ...shared].some(callsAReadMapper)
+  ![source, ...shared].some(letsAReadMapperAnswer)
     ? [`${file}: an answer of the API is made without a read mapper`]
     : []),
 ]

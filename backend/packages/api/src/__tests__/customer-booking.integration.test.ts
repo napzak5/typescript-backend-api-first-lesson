@@ -11,9 +11,9 @@ import {
 } from '@beauty-salon-backend/database'
 import {
   bookingIdSchema,
-  type CustomerBookingCreateRequest,
   type CustomerReach,
   customerIdSchema,
+  type RequestedCustomerBooking,
   salonIdSchema,
   serviceIdSchema,
   staffIdSchema,
@@ -2587,8 +2587,8 @@ describe('Customer booking API', () => {
     })
     /** A request as the use case hands it on: the cut at ten on the day. */
     const requestOf = (
-      overrides: Partial<CustomerBookingCreateRequest> = {},
-    ): CustomerBookingCreateRequest => ({
+      overrides: Partial<RequestedCustomerBooking> = {},
+    ): RequestedCustomerBooking => ({
       salonId: salonIdSchema.parse(salonId),
       serviceId: serviceIdSchema.parse(cutId),
       staffId: staffIdSchema.parse(staffId),

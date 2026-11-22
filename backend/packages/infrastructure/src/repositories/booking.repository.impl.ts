@@ -12,7 +12,6 @@ import {
 } from '@beauty-salon-backend/database'
 import {
   type BookingAction,
-  type BookingCreateRequest,
   type BookingCreation,
   type BookingDeletion,
   type BookingId,
@@ -24,17 +23,14 @@ import {
   type BookingReference,
   type BookingReferences,
   type BookingReschedule,
-  type BookingRescheduleRequest,
   type BookingRescheduleWrite,
   type BookingServiceAddition,
-  type BookingServiceCreateRequest,
   type BookingServiceId,
   type BookingServiceRemoval,
   type BookingStatusChange,
   type BookingWithServices,
   type BookingWrite,
   type CustomerBooker,
-  type CustomerBookingCreateRequest,
   type CustomerBookingCreation,
   type CustomerBookingMoveWrite,
   type CustomerBookingReferences,
@@ -63,6 +59,10 @@ import {
   planServiceRemoval,
   planStatusChange,
   RELEASING_STATUSES,
+  type RequestedBooking,
+  type RequestedBookingMove,
+  type RequestedBookingService,
+  type RequestedCustomerBooking,
   type StaffDemand,
   staffOfMoved,
   type UserId,
@@ -130,7 +130,7 @@ const momentOf = (milliseconds: number | null): Date | null =>
  */
 const lockedReferencesOf = async (
   tx: DatabaseExecutor,
-  request: BookingCreateRequest,
+  request: RequestedBooking,
 ): Promise<BookingReferences> => {
   const [salon] = await tx
     .select({ timezone: salons.timezone, taxRate: salons.taxRate })
@@ -620,7 +620,7 @@ export class BookingRepository implements IBookingRepository {
   constructor(private readonly db: Database) {}
 
   async create(
-    request: BookingCreateRequest,
+    request: RequestedBooking,
     origin: BookingOrigin,
   ): Promise<Result<BookingCreation, DomainError>> {
     return attempt('Failed to create booking', () =>
@@ -651,7 +651,7 @@ export class BookingRepository implements IBookingRepository {
   }
 
   async book(
-    request: CustomerBookingCreateRequest,
+    request: RequestedCustomerBooking,
     booker: CustomerBooker,
     origin: BookingOrigin,
   ): Promise<Result<CustomerBookingCreation, DomainError>> {
@@ -828,7 +828,7 @@ export class BookingRepository implements IBookingRepository {
   async reschedule(
     id: BookingId,
     reach: LedgerReach,
-    request: BookingRescheduleRequest,
+    request: RequestedBookingMove,
   ): Promise<Result<BookingReschedule, DomainError>> {
     return attempt('Failed to reschedule booking', () =>
       this.db.transaction(
@@ -899,7 +899,7 @@ export class BookingRepository implements IBookingRepository {
   async rebook(
     id: BookingId,
     reach: CustomerReach,
-    request: BookingRescheduleRequest,
+    request: RequestedBookingMove,
     mover: CustomerMover,
   ): Promise<Result<CustomerBookingReschedule, DomainError>> {
     return attempt('Failed to rebook for customer', () =>
@@ -1038,7 +1038,7 @@ export class BookingRepository implements IBookingRepository {
   async addService(
     id: BookingId,
     reach: LedgerReach,
-    request: BookingServiceCreateRequest,
+    request: RequestedBookingService,
   ): Promise<Result<BookingServiceAddition, DomainError>> {
     return attempt('Failed to add service to booking', () =>
       this.db.transaction(

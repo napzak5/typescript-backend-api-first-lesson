@@ -6,10 +6,12 @@ import type {
   SalonOfSlots,
   ServiceOfSlots,
 } from '../../../models/available-slot'
-import type { BookingWrite } from '../../../models/booking'
+import type {
+  BookingWrite,
+  RequestedCustomerBooking,
+} from '../../../models/booking'
 import type { CustomerId, DbCustomer } from '../../../models/customer'
 import type { DbOpeningHours } from '../../../models/salon'
-import type { CustomerBookingCreateRequest } from '../../../schemas/booking.schema'
 import type { DomainError, ValidationIssue } from '../../../shared'
 import { booksOnline } from '../../available-slot/_shared/acceptance'
 import {
@@ -104,7 +106,7 @@ export type CustomerBookingPlan =
   | { type: 'customerOccupied' }
 
 /** The time a customer asks for, as a request writes it. */
-type TimeAsked = Pick<CustomerBookingCreateRequest, 'startTime'>
+type TimeAsked = Pick<RequestedCustomerBooking, 'startTime'>
 
 /**
  * The dates (`YYYY-MM-DD`) the calendar of the salon is read for: those
@@ -221,7 +223,7 @@ export const refusalOfSlot = (
  * otherwise both at once.
  */
 export const planCustomerBooking = (
-  request: CustomerBookingCreateRequest,
+  request: RequestedCustomerBooking,
   { customerId, now }: CustomerBooker,
   references: CustomerBookingReferences,
   origin: BookingOrigin,

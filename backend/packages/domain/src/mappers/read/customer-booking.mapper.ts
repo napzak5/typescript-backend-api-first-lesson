@@ -3,10 +3,14 @@ import type {
   ApiBookingServiceResponse,
   ApiCustomerBookingResponse,
   ApiCustomerBookingServiceResponse,
+  BookingId,
   BookingWithServices,
 } from '../../models/booking'
+import type { ApiPage, Paging } from '../../models/page'
+import type { BookingList } from '../../repositories/booking.repository'
 import type { DomainError } from '../../shared'
 import { BookingReadMapper } from './booking.mapper'
+import { toApiPage } from './page'
 
 /**
  * Database rows → what a customer is shown of their booking. The values
@@ -78,5 +82,16 @@ export const CustomerBookingReadMapper = {
       apiBookings.push(mapped.data)
     }
     return Result.success(apiBookings)
+  },
+
+  /** The bookings a list found as a page of it, as their customer is shown them. */
+  toApiCustomerBookingPage(
+    { bookings, total, hasMore }: BookingList,
+    paging: Paging<BookingId>,
+  ): Result<ApiPage<ApiCustomerBookingResponse>, DomainError> {
+    return Result.map(
+      CustomerBookingReadMapper.toApiCustomerBookings(bookings),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

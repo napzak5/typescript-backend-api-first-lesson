@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
 import { BookingReadMapper } from '../../mappers/read/booking.mapper'
+import { BookingWriteMapper } from '../../mappers/write/booking.mapper'
 import type { Actor, ClientInfo } from '../../models/auth'
 import type { ApiBookingResponse } from '../../models/booking'
 import { bookingCreateRequestSchema } from '../../schemas/booking.schema'
@@ -41,7 +42,8 @@ export class CreateBookingUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (!isWithin(reach, request.data.salonId)) {
+    const requested = BookingWriteMapper.fromCreateRequest(request.data)
+    if (!isWithin(reach, requested.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
 
@@ -51,7 +53,7 @@ export class CreateBookingUseCase {
       'booking',
       bookingNumberIssuer,
       async (bookingNumber) => {
-        const created = await bookingRepository.create(request.data, {
+        const created = await bookingRepository.create(requested, {
           bookingNumber,
           createdBy: actor.userId,
           client,

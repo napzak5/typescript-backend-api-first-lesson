@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
 import { BookingReadMapper } from '../../mappers/read/booking.mapper'
+import { BookingWriteMapper } from '../../mappers/write/booking.mapper'
 import type { Actor } from '../../models/auth'
 import {
   type ApiBookingServiceResponse,
@@ -56,7 +57,7 @@ export class CreateBookingServiceUseCase {
     const added = await this.dependencies.bookingRepository.addService(
       bookingId.data,
       reach,
-      request.data,
+      BookingWriteMapper.fromServiceCreateRequest(request.data),
     )
     if (added.type === 'error') {
       return added

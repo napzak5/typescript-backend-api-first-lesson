@@ -33,8 +33,18 @@ export const availableSlotSearchRequestSchema = z.strictObject({
   duration: z.number().int().min(1).max(MAX_DURATION).exactOptional(),
 }) satisfies z.ZodType<ApiAvailableSlotSearchRequest>
 
+/** A search request that passed the rules of its own. */
+export type AvailableSlotSearchRequest = z.infer<
+  typeof availableSlotSearchRequestSchema
+>
+
 export const availableSlotCheckRequestSchema = z.strictObject({
   staffId: staffIdSchema,
   serviceId: serviceIdSchema,
   startTime: minuteInUtc,
 }) satisfies z.ZodType<ApiAvailableSlotCheckRequest>
+
+/** A check request that passed the rules of its own. */
+export type AvailableSlotCheckRequest = z.infer<
+  typeof availableSlotCheckRequestSchema
+>
