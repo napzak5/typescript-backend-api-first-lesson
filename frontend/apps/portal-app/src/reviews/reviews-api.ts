@@ -1,6 +1,7 @@
 import {
   FAILED,
   from,
+  isUnread,
   type NotFound,
   outsideTheContract,
   type Page,
@@ -174,10 +175,6 @@ const readReviewPage = async (
     .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
-
-const isUnread = ({ type }: { type: string }): boolean =>
-  type === 'tooManyRequests' || type === 'failed'
-
 /** What reviews name by an ID: their salons, and the staff of those salons. */
 type Names = {
   salons: ModelsSalonResponse[]

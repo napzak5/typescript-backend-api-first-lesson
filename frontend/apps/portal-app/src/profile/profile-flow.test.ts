@@ -274,7 +274,8 @@ const TODAY = '2026-11-19'
 const BIRTH_DATE_OUT_OF_RANGE =
   '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。'
 const UNLISTED = '選択肢から選んでください。'
-const UNACCEPTABLE = 'この内容は登録できません。入力し直してください。'
+const UNACCEPTABLE =
+  'この値は受け付けられませんでした。入力を確かめてください。'
 
 /** A box hands its name over when it is ticked, and nothing when it is not. */
 const ticked = (name: string, allowed: boolean): [string, string][] =>

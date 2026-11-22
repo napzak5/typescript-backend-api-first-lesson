@@ -18,9 +18,11 @@ import {
   ButtonLink,
   Card,
   EmptyState,
+  type FormSays,
   Link,
   LoadingIndicator,
   moreOf,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -35,7 +37,6 @@ import {
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useLocation, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { OWN_PROFILE, readOwnProfile } from '../profile/profile-api'
 import { ReviewReport } from '../reviews/components/review-report/review-report'
 import { afterReport, readerOf, readReport } from '../reviews/reader-flow'

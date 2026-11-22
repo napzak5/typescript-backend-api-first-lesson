@@ -1,8 +1,13 @@
-import { Form, PageHeader, TextField } from '@beauty-salon-frontend/ui'
+import {
+  Form,
+  type FormSays,
+  NOTHING_TO_SAY,
+  PageHeader,
+  TextField,
+} from '@beauty-salon-frontend/ui'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { requestPasswordReset } from './account-api'
 import { afterRefusal, readEmail } from './account-flow'
 

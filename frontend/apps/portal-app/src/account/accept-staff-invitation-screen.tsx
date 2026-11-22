@@ -9,6 +9,8 @@ import {
   ButtonLink,
   DescriptionList,
   Form,
+  type FormSays,
+  NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
   TextField,
@@ -17,12 +19,12 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { EVERY_ROLE } from '../roles'
 import {
   acceptInvitation,
   checkInvitation,
   joinInvitation,
+  TOKEN_REFUSED,
 } from './account-api'
 import { afterRefusal, messageAfter, readNewPassword } from './account-flow'
 import { CheckingLink, LinkNotChecked, LinkUnusable } from './mailed-link'
@@ -43,7 +45,6 @@ const moment = new Intl.DateTimeFormat('ja-JP', {
   timeZone: 'Asia/Tokyo',
 })
 
-const LINK_REFUSED: { type: 'tokenRefused' } = { type: 'tokenRefused' }
 const ACCOUNT_EXISTS: { type: 'accountExists' } = { type: 'accountExists' }
 
 /** How an invitation ended that this screen dealt with. */
@@ -220,7 +221,7 @@ const AcceptWithToken = ({ token }: { token: string }) => {
 
   return match(
     ended === 'linkRefused'
-      ? LINK_REFUSED
+      ? TOKEN_REFUSED
       : ended === 'accountExists'
         ? ACCOUNT_EXISTS
         : check.data,

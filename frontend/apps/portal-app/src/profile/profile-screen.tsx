@@ -3,8 +3,10 @@ import type { ModelsCustomerProfileResponse } from '@beauty-salon-frontend/api-c
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
-  ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -14,10 +16,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
 import { SignInHelp } from '../sign-in-help'
 import { ProfileForm } from './components/profile-form/profile-form'
+import { BACK_TO_MY_PAGE, MY_PAGE } from './my-page'
 import {
   createOwnProfile,
   OWN_PROFILE,
@@ -39,15 +41,6 @@ import { localDateOf } from './profile-format'
  * changed its name then would be taken for another screen.
  */
 const TITLE = 'お客様の情報'
-
-/** Where the profile is shown, and where both forms lead */
-const MY_PAGE = '/mypage'
-
-const BACK = (
-  <ButtonLink href={MY_PAGE} variant='quiet'>
-    マイページへ戻る
-  </ButtonLink>
-)
 
 type ProfileChangeProps = {
   profile: ModelsCustomerProfileResponse
@@ -95,7 +88,7 @@ const ProfileChange = ({ profile, onGone }: ProfileChangeProps) => {
       // Nothing was changed, so there is nothing to ask the API for: the
       // customer is told so where the profile is shown
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更された項目はありません。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(MY_PAGE)
       })
       .with({ type: 'valid' }, ({ value }) => update.mutate(value))
@@ -110,7 +103,7 @@ const ProfileChange = ({ profile, onGone }: ProfileChangeProps) => {
       message={says.message}
       errors={says.errors}
       pending={update.isPending}
-      actions={BACK}
+      actions={BACK_TO_MY_PAGE}
       onSubmit={submit}
     />
   )
@@ -154,7 +147,7 @@ const ProfileRegistration = () => {
       message={says.message}
       errors={says.errors}
       pending={creation.isPending}
-      actions={BACK}
+      actions={BACK_TO_MY_PAGE}
       onSubmit={submit}
     />
   )

@@ -7,8 +7,12 @@ import type {
   ModelsAttachmentContentType,
   ModelsSharedFileResponse,
 } from '@beauty-salon-frontend/api-client'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { FormSays, Read } from '../forms'
 
 /*
  * What the screen of a share link says of the file and of what became of a
@@ -77,7 +81,7 @@ const PASSWORD_MISSING_SAID = 'パスワードを入力してください。'
  * is one: whoever opens the link does not know those the link was made
  * with, and the API says whether it is the one.
  */
-export const readPassword = (values: FormData): Read<string> => {
+export const readPassword = (values: FormData): FormRead<string> => {
   const password = values.get('password')
 
   return typeof password === 'string' && password !== ''
@@ -94,14 +98,10 @@ export const afterPassword = (
       message: undefined,
       errors: { password: PASSWORD_REFUSED_SAID },
     }))
-    .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'failed' }, () => ({
-      message: NOT_SENT_MESSAGE,
-      errors: {},
-    }))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /** What is said when a request was not answered, or the file not fetched */

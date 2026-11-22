@@ -2,6 +2,7 @@ import {
   Alert,
   FormDialog,
   type FormErrors,
+  NO_ERRORS,
   RadioGroup,
   TextArea,
 } from '@beauty-salon-frontend/ui'
@@ -32,8 +33,6 @@ export type ReviewReportProps = {
   /** The customer sent the form: `reason` and `details` */
   onReport: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 const REPORTED_BEFORE =
   'このレビューは、すでに通報しています。1 つのレビューを通報できるのは、1 回です。'
