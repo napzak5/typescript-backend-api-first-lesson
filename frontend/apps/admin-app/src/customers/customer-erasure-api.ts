@@ -1,21 +1,22 @@
 import {
+  FAILED,
+  type Forbidden,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  REFUSED_PARTS,
+  type RefusedValue,
+  refusedValuesOf,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   customerCrudCancelDeletionRequest,
   customerCrudGetDeletionRequest,
   customerCrudRequestDeletion,
   type ModelsCustomerDeletionRequestCreateRequest,
   type ModelsCustomerDeletionRequestResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  type Forbidden,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type RefusedValue,
-  refusedValuesOf,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import { customerKeyOf } from './customers-api'
 
@@ -24,15 +25,6 @@ import { customerKeyOf } from './customers-api'
  * latest one, a new one taken, a pending one called off. The erasure
  * itself is run by the operator of the platform.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -68,7 +60,7 @@ export const readErasureRequest = async (
     }))
     .with({ status: 404 }, () => ({ type: 'read', request: null }))
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -144,6 +136,6 @@ export const cancelErasureRequest = async (
     }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

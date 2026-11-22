@@ -1,3 +1,4 @@
+import type { NotFound } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBusinessHours,
   ModelsDateRange,
@@ -5,11 +6,7 @@ import type {
   ModelsOpeningHours,
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import {
-  isDay,
-  type NotFound,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import {
   type FormSays,

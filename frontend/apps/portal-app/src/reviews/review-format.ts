@@ -35,14 +35,3 @@ export const ratedStaffOf = ({
   staffName,
 }: Pick<OwnReview, 'review' | 'staffName'>): string | null =>
   review.staffId === null ? null : (staffName ?? NO_STAFF)
-
-/** How many reviews a list has, and how many of them it shows. */
-export const countOf = (total: number | null, shown: number): string => {
-  if (total === null) {
-    return `${shown} 件を表示しています`
-  }
-
-  return shown < total
-    ? `${total} 件のレビューがあります（${shown} 件を表示しています）`
-    : `${total} 件のレビューがあります`
-}

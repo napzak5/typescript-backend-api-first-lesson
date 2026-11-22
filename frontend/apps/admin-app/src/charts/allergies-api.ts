@@ -1,13 +1,4 @@
 import {
-  type ModelsCustomerAllergyCreateRequest,
-  type ModelsCustomerAllergyResponse,
-  type ModelsCustomerAllergyUpdateRequest,
-  medicalChartCrudAddAllergy,
-  medicalChartCrudListAllergies,
-  medicalChartCrudRemoveAllergy,
-  medicalChartCrudUpdateAllergy,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -17,12 +8,23 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  REFUSED_PARTS,
   type RefusedValue,
   refusedValuesOf,
   toTheEnd,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsCustomerAllergyCreateRequest,
+  type ModelsCustomerAllergyResponse,
+  type ModelsCustomerAllergyUpdateRequest,
+  medicalChartCrudAddAllergy,
+  medicalChartCrudListAllergies,
+  medicalChartCrudRemoveAllergy,
+  medicalChartCrudUpdateAllergy,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import { customerKeyOf } from '../customers/customers-api'
@@ -32,18 +34,6 @@ import { customerKeyOf } from '../customers/customers-api'
  * an allergen, with or without a chart. The API has no route that reads
  * one allergy: it is found in the list of the customer.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
-
-/** The same, for a request whose 400 names the values it refused */
-const UNSENT = P.union(null, { status: 401 }, { status: 429 }, { status: 500 })
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -81,7 +71,7 @@ const readPage = async (
       .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
       // The screens read the customer first, and are behind the same permission
       .with({ status: P.union(403, 404) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...REFUSED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -161,7 +151,7 @@ export const addAllergy = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The body is the form, far from the limits of size and of type
       .with({ status: P.union(413, 415) }, () => FAILED)
-      .with(UNSENT, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -197,7 +187,7 @@ export const updateAllergy = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNSENT, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -224,6 +214,6 @@ export const removeAllergy = async (
     .with({ status: 204 }, () => ({ type: 'removed' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

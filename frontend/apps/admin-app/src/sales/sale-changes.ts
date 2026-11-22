@@ -1,3 +1,7 @@
+import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsSaleResponse,
   ModelsSaleUpdateRequest,
@@ -8,7 +12,6 @@ import {
   isDay,
   momentOf,
   type Read,
-  type RefusedValue,
   textOf,
   timeOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
@@ -282,8 +285,7 @@ export const afterVoid = (outcome: VoidAttempt): VoidSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({

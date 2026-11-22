@@ -10,6 +10,47 @@ import { Button } from '../button/button'
  */
 export type More = 'none' | 'available' | 'loading' | 'failed'
 
+/**
+ * What comes after the items of a list, for the component that shows them.
+ * A page that was not read is asked for again by reading the list again,
+ * so it is on its way while the list is.
+ */
+export const moreOf = (
+  rest: 'none' | 'more' | 'unread',
+  fetching: { nextPage: boolean; again: boolean },
+): More => {
+  if (rest === 'none') {
+    return 'none'
+  }
+  if (fetching.nextPage || (rest === 'unread' && fetching.again)) {
+    return 'loading'
+  }
+
+  return rest === 'unread' ? 'failed' : 'available'
+}
+
+/**
+ * What comes after rows that wait for something read after their page, the
+ * names of the people in them: rows whose names are on their way are on
+ * their way; rows whose names could not be read did not come, and are asked
+ * for again when the names are read again (`readingAgain`). Past the rows,
+ * it is what the pages of the list say.
+ */
+export const moreOfRows = (
+  rest: { type: 'none' | 'reading' | 'unread' },
+  pages: More,
+  readingAgain: boolean,
+): More => {
+  if (rest.type === 'reading') {
+    return 'loading'
+  }
+  if (rest.type === 'unread') {
+    return readingAgain ? 'loading' : 'failed'
+  }
+
+  return pages
+}
+
 export type LoadMoreProps = {
   more: More
   /** Asks for the items that come next */

@@ -1,14 +1,14 @@
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerResponse,
   ModelsCustomerUpdateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  dayAt,
-  NOT_FOUND,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   LoadingIndicator,
@@ -167,7 +167,7 @@ const CustomerToChange = ({ salon, customer }: CustomerToChangeProps) => {
     ))
     .with({ type: 'found' }, ({ customer: found }) => opened(referrerOf(found)))
     .with({ type: 'notFound' }, () => opened({ type: 'gone', id: referredBy }))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('紹介元', reason)}
         onRetry={() => void read.refetch()}

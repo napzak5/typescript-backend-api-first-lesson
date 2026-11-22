@@ -1,3 +1,8 @@
+import {
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsSalonResponse,
@@ -7,8 +12,6 @@ import type {
 import {
   dayNameOf,
   OtherSalonNotice,
-  unreadMessageOf,
-  whyUnread,
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
@@ -29,8 +32,6 @@ import {
 } from '../salons/salons-api'
 import { hoursOf } from './booking-format'
 import { bookingKeyOf, readBooking } from './bookings-api'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 export type WithBookingProps = {
   salon: ModelsSalonResponse
@@ -96,7 +97,7 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
           <OtherSalonNotice />
         </>
       ))
-      .with({ type: UNREAD }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <PageHeader title={title} description={salon.name} />
           <UnreadNotice
@@ -158,8 +159,8 @@ export const WithStaffAndServices = ({
       children(ofStaff.items, ofServices.items),
     )
     .with(
-      [{ type: UNREAD }, P._],
-      [P._, { type: P.union(UNREAD, 'notFound') }],
+      [{ type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
           message={unreadMessageOf(label, whyUnread(reads))}

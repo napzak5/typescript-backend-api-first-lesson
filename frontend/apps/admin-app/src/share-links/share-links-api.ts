@@ -1,12 +1,4 @@
 import {
-  type ModelsShareLinkCreateRequest,
-  type ModelsShareLinkResponse,
-  shareLinkCrudCreate,
-  shareLinkCrudDelete,
-  shareLinkCrudGet,
-  shareLinkCrudList,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -17,9 +9,18 @@ import {
   pageOf,
   type RefusedValue,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsShareLinkCreateRequest,
+  type ModelsShareLinkResponse,
+  shareLinkCrudCreate,
+  shareLinkCrudDelete,
+  shareLinkCrudGet,
+  shareLinkCrudList,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -27,14 +28,6 @@ import { match, P } from 'ts-pattern'
  * has no account, until it runs out. The API gives the token of a link in
  * the answer that issues it, and never again.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -78,7 +71,7 @@ export const readShareLinkPage = async (
     .with({ status: 400 }, () => FAILED)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 404 }, () => NOT_FOUND)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -104,7 +97,7 @@ export const readShareLink = async (
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -144,7 +137,7 @@ export const issueShareLink = async (
     .with({ status: 409 }, () => ({ type: 'notUploaded' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -166,6 +159,6 @@ export const revokeShareLink = async (
     .with({ status: 204 }, () => ({ type: 'revoked' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

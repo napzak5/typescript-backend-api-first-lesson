@@ -1,4 +1,12 @@
 import {
+  FAILED,
+  outsideTheContract,
+  type RefusedValue,
+  refusedValuesOf,
+  TOO_MANY_REQUESTS,
+  type Unsent,
+} from '@beauty-salon-frontend/answers'
+import {
   authCrudChangePassword,
   authCrudDisableTwoFactor,
   authCrudEnableTwoFactor,
@@ -9,7 +17,6 @@ import {
   type ModelsAuthPasswordChangeRequest,
   type ModelsAuthTwoFactorDisableRequest,
   type ModelsAuthTwoFactorSetupResponse,
-  type ModelsProblemDetails,
   type ModelsSessionResponse,
   type ModelsUserResponse,
   sessionCrudGetSessions,
@@ -24,15 +31,6 @@ import { match, P } from 'ts-pattern'
  * second factor. None of these functions rejects: what a screen tells the
  * user is in the outcome.
  */
-
-/** Why nothing came of a request: there is nothing a person could correct. */
-export type Unsent =
-  | { type: 'tooManyRequests' }
-  /** No answer, or one that says nothing a person could act on */
-  | { type: 'failed' }
-
-/** A value the API does not take: the property, and the rule it broke. */
-export type RefusedValue = { field: string; rule: string }
 
 export type AccountRead = { type: 'found'; user: ModelsUserResponse } | Unsent
 
@@ -77,12 +75,6 @@ export const OWN_ACCOUNT_PARTS = ['account']
 export const OWN_ACCOUNT = [...OWN_ACCOUNT_PARTS, 'user']
 export const OWN_SESSIONS = [...OWN_ACCOUNT_PARTS, 'sessions']
 
-const FAILED: { type: 'failed' } = { type: 'failed' }
-
-const TOO_MANY_REQUESTS: { type: 'tooManyRequests' } = {
-  type: 'tooManyRequests',
-}
-
 const CONFLICT: { type: 'conflict' } = { type: 'conflict' }
 
 /**
@@ -90,28 +82,13 @@ const CONFLICT: { type: 'conflict' } = { type: 'conflict' }
  * on: no answer, a session that could not be renewed, a body the API did
  * not read, an error of the server.
  */
-const UNANSWERED = P.union(
+const UNANSWERED_PARTS: [
   null,
   { status: 401 },
   { status: 413 },
   { status: 415 },
   { status: 500 },
-)
-
-/** The values a refusal names, each with the rule it broke. */
-const refusedValuesOf = ({
-  errors,
-}: Pick<ModelsProblemDetails, 'errors'>): RefusedValue[] =>
-  (errors ?? []).map(({ field, rule }) => ({ field, rule }))
-
-/**
- * The handler of `.exhaustive()`: an answer whose status the contract does
- * not name (a gateway in front of the API answers 502, 503 or 504 when the
- * API does not) is nothing to act on, like no answer at all. Without it the
- * match would throw, and the screen would wait for an outcome that never
- * comes.
- */
-const outsideTheContract = (): { type: 'failed' } => FAILED
+] = [null, { status: 401 }, { status: 413 }, { status: 415 }, { status: 500 }]
 
 /**
  * The account of the session, read anew. `useSession` reads it once for a
@@ -196,7 +173,7 @@ export const changePassword = async (
       values: refusedValuesOf(data),
     }))
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }
 
@@ -254,7 +231,7 @@ export const startTwoFactor = async (
     }))
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }
 
@@ -277,7 +254,7 @@ export const confirmTwoFactor = async (
     }))
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }
 
@@ -302,7 +279,7 @@ export const issueBackupCodes = async (
     }))
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }
 
@@ -324,6 +301,6 @@ export const stopTwoFactor = async (
     }))
     .with({ status: 409 }, () => CONFLICT)
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(UNANSWERED, () => FAILED)
+    .with(P.union(...UNANSWERED_PARTS), () => FAILED)
     .exhaustive(outsideTheContract)
 }

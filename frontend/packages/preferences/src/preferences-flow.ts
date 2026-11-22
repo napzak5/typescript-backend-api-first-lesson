@@ -1,3 +1,7 @@
+import {
+  NOT_SENT_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerPreferencesResponse,
   ModelsCustomerPreferencesUpdateRequest,
@@ -419,13 +423,12 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
 }
 
 const TOO_MANY_REQUESTS: FormSays = {
-  message: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+  message: TOO_MANY_REQUESTS_MESSAGE,
   errors: {},
 }
 
 const NOT_SENT: FormSays = {
-  message:
-    '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+  message: NOT_SENT_MESSAGE,
   errors: {},
 }
 

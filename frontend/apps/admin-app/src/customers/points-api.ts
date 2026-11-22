@@ -1,4 +1,17 @@
 import {
+  FAILED,
+  type Forbidden,
+  from,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  REFUSED_PARTS,
+  refusedValuesOf,
+  UNANSWERED_PARTS,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsPointExpiringResponse,
   type ModelsPointTransactionResponse,
   pointCrudAdjust,
@@ -8,17 +21,6 @@ import {
   pointCrudListTransactions,
   pointCrudUse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  type Forbidden,
-  from,
-  outsideTheContract,
-  type Page,
-  pageOf,
-  refusedValuesOf,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import { readSale } from '../sales/sales-api'
@@ -26,23 +28,6 @@ import { customerKeyOf } from './customers-api'
 import { type PointAttempt, type PointRecording, whyRefused } from './points'
 
 const idSchema = z.uuid()
-
-/** The answers that say nothing of the points, as a pattern */
-const REFUSED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
-
-/** The same, for a request whose 400 names the values it refused */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -90,7 +75,7 @@ export const readBalance = async (customerId: string): Promise<BalanceRead> => {
       balance: data.data.balance,
     }))
     .with({ status: P.union(403, 404) }, () => FAILED)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -123,7 +108,7 @@ export const readExpiring = async (
       expiring: data.data,
     }))
     .with({ status: P.union(403, 404) }, () => FAILED)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -148,7 +133,7 @@ export const readTransactionsPage = async (
     .returnType<Page<ModelsPointTransactionResponse> | Unread>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: P.union(403, 404) }, () => FAILED)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -183,7 +168,7 @@ export const recordPoints = async (
     .with({ status: 409 }, () => ({ type: 'conflict' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
   if (outcome.type !== 'conflict') {
     return outcome

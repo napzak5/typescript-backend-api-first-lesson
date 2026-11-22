@@ -1,3 +1,7 @@
+import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsSaleBreakdownResponse,
@@ -7,7 +11,7 @@ import type {
   ModelsSalesDetail,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type RefusedValue, textOf } from '@beauty-salon-frontend/salon-screens'
+import { textOf } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import { nullIfBlank } from '../bookings/booking-entry'
 import { GONE_SERVICE } from '../bookings/booking-format'
@@ -336,8 +340,7 @@ export const afterCheckout = (outcome: CheckoutAttempt): CheckoutSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({

@@ -1,4 +1,9 @@
 import {
+  NOT_SENT_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsCustomerBasicPreferences,
   ModelsCustomerGenderType,
   type ModelsCustomerProfileCreateRequest,
@@ -8,7 +13,6 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { RefusedValue } from '../behind-the-session'
 import type { FormSays, Read } from '../forms'
 import type { ProfileCreation, ProfileUpdate } from './profile-api'
 
@@ -396,13 +400,12 @@ const messageOf = (control: string, rule: string): string | undefined => {
 }
 
 const TOO_MANY_REQUESTS: FormSays = {
-  message: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+  message: TOO_MANY_REQUESTS_MESSAGE,
   errors: {},
 }
 
 const NOT_SENT: FormSays = {
-  message:
-    '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+  message: NOT_SENT_MESSAGE,
   errors: {},
 }
 

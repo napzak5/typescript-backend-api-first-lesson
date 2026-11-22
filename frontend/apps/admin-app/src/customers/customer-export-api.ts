@@ -1,17 +1,18 @@
 import {
-  customerCrudExport,
-  customerCrudExportData,
-} from '@beauty-salon-frontend/api-client'
-import { type FileToSave, fileOfAnswer } from '@beauty-salon-frontend/io'
-import {
   FAILED,
   type Forbidden,
   NOT_FOUND,
   type NotFound,
   outsideTheContract,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  customerCrudExport,
+  customerCrudExportData,
+} from '@beauty-salon-frontend/api-client'
+import { type FileToSave, fileOfAnswer } from '@beauty-salon-frontend/io'
 import { match, P } from 'ts-pattern'
 import { rowsOfCsv } from './customer-file'
 import {
@@ -23,14 +24,6 @@ import {
  * The files the API makes of the ledger: the customers who meet the
  * conditions of the ledger, and everything held of one customer.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -78,7 +71,7 @@ export const exportLedger = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The conditions are those the ledger is read by, which the API takes
       .with({ status: 400 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -112,7 +105,7 @@ export const exportCustomerData = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The ID is that of a customer the page shows
       .with({ status: 400 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }

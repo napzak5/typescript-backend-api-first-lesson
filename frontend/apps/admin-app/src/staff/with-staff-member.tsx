@@ -1,8 +1,8 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
-import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -132,7 +132,7 @@ export const WithStaffMember = ({
         <StaffLedgerForbidden />
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={title} description={salon.name} />
         <UnreadNotice

@@ -1,16 +1,17 @@
 import {
-  customerCrudBulkCreate,
-  customerCrudBulkDelete,
-  customerCrudBulkUpdate,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   outsideTheContract,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  customerCrudBulkCreate,
+  customerCrudBulkDelete,
+  customerCrudBulkUpdate,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import {
   type RemovalAttempt,
@@ -26,14 +27,6 @@ import { readCustomers } from './customers-api'
  * those chosen in the ledger given a tag, or removed. The API does all of
  * a write or none of it.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -64,7 +57,7 @@ export const registerCustomers = async (
       .with({ status: 403 }, () => FORBIDDEN)
       .with({ status: 413 }, () => ({ type: 'tooLarge' }))
       .with({ status: 415 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -121,7 +114,7 @@ export const retagCustomers = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // Only the tags are sent, as they were read: the API has nothing else to refuse
       .with({ status: P.union(400, 409, 413, 415) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -151,6 +144,6 @@ export const removeCustomers = async (
     .with({ status: 404 }, () => goneOf(ids))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(400, 413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

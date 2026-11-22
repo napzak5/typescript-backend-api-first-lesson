@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSharedFileResponse } from '@beauty-salon-frontend/api-client'
 import {
   Form,
@@ -11,7 +12,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { match, P } from 'ts-pattern'
 import { useMailedToken } from '../account/mailed-token'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
-import { unreadMessageOf } from '../salons/pages'
 import {
   type SharedFileContent,
   SharedFileRecord,
@@ -27,8 +27,6 @@ import {
 } from './shared-file'
 
 const TITLE = '共有されたファイル'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const NOT_LOADED: SharedFileContent = {
   type: 'notLoaded',
@@ -260,7 +258,7 @@ const SharedFileOfToken = ({ token }: { token: string }) => {
           />
         ))
         .with({ type: 'unusable' }, () => <ShareLinkUnusable />)
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <>
             <PageHeader title={TITLE} />
             <UnreadNotice

@@ -1,8 +1,17 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  UNREAD_TYPES,
+  unreadMessageOf,
+  unsentMessageOf,
+} from '@beauty-salon-frontend/answers'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -19,18 +28,10 @@ import { match, P } from 'ts-pattern'
 import { listHrefOf } from '../bookings/own-bookings'
 import { OWN_PROFILE, readOwnProfile } from '../profile/profile-api'
 import { CUSTOMERS } from '../roles'
-import {
-  cursorAfter,
-  firstCursor,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
-} from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import { OwnReviewList } from './components/own-review-list/own-review-list'
 import { ReviewRemoval } from './components/review-removal/review-removal'
 import { afterReviewWrite } from './review-cache'
-import { afterReviewRemoval } from './review-flow'
 import { subjectOf } from './review-format'
 import {
   OWN_REVIEW_LISTS,
@@ -40,8 +41,6 @@ import {
 } from './reviews-api'
 
 const TITLE = '自分のレビュー'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const NO_REVIEWS = (
   <EmptyState
@@ -119,7 +118,7 @@ const Reviews = ({ customerId }: ReviewsProps) => {
         notify({ tone: 'success', message: 'レビューを削除しました。' })
         return
       }
-      setUnsent(afterReviewRemoval(outcome))
+      setUnsent(unsentMessageOf(outcome))
     },
   })
 
@@ -194,7 +193,7 @@ const OwnReviews = () => {
           <Reviews customerId={id} />
         ))
         .with({ type: 'none' }, () => NO_PROFILE)
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void profile.refetch()}

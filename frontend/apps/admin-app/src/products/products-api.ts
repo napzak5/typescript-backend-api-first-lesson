@@ -1,14 +1,4 @@
 import {
-  type ModelsProductCreateRequest,
-  type ModelsProductResponse,
-  type ModelsProductUpdateRequest,
-  productCrudCreate,
-  productCrudDelete,
-  productCrudGet,
-  productCrudList,
-  productCrudUpdate,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -21,9 +11,20 @@ import {
   type RefusedValue,
   refusedValuesOf,
   toTheEnd,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsProductCreateRequest,
+  type ModelsProductResponse,
+  type ModelsProductUpdateRequest,
+  productCrudCreate,
+  productCrudDelete,
+  productCrudGet,
+  productCrudList,
+  productCrudUpdate,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import { type ProductConditions, productListParamsOf } from './product-ledger'
 
@@ -32,14 +33,6 @@ import { type ProductConditions, productListParamsOf } from './product-ledger'
  * treatments use. Everybody who works at the salon reads them; the owner,
  * a manager and an administrator keep them.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -120,7 +113,7 @@ export const readProductPage = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The salon was removed after it was read, or the product of the cursor meanwhile
       .with({ status: P.union(400, 404) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -153,7 +146,7 @@ export const readProduct = async (
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -187,7 +180,7 @@ export const addProduct = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -215,7 +208,7 @@ export const changeProduct = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -240,6 +233,6 @@ export const removeProduct = async (
     .with({ status: 409 }, () => ({ type: 'inStock' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

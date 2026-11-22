@@ -1,3 +1,4 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
 import {
   newPasswordError,
   refusedPasswordMessage,
@@ -113,8 +114,7 @@ export const afterRefusal = (refusal: Refusal): FormSays =>
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({
-      message:
-        '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: NOT_SENT_MESSAGE,
       errors: {},
     }))
     .exhaustive()

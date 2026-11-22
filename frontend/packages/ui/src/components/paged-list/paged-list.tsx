@@ -21,6 +21,27 @@ export type PagedListProps<Item> = Omit<CardListProps<Item>, 'ref'> & {
   focus?: PagedListFocus | undefined
 }
 
+/**
+ * How many items a list has, and how many of them are shown while not all
+ * are: the `count` of a list read a page at a time. `unit` counts the items
+ * (件, 人); `whole` says how many there are, `12 件` when it is not given.
+ * When the API did not count them, it says how many are shown.
+ */
+export const countOf = (
+  total: number | null,
+  shown: number,
+  unit: string,
+  whole: (total: number) => string = (count) => `${count} ${unit}`,
+): string => {
+  if (total === null) {
+    return `${shown} ${unit}を表示しています`
+  }
+
+  return shown < total
+    ? `${whole(total)}（${shown} ${unit}を表示しています）`
+    : whole(total)
+}
+
 /** Out of the order of the keyboard: the focus is put there, and it is no control */
 const focusItem = (item: HTMLElement): void => {
   item.tabIndex = -1

@@ -1,8 +1,16 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
+  moreOf,
+  moreOfRows,
   Navigation,
   PageHeader,
   UnreadNotice,
@@ -11,13 +19,6 @@ import { useInfiniteQuery, useQueries } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { CUSTOMERS } from '../roles'
-import {
-  cursorAfter,
-  firstCursor,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
-} from '../salons/pages'
 import { dateAt } from '../salons/salon-format'
 import { readSalon } from '../salons/salons-api'
 import { SignInHelp } from '../sign-in-help'
@@ -26,7 +27,6 @@ import { BookingList } from './components/booking-list/booking-list'
 import {
   askedOf,
   listHrefOf,
-  moreOfRows,
   namedBy,
   OWN_BOOKING_LISTS,
   rowsOf,

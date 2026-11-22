@@ -1,4 +1,15 @@
 import {
+  FAILED,
+  type Forbidden,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  refusedValuesOf,
+  UNANSWERED_PARTS,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsDailySalesResponse,
   type ModelsProblemDetails,
   type ModelsSalesByCategoryResponse,
@@ -14,17 +25,7 @@ import {
   salesReportCrudGetTrends,
 } from '@beauty-salon-frontend/api-client'
 import { type FileToSave, fileOfAnswer } from '@beauty-salon-frontend/io'
-import {
-  FAILED,
-  type Forbidden,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type Period,
-  refusedValuesOf,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+import type { Period } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -35,14 +36,6 @@ import { match, P } from 'ts-pattern'
  * most, the end not before the start), so a 400 says the salon was removed
  * since it was read.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -101,7 +94,7 @@ export const readSalesReport = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -135,7 +128,7 @@ export const readSalesByStaff = async (
     .with({ status: 200 }, ({ data }) => ({ type: 'found', staff: data.data }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -172,7 +165,7 @@ export const readSalesByCategory = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -218,7 +211,7 @@ export const readSalesTrends = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -252,7 +245,7 @@ export const readDailySales = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -284,6 +277,6 @@ export const exportSalesReport = async (
     })
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, ({ data }) => refusalOf(data))
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

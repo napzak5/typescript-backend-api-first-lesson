@@ -3,7 +3,6 @@ export {
   type KeywordSearchProps,
 } from './components/keyword-search/keyword-search'
 export {
-  countOf,
   PagedTable,
   type PagedTableProps,
 } from './components/paged-table/paged-table'
@@ -29,13 +28,6 @@ export {
   keywordOf,
   LONGEST_KEYWORD,
 } from './keyword'
-export { outsideTheContract } from './outside-the-contract'
-export {
-  cursorAfter,
-  firstCursor,
-  listingOf,
-  moreOf,
-} from './pages'
 export {
   lastYearUntil,
   monthUntil,
@@ -46,24 +38,6 @@ export {
   readDays,
   readPeriod,
 } from './period'
-export {
-  FAILED,
-  type Forbidden,
-  from,
-  LARGEST_PAGE,
-  NOT_FOUND,
-  type NotFound,
-  type Page,
-  pageOf,
-  type Refused,
-  type RefusedValue,
-  refusedValuesOf,
-  toTheEnd,
-  type Unread,
-  unreadMessageOf,
-  unreadOf,
-  whyUnread,
-} from './reading'
 export {
   KEYWORD,
   queryOfKeyword,

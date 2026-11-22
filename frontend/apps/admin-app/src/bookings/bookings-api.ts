@@ -1,4 +1,21 @@
 import {
+  FAILED,
+  from,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  REFUSED_PARTS,
+  type RefusedValue,
+  refusedValuesOf,
+  UNANSWERED_PARTS,
+  UNREAD_TYPES,
+  type Unread,
+  unreadOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
+import {
   availableSlotCrudCheck,
   bookingCrudCancel,
   bookingCrudComplete,
@@ -24,20 +41,6 @@ import {
   type ModelsBookingServiceResponse,
   type ModelsBookingUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  from,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type Page,
-  pageOf,
-  type RefusedValue,
-  refusedValuesOf,
-  type Unread,
-  unreadOf,
-  whyUnread,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import type { DayConditions } from './booking-day'
@@ -186,23 +189,6 @@ const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
 const CONFLICT: StatusChange = { type: 'conflict' }
 
-/** The answers that say nothing about the booking, as a pattern */
-const REFUSED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
-
-/** The same, for a request whose 400 names the values it refused */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
-
 /** The keys of what the screens read of the bookings of a salon. */
 export const bookingListsKeyOf = (salonId: string): string[] => [
   'salons',
@@ -246,7 +232,7 @@ export const readDayBookings = async (
     .returnType<BookingPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -270,7 +256,7 @@ export const readBooking = async (id: string): Promise<BookingRead> => {
     }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -296,7 +282,7 @@ const statusChangeOf = (answer: StatusAnswer | null): StatusChange =>
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 
 /** Confirms a booking that waits for it (`draft`, `pending`). */
@@ -348,7 +334,7 @@ export const createBooking = async (
     .with({ status: 409 }, () => ({ type: 'conflict' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -372,7 +358,7 @@ export const updateBooking = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -386,7 +372,7 @@ export const deleteBooking = async (id: string): Promise<BookingRemoval> => {
     .with({ status: 409 }, () => ({ type: 'referred' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -415,7 +401,7 @@ export const rescheduleBooking = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -442,7 +428,7 @@ export const addBookingLine = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -464,7 +450,7 @@ export const readBookingLine = async (
     .with({ status: 200 }, ({ data }) => ({ type: 'found', line: data.data }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -481,7 +467,7 @@ export const deleteBookingLine = async (
     .with({ status: 409 }, () => ({ type: 'conflict' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -507,7 +493,7 @@ export const checkSlot = async (
       conflicts: data.data.conflicts,
     }))
     .with({ status: P.union(403, 404, 413, 415) }, () => FAILED)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -622,7 +608,7 @@ export const attemptAddition = async (
     .returnType<AdditionAttempt>()
     .with({ type: 'taken' }, () => ({ type: 'taken', check }))
     .with({ type: P.union('free', 'unassigned') }, () => ({ type: 'tooMuch' }))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (unread) => unread)
+    .with({ type: P.union(...UNREAD_TYPES) }, (unread) => unread)
     .exhaustive()
 }
 

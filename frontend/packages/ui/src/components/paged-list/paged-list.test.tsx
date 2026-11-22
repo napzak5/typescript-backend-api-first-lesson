@@ -3,6 +3,7 @@ import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
+import { countOf } from './paged-list'
 import * as pagedListStories from './paged-list.stories'
 
 const stories = composeStories(pagedListStories)
@@ -128,4 +129,37 @@ describe('PagedList', () => {
     ).toBeVisible()
     expect(items()).toHaveLength(2)
   })
+})
+
+describe('countOf', () => {
+  it.each<[number | null, number, string]>([
+    [12, 10, '12 件（10 件を表示しています）'],
+    [10, 10, '10 件'],
+    // A list that grew while it was read says the count of its last page
+    [2, 3, '2 件'],
+    [null, 10, '10 件を表示しています'],
+  ])(
+    'should say how many of %s are shown when %i are',
+    (total, shown, said) => {
+      expect(countOf(total, shown, '件')).toBe(said)
+    },
+  )
+
+  it.each<[number | null, number, string]>([
+    [3, 3, '3 台の端末でサインインしています'],
+    [24, 20, '24 台の端末でサインインしています（20 台を表示しています）'],
+    [null, 20, '20 台を表示しています'],
+  ])(
+    'should say the whole in the words it is given, of %s and %i',
+    (total, shown, said) => {
+      expect(
+        countOf(
+          total,
+          shown,
+          '台',
+          (count) => `${count} 台の端末でサインインしています`,
+        ),
+      ).toBe(said)
+    },
+  )
 })

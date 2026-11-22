@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { NoSalonNotice, useOwnSalon } from '@beauty-salon-frontend/session'
 import {
   LoadingIndicator,
@@ -7,7 +8,6 @@ import {
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { unreadMessageOf } from './reading'
 import { SalonChoiceScreen } from './salon-choice-screen'
 
 export type StartScreenProps = {
@@ -53,7 +53,7 @@ export const StartScreen = ({
       <Navigate to={salonHref(salonId)} replace />
     ))
     .with({ type: 'none' }, () => <NoSalonNotice />)
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={title} />
         <UnreadNotice

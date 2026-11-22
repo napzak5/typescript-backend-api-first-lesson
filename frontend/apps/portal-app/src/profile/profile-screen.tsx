@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsCustomerProfileResponse } from '@beauty-salon-frontend/api-client'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
@@ -15,7 +16,6 @@ import { useNavigate } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import { ProfileForm } from './components/profile-form/profile-form'
 import {
@@ -42,8 +42,6 @@ const TITLE = 'お客様の情報'
 
 /** Where the profile is shown, and where both forms lead */
 const MY_PAGE = '/mypage'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const BACK = (
   <ButtonLink href={MY_PAGE} variant='quiet'>
@@ -214,7 +212,7 @@ const OwnProfile = () => {
         <ProfileRegistration />
       </>
     ))
-    .with({ type: UNREAD }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice

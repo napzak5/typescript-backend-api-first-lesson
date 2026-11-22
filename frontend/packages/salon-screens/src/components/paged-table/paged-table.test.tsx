@@ -3,7 +3,7 @@ import { composeStories, composeStory } from '@storybook/react-vite'
 import { useLayoutEffect, useState } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
-import { countOf, PagedTable, type PagedTableProps } from './paged-table'
+import { PagedTable, type PagedTableProps } from './paged-table'
 import * as pagedTableStories from './paged-table.stories'
 
 const stories = composeStories(pagedTableStories)
@@ -171,17 +171,4 @@ describe('PagedTable', () => {
     expect(screen.getByRole('link', { name: '佐藤 次郎' })).toBeVisible()
     expect(document.body).toHaveFocus()
   })
-})
-
-describe('countOf', () => {
-  it.each([
-    [12, 10, '12 件（10 件を表示しています）'],
-    [10, 10, '10 件'],
-    [null, 10, '10 件を表示しています'],
-  ])(
-    'should say how many of %s are shown when %i are',
-    (total, shown, said) => {
-      expect(countOf(total, shown, '件')).toBe(said)
-    },
-  )
 })

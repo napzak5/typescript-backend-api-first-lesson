@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsBookingServiceResponse,
@@ -5,7 +6,6 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -36,8 +36,6 @@ import { serviceNameOf } from './day-bookings'
 import { WithBooking, WithStaffAndServices } from './with-booking'
 
 const TITLE = '施術明細の内容'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 type LineProps = {
   salon: ModelsSalonResponse
@@ -159,7 +157,7 @@ const LineOfBooking = ({ salon, booking }: LineOfBookingProps) => {
       </>
     ))
     .with({ type: 'forbidden' }, () => <OtherSalonNotice />)
-    .with({ type: UNREAD }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('施術明細', reason)}
         onRetry={() => void read.refetch()}

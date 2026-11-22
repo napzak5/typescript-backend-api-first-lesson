@@ -33,6 +33,7 @@
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
+    "@beauty-salon-frontend/answers": "workspace:*",
     "@beauty-salon-frontend/api-client": "workspace:*",
     "@beauty-salon-frontend/io": "workspace:*",
     "@beauty-salon-frontend/ui": "workspace:*",

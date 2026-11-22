@@ -2,8 +2,9 @@ import type { ModelsProblemDetails } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 
 /*
- * What the functions that read from the API share: why nothing was read,
- * a page of a list, and a list read to its end.
+ * What the functions that call the API share: why nothing came of a
+ * request, the values it refused, a page of a list, and a list read to its
+ * end.
  */
 
 /** Why nothing came of a request to read: there is nothing a person could correct. */
@@ -11,6 +12,21 @@ export type Unread =
   | { type: 'tooManyRequests' }
   /** No answer, or one that says nothing a person could act on */
   | { type: 'failed' }
+
+/**
+ * Why nothing came of a request to write, besides what the request itself
+ * may be refused for: the same as for a read.
+ */
+export type Unsent = Unread
+
+/**
+ * The types of what was not read, as the parts of a pattern
+ * (`{ type: P.union(...UNREAD_TYPES) }`).
+ */
+export const UNREAD_TYPES: ['tooManyRequests', 'failed'] = [
+  'tooManyRequests',
+  'failed',
+]
 
 /** The address names nothing: no record has this ID, or it was removed. */
 export type NotFound = { type: 'notFound' }
@@ -37,13 +53,62 @@ export type Page<Item> = {
   nextCursor: string | null
 }
 
-export const NOT_FOUND: NotFound = { type: 'notFound' }
+/*
+ * A pattern cannot be shared: its type cannot be named outside
+ * `ts-pattern`. Its parts are, and a match puts them together where it is
+ * written (`.with(P.union(...UNANSWERED_PARTS), unreadOf)`): the answer of
+ * the operation then refuses a part it cannot be, and `.exhaustive()` an
+ * answer that no part takes. A pattern kept in a constant is not checked
+ * against the answers it is matched with.
+ */
 
-export const FAILED: Unread = { type: 'failed' }
+/**
+ * The answers that say nothing a person could act on, and no answer at all.
+ * A 401 is among them: the screens are behind the session, and one that
+ * could not be renewed signs the user out.
+ */
+export const UNANSWERED_PARTS: [
+  null,
+  { status: 401 },
+  { status: 429 },
+  { status: 500 },
+] = [null, { status: 401 }, { status: 429 }, { status: 500 }]
 
-const TOO_MANY_REQUESTS: Unread = { type: 'tooManyRequests' }
+/** The answers of `Refused`: those of `UNANSWERED_PARTS`, and a 400 */
+export const REFUSED_PARTS: [
+  null,
+  { status: 400 },
+  { status: 401 },
+  { status: 429 },
+  { status: 500 },
+] = [null, { status: 400 }, { status: 401 }, { status: 429 }, { status: 500 }]
 
-type Problem<Status extends number> = {
+/**
+ * The answers of an operation that needs no session that say nothing a
+ * person could act on, and no answer at all: those of `UNANSWERED_PARTS`
+ * but a 401, which such an operation does not answer.
+ */
+export const PUBLIC_UNANSWERED_PARTS: [null, { status: 429 }, { status: 500 }] =
+  [null, { status: 429 }, { status: 500 }]
+
+/** The answers of `Refused` that an operation that needs no session gives: those of `PUBLIC_UNANSWERED_PARTS`, and a 400 */
+export const PUBLIC_REFUSED_PARTS: [
+  null,
+  { status: 400 },
+  { status: 429 },
+  { status: 500 },
+] = [null, { status: 400 }, { status: 429 }, { status: 500 }]
+
+export const NOT_FOUND: { type: 'notFound' } = { type: 'notFound' }
+
+export const FAILED: { type: 'failed' } = { type: 'failed' }
+
+export const TOO_MANY_REQUESTS: { type: 'tooManyRequests' } = {
+  type: 'tooManyRequests',
+}
+
+/** An answer of the API that is a problem, with its status */
+export type Problem<Status extends number> = {
   status: Status
   data: ModelsProblemDetails
 }
@@ -127,11 +192,25 @@ export const toTheEnd = async <
     : toTheEnd(readPage, page.nextCursor, items, pagesLeft - 1)
 }
 
+/** What a screen says after too many requests: waiting mends it, the connection does not. */
+export const TOO_MANY_REQUESTS_MESSAGE =
+  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
+
+/** What a screen says when a request to write got no answer to act on. */
+export const NOT_SENT_MESSAGE =
+  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
+
+/** What a screen says when a request that changes nothing a person typed got nowhere. */
+export const unsentMessageOf = (reason: Unsent): string =>
+  reason.type === 'tooManyRequests'
+    ? TOO_MANY_REQUESTS_MESSAGE
+    : NOT_SENT_MESSAGE
+
 /** Why something could not be read, in words. */
 export const unreadMessageOf = (
   what: string,
   reason: Unread | NotFound,
 ): string =>
   reason.type === 'tooManyRequests'
-    ? 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
+    ? TOO_MANY_REQUESTS_MESSAGE
     : `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`

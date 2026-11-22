@@ -1,8 +1,9 @@
+import { NOT_FOUND } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
-import { NOT_FOUND, WithSalon } from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   Actions,
   Alert,

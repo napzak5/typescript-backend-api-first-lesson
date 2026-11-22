@@ -7,7 +7,6 @@ import type { CustomersRead } from '../customers/customers-api'
 import { aBooking, aCustomer, services, staff } from './components/examples'
 import {
   customerIdsOf,
-  moreOfRows,
   type Names,
   rowsOf,
   serviceNamesOf,
@@ -142,49 +141,6 @@ describe('staffNameOf', () => {
   ])('should name %s', (_case, staffId, name) => {
     expect(staffNameOf(staffId, STAFF)).toBe(name)
   })
-})
-
-type MoreCase = [
-  string,
-  Parameters<typeof moreOfRows>[0],
-  Parameters<typeof moreOfRows>[1],
-  boolean,
-  ReturnType<typeof moreOfRows>,
-]
-
-const MORE: MoreCase[] = [
-  ['customers on their way', { type: 'reading' }, 'none', false, 'loading'],
-  [
-    'customers not read',
-    { type: 'unread', reason: { type: 'failed' } },
-    'available',
-    false,
-    'failed',
-  ],
-  [
-    'customers read again',
-    { type: 'unread', reason: { type: 'failed' } },
-    'available',
-    true,
-    'loading',
-  ],
-  [
-    'every row, and more pages',
-    { type: 'none' },
-    'available',
-    false,
-    'available',
-  ],
-  ['every row of every page', { type: 'none' }, 'none', false, 'none'],
-]
-
-describe('moreOfRows', () => {
-  it.each(MORE)(
-    'should say what stands below the rows with %s',
-    (_case, rest, pages, again, more) => {
-      expect(moreOfRows(rest, pages, again)).toBe(more)
-    },
-  )
 })
 
 describe('customerIdsOf', () => {

@@ -1,9 +1,5 @@
-import {
-  countOf,
-  momentNameAt,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
-import { Link, type More } from '@beauty-salon-frontend/ui'
+import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
+import { countOf, Link, type More } from '@beauty-salon-frontend/ui'
 import { tagsTextOf } from '../../../customers/customer-ledger'
 import { customerNameOf } from '../../../customers/customers-api'
 import type { FoundChart } from '../../charts-api'

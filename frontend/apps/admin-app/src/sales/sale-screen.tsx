@@ -1,15 +1,16 @@
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsPaymentMethodResponse,
   ModelsSaleResponse,
   ModelsSaleVoidRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  NOT_FOUND,
-  unreadMessageOf,
-  WithSalon,
-  whyUnread,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -59,8 +60,6 @@ import { ledgerQueryOf } from './sales-ledger'
 import { WithPaymentMethods, WithSale } from './with-sale'
 
 const TITLE = '売上の内容'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 /** A sale names no customer when none was recorded: nothing is read for it */
 const NO_CUSTOMER: { type: 'none' } = { type: 'none' }
@@ -272,16 +271,20 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
         </>
       ),
     )
-    .with([{ type: UNREAD }, P._], [P._, { type: UNREAD }], (reads) => (
-      <UnreadNotice
-        message={unreadMessageOf('売上の内容', whyUnread(reads))}
-        onRetry={() => {
-          void customer.refetch()
-          void staff.refetch()
-        }}
-        pending={customer.isFetching || staff.isFetching}
-      />
-    ))
+    .with(
+      [{ type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, { type: P.union(...UNREAD_TYPES) }],
+      (reads) => (
+        <UnreadNotice
+          message={unreadMessageOf('売上の内容', whyUnread(reads))}
+          onRetry={() => {
+            void customer.refetch()
+            void staff.refetch()
+          }}
+          pending={customer.isFetching || staff.isFetching}
+        />
+      ),
+    )
     .exhaustive()
 }
 

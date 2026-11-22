@@ -1,3 +1,8 @@
+import {
+  NOT_SENT_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewCreateRequest,
   ModelsReviewResponse,
@@ -9,15 +14,9 @@ import {
 } from '@beauty-salon-frontend/preferences'
 import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { RefusedValue } from '../behind-the-session'
 import type { FormSays, Read } from '../forms'
 import { DETAIL_RATINGS } from '../salons/salon-format'
-import type {
-  ReviewChange,
-  ReviewRemoval,
-  ReviewWriting,
-  Visit,
-} from './reviews-api'
+import type { ReviewChange, ReviewWriting, Visit } from './reviews-api'
 
 /*
  * The names of the controls of the form: those of the properties of the
@@ -357,12 +356,6 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
       }
 }
 
-export const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-
-export const NOT_SENT =
-  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
-
 const VISIT_READ_AGAIN: FormSays = {
   message:
     'このレビューは、投稿できませんでした。来店の内容を読み込み直しましたので、お確かめください。',
@@ -394,10 +387,10 @@ export const afterReviewWriting = (
       namesTheVisit(values) ? VISIT_READ_AGAIN : afterRefusedValues(values),
     )
     .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT, errors: {} }))
+    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
     .exhaustive()
 
 /**
@@ -411,21 +404,8 @@ export const afterReviewChange = (
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
     .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT, errors: {} }))
-    .exhaustive()
-
-/**
- * What the dialog says after the API did not remove a review: the customer
- * may try again. A review that was gone already is not said here: what the
- * customer asked for is so.
- */
-export const afterReviewRemoval = (
-  outcome: Exclude<ReviewRemoval, { type: 'removed' } | { type: 'gone' }>,
-): string =>
-  match(outcome)
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => NOT_SENT)
+    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
     .exhaustive()

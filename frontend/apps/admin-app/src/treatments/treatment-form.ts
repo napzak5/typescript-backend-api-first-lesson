@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsProductResponse,
@@ -6,12 +7,7 @@ import type {
   ModelsTreatmentRecordResponse,
   ModelsTreatmentRecordUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import {
-  isDay,
-  type Read,
-  type RefusedValue,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { tagsIn } from '../customers/customer-ledger'

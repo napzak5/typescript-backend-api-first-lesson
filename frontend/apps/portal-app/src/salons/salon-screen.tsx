@@ -1,3 +1,11 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  UNREAD_TYPES,
+  unreadMessageOf,
+  unsentMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewReportRequest,
   ModelsReviewResponse,
@@ -12,6 +20,7 @@ import {
   EmptyState,
   Link,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -29,12 +38,7 @@ import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { OWN_PROFILE, readOwnProfile } from '../profile/profile-api'
 import { ReviewReport } from '../reviews/components/review-report/review-report'
-import {
-  afterHelpful,
-  afterReport,
-  readerOf,
-  readReport,
-} from '../reviews/reader-flow'
+import { afterReport, readerOf, readReport } from '../reviews/reader-flow'
 import { afterHelpfulCounted, afterReviewGone } from '../reviews/review-cache'
 import { reportReview, sayHelpful } from '../reviews/reviews-api'
 import { signInHrefFrom } from '../sign-in-path'
@@ -44,13 +48,6 @@ import { SalonAbout } from './components/salon-about/salon-about'
 import { SalonHours } from './components/salon-hours/salon-hours'
 import { ServiceMenu } from './components/service-menu/service-menu'
 import { StaffProfiles } from './components/staff-profiles/staff-profiles'
-import {
-  cursorAfter,
-  firstCursor,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
-} from './pages'
 import { dateAt, postedOf } from './salon-format'
 import { menuOf } from './salon-menu'
 import {
@@ -64,8 +61,6 @@ import {
 
 /** The title of the screen that could not read the salon, and so not its name */
 const TITLE = 'サロンの詳細'
-
-const NOT_READ = P.union('notFound', 'tooManyRequests', 'failed')
 
 type OfSalonProps = {
   salon: ModelsSalonResponse
@@ -105,7 +100,7 @@ const MenuSection = ({ salon }: OfSalonProps) => {
             />
           )
         })
-        .with({ type: NOT_READ }, (reason) => (
+        .with({ type: P.union('notFound', ...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('メニュー', reason)}
             onRetry={() => void read.refetch()}
@@ -147,16 +142,13 @@ const StaffSection = ({ salon }: OfSalonProps) => {
             {/* The people are there without their ratings, too */}
             {match(ratings.data)
               .with(undefined, { type: 'found' }, () => null)
-              .with(
-                { type: P.union('tooManyRequests', 'failed') },
-                (reason) => (
-                  <UnreadNotice
-                    message={unreadMessageOf('スタッフの評価', reason)}
-                    onRetry={() => void ratings.refetch()}
-                    pending={ratings.isFetching}
-                  />
-                ),
-              )
+              .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
+                <UnreadNotice
+                  message={unreadMessageOf('スタッフの評価', reason)}
+                  onRetry={() => void ratings.refetch()}
+                  pending={ratings.isFetching}
+                />
+              ))
               .exhaustive()}
             <StaffProfiles
               staff={staff}
@@ -168,7 +160,7 @@ const StaffSection = ({ salon }: OfSalonProps) => {
             />
           </>
         ))
-        .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('スタッフ', reason)}
             onRetry={() => void read.refetch()}
@@ -269,7 +261,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         })
         .with({ type: 'gone' }, () => reviewIsGone(review))
         .with({ type: 'tooManyRequests' }, { type: 'failed' }, (unsent) =>
-          notify({ tone: 'danger', message: afterHelpful(unsent) }),
+          notify({ tone: 'danger', message: unsentMessageOf(unsent) }),
         )
         .exhaustive()
     },
@@ -328,7 +320,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         .with({ type: 'found' }, (found) => (
           <ReviewSummary summary={found.summary} />
         ))
-        .with({ type: NOT_READ }, (reason) => (
+        .with({ type: P.union('notFound', ...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('評価', reason)}
             onRetry={() => void summary.refetch()}
@@ -467,7 +459,7 @@ export const SalonScreen = () => {
           <ButtonLink href='/'>サロンを探す</ButtonLink>
         </>
       ))
-      .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <PageHeader title={TITLE} />
           <UnreadNotice

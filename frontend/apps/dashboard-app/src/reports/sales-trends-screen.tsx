@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   dayAt,
@@ -5,7 +6,6 @@ import {
   periodNameOf,
   readPeriod,
   StatisticsPeriod,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -36,8 +36,6 @@ import {
 } from './sales-trends'
 
 const TITLE = '売上の推移'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 /** What was wrong with the form, and the days and the parts the address showed when it was sent */
 type Refused = { asked: string; errors: FormErrors }
@@ -95,7 +93,9 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <ReportRefusal refusal={type} what={TITLE} />
         ))
         .with(
-          P.union(undefined, { type: P.union('found', UNREAD) }),
+          P.union(undefined, {
+            type: P.union('found', P.union(...UNREAD_TYPES)),
+          }),
           (counted) => (
             <>
               <StatisticsPeriod
@@ -134,7 +134,7 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                     />
                   ),
                 )
-                .with({ type: UNREAD }, (reason) => (
+                .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                   <UnreadNotice
                     message={unreadMessageOf(TITLE, reason)}
                     onRetry={() => void read.refetch()}

@@ -32,6 +32,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@beauty-salon-frontend/answers": "workspace:*",
     "@beauty-salon-frontend/api-client": "workspace:*",
     "@beauty-salon-frontend/session": "workspace:*",
     "@beauty-salon-frontend/ui": "workspace:*",

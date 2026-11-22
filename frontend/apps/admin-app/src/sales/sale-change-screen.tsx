@@ -1,14 +1,15 @@
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsSaleResponse,
   ModelsSaleUpdateRequest,
   ModelsSalonResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  NOT_FOUND,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   LoadingIndicator,
@@ -38,8 +39,6 @@ import {
 import { WithSale } from './with-sale'
 
 const TITLE = '売上を直す'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
@@ -93,7 +92,14 @@ const SaleChange = ({ salon, sale, staff }: SaleChangeProps) => {
           queryClient.setQueryData(key, NOT_FOUND)
         })
         .with(
-          { type: P.union('invalid', 'undated', 'forbidden', UNREAD) },
+          {
+            type: P.union(
+              'invalid',
+              'undated',
+              'forbidden',
+              P.union(...UNREAD_TYPES),
+            ),
+          },
           (refused) => setSaid(afterSaleChange(refused)),
         )
         .exhaustive(),
@@ -147,7 +153,7 @@ const WithStaff = ({ salon, sale }: Omit<SaleChangeProps, 'staff'>) => {
     .with({ type: 'found' }, ({ items }) => (
       <SaleChange salon={salon} sale={sale} staff={items} />
     ))
-    .with({ type: UNREAD }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('スタッフ', reason)}
         onRetry={() => void staff.refetch()}

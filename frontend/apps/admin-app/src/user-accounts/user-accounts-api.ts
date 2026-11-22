@@ -1,17 +1,18 @@
 import {
+  type Forbidden,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  UNANSWERED_PARTS,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   adminAuthCrudGetUser,
   adminAuthCrudResetTwoFactor,
   adminAuthCrudUnlockAccount,
   type ModelsUserResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  type Forbidden,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -19,14 +20,6 @@ import { match, P } from 'ts-pattern'
  * one read by its ID, its lock lifted, and its second factor reset for a
  * user who lost both the authenticator and the backup codes.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -51,7 +44,7 @@ export const readUser = async (userId: string): Promise<UserRead> => {
     .with({ status: 200 }, ({ data }) => ({ type: 'found', user: data.data }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -82,7 +75,7 @@ export const unlockAccount = async (userId: string): Promise<Unlocking> => {
     .with({ status: 409 }, () => ({ type: 'notLocked' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -113,6 +106,6 @@ export const resetTwoFactor = async (
     .with({ status: 409 }, () => ({ type: 'notEnabled' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }

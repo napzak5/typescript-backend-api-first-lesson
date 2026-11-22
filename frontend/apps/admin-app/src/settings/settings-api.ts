@@ -1,12 +1,4 @@
 import {
-  type ModelsSalonCreateRequest,
-  type ModelsSalonResponse,
-  type ModelsSalonUpdateRequest,
-  salonCrudCreate,
-  salonCrudDelete,
-  salonCrudUpdate,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   NOT_FOUND,
@@ -14,9 +6,18 @@ import {
   outsideTheContract,
   type RefusedValue,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsSalonCreateRequest,
+  type ModelsSalonResponse,
+  type ModelsSalonUpdateRequest,
+  salonCrudCreate,
+  salonCrudDelete,
+  salonCrudUpdate,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -24,14 +25,6 @@ import { match, P } from 'ts-pattern'
  * is public), and the owner, a manager and an administrator change them.
  * An administrator adds a salon; the owner and an administrator remove it.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -81,7 +74,7 @@ export const changeSalon = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -112,7 +105,7 @@ export const addSalon = async (
     .with({ status: 409 }, () => ({ type: 'emailTaken' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -138,6 +131,6 @@ export const removeSalon = async (salonId: string): Promise<SalonRemoval> => {
     .with({ status: 409 }, () => ({ type: 'bookingsUnfinished' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }

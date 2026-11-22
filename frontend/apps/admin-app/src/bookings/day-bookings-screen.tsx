@@ -1,25 +1,29 @@
+import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
-  cursorAfter,
   dayAfter,
   dayAt,
   dayNameOf,
-  FAILED,
-  firstCursor,
-  listingOf,
-  moreOf,
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
-  whyUnread,
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
+  moreOf,
+  moreOfRows,
   PageHeader,
   PeriodSwitch,
   UnreadNotice,
@@ -46,11 +50,9 @@ import {
 import { bookingListsKeyOf, readDayBookings } from './bookings-api'
 import { BookingFilter } from './components/booking-filter/booking-filter'
 import { DayBookingTable } from './components/day-booking-table/day-booking-table'
-import { customerIdsOf, moreOfRows, rowsOf } from './day-bookings'
+import { customerIdsOf, rowsOf } from './day-bookings'
 
 const TITLE = '予約台帳'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 type DayBookingsProps = {
   salon: ModelsSalonResponse
@@ -171,8 +173,8 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
           <LoadingIndicator label='予約を読み込んでいます' />
         ))
         .with(
-          [P._, { type: UNREAD }, P._],
-          [P._, P._, { type: P.union(UNREAD, 'notFound') }],
+          [P._, { type: P.union(...UNREAD_TYPES) }, P._],
+          [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
           ([, ofStaff, ofServices]) => (
             <UnreadNotice
               message={unreadMessageOf(

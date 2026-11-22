@@ -1,3 +1,8 @@
+import {
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingRescheduleRequest,
   ModelsCustomerBookingResponse,
@@ -21,9 +26,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { dateAt } from '../salons/salon-format'
-import { readSalon, readStaff, whyUnread } from '../salons/salons-api'
+import { readSalon, readStaff } from '../salons/salons-api'
 import { SignInHelp } from '../sign-in-help'
 import {
   type Choice,
@@ -53,8 +57,6 @@ import {
 } from './own-bookings'
 
 const TITLE = '日時の変更'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 type MoveStepProps = {
   booking: ModelsCustomerBookingResponse
@@ -155,7 +157,7 @@ const MoveStep = ({ booking, salon, service, staff }: MoveStepProps) => {
           .returnType<TimesOfDay>()
           .with(undefined, () => ({ type: 'loading' }))
           .with({ type: 'found' }, () => ({ type: 'listed', times }))
-          .with({ type: UNREAD }, (reason) => ({
+          .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
             type: 'unread',
             reason,
             retrying: slots.isFetching,
@@ -257,9 +259,9 @@ const BookingToMove = ({ booking }: BookingToMoveProps) => {
       ),
     )
     .with(
-      [{ type: UNREAD }, P._, P._],
-      [P._, { type: UNREAD }, P._],
-      [P._, P._, { type: UNREAD }],
+      [{ type: P.union(...UNREAD_TYPES) }, P._, P._],
+      [P._, { type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, P._, { type: P.union(...UNREAD_TYPES) }],
       (reads) => (
         <UnreadNotice
           message={unreadMessageOf('予約の内容', whyUnread(reads))}
@@ -310,7 +312,7 @@ const MovePage = () => {
         <ButtonLink href='/bookings'>予約の一覧へ</ButtonLink>
       </>
     ))
-    .with({ type: UNREAD }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice

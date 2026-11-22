@@ -1,8 +1,8 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsStaffProfileResponse,
   ModelsStaffProfileUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   Card,
@@ -136,7 +136,7 @@ const ProfilePart = () => {
       <LoadingIndicator label='プロフィールを読み込んでいます' />
     ))
     .with({ type: 'unavailable' }, () => <p>{UNAVAILABLE_NOW}</p>)
-    .with({ type: P.union('tooManyRequests', 'failed') }, (unread) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (unread) => (
       <UnreadNotice
         message={unreadMessageOf('プロフィール', unread)}
         onRetry={() => void read.refetch()}

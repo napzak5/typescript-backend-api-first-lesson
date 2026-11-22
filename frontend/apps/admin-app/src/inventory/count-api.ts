@@ -1,19 +1,20 @@
 import {
+  FAILED,
+  type Forbidden,
+  outsideTheContract,
+  type RefusedValue,
+  refusedValuesOf,
+  UNANSWERED_PARTS,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   inventoryCrudGetValueReport,
   inventoryCrudPerformStockCount,
   type ModelsInventoryStockCountRequest,
   type ModelsInventoryStockCountResponse,
   type ModelsInventoryValueReportResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  type Forbidden,
-  outsideTheContract,
-  type RefusedValue,
-  refusedValuesOf,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import { stockKeyOf } from './inventory-api'
 
@@ -23,14 +24,6 @@ import { stockKeyOf } from './inventory-api'
  * of the stock at purchase prices. Both are for the owner, a manager and an
  * administrator.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -71,7 +64,7 @@ export const countStock = async (
     .with({ status: 409 }, () => ({ type: 'belowReserved' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -105,6 +98,6 @@ export const readValueReport = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

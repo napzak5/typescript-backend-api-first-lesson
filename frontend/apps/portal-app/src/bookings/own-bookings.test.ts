@@ -2,7 +2,6 @@ import type {
   ModelsBookingStatusType,
   ModelsCustomerBookingResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { More } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
 import { booking } from './components/examples'
 import {
@@ -10,7 +9,6 @@ import {
   isChangeable,
   isMovable,
   listHrefOf,
-  moreOfRows,
   moveHrefOf,
   type Named,
   namedBy,
@@ -397,42 +395,5 @@ describe('rowsOf', () => {
         }),
       ),
     ).toEqual({ rows: [], rest: { type: 'reading' } })
-  })
-})
-
-describe('moreOfRows', () => {
-  it.each<More>(['none', 'available', 'loading', 'failed'])(
-    'should be what the pages say when every booking has its row: %s',
-    (pages) => {
-      expect(moreOfRows({ type: 'none' }, pages, false)).toBe(pages)
-    },
-  )
-
-  it('should be on its way while names are read, whatever the pages say', () => {
-    expect(moreOfRows({ type: 'reading' }, 'none', false)).toBe('loading')
-  })
-
-  it('should have failed when names could not be read, whatever the pages say', () => {
-    expect(
-      moreOfRows(
-        { type: 'unread', reason: { type: 'failed' } },
-        'available',
-        false,
-      ),
-    ).toBe('failed')
-  })
-
-  it('should be on its way while the names that could not be read are asked for again', () => {
-    expect(
-      moreOfRows(
-        { type: 'unread', reason: { type: 'tooManyRequests' } },
-        'none',
-        true,
-      ),
-    ).toBe('loading')
-  })
-
-  it('should stay what the pages say while other names are read again', () => {
-    expect(moreOfRows({ type: 'none' }, 'available', true)).toBe('available')
   })
 })

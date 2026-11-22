@@ -1,10 +1,4 @@
 import {
-  inventoryCrudListMovements,
-  inventoryCrudRecordMovement,
-  type ModelsInventoryMovementRequest,
-  type ModelsInventoryTransactionResponse,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -15,9 +9,16 @@ import {
   pageOf,
   type RefusedValue,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  inventoryCrudListMovements,
+  inventoryCrudRecordMovement,
+  type ModelsInventoryMovementRequest,
+  type ModelsInventoryTransactionResponse,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import { stockRowKeyOf } from './inventory-api'
 import { type MovementConditions, movementParamsOf } from './movement-search'
@@ -28,14 +29,6 @@ import { type MovementConditions, movementParamsOf } from './movement-search'
  * records those of every day; the owner, a manager and an administrator
  * record the others as well. A movement is never changed nor removed.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -80,7 +73,7 @@ export const readMovementPage = async (
       // The movement of the cursor is of no other row, and the conditions are
       // those the API takes: nothing a person could act on
       .with({ status: 400 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -119,6 +112,6 @@ export const recordMovement = async (
     .with({ status: 409 }, () => ({ type: 'outOfRange' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

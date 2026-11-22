@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
 import {
@@ -5,7 +6,6 @@ import {
   periodNameOf,
   periodQueryOf,
   StatisticsPeriod,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -33,8 +33,6 @@ import {
 import { usePeriodCount } from './use-period-count'
 
 const TITLE = '売上レポート'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 /** Why the last export saved nothing, for the period it was asked for */
 type ExportSaid = { asked: string; message: string }
@@ -97,49 +95,52 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         <ReportRefusal refusal={type} what={TITLE} />
       </>
     ))
-    .with(P.union(undefined, { type: P.union('found', UNREAD) }), (counted) => (
-      <>
-        {header(
-          counted?.type === 'found' && counted.report.transactionCount > 0,
-        )}
-        {exportSaid !== undefined && exportSaid.asked === asked && (
-          <Alert tone='danger'>{exportSaid.message}</Alert>
-        )}
-        <StatisticsPeriod
-          period={period}
-          description={REPORT_PERIOD}
-          errors={errors}
-          onSubmit={count}
-        />
-        <p>{`${periodNameOf(period)}の売上`}</p>
-        {match(counted)
-          .with(undefined, () => (
-            <LoadingIndicator label='売上を集計しています' />
-          ))
-          .with({ type: 'found', report: { transactionCount: 0 } }, () => (
-            <EmptyState
-              title='この期間の売上はありません'
-              description='期間を変えて集計してください。'
-            />
-          ))
-          .with({ type: 'found' }, ({ report }) => (
-            <SalesReport
-              report={report}
-              currency={salon.currency}
-              staffHref={`${staffSalesHrefOf(salon.id)}?${asked}`}
-              categoriesHref={`${categorySalesHrefOf(salon.id)}?${asked}`}
-            />
-          ))
-          .with({ type: UNREAD }, (reason) => (
-            <UnreadNotice
-              message={unreadMessageOf('売上レポート', reason)}
-              onRetry={() => void read.refetch()}
-              pending={read.isFetching}
-            />
-          ))
-          .exhaustive()}
-      </>
-    ))
+    .with(
+      P.union(undefined, { type: P.union('found', P.union(...UNREAD_TYPES)) }),
+      (counted) => (
+        <>
+          {header(
+            counted?.type === 'found' && counted.report.transactionCount > 0,
+          )}
+          {exportSaid !== undefined && exportSaid.asked === asked && (
+            <Alert tone='danger'>{exportSaid.message}</Alert>
+          )}
+          <StatisticsPeriod
+            period={period}
+            description={REPORT_PERIOD}
+            errors={errors}
+            onSubmit={count}
+          />
+          <p>{`${periodNameOf(period)}の売上`}</p>
+          {match(counted)
+            .with(undefined, () => (
+              <LoadingIndicator label='売上を集計しています' />
+            ))
+            .with({ type: 'found', report: { transactionCount: 0 } }, () => (
+              <EmptyState
+                title='この期間の売上はありません'
+                description='期間を変えて集計してください。'
+              />
+            ))
+            .with({ type: 'found' }, ({ report }) => (
+              <SalesReport
+                report={report}
+                currency={salon.currency}
+                staffHref={`${staffSalesHrefOf(salon.id)}?${asked}`}
+                categoriesHref={`${categorySalesHrefOf(salon.id)}?${asked}`}
+              />
+            ))
+            .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
+              <UnreadNotice
+                message={unreadMessageOf('売上レポート', reason)}
+                onRetry={() => void read.refetch()}
+                pending={read.isFetching}
+              />
+            ))
+            .exhaustive()}
+        </>
+      ),
+    )
     .exhaustive()
 }
 

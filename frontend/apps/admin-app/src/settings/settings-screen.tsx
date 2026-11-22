@@ -1,7 +1,7 @@
+import { NOT_FOUND } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   dayAt,
-  NOT_FOUND,
   readSalon,
   SALON_CHOICES,
   salonKeyOf,

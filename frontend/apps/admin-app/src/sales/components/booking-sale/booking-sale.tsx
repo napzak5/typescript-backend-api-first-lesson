@@ -1,5 +1,6 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsBookingResponse } from '@beauty-salon-frontend/api-client'
-import { amountOf, unreadMessageOf } from '@beauty-salon-frontend/salon-screens'
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   ButtonLink,
@@ -49,7 +50,7 @@ export const BookingSale = ({
       .with(undefined, () => (
         <LoadingIndicator label='会計を読み込んでいます' />
       ))
-      .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <UnreadNotice
           message={unreadMessageOf('会計', reason)}
           onRetry={onRetry}

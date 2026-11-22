@@ -1,8 +1,8 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   periodNameOf,
   StatisticsPeriod,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -20,8 +20,6 @@ import { readSalesByCategory, salesByCategoryKeyOf } from './sales-report-api'
 import { usePeriodCount } from './use-period-count'
 
 const TITLE = '区分別の売上'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 /**
  * The sales of services of the salon over a period by kind of service:
@@ -44,7 +42,9 @@ const CategoriesPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <ReportRefusal refusal={type} what={TITLE} />
         ))
         .with(
-          P.union(undefined, { type: P.union('found', UNREAD) }),
+          P.union(undefined, {
+            type: P.union('found', P.union(...UNREAD_TYPES)),
+          }),
           (counted) => (
             <>
               <StatisticsPeriod
@@ -70,7 +70,7 @@ const CategoriesPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                     currency={salon.currency}
                   />
                 ))
-                .with({ type: UNREAD }, (reason) => (
+                .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                   <UnreadNotice
                     message={unreadMessageOf(TITLE, reason)}
                     onRetry={() => void read.refetch()}

@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsAuthTwoFactorSetupResponse,
   ModelsUserResponse,
@@ -23,7 +24,7 @@ import {
   readOwnAccount,
   startTwoFactor,
 } from './security-api'
-import { type FormSays, NOTHING_TO_SAY, unreadMessageOf } from './security-flow'
+import { type FormSays, NOTHING_TO_SAY } from './security-flow'
 import {
   afterRefusal,
   CHANGED_ELSEWHERE,
@@ -31,8 +32,6 @@ import {
   readPassword,
   withTwoFactorStatus,
 } from './two-factor-flow'
-
-const UNSENT = P.union('tooManyRequests', 'failed')
 
 /**
  * Where the set-up is. The secret and the backup codes are in the answer
@@ -229,7 +228,7 @@ export const TwoFactorSetupScreen = ({
         .with({ type: 'found' }, ({ user }) => (
           <Setup user={user} securityHref={securityHref} />
         ))
-        .with({ type: UNSENT }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('アカウント', reason)}
             onRetry={() => void read.refetch()}

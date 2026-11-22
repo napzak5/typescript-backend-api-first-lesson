@@ -1,31 +1,23 @@
 import {
-  type ModelsServiceResponse,
-  type ModelsStaffProfileResponse,
-  serviceCrudList,
-  staffProfileList,
-} from '@beauty-salon-frontend/api-client'
-import {
   from,
   LARGEST_PAGE,
   NOT_FOUND,
   type NotFound,
   outsideTheContract,
   type Page,
+  PUBLIC_REFUSED_PARTS,
   pageOf,
   toTheEnd,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsServiceResponse,
+  type ModelsStaffProfileResponse,
+  serviceCrudList,
+  staffProfileList,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
-
-/** The answers of `Refused`, as a pattern */
-const REFUSED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 export type StaffProfilesRead =
   | { type: 'found'; items: ModelsStaffProfileResponse[] }
@@ -49,7 +41,7 @@ export const readStaffProfiles = (
     return match(answer)
       .returnType<Page<ModelsStaffProfileResponse> | Unread>()
       .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
-      .with(REFUSED, unreadOf)
+      .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   })
 
@@ -74,7 +66,7 @@ export const readServices = (salonId: string): Promise<ServicesRead> =>
       .returnType<Page<ModelsServiceResponse> | NotFound | Unread>()
       .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
       .with({ status: 404 }, () => NOT_FOUND)
-      .with(REFUSED, unreadOf)
+      .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   })
 

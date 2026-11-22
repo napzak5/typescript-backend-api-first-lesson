@@ -1,18 +1,17 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerAllergyResponse,
   ModelsCustomerResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  cursorAfter,
-  firstCursor,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import { ButtonLink, moreOf, useNotifications } from '@beauty-salon-frontend/ui'
 import {
   useInfiniteQuery,
   useMutation,

@@ -1,4 +1,15 @@
 import {
+  FAILED,
+  type Forbidden,
+  from,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  UNANSWERED_PARTS,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   inventoryAlertCrudAcknowledge,
   inventoryAlertCrudGetSummary,
   inventoryAlertCrudList,
@@ -6,16 +17,6 @@ import {
   type ModelsInventoryAlertResponse,
   type ModelsInventoryAlertSummaryResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  type Forbidden,
-  from,
-  outsideTheContract,
-  type Page,
-  pageOf,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import type { AlertConditions } from './alert-search'
 import { stockKeyOf } from './inventory-api'
@@ -26,14 +27,6 @@ import { stockKeyOf } from './inventory-api'
  * and the acknowledgement of one. Every member of the staff of the salon
  * reads and acknowledges them, and an administrator.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -81,7 +74,7 @@ export const readAlertPage = async (
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -108,7 +101,7 @@ export const readAlertSummary = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -140,6 +133,6 @@ export const acknowledgeAlert = async (
     .with({ status: 409 }, () => ({ type: 'acknowledgedAlready' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(400, 413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsReviewUpdateRequest } from '@beauty-salon-frontend/api-client'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
@@ -19,7 +20,6 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { dayOf } from '../salons/salon-format'
 import { SignInHelp } from '../sign-in-help'
 import { ReviewForm } from './components/review-form/review-form'
@@ -38,8 +38,6 @@ const TITLE = 'レビューを変更する'
 
 /** Where what the customer wrote is listed, and where the form leads */
 const OWN_REVIEWS = '/mypage/reviews'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const BACK = (
   <ButtonLink href={OWN_REVIEWS} variant='quiet'>
@@ -198,7 +196,7 @@ const ReviewToChange = () => {
             />
           </>
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void read.refetch()}

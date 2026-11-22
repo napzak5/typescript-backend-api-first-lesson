@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/api-client'
 import {
   afterPreferencesChange,
@@ -23,7 +24,6 @@ import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { OWN_PROFILE, type ProfileRead } from '../profile/profile-api'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import {
   OWN_PREFERENCES,
@@ -37,8 +37,6 @@ const TITLE = '好みの設定'
 
 /** Where the preferences are shown, and where the form leads */
 const MY_PAGE = '/mypage'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const BACK = (
   <ButtonLink href={MY_PAGE} variant='quiet'>
@@ -185,7 +183,7 @@ const OwnPreferencesToChange = () => {
             />
           </>
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('好みの設定', reason)}
             onRetry={() => void read.refetch()}

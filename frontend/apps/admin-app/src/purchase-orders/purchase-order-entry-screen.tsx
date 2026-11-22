@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryResponse,
   ModelsPurchaseOrderCreateRequest,
@@ -5,7 +6,6 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -148,16 +148,13 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         .with([{ type: 'forbidden' }, P._], () => (
           <OtherSalonNotice what='発注' />
         ))
-        .with(
-          [{ type: P.union('tooManyRequests', 'failed') }, P._],
-          ([reason]) => (
-            <UnreadNotice
-              message={unreadMessageOf('在庫の行', reason)}
-              onRetry={() => void rows.refetch()}
-              pending={rows.isFetching}
-            />
-          ),
-        )
+        .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
+          <UnreadNotice
+            message={unreadMessageOf('在庫の行', reason)}
+            onRetry={() => void rows.refetch()}
+            pending={rows.isFetching}
+          />
+        ))
         // The salon was removed meanwhile, or the products could not be read
         .with(
           [
@@ -187,7 +184,7 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
               <LoadingIndicator label='発注の提案を読み込んでいます' />
             ))
             .with({ type: 'forbidden' }, () => <OtherSalonNotice what='発注' />)
-            .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+            .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
               <UnreadNotice
                 message={unreadMessageOf('発注の提案', reason)}
                 onRetry={() => void suggestions.refetch()}

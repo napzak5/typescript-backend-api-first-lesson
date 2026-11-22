@@ -1,8 +1,9 @@
-import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import {
   NOT_FOUND,
+  UNREAD_TYPES,
   unreadMessageOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
   LoadingIndicator,
@@ -233,7 +234,7 @@ const AccountPage = ({ userId }: AccountPageProps) => {
             <ToTheStart />
           </>
         ))
-        .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('アカウント', reason)}
             onRetry={() => void read.refetch()}

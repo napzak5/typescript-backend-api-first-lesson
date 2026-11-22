@@ -8,7 +8,6 @@ import { describe, expect, it } from 'vitest'
 import { profile } from '../profile/components/examples'
 import type { ProfileRead } from '../profile/profile-api'
 import {
-  afterHelpful,
   afterReport,
   DETAILS,
   MAX_DETAILS_LENGTH,
@@ -297,19 +296,5 @@ describe('afterReport', () => {
         '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
       errors: {},
     })
-  })
-})
-
-describe('afterHelpful', () => {
-  it('should say that there were too many requests, and to wait', () => {
-    expect(afterHelpful({ type: 'tooManyRequests' })).toBe(
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-    )
-  })
-
-  it('should say that nothing was sent, and to look at the connection', () => {
-    expect(afterHelpful({ type: 'failed' })).toBe(
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
-    )
   })
 })

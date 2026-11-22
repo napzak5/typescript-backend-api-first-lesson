@@ -1,4 +1,16 @@
 import {
+  FAILED,
+  type NotFound,
+  outsideTheContract,
+  type RefusedValue,
+  refusedValuesOf,
+  TOO_MANY_REQUESTS,
+  UNANSWERED_PARTS,
+  type Unread,
+  type Unsent,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
+import {
   customerProfileGetPreferences,
   customerProfileUpdatePreferences,
   type ModelsCustomerPreferencesResponse,
@@ -12,23 +24,9 @@ import {
   staffIdsOf,
 } from '@beauty-salon-frontend/preferences'
 import { match, P } from 'ts-pattern'
-import {
-  FAILED,
-  type RefusedValue,
-  refusedValuesOf,
-  TOO_MANY_REQUESTS,
-  type Unsent,
-  unansweredOf,
-} from '../behind-the-session'
+import { unansweredOf } from '../behind-the-session'
 import { readBookedSalonIds } from '../bookings/bookings-api'
-import { outsideTheContract } from '../outside-the-contract'
-import {
-  type NotFound,
-  readSalon,
-  readStaff,
-  type Unread,
-  whyUnread,
-} from '../salons/salons-api'
+import { readSalon, readStaff } from '../salons/salons-api'
 
 /**
  * The key under which the preferences of the customer are kept, as the
@@ -43,18 +41,6 @@ export const OWN_PREFERENCES = ['own', 'preferences']
  * page shows, and is never opened with what the page read.
  */
 export const OWN_PREFERENCES_TO_CHANGE = ['own', 'preferences-to-change']
-
-/**
- * The answers `unansweredOf` reads. (A pattern is a constant of its module:
- * the type of one cannot be written out, so it is not exported.)
- */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 403 },
-  { status: 429 },
-  { status: 500 },
-)
 
 export type PreferencesRead =
   | {
@@ -100,7 +86,7 @@ const readStored = async (): Promise<StoredRead> => {
       preferences: data.data,
     }))
     .with({ status: 404 }, () => ({ type: 'none' }))
-    .with(UNANSWERED, unansweredOf)
+    .with(P.union(...UNANSWERED_PARTS, { status: 403 }), unansweredOf)
     .exhaustive(outsideTheContract)
 }
 

@@ -1,3 +1,4 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryResponse,
   ModelsPurchaseOrderCreateRequest,
@@ -6,7 +7,6 @@ import type {
 import {
   isDay,
   type Read,
-  type RefusedValue,
   startOfDayAt,
   textOf,
 } from '@beauty-salon-frontend/salon-screens'

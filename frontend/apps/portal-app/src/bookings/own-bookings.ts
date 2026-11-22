@@ -1,11 +1,10 @@
+import type { NotFound, Unread } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingStatusType,
   ModelsCustomerBookingResponse,
   ModelsSalonResponse,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { More } from '@beauty-salon-frontend/ui'
-import type { NotFound, Unread } from '../salons/salons-api'
 import { daysFrom, queryOf } from './booking-choice'
 import type { OwnBookingsAsked } from './bookings-api'
 
@@ -220,25 +219,4 @@ export const rowsOf = (
         ? { type: 'none' }
         : unnamed,
   }
-}
-
-/**
- * What stands below the rows of a list. Names that are on their way are
- * rows that are on their way; names that could not be read are rows that
- * did not come, and are asked for again. Past the rows, it is what the
- * pages of the list say.
- */
-export const moreOfRows = (
-  rest: Rows['rest'],
-  pages: More,
-  readingNamesAgain: boolean,
-): More => {
-  if (rest.type === 'reading') {
-    return 'loading'
-  }
-  if (rest.type === 'unread') {
-    return readingNamesAgain ? 'loading' : 'failed'
-  }
-
-  return pages
 }

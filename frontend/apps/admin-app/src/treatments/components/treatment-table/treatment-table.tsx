@@ -2,12 +2,8 @@ import type {
   ModelsServiceResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  countOf,
-  momentNameAt,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
-import { Link, type More } from '@beauty-salon-frontend/ui'
+import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
+import { countOf, Link, type More } from '@beauty-salon-frontend/ui'
 import { UNLISTED_STAFF } from '../../../bookings/booking-format'
 import { serviceNameOf, staffNameOf } from '../../../bookings/day-bookings'
 import {

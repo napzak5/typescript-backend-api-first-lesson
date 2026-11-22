@@ -1,4 +1,17 @@
 import {
+  FAILED,
+  from,
+  type NotFound,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  TOO_MANY_REQUESTS,
+  toTheEnd,
+  UNANSWERED_PARTS,
+  type Unread,
+  type Unsent,
+} from '@beauty-salon-frontend/answers'
+import {
   availableSlotCrudList,
   type CustomerBookingsListParams,
   customerBookingsCancel,
@@ -16,21 +29,7 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
-import {
-  FAILED,
-  TOO_MANY_REQUESTS,
-  type Unsent,
-  unansweredOf,
-} from '../behind-the-session'
-import { outsideTheContract } from '../outside-the-contract'
-import {
-  from,
-  type NotFound,
-  type Page,
-  pageOf,
-  toTheEnd,
-  type Unread,
-} from '../salons/salons-api'
+import { unansweredOf } from '../behind-the-session'
 
 export type ServiceRead =
   | { type: 'found'; service: ModelsServiceResponse }
@@ -85,18 +84,6 @@ export type Move =
   | Unsent
 
 const NOT_FOUND: NotFound = { type: 'notFound' }
-
-/**
- * The answers `unansweredOf` reads. (A pattern is a constant of its module:
- * the type of one cannot be written out, so it is not exported.)
- */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 403 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const idSchema = z.uuid()
 
@@ -239,7 +226,7 @@ export const readOwnBooking = async (id: string): Promise<OwnBookingRead> => {
     }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unansweredOf)
+    .with(P.union(...UNANSWERED_PARTS, { status: 403 }), unansweredOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -276,7 +263,7 @@ const readOwnBookingsPage = async (
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 404 }, () => NO_BOOKINGS)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unansweredOf)
+    .with(P.union(...UNANSWERED_PARTS, { status: 403 }), unansweredOf)
     .exhaustive(outsideTheContract)
 }
 

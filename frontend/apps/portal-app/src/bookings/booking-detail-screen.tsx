@@ -1,3 +1,8 @@
+import {
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingCancelRequest,
   ModelsCustomerBookingResponse,
@@ -19,8 +24,7 @@ import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { BookingReview } from '../reviews/booking-review'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
-import { readSalon, readStaff, whyUnread } from '../salons/salons-api'
+import { readSalon, readStaff } from '../salons/salons-api'
 import { SignInHelp } from '../sign-in-help'
 import { afterCancellation, readCancellation } from './booking-flow'
 import { whenLineOf } from './booking-format'
@@ -41,8 +45,6 @@ import {
 } from './own-bookings'
 
 const TITLE = '予約の内容'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const GONE_OR_FOUND = P.union('found', 'notFound')
 
@@ -196,9 +198,9 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
       },
     )
     .with(
-      [{ type: UNREAD }, P._, P._],
-      [P._, { type: UNREAD }, P._],
-      [P._, P._, { type: UNREAD }],
+      [{ type: P.union(...UNREAD_TYPES) }, P._, P._],
+      [P._, { type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, P._, { type: P.union(...UNREAD_TYPES) }],
       (reads) => (
         <UnreadNotice
           message={unreadMessageOf('予約の内容', whyUnread(reads))}
@@ -243,7 +245,7 @@ const OwnBooking = () => {
         <ButtonLink href='/'>サロンを探す</ButtonLink>
       </>
     ))
-    .with({ type: UNREAD }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice
