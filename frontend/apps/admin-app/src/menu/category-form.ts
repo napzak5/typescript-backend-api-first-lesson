@@ -8,6 +8,7 @@ import type {
   ModelsServiceCategoryResponse,
   ModelsServiceCategoryUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormRead,
@@ -17,7 +18,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
-import { CATEGORIES } from '../customers/customer-format'
 import { numberOf } from '../treatments/treatment-form'
 import type { TreatmentRemovalSays } from '../treatments/treatment-format'
 import type { CategoryRemoval, CategoryWrite } from './menu-api'
@@ -68,7 +68,9 @@ const readWhole = (
   const optional = (name: string): string | null =>
     textOrNull(textOf(values, name))
   const name = textOf(values, 'name').trim()
-  const kind = CATEGORIES.find((one) => one === textOf(values, 'category'))
+  const kind = SERVICE_CATEGORIES.find(
+    (one) => one === textOf(values, 'category'),
+  )
   const displayOrder = numberOf(textOf(values, 'displayOrder'), 0)
   const iconUrl = optional('iconUrl')
   const color = optional('color')

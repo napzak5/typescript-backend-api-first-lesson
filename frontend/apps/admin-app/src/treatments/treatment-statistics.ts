@@ -1,8 +1,5 @@
-import {
-  isDay,
-  monthUntil,
-  type Period,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/fields'
+import { monthUntil, type Period } from '@beauty-salon-frontend/salon-screens'
 
 /*
  * The statistics of the treatment records of a salon: the days they are

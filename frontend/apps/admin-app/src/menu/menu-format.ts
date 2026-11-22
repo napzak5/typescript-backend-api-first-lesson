@@ -8,7 +8,7 @@ import {
   ModelsServiceStatusType,
 } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import type { Option } from '../customers/customer-format'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 
 /*
  * How the menu is named and ordered on the screens: the words of the values
@@ -96,24 +96,25 @@ export const OPTION_TYPES: readonly ModelsServiceOptionType[] = Object.values(
   ModelsServiceOptionType,
 )
 
-export const PRICING_OPTIONS: readonly Option[] = PRICINGS.map((value) => ({
-  value,
-  label: PRICING_NAMES[value],
-}))
-
-export const SERVICE_STATUS_OPTIONS: readonly Option[] = SERVICE_STATUSES.map(
-  (value) => ({ value, label: STATUS_NAMES[value] }),
+export const PRICING_OPTIONS: readonly ChoiceOption[] = PRICINGS.map(
+  (value) => ({
+    value,
+    label: PRICING_NAMES[value],
+  }),
 )
 
-export const AVAILABILITY_OPTIONS: readonly Option[] = AVAILABILITIES.map(
+export const SERVICE_STATUS_OPTIONS: readonly ChoiceOption[] =
+  SERVICE_STATUSES.map((value) => ({ value, label: STATUS_NAMES[value] }))
+
+export const AVAILABILITY_OPTIONS: readonly ChoiceOption[] = AVAILABILITIES.map(
   (value) => ({ value, label: AVAILABILITY_NAMES[value] }),
 )
 
-export const REQUIREMENT_OPTIONS: readonly Option[] = REQUIREMENTS.map(
+export const REQUIREMENT_OPTIONS: readonly ChoiceOption[] = REQUIREMENTS.map(
   (value) => ({ value, label: REQUIREMENT_NAMES[value] }),
 )
 
-export const OPTION_TYPE_OPTIONS: readonly Option[] = OPTION_TYPES.map(
+export const OPTION_TYPE_OPTIONS: readonly ChoiceOption[] = OPTION_TYPES.map(
   (value) => ({ value, label: OPTION_NAMES[value] }),
 )
 

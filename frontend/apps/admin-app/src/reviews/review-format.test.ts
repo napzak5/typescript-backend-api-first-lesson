@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { answeredReview, reportedReview } from './components/examples'
-import {
-  detailRatingsOf,
-  reviewDayNameOf,
-  reviewNameOf,
-  webAddressOf,
-} from './review-format'
+import { detailRatingsOf, reviewDayNameOf, reviewNameOf } from './review-format'
 
 describe('detailRatingsOf', () => {
   it('should name every side of the visit in the order of the form, and those the customer did not rate', () => {
@@ -38,16 +33,5 @@ describe('reviewNameOf', () => {
   it('should name a review by its title, or by its rating when it has none', () => {
     expect(reviewNameOf(answeredReview)).toBe('仕上がりに大満足')
     expect(reviewNameOf(reportedReview)).toBe('評価 3 のレビュー')
-  })
-})
-
-describe('webAddressOf', () => {
-  it.each<[string, string | null]>([
-    ['https://images.example.com/a.jpg', 'https://images.example.com/a.jpg'],
-    ['HTTP://images.example.com/a.jpg', 'HTTP://images.example.com/a.jpg'],
-    ['javascript:alert(1)', null],
-    ['images/a.jpg', null],
-  ])('should lead to %s only when it is of the web', (url, address) => {
-    expect(webAddressOf(url)).toBe(address)
   })
 })

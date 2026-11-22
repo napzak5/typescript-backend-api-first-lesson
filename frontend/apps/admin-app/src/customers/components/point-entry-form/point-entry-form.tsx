@@ -1,4 +1,4 @@
-import { LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
+import { LATEST_DAY } from '@beauty-salon-frontend/fields'
 import {
   Alert,
   Checkbox,

@@ -1,4 +1,5 @@
-import { daysErrorsOf, isDay } from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/fields'
+import { daysErrorsOf } from '@beauty-salon-frontend/salon-screens'
 import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import * as z from 'zod'
 import type { TreatmentConditions } from './treatments-api'

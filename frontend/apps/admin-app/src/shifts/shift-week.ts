@@ -2,11 +2,8 @@ import type {
   ModelsDayOfWeekType,
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
-import {
-  dayAfter,
-  dayNameOf,
-  isDay,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/fields'
+import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 
 /*

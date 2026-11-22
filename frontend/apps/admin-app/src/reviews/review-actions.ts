@@ -7,6 +7,7 @@ import type {
   ModelsReviewReportReasonType,
   ModelsReviewReportRequest,
 } from '@beauty-salon-frontend/api-client'
+import { tooLong } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormRead,
@@ -97,7 +98,7 @@ export const REASONS: readonly {
 const REASON_MISSING = '通報の理由を選んでください。'
 const DETAILS_MISSING =
   '「その他」を選んだときは、何が問題かを入力してください。'
-const DETAILS_TOO_LONG = `${MAX_DETAILS_LENGTH} 文字以内で入力してください。`
+const DETAILS_TOO_LONG = tooLong(MAX_DETAILS_LENGTH)
 
 /**
  * The report of the form, with what the API checks of it: a reason of the

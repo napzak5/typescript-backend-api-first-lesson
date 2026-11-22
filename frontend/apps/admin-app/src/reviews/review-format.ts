@@ -46,11 +46,3 @@ export const reviewNameOf = ({
   overallRating,
 }: Pick<ModelsReviewResponse, 'title' | 'overallRating'>): string =>
   title ?? `評価 ${overallRating} のレビュー`
-
-/**
- * The address of a picture a customer gave, when it is one of the web: a
- * picture is shown as a link, and an address of any other kind is shown
- * as text.
- */
-export const webAddressOf = (url: string): string | null =>
-  /^https?:\/\//i.test(url) ? url : null

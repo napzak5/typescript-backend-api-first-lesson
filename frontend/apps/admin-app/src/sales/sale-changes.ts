@@ -9,9 +9,9 @@ import type {
   ModelsSaleUpdateRequest,
   ModelsSaleVoidRequest,
 } from '@beauty-salon-frontend/api-client'
+import { isDay } from '@beauty-salon-frontend/fields'
 import {
   dayAt,
-  isDay,
   momentOf,
   timeOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'

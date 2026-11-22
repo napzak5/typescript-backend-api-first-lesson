@@ -1,24 +1,27 @@
 import {
-  ModelsCustomerGenderType,
+  type ModelsCustomerGenderType,
   type ModelsCustomerResponse,
   ModelsCustomerStatusType,
   ModelsHairThicknessType,
   ModelsHairType,
   ModelsMembershipTierType,
   ModelsScalpConditionType,
-  ModelsServiceCategoryType,
+  type ModelsServiceCategoryType,
+  type ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import { GENDERS, SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
 import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
-import type { BadgeTone } from '@beauty-salon-frontend/ui'
-import { NONE } from '@beauty-salon-frontend/ui'
+import {
+  type BadgeTone,
+  type ChoiceOption,
+  NONE,
+} from '@beauty-salon-frontend/ui'
+import { UNLISTED_STAFF } from '../bookings/booking-format'
 
 /*
  * How the screens of the ledger of the customers name what it holds: the
  * values of its enums, and what a few properties come to together.
  */
-
-/** A choice of a select or of a group of checkboxes. */
-export type Option = { value: string; label: string }
 
 const TIER_NAMES: Record<ModelsMembershipTierType, string> = {
   regular: 'レギュラー',
@@ -72,15 +75,6 @@ const GENDER_NAMES: Record<ModelsCustomerGenderType, string> = {
   prefer_not_to_say: '回答しない',
 }
 
-export const GENDERS: readonly ModelsCustomerGenderType[] = Object.values(
-  ModelsCustomerGenderType,
-)
-
-/** The kinds of service, in the order of the contract. */
-export const CATEGORIES: readonly ModelsServiceCategoryType[] = Object.values(
-  ModelsServiceCategoryType,
-)
-
 const HAIR_TYPE_NAMES: Record<ModelsHairType, string> = {
   straight: 'ストレート',
   wavy: 'ウェーブ',
@@ -112,38 +106,41 @@ export const SCALP_CONDITIONS: readonly ModelsScalpConditionType[] =
   Object.values(ModelsScalpConditionType)
 
 /** What the forms offer of each enum, under the names of its values. */
-export const TIER_OPTIONS: readonly Option[] = TIERS.map((tier) => ({
+export const TIER_OPTIONS: readonly ChoiceOption[] = TIERS.map((tier) => ({
   value: tier,
   label: TIER_NAMES[tier],
 }))
 
-export const STATUS_OPTIONS: readonly Option[] = CUSTOMER_STATUSES.map(
+export const STATUS_OPTIONS: readonly ChoiceOption[] = CUSTOMER_STATUSES.map(
   (status) => ({ value: status, label: STATUS_NAMES[status] }),
 )
 
-export const GENDER_OPTIONS: readonly Option[] = GENDERS.map((gender) => ({
-  value: gender,
-  label: GENDER_NAMES[gender],
-}))
+export const GENDER_OPTIONS: readonly ChoiceOption[] = GENDERS.map(
+  (gender) => ({
+    value: gender,
+    label: GENDER_NAMES[gender],
+  }),
+)
 
-export const CATEGORY_OPTIONS: readonly Option[] = CATEGORIES.map(
+export const CATEGORY_OPTIONS: readonly ChoiceOption[] = SERVICE_CATEGORIES.map(
   (category) => ({ value: category, label: categoryNameOf(category) }),
 )
 
-export const HAIR_TYPE_OPTIONS: readonly Option[] = HAIR_TYPES.map(
+export const HAIR_TYPE_OPTIONS: readonly ChoiceOption[] = HAIR_TYPES.map(
   (hairType) => ({ value: hairType, label: HAIR_TYPE_NAMES[hairType] }),
 )
 
-export const HAIR_THICKNESS_OPTIONS: readonly Option[] = HAIR_THICKNESSES.map(
-  (thickness) => ({ value: thickness, label: HAIR_THICKNESS_NAMES[thickness] }),
-)
+export const HAIR_THICKNESS_OPTIONS: readonly ChoiceOption[] =
+  HAIR_THICKNESSES.map((thickness) => ({
+    value: thickness,
+    label: HAIR_THICKNESS_NAMES[thickness],
+  }))
 
-export const SCALP_CONDITION_OPTIONS: readonly Option[] = SCALP_CONDITIONS.map(
-  (condition) => ({
+export const SCALP_CONDITION_OPTIONS: readonly ChoiceOption[] =
+  SCALP_CONDITIONS.map((condition) => ({
     value: condition,
     label: SCALP_CONDITION_NAMES[condition],
-  }),
-)
+  }))
 
 /** The gender of a customer, or `null` when they did not give it. */
 export const genderNameOf = (
@@ -156,7 +153,7 @@ export const categoriesNameOf = (
 ): string =>
   categories.length === 0
     ? NONE
-    : CATEGORIES.filter((category) => categories.includes(category))
+    : SERVICE_CATEGORIES.filter((category) => categories.includes(category))
         .map((category) => categoryNameOf(category))
         .join('、')
 
@@ -228,3 +225,14 @@ export const rateNameOf = (rate: number): string =>
 /** A count, with what it counts: 「3 回」. */
 export const countNameOf = (count: number, unit: string): string =>
   `${new Intl.NumberFormat('ja-JP').format(count)} ${unit}`
+
+/**
+ * The members of the staff with the given IDs, by the names the salons
+ * show them under, in the order of the IDs. One who has no profile among
+ * `staff` is shown by no salon any more (removed, or not working there
+ * now): the ledger says that there is one.
+ */
+export const staffNamesOf = (
+  ids: readonly string[],
+  staff: ReadonlyMap<string, Pick<ModelsStaffProfileResponse, 'displayName'>>,
+): string[] => ids.map((id) => staff.get(id)?.displayName ?? UNLISTED_STAFF)

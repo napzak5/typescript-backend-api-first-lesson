@@ -1,8 +1,8 @@
 import type { ModelsOrderStatusType } from '@beauty-salon-frontend/api-client'
+import { isDay } from '@beauty-salon-frontend/fields'
 import {
   dayAfter,
   daysErrorsOf,
-  isDay,
   startOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
 import { type FormRead, textOf, textOrNull } from '@beauty-salon-frontend/ui'

@@ -1,5 +1,9 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
-import { EARLIEST_DAY } from '@beauty-salon-frontend/salon-screens'
+import {
+  EARLIEST_DAY,
+  PREFERENCE_NOTES,
+  PREFERRED_SERVICES,
+} from '@beauty-salon-frontend/fields'
 import {
   Checkbox,
   CheckboxGroup,
@@ -12,12 +16,7 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { type ReactNode, useState } from 'react'
-import {
-  PREFERENCE_NOTES,
-  PREFERRED_SERVICES,
-  REFERRER,
-  type Referrer,
-} from '../../customer-form'
+import { REFERRER, type Referrer } from '../../customer-form'
 import {
   CATEGORY_OPTIONS,
   GENDER_OPTIONS,

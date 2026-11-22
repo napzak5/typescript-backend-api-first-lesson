@@ -1,9 +1,6 @@
 import type { ModelsPaymentStatusType } from '@beauty-salon-frontend/api-client'
-import {
-  dayNameOf,
-  daysErrorsOf,
-  isDay,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/fields'
+import { dayNameOf, daysErrorsOf } from '@beauty-salon-frontend/salon-screens'
 import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 
 /**

@@ -1,5 +1,5 @@
 import type { ModelsBookingStatusType } from '@beauty-salon-frontend/api-client'
-import { isDay } from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/fields'
 import * as z from 'zod/mini'
 
 /**

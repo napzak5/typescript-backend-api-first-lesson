@@ -6,8 +6,8 @@ import {
   amountOf,
   methodKindNameOf,
 } from '@beauty-salon-frontend/salon-screens'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
-import type { Option } from '../customers/customer-format'
 
 /*
  * How the payment methods of a salon are named on the screens: the kinds
@@ -20,10 +20,12 @@ export const METHOD_KINDS: readonly ModelsPaymentMethodType[] = Object.values(
 )
 
 /** The kinds of payment to choose from */
-export const KIND_OPTIONS: readonly Option[] = METHOD_KINDS.map((kind) => ({
-  value: kind,
-  label: methodKindNameOf(kind),
-}))
+export const KIND_OPTIONS: readonly ChoiceOption[] = METHOD_KINDS.map(
+  (kind) => ({
+    value: kind,
+    label: methodKindNameOf(kind),
+  }),
+)
 
 /** The rate of the fee: 「3.6%」, 「手数料なし」, or `null` when it is not recorded. */
 export const feeNameOf = (fee: number | null): string | null =>

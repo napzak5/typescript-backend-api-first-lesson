@@ -16,6 +16,7 @@ import {
   hairNameOf,
   rateNameOf,
   STATUS_OPTIONS,
+  staffNamesOf,
   TIER_OPTIONS,
   tierNameOf,
 } from './customer-format'
@@ -155,5 +156,44 @@ describe('rateNameOf and countNameOf', () => {
   it('should write a count with what it counts', () => {
     // Act, Assert
     expect(countNameOf(1200, '回')).toBe('1,200 回')
+  })
+})
+
+describe('staffNamesOf', () => {
+  const staff = new Map([
+    ['4f1c8a52-7d3e-4b96-a0c5-2e9d6f8b1a37', { displayName: 'Mika Suzuki' }],
+    ['b82e5d07-1a4c-4f69-9e3b-7c0d2a6f5e18', { displayName: 'Ken Sato' }],
+  ])
+
+  it('should name the members as the salons show them, in the order of the IDs', () => {
+    // Act
+    const names = staffNamesOf(
+      [
+        'b82e5d07-1a4c-4f69-9e3b-7c0d2a6f5e18',
+        '4f1c8a52-7d3e-4b96-a0c5-2e9d6f8b1a37',
+      ],
+      staff,
+    )
+
+    // Assert
+    expect(names).toEqual(['Ken Sato', 'Mika Suzuki'])
+  })
+
+  it('should say of a member no salon shows any more that there is one, in their place', () => {
+    // Act
+    const names = staffNamesOf(
+      [
+        '4f1c8a52-7d3e-4b96-a0c5-2e9d6f8b1a37',
+        '0d9a3c61-5b2f-4e87-8a14-6f7e1c0b9d25',
+      ],
+      staff,
+    )
+
+    // Assert
+    expect(names).toEqual(['Mika Suzuki', '一覧にないスタッフ'])
+  })
+
+  it('should name nobody when no member is named', () => {
+    expect(staffNamesOf([], staff)).toEqual([])
   })
 })

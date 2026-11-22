@@ -1,12 +1,14 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
+import {
+  PREFERENCE_NOTES,
+  PREFERRED_SERVICES,
+} from '@beauty-salon-frontend/fields'
 import { describe, expect, it } from 'vitest'
 import { aCustomer } from '../bookings/components/examples'
 import {
   afterCustomerWrite,
   type CustomerWriteAttempt,
   NO_REFERRER,
-  PREFERENCE_NOTES,
-  PREFERRED_SERVICES,
   type Referrer,
   readCustomerChange,
   readCustomerEntry,
@@ -580,6 +582,8 @@ describe('afterCustomerWrite', () => {
           { field: 'tags.1', rule: 'custom' },
           { field: 'tags.0', rule: 'too_small' },
           { field: `${PREFERRED_SERVICES}.0`, rule: 'invalid_value' },
+          { field: 'city', rule: 'too_big' },
+          { field: 'referralCode', rule: 'too_big' },
         ],
       },
       {
@@ -588,7 +592,9 @@ describe('afterCustomerWrite', () => {
           birthDate:
             '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
           tags: 'この値は受け付けられませんでした。入力を確かめてください。',
-          [PREFERRED_SERVICES]:
+          [PREFERRED_SERVICES]: '選択肢から選んでください。',
+          city: '100 文字以内で入力してください。',
+          referralCode:
             'この値は受け付けられませんでした。入力を確かめてください。',
         },
       },
@@ -598,10 +604,7 @@ describe('afterCustomerWrite', () => {
       { type: 'invalid', values: [{ field: 'preferences', rule: 'custom' }] },
       {
         message: undefined,
-        errors: {
-          [PREFERRED_SERVICES]:
-            'この値は受け付けられませんでした。入力を確かめてください。',
-        },
+        errors: { [PREFERRED_SERVICES]: '選択肢から選んでください。' },
       },
     ],
     [

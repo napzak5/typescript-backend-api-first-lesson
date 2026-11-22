@@ -14,12 +14,8 @@ import type {
   ModelsSaleResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  amountOf,
-  isDay,
-  LATEST_DAY,
-  momentNameAt,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay, LATEST_DAY } from '@beauty-salon-frontend/fields'
+import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
   type FormRead,

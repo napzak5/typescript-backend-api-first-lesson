@@ -1,3 +1,4 @@
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/fields'
 import {
   countNarrowing,
   FilterForm,
@@ -83,8 +84,8 @@ export const LedgerFilter = ({
         name='from'
         autoComplete='off'
         type='date'
-        min='1900-01-01'
-        max='2999-12-31'
+        min={EARLIEST_DAY}
+        max={LATEST_DAY}
         required
         value={values.from}
         error={errors['from']}
@@ -95,8 +96,8 @@ export const LedgerFilter = ({
         name='to'
         autoComplete='off'
         type='date'
-        min='1900-01-01'
-        max='2999-12-31'
+        min={EARLIEST_DAY}
+        max={LATEST_DAY}
         required
         value={values.to}
         error={errors['to']}

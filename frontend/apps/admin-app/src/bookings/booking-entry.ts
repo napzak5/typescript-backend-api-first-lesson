@@ -9,11 +9,8 @@ import type {
   ModelsBookingServiceCreateRequest,
   ModelsBookingUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import {
-  isDay,
-  keywordIn,
-  momentOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/fields'
+import { keywordIn, momentOf } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
   type FormRead,
