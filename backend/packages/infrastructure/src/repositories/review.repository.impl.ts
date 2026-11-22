@@ -62,9 +62,9 @@ import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { countMarksOf } from './review-marks'
-import { countReportsOf } from './review-report-count'
-import { countReviewsOf } from './salon-review-counts'
+import { countMarksOf } from './_shared/review-marks'
+import { countReportsOf } from './_shared/review-report-count'
+import { countReviewsOf } from './_shared/salon-review-counts'
 
 /**
  * A read of a page of reviews in one snapshot: the cursor, the page and

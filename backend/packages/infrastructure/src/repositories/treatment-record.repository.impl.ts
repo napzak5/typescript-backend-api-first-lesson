@@ -57,7 +57,7 @@ import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { detailsOf } from './treatment-details'
+import { detailsOf } from './_shared/treatment-details'
 
 /** The bookings of the salons the reach covers. */
 const bookingsWithin = (reach: LedgerReach): SQL | undefined =>

@@ -20,8 +20,8 @@ import {
   schedulesOf,
   serviceLineStartsOf,
   takenOf,
-} from './slot-reads'
-import { staffMemberOf } from './staff-member'
+} from './_shared/slot-reads'
+import { staffMemberOf } from './_shared/staff-member'
 
 /**
  * The statements of a method see the database as it was at one moment, so

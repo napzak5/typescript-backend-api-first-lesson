@@ -58,8 +58,8 @@ import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { type HeldSale, heldSaleOf, within } from './held-sale'
-import { salesWithDetails } from './sale-details'
+import { type HeldSale, heldSaleOf, within } from './_shared/held-sale'
+import { salesWithDetails } from './_shared/sale-details'
 
 /**
  * The statements of a read see the database as it was at one moment: a

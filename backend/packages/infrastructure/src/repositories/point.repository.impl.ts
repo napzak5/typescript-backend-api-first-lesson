@@ -26,8 +26,8 @@ import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { within as withinSales } from './held-sale'
-import { transactionsInOrder } from './point-transactions'
+import { within as withinSales } from './_shared/held-sale'
+import { transactionsInOrder } from './_shared/point-transactions'
 
 /**
  * A read of the history of a customer in one snapshot: the customer, the

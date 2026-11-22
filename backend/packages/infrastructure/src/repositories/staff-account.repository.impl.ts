@@ -14,8 +14,8 @@ import { and, eq } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database } from '../database/index'
-import { userNotDeleted } from './account'
-import { staffMemberOf } from './staff-member'
+import { userNotDeleted } from './_shared/account'
+import { staffMemberOf } from './_shared/staff-member'
 
 /** The account of the staff member: the user that names them. */
 const accountOf = (staffId: StaffId) =>

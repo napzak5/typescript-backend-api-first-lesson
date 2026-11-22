@@ -26,7 +26,7 @@ import type { Database } from '../database/index'
 import {
   hasLineOfUnfinishedBooking,
   hasUnfinishedBooking,
-} from './unfinished-bookings'
+} from './_shared/unfinished-bookings'
 
 const emailTaken = {
   code: '23505',

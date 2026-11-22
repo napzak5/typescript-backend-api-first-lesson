@@ -36,7 +36,7 @@ import { CLOCK } from '../database/clock'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
-import { hasUnfinishedBooking } from './unfinished-bookings'
+import { hasUnfinishedBooking } from './_shared/unfinished-bookings'
 
 const emailUniqueViolation = {
   code: '23505',

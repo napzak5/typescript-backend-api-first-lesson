@@ -23,7 +23,7 @@ import { and, eq } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import { CLOCK, CLOCK_ONCE, ONE_MOMENT } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { heldSaleOf, within } from './held-sale'
+import { heldSaleOf, within } from './_shared/held-sale'
 
 /**
  * What the payments of a sale say of its money. Read in a statement of its

@@ -52,14 +52,14 @@ import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
 import { AT_ONE_MOMENT } from '../database/snapshot'
-import { userNotDeleted } from './account'
-import { customerDataOf } from './customer-data'
-import { mergeCustomers } from './customer-merge'
-import { recordVersions } from './customer-version-record'
+import { userNotDeleted } from './_shared/account'
+import { customerDataOf } from './_shared/customer-data'
+import { mergeCustomers } from './_shared/customer-merge'
+import { recordVersions } from './_shared/customer-version-record'
 import {
   customersOfUnfinishedBookings,
   hasUnfinishedBooking,
-} from './unfinished-bookings'
+} from './_shared/unfinished-bookings'
 
 const emailTaken = {
   code: '23505',

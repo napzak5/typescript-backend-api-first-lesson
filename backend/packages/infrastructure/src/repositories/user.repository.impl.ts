@@ -23,7 +23,7 @@ import {
   salonOfStaff,
   staffOfUser,
   userNotDeleted,
-} from './account'
+} from './_shared/account'
 
 /** The columns a verification token occupies. */
 const emailVerificationOf = ({ tokenHash, expiresAt }: MailedToken) => ({
