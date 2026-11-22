@@ -490,9 +490,12 @@ describe('the session against the API', () => {
   `waitFor` of `@testing-library/react`); never for a duration. The setup
   lets them wait 5 seconds, not the 1 of Testing Library, and a test 30:
   checking a password (argon2) takes more than a second on a runner that
-  runs other tests besides. `vi.waitFor` of Vitest does not read that
-  setting and gives up after 1 second: it is not used against the API. The
-  tests of the stories call no API and keep the 1 second.
+  runs other tests besides. A hook has the 30 seconds of a test as well,
+  not the 10 of Vitest: after every test the setup has the server copy the
+  seeded database anew, which is work of the same kind. `vi.waitFor` of
+  Vitest does not read that setting and gives up after 1 second: it is not
+  used against the API. The tests of the stories call no API and keep the
+  1 second.
 - Two answers come in either order. A screen that is shown without a
   session (the search and the page of a salon) can be there before the API
   has said who is signed in, and the links of the header come with that
