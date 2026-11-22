@@ -2,9 +2,8 @@ import type {
   ModelsStaffProfileResponse,
   ModelsStaffProfileUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf, textOrNull } from '@beauty-salon-frontend/ui'
 import * as z from 'zod'
-import { nullIfBlank } from '../bookings/booking-entry'
 import { tagsIn } from '../customers/customer-ledger'
 import { numberOf } from '../treatments/treatment-form'
 
@@ -51,9 +50,9 @@ export const optionalNumberUpTo = (
  * The introduction a form holds: the specialties and the certifications
  * as lists, and a control that was left empty as `null`.
  */
-export const readIntroduction = (values: FormData): Read<Introduction> => {
+export const readIntroduction = (values: FormData): FormRead<Introduction> => {
   const optional = (name: string): string | null =>
-    nullIfBlank(textOf(values, name).trim())
+    textOrNull(textOf(values, name).trim())
   const yearsOfExperience = optionalNumberUpTo(
     textOf(values, 'yearsOfExperience').trim(),
     0,
@@ -76,7 +75,7 @@ export const readIntroduction = (values: FormData): Read<Introduction> => {
 
   return {
     type: 'valid',
-    request: {
+    value: {
       specialties: tagsIn(textOf(values, 'specialties')),
       bio: optional('bio'),
       imageUrl,
@@ -85,11 +84,6 @@ export const readIntroduction = (values: FormData): Read<Introduction> => {
     },
   }
 }
-
-/** A text as the form reads it back: without the spaces around it, nothing as `null`. */
-export const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
 const sameList = (one: string[], other: string[]): boolean =>
   JSON.stringify(one) === JSON.stringify(other)
 
@@ -104,8 +98,8 @@ export const introductionChangesOf = (
   ...(sameList(sent.specialties, shown.specialties)
     ? {}
     : { specialties: sent.specialties }),
-  ...(sent.bio === shownText(shown.bio) ? {} : { bio: sent.bio }),
-  ...(sent.imageUrl === shownText(shown.imageUrl)
+  ...(sent.bio === textOrNull(shown.bio) ? {} : { bio: sent.bio }),
+  ...(sent.imageUrl === textOrNull(shown.imageUrl)
     ? {}
     : { imageUrl: sent.imageUrl }),
   ...(sent.yearsOfExperience === shown.yearsOfExperience

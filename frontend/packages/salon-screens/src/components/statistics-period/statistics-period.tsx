@@ -1,6 +1,7 @@
 import {
   FilterForm,
   type FormErrors,
+  NO_ERRORS,
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
@@ -20,8 +21,6 @@ export type StatisticsPeriodProps = {
   /** Further controls of what is counted, after the days: what the period is cut into */
   children?: ReactNode
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The days that something is counted over, both ends counted: what a

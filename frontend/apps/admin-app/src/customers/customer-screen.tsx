@@ -243,7 +243,7 @@ const UsePart = ({ salon, customer }: PartProps) => {
       return
     }
     setErrors(undefined)
-    const next: Period = filled.request
+    const next: Period = filled.value
     if (periodQueryOf(next).toString() === periodQueryOf(period).toString()) {
       void read.refetch()
       return
@@ -506,7 +506,7 @@ const ErasurePart = ({
       return
     }
     setErrors(undefined)
-    asking.mutate(filled.request)
+    asking.mutate(filled.value)
   }
 
   const shown = match(read.data)

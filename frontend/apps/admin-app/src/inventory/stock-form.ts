@@ -1,4 +1,6 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
@@ -8,13 +10,16 @@ import type {
   ModelsInventoryUpdateRequest,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import { isDay, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
-import { match } from 'ts-pattern'
+import { isDay } from '@beauty-salon-frontend/salon-screens'
 import {
+  aboutTheAttempt,
+  errorAt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
 import type { TreatmentRemovalSays } from '../treatments/treatment-format'
 import type { StockRowRemoval, StockRowWrite } from './inventory-api'
 import { productOf } from './stock-format'
@@ -59,13 +64,6 @@ const CONTROLS: readonly string[] = [
 ]
 
 const lengthOf = (text: string): number => [...text].length
-
-/** What is said at a control, under its name; nothing when the value may be sent. */
-const errorAt = (
-  control: string,
-  message: string | undefined,
-): [string, string][] => (message === undefined ? [] : [[control, message]])
-
 /** Whether the form of a row shows its lot: the product is kept by lots, or the row has one to clear. */
 export const showsLot = (
   row: Pick<ModelsInventoryResponse, 'lotNumber'> | null,
@@ -85,15 +83,15 @@ const readPlace = (
   values: FormData,
 ): { place: Place; errors: [string, string][] } => {
   const expiry = textOf(values, 'expiryDate').trim()
-  const location = nullIfBlank(textOf(values, 'location'))
-  const shelf = nullIfBlank(textOf(values, 'shelf'))
+  const location = textOrNull(textOf(values, 'location'))
+  const shelf = textOrNull(textOf(values, 'shelf'))
 
   return {
     place: {
       expiryDate: expiry === '' ? null : expiry,
       location,
       shelf,
-      notes: nullIfBlank(textOf(values, 'notes')),
+      notes: textOrNull(textOf(values, 'notes')),
     },
     errors: [
       ...errorAt(
@@ -125,9 +123,9 @@ export const readStockEntry = (
   values: FormData,
   salonId: string,
   products: readonly ModelsProductResponse[],
-): Read<ModelsInventoryCreateRequest> => {
+): FormRead<ModelsInventoryCreateRequest> => {
   const product = productOf(products, textOf(values, 'productId'))
-  const lot = nullIfBlank(textOf(values, 'lotNumber'))
+  const lot = textOrNull(textOf(values, 'lotNumber'))
   const { place, errors: placeErrors } = readPlace(values)
   const errors = Object.fromEntries([
     ...errorAt('productId', product === undefined ? PRODUCT_ERROR : undefined),
@@ -146,7 +144,7 @@ export const readStockEntry = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       salonId,
       productId: product.id,
       lotNumber: product.requiresLotTracking ? lot : null,
@@ -156,12 +154,9 @@ export const readStockEntry = (
 }
 
 /** What a change of a row asks for: nothing, when nothing was changed. */
-type StockRowChange = Read<ModelsInventoryUpdateRequest> | { type: 'unchanged' }
-
-/** A text of a row as the form reads it back: without the spaces around it, nothing as `null`. */
-const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
+type StockRowChange =
+  | FormRead<ModelsInventoryUpdateRequest>
+  | { type: 'unchanged' }
 /** The lot that was sent, or what is wrong with it; `undefined` when the form has no lot. */
 const readLot = (
   values: FormData,
@@ -171,14 +166,14 @@ const readLot = (
   if (!showsLot(row, product)) {
     return { lot: undefined, error: undefined }
   }
-  const lot = nullIfBlank(textOf(values, 'lotNumber'))
+  const lot = textOrNull(textOf(values, 'lotNumber'))
   const required = product?.requiresLotTracking === true
   const error =
     required && (lot === null || lengthOf(lot) > LONGEST_LOT)
       ? LOT_ERROR
       : lot !== null && lengthOf(lot) > LONGEST_LOT
         ? LOT_LENGTH_ERROR
-        : !required && lot !== null && lot !== shownText(row.lotNumber)
+        : !required && lot !== null && lot !== textOrNull(row.lotNumber)
           ? LOT_NOT_KEPT
           : undefined
 
@@ -206,22 +201,22 @@ export const readStockChange = (
     return { type: 'invalid', errors }
   }
   const changes: ModelsInventoryUpdateRequest = {
-    ...(lot === undefined || lot === shownText(row.lotNumber)
+    ...(lot === undefined || lot === textOrNull(row.lotNumber)
       ? {}
       : { lotNumber: lot }),
     ...(place.expiryDate === row.expiryDate
       ? {}
       : { expiryDate: place.expiryDate }),
-    ...(place.location === shownText(row.location)
+    ...(place.location === textOrNull(row.location)
       ? {}
       : { location: place.location }),
-    ...(place.shelf === shownText(row.shelf) ? {} : { shelf: place.shelf }),
-    ...(place.notes === shownText(row.notes) ? {} : { notes: place.notes }),
+    ...(place.shelf === textOrNull(row.shelf) ? {} : { shelf: place.shelf }),
+    ...(place.notes === textOrNull(row.notes) ? {} : { notes: place.notes }),
   }
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /** Whether the API refused a lot because its product is kept by lots otherwise than the form knew. */
@@ -248,9 +243,7 @@ const refusalAt = (field: string, rule: string): string =>
     .with('expiryDate', () => EXPIRY_ERROR)
     .with('location', () => LOCATION_ERROR)
     .with('shelf', () => SHELF_ERROR)
-    .otherwise(
-      () => 'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /**
  * What the form says after the API did not take it. A lot that another
@@ -276,7 +269,7 @@ export const afterStockWrite = (
       return {
         message:
           said.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
+            ? CHECK_THE_VALUES_MESSAGE
             : said.length > atControls.length
               ? LOT_MARK_CHANGED
               : undefined,
@@ -288,18 +281,17 @@ export const afterStockWrite = (
     .with({ type: 'lotTaken' }, () =>
       lotSent
         ? { message: undefined, errors: { lotNumber: LOT_TAKEN } }
-        : { message: ROW_TAKEN, errors: {} },
+        : aboutTheAttempt(ROW_TAKEN),
     )
-    .with({ type: 'forbidden' }, () => ({
-      message: FORBIDDEN_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '在庫の行を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /**

@@ -14,7 +14,9 @@ import {
   Button,
   ButtonLink,
   EmptyState,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -24,7 +26,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import {
   inventoryHrefOf,
   stockEntryHrefOf,
@@ -44,8 +45,6 @@ import { StockForbidden, useKeepsStock } from './keeps-stock'
 import { afterStockCount, readStockCount } from './stock-count'
 
 const TITLE = '棚卸し'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 /** A count that was recorded, with the rows and the products it was entered on */
 type Counted = {
@@ -72,7 +71,7 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const focusHeading = useScreenHeadingFocus()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const [counted, setCounted] = useState<Counted | undefined>(undefined)
   const shownBefore = useRef(counted)
   const rows = useQuery({
@@ -137,9 +136,9 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        count.mutate({ request, rows: read, products: named })
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        count.mutate({ request: value, rows: read, products: named })
       })
       .exhaustive()
 

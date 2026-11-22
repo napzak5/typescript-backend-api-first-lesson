@@ -6,12 +6,16 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  type FormSays,
+  NOTHING_TO_SAY,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { stockMovementsHrefOf, stockRowHrefOf } from '../navigation'
 import { MovementForm } from './components/movement-form/movement-form'
 import { stockKeyOf, stockRowKeyOf } from './inventory-api'
@@ -23,8 +27,6 @@ import { productOf, quantityNameOf } from './stock-format'
 import { WithStockRow } from './with-stock-row'
 
 const TITLE = '在庫の移動を記録する'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type MovementEntryProps = {
   salon: ModelsSalonResponse
@@ -43,7 +45,7 @@ const MovementEntry = ({ salon, row, product }: MovementEntryProps) => {
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const keeps = useKeepsStock()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const offered = recordedKindsOf(keeps)
   const rowKey = stockRowKeyOf(row.id)
 
@@ -84,9 +86,9 @@ const MovementEntry = ({ salon, row, product }: MovementEntryProps) => {
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        entry.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        entry.mutate(value)
       })
       .exhaustive()
 

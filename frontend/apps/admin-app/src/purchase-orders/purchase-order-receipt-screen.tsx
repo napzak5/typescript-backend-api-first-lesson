@@ -10,7 +10,9 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -19,7 +21,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { stockKeyOf, stockRowKeyOf } from '../inventory/inventory-api'
 import { purchaseOrderHrefOf } from '../navigation'
 import { OrderReceiptForm } from './components/order-receipt-form/order-receipt-form'
@@ -41,8 +42,6 @@ import {
 
 const TITLE = '入荷を記録する'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 type OrderReceiptProps = {
   salon: ModelsSalonResponse
   order: ModelsPurchaseOrderResponse
@@ -60,7 +59,7 @@ const OrderReceipt = ({ salon, order }: OrderReceiptProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const key = purchaseOrderKeyOf(order.id)
   const page = purchaseOrderHrefOf(salon.id, order.id)
 
@@ -108,9 +107,9 @@ const OrderReceipt = ({ salon, order }: OrderReceiptProps) => {
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        receipt.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        receipt.mutate(value)
       })
       .exhaustive()
 

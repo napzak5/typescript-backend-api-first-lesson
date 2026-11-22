@@ -43,7 +43,7 @@ describe('readAllergy', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         allergyType: 'chemical',
         allergenName: 'ラテックス',
         severityType: 'severe',
@@ -64,7 +64,7 @@ describe('readAllergy', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: { symptoms: null, notes: null, confirmedDate: null },
+      value: { symptoms: null, notes: null, confirmedDate: null },
     })
   })
 
@@ -169,7 +169,7 @@ describe('readAllergyChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'valid',
-      request: { severityType: 'life_threatening', symptoms: null },
+      value: { severityType: 'life_threatening', symptoms: null },
     })
   })
 
@@ -189,7 +189,7 @@ describe('readAllergyChange', () => {
       const change = readAllergyChange(valuesOf(changes), anAllergy(), TODAY)
 
       // Assert
-      expect(change).toEqual({ type: 'valid', request })
+      expect(change).toEqual({ type: 'valid', value: request })
     },
   )
 

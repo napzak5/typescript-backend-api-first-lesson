@@ -124,7 +124,7 @@ describe('readOrderCancellation', () => {
   it('should hand over the reason, without the blanks around it', () => {
     expect(
       readOrderCancellation(formOf({ cancellationReason: '  在庫切れ\n' })),
-    ).toEqual({ type: 'valid', request: { cancellationReason: '在庫切れ' } })
+    ).toEqual({ type: 'valid', value: { cancellationReason: '在庫切れ' } })
   })
 
   it.each<[string, FormData]>([

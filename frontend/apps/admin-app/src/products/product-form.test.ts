@@ -122,7 +122,7 @@ describe('readProductEntry', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         productCode: 'OIL001',
         name: 'ヘアオイル 100ml',
         description: null,
@@ -329,7 +329,7 @@ describe('readProductChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         salonPrice: 3200,
         reorderPoint: null,
         supplier: null,

@@ -1,6 +1,7 @@
 import {
   FormDialog,
   type FormErrors,
+  NO_ERRORS,
   PasswordField,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -18,8 +19,6 @@ export type TwoFactorStopDialogProps = {
   /** The values of the two controls, under their names */
   onStop: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * Turns the second factor off, after the password and a code: a session

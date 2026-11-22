@@ -7,17 +7,15 @@ import type {
   ModelsBookingRescheduleRequest,
   ModelsCustomerBookingCreateRequest,
 } from '@beauty-salon-frontend/api-client'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { FormSays, Read } from '../forms'
 import type { Time } from './booking-choice'
 import type { Booking, Cancellation, Move } from './bookings-api'
-
-const textOf = (values: FormData, name: string): string => {
-  const value = values.get(name)
-
-  return typeof value === 'string' ? value : ''
-}
-
 /** What is booked, as the address of the screen and its choices say it. */
 export type Asked = {
   salonId: string
@@ -36,7 +34,7 @@ export type Asked = {
 export const readBooking = (
   values: FormData,
   { salonId, serviceId, staffId, times }: Asked,
-): Read<ModelsCustomerBookingCreateRequest> => {
+): FormRead<ModelsCustomerBookingCreateRequest> => {
   const time = times.find(
     ({ startTime }) => startTime === textOf(values, 'startTime'),
   )
@@ -70,29 +68,25 @@ export const afterBooking = (
 ): FormSays =>
   match(outcome)
     .returnType<FormSays>()
-    .with({ type: 'refused' }, () => ({
-      message:
+    .with({ type: 'refused' }, () =>
+      aboutTheAttempt(
         'この日時では、予約できませんでした。空いている時刻を読み込み直しましたので、選び直してください。予約できない状態が続くときは、サロンにお問い合わせください。',
-      errors: {},
-    }))
-    .with({ type: 'noProfile' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'noProfile' }, () =>
+      aboutTheAttempt(
         'お客様の情報を読み込めませんでした。もう一度、お客様の情報を登録してください。',
-      errors: {},
-    }))
-    .with({ type: 'invalid' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'invalid' }, () =>
+      aboutTheAttempt(
         '予約できませんでした。ページを読み込み直して、もう一度お試しください。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'failed' }, () => ({
-      message: NOT_SENT_MESSAGE,
-      errors: {},
-    }))
+      ),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /**
@@ -161,7 +155,7 @@ export type AskedToMove = {
 export const readMove = (
   values: FormData,
   { staffId, times }: AskedToMove,
-): Read<ModelsBookingRescheduleRequest> => {
+): FormRead<ModelsBookingRescheduleRequest> => {
   const time = times.find(
     ({ startTime }) => startTime === textOf(values, 'startTime'),
   )
@@ -189,24 +183,23 @@ export const afterMove = (
 ): FormSays =>
   match(outcome)
     .returnType<FormSays>()
-    .with({ type: 'refused' }, () => ({
-      message:
+    .with({ type: 'refused' }, () =>
+      aboutTheAttempt(
         'この日時には、変更できませんでした。空いている時刻を読み込み直しましたので、選び直してください。変更できない状態が続くときは、サロンにお問い合わせください。',
-      errors: {},
-    }))
-    .with({ type: 'notFound' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'notFound' }, () =>
+      aboutTheAttempt(
         'この予約は、見つかりませんでした。予約の一覧から、お確かめください。',
-      errors: {},
-    }))
-    .with({ type: 'invalid' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'invalid' }, () =>
+      aboutTheAttempt(
         '変更できませんでした。ページを読み込み直して、もう一度お試しください。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
+      ),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()

@@ -63,7 +63,7 @@ describe('readLedgerConditions', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: { from: '2026-11-01', to: '2026-11-01' },
+      value: { from: '2026-11-01', to: '2026-11-01' },
     })
   })
 

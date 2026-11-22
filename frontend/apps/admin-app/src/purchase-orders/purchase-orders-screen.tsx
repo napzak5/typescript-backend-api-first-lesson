@@ -83,7 +83,7 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
       return
     }
     setErrors(undefined)
-    const next = orderQueryOf(filled.request)
+    const next = orderQueryOf(filled.value)
     if (next.toString() === asked) {
       // The same orders again: whoever sends it wants what there is now
       void read.refetch()

@@ -231,7 +231,7 @@ describe('StaffForm', () => {
         : readStaffChange(values, aStaffMember(), false),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         level: 'expert',
         certifications: ['美容師免許', '管理美容師', 'ヘアカラリスト'],
         commissionRate: null,

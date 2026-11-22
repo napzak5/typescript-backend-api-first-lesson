@@ -298,7 +298,7 @@ describe('CustomerForm', () => {
         : readCustomerChange(values, customerFormStories.RECORDED, TODAY),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         building: null,
         preferences: {
           preferredServices: ['cut', 'color', 'spa'],
@@ -392,7 +392,7 @@ describe('CustomerForm', () => {
       values === undefined
         ? undefined
         : readCustomerChange(values, customerFormStories.RECORDED, TODAY),
-    ).toEqual({ type: 'valid', request: { referredBy: null } })
+    ).toEqual({ type: 'valid', value: { referredBy: null } })
   })
 
   it('should say what is wrong with the referrer at its field, and put the focus there', async () => {

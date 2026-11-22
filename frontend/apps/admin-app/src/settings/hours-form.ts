@@ -1,4 +1,8 @@
-import type { NotFound } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  type NotFound,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBusinessHours,
   ModelsDateRange,
@@ -6,14 +10,21 @@ import type {
   ModelsOpeningHours,
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { isDay, textOf } from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  type FormSays,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import {
-  type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
-import { WEEKDAYS, weekdayOf } from '../shifts/shift-week'
+  dateRowsIn,
+  NO_BREAK_END,
+  NO_BREAK_START,
+  WEEKDAYS,
+  weekdayOf,
+} from '../shifts/shift-week'
 import type { Hours, HoursAttempt } from './hours-api'
 
 /*
@@ -138,12 +149,6 @@ type Rest = {
   breakEnd: string | undefined
 }
 
-const NO_BREAK_END =
-  '休憩の終わりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。'
-
-const NO_BREAK_START =
-  '休憩の始まりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。'
-
 /** What is said at the times of a day the salon is open on, under the names of their controls. */
 const timeEntriesOf = (
   { openTime, closeTime }: Times,
@@ -249,14 +254,6 @@ const sameEntries = <Entry>(
 ): boolean =>
   JSON.stringify(one.map(valuesOf)) === JSON.stringify(other.map(valuesOf))
 
-/** The rows of the form that the dates are written at: as many as it has controls of dates. */
-const dateRowsIn = (values: FormData): number[] =>
-  [...values.keys()].flatMap((name) => {
-    const found = /^dates\.(\d+)\.date$/.exec(name)
-
-    return found?.[1] === undefined ? [] : [Number(found[1])]
-  })
-
 /** What is said at the date of a row: none, when it may be sent. */
 const dateErrorOf = (
   date: string,
@@ -281,7 +278,7 @@ const dateErrorOf = (
 
 /** What a change of the hours asks for, nothing when nothing was changed, or what is wrong with the form. */
 export type HoursChangeRead =
-  | { type: 'valid'; request: ModelsSalonUpdateRequest }
+  | { type: 'valid'; value: ModelsSalonUpdateRequest }
   | { type: 'unchanged' }
   | { type: 'invalid'; errors: Record<string, string> }
 
@@ -335,8 +332,8 @@ export const readHoursChange = (
         closeTime: secondsOf(at('closeTime')),
       },
       isHoliday: values.has(nameOf('isHoliday')),
-      holidayName: nullIfBlank(at('holidayName')),
-      notes: nullIfBlank(textOf(values, nameOf('notes'))),
+      holidayName: textOrNull(at('holidayName')),
+      notes: textOrNull(textOf(values, nameOf('notes'))),
     }
   })
   const entries: [string, string | undefined][] = [
@@ -421,10 +418,8 @@ export const readHoursChange = (
 
   return Object.keys(request).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request }
+    : { type: 'valid', value: request }
 }
-
-const CHECK_AGAIN = '入力した内容を確かめて、もう一度お試しください。'
 
 const CHANGED_MEANWHILE =
   'その間に、ほかのアカウントがこのサロンの営業時間を変えていました。このフォームの内容は、まだ保存していません。もう一度「保存する」を押すと、いまの営業時間を、このフォームの内容で置き換えます。ほかのアカウントの変更を確かめるときは、「やめる」で設定に戻ってください。'
@@ -438,24 +433,22 @@ export const afterHoursChange = (
 ): FormSays =>
   match(outcome)
     .returnType<FormSays>()
-    .with({ type: 'changed' }, () => ({
-      message: CHANGED_MEANWHILE,
-      errors: {},
-    }))
+    .with({ type: 'changed' }, () => aboutTheAttempt(CHANGED_MEANWHILE))
     // The form sends no email address: a refusal of one is a refusal of the form
-    .with({ type: P.union('invalid', 'emailTaken') }, () => ({
-      message: CHECK_AGAIN,
-      errors: {},
-    }))
-    .with({ type: 'forbidden' }, () => ({
-      message:
+    .with({ type: P.union('invalid', 'emailTaken') }, () =>
+      aboutTheAttempt(CHECK_THE_VALUES_MESSAGE),
+    )
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt(
         'このサロンの営業時間は、変えられません。営業時間を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '営業時間を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()

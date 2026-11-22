@@ -1,4 +1,5 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
   NOT_SENT_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
@@ -8,10 +9,15 @@ import type {
   ModelsAuthTwoFactorDisableRequest,
   ModelsUserResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { FormErrors } from '@beauty-salon-frontend/ui'
+import {
+  aboutTheAttempt,
+  type FormErrors,
+  type FormRead,
+  type FormSays,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { AccountRead } from './security-api'
-import type { FormSays, Read } from './security-flow'
 
 /*
  * What the screens of the second factor make of what a person entered, and
@@ -42,12 +48,6 @@ const CODE_MISSING =
 const CODE_TOO_LONG =
   'コードが長すぎます。認証アプリの 6 桁のコードか、バックアップコードを入力してください。'
 const CODE_WRONG = `コードが違うか、使ったことのあるバックアップコードです。${LOCK}`
-const textOf = (values: FormData, name: string): string => {
-  const value = values.get(name)
-
-  return typeof value === 'string' ? value : ''
-}
-
 /** What is wrong with the password that confirms a change, if anything. */
 const passwordError = (password: string): string | undefined =>
   password === '' ? PASSWORD_MISSING : undefined
@@ -79,20 +79,23 @@ const codeError = (code: string, kind: CodeKind): string | undefined =>
     )
     .exhaustive()
 
-const readOf = <Value>(errors: FormErrors, value: Value): Read<Value> =>
+const readOf = <Value>(errors: FormErrors, value: Value): FormRead<Value> =>
   Object.values(errors).some((error) => error !== undefined)
     ? { type: 'invalid', errors }
     : { type: 'valid', value }
 
 /** Reads the form that begins the set-up: the password, as it was typed. */
-export const readPassword = (values: FormData): Read<string> => {
+export const readPassword = (values: FormData): FormRead<string> => {
   const password = textOf(values, PASSWORD)
 
   return readOf({ [PASSWORD]: passwordError(password) }, password)
 }
 
 /** Reads a form that takes one code: of the authenticator app alone, or a backup code too. */
-export const readCode = (values: FormData, kind: CodeKind): Read<string> => {
+export const readCode = (
+  values: FormData,
+  kind: CodeKind,
+): FormRead<string> => {
   const code = codeOf(textOf(values, CODE))
 
   return readOf({ [CODE]: codeError(code, kind) }, code)
@@ -101,7 +104,7 @@ export const readCode = (values: FormData, kind: CodeKind): Read<string> => {
 /** Reads the form that turns the second factor off: the password and a code. */
 export const readStop = (
   values: FormData,
-): Read<ModelsAuthTwoFactorDisableRequest> => {
+): FormRead<ModelsAuthTwoFactorDisableRequest> => {
   const password = textOf(values, PASSWORD)
   const code = codeOf(textOf(values, CODE))
 
@@ -143,17 +146,13 @@ export const afterRefusal = (outcome: FormRefusal, kind: CodeKind): FormSays =>
       })
 
       return said.length === 0
-        ? {
-            message: '入力した内容を確かめて、もう一度お試しください。',
-            errors: {},
-          }
+        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
         : { message: undefined, errors: Object.fromEntries(said) }
     })
-    .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /**

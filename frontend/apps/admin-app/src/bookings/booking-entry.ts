@@ -1,4 +1,6 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
@@ -11,10 +13,14 @@ import {
   isDay,
   keywordIn,
   momentOf,
-  type Read,
-  textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import type { FormErrors } from '@beauty-salon-frontend/ui'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type {
   BookingCreation,
@@ -89,13 +95,6 @@ export const lineControlOf = (
 ): string => `services.${index}.${part}`
 
 const SERVICE_CONTROL = /^services\.\d+\.serviceId$/
-
-export const nullIfBlank = (text: string): string | null => {
-  const trimmed = text.trim()
-
-  return trimmed === '' ? null : trimmed
-}
-
 /** The largest amount a booking holds */
 const MOST_YEN = 2_147_483_647
 
@@ -123,7 +122,7 @@ export type Notes = Pick<
 >
 
 /** What the salon wrote down, from the controls of `BookingNotesFields`. */
-export const readNotes = (values: FormData): Read<Notes> => {
+export const readNotes = (values: FormData): FormRead<Notes> => {
   const depositAmount = yenOf(textOf(values, 'depositAmount'))
   if (depositAmount === undefined) {
     return { type: 'invalid', errors: { depositAmount: DEPOSIT_ERROR } }
@@ -131,11 +130,11 @@ export const readNotes = (values: FormData): Read<Notes> => {
 
   return {
     type: 'valid',
-    request: {
+    value: {
       depositAmount,
-      customerRequest: nullIfBlank(textOf(values, 'customerRequest')),
-      internalNotes: nullIfBlank(textOf(values, 'internalNotes')),
-      source: nullIfBlank(textOf(values, 'source')),
+      customerRequest: textOrNull(textOf(values, 'customerRequest')),
+      internalNotes: textOrNull(textOf(values, 'internalNotes')),
+      source: textOrNull(textOf(values, 'source')),
     },
   }
 }
@@ -164,7 +163,7 @@ export const readLine = (
   values: FormData,
   control: (part: keyof ModelsBookingServiceCreateRequest) => string,
   { date, staffId, timezone }: LineDay,
-): Read<ModelsBookingServiceCreateRequest> => {
+): FormRead<ModelsBookingServiceCreateRequest> => {
   const serviceId = textOf(values, control('serviceId'))
   const time = textOf(values, control('startTime'))
   const member = textOf(values, control('staffId'))
@@ -189,14 +188,14 @@ export const readLine = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       serviceId,
       staffId: match(member)
         .with(SAME_STAFF, () => staffId)
         .with(NO_STAFF, () => null)
         .otherwise((id) => id),
       startTime,
-      notes: nullIfBlank(textOf(values, control('notes'))),
+      notes: textOrNull(textOf(values, control('notes'))),
     },
   }
 }
@@ -206,7 +205,10 @@ export const readLine = (
  * the day of the visit, at a time of the clock of the salon; a line whose
  * member is that of the booking names the member.
  */
-export const readLines = (values: FormData, timezone: string): Read<Lines> => {
+export const readLines = (
+  values: FormData,
+  timezone: string,
+): FormRead<Lines> => {
   const staffId = textOf(values, 'staffId')
   const day = textOf(values, 'date')
   const date = isDay(day) ? day : undefined
@@ -233,10 +235,10 @@ export const readLines = (values: FormData, timezone: string): Read<Lines> => {
 
   return {
     type: 'valid',
-    request: {
+    value: {
       staffId,
       services: lines.flatMap((line) =>
-        line.type === 'valid' ? [line.request] : [],
+        line.type === 'valid' ? [line.value] : [],
       ),
     },
   }
@@ -250,7 +252,7 @@ export const readEntry = (
     customerId,
     timezone,
   }: { salonId: string; customerId: string; timezone: string },
-): Read<ModelsBookingCreateRequest> => {
+): FormRead<ModelsBookingCreateRequest> => {
   const lines = readLines(values, timezone)
   const notes = readNotes(values)
   if (lines.type === 'invalid' || notes.type === 'invalid') {
@@ -265,13 +267,13 @@ export const readEntry = (
 
   return {
     type: 'valid',
-    request: { salonId, customerId, ...lines.request, ...notes.request },
+    value: { salonId, customerId, ...lines.value, ...notes.value },
   }
 }
 
 /** What a change of the notes of a booking asks for: nothing, when nothing was changed. */
 export type NotesChange =
-  | Read<ModelsBookingUpdateRequest>
+  | FormRead<ModelsBookingUpdateRequest>
   | { type: 'unchanged' }
 
 /**
@@ -287,8 +289,8 @@ export const readNotesChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const { depositAmount, customerRequest, internalNotes, source } = read.request
-  const before = (text: string | null): string | null => nullIfBlank(text ?? '')
+  const { depositAmount, customerRequest, internalNotes, source } = read.value
+  const before = (text: string | null): string | null => textOrNull(text ?? '')
   const changes: ModelsBookingUpdateRequest = {
     ...(depositAmount === shown.depositAmount ? {} : { depositAmount }),
     ...(customerRequest === before(shown.customerRequest)
@@ -300,7 +302,7 @@ export const readNotesChange = (
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /** How a booking reached the salon, as the form offers it. */
@@ -320,20 +322,6 @@ const SOURCE_NAMES: Record<string, string> = {
 /** How a booking reached the salon, in words: a value of another kind, as it is. */
 export const sourceNameOf = (source: string): string =>
   SOURCE_NAMES[source] ?? source
-
-/** What a form says about an attempt: about the whole of it, and at its controls. */
-export type FormSays = { message: string | undefined; errors: FormErrors }
-
-export const TOO_MANY_REQUESTS: FormSays = {
-  message: TOO_MANY_REQUESTS_MESSAGE,
-  errors: {},
-}
-
-const CHECK_THE_VALUES: FormSays = {
-  message: '入力した内容を確かめて、もう一度お試しください。',
-  errors: {},
-}
-
 /** What is said about a value the API refused at its control. */
 const messageAt = ({ field, rule }: RefusedValue): string =>
   match([field, rule])
@@ -350,9 +338,7 @@ const messageAt = ({ field, rule }: RefusedValue): string =>
       ([refused]) => refused === 'depositAmount',
       () => DEPOSIT_ERROR,
     )
-    .otherwise(
-      () => 'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /** What is said about a value the API refused that the form has no control for. */
 const ATTEMPT_MESSAGES: Record<string, string> = {
@@ -377,7 +363,7 @@ export const afterRefusal = (
     return hasControl(field) || message === undefined ? [] : [message]
   })
   if (atControls.length === 0 && aboutAttempt.length === 0) {
-    return CHECK_THE_VALUES
+    return aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
   }
 
   return {
@@ -415,17 +401,18 @@ export const afterEntry = (
     .with({ type: 'invalid' }, ({ values }) =>
       afterRefusal(values, isEntryControl),
     )
-    .with({ type: 'conflict' }, () => ({ message: TAKEN, errors: {} }))
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、このサロンの予約を入れられません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'conflict' }, () => aboutTheAttempt(TAKEN))
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、このサロンの予約を入れられません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '予約を入れられませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /**
@@ -440,16 +427,17 @@ export const afterNotesChange = (
     .with({ type: 'invalid' }, ({ values }) =>
       afterRefusal(values, (field) => NOTES_CONTROLS.includes(field)),
     )
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、この予約を変えられません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、この予約を変えられません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '予約の記録を変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /** What follows an attempt to remove a booking. */

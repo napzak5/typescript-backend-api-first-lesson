@@ -229,7 +229,7 @@ describe('readMove', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         staffId: OTHER_MEMBER,
         startTime: '2026-11-21T02:30:00.000Z',
       },
@@ -302,7 +302,7 @@ describe('readAddition', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         serviceId: COLOR,
         staffId: MEMBER,
         startTime: '2026-11-20T02:00:00.000Z',
@@ -319,7 +319,7 @@ describe('readAddition', () => {
     })
 
     // Assert
-    expect(read).toMatchObject({ type: 'valid', request: { staffId: null } })
+    expect(read).toMatchObject({ type: 'valid', value: { staffId: null } })
   })
 
   it('should say at its control what the line lacks', () => {
@@ -365,7 +365,7 @@ describe('readAddition', () => {
     // Assert
     expect(aDayAfter).toMatchObject({
       type: 'valid',
-      request: { startTime: '2026-11-02T04:15:00.000Z' },
+      value: { startTime: '2026-11-02T04:15:00.000Z' },
     })
     expect(beyond).toEqual({
       type: 'invalid',

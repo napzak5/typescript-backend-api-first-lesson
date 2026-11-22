@@ -2,6 +2,7 @@ import {
   ButtonLink,
   Form,
   type FormErrors,
+  NO_ERRORS,
   PasswordField,
 } from '@beauty-salon-frontend/ui'
 import { PASSWORD } from '../../two-factor-flow'
@@ -18,8 +19,6 @@ export type TwoFactorPasswordFormProps = {
   /** The value of the control, under its name */
   onSubmit: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The first step of setting up the second factor: the password, which

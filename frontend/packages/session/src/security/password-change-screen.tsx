@@ -1,15 +1,15 @@
-import { PageHeader, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  type FormSays,
+  NOTHING_TO_SAY,
+  PageHeader,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { match, P } from 'ts-pattern'
 import { PasswordChangeForm } from './components/password-change-form/password-change-form'
 import { changePassword, OWN_ACCOUNT_PARTS } from './security-api'
-import {
-  afterPasswordChange,
-  type FormSays,
-  NOTHING_TO_SAY,
-  readPasswordChange,
-} from './security-flow'
+import { afterPasswordChange, readPasswordChange } from './security-flow'
 
 export type PasswordChangeScreenProps = {
   /** The address of the screen of the security of the account: the way back */

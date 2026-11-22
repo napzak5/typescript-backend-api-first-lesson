@@ -101,7 +101,7 @@ describe('readCustomerEntry', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         lastName: '山田',
         firstName: '花子',
         lastNameKana: null,
@@ -143,7 +143,7 @@ describe('readCustomerEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: { referredBy: REFERRER_ID },
+      value: { referredBy: REFERRER_ID },
     })
   })
 
@@ -189,7 +189,7 @@ describe('readCustomerEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: {
+      value: {
         lastName: '山田',
         lastNameKana: 'ヤマダ',
         firstNameKana: 'ハナコ',
@@ -231,7 +231,7 @@ describe('readCustomerEntry', () => {
     // Act, Assert
     expect(readCustomerEntry(form, TODAY)).toMatchObject({
       type: 'valid',
-      request: { isActive: false },
+      value: { isActive: false },
     })
   })
 
@@ -241,7 +241,7 @@ describe('readCustomerEntry', () => {
       readCustomerEntry(formOf({}, [[PREFERRED_SERVICES, 'color']]), TODAY),
     ).toMatchObject({
       type: 'valid',
-      request: { preferences: { preferredServices: ['color'], notes: null } },
+      value: { preferences: { preferredServices: ['color'], notes: null } },
     })
   })
 
@@ -400,7 +400,7 @@ describe('readCustomerChange', () => {
         referred,
         TODAY,
       ),
-    ).toEqual({ type: 'valid', request: { referredBy: other } })
+    ).toEqual({ type: 'valid', value: { referredBy: other } })
   })
 
   it('should send no referrer when the one they had was taken away', () => {
@@ -414,7 +414,7 @@ describe('readCustomerChange', () => {
         referred,
         TODAY,
       ),
-    ).toEqual({ type: 'valid', request: { referredBy: null } })
+    ).toEqual({ type: 'valid', value: { referredBy: null } })
   })
 
   it('should ask for nothing when the referrer is the one the customer has', () => {
@@ -465,7 +465,7 @@ describe('readCustomerChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         phoneNumber: '080-9876-5432',
         lastNameKana: null,
         tags: ['VIP', '常連'],
@@ -502,7 +502,7 @@ describe('readCustomerChange', () => {
     // Act, Assert
     expect(
       readCustomerChange(formOfCustomer(customer, values), customer, TODAY),
-    ).toEqual({ type: 'valid', request })
+    ).toEqual({ type: 'valid', value: request })
   })
 
   it('should send the permissions to reach a customer that were changed', () => {
@@ -514,7 +514,7 @@ describe('readCustomerChange', () => {
     // Act, Assert
     expect(readCustomerChange(form, customer, TODAY)).toEqual({
       type: 'valid',
-      request: { allowEmail: false, allowMarketing: true },
+      value: { allowEmail: false, allowMarketing: true },
     })
   })
 
@@ -528,7 +528,7 @@ describe('readCustomerChange', () => {
     // Act, Assert
     expect(readCustomerChange(formOfCustomer(liking), liking, TODAY)).toEqual({
       type: 'valid',
-      request: { preferences: null },
+      value: { preferences: null },
     })
   })
 

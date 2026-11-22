@@ -6,6 +6,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   Note,
   Select,
   TextArea,
@@ -36,8 +37,6 @@ export type SalonFormProps = Pick<
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
   errors?: FormErrors | undefined
 }
-
-const NO_ERRORS: FormErrors = {}
 
 const textOrEmpty = (text: string | null): string => text ?? ''
 

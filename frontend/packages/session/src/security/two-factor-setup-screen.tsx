@@ -6,7 +6,9 @@ import type {
 import {
   ButtonLink,
   Card,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -24,7 +26,6 @@ import {
   readOwnAccount,
   startTwoFactor,
 } from './security-api'
-import { type FormSays, NOTHING_TO_SAY } from './security-flow'
 import {
   afterRefusal,
   CHANGED_ELSEWHERE,

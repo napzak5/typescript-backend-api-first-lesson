@@ -1,17 +1,29 @@
-import type { NotFound } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  type NotFound,
+  REFUSED_VALUE_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsDayOfWeekType,
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
-import { isDay, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
-import { match } from 'ts-pattern'
+import { isDay } from '@beauty-salon-frontend/salon-screens'
 import {
+  aboutTheAttempt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
 import { type ScheduleAttempt, sameSchedule } from './schedules-api'
-import { WEEKDAYS } from './shift-week'
+import {
+  dateRowsIn,
+  NO_BREAK_END,
+  NO_BREAK_START,
+  WEEKDAYS,
+} from './shift-week'
 
 /*
  * The form of the schedule of a member: a part for every day of the week,
@@ -115,14 +127,8 @@ const filledAt = (
   endTime: timeOf(textOf(values, nameOf('endTime')).trim()),
   breakStartTime: timeOf(textOf(values, nameOf('breakStartTime')).trim()),
   breakEndTime: timeOf(textOf(values, nameOf('breakEndTime')).trim()),
-  notes: nullIfBlank(textOf(values, nameOf('notes'))),
+  notes: textOrNull(textOf(values, nameOf('notes'))),
 })
-
-const NO_BREAK_END =
-  '休憩の終わりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。'
-
-const NO_BREAK_START =
-  '休憩の始まりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。'
 
 /** What is said at the end of the hours of a part. */
 const endTimeError = ({ startTime, endTime }: Filled): string | undefined => {
@@ -230,14 +236,6 @@ export type ScheduleRequest = {
   controls: (string | undefined)[]
 }
 
-/** The rows of the form that the dates are written at: as many as it has controls of dates. */
-const dateRowsIn = (values: FormData): number[] =>
-  [...values.keys()].flatMap((name) => {
-    const found = /^dates\.(\d+)\.date$/.exec(name)
-
-    return found?.[1] === undefined ? [] : [Number(found[1])]
-  })
-
 /** What is said at the date of a row: none, when it may be sent. */
 const dateErrorOf = (
   date: string,
@@ -272,7 +270,7 @@ const readWhole = (
   values: FormData,
   shown: readonly ModelsStaffSchedule[],
   today: string,
-): Read<ScheduleRequest> => {
+): FormRead<ScheduleRequest> => {
   const parts = partsOf(shown, today)
   const kept = values.has(DROP_PAST) ? [] : parts.past
   const weekly = WEEKDAYS.map((weekday) => ({
@@ -346,7 +344,7 @@ const readWhole = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       rows: sent.map(({ row }) => row),
       controls: sent.map(({ control }) => control),
     },
@@ -360,7 +358,7 @@ const asSent = (rows: readonly ModelsStaffSchedule[]): ModelsStaffSchedule[] =>
   )
 
 /** What a change of a schedule asks for: nothing, when nothing was changed. */
-export type ScheduleChange = Read<ScheduleRequest> | { type: 'unchanged' }
+export type ScheduleChange = FormRead<ScheduleRequest> | { type: 'unchanged' }
 
 /**
  * The schedule a form holds, and whether it differs from the schedule it
@@ -377,7 +375,7 @@ export const readScheduleChange = (
     return read
   }
 
-  return sameSchedule(read.request.rows, asSent(shown))
+  return sameSchedule(read.value.rows, asSent(shown))
     ? { type: 'unchanged' }
     : read
 }
@@ -418,31 +416,24 @@ export const afterScheduleSave = (
       })
 
       return {
-        message:
-          said.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
-          said.map((control) => [
-            control,
-            'この値は受け付けられませんでした。入力を確かめてください。',
-          ]),
+          said.map((control) => [control, REFUSED_VALUE_MESSAGE]),
         ),
       }
     })
-    .with({ type: 'changed' }, () => ({
-      message: CHANGED_MEANWHILE,
-      errors: {},
-    }))
-    .with({ type: 'forbidden' }, () => ({
-      message:
+    .with({ type: 'changed' }, () => aboutTheAttempt(CHANGED_MEANWHILE))
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt(
         'このアカウントでは、勤務スケジュールを直せません。勤務スケジュールを直せるのは、サロンのオーナー、マネージャーと、管理者です。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '勤務スケジュールを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()

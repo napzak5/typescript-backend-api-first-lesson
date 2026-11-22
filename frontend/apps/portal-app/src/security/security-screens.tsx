@@ -6,6 +6,7 @@ import {
 } from '@beauty-salon-frontend/session'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
 import { useNavigate } from 'react-router'
+import { MY_PAGE } from '../profile/my-page'
 import { CUSTOMERS } from '../roles'
 import { SignInHelp } from '../sign-in-help'
 
@@ -27,7 +28,7 @@ export const OwnSecurityScreen = () => (
     <AccountSecurityScreen
       passwordHref={PASSWORD_PATH}
       twoFactorHref={TWO_FACTOR_PATH}
-      actions={<ButtonLink href='/mypage'>マイページへ戻る</ButtonLink>}
+      actions={<ButtonLink href={MY_PAGE}>マイページへ戻る</ButtonLink>}
     />
   </RequireSession>
 )

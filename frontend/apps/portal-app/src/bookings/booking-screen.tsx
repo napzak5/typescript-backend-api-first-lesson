@@ -12,7 +12,9 @@ import {
   Checkbox,
   DescriptionList,
   Form,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   TextArea,
   TextField,
@@ -24,7 +26,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import {
   createOwnProfile,
   OWN_PROFILE,

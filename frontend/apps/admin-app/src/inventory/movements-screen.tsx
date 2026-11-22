@@ -120,7 +120,7 @@ const MovementHistory = ({
       return
     }
     setErrors(undefined)
-    const next = movementQueryOf(filled.request)
+    const next = movementQueryOf(filled.value)
     if (next.toString() === asked) {
       // The same movements again: whoever sends it wants what there is now
       void read.refetch()

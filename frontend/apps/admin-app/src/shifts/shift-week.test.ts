@@ -8,6 +8,7 @@ import {
   aWeek,
 } from './components/examples'
 import {
+  dateRowsIn,
   daysOfWeek,
   mondayOf,
   type Shift,
@@ -21,6 +22,19 @@ import {
   weekIn,
   weekNameOf,
 } from './shift-week'
+
+describe('dateRowsIn', () => {
+  it('should find the rows that dates are written at, by their numbers, past the tenth', () => {
+    const values = new FormData()
+    values.set('monday.startTime', '09:00')
+    values.set('dates.0.date', '2026-11-23')
+    values.set('dates.12.date', '2026-12-01')
+    values.set('dates.12.startTime', '10:00')
+    values.set('dates.x.date', '')
+
+    expect(dateRowsIn(values)).toEqual([0, 12])
+  })
+})
 
 describe('weekdayOf', () => {
   it('should find the day of the week of every day of a week', () => {

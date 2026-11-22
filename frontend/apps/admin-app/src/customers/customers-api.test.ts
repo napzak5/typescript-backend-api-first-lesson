@@ -6,7 +6,12 @@ import {
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { aCustomer, customers, staff } from '../bookings/components/examples'
+import {
+  aCustomer,
+  customers,
+  salon,
+  staff,
+} from '../bookings/components/examples'
 import {
   attemptCustomerChange,
   attemptCustomerEntry,
@@ -17,6 +22,7 @@ import {
   readCustomerPage,
   readCustomers,
   readPreferences,
+  readPreferencesToChange,
   readStatistics,
 } from './customers-api'
 
@@ -471,7 +477,7 @@ describe('attemptCustomerEntry and attemptCustomerChange', () => {
   })
 })
 
-describe('readPreferences', () => {
+describe('readPreferences and readPreferencesToChange', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
   })
@@ -527,17 +533,70 @@ describe('readPreferences', () => {
     expect(fetched).toHaveBeenCalledTimes(4)
   })
 
-  it('should say why nothing came of reading a member the preferences name', async () => {
+  it('should say why nothing came of reading a member the preferences name, when another was read', async () => {
     // Arrange
     answering(
       answerOf({
-        [`GET ${PREFERENCES}`]: () => preferences(misaki?.id ?? '', []),
-        [`GET /api/v1/staff-profiles/${misaki?.id}`]: () => problem(429),
+        [`GET ${PREFERENCES}`]: () =>
+          preferences(misaki?.id ?? '', [ken?.id ?? '']),
+        [`GET /api/v1/staff-profiles/${misaki?.id}`]: profile(misaki),
+        [`GET /api/v1/staff-profiles/${ken?.id}`]: () => problem(429),
       }),
     )
 
     // Act, Assert
     expect(await readPreferences(customer.id)).toEqual({
+      type: 'tooManyRequests',
+    })
+  })
+
+  it('should say why nothing came of reading a member of another salon, when another was read', async () => {
+    // Arrange
+    answering(
+      answerOf({
+        [`GET ${PREFERENCES}`]: () =>
+          preferences(misaki?.id ?? '', [ken?.id ?? '']),
+        'GET /api/v1/staff-profiles': () => listed([]),
+        [`GET /api/v1/staff-profiles/${misaki?.id}`]: profile(misaki),
+        [`GET /api/v1/staff-profiles/${ken?.id}`]: () => problem(429),
+      }),
+    )
+
+    // Act, Assert
+    expect(await readPreferencesToChange(customer.id, salon)).toEqual({
+      type: 'tooManyRequests',
+    })
+  })
+
+  it('should say why nothing came of reading the salon of a member of another salon, when another salon was read', async () => {
+    // Arrange
+    const OTHER = '5d2c7e91-3a4b-4f6e-9c8d-1e2f3a4b5c6d'
+    const ANOTHER = '6e3d8fa2-4b5c-4a7f-8d9e-2f3a4b5c6d7e'
+    answering(
+      answerOf({
+        [`GET ${PREFERENCES}`]: () =>
+          preferences(misaki?.id ?? '', [ken?.id ?? '']),
+        'GET /api/v1/staff-profiles': () => listed([]),
+        [`GET /api/v1/staff-profiles/${misaki?.id}`]: () =>
+          json(200, {
+            data: { ...misaki, salonId: OTHER },
+            meta: null,
+            links: {},
+          }),
+        [`GET /api/v1/staff-profiles/${ken?.id}`]: () =>
+          json(200, {
+            data: { ...ken, salonId: ANOTHER },
+            meta: null,
+            links: {},
+          }),
+        [`GET /api/v1/salons/${OTHER}`]: () =>
+          json(200, { data: { ...salon, id: OTHER }, meta: null, links: {} }),
+        [`GET /api/v1/salons/${ANOTHER}`]: () => problem(429),
+      }),
+    )
+
+    // Act, Assert
+    expect(await readPreferencesToChange(customer.id, salon)).toEqual({
       type: 'tooManyRequests',
     })
   })

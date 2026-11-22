@@ -9,6 +9,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   RadioGroup,
   TextArea,
   TextField,
@@ -36,8 +37,6 @@ export type MovementFormProps = Pick<
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
   errors?: FormErrors | undefined
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /** What is said of the way a kind that moves either way goes */
 const wayDescriptionOf = (type: ModelsInventoryTransactionType): string =>

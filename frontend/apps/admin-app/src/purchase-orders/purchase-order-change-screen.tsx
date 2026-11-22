@@ -10,7 +10,10 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -19,7 +22,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { purchaseOrderHrefOf } from '../navigation'
 import { OrderChangeForm } from './components/order-change-form/order-change-form'
 import {
@@ -38,8 +40,6 @@ import {
 
 const TITLE = '発注を直す'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 type OrderChangeProps = {
   salon: ModelsSalonResponse
   order: ModelsPurchaseOrderResponse
@@ -56,7 +56,7 @@ const OrderChange = ({ salon, order }: OrderChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const key = purchaseOrderKeyOf(order.id)
   const page = purchaseOrderHrefOf(salon.id, order.id)
 
@@ -95,12 +95,12 @@ const OrderChange = ({ salon, order }: OrderChangeProps) => {
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(page)
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        change.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        change.mutate(value)
       })
       .exhaustive()
 

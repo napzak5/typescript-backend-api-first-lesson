@@ -5,12 +5,8 @@ import type {
   ModelsBookingResponse,
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
-import {
-  isDay,
-  momentOf,
-  type Read,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay, momentOf } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { StatusChange } from './bookings-api'
 
@@ -72,7 +68,7 @@ export const readCompletion = (
     timezone,
     recordedStart,
   }: { timezone: string; recordedStart: string | null },
-): Read<ModelsBookingCompleteRequest> => {
+): FormRead<ModelsBookingCompleteRequest> => {
   const start = textOf(values, 'actualStartTime').trim()
   const end = textOf(values, 'actualEndTime').trim()
   const actualStartTime = start === '' ? null : momentIn(start, timezone)
@@ -101,7 +97,7 @@ export const readCompletion = (
     }
   }
 
-  return { type: 'valid', request: { actualStartTime, actualEndTime } }
+  return { type: 'valid', value: { actualStartTime, actualEndTime } }
 }
 
 /** The cancellation of a booking, from its form: the reason, if one was given. */

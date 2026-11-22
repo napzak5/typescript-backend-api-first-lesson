@@ -1,4 +1,5 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
@@ -6,9 +7,13 @@ import type {
   ModelsReviewReportReasonType,
   ModelsReviewReportRequest,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import type { Reporting, Responding } from './reviews-api'
 
 /*
@@ -48,7 +53,7 @@ export const RESPONSE = 'ownerResponse'
 const RESPONSE_MISSING = '返信を入力してください。'
 
 export type ResponseRead =
-  | Read<string>
+  | FormRead<string>
   /** The answer is the one the review holds: writing it changes nothing */
   | { type: 'unchanged' }
 
@@ -67,7 +72,7 @@ export const readResponse = (
 
   return response === current
     ? { type: 'unchanged' }
-    : { type: 'valid', request: response }
+    : { type: 'valid', value: response }
 }
 
 /** The names of the controls of the report: those of the properties of the request */
@@ -102,7 +107,7 @@ const DETAILS_TOO_LONG = `${MAX_DETAILS_LENGTH} 文字以内で入力してく�
  */
 export const readReport = (
   values: FormData,
-): Read<ModelsReviewReportRequest> => {
+): FormRead<ModelsReviewReportRequest> => {
   const reason = REASONS.find(
     ({ value }) => value === textOf(values, REASON),
   )?.value
@@ -119,20 +124,14 @@ export const readReport = (
 
   return {
     type: 'valid',
-    request: { reason, details: details === '' ? null : details },
+    value: { reason, details: details === '' ? null : details },
   }
 }
-
-const CHECK_THE_VALUES: FormSays = {
-  message: '入力した内容を確かめて、もう一度お試しください。',
-  errors: {},
-}
-
 /** What the form of the answer says of the values the API refused: at the answer, or above the form. */
 const afterRefusedResponse = (values: readonly RefusedValue[]): FormSays =>
   values.some(({ field }) => field === RESPONSE)
     ? { message: undefined, errors: { [RESPONSE]: RESPONSE_MISSING } }
-    : CHECK_THE_VALUES
+    : aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
 
 /**
  * What is said after the API did not take an answer, or its withdrawal. A
@@ -144,17 +143,19 @@ export const afterResponding = (
   match(outcome)
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedResponse(values))
-    .with({ type: 'forbidden' }, () => ({
-      message:
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt(
         'このアカウントでは、このレビューに返信できません。返信できるのは、サロンのオーナーとマネージャーです。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '返信を送れませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /**
@@ -204,7 +205,7 @@ const afterRefusedReport = (values: readonly RefusedValue[]): FormSays => {
               }),
         },
       }
-    : CHECK_THE_VALUES
+    : aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
 }
 
 /** What the dialog says when the account reported the review before */
@@ -225,15 +226,17 @@ export const afterReporting = (
   match(outcome)
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedReport(values))
-    .with({ type: 'forbidden' }, () => ({
-      message:
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt(
         'このアカウントでは、このレビューを通報できません。通報できるのは、サロンのオーナーとマネージャーです。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '通報を送れませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()

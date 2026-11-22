@@ -1,4 +1,4 @@
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { z } from 'zod'
 
 /*
@@ -99,7 +99,7 @@ const LOT_ERROR = `ロット番号は ${LONGEST_LOT} 文字以内で入力して
  * The conditions of the view of every row that were filled in: each may be
  * left empty. A lot is looked for without the spaces typed around it.
  */
-export const readStockConditions = (values: FormData): Read<StockView> => {
+export const readStockConditions = (values: FormData): FormRead<StockView> => {
   const lot = textOf(values, 'lotNumber').trim()
   if ([...lot].length > LONGEST_LOT) {
     return { type: 'invalid', errors: { lotNumber: LOT_ERROR } }
@@ -109,7 +109,7 @@ export const readStockConditions = (values: FormData): Read<StockView> => {
 
   return {
     type: 'valid',
-    request: {
+    value: {
       type: 'all',
       ...(productId === undefined ? {} : { productId }),
       ...(lotNumber === undefined ? {} : { lotNumber }),

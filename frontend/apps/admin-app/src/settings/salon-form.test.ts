@@ -101,7 +101,7 @@ describe('readSalonChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         description: '表参道の駅から歩いて 2 分です。',
         building: null,
         latitude: -33.8688,
@@ -141,7 +141,7 @@ describe('readSalonChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         name: 'Salon Hikari 表参道',
         nameKana: 'サロンヒカリ',
         postalCode: '150-0002',
@@ -387,7 +387,7 @@ describe('readSalonEntry', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         name: 'Salon Hikari 表参道店',
         nameKana: 'サロン ヒカリ',
         description: '表参道の駅から歩いて 3 分です。',
@@ -426,7 +426,7 @@ describe('readSalonEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: {
+      value: {
         nameKana: null,
         building: null,
         latitude: null,

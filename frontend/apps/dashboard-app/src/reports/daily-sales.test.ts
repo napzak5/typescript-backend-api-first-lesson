@@ -38,7 +38,7 @@ describe('readDay', () => {
     // Act, Assert
     expect(readDay(formWith(' 2026-11-20 '))).toEqual({
       type: 'valid',
-      request: '2026-11-20',
+      value: '2026-11-20',
     })
   })
 

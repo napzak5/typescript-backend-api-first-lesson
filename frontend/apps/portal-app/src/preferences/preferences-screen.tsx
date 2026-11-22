@@ -11,7 +11,10 @@ import {
   Alert,
   ButtonLink,
   EmptyState,
+  type FormSays,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -21,7 +24,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
+import { BACK_TO_MY_PAGE, MY_PAGE } from '../profile/my-page'
 import { OWN_PROFILE, type ProfileRead } from '../profile/profile-api'
 import { CUSTOMERS } from '../roles'
 import { SignInHelp } from '../sign-in-help'
@@ -34,15 +37,6 @@ import {
 } from './preferences-api'
 
 const TITLE = '好みの設定'
-
-/** Where the preferences are shown, and where the form leads */
-const MY_PAGE = '/mypage'
-
-const BACK = (
-  <ButtonLink href={MY_PAGE} variant='quiet'>
-    マイページへ戻る
-  </ButtonLink>
-)
 
 /** What the API says of an account that is no customer */
 const NO_PREFERENCES: PreferencesRead = { type: 'none' }
@@ -106,7 +100,7 @@ const PreferencesChange = ({
       // Nothing was changed, so there is nothing to ask the API for: the
       // customer is told so where the preferences are shown
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更された項目はありません。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(MY_PAGE)
       })
       .with({ type: 'valid' }, ({ value }) => update.mutate(value))
@@ -121,7 +115,7 @@ const PreferencesChange = ({
       message={says.message}
       errors={says.errors}
       pending={update.isPending}
-      actions={BACK}
+      actions={BACK_TO_MY_PAGE}
       onSubmit={submit}
     />
   )

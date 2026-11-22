@@ -11,8 +11,11 @@ import {
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
+  aboutTheAttempt,
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -20,7 +23,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import {
   Unchangeable,
   WithBooking,
@@ -54,8 +56,6 @@ import {
 
 const TITLE = '会計を入れる'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 /** What is said of a calculation whose prices are not those of the menu the screen read */
 const OTHER_PRICES =
   'メニューの料金が、この画面を開いたあとで変わりました。計算し直すと、いまの料金で数えます。'
@@ -82,7 +82,7 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
   const { notify } = useNotifications()
   const [added, setAdded] = useState<readonly string[]>([])
   const [changed, setChanged] = useState('')
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const calculation = useQuery({
     queryKey: ['sales', 'calculation', salon.id, booking.id, ...added],
     queryFn: () =>
@@ -147,13 +147,10 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
 
   const submit = (values: FormData): void => {
     if (bill.type !== 'calculated') {
-      setSaid({
-        message: '金額が出てから、会計を入れてください。',
-        errors: {},
-      })
+      setSaid(aboutTheAttempt('金額が出てから、会計を入れてください。'))
       return
     }
-    setSaid(NOTHING_SAID)
+    setSaid(NOTHING_TO_SAY)
     checkout.mutate(
       saleRequestOf(
         booking,

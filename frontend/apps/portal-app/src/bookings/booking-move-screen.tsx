@@ -15,7 +15,9 @@ import {
   Alert,
   ButtonLink,
   Card,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -24,7 +26,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
 import { dateAt } from '../salons/salon-format'
 import { readSalon, readStaff } from '../salons/salons-api'

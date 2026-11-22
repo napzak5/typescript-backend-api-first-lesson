@@ -8,7 +8,9 @@ import type {
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -17,7 +19,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { menuHrefOf } from '../navigation'
 import { readServices, servicesKeyOf } from '../salons/salons-api'
 import { ServicesChangeForm } from './components/services-change-form/services-change-form'
@@ -36,8 +37,6 @@ import {
 } from './services-change'
 
 const TITLE = 'サービスをまとめて変える'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type ServicesChangeProps = {
   salon: ModelsSalonResponse
@@ -62,7 +61,7 @@ const ServicesChange = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const menu = menuHrefOf(salon.id)
   const change = useMutation({
     mutationFn: (request: ModelsServiceBulkUpdateRequest) =>
@@ -94,9 +93,9 @@ const ServicesChange = ({
   const submit = (values: FormData): void =>
     match(readServicesChange(values))
       .with({ type: 'invalid' }, ({ says }) => setSaid(says))
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        change.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        change.mutate(value)
       })
       .exhaustive()
 

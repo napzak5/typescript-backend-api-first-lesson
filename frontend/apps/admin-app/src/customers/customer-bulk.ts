@@ -1,10 +1,14 @@
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerBulkUpdateItem,
   ModelsCustomerResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { customerNameOf } from './customers-api'
 
 /*
@@ -49,7 +53,7 @@ export const TAG = 'tag'
 const SEPARATORS = /[,、，]/
 
 /** The change of tags of the dialog: one tag, without the characters that separate tags. */
-export const readTagChange = (values: FormData): Read<TagChange> => {
+export const readTagChange = (values: FormData): FormRead<TagChange> => {
   const tag = textOf(values, TAG).trim()
   const error = match(tag)
     .returnType<string | undefined>()
@@ -63,7 +67,7 @@ export const readTagChange = (values: FormData): Read<TagChange> => {
   return error === undefined
     ? {
         type: 'valid',
-        request: {
+        value: {
           way: textOf(values, TAG_WAY) === 'remove' ? 'remove' : 'add',
           tag,
         },
@@ -175,7 +179,7 @@ export const afterRetagging = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS.message ?? '',
+      message: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE).message ?? '',
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -219,7 +223,7 @@ export const afterRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS.message ?? '',
+      message: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE).message ?? '',
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

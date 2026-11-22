@@ -41,7 +41,7 @@ describe('readChartConditions', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: { search: 'PPD', allergies: 'without' },
+      value: { search: 'PPD', allergies: 'without' },
     })
   })
 
@@ -50,7 +50,7 @@ describe('readChartConditions', () => {
     const read = readChartConditions(valuesOf('  ', ''))
 
     // Assert
-    expect(read).toEqual({ type: 'valid', request: {} })
+    expect(read).toEqual({ type: 'valid', value: {} })
   })
 
   it('should refuse a keyword of more than 100 characters', () => {

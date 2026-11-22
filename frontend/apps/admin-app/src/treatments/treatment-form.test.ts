@@ -104,14 +104,14 @@ describe('readTreatmentEntry', () => {
     } = record
     expect(read).toEqual({
       type: 'valid',
-      request: { ...written, bookingId: booking.id },
+      value: { ...written, bookingId: booking.id },
     })
   })
 
   it('should write what was left empty as nothing, and the lists as empty', () => {
     expect(readTreatmentEntry(formOf(LEAST), booking, context)).toEqual({
       type: 'valid',
-      request: {
+      value: {
         bookingId: booking.id,
         customerId: booking.customerId,
         staffId: misaki?.id,
@@ -147,7 +147,7 @@ describe('readTreatmentEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: { scalpCondition: 'やや乾燥', staffEvaluation: null },
+      value: { scalpCondition: 'やや乾燥', staffEvaluation: null },
     })
   })
 
@@ -165,7 +165,7 @@ describe('readTreatmentEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: {
+      value: {
         techniques: ['ローライト', 'レイヤーカット'],
         processingTime: 75,
       },
@@ -182,7 +182,7 @@ describe('readTreatmentEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: { services: [CUT, COLOR] },
+      value: { services: [CUT, COLOR] },
     })
   })
 
@@ -199,7 +199,7 @@ describe('readTreatmentEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: { nextRecommendedDate: booking.bookingDate },
+      value: { nextRecommendedDate: booking.bookingDate },
     })
   })
 
@@ -306,7 +306,7 @@ describe('the materials of the form', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: {
+      value: {
         materials: [
           {
             productId: COLOR_AGENT,
@@ -390,7 +390,7 @@ describe('the materials of the form', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: {
+      value: {
         materials: [{ lotNumber: 'L-9' }, { lotNumber: null }],
       },
     })
@@ -455,7 +455,7 @@ describe('readTreatmentChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'valid',
-      request: {
+      value: {
         processingTime: 90,
         nextRecommendedDate: '2027-01-15',
         customerSatisfaction: null,
@@ -478,7 +478,7 @@ describe('readTreatmentChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'valid',
-      request: {
+      value: {
         services: [CUT],
         techniques: ['ローライト', 'レイヤーカット', 'ブロー'],
         nextRecommendedServices: [],
@@ -505,7 +505,7 @@ describe('readTreatmentChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'valid',
-      request: {
+      value: {
         materials: [
           {
             productId: COLOR_AGENT,

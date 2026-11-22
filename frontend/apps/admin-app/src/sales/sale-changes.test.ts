@@ -155,7 +155,7 @@ describe('readSaleChange', () => {
     )
 
     // Assert
-    expect(read).toEqual({ type: 'valid', request })
+    expect(read).toEqual({ type: 'valid', value: request })
   })
 
   it('should keep a member who is among the staff no more, when the choice is left as it is', () => {
@@ -359,7 +359,7 @@ describe('readVoid', () => {
     // Act, Assert
     expect(readVoid(formOf({ voidReason: ' 取り違え ' }))).toEqual({
       type: 'valid',
-      request: { voidReason: '取り違え' },
+      value: { voidReason: '取り違え' },
     })
   })
 

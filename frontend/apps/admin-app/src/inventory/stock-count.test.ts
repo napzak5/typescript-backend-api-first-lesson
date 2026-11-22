@@ -58,7 +58,7 @@ describe('readStockCount', () => {
     // Assert
     expect(count).toEqual({
       type: 'valid',
-      request: {
+      value: {
         salonId: salon.id,
         items: [
           { inventoryId: expiredColour.id, countedQuantity: 2.5 },
@@ -77,7 +77,7 @@ describe('readStockCount', () => {
     // Assert
     expect(count).toEqual({
       type: 'valid',
-      request: {
+      value: {
         salonId: salon.id,
         items: [{ inventoryId: colourLot.id, countedQuantity: 1200.25 }],
         reason: null,
@@ -92,7 +92,7 @@ describe('readStockCount', () => {
     // Assert
     expect(count).toMatchObject({
       type: 'valid',
-      request: { items: [{ inventoryId: shampooRow.id, countedQuantity: 2 }] },
+      value: { items: [{ inventoryId: shampooRow.id, countedQuantity: 2 }] },
     })
   })
 

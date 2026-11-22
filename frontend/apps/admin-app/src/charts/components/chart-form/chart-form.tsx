@@ -10,6 +10,7 @@ import {
   type FormErrors,
   FormPart,
   FormRow,
+  NO_ERRORS,
   Note,
   Select,
   TextArea,
@@ -49,8 +50,6 @@ type Row = { key: number; shown: ModelsPreviousTreatment | undefined }
 
 /** Where the focus goes after a row was added or taken away */
 type Focus = { type: 'row'; key: number } | { type: 'add' } | undefined
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The chart of a customer: what to take care of before a treatment, the

@@ -143,7 +143,7 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
       return
     }
     setErrors(undefined)
-    show(filled.request)
+    show(filled.value)
   }
 
   const entry = keeps ? (

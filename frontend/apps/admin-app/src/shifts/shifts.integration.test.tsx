@@ -537,7 +537,7 @@ describe('the shifts, against the API', () => {
 
     // Assert
     expect(await heading('勤務スケジュール')).toHaveFocus()
-    expect(notifications()).toContain('変更はありませんでした。')
+    expect(notifications()).toContain('変更された項目はありません。')
     expect(await scheduleRowIdsOf(TANAKA)).toEqual(before)
   })
 

@@ -2,8 +2,10 @@ import type { ModelsProblemDetails } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  CHECK_THE_VALUES_MESSAGE,
   FAILED,
   from,
+  isUnread,
   LARGEST_PAGE,
   NOT_FOUND,
   type NotFound,
@@ -13,6 +15,7 @@ import {
   PUBLIC_UNANSWERED_PARTS,
   pageOf,
   REFUSED_PARTS,
+  REFUSED_VALUE_MESSAGE,
   type Refused,
   refusedValuesOf,
   TOO_MANY_REQUESTS,
@@ -294,6 +297,31 @@ describe('unreadMessageOf', () => {
       )
     },
   )
+})
+
+describe('isUnread', () => {
+  it.each<[{ type: string }, boolean]>([
+    [TOO_MANY_REQUESTS, true],
+    [FAILED, true],
+    [NOT_FOUND, false],
+    [{ type: 'found' }, false],
+  ])('should find %j unread: %j', (read, unread) => {
+    expect(isUnread(read)).toBe(unread)
+  })
+})
+
+describe('the sentences of values the API refused', () => {
+  it('should ask to look at what was entered and to try again', () => {
+    expect(CHECK_THE_VALUES_MESSAGE).toBe(
+      '入力した内容を確かめて、もう一度お試しください。',
+    )
+  })
+
+  it('should say at a control that its value was not taken', () => {
+    expect(REFUSED_VALUE_MESSAGE).toBe(
+      'この値は受け付けられませんでした。入力を確かめてください。',
+    )
+  })
 })
 
 describe('unsentMessageOf', () => {

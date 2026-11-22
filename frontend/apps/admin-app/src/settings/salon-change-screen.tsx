@@ -11,7 +11,10 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -19,7 +22,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { settingsHrefOf } from '../navigation'
 import { SalonForm } from './components/salon-form/salon-form'
 import { SettingsForbidden, useKeepsSalon } from './keeps-salon'
@@ -27,8 +29,6 @@ import { afterSalonChange, readSalonChange } from './salon-form'
 import { changeSalon } from './settings-api'
 
 const TITLE = 'サロンの情報を直す'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type SalonChangeProps = { salon: ModelsSalonResponse }
 
@@ -42,7 +42,7 @@ const SalonChange = ({ salon }: SalonChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const key = salonKeyOf(salon.id)
   const settings = settingsHrefOf(salon.id)
   const change = useMutation({
@@ -80,12 +80,12 @@ const SalonChange = ({ salon }: SalonChangeProps) => {
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(settings)
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        change.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        change.mutate(value)
       })
       .exhaustive()
 

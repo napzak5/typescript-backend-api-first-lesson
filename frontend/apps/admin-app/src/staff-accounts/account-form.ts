@@ -5,9 +5,13 @@ import type {
   ModelsStaffInvitationResponse,
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { roleNameOf } from './account-format'
 import type {
   AccountUnlinking,
@@ -31,17 +35,17 @@ const NO_ROLE = 'ロールを選んでください。'
 export const readRole = (
   values: FormData,
   roles: readonly ModelsSalonRoleType[],
-): Read<ModelsSalonRoleType> => {
+): FormRead<ModelsSalonRoleType> => {
   const chosen = textOf(values, ROLE)
   const role = roles.find((offered) => offered === chosen)
 
   return role === undefined
     ? { type: 'invalid', errors: { [ROLE]: NO_ROLE } }
-    : { type: 'valid', request: role }
+    : { type: 'valid', value: role }
 }
 
 /** What a form of the role of an account gives: nothing to send when the role stays as it is. */
-export type RoleChoice = Read<ModelsSalonRoleType> | { type: 'unchanged' }
+export type RoleChoice = FormRead<ModelsSalonRoleType> | { type: 'unchanged' }
 
 /** The role chosen for an account, or that it was left as it is. */
 export const readRoleChange = (
@@ -51,7 +55,7 @@ export const readRoleChange = (
 ): RoleChoice => {
   const read = readRole(values, roles)
 
-  return read.type === 'valid' && read.request === account.role
+  return read.type === 'valid' && read.value === account.role
     ? { type: 'unchanged' }
     : read
 }
@@ -119,15 +123,13 @@ export const afterInvitation = (
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      says: {
-        message:
-          'このアカウントでは、このロールで招待できません。オーナーのロールを与えられるのは、管理者です。',
-        errors: {},
-      },
+      says: aboutTheAttempt(
+        'このアカウントでは、このロールで招待できません。オーナーのロールを与えられるのは、管理者です。',
+      ),
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      says: TOO_MANY_REQUESTS,
+      says: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -166,22 +168,17 @@ export const afterRoleChange = (
     }))
     .with({ type: 'own' }, () => ({
       type: 'again',
-      says: {
-        message: 'ご自身のアカウントのロールは、変えられません。',
-        errors: {},
-      },
+      says: aboutTheAttempt('ご自身のアカウントのロールは、変えられません。'),
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      says: {
-        message:
-          'このアカウントでは、このロールを与えられません。オーナーのロールを与えられるのは、管理者です。',
-        errors: {},
-      },
+      says: aboutTheAttempt(
+        'このアカウントでは、このロールを与えられません。オーナーのロールを与えられるのは、管理者です。',
+      ),
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      says: TOO_MANY_REQUESTS,
+      says: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

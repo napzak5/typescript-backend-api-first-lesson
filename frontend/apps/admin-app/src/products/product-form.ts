@@ -1,18 +1,24 @@
-import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsProductCreateRequest,
   ModelsProductResponse,
   ModelsProductUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  errorAt,
+  type FormRead,
+  type FormSays,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
-import {
-  type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-  yenOf,
-} from '../bookings/booking-entry'
+import { yenOf } from '../bookings/booking-entry'
 import { numberOf } from '../treatments/treatment-form'
 import type { TreatmentRemovalSays } from '../treatments/treatment-format'
 import type { ProductRemoval, ProductWrite } from './products-api'
@@ -94,13 +100,6 @@ const webAddressSchema = z.httpUrl().max(LONGEST_URL)
 
 /** How many characters a text has, as the API counts them: a character outside the basic plane is one. */
 const lengthOf = (text: string): number => [...text].length
-
-/** What is said at a control, under its name; nothing when the value may be sent. */
-const errorAt = (
-  control: string,
-  message: string | undefined,
-): [string, string][] => (message === undefined ? [] : [[control, message]])
-
 /** The message of a text that must be there, when it is not, or is too long. */
 const requiredError = (
   text: string,
@@ -134,7 +133,7 @@ export const levelOf = (text: string): number | null | undefined => {
 
 /** A web address that may be left empty: `undefined` when it is none the API takes. */
 const webAddressOf = (text: string): string | null | undefined => {
-  const address = nullIfBlank(text)
+  const address = textOrNull(text)
 
   return address === null || webAddressSchema.safeParse(address).success
     ? address
@@ -168,11 +167,11 @@ const orderErrors = (
 ]
 
 /** The whole product the form holds, or what is wrong with it. */
-const readWhole = (values: FormData): Read<ModelsProductCreateRequest> => {
+const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
   const productCode = textOf(values, 'productCode').trim()
   const name = textOf(values, 'name').trim()
-  const category = nullIfBlank(textOf(values, 'category'))
-  const brand = nullIfBlank(textOf(values, 'brand'))
+  const category = textOrNull(textOf(values, 'category'))
+  const brand = textOrNull(textOf(values, 'brand'))
   const purchasePrice = yenOf(textOf(values, 'purchasePrice'))
   const retailPrice = yenOf(textOf(values, 'retailPrice'))
   const salonPrice = yenOf(textOf(values, 'salonPrice'))
@@ -180,11 +179,11 @@ const readWhole = (values: FormData): Read<ModelsProductCreateRequest> => {
   const minimumStock = levelOf(textOf(values, 'minimumStock'))
   const reorderPoint = levelOf(textOf(values, 'reorderPoint'))
   const maximumStock = levelOf(textOf(values, 'maximumStock'))
-  const supplier = nullIfBlank(textOf(values, 'supplier'))
-  const supplierProductCode = nullIfBlank(textOf(values, 'supplierProductCode'))
+  const supplier = textOrNull(textOf(values, 'supplier'))
+  const supplierProductCode = textOrNull(textOf(values, 'supplierProductCode'))
   const leadTimeDays = numberOf(textOf(values, 'leadTimeDays'), 0)
   const imageUrl = webAddressOf(textOf(values, 'imageUrl'))
-  const barcode = nullIfBlank(textOf(values, 'barcode'))
+  const barcode = textOrNull(textOf(values, 'barcode'))
   const expiryMonths = numberOf(textOf(values, 'expiryMonths'), 0)
   const safetyDataSheet = webAddressOf(textOf(values, 'safetyDataSheet'))
   const errors = Object.fromEntries([
@@ -276,10 +275,10 @@ const readWhole = (values: FormData): Read<ModelsProductCreateRequest> => {
 
   return {
     type: 'valid',
-    request: {
+    value: {
       productCode,
       name,
-      description: nullIfBlank(textOf(values, 'description')),
+      description: textOrNull(textOf(values, 'description')),
       category,
       brand,
       purchasePrice,
@@ -298,7 +297,7 @@ const readWhole = (values: FormData): Read<ModelsProductCreateRequest> => {
       isForTreatment: values.has('isForTreatment'),
       requiresLotTracking: values.has('requiresLotTracking'),
       expiryMonths,
-      storageConditions: nullIfBlank(textOf(values, 'storageConditions')),
+      storageConditions: textOrNull(textOf(values, 'storageConditions')),
       safetyDataSheet,
       isActive: values.has('isActive'),
     },
@@ -308,24 +307,21 @@ const readWhole = (values: FormData): Read<ModelsProductCreateRequest> => {
 /** A new product, as the form holds it. */
 export const readProductEntry = (
   values: FormData,
-): Read<ModelsProductCreateRequest> => readWhole(values)
+): FormRead<ModelsProductCreateRequest> => readWhole(values)
 
 /** What a change of a product asks for: nothing, when nothing was changed. */
-type ProductChange = Read<ModelsProductUpdateRequest> | { type: 'unchanged' }
-
-/** A text as the form reads it back: without the spaces around it, nothing as `null`. */
-const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
+type ProductChange =
+  | FormRead<ModelsProductUpdateRequest>
+  | { type: 'unchanged' }
 /** What the form reads back of each property of a product it was opened with */
 const shownOf = (
   product: ModelsProductResponse,
 ): ModelsProductCreateRequest => ({
   productCode: product.productCode.trim(),
   name: product.name.trim(),
-  description: shownText(product.description),
-  category: shownText(product.category),
-  brand: shownText(product.brand),
+  description: textOrNull(product.description),
+  category: textOrNull(product.category),
+  brand: textOrNull(product.brand),
   purchasePrice: product.purchasePrice,
   retailPrice: product.retailPrice,
   salonPrice: product.salonPrice,
@@ -333,17 +329,17 @@ const shownOf = (
   minimumStock: product.minimumStock,
   maximumStock: product.maximumStock,
   reorderPoint: product.reorderPoint,
-  supplier: shownText(product.supplier),
-  supplierProductCode: shownText(product.supplierProductCode),
+  supplier: textOrNull(product.supplier),
+  supplierProductCode: textOrNull(product.supplierProductCode),
   leadTimeDays: product.leadTimeDays,
-  imageUrl: shownText(product.imageUrl),
-  barcode: shownText(product.barcode),
+  imageUrl: textOrNull(product.imageUrl),
+  barcode: textOrNull(product.barcode),
   isForSale: product.isForSale,
   isForTreatment: product.isForTreatment,
   requiresLotTracking: product.requiresLotTracking,
   expiryMonths: product.expiryMonths,
-  storageConditions: shownText(product.storageConditions),
-  safetyDataSheet: shownText(product.safetyDataSheet),
+  storageConditions: textOrNull(product.storageConditions),
+  safetyDataSheet: textOrNull(product.safetyDataSheet),
   isActive: product.isActive,
 })
 
@@ -359,7 +355,7 @@ export const readProductChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const sent = read.request
+  const sent = read.value
   const before = shownOf(shown)
   const changes: ModelsProductUpdateRequest = {
     ...(sent.productCode === before.productCode
@@ -422,7 +418,7 @@ export const readProductChange = (
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /** What is said at a control the API refused a value of. */
@@ -458,9 +454,7 @@ const refusalAt = (field: string, rule: string): string =>
     .with('barcode', () => BARCODE_ERROR)
     .with('expiryMonths', () => EXPIRY_ERROR)
     .with('imageUrl', 'safetyDataSheet', () => URL_ERROR)
-    .otherwise(
-      () => 'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /** What the form says after the API did not take it. */
 export const afterProductWrite = (
@@ -475,10 +469,7 @@ export const afterProductWrite = (
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message:
-          said.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
@@ -488,16 +479,15 @@ export const afterProductWrite = (
       message: undefined,
       errors: { productCode: CODE_TAKEN },
     }))
-    .with({ type: 'forbidden' }, () => ({
-      message: FORBIDDEN_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '商品を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /**

@@ -909,7 +909,7 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert
       await theCustomer()
-      expect(notifications()).toContain('変更はありませんでした。')
+      expect(notifications()).toContain('変更された項目はありません。')
       expect((await storedCustomerOf(KENJI.email)).updatedAt).toBe(updatedAt)
     })
 

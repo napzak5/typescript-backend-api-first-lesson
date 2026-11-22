@@ -114,7 +114,7 @@ describe('readCustomerConditions', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         search: '090-1234',
         tags: ['VIP', '常連'],
         from: '2026-11-01',
@@ -129,7 +129,7 @@ describe('readCustomerConditions', () => {
     // Act, Assert
     expect(readCustomerConditions(formOf(EMPTY_FORM))).toEqual({
       type: 'valid',
-      request: { tags: [] },
+      value: { tags: [] },
     })
   })
 

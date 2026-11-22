@@ -221,7 +221,7 @@ describe('the own profile, against the API', () => {
 
     // Assert
     expect(
-      await screen.findByText('変更はありませんでした。'),
+      await screen.findByText('変更された項目はありません。'),
     ).toBeInTheDocument()
     expect((await storedMemberOf(STYLIST))?.updatedAt).toBe(before?.updatedAt)
   })

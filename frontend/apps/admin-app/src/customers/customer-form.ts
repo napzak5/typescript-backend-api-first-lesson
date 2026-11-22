@@ -1,23 +1,26 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerBasicPreferences,
   ModelsCustomerCreateRequest,
   ModelsCustomerResponse,
   ModelsCustomerUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY, isDay } from '@beauty-salon-frontend/salon-screens'
 import {
-  EARLIEST_DAY,
-  isDay,
-  type Read,
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+  same,
   textOf,
-} from '@beauty-salon-frontend/salon-screens'
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
-import {
-  type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
 import {
   CATEGORIES,
   CUSTOMER_STATUSES,
@@ -177,9 +180,12 @@ const preferencesOf = (
  * was left empty is `null` where the API allows that. Today, at the salon,
  * is the last day somebody can have been born on.
  */
-const readWhole = (values: FormData, today: string): Read<Whole> => {
+const readWhole = (
+  values: FormData,
+  today: string,
+): FormRead<Whole, Record<string, string>> => {
   const text = (name: string): string => textOf(values, name).trim()
-  const optional = (name: string): string | null => nullIfBlank(text(name))
+  const optional = (name: string): string | null => textOrNull(text(name))
   const lastName = text('lastName')
   const firstName = text('firstName')
   const email = text('email')
@@ -248,7 +254,7 @@ const readWhole = (values: FormData, today: string): Read<Whole> => {
 
   return {
     type: 'valid',
-    request: {
+    value: {
       lastName,
       firstName,
       lastNameKana: optional('lastNameKana'),
@@ -292,23 +298,18 @@ const readWhole = (values: FormData, today: string): Read<Whole> => {
 export const readCustomerEntry = (
   values: FormData,
   today: string,
-): Read<ModelsCustomerCreateRequest> => readWhole(values, today)
-
-/** A text of the ledger as the form reads it back: without the spaces around it, nothing as `null`. */
-const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
+): FormRead<ModelsCustomerCreateRequest, Record<string, string>> =>
+  readWhole(values, today)
 /** What the form shows of what a customer likes: `null` shows as nothing chosen and nothing written. */
 const shownPreferencesOf = (
   preferences: ModelsCustomerBasicPreferences | null,
 ): ModelsCustomerBasicPreferences | null =>
   preferences === null
     ? null
-    : preferencesOf(preferences.preferredServices, shownText(preferences.notes))
-
-const same = (one: unknown, other: unknown): boolean =>
-  JSON.stringify(one) === JSON.stringify(other)
-
+    : preferencesOf(
+        preferences.preferredServices,
+        textOrNull(preferences.notes),
+      )
 /**
  * The properties a form was sent with other values for than the customer
  * it was opened with. A value is compared as the form reads it: without
@@ -325,35 +326,35 @@ const changesOf = (
   ...(sent.firstName === shown.firstName.trim()
     ? {}
     : { firstName: sent.firstName }),
-  ...(sent.lastNameKana === shownText(shown.lastNameKana)
+  ...(sent.lastNameKana === textOrNull(shown.lastNameKana)
     ? {}
     : { lastNameKana: sent.lastNameKana }),
-  ...(sent.firstNameKana === shownText(shown.firstNameKana)
+  ...(sent.firstNameKana === textOrNull(shown.firstNameKana)
     ? {}
     : { firstNameKana: sent.firstNameKana }),
   ...(sent.email.toLowerCase() === shown.email ? {} : { email: sent.email }),
   ...(sent.phoneNumber === shown.phoneNumber.trim()
     ? {}
     : { phoneNumber: sent.phoneNumber }),
-  ...(sent.alternativePhone === shownText(shown.alternativePhone)
+  ...(sent.alternativePhone === textOrNull(shown.alternativePhone)
     ? {}
     : { alternativePhone: sent.alternativePhone }),
-  ...(sent.postalCode === shownText(shown.postalCode)
+  ...(sent.postalCode === textOrNull(shown.postalCode)
     ? {}
     : { postalCode: sent.postalCode }),
-  ...(sent.prefecture === shownText(shown.prefecture)
+  ...(sent.prefecture === textOrNull(shown.prefecture)
     ? {}
     : { prefecture: sent.prefecture }),
-  ...(sent.city === shownText(shown.city) ? {} : { city: sent.city }),
-  ...(sent.address === shownText(shown.address)
+  ...(sent.city === textOrNull(shown.city) ? {} : { city: sent.city }),
+  ...(sent.address === textOrNull(shown.address)
     ? {}
     : { address: sent.address }),
-  ...(sent.building === shownText(shown.building)
+  ...(sent.building === textOrNull(shown.building)
     ? {}
     : { building: sent.building }),
   ...(sent.birthDate === shown.birthDate ? {} : { birthDate: sent.birthDate }),
   ...(sent.gender === shown.gender ? {} : { gender: sent.gender }),
-  ...(sent.occupation === shownText(shown.occupation)
+  ...(sent.occupation === textOrNull(shown.occupation)
     ? {}
     : { occupation: sent.occupation }),
   ...(sent.membershipTier === shown.membershipTier
@@ -362,12 +363,12 @@ const changesOf = (
   ...(same(sent.preferences, shownPreferencesOf(shown.preferences))
     ? {}
     : { preferences: sent.preferences }),
-  ...(sent.notes === shownText(shown.notes) ? {} : { notes: sent.notes }),
-  ...(sent.internalNotes === shownText(shown.internalNotes)
+  ...(sent.notes === textOrNull(shown.notes) ? {} : { notes: sent.notes }),
+  ...(sent.internalNotes === textOrNull(shown.internalNotes)
     ? {}
     : { internalNotes: sent.internalNotes }),
   ...(same(sent.tags, shown.tags) ? {} : { tags: sent.tags }),
-  ...(sent.referralCode === shownText(shown.referralCode)
+  ...(sent.referralCode === textOrNull(shown.referralCode)
     ? {}
     : { referralCode: sent.referralCode }),
   ...(sent.referredBy === shown.referredBy
@@ -395,7 +396,7 @@ const changesOf = (
 
 /** What a change of a customer asks for: nothing, when nothing was changed. */
 export type CustomerChange =
-  | Read<ModelsCustomerUpdateRequest>
+  | FormRead<ModelsCustomerUpdateRequest>
   | { type: 'unchanged' }
 
 /**
@@ -413,11 +414,11 @@ export const readCustomerChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const changes = changesOf(read.request, shown)
+  const changes = changesOf(read.value, shown)
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /** What came of registering a customer, or of changing one, after the API was asked why it refused. */
@@ -500,9 +501,7 @@ const messageAt = (control: string, rule: string): string =>
         ? 'お客様ご自身は、紹介元に選べません。ほかのお客様を選んでください。'
         : '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
     )
-    .otherwise(
-      () => 'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 const DUPLICATES: Record<'email' | 'referralCode', string> = {
   email:
@@ -512,10 +511,9 @@ const DUPLICATES: Record<'email' | 'referralCode', string> = {
 }
 
 /** What a form of the ledger says when the API refuses the account: it no longer belongs to a salon. */
-export const CANNOT_HANDLE_CUSTOMERS: FormSays = {
-  message: 'このアカウントでは、顧客台帳を扱えません。',
-  errors: {},
-}
+export const CANNOT_HANDLE_CUSTOMERS: FormSays = aboutTheAttempt(
+  'このアカウントでは、顧客台帳を扱えません。',
+)
 
 /** Which write a form makes: the words of its failure differ. */
 export type CustomerWrite = 'entry' | 'change'
@@ -546,10 +544,7 @@ export const afterCustomerWrite = (
         .filter(({ control }) => CONTROLS.includes(control))
 
       return {
-        message:
-          said.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(
           said
@@ -563,9 +558,8 @@ export const afterCustomerWrite = (
       errors: { [field]: DUPLICATES[field] },
     }))
     .with({ type: 'forbidden' }, () => CANNOT_HANDLE_CUSTOMERS)
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message: FAILED_WRITES[write],
-      errors: {},
-    }))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()

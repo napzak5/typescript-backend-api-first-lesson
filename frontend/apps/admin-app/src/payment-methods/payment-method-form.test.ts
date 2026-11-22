@@ -84,7 +84,7 @@ describe('readPaymentMethodEntry', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         method: 'qr_payment',
         displayName: 'PayPay',
         description: 'レジ横のコードを読んでもらいます。',
@@ -113,7 +113,7 @@ describe('readPaymentMethodEntry', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         method: 'qr_payment',
         displayName: 'PayPay',
         description: null,
@@ -255,7 +255,7 @@ describe('readPaymentMethodChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         displayName: 'クレジットカード',
         processorName: null,
         fee: 3.6,
@@ -283,7 +283,7 @@ describe('readPaymentMethodChange', () => {
   ])('should send %s', (_, changes, request) => {
     expect(readPaymentMethodChange(changeWith(changes), card())).toEqual({
       type: 'valid',
-      request,
+      value: request,
     })
   })
 

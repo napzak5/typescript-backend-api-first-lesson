@@ -2,9 +2,8 @@ import type { ProductCrudListParams } from '@beauty-salon-frontend/api-client'
 import {
   keywordIn,
   LONGEST_KEYWORD,
-  type Read,
-  textOf,
 } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 
 /*
@@ -89,7 +88,7 @@ const BARCODE_ERROR = `バーコードは ${LONGEST_NAME} 文字以内で入力�
 /** The conditions that were filled in: every one may be left empty. */
 export const readProductConditions = (
   values: FormData,
-): Read<ProductConditions> => {
+): FormRead<ProductConditions> => {
   const keyword = textOf(values, 'keyword').trim()
   const barcode = textOf(values, 'barcode').trim()
   const errors: Record<string, string> = {
@@ -105,7 +104,7 @@ export const readProductConditions = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       ...(keyword === '' ? {} : { keyword }),
       ...(barcode === '' ? {} : { barcode }),
       ...(category === undefined ? {} : { category }),

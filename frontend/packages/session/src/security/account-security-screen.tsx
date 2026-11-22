@@ -7,8 +7,10 @@ import {
 import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
 import {
   Card,
+  type FormSays,
   LoadingIndicator,
   moreOf,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -42,9 +44,7 @@ import {
 import {
   cursorAfter,
   endsWithGoneCursor,
-  type FormSays,
   listingOf,
-  NOTHING_TO_SAY,
   withoutSession,
 } from './security-flow'
 import {

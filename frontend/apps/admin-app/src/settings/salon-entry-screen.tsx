@@ -6,6 +6,8 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
+  NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -13,7 +15,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { settingsHrefOf } from '../navigation'
 import { SalonForm } from './components/salon-form/salon-form'
 import { useAddsSalon } from './keeps-salon'
@@ -21,8 +22,6 @@ import { afterSalonEntry, readSalonEntry } from './salon-form'
 import { addSalon } from './settings-api'
 
 const TITLE = 'サロンを登録する'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 /**
  * The form of a salon to be added. The salon added is shown in its
@@ -33,7 +32,7 @@ const SalonEntry = () => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const addition = useMutation({
     mutationFn: (request: ModelsSalonCreateRequest) => addSalon(request),
     onSuccess: (outcome) =>
@@ -68,9 +67,9 @@ const SalonEntry = () => {
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        addition.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        addition.mutate(value)
       })
       .exhaustive()
 

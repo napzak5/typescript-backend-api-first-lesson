@@ -1,3 +1,5 @@
+import { CHECK_THE_VALUES_MESSAGE } from '@beauty-salon-frontend/answers'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
 import type { SignInOutcome } from '../../sign-in'
@@ -31,25 +33,15 @@ export const INITIAL_SIGN_IN_STATE: SignInState = {
   message: undefined,
   errors: {},
 }
-
-/** What the form was sent with: values to send on, or what is wrong with them. */
-type Read<Value> =
-  | { type: 'valid'; value: Value }
-  | { type: 'invalid'; errors: SignInFormErrors }
-
-const textOf = (values: FormData, name: string): string => {
-  const value = values.get(name)
-
-  return typeof value === 'string' ? value : ''
-}
-
 const emailSchema = z.email()
 
 /**
  * The values of the first step. The address is taken without the spaces
  * around it, which come with a pasted value; the password is taken as it is.
  */
-const readCredentials = (values: FormData): Read<Credentials> => {
+const readCredentials = (
+  values: FormData,
+): FormRead<Credentials, SignInFormErrors> => {
   const email = textOf(values, 'email').trim()
   const password = textOf(values, 'password')
   const errors: SignInFormErrors = {
@@ -72,7 +64,9 @@ const readCredentials = (values: FormData): Read<Credentials> => {
 }
 
 /** The code of the second step, without the spaces around it. */
-const readTwoFactorCode = (values: FormData): Read<string> => {
+const readTwoFactorCode = (
+  values: FormData,
+): FormRead<string, SignInFormErrors> => {
   const code = textOf(values, 'twoFactorCode').trim()
 
   return code === ''
@@ -90,9 +84,9 @@ const readTwoFactorCode = (values: FormData): Read<string> => {
 export const readAttempt = (
   step: SignInState['step'],
   values: FormData,
-): Read<Attempt> =>
+): FormRead<Attempt, SignInFormErrors> =>
   match(step)
-    .returnType<Read<Attempt>>()
+    .returnType<FormRead<Attempt, SignInFormErrors>>()
     .with({ type: 'credentials' }, () => {
       const read = readCredentials(values)
 
@@ -172,9 +166,7 @@ export const afterAttempt = (
       return ofFirstStep || errors.twoFactorCode === undefined
         ? {
             step: { type: 'credentials' },
-            message: ofFirstStep
-              ? undefined
-              : '入力した内容を確かめて、もう一度お試しください。',
+            message: ofFirstStep ? undefined : CHECK_THE_VALUES_MESSAGE,
             errors,
           }
         : { step: state.step, message: undefined, errors }

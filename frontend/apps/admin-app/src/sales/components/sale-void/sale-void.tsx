@@ -2,6 +2,7 @@ import {
   Button,
   FormDialog,
   type FormErrors,
+  NO_ERRORS,
   TextArea,
 } from '@beauty-salon-frontend/ui'
 import styles from './sale-void.module.css'
@@ -32,8 +33,6 @@ export type SaleVoidProps = {
   /** The form of the dialog was sent: `voidReason` */
   onVoid: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The voiding of a sale that should not count: one entered by mistake, or

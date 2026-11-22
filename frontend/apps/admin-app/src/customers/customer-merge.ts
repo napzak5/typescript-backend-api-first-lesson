@@ -8,6 +8,7 @@ import type {
   ModelsCustomerResponse,
   ModelsMedicalChartResponse,
 } from '@beauty-salon-frontend/api-client'
+import { same } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { LedgerValues } from './components/customer-record/ledger-items'
 import { countNameOf } from './customer-format'
@@ -79,11 +80,6 @@ const sideOf = (
         : 'primary',
     )
     .exhaustive()
-
-/** Whether two values are the same: they are plain data, as the API sends them. */
-const same = (a: unknown, b: unknown): boolean =>
-  JSON.stringify(a) === JSON.stringify(b)
-
 /**
  * The value of one item after the merge: the value both have, the value of
  * the one that has a value, or else the value of `side`.

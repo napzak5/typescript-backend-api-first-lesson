@@ -56,12 +56,12 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
       return
     }
     setRefused(undefined)
-    if (filled.request === day) {
+    if (filled.value === day) {
       // The same day again: whoever sends it wants what there is now
       void read.refetch()
       return
     }
-    setQuery(dayQueryOf(filled.request), { replace: true })
+    setQuery(dayQueryOf(filled.value), { replace: true })
   }
 
   return (

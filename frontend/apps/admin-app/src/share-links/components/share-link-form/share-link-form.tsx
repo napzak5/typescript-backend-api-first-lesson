@@ -1,6 +1,7 @@
 import {
   Form,
   type FormErrors,
+  NO_ERRORS,
   Note,
   PasswordField,
   Select,
@@ -28,8 +29,6 @@ export type ShareLinkFormProps = {
   actions?: ReactNode
   onSubmit: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The form that issues a share link of a file: how long it works, from

@@ -2,8 +2,8 @@ import type {
   ModelsTreatmentPhotoBulkCreateRequest,
   ModelsTreatmentPhotoResponse,
 } from '@beauty-salon-frontend/api-client'
+import type { FormSays } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
-import type { FormSays } from '../bookings/booking-entry'
 import { aPhoto, aTreatment, photos } from './components/examples'
 import {
   afterPhotoRemoval,
@@ -130,7 +130,7 @@ describe('readPhotos', () => {
     // Assert
     expect(read).toEqual<PhotosRead>({
       type: 'valid',
-      request: {
+      value: {
         photos: [
           {
             photoType: 'before',
@@ -164,7 +164,7 @@ describe('readPhotos', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: { photos: [{ sortOrder: 0 }] },
+      value: { photos: [{ sortOrder: 0 }] },
     })
   })
 

@@ -10,6 +10,7 @@ import {
   type FormErrors,
   FormPart,
   FormRow,
+  NO_ERRORS,
   Note,
   RadioGroup,
   TextField,
@@ -50,8 +51,6 @@ type DateRow = {
 
 /** Where the focus goes after a row was added or taken away */
 type Focus = { type: 'row'; key: number } | { type: 'add' } | undefined
-
-const NO_ERRORS: FormErrors = {}
 
 type HoursProps = {
   nameOf: (property: ScheduleProperty) => string

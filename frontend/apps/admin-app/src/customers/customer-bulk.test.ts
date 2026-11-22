@@ -75,7 +75,7 @@ describe('readTagChange', () => {
     const read = readTagChange(valuesOf(entries))
 
     // Assert
-    expect(read).toEqual({ type: 'valid', request: change })
+    expect(read).toEqual({ type: 'valid', value: change })
   })
 
   it.each<[string, string, string]>([

@@ -6,12 +6,16 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { amountOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  type FormSays,
+  NOTHING_TO_SAY,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { saleHrefOf } from '../navigation'
 import { PaymentForm } from './components/payment-form/payment-form'
 import { afterPayment, methodsInUse, readPayment } from './payments'
@@ -26,8 +30,6 @@ import {
 import { WithPaymentMethods, WithSale } from './with-sale'
 
 const TITLE = '支払いを記録する'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type PaymentEntryProps = {
   salon: ModelsSalonResponse
@@ -49,7 +51,7 @@ const PaymentEntry = ({ salon, sale, methods }: PaymentEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const key = saleKeyOf(sale.id)
   const back = saleHrefOf(salon.id, sale.id)
   const owed = owedOf(sale)
@@ -101,8 +103,8 @@ const PaymentEntry = ({ salon, sale, methods }: PaymentEntryProps) => {
       setSaid({ message: undefined, errors: read.errors })
       return
     }
-    setSaid(NOTHING_SAID)
-    recording.mutate(read.request)
+    setSaid(NOTHING_TO_SAY)
+    recording.mutate(read.value)
   }
 
   if (offered.length === 0) {

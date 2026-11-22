@@ -26,6 +26,7 @@ import {
 import { useLayoutEffect, useRef, useState } from 'react'
 import { match, P } from 'ts-pattern'
 import { listHrefOf } from '../bookings/own-bookings'
+import { MY_PAGE } from '../profile/my-page'
 import { OWN_PROFILE, readOwnProfile } from '../profile/profile-api'
 import { CUSTOMERS } from '../roles'
 import { SignInHelp } from '../sign-in-help'
@@ -183,7 +184,7 @@ const OwnReviews = () => {
       <PageHeader
         title={TITLE}
         description='来店したサロンに書いたレビューです。サロンのページに掲載され、誰でも読めます。'
-        actions={<ButtonLink href='/mypage'>マイページへ戻る</ButtonLink>}
+        actions={<ButtonLink href={MY_PAGE}>マイページへ戻る</ButtonLink>}
       />
       {match(profile.data)
         .with(undefined, () => (

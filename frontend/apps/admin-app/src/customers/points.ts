@@ -1,6 +1,7 @@
 import {
   type Forbidden,
   type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
   UNREAD_TYPES,
   type Unread,
 } from '@beauty-salon-frontend/answers'
@@ -18,15 +19,15 @@ import {
   isDay,
   LATEST_DAY,
   momentNameAt,
-  type Read,
-  textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import { match, P } from 'ts-pattern'
 import {
+  aboutTheAttempt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match, P } from 'ts-pattern'
 import type { SaleRead } from '../sales/sales-api'
 import { countNameOf } from './customer-format'
 import type { CustomerRead } from './customers-api'
@@ -165,7 +166,7 @@ const expiryErrorOf = (
 export const readPointRecording = (
   values: FormData,
   { customerId, kinds, today, offeredSale }: PointContext,
-): Read<PointRecording> => {
+): FormRead<PointRecording> => {
   const kind = kindIn(values, kinds)
   const saleId =
     offeredSale !== null && textOf(values, 'saleId') === offeredSale
@@ -173,7 +174,7 @@ export const readPointRecording = (
       : null
   const points = pointsOf(textOf(values, 'points'))
   const expiryDate =
-    kind === 'earned' ? nullIfBlank(textOf(values, 'expiryDate')) : null
+    kind === 'earned' ? textOrNull(textOf(values, 'expiryDate')) : null
   const expiryError = expiryErrorOf(expiryDate, today)
   const errors = {
     ...(kind === undefined ? { kind: KIND_ERROR } : {}),
@@ -193,14 +194,14 @@ export const readPointRecording = (
   const common: ModelsPointUseRequest = {
     customerId,
     points,
-    description: nullIfBlank(textOf(values, 'description')),
+    description: textOrNull(textOf(values, 'description')),
     referenceType: saleId === null ? null : 'sale',
     referenceId: saleId,
   }
 
   return {
     type: 'valid',
-    request: match(kind)
+    value: match(kind)
       .returnType<PointRecording>()
       .with('earned', () => ({
         type: 'earn',
@@ -363,10 +364,9 @@ export const recordedMessageOf = ({
 const refusalSays = (why: PointRefusal): FormSays =>
   match(why)
     .returnType<FormSays>()
-    .with({ type: 'voidSale' }, () => ({
-      message: '取り消した売上には、ポイントを付与も利用もできません。',
-      errors: {},
-    }))
+    .with({ type: 'voidSale' }, () =>
+      aboutTheAttempt('取り消した売上には、ポイントを付与も利用もできません。'),
+    )
     .with({ type: 'short' }, ({ balance }) => ({
       message: undefined,
       errors: {
@@ -379,17 +379,17 @@ const refusalSays = (why: PointRefusal): FormSays =>
         points: `残高が上限（${countNameOf(MOST_POINTS, 'ポイント')}）を超えるため、記録できません。`,
       },
     }))
-    .with({ type: 'recordedAlready', recording: 'earn' }, () => ({
-      message:
+    .with({ type: 'recordedAlready', recording: 'earn' }, () =>
+      aboutTheAttempt(
         'この売上には、もうポイントを付与しています。ポイントの履歴をお確かめください。',
-      errors: {},
-    }))
-    .with({ type: 'recordedAlready', recording: 'use' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'recordedAlready', recording: 'use' }, () =>
+      aboutTheAttempt(
         'この売上には、もう使ったポイントを記録しています。ポイントの履歴をお確かめください。',
-      errors: {},
-    }))
-    .with({ type: 'unknown' }, () => ({ message: RECORD_AGAIN, errors: {} }))
+      ),
+    )
+    .with({ type: 'unknown' }, () => aboutTheAttempt(RECORD_AGAIN))
     .exhaustive()
 
 /** What is said at a control of a value the API refused. */
@@ -448,7 +448,7 @@ export const afterRecording = (outcome: PointAttempt): PointSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      ...TOO_MANY_REQUESTS,
+      ...aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

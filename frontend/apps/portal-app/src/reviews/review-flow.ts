@@ -1,5 +1,7 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
   NOT_SENT_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
@@ -12,9 +14,16 @@ import {
   linesOf,
   pictureAddressesError,
 } from '@beauty-salon-frontend/preferences'
-import type { FormErrors } from '@beauty-salon-frontend/ui'
+import {
+  aboutTheAttempt,
+  type FormErrors,
+  type FormRead,
+  type FormSays,
+  same,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { FormSays, Read } from '../forms'
 import { DETAIL_RATINGS } from '../salons/salon-format'
 import type { ReviewChange, ReviewWriting, Visit } from './reviews-api'
 
@@ -94,13 +103,6 @@ export const enteredOf = (review: ModelsReviewResponse): Entered => ({
   comment: review.comment ?? '',
   imageUrls: review.imageUrls.join('\n'),
 })
-
-const textOf = (values: FormData, name: string): string => {
-  const value = values.get(name)
-
-  return typeof value === 'string' ? value : ''
-}
-
 /**
  * What the form was sent with. A `select` is always sent with a value, so
  * a form without that of the staff, or of their rating, has no control for
@@ -127,14 +129,6 @@ const RATINGS = ['1', '2', '3', '4', '5']
 /** The rating a control holds; `null` when none is chosen. */
 const ratingOf = (text: string): number | null =>
   RATINGS.includes(text) ? Number(text) : null
-
-/** What a control that may be left empty holds: `null` for nothing. */
-const textOrNull = (text: string): string | null => {
-  const trimmed = text.trim()
-
-  return trimmed === '' ? null : trimmed
-}
-
 /** What a customer says of a visit, as a request states it. */
 type Said = {
   /** `null` while none is chosen: a review has one */
@@ -172,7 +166,6 @@ const saidOf = (entered: Entered): Said => ({
 const OVERALL_RATING_MISSING = '総合の評価を選んでください。'
 const TITLE_TOO_LONG = `${MAX_TITLE_LENGTH} 文字以内で入力してください。`
 const TOO_MANY_IMAGES = `画像は ${MAX_IMAGES} 個までです。行を減らしてください。`
-const UNACCEPTABLE = 'この内容は登録できません。入力し直してください。'
 
 /** What cannot be right of what the form was sent with, under the names of the controls. */
 const errorsOf = (entered: Entered): FormErrors => {
@@ -201,7 +194,7 @@ const errorsOf = (entered: Entered): FormErrors => {
 export const readNewReview = (
   values: FormData,
   { booking, customerId }: Visit,
-): Read<ModelsReviewCreateRequest> => {
+): FormRead<ModelsReviewCreateRequest> => {
   const entered = enteredIn(values)
   const errors = errorsOf(entered)
   const said = saidOf(entered)
@@ -229,10 +222,6 @@ export const readNewReview = (
     },
   }
 }
-
-const differs = (one: unknown, other: unknown): boolean =>
-  JSON.stringify(one) !== JSON.stringify(other)
-
 /**
  * What the form was sent with other values for than it was opened with.
  * What the form has no control for is no change.
@@ -261,14 +250,14 @@ const changesOf = (
     : { valueRating: sent.valueRating }),
   ...(sent.title === shown.title ? {} : { title: sent.title }),
   ...(sent.comment === shown.comment ? {} : { comment: sent.comment }),
-  ...(differs(sent.imageUrls, shown.imageUrls)
+  ...(!same(sent.imageUrls, shown.imageUrls)
     ? { imageUrls: sent.imageUrls }
     : {}),
 })
 
 /** What the form was sent with: what to change, nothing to change, or what is wrong. */
 export type ReviewChangeRead =
-  | Read<ModelsReviewUpdateRequest>
+  | FormRead<ModelsReviewUpdateRequest>
   /** The form was sent as it was opened: there is nothing to ask the API for */
   | { type: 'unchanged' }
 
@@ -325,9 +314,13 @@ const controlOf = (field: string): string | undefined =>
 const messageOf = (control: string, rule: string): string =>
   match(control)
     .with(STAFF, () => STAFF_GONE)
-    .with(TITLE, () => (rule === 'too_big' ? TITLE_TOO_LONG : UNACCEPTABLE))
-    .with(IMAGES, () => (rule === 'too_big' ? TOO_MANY_IMAGES : UNACCEPTABLE))
-    .otherwise(() => UNACCEPTABLE)
+    .with(TITLE, () =>
+      rule === 'too_big' ? TITLE_TOO_LONG : REFUSED_VALUE_MESSAGE,
+    )
+    .with(IMAGES, () =>
+      rule === 'too_big' ? TOO_MANY_IMAGES : REFUSED_VALUE_MESSAGE,
+    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /**
  * What the form says about the values the API did not take: at the control
@@ -343,10 +336,7 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
   })
 
   return said.length === 0
-    ? {
-        message: '入力した内容を確かめて、もう一度お試しください。',
-        errors: {},
-      }
+    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
     : {
         message: undefined,
         // The first thing the API says about a value is the one to act on
@@ -356,11 +346,9 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
       }
 }
 
-const VISIT_READ_AGAIN: FormSays = {
-  message:
-    'このレビューは、投稿できませんでした。来店の内容を読み込み直しましたので、お確かめください。',
-  errors: {},
-}
+const VISIT_READ_AGAIN: FormSays = aboutTheAttempt(
+  'このレビューは、投稿できませんでした。来店の内容を読み込み直しましたので、お確かめください。',
+)
 
 const namesTheVisit = (values: readonly RefusedValue[]): boolean =>
   values.some(({ field }) => OF_THE_VISIT.includes(field))
@@ -386,11 +374,10 @@ export const afterReviewWriting = (
     .with({ type: 'invalid' }, ({ values }) =>
       namesTheVisit(values) ? VISIT_READ_AGAIN : afterRefusedValues(values),
     )
-    .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /**
@@ -403,9 +390,8 @@ export const afterReviewChange = (
   match(outcome)
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
-    .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()

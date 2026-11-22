@@ -53,7 +53,7 @@ describe('readResponse', () => {
         formOf({ ownerResponse: '  ありがとうございました。\n' }),
         null,
       ),
-    ).toEqual({ type: 'valid', request: '  ありがとうございました。\n' })
+    ).toEqual({ type: 'valid', value: '  ありがとうございました。\n' })
   })
 
   it.each<[string, string]>([
@@ -72,7 +72,7 @@ describe('readResponse', () => {
     ).toEqual({ type: 'unchanged' })
     expect(
       readResponse(formOf({ ownerResponse: 'ありがとう ' }), 'ありがとう'),
-    ).toEqual({ type: 'valid', request: 'ありがとう ' })
+    ).toEqual({ type: 'valid', value: 'ありがとう ' })
   })
 })
 
@@ -82,7 +82,7 @@ describe('readReport', () => {
       readReport(formOf({ reason: 'spam', details: '  宣伝です。 \n' })),
     ).toEqual({
       type: 'valid',
-      request: { reason: 'spam', details: '宣伝です。' },
+      value: { reason: 'spam', details: '宣伝です。' },
     })
   })
 
@@ -91,7 +91,7 @@ describe('readReport', () => {
       readReport(formOf({ reason: 'personal_information', details: '   ' })),
     ).toEqual({
       type: 'valid',
-      request: { reason: 'personal_information', details: null },
+      value: { reason: 'personal_information', details: null },
     })
   })
 
@@ -100,7 +100,7 @@ describe('readReport', () => {
       readReport(formOf({ reason: 'other', details: '詳'.repeat(2000) })),
     ).toEqual({
       type: 'valid',
-      request: { reason: 'other', details: '詳'.repeat(2000) },
+      value: { reason: 'other', details: '詳'.repeat(2000) },
     })
   })
 

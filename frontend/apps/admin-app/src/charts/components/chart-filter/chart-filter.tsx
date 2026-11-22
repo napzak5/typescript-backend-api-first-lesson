@@ -2,6 +2,7 @@ import {
   countNarrowing,
   FilterForm,
   type FormErrors,
+  NO_ERRORS,
   Select,
   TextField,
   useFilterValues,
@@ -26,8 +27,6 @@ const valuesOf = (conditions: ChartConditions): Values => ({
   search: conditions.search ?? '',
   allergies: conditions.allergies ?? '',
 })
-
-const NO_ERRORS: FormErrors = {}
 
 /** The conditions of the sheet that narrow the list: its button counts them */
 const COUNTED: readonly (keyof Values)[] = ['allergies']

@@ -1,4 +1,5 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
@@ -9,11 +10,17 @@ import {
   ModelsTreatmentPhotoType,
   type ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
-import type { ChoiceOption } from '@beauty-salon-frontend/ui'
+import {
+  aboutTheAttempt,
+  type ChoiceOption,
+  errorAt,
+  type FormRead,
+  type FormSays,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
-import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import type { PhotoRemoval, PhotosAdding } from './treatments-api'
 
 /*
@@ -85,7 +92,6 @@ const NO_CONSENT =
   'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。'
 const URL_HELD =
   'この施術記録には、同じ URL の写真があります。ほかの写真の URL を入力するか、この写真の欄を外してください。'
-const CHECK_AGAIN = '入力した内容を確かめて、もう一度お試しください。'
 
 /** What is said of the address of a photo that an earlier row of the form holds */
 const repeatedUrlOf = (row: number): string =>
@@ -96,27 +102,12 @@ const noRoomOf = (room: number): string =>
   room === 0
     ? `この施術記録の写真は、${MOST_PHOTOS} 枚になりました。写真を外してから足してください。`
     : `この施術記録には、あと ${room} 枚まで足せます。写真の欄を減らしてください。`
-
-/** A text that was filled in, without the spaces around it; nothing as `null`. */
-const textOrNull = (text: string): string | null => {
-  const trimmed = text.trim()
-
-  return trimmed === '' ? null : trimmed
-}
-
 /** An address of the web as the API takes it for a photo: of a domain name, not of a machine or its number */
 const photoAddressSchema = z.httpUrl().check(z.maxLength(LONGEST_URL))
 
 /** Whether a text is an address the API keeps a photo at. */
 const isPhotoAddress = (text: string): boolean =>
   photoAddressSchema.safeParse(text).success
-
-/** What is wrong with a control, under its name; nothing when nothing is. */
-const errorAt = (
-  control: string,
-  message: string | undefined,
-): [string, string][] => (message === undefined ? [] : [[control, message]])
-
 /** A photo as it was filled in */
 type FilledPhoto = {
   photoType: string
@@ -203,7 +194,7 @@ const photoErrorsOf = (
 
 /** The photos that were filled in, or what is wrong with them; and none, when the record has no room for them. */
 export type PhotosRead =
-  | Read<ModelsTreatmentPhotoBulkCreateRequest>
+  | FormRead<ModelsTreatmentPhotoBulkCreateRequest>
   | { type: 'noRoom'; message: string }
 
 /**
@@ -230,7 +221,7 @@ export const readPhotos = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       photos: filled.flatMap((photo, index) => {
         const photoType = photoTypeOf(photo.photoType)
 
@@ -291,7 +282,8 @@ export const afterPhotosAdded = (
       )
 
       return {
-        message: said.length < values.length ? CHECK_AGAIN : undefined,
+        message:
+          said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(said.toReversed()),
       }
     })
@@ -305,18 +297,19 @@ export const afterPhotosAdded = (
 
       return errors.length > 0
         ? { message: undefined, errors: Object.fromEntries(errors) }
-        : { message: noRoomOf(roomOf(record)), errors: {} }
+        : aboutTheAttempt(noRoomOf(roomOf(record)))
     })
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、施術写真を足せません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、施術写真を足せません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '施術写真を足せませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /** What is said when photos were added: 「施術写真を 2 枚足しました。」. */

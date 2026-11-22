@@ -76,7 +76,7 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
       return
     }
     setRefused(undefined)
-    const next = trendsQueryOf(filled.request, readTrendUnit(values))
+    const next = trendsQueryOf(filled.value, readTrendUnit(values))
     if (next.toString() === asked) {
       // The same parts again: whoever sends them wants what there is now
       void read.refetch()

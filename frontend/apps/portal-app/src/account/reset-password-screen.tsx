@@ -2,21 +2,20 @@ import { PASSWORD_RULE } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   Form,
+  type FormSays,
+  NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { match, P } from 'ts-pattern'
-import { type FormSays, NOTHING_TO_SAY } from '../forms'
-import { checkPasswordReset, resetPassword } from './account-api'
+import { checkPasswordReset, resetPassword, TOKEN_REFUSED } from './account-api'
 import { afterRefusal, readNewPassword } from './account-flow'
 import { CheckingLink, LinkNotChecked, LinkUnusable } from './mailed-link'
 import { useMailedToken } from './mailed-token'
 
 const TITLE = 'パスワードの再設定'
-
-const LINK_REFUSED: { type: 'tokenRefused' } = { type: 'tokenRefused' }
 
 const AskAgain = () => (
   <ButtonLink href='/forgot-password'>再設定のメールをもう一度送る</ButtonLink>
@@ -68,7 +67,7 @@ const ResetWithToken = ({ token }: { token: string }) => {
     )
   }
 
-  return match(ended === 'linkRefused' ? LINK_REFUSED : check.data)
+  return match(ended === 'linkRefused' ? TOKEN_REFUSED : check.data)
     .with(undefined, () => <CheckingLink title={TITLE} />)
     .with({ type: 'accepted' }, () => (
       <>

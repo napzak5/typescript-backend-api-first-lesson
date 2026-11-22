@@ -271,7 +271,7 @@ describe('the settings of a salon, against the API', () => {
 
     // Assert
     expect(
-      await screen.findByText('変更はありませんでした。'),
+      await screen.findByText('変更された項目はありません。'),
     ).toBeInTheDocument()
     await openedSettings()
     expect(await storedSalonOf(TOKYO)).toEqual(before)

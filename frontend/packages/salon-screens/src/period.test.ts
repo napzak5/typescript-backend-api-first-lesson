@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  daysErrorsOf,
   lastYearUntil,
   monthUntil,
   type Period,
@@ -83,7 +84,7 @@ describe('readPeriod', () => {
     // Act, Assert
     expect(readPeriod(formOf('2024-01-01', '2024-12-31'))).toEqual({
       type: 'valid',
-      request: { from: '2024-01-01', to: '2024-12-31' },
+      value: { from: '2024-01-01', to: '2024-12-31' },
     })
   })
 
@@ -112,12 +113,34 @@ describe('readPeriod', () => {
   })
 })
 
+describe('daysErrorsOf', () => {
+  const DAY = '日付を入力してください。'
+  const RANGE = '終わりの日は、始まりの日と同じか、その後にしてください。'
+
+  it.each<[string, string, 'required' | 'optional', Record<string, string>]>([
+    ['2026-11-01', '2026-11-30', 'required', {}],
+    ['2026-11-30', '2026-11-30', 'required', {}],
+    ['', '', 'optional', {}],
+    ['2026-11-01', '', 'optional', {}],
+    ['', '2026-11-30', 'optional', {}],
+    ['', '', 'required', { from: DAY, to: DAY }],
+    ['2026-11-01', '', 'required', { to: DAY }],
+    ['11/1', '2026-11-30', 'optional', { from: DAY }],
+    ['2026-11-01', '2026-02-30', 'optional', { to: DAY }],
+    ['2026-11-30', '2026-11-01', 'required', { to: RANGE }],
+    ['2026-11-30', '2026-11-01', 'optional', { to: RANGE }],
+    ['11/30', '2026-11-01', 'optional', { from: DAY }],
+  ])('should find %j to %j (%s) to say %j', (from, to, ends, errors) => {
+    expect(daysErrorsOf(from, to, ends)).toEqual(errors)
+  })
+})
+
 describe('readDays', () => {
   it('should read days as many as they are', () => {
     // Act, Assert
     expect(readDays(formOf('2020-01-01', '2026-11-20'))).toEqual({
       type: 'valid',
-      request: { from: '2020-01-01', to: '2026-11-20' },
+      value: { from: '2020-01-01', to: '2026-11-20' },
     })
   })
 

@@ -165,7 +165,7 @@ describe('readLines', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         staffId: MEMBER,
         services: [
           {
@@ -249,7 +249,7 @@ describe('readLines', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: { services: [{ startTime: '2026-11-01T05:30:00.000Z' }] },
+      value: { services: [{ startTime: '2026-11-01T05:30:00.000Z' }] },
     })
   })
 })
@@ -269,7 +269,7 @@ describe('readNotes', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         source: null,
         depositAmount,
         customerRequest: null,
@@ -309,7 +309,7 @@ describe('readNotes', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         source: 'phone',
         depositAmount: null,
         customerRequest: '短めに',
@@ -333,7 +333,7 @@ describe('readEntry', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         salonId: 'salon',
         customerId: 'customer',
         staffId: MEMBER,
@@ -416,7 +416,7 @@ describe('readNotesChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'valid',
-      request: {
+      value: {
         source: 'phone',
         customerRequest: null,
         internalNotes: '次回はカラーも',

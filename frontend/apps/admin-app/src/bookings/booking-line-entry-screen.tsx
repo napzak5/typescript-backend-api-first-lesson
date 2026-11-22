@@ -7,13 +7,17 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import { dayNameOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  type FormSays,
+  NOTHING_TO_SAY,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { bookingHrefOf } from '../navigation'
-import type { FormSays } from './booking-entry'
 import { afterAddition, readAddition, whyNoLineAdded } from './booking-moves'
 import {
   attemptAddition,
@@ -26,8 +30,6 @@ import { BookingLineForm } from './components/booking-line-form/booking-line-for
 import { Unchangeable, WithBooking, WithStaffAndServices } from './with-booking'
 
 const TITLE = '施術明細を追加する'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type AdditionProps = {
   salon: ModelsSalonResponse
@@ -50,7 +52,7 @@ const Addition = ({ salon, booking, staff, services }: AdditionProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const [check, setCheck] = useState<LineCheck | undefined>(undefined)
   const key = bookingKeyOf(booking.id)
   const back = bookingHrefOf(salon.id, booking.id)
@@ -100,9 +102,9 @@ const Addition = ({ salon, booking, staff, services }: AdditionProps) => {
       setSaid({ message: undefined, errors: read.errors })
       return
     }
-    setSaid(NOTHING_SAID)
+    setSaid(NOTHING_TO_SAY)
     setCheck(undefined)
-    addition.mutate(read.request)
+    addition.mutate(read.value)
   }
 
   return (

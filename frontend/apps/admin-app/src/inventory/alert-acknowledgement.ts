@@ -3,9 +3,8 @@ import type {
   ModelsInventoryAlertAcknowledgeRequest,
   ModelsInventoryAlertResponse,
 } from '@beauty-salon-frontend/api-client'
-import { textOf } from '@beauty-salon-frontend/salon-screens'
+import { textOf, textOrNull } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { nullIfBlank } from '../bookings/booking-entry'
 import { alertNameOf } from './alert-format'
 import type { AlertAcknowledgement } from './alerts-api'
 
@@ -25,7 +24,7 @@ export const acknowledgementOf = (
   alert: alert.alert,
   productId: alert.productId,
   inventoryId: alert.inventoryId,
-  notes: nullIfBlank(textOf(values, 'notes')),
+  notes: textOrNull(textOf(values, 'notes')),
 })
 
 export type AcknowledgementSays =

@@ -7,6 +7,7 @@ import {
   EmptyState,
   type FormErrors,
   LoadingIndicator,
+  NO_ERRORS,
   RadioGroup,
   Select,
   TextField,
@@ -66,8 +67,6 @@ export type BookingFormProps = {
   /** The time that was chosen (`startTime`), and the values of the controls that were given */
   onSubmit: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /** The value of the choice for nobody in particular */
 const ANYBODY = ''
