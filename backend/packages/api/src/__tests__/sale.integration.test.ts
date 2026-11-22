@@ -17,7 +17,7 @@ import {
   customerIdSchema,
   type DomainError,
   type LedgerReach,
-  type SaleCreateRequest,
+  type RequestedSale,
   saleIdSchema,
   salonIdSchema,
   staffIdSchema,
@@ -2945,7 +2945,7 @@ describe('Sales API', () => {
       type: 'salon',
       salonId: salonIdSchema.parse(id),
     })
-    type Line = SaleCreateRequest['details'][number]
+    type Line = RequestedSale['details'][number]
     const lineOf = (overrides: Partial<Line> = {}): Line => ({
       itemType: 'service',
       itemId: cutId,
@@ -2964,8 +2964,8 @@ describe('Sales API', () => {
     })
     /** A request as the use case hands it on: a cut for the customer, without a booking. */
     const requestOf = (
-      overrides: Partial<SaleCreateRequest> = {},
-    ): SaleCreateRequest => ({
+      overrides: Partial<RequestedSale> = {},
+    ): RequestedSale => ({
       salonId: salonIdSchema.parse(salonId),
       customerId: customerIdSchema.parse(customerId),
       staffId: staffIdSchema.parse(staffId),
@@ -3044,7 +3044,7 @@ describe('Sales API', () => {
         expect(await db.$count(salesDetails)).toBe(1)
       })
 
-      it.each<[string, () => Promise<Partial<SaleCreateRequest>>, string]>([
+      it.each<[string, () => Promise<Partial<RequestedSale>>, string]>([
         [
           'a customer that is not there',
           async () => ({ customerId: customerIdSchema.parse(UNKNOWN_ID) }),

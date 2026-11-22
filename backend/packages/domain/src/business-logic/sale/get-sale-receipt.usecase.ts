@@ -47,10 +47,6 @@ export class GetSaleReceiptUseCase {
       return Result.error(toReceiptRefusalError(refusal))
     }
 
-    return Result.map(SaleReadMapper.toApiSale(found.data), (sale) => ({
-      receiptNumber: sale.saleNumber,
-      sale,
-      issuedAt: clock().toISOString(),
-    }))
+    return SaleReadMapper.toApiSaleReceipt(found.data, clock())
   }
 }

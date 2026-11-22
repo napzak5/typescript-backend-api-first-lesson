@@ -1,7 +1,3 @@
-export type {
-  PaymentRefundRequest,
-  SaleProcessRequest,
-} from '../../schemas/payment.schema'
 export type { PaymentUseCaseDependencies } from './_shared/dependencies'
 export { paymentNumberFrom } from './_shared/payment-number'
 export {

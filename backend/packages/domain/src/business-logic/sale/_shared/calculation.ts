@@ -1,11 +1,16 @@
+import type { BookingId } from '../../../models/booking'
 import type { DbPaymentMethod } from '../../../models/payment-method'
-import type { ApiSaleCalculateResponse } from '../../../models/sale'
-import type { DbSalon } from '../../../models/salon'
+import type { RequestedCalculation } from '../../../models/sale'
+import type { DbSalon, SalonId } from '../../../models/salon'
 import type { DbService } from '../../../models/service'
 import { MAX_INTEGER } from '../../../schemas/rules'
-import type { SaleCalculateRequest } from '../../../schemas/sale.schema'
 import type { ValidationIssue } from '../../../shared'
-import { amountsOf, type PricedLine, pricedLineOf } from '../../_shared/amounts'
+import {
+  amountsOf,
+  type BillAmounts,
+  type PricedLine,
+  pricedLineOf,
+} from '../../_shared/amounts'
 import { notFound } from '../../booking/_shared/plan'
 
 /**
@@ -50,12 +55,24 @@ export type CalculationReferences = {
 }
 
 /**
+ * What a sale would come to: the salon and the booking it was calculated
+ * for, what its lines come to taken together, and the kinds of payment
+ * method that take its total in one payment (`methodsTaking`).
+ */
+export type CalculatedSale = {
+  salonId: SalonId
+  bookingId: BookingId | null
+  breakdown: BillAmounts
+  recommendedMethods: DbPaymentMethod['method'][]
+}
+
+/**
  * - `calculated`: what the sale would come to
  * - `invalid`: the request refers to something that is not there, comes to
  *   no line, or to more than a sale holds
  */
 export type SaleCalculation =
-  | { type: 'calculated'; calculation: ApiSaleCalculateResponse }
+  | { type: 'calculated'; calculation: CalculatedSale }
   | { type: 'invalid'; issues: ValidationIssue[] }
 
 /** What a request is told that comes to no line. */
@@ -106,7 +123,7 @@ export const methodsTaking = (
  * everything that is not there is reported at once.
  */
 export const planCalculation = (
-  request: SaleCalculateRequest,
+  request: RequestedCalculation,
   references: CalculationReferences,
 ): SaleCalculation => {
   const { salon, booking } = references

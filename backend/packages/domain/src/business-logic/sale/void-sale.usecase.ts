@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
+import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiSaleResponse, parseSaleId } from '../../models/sale'
 import { saleVoidRequestSchema } from '../../schemas/sale.schema'
@@ -41,7 +42,7 @@ export class VoidSaleUseCase {
     const voided = await this.dependencies.saleRepository.voidSale(
       saleId.data,
       reach,
-      request.data,
+      SaleWriteMapper.fromVoidRequest(request.data),
     )
     if (voided.type === 'error') {
       return voided

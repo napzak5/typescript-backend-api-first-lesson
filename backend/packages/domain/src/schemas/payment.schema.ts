@@ -36,6 +36,3 @@ export const paymentRefundRequestSchema = z.strictObject({
   refundAmount: amountOfMoney,
   refundReason: nonBlankText.nullable(),
 }) satisfies z.ZodType<ApiPaymentRefundRequest>
-
-/** A request to refund a payment that passed the rules of its own. */
-export type PaymentRefundRequest = z.infer<typeof paymentRefundRequestSchema>

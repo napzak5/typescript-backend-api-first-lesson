@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  dailyOf,
-  EXPORT_COLUMNS,
-  exportOf,
-  reportOf,
-} from '../business-logic/sales-report'
+import { EXPORT_COLUMNS, exportOf } from '../business-logic/sales-report'
+import { SalesReportReadMapper } from '../mappers/read/sales-report.mapper'
 import { dayFigures, salesFigures, salesPeriod } from './sales-report-fixtures'
 
 /** The lines of a file, without the empty text after the last line end. */
@@ -105,7 +101,7 @@ describe('exportOf', () => {
     const line = linesOf(exportOf(salesPeriod(), days).content)[20]
 
     expect(line).toBe('2026-11-20,13200,1200,300,3,500,12700')
-    expect(dailyOf('2026-11-20', days)).toEqual({
+    expect(SalesReportReadMapper.toApiDailySales('2026-11-20', days)).toEqual({
       date: '2026-11-20',
       sales: 13200,
       transactions: 3,
@@ -127,7 +123,10 @@ describe('exportOf', () => {
 
   it('has columns whose totals are those of the report of the period', () => {
     const figures = salesFigures()
-    const report = reportOf(salesPeriod(), figures)
+    const report = SalesReportReadMapper.toApiSalesReport(
+      salesPeriod(),
+      figures,
+    )
 
     const [sales, tax, discounts, transactions, refunds, net] = columnsOf(
       exportOf(salesPeriod(), figures.days).content,

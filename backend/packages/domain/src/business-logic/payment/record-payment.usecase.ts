@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { PaymentReadMapper } from '../../mappers/read/payment.mapper'
+import { PaymentWriteMapper } from '../../mappers/write/payment.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiPaymentResponse, parseSaleId } from '../../models/sale'
 import { saleProcessRequestSchema } from '../../schemas/payment.schema'
@@ -44,6 +45,8 @@ export class RecordPaymentUseCase {
       return request
     }
 
+    const requested = PaymentWriteMapper.fromSaleProcessRequest(request.data)
+
     const { paymentRepository, paymentNumberIssuer } = this.dependencies
 
     return underFreeNumber(
@@ -53,7 +56,7 @@ export class RecordPaymentUseCase {
         const recorded = await paymentRepository.record(
           saleId.data,
           reach,
-          request.data,
+          requested,
           { transactionNumber },
         )
         if (recorded.type === 'error') {

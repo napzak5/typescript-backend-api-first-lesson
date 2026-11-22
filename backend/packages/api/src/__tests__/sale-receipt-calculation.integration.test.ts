@@ -11,7 +11,7 @@ import {
 } from '@beauty-salon-backend/database'
 import {
   bookingIdSchema,
-  type SaleCalculateRequest,
+  type RequestedCalculation,
   salonIdSchema,
   serviceIdSchema,
 } from '@beauty-salon-backend/domain'
@@ -1461,7 +1461,7 @@ describe('Sale receipts and calculations API', () => {
       salonOf?: string
       bookingOf?: string | null
       servicesOf?: string[]
-    } = {}): SaleCalculateRequest => ({
+    } = {}): RequestedCalculation => ({
       salonId: salonIdSchema.parse(salonOf),
       bookingId: bookingOf === null ? null : bookingIdSchema.parse(bookingOf),
       services: servicesOf.map((id) => serviceIdSchema.parse(id)),

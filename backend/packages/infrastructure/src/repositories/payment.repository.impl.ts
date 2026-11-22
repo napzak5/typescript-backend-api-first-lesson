@@ -11,12 +11,12 @@ import {
   type PaymentOrigin,
   type PaymentRecording,
   type PaymentRefunding,
-  type PaymentRefundRequest,
   planPayment,
   planRefund,
+  type RequestedPayment,
+  type RequestedRefund,
   refusalOfPayment,
   type SaleId,
-  type SaleProcessRequest,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
 import { and, eq } from 'drizzle-orm'
@@ -47,7 +47,7 @@ export class PaymentRepository implements IPaymentRepository {
   async record(
     saleId: SaleId,
     reach: LedgerReach,
-    request: SaleProcessRequest,
+    request: RequestedPayment,
     origin: PaymentOrigin,
   ): Promise<Result<PaymentRecording, DomainError>> {
     return attempt('Failed to record payment', () =>
@@ -131,7 +131,7 @@ export class PaymentRepository implements IPaymentRepository {
   async refund(
     id: PaymentId,
     reach: LedgerReach,
-    request: PaymentRefundRequest,
+    request: RequestedRefund,
   ): Promise<Result<PaymentRefunding, DomainError>> {
     return attempt('Failed to refund payment', () =>
       this.db.transaction(

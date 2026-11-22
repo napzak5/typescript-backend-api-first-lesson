@@ -21,22 +21,22 @@ import {
   PRODUCT_ITEM,
   planSale,
   planSaleChange,
+  type RequestedCalculation,
+  type RequestedSale,
+  type RequestedSaleChange,
+  type RequestedSalesDetail,
+  type RequestedSaleVoid,
   refusalOfChange,
   refusalOfVoid,
-  type SaleCalculateRequest,
   type SaleChangeReferences,
-  type SaleCreateRequest,
   type SaleCreation,
   type SaleId,
   type SaleList,
   type SaleListCriteria,
   type SaleOrigin,
   type SaleReferences,
-  type SalesDetailRequest,
   type SaleUpdate,
-  type SaleUpdateRequest,
   type SaleVoiding,
-  type SaleVoidRequest,
   type SaleWithDetails,
   type SaleWrite,
   SERVICE_ITEM,
@@ -78,7 +78,7 @@ const named = (ids: readonly (string | null)[]): string[] => [
 
 /** The `itemId`s of the lines that are of that type. */
 const itemIdsOf = (
-  details: readonly SalesDetailRequest[],
+  details: readonly RequestedSalesDetail[],
   itemType: string,
 ): string[] =>
   named(
@@ -157,7 +157,7 @@ const soldOf = async (
   tx: DatabaseExecutor,
   salonId: string,
   staffId: string | null,
-  details: readonly SalesDetailRequest[],
+  details: readonly RequestedSalesDetail[],
 ): Promise<Pick<SaleReferences, 'staffIds' | 'serviceIds' | 'productIds'>> => {
   const staffIds = named([staffId, ...details.map((line) => line.staffId)])
   const serviceIds = itemIdsOf(details, SERVICE_ITEM)
@@ -231,7 +231,7 @@ const soldOf = async (
  */
 const referencesOf = async (
   tx: DatabaseExecutor,
-  request: SaleCreateRequest,
+  request: RequestedSale,
 ): Promise<SaleReferences> => {
   const booking = await heldBookingOf(
     tx,
@@ -274,7 +274,7 @@ const referencesOf = async (
 const changeReferencesOf = async (
   tx: DatabaseExecutor,
   { sale, salon }: HeldSale,
-  request: SaleUpdateRequest,
+  request: RequestedSaleChange,
 ): Promise<SaleChangeReferences> => {
   const booking = await heldBookingOf(
     tx,
@@ -343,7 +343,7 @@ const written = async (
  */
 const calculationReferencesOf = async (
   tx: DatabaseExecutor,
-  request: SaleCalculateRequest,
+  request: RequestedCalculation,
 ): Promise<CalculationReferences> => {
   const [salon] = await tx
     .select({ taxRate: salons.taxRate })
@@ -440,7 +440,7 @@ export class SaleRepository implements ISaleRepository {
   constructor(private readonly db: Database) {}
 
   async create(
-    request: SaleCreateRequest,
+    request: RequestedSale,
     origin: SaleOrigin,
   ): Promise<Result<SaleCreation, DomainError>> {
     return attempt('Failed to create sale', () =>
@@ -475,7 +475,7 @@ export class SaleRepository implements ISaleRepository {
   async update(
     id: SaleId,
     reach: LedgerReach,
-    request: SaleUpdateRequest,
+    request: RequestedSaleChange,
   ): Promise<Result<SaleUpdate, DomainError>> {
     return attempt('Failed to update sale', () =>
       this.db.transaction(
@@ -528,7 +528,7 @@ export class SaleRepository implements ISaleRepository {
   async voidSale(
     id: SaleId,
     reach: LedgerReach,
-    request: SaleVoidRequest,
+    request: RequestedSaleVoid,
   ): Promise<Result<SaleVoiding, DomainError>> {
     return attempt('Failed to void sale', () =>
       this.db.transaction(
@@ -647,7 +647,7 @@ export class SaleRepository implements ISaleRepository {
   }
 
   async findCalculationReferences(
-    request: SaleCalculateRequest,
+    request: RequestedCalculation,
   ): Promise<Result<CalculationReferences, DomainError>> {
     return attempt('Failed to read what a calculation refers to', () =>
       this.db.transaction(

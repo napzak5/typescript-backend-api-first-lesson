@@ -1,5 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
+import { SaleReadMapper } from '../../mappers/read/sale.mapper'
+import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiSaleCalculateResponse } from '../../models/sale'
 import { saleCalculateRequestSchema } from '../../schemas/sale.schema'
@@ -34,22 +36,23 @@ export class CalculateSaleUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (!isWithin(reach, request.data.salonId)) {
+    const requested = SaleWriteMapper.fromCalculateRequest(request.data)
+    if (!isWithin(reach, requested.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
 
     const references =
       await this.dependencies.saleRepository.findCalculationReferences(
-        request.data,
+        requested,
       )
     if (references.type === 'error') {
       return references
     }
 
-    return match(planCalculation(request.data, references.data))
+    return match(planCalculation(requested, references.data))
       .returnType<Result<ApiSaleCalculateResponse, DomainError>>()
       .with({ type: 'calculated' }, ({ calculation }) =>
-        Result.success(calculation),
+        Result.success(SaleReadMapper.toApiSaleCalculation(calculation)),
       )
       .with({ type: 'invalid' }, ({ issues }) =>
         Result.error(DomainErrors.validation(MESSAGE, issues)),

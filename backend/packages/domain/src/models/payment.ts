@@ -2,6 +2,7 @@ import type { components } from '@beauty-salon-backend/generated'
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
+import type { PaymentMethodId } from './payment-method'
 import type { DbPaymentTransaction, DbSale } from './sale'
 
 // ID: a UUID that has been checked.
@@ -22,6 +23,25 @@ export type ApiSaleProcessRequest =
   components['schemas']['Models.SaleProcessRequest']
 export type ApiPaymentRefundRequest =
   components['schemas']['Models.PaymentRefundRequest']
+
+/**
+ * The payment a request asks to record: what the till took, and with which
+ * payment method of the salon. Its number, its status and the payment
+ * status of its sale are not among it: they are worked out (`planPayment`).
+ */
+export type RequestedPayment = {
+  paymentMethodId: PaymentMethodId
+  amount: number
+  /** The last four digits of the card; null unless a card was used. */
+  cardLastFour: string | null
+  cardBrand: string | null
+}
+
+/** The refund a request asks for: how much is given back, and why, when it says. */
+export type RequestedRefund = {
+  refundAmount: number
+  refundReason: string | null
+}
 
 /**
  * What the record of a payment writes: the payment, and the payment status

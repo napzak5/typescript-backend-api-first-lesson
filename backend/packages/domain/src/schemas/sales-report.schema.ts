@@ -63,11 +63,20 @@ export const salesReportGetRequestSchema = z
   .strictObject(reportPeriod)
   .check(periodInOrder) satisfies z.ZodType<ApiSalesReportGetRequest>
 
+/** The query of a report that passed the rules of its own. */
+export type SalesReportGetRequest = z.infer<typeof salesReportGetRequestSchema>
+
 export const salesTrendsGetRequestSchema = z
   .strictObject({ ...reportPeriod, period: SalesTrendPeriodTypeSchema })
   .check(periodInOrder) satisfies z.ZodType<ApiSalesTrendsGetRequest>
+
+/** The query of the trends that passed the rules of its own. */
+export type SalesTrendsGetRequest = z.infer<typeof salesTrendsGetRequestSchema>
 
 export const dailySalesGetRequestSchema = z.strictObject({
   salonId: salonIdSchema,
   date: calendarDate,
 }) satisfies z.ZodType<ApiDailySalesGetRequest>
+
+/** The query of the sales of a day that passed the rules of its own. */
+export type DailySalesGetRequest = z.infer<typeof dailySalesGetRequestSchema>

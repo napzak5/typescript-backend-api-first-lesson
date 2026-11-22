@@ -122,9 +122,6 @@ const salesDetailSchema = salesDetailShape.check((context) => {
   }
 }) satisfies z.ZodType<ApiSalesDetail>
 
-/** A line of a sale that passed the rules of its own. */
-export type SalesDetailRequest = z.infer<typeof salesDetailSchema>
-
 /**
  * The lines of a sale have an order, which is how a receipt lists them: a
  * line that has the `sortOrder` of an earlier one is reported.
@@ -207,9 +204,6 @@ export const saleVoidRequestSchema = z.strictObject({
   voidReason: nonBlankText.nullable(),
 }) satisfies z.ZodType<ApiSaleVoidRequest>
 
-/** A request to void a sale that passed the rules of its own. */
-export type SaleVoidRequest = z.infer<typeof saleVoidRequestSchema>
-
 /**
  * A calculation names the salon, the booking whose service lines it counts
  * and the services it adds to them, each of which becomes a line of the
@@ -242,3 +236,6 @@ export const saleSearchRequestSchema = saleSearch.refine(
     startDate === undefined || endDate === undefined || startDate <= endDate,
   { path: ['endDate'], message: 'Must not be earlier than startDate' },
 ) satisfies z.ZodType<ApiSaleSearchRequest>
+
+/** The query of a list that passed the rules of its own. */
+export type SaleSearchRequest = z.infer<typeof saleSearchRequestSchema>

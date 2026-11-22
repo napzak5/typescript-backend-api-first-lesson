@@ -6,12 +6,12 @@ import type {
   RefundPlan,
 } from '../business-logic/payment/_shared/plan'
 import type { LedgerReach } from '../models/booking'
-import type { PaymentId } from '../models/payment'
-import type { DbPaymentTransaction, SaleId } from '../models/sale'
 import type {
-  PaymentRefundRequest,
-  SaleProcessRequest,
-} from '../schemas/payment.schema'
+  PaymentId,
+  RequestedPayment,
+  RequestedRefund,
+} from '../models/payment'
+import type { DbPaymentTransaction, SaleId } from '../models/sale'
 import type { DomainError } from '../shared'
 
 /**
@@ -57,7 +57,7 @@ export interface IPaymentRepository {
   record(
     saleId: SaleId,
     reach: LedgerReach,
-    request: SaleProcessRequest,
+    request: RequestedPayment,
     origin: PaymentOrigin,
   ): Promise<Result<PaymentRecording, DomainError>>
 
@@ -69,6 +69,6 @@ export interface IPaymentRepository {
   refund(
     id: PaymentId,
     reach: LedgerReach,
-    request: PaymentRefundRequest,
+    request: RequestedRefund,
   ): Promise<Result<PaymentRefunding, DomainError>>
 }

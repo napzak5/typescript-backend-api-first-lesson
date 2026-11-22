@@ -1,13 +1,20 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import type { CalculatedSale } from '../../business-logic/sale/_shared/calculation'
+import type { ApiPage, Paging } from '../../models/page'
 import type {
+  ApiSaleCalculateResponse,
+  ApiSaleReceiptResponse,
   ApiSaleResponse,
   ApiSalesDetail,
   DbSalesDetail,
+  SaleId,
   SaleWithDetails,
 } from '../../models/sale'
+import type { SaleList } from '../../repositories/sale.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPage } from './page'
 import { toApiPayment } from './payment.mapper'
 
 /**
@@ -20,6 +27,10 @@ import { toApiPayment } from './payment.mapper'
  * Every property is named, so a column added to one of the tables is not
  * shown by itself. The payments of a sale are mapped as a payment is
  * (`payment.mapper.ts`).
+ *
+ * What is made of a sale and stored nowhere is an answer of this mapper
+ * too: the receipt of a sale, and what a sale would come to before it is
+ * entered.
  */
 
 const convertedDetailColumnsSchema = z.object({
@@ -127,5 +138,50 @@ export const SaleReadMapper = {
 
   toApiSales(sales: SaleWithDetails[]): Result<ApiSaleResponse[], DomainError> {
     return each(sales, toApiSale)
+  },
+
+  /** The sales a list found as a page of it. */
+  toApiSalePage(
+    { sales, total, hasMore }: SaleList,
+    paging: Paging<SaleId>,
+  ): Result<ApiPage<ApiSaleResponse>, DomainError> {
+    return Result.map(SaleReadMapper.toApiSales(sales), (data) =>
+      toApiPage(data, { total, hasMore }, paging),
+    )
+  },
+
+  /**
+   * The receipt of a sale: the sale under its own number, and the moment
+   * the receipt was made, which is another one whenever it is asked for.
+   */
+  toApiSaleReceipt(
+    sale: SaleWithDetails,
+    issuedAt: Date,
+  ): Result<ApiSaleReceiptResponse, DomainError> {
+    return Result.map(toApiSale(sale), (apiSale) => ({
+      receiptNumber: apiSale.saleNumber,
+      sale: apiSale,
+      issuedAt: issuedAt.toISOString(),
+    }))
+  },
+
+  /** What a sale would come to, as it was calculated. */
+  toApiSaleCalculation({
+    salonId,
+    bookingId,
+    breakdown,
+    recommendedMethods,
+  }: CalculatedSale): ApiSaleCalculateResponse {
+    return {
+      salonId,
+      bookingId,
+      breakdown: {
+        subtotal: breakdown.subtotal,
+        discountAmount: breakdown.discountAmount,
+        taxAmount: breakdown.taxAmount,
+        totalAmount: breakdown.totalAmount,
+      },
+      recommendedMethods,
+    }
   },
 }

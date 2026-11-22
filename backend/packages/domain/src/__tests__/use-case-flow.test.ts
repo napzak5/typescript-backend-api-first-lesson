@@ -24,25 +24,20 @@ const NOT_YET = [
   'auth',
   'inventory',
   'inventory-alert',
-  'payment',
   'point',
   'product',
   'purchase-order',
   'review',
   'review-report',
-  'sale',
-  'sales-report',
 ]
 
 /** The read mappers that have no write mapper of their name yet. */
 const WITHOUT_WRITE_MAPPER = [
   'inventory-alert',
   'inventory-report',
-  'payment',
   'point',
   'review',
   'review-report',
-  'sale',
   'session',
   'user',
 ]

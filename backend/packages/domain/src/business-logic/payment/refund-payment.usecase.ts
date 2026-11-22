@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { PaymentReadMapper } from '../../mappers/read/payment.mapper'
+import { PaymentWriteMapper } from '../../mappers/write/payment.mapper'
 import type { Actor } from '../../models/auth'
 import { parsePaymentId } from '../../models/payment'
 import type { ApiPaymentResponse } from '../../models/sale'
@@ -47,7 +48,7 @@ export class RefundPaymentUseCase {
     const refunded = await this.dependencies.paymentRepository.refund(
       paymentId.data,
       reach,
-      request.data,
+      PaymentWriteMapper.fromRefundRequest(request.data),
     )
     if (refunded.type === 'error') {
       return refunded
