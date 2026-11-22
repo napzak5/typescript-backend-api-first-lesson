@@ -1,16 +1,10 @@
+import { CUSTOMER, OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
-import * as z from 'zod'
 import { ADMIN, PORTAL } from './applications'
 import { salonId } from './bookings'
 import { edgesOf } from './checks'
 import { expect, test } from './fixtures'
-import {
-  CUSTOMER,
-  enterCredentials,
-  heading,
-  OWNER,
-  PORTAL_START,
-} from './sign-in'
+import { enterCredentials, heading, PORTAL_START } from './sign-in'
 
 /*
  * What the theme decides for every screen, as the browser draws it: the
@@ -40,8 +34,6 @@ const controlsOfTheSignIn = async (
     button: await heightOf(page.getByRole('button', { name: 'サインイン' })),
   }
 }
-
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
 
 test.describe('the type and the density of the screens', () => {
   test('should draw a page in its own typefaces, fetched from the application and nowhere else', async ({
@@ -138,13 +130,12 @@ test.describe('the type and the density of the screens', () => {
       api,
     }) => {
       // Arrange
-      const [customer] = idSchema.parse(
-        await api.query('select id::text from customers where email = $1', [
-          CUSTOMER,
-        ]),
+      const customer = await api.idOf(
+        'select id::text from customers where email = $1',
+        [CUSTOMER],
       )
       await page.goto(
-        `${ADMIN.origin}/salons/${await salonId(api)}/customers/${customer.id}`,
+        `${ADMIN.origin}/salons/${await salonId(api)}/customers/${customer}`,
       )
       await enterCredentials(page, OWNER, api.seedPassword)
       await expect(heading(page, 'お客様の台帳')).toBeVisible()

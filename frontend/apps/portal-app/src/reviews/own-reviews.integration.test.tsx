@@ -6,6 +6,13 @@ import {
   heading,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  CUSTOMER,
+  KENJI,
+  OPERATOR,
+  OSAKA,
+  VIP,
+} from '@beauty-salon-frontend/testing/seed'
 import { focusManager, onlineManager } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -20,7 +27,6 @@ import {
 } from 'vitest'
 import { renderAt } from '../__tests__/screens'
 import {
-  CUSTOMER,
   giveBack,
   NEWCOMER,
   NEWCOMER_PASSWORD,
@@ -30,14 +36,11 @@ import {
   takeAway,
 } from '../bookings/__tests__/arrangements'
 import {
-  ADMIN,
   answers,
   button,
   changes,
   detailsIn,
   insertReviews,
-  KENJI,
-  OSAKA,
   overall,
   ratingOf,
   region,
@@ -49,7 +52,6 @@ import {
   storedReviewsOf,
   TAKESHI,
   text,
-  VIP,
   visitReviewed,
   visitToReview,
   WRITTEN,
@@ -136,7 +138,7 @@ const sentWith = (fetched: MockInstance<typeof fetch>): unknown[] =>
 
 describe('what a customer wrote, against the API', () => {
   beforeEach(async () => {
-    await signedInAs(KENJI)
+    await signedInAs(KENJI.email)
   })
 
   afterEach(() => {
@@ -226,9 +228,9 @@ describe('what a customer wrote, against the API', () => {
 
     it('should say that the customer has written nothing yet, and lead to the visits that were', async () => {
       // Arrange
-      await signedInAs(VIP)
-      const { reviewId } = await visitReviewed(VIP)
-      await removes(reviewId, VIP)
+      await signedInAs(VIP.email)
+      const { reviewId } = await visitReviewed(VIP.email)
+      await removes(reviewId, VIP.email)
 
       // Act
       renderAt(LIST)
@@ -266,7 +268,7 @@ describe('what a customer wrote, against the API', () => {
 
     it('should show the first reviews, add the next ones below when asked, and move the focus to the salon of the first that was added', async () => {
       // Arrange
-      await insertReviews(KENJI, 12)
+      await insertReviews(KENJI.email, 12)
       renderAt(LIST)
       expect(await listed()).toHaveLength(10)
       expect(statusMessages()).toContain(
@@ -296,7 +298,7 @@ describe('what a customer wrote, against the API', () => {
 
     it('should say that the next reviews did not come, keep those that are there, and add them when asked again', async () => {
       // Arrange
-      await insertReviews(KENJI, 12)
+      await insertReviews(KENJI.email, 12)
       renderAt(LIST)
       expect(await listed()).toHaveLength(10)
       await takeAway('reviews')
@@ -340,8 +342,8 @@ describe('what a customer wrote, against the API', () => {
 
     it('should list the reviews as they are now whenever the list is shown: with what the salon answered meanwhile', async () => {
       // Arrange: the application keeps what it read; the list is read, and left
-      await signedInAs(VIP)
-      const { reviewId } = await visitReviewed(VIP)
+      await signedInAs(VIP.email)
+      const { reviewId } = await visitReviewed(VIP.email)
       const client = asTheApplicationKeeps()
       const { unmount } = renderAt(LIST, { client })
       expect(await listed()).toHaveLength(1)
@@ -485,7 +487,7 @@ describe('what a customer wrote, against the API', () => {
       const visit = await visitReviewed()
       renderAt(LIST)
       await userEvent.click(await removeButtonAt(0))
-      await removes(visit.reviewId, ADMIN)
+      await removes(visit.reviewId, OPERATOR)
 
       // Act
       await userEvent.click(confirmButton())
@@ -784,7 +786,7 @@ describe('what a customer wrote, against the API', () => {
       renderAt(changePathOf(visit.reviewId))
       const user = userEvent.setup()
       await overall()
-      await removes(visit.reviewId, ADMIN)
+      await removes(visit.reviewId, OPERATOR)
 
       // Act
       await user.click(ratingOf('1（不満）'))

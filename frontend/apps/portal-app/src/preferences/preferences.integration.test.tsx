@@ -1,7 +1,7 @@
 import type { ModelsCustomerPreferencesUpdateRequest } from '@beauty-salon-frontend/api-client'
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   asTheApplicationKeeps,
@@ -10,6 +10,13 @@ import {
   queryClientOfATest,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  CUSTOMER,
+  OPERATOR,
+  OSAKA,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { NotificationProvider } from '@beauty-salon-frontend/ui'
 import {
   focusManager,
@@ -32,7 +39,6 @@ import { renderAt } from '../__tests__/screens'
 import {
   accessTokenOf,
   ask,
-  CUSTOMER,
   giveBack,
   HIROSHI,
   MIKA,
@@ -41,7 +47,6 @@ import {
   registerNewcomer,
   signedInAs,
   staffId,
-  TOKYO,
   takeAway,
 } from '../bookings/__tests__/arrangements'
 import { OwnPreferences } from './own-preferences'
@@ -60,10 +65,6 @@ import { OwnPreferences } from './own-preferences'
 
 const TITLE = applications.portal.name
 
-const STYLIST = 'stylist1@beautysalon.jp'
-const ADMIN = 'admin@beautysalon.jp'
-
-const OSAKA = 'Hair & Spa Osaka'
 const YUI = 'Yui Watanabe'
 const AKIKO = 'Akiko Mori'
 const TAKESHI = 'Takeshi Ito'
@@ -102,22 +103,18 @@ const prefers = async (
   expect(answer.status).toBe(200)
 }
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** What a salon writes into its ledger of the customer of the tests, while she looks at a screen. */
 const salonWrites = async (
   changes: ModelsCustomerPreferencesUpdateRequest,
 ): Promise<void> => {
-  const [{ id }] = idSchema.parse(
-    await testApi().query(
-      'select id::text from customers where email = $1 and "deletedAt" is null',
-      [CUSTOMER],
-    ),
+  const id = await idOf(
+    'select id::text from customers where email = $1 and "deletedAt" is null',
+    [CUSTOMER],
   )
   const answer = await change(
     `/customers/${id}/preferences`,
     changes,
-    await accessTokenOf(ADMIN),
+    await accessTokenOf(OPERATOR),
   )
   expect(answer.status).toBe(200)
 }
@@ -135,7 +132,7 @@ const leaves = async (displayName: string): Promise<void> => {
   const answer = await change(
     `/salons/${salonId}/staff/${id}`,
     { isActive: false },
-    await accessTokenOf(ADMIN),
+    await accessTokenOf(OPERATOR),
   )
   expect(answer.status).toBe(200)
 }

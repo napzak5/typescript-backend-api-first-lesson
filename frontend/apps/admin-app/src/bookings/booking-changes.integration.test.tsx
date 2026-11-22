@@ -1,11 +1,23 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  idsOf,
+  salonIdOf,
+  signInAs,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   firstSight,
   heading,
   notifications,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  OWNER,
+  STYLIST,
+  TOKYO,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
@@ -19,16 +31,7 @@ import {
 } from 'vitest'
 import * as z from 'zod'
 import { renderAt } from '../__tests__/screens'
-import {
-  arrange,
-  dayFromToday,
-  OWNER,
-  refuse,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-  YUKI,
-} from './__tests__/arrangements'
+import { arrange, refuse } from './__tests__/arrangements'
 
 const MOVE_TAKEN =
   '担当の時間が、ほかの予約と重なっているため、日時と担当を変えられませんでした。動かしたあとの明細ごとに、重なるほかの予約を確かめました。'
@@ -109,18 +112,12 @@ const storedBooking = async (id: string) =>
     ),
   )[0]
 
-const lineIdsSchema = z.array(z.object({ id: z.uuid() }))
-
 /** The IDs of the lines of a booking, in their order. */
-const lineIdsOf = async (id: string): Promise<string[]> =>
-  lineIdsSchema
-    .parse(
-      await testApi().query(
-        `select id::text from booking_services where "bookingId" = $1 order by "sortOrder"`,
-        [id],
-      ),
-    )
-    .map((line) => line.id)
+const lineIdsOf = (id: string): Promise<string[]> =>
+  idsOf(
+    `select id::text from booking_services where "bookingId" = $1 order by "sortOrder"`,
+    [id],
+  )
 
 /**
  * Puts another line on a booking, after its lines, and sums the booking up

@@ -1,3 +1,4 @@
+import { KENJI, OSAKA, OWNER, VIP } from '@beauty-salon-frontend/testing/seed'
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { PORTAL } from './applications'
@@ -5,7 +6,7 @@ import { HIROSHI, MIKA, part, staffId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { saveButton, text } from './mypage'
-import { accessTokenOf, enterCredentials, heading, OWNER } from './sign-in'
+import { accessTokenOf, enterCredentials, heading } from './sign-in'
 
 /*
  * The customers are the second and the fourth of the seed data. Kenji
@@ -15,10 +16,6 @@ import { accessTokenOf, enterCredentials, heading, OWNER } from './sign-in'
  * owner of the seed data is the owner of that salon.
  */
 
-const KENJI = 'customer2@example.com'
-const VIP = 'vip.customer@example.com'
-
-const OSAKA = 'Hair & Spa Osaka'
 const TAKESHI = 'Takeshi Ito'
 
 const PICTURE = 'https://images.example.com/reviews/after.jpg'
@@ -153,9 +150,9 @@ test.describe('the reviews of a customer, in a browser', () => {
     api,
   }) => {
     // Arrange
-    const visit = await visitOf(api, KENJI, false)
+    const visit = await visitOf(api, KENJI.email, false)
     await page.goto(`${PORTAL.origin}/bookings/${visit.id}`)
-    await enterCredentials(page, KENJI, api.seedPassword)
+    await enterCredentials(page, KENJI.email, api.seedPassword)
 
     // Assert
     await expect(
@@ -357,10 +354,10 @@ test.describe('the reviews of a customer, on a screen as narrow as a phone', () 
   }) => {
     // Arrange: a visit that two members of the staff took, written about
     // once more
-    const visit = await visitOf(api, VIP, true)
-    await remove(request, api, visit.reviewId, VIP)
+    const visit = await visitOf(api, VIP.email, true)
+    await remove(request, api, visit.reviewId, VIP.email)
     await page.goto(`${PORTAL.origin}/bookings/${visit.id}/review`)
-    await enterCredentials(page, VIP, api.seedPassword)
+    await enterCredentials(page, VIP.email, api.seedPassword)
 
     // Assert: everybody who took the booking is offered, the member it
     // was with first

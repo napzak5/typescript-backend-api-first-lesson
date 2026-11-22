@@ -1,11 +1,11 @@
 import { readFile } from 'node:fs/promises'
+import { OWNER, VIP, YUKI } from '@beauty-salon-frontend/testing/seed'
 import type { Download, Locator, Page } from '@playwright/test'
-import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The customers of the seed data tagged vip are Tanaka Yuki and Nakamura
@@ -14,21 +14,11 @@ import { enterCredentials, heading, OWNER } from './sign-in'
  * the API, so the name of a file comes through CORS.
  */
 
-const YUKI = { email: 'customer1@example.com', name: 'Tanaka Yuki' }
-const HIROSHI = { email: 'vip.customer@example.com' }
-
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
-const yukiId = async (api: TestApi): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query(
-      'select id::text from customers where email = $1 and "deletedAt" is null',
-      [YUKI.email],
-    ),
+const yukiId = (api: TestApi): Promise<string> =>
+  api.idOf(
+    'select id::text from customers where email = $1 and "deletedAt" is null',
+    [YUKI.email],
   )
-
-  return id
-}
 
 /** Presses a link or a button as somebody does who works with the keyboard alone. */
 const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
@@ -77,7 +67,7 @@ test.describe('exporting customers, in a browser', () => {
     expect(lines).toHaveLength(4)
     expect(lines[0]).toMatch(/^id,/)
     expect(lines.slice(1, 3).join('\n')).toContain(YUKI.email)
-    expect(lines.slice(1, 3).join('\n')).toContain(HIROSHI.email)
+    expect(lines.slice(1, 3).join('\n')).toContain(VIP.email)
     expect(lines[3]).toBe('')
     await expect(
       page.getByText(`2 人のお客様を、${name} に出力しました。`),

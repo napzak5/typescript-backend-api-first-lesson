@@ -1,10 +1,11 @@
+import { OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The staff ledger as the owner of a salon keeps it, with the keyboard
@@ -29,18 +30,9 @@ const storedOf = async (api: TestApi, email: string) =>
     ),
   )
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** A member of the seed data, by their staff code. */
-const staffIdOf = async (api: TestApi, staffCode: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query('select id::text from staff where "staffCode" = $1', [
-      staffCode,
-    ]),
-  )
-
-  return id
-}
+const staffIdOf = (api: TestApi, staffCode: string): Promise<string> =>
+  api.idOf('select id::text from staff where "staffCode" = $1', [staffCode])
 
 /** Presses a link or a button as somebody does who works with the keyboard alone. */
 const pressWithTheKeyboard = async (control: Locator): Promise<void> => {

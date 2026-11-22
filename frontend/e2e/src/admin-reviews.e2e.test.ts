@@ -1,10 +1,11 @@
+import { MANAGER, OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN, PORTAL } from './applications'
 import { part, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, MANAGER, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The reviews of the salon in Tokyo, from the side of the salon: its
@@ -43,15 +44,12 @@ const stored = async (api: TestApi) =>
     ),
   )[0]
 
-const reviewIdSchema = z.tuple([z.object({ id: z.string() })])
-
 /** The address of the review on the screens of the salon */
 const reviewPathOf = async (api: TestApi): Promise<string> =>
-  `/salons/${await salonId(api)}/reviews/${
-    reviewIdSchema.parse(
-      await api.query('select id::text from reviews where title = $1', [GOOD]),
-    )[0].id
-  }`
+  `/salons/${await salonId(api)}/reviews/${await api.idOf(
+    'select id::text from reviews where title = $1',
+    [GOOD],
+  )}`
 
 /** Presses a link or a button as somebody does who works with the keyboard alone. */
 const pressWithTheKeyboard = async (control: Locator): Promise<void> => {

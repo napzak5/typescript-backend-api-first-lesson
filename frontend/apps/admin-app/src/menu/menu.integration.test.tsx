@@ -1,18 +1,21 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  salonIdOf,
+  signInAs,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import {
   categoryChangeHrefOf,
   categoryEntryHrefOf,
@@ -257,7 +260,7 @@ describe('the menu, against the API', () => {
     const osaka = await salonIdOf(OSAKA)
     await openAs(
       serviceHrefOf(osaka, await serviceIdOf('Spa & Cut Package')),
-      ADMIN,
+      OPERATOR,
     )
 
     // Act

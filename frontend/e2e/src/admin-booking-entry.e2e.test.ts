@@ -1,10 +1,11 @@
+import { KENJI, OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { bookThroughApi, MIKA, openDay, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { ADMIN_START, enterCredentials, heading, OWNER } from './sign-in'
+import { ADMIN_START, enterCredentials, heading } from './sign-in'
 
 /*
  * The bookings a salon puts into its ledger itself, for a customer who
@@ -14,7 +15,7 @@ import { ADMIN_START, enterCredentials, heading, OWNER } from './sign-in'
  * mistake is removed.
  */
 
-const CUSTOMER_NAME = 'Yamamoto Kenji'
+const CUSTOMER_NAME = KENJI.name
 
 const storedSchema = z.array(
   z.object({
@@ -28,13 +29,9 @@ const storedSchema = z.array(
   }),
 )
 
-const idsSchema = z.array(z.object({ id: z.uuid() }))
-
 /** The bookings there are: those of the seed data, before a test puts one in. */
-const bookingIds = async (api: TestApi): Promise<string[]> =>
-  idsSchema
-    .parse(await api.query('select id::text from bookings'))
-    .map(({ id }) => id)
+const bookingIds = (api: TestApi): Promise<string[]> =>
+  api.idsOf('select id::text from bookings')
 
 /**
  * The bookings of the customer that are not among `before`, as the database

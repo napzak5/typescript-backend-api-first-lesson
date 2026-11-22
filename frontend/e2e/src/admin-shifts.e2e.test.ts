@@ -1,3 +1,4 @@
+import { MANAGER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
@@ -5,7 +6,7 @@ import { MIKA, salonId, staffId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
-import { enterCredentials, heading, MANAGER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The shifts of a salon as its manager plans them, with the keyboard

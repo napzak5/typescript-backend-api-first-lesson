@@ -1,2 +1,10 @@
 export { signInAs } from './sign-in'
-export { type TestApi, testApi } from './test-api'
+export {
+  countOf,
+  dayFromToday,
+  idOf,
+  idsOf,
+  salonIdOf,
+  testApi,
+} from './test-api'
+export type { TestApi } from './test-server-client'

@@ -1,22 +1,22 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
   notifications,
   termsOf,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OWNER,
+  STYLIST,
+  THERAPIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
-import {
-  MANAGER,
-  OWNER,
-  salonIdOf,
-  THERAPIST,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import {
   staffChangeHrefOf,
   staffEntryHrefOf,
@@ -492,7 +492,7 @@ describe('the staff ledger, against the API', () => {
     expect(active).toHaveAccessibleDescription(
       expect.stringContaining('ご自身のスタッフ情報は、無効にできません。'),
     )
-    expect(await storedMemberOf('owner@beautysalon.jp')).toMatchObject({
+    expect(await storedMemberOf(OWNER)).toMatchObject({
       isActive: true,
     })
   })
@@ -569,7 +569,7 @@ describe('the staff ledger, against the API', () => {
       'Hiroshi Tanaka さんは、終わっていない予約（下書き、確定待ち、確定、施術中）を担当しているため、削除できません。',
     )
     expect(screen.queryByRole('dialog')).toBeNull()
-    expect(await storedMemberOf('stylist1@beautysalon.jp')).toMatchObject({
+    expect(await storedMemberOf(STYLIST)).toMatchObject({
       removed: false,
     })
   })

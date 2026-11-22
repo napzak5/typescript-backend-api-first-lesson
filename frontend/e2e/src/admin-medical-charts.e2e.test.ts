@@ -1,10 +1,11 @@
+import { KENJI, OWNER, YUKI } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * Yamamoto Kenji of the seed data has no chart: an owner makes it, with a
@@ -13,22 +14,11 @@ import { enterCredentials, heading, OWNER } from './sign-in'
  * chart in the seed data, which is shown on a screen as narrow as a phone.
  */
 
-const KENJI = { email: 'customer2@example.com', name: 'Yamamoto Kenji' }
-
-const YUKI = { email: 'customer1@example.com', name: 'Tanaka Yuki' }
-
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
-const customerId = async (api: TestApi, email: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query(
-      'select id::text from customers where email = $1 and "deletedAt" is null',
-      [email],
-    ),
+const customerId = (api: TestApi, email: string): Promise<string> =>
+  api.idOf(
+    'select id::text from customers where email = $1 and "deletedAt" is null',
+    [email],
   )
-
-  return id
-}
 
 const chartSchema = z.array(
   z.object({

@@ -1,10 +1,11 @@
+import { CUSTOMER, OWNER, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { HIROSHI, LADIES_CUT, salonId, TOKYO } from './bookings'
+import { HIROSHI, LADIES_CUT, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { CUSTOMER, enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * What the counter of a salon does to a sale after it was paid: who took

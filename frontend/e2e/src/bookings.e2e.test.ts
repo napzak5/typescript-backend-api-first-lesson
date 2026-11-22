@@ -1,3 +1,4 @@
+import { CUSTOMER, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
 import {
@@ -12,14 +13,12 @@ import {
   serviceId,
   staffControl,
   staffId,
-  TOKYO,
   time,
   times,
 } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import {
-  CUSTOMER,
   enterCredentials,
   heading,
   NEWCOMER,

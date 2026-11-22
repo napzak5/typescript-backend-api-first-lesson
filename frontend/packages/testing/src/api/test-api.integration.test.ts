@@ -1,9 +1,15 @@
 import { env } from '@beauty-salon-frontend/config'
 import { describe, expect, inject, it } from 'vitest'
 import * as z from 'zod'
-import { testApi } from './test-api'
-
-const SEEDED_CUSTOMER = 'customer1@example.com'
+import { CUSTOMER, OPERATOR, OSAKA, OWNER, TOKYO } from '../seed'
+import {
+  countOf,
+  dayFromToday,
+  idOf,
+  idsOf,
+  salonIdOf,
+  testApi,
+} from './test-api'
 
 const call = (path: string, init?: RequestInit): Promise<Response> =>
   fetch(`${testApi().origin}${path}`, init)
@@ -34,15 +40,8 @@ const signedInSchema = z.object({
   data: z.object({ accessToken: z.string() }),
 })
 
-const countSchema = z.tuple([z.object({ count: z.number() })])
-
-const sessionCount = async (): Promise<number> => {
-  const rows = await testApi().query(
-    'select count(*)::int as count from sessions',
-  )
-
-  return countSchema.parse(rows)[0].count
-}
+const sessionCount = (): Promise<number> =>
+  countOf('select count(*) as count from sessions')
 
 /** Asks the test server as the setup does, for what `testApi()` does not offer. */
 const ask = (method: string, path: string, body?: unknown): Promise<Response> =>
@@ -93,13 +92,11 @@ const preflight = (api: string, origin: string): Promise<Response> =>
  * whose names begin as the name of the database of this file does. Other
  * test servers on the same instance make and drop theirs meanwhile.
  */
-const databaseCount = async (): Promise<number> =>
-  countSchema.parse(
-    await testApi().query(
-      `select count(*)::int as count from pg_database
-       where starts_with(datname, regexp_replace(current_database(), '[^_]+$', ''))`,
-    ),
-  )[0].count
+const databaseCount = (): Promise<number> =>
+  countOf(
+    `select count(*) as count from pg_database
+     where starts_with(datname, regexp_replace(current_database(), '[^_]+$', ''))`,
+  )
 
 describe('the API of a test file', () => {
   it('is where the code under test looks for the API', () => {
@@ -118,16 +115,16 @@ describe('the API of a test file', () => {
   })
 
   it('lets the seeded accounts sign in with the password it names', async () => {
-    const answer = await signIn(SEEDED_CUSTOMER, testApi().seedPassword)
+    const answer = await signIn(CUSTOMER, testApi().seedPassword)
 
     expect(answer.status).toBe(200)
     expect(await answer.json()).toMatchObject({
-      data: { user: { email: SEEDED_CUSTOMER, role: 'customer' } },
+      data: { user: { email: CUSTOMER, role: 'customer' } },
     })
   })
 
   it('answers a wrong password as the application does', async () => {
-    const answer = await signIn(SEEDED_CUSTOMER, 'not the password')
+    const answer = await signIn(CUSTOMER, 'not the password')
 
     expect(answer.status).toBe(401)
     expect(await answer.json()).toMatchObject({ code: '1002' })
@@ -136,7 +133,7 @@ describe('the API of a test file', () => {
   it('runs a statement with its values on the database', async () => {
     const rows = await testApi().query(
       'select role from users where email = $1',
-      ['owner@beautysalon.jp'],
+      [OWNER],
     )
 
     expect(rows).toEqual([{ role: 'owner' }])
@@ -146,6 +143,199 @@ describe('the API of a test file', () => {
     await expect(
       testApi().query('select * from no_such_table'),
     ).rejects.toThrow(/no_such_table/)
+  })
+})
+
+/** A day as the database writes it, so many days from the day it is now in Tokyo. */
+const dayInTokyo = (now: Date, days: number): string => {
+  const [year, month, day] = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo',
+  })
+    .format(now)
+    .split('-')
+    .map(Number)
+
+  return new Date(Date.UTC(year ?? 0, (month ?? 0) - 1, (day ?? 0) + days))
+    .toISOString()
+    .slice(0, 10)
+}
+
+const USER_ID = 'select id::text from users where email = $1'
+const USER_IDS = 'select id::text from users where role::text = $1'
+const SALON_ID = 'select id::text from salons where name = $1'
+
+describe('what a test reads from the database', () => {
+  it('reads the ID of the row a statement returns', async () => {
+    // Arrange
+    const rows = await testApi().query(USER_ID, [OWNER])
+
+    // Act
+    const id = await testApi().idOf(USER_ID, [OWNER])
+
+    // Assert
+    expect(rows).toEqual([{ id }])
+    expect(id).toMatch(/^[0-9a-f-]{36}$/)
+  })
+
+  it('reads the ID of a statement that takes no values', async () => {
+    // Act, Assert
+    expect(
+      await testApi().idOf(
+        `select id::text from salons where name = 'Hair & Spa Osaka'`,
+      ),
+    ).toBe(await testApi().salonIdOf(OSAKA))
+  })
+
+  it.each<[string, string, string, string]>([
+    [
+      'no row',
+      USER_ID,
+      'nobody@example.com',
+      'Not one row but 0: select id::text from users where email = $1 ["nobody@example.com"]',
+    ],
+    [
+      'more than one row',
+      USER_IDS,
+      'staff',
+      'Not one row but 3: select id::text from users where role::text = $1 ["staff"]',
+    ],
+  ])(
+    'fails the test that asks for the ID of %s, with the statement',
+    async (_case, text, value, said) => {
+      // Act, Assert
+      await expect(testApi().idOf(text, [value])).rejects.toThrow(said)
+    },
+  )
+
+  it('fails the test that asks for an ID that is none', async () => {
+    // Act, Assert
+    await expect(
+      testApi().idOf('select email as id from users where email = $1', [OWNER]),
+    ).rejects.toThrow(/Invalid UUID/)
+  })
+
+  it('reads the IDs of the rows a statement returns, in their order', async () => {
+    // Arrange
+    const tokyo = await testApi().salonIdOf(TOKYO)
+    const osaka = await testApi().salonIdOf(OSAKA)
+
+    // Act, Assert
+    expect(
+      await testApi().idsOf('select id::text from salons order by name'),
+    ).toEqual([tokyo, osaka])
+    expect(
+      await testApi().idsOf('select id::text from salons order by name desc'),
+    ).toEqual([osaka, tokyo])
+  })
+
+  it.each<[string, string, number]>([
+    ['one row', OSAKA, 1],
+    ['no row', 'No Such Salon', 0],
+  ])(
+    'reads the IDs of a statement that returns %s',
+    async (_case, name, rows) => {
+      // Act, Assert
+      expect(await testApi().idsOf(SALON_ID, [name])).toHaveLength(rows)
+    },
+  )
+
+  it('fails the test that asks for IDs that are none', async () => {
+    // Act, Assert
+    await expect(
+      testApi().idsOf('select name as id from salons'),
+    ).rejects.toThrow(/Invalid UUID/)
+  })
+
+  it.each<[string, string]>([
+    [
+      'in 64 bits, which arrives as text',
+      'select count(*) as count from salons',
+    ],
+    ['in 32 bits', 'select count(*)::int as count from salons'],
+  ])('reads what a statement counts %s as a number', async (_case, text) => {
+    // Act, Assert
+    expect(await testApi().countOf(text)).toBe(2)
+  })
+
+  it('reads what a statement counts with its values', async () => {
+    // Act, Assert
+    expect(
+      await testApi().countOf(
+        'select count(*) as count from users where role::text = $1',
+        ['staff'],
+      ),
+    ).toBe(3)
+  })
+
+  it.each<[string, string, string]>([
+    [
+      'no row',
+      'select count(*) as count from salons having false',
+      'Not one row but 0: select count(*) as count from salons having false []',
+    ],
+    [
+      'more than one row',
+      'select count(*) as count from salons group by id',
+      'Not one row but 2: select count(*) as count from salons group by id []',
+    ],
+  ])(
+    'fails the test that asks for the count of %s, with the statement',
+    async (_case, text, said) => {
+      // Act, Assert
+      await expect(testApi().countOf(text)).rejects.toThrow(said)
+    },
+  )
+
+  it.each<[number]>([[0], [1], [-1], [45]])(
+    'names the day %d days from today in Tokyo',
+    async (days) => {
+      // Arrange: the day may change in Tokyo while the test asks
+      const before = dayInTokyo(new Date(), days)
+
+      // Act
+      const day = await testApi().dayFromToday(days)
+
+      // Assert
+      expect([before, dayInTokyo(new Date(), days)]).toContain(day)
+    },
+  )
+
+  it('reads the ID of a salon by its name', async () => {
+    // Arrange
+    const rows = await testApi().query(SALON_ID, [TOKYO])
+
+    // Act
+    const tokyo = await testApi().salonIdOf(TOKYO)
+
+    // Assert
+    expect(rows).toEqual([{ id: tokyo }])
+    expect(await testApi().salonIdOf(OSAKA)).not.toBe(tokyo)
+  })
+
+  it('fails the test that asks for a salon that is none, with its name', async () => {
+    // Act, Assert
+    await expect(testApi().salonIdOf('No Such Salon')).rejects.toThrow(
+      'Not one row but 0: select id::text from salons where name = $1 ["No Such Salon"]',
+    )
+  })
+
+  it('reads the same for the functions that a test file calls', async () => {
+    // Act, Assert
+    expect(await idOf(USER_ID, [OWNER])).toBe(
+      await testApi().idOf(USER_ID, [OWNER]),
+    )
+    expect(
+      await countOf(
+        'select count(*) as count from users where role::text = $1',
+        ['staff'],
+      ),
+    ).toBe(3)
+    expect(await idsOf(USER_IDS, ['staff'])).toEqual(
+      await testApi().idsOf(USER_IDS, ['staff']),
+    )
+    expect(await idsOf(USER_IDS, ['staff'])).toHaveLength(3)
+    expect(await dayFromToday(3)).toBe(await testApi().dayFromToday(3))
+    expect(await salonIdOf(OSAKA)).toBe(await testApi().salonIdOf(OSAKA))
   })
 })
 
@@ -414,7 +604,7 @@ describe('the code of an authenticator app', () => {
   }> => {
     const password = testApi().seedPassword
     const signedIn = signedInSchema.parse(
-      await (await signIn(SEEDED_CUSTOMER, password)).json(),
+      await (await signIn(CUSTOMER, password)).json(),
     )
     const asOwner = (path: string, body: unknown): Promise<Response> =>
       call(path, {
@@ -440,12 +630,12 @@ describe('the code of an authenticator app', () => {
     const password = testApi().seedPassword
     const { secret, usedCode } = await setUpTwoFactor()
 
-    const withoutCode = await signIn(SEEDED_CUSTOMER, password)
+    const withoutCode = await signIn(CUSTOMER, password)
     // The very code of the set-up: asked for again, it would be that of the
     // next 30 seconds once they have begun, which is not used yet
-    const withUsedCode = await signIn(SEEDED_CUSTOMER, password, usedCode)
+    const withUsedCode = await signIn(CUSTOMER, password, usedCode)
     const withNextCode = await signIn(
-      SEEDED_CUSTOMER,
+      CUSTOMER,
       password,
       await testApi().authenticatorCode(secret, 1),
     )
@@ -464,7 +654,6 @@ describe('the code of an authenticator app', () => {
 })
 
 describe('the files of an API', () => {
-  const SEEDED_ADMINISTRATOR = 'admin@beautysalon.jp'
   const issuedSchema = z.object({
     data: z.object({
       attachment: z.object({ id: z.string() }),
@@ -487,7 +676,7 @@ describe('the files of an API', () => {
     (path: string, init?: RequestInit) => Promise<Response>
   > => {
     const signedIn = signedInSchema.parse(
-      await (await signIn(SEEDED_ADMINISTRATOR, testApi().seedPassword)).json(),
+      await (await signIn(OPERATOR, testApi().seedPassword)).json(),
     )
 
     return (path, init) =>
@@ -638,7 +827,7 @@ describe('an API that is removed', () => {
 describe('what a test leaves behind', () => {
   // The two tests are one check in two steps: the second sees nothing of the first
   it('is there until the test ends', async () => {
-    await signIn(SEEDED_CUSTOMER, testApi().seedPassword)
+    await signIn(CUSTOMER, testApi().seedPassword)
     localStorage.setItem('kept', 'by the first test')
     sessionStorage.setItem('kept', 'by the first test')
 

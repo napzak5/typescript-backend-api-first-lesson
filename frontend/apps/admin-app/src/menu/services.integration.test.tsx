@@ -1,19 +1,18 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import { heading, termsOnceThere } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import {
   menuHrefOf,
   serviceChangeHrefOf,
@@ -272,7 +271,7 @@ describe('the services of the menu, against the API', () => {
     const osaka = await salonIdOf(OSAKA)
     await openAs(
       serviceChangeHrefOf(osaka, await serviceIdOf('Spa & Cut Package')),
-      ADMIN,
+      OPERATOR,
     )
     await openedForm('サービスを直す')
 
@@ -363,7 +362,7 @@ describe('the services of the menu, against the API', () => {
       const user = userEvent.setup()
       await openAs(
         serviceChangeHrefOf(await salonIdOf(salon), await serviceIdOf(name)),
-        ADMIN,
+        OPERATOR,
       )
       await openedForm('サービスを直す')
 
@@ -550,7 +549,7 @@ describe('the services of the menu, against the API', () => {
     const { container } = renderAt(
       serviceChangeHrefOf(osaka, await serviceIdOf('Spa & Cut Package')),
     )
-    await signInAs(ADMIN)
+    await signInAs(OPERATOR)
 
     // Act
     await openedForm('サービスを直す')

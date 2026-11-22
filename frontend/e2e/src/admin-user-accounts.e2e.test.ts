@@ -1,3 +1,4 @@
+import { CUSTOMER, OPERATOR, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN, PORTAL } from './applications'
@@ -6,10 +7,8 @@ import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { pressWithTheKeyboard } from './sales'
 import {
-  CUSTOMER,
   enterCredentials,
   heading,
-  OPERATOR,
   PORTAL_START,
   signOutButton,
 } from './sign-in'
@@ -24,47 +23,25 @@ import {
  * are shown on a screen as narrow as a phone as well.
  */
 
-const TOKYO = 'Beauty Studio Tokyo'
-
-const idSchema = z.tuple([z.object({ id: z.string() })])
-
 /** The address of the customer of the seed data on the screens of the salon in Tokyo */
-const customerPathOf = async (api: TestApi): Promise<string> => {
-  const [salon] = idSchema.parse(
-    await api.query('select id::text from salons where name = $1', [TOKYO]),
-  )
-  const [customer] = idSchema.parse(
-    await api.query('select id::text from customers where email = $1', [
-      CUSTOMER,
-    ]),
-  )
-
-  return `/salons/${salon.id}/customers/${customer.id}`
-}
+const customerPathOf = async (api: TestApi): Promise<string> =>
+  `/salons/${await api.salonIdOf(TOKYO)}/customers/${await api.idOf(
+    'select id::text from customers where email = $1',
+    [CUSTOMER],
+  )}`
 
 /** The address of the account of the customer of the seed data */
 const accountPathOf = async (api: TestApi): Promise<string> =>
-  `/users/${
-    idSchema.parse(
-      await api.query('select id::text from users where email = $1', [
-        CUSTOMER,
-      ]),
-    )[0].id
-  }`
+  `/users/${await api.idOf('select id::text from users where email = $1', [
+    CUSTOMER,
+  ])}`
 
 /** The address of the login account of the first stylist of the seed data, on the screens of the salon in Tokyo */
-const staffAccountPathOf = async (api: TestApi): Promise<string> => {
-  const [salon] = idSchema.parse(
-    await api.query('select id::text from salons where name = $1', [TOKYO]),
-  )
-  const [member] = idSchema.parse(
-    await api.query('select id::text from staff where "staffCode" = $1', [
-      'STF001',
-    ]),
-  )
-
-  return `/salons/${salon.id}/staff/${member.id}/account`
-}
+const staffAccountPathOf = async (api: TestApi): Promise<string> =>
+  `/salons/${await api.salonIdOf(TOKYO)}/staff/${await api.idOf(
+    'select id::text from staff where "staffCode" = $1',
+    ['STF001'],
+  )}/account`
 
 /** Lets wrong passwords have locked the account of the customer, who signs in with two factors. */
 const arrangeLockedWithTwoFactors = (api: TestApi): Promise<unknown> =>

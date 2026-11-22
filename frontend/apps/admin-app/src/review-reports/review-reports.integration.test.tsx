@@ -1,23 +1,23 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   goBack,
   heading,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  refuse,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
+import { refuse } from '../bookings/__tests__/arrangements'
 import { reviewHrefOf, reviewReportsHrefOf, reviewsHrefOf } from '../navigation'
 import {
   reviewIdOf,
@@ -136,7 +136,7 @@ describe('the reports of reviews', () => {
     const user = userEvent.setup()
     const salonId = await salonIdOf(OSAKA)
     const { received } = await reportOf(GREAT)
-    await openAs(reviewsHrefOf(salonId), ADMIN)
+    await openAs(reviewsHrefOf(salonId), OPERATOR)
     await heading('レビュー')
 
     // Act
@@ -180,7 +180,7 @@ describe('the reports of reviews', () => {
     const user = userEvent.setup()
     const salonId = await salonIdOf(OSAKA)
     const { received } = await reportOf(GREAT)
-    await openAs(reviewsHrefOf(salonId), ADMIN)
+    await openAs(reviewsHrefOf(salonId), OPERATOR)
     await screen.findByRole('link', { name: GREAT })
     await user.click(screen.getByRole('link', { name: '通報を見る' }))
     await user.click(await screen.findByRole('link', { name: GREAT }))
@@ -194,7 +194,7 @@ describe('the reports of reviews', () => {
     expect(await screen.findByText('通報を却下しました。')).toBeVisible()
     expect(screen.queryByRole('dialog')).toBeNull()
     const report = await reportOf(GREAT)
-    expect(report).toMatchObject({ status: 'dismissed', resolvedBy: ADMIN })
+    expect(report).toMatchObject({ status: 'dismissed', resolvedBy: OPERATOR })
     expect((await storedReviewOf(GREAT)).reportCount).toBe(0)
     await waitFor(() =>
       expect(rowsOf('このレビューへの通報')).toEqual([
@@ -236,9 +236,9 @@ describe('the reports of reviews', () => {
     // Arrange
     const user = userEvent.setup()
     const address = reviewReportsHrefOf(await salonIdOf(OSAKA))
-    await openAs(address, ADMIN)
+    await openAs(address, OPERATOR)
     await screen.findByRole('link', { name: GREAT })
-    await reportsDismissedMeanwhile(GREAT, ADMIN)
+    await reportsDismissedMeanwhile(GREAT, OPERATOR)
 
     // Act
     await user.click(screen.getByRole('button', { name: '表示する' }))
@@ -253,7 +253,7 @@ describe('the reports of reviews', () => {
     const user = userEvent.setup()
     const address = reviewReportsHrefOf(await salonIdOf(TOKYO))
     const { received, dismissed } = await reportOf(EXCELLENT)
-    await openAs(address, ADMIN)
+    await openAs(address, OPERATOR)
     expect(await screen.findByText('未処理の通報はありません')).toBeVisible()
     const state = screen.getByRole('combobox', { name: '状態' })
 
@@ -305,9 +305,9 @@ describe('the reports of reviews', () => {
   it('should say that another administrator dismissed the report meanwhile, and show it dismissed', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openReviewAs(ADMIN)
+    await openReviewAs(OPERATOR)
     const dialog = await askToDismiss(user)
-    await reportsDismissedMeanwhile(GREAT, ADMIN)
+    await reportsDismissedMeanwhile(GREAT, OPERATOR)
 
     // Act
     await user.click(within(dialog).getByRole('button', { name: '却下する' }))
@@ -335,7 +335,7 @@ describe('the reports of reviews', () => {
   it('should say in the dialog that the report could not be dismissed when the database fails', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openReviewAs(ADMIN)
+    await openReviewAs(OPERATOR)
     const dialog = await askToDismiss(user)
     await refuse('update', 'review_reports')
 
@@ -351,7 +351,7 @@ describe('the reports of reviews', () => {
   it('should say that the review is gone when it was removed before its report was dismissed', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openReviewAs(ADMIN)
+    await openReviewAs(OPERATOR)
     const dialog = await askToDismiss(user)
     await reviewRemovedMeanwhile(GREAT)
 
@@ -366,7 +366,7 @@ describe('the reports of reviews', () => {
     // Arrange
     const user = userEvent.setup()
     const salonId = await salonIdOf(OSAKA)
-    await openAs(reviewsHrefOf(salonId), ADMIN)
+    await openAs(reviewsHrefOf(salonId), OPERATOR)
     await screen.findByRole('link', { name: GREAT })
     await user.click(screen.getByRole('link', { name: '通報を見る' }))
     await user.click(await screen.findByRole('link', { name: GREAT }))
@@ -420,7 +420,7 @@ describe('the reports of reviews', () => {
   it('should say that the review is gone when it was removed before the administrator removed it', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openReviewAs(ADMIN)
+    await openReviewAs(OPERATOR)
     const dialog = await askToRemove(user)
     await reviewRemovedMeanwhile(GREAT)
 
@@ -434,7 +434,7 @@ describe('the reports of reviews', () => {
   it('should say in the dialog that the review could not be removed when the database fails', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openReviewAs(ADMIN)
+    await openReviewAs(OPERATOR)
     const dialog = await askToRemove(user)
     await refuse('delete', 'reviews')
 
@@ -523,7 +523,7 @@ describe('the reports of reviews', () => {
     ],
   ])('should show %s accessibly', async (_, pathOf, opened) => {
     // Arrange
-    await openAs(await pathOf(), ADMIN)
+    await openAs(await pathOf(), OPERATOR)
     await opened()
 
     // Act

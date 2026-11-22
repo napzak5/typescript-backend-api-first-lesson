@@ -1,29 +1,31 @@
 import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   firstSight,
   heading,
   notifications,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  KENJI,
+  OSAKA,
+  OWNER,
+  SAKURA,
+  STYLIST,
+  TOKYO,
+  VIP,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
-import {
-  arrange,
-  dayFromToday,
-  KENJI,
-  OSAKA,
-  OWNER,
-  refuse,
-  SAKURA,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-  YUKI,
-} from '../bookings/__tests__/arrangements'
+import { arrange, refuse } from '../bookings/__tests__/arrangements'
 import {
   arrangeCustomers,
   arrangePreferences,
@@ -36,8 +38,6 @@ import {
   storedCustomerOf,
   writeNoteMeanwhile,
 } from './__tests__/arrangements'
-
-const HIROSHI = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 
 const field = (name: string): HTMLElement => screen.getByLabelText(name)
 
@@ -120,7 +120,7 @@ const chooseReferrer = async (
 }
 
 /** The customers of the seed data, in alphabetical order */
-const EVERYONE = [YUKI.name, KENJI.name, SAKURA.name, HIROSHI.name].toSorted()
+const EVERYONE = [YUKI.name, KENJI.name, SAKURA.name, VIP.name].toSorted()
 
 const NEW_EMAIL = 'hanako.yamada@example.com'
 
@@ -210,7 +210,7 @@ describe('the ledger of the customers, against the API', () => {
         ),
       )
       await waitFor(() =>
-        expect(namesIn('条件に合うお客様')).toEqual([HIROSHI.name]),
+        expect(namesIn('条件に合うお客様')).toEqual([VIP.name]),
       )
 
       // Act

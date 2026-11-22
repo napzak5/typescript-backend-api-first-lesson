@@ -1,23 +1,23 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   heading,
   notifications,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  KENJI,
+  OWNER,
+  STYLIST,
+  TOKYO,
+  VIP,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
-import {
-  KENJI,
-  OWNER,
-  refuse,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-  YUKI,
-} from '../bookings/__tests__/arrangements'
+import { refuse } from '../bookings/__tests__/arrangements'
 import { customerImportHrefOf, customersHrefOf } from '../navigation'
 import {
   arrangeCustomers,
@@ -38,8 +38,6 @@ import {
  * addresses of mail of its own. A member of the staff chooses and gives
  * tags, an owner removes.
  */
-
-const HIROSHI = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 
 /** The rows of a table, a list of the texts of their cells each. */
 const rowsOf = (name: string): string[][] =>
@@ -403,7 +401,7 @@ describe('writing customers at once, against the API', () => {
       await theLedger()
 
       // Act
-      await chooseInLedger(user, YUKI.name, HIROSHI.name, KENJI.name)
+      await chooseInLedger(user, YUKI.name, VIP.name, KENJI.name)
       await retag(user, 3, '外す', 'vip')
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
@@ -412,7 +410,7 @@ describe('writing customers at once, against the API', () => {
       expect((await storedCustomerOf(YUKI.email)).tags).toEqual([
         'organic-preference',
       ])
-      expect((await storedCustomerOf(HIROSHI.email)).tags).toEqual([
+      expect((await storedCustomerOf(VIP.email)).tags).toEqual([
         'platinum',
         'high-value',
       ])
@@ -423,12 +421,12 @@ describe('writing customers at once, against the API', () => {
       // Arrange
       const user = userEvent.setup()
       const yuki = await storedCustomerOf(YUKI.email)
-      const hiroshi = await storedCustomerOf(HIROSHI.email)
+      const hiroshi = await storedCustomerOf(VIP.email)
       await openAt(customersHrefOf, STYLIST)
       await theLedger()
 
       // Act
-      await chooseInLedger(user, YUKI.name, HIROSHI.name)
+      await chooseInLedger(user, YUKI.name, VIP.name)
       await retag(user, 2, '付ける', 'vip')
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
 
@@ -437,7 +435,7 @@ describe('writing customers at once, against the API', () => {
         '選んだお客様には、もうタグ「vip」が付いています。',
       )
       expect(await storedCustomerOf(YUKI.email)).toEqual(yuki)
-      expect(await storedCustomerOf(HIROSHI.email)).toEqual(hiroshi)
+      expect(await storedCustomerOf(VIP.email)).toEqual(hiroshi)
     })
 
     it('should refuse two tags at once, at the field of the dialog', async () => {

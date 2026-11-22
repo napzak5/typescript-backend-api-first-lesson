@@ -9,6 +9,7 @@ import {
   queryClientOfATest,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
+import { CUSTOMER, STYLIST, YUKI } from '@beauty-salon-frontend/testing/seed'
 import { focusManager, onlineManager } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -26,7 +27,6 @@ import { renderAt } from '../__tests__/screens'
 import {
   accessTokenOf,
   ask,
-  CUSTOMER,
   giveBack,
   NEWCOMER,
   NEWCOMER_PASSWORD,
@@ -46,8 +46,6 @@ import {
  */
 
 const TITLE = applications.portal.name
-
-const STYLIST = 'stylist1@beautysalon.jp'
 
 // --- What the tests ask of the database
 
@@ -164,7 +162,7 @@ const GONE =
 
 /** What the page says of the customer of the tests as the seed data has her. */
 const SEEDED = {
-  お名前: 'Tanaka Yuki',
+  お名前: YUKI.name,
   フリガナ: 'タナカ ユキ',
   メールアドレス: CUSTOMER,
   電話番号: '+81-90-1234-5678',

@@ -1,10 +1,11 @@
+import { KENJI, OWNER, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { HIROSHI, LADIES_CUT, salonId, TOKYO } from './bookings'
+import { HIROSHI, LADIES_CUT, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The treatment record of a visit, as the staff write it beside the chair:
@@ -16,17 +17,12 @@ import { enterCredentials, heading, OWNER } from './sign-in'
  * as a phone.
  */
 
-const KENJI = { email: 'customer2@example.com', name: 'Yamamoto Kenji' }
-
 const MASK = { code: 'TREAT001', name: 'Intensive Hair Mask 250ml（TREAT001）' }
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** Puts the booking of the tests into the database, its treatment begun. */
-const arrangeVisit = async (api: TestApi): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query(
-      `with picked as (
+const arrangeVisit = (api: TestApi): Promise<string> =>
+  api.idOf(
+    `with picked as (
          select salons.id as "salonId", customers.id as "customerId", staff.id as "staffId",
                 services.id as "serviceId", services.price, services.duration,
                 (now() at time zone 'Asia/Tokyo')::date as day
@@ -54,12 +50,8 @@ const arrangeVisit = async (api: TestApi): Promise<string> => {
          from made cross join picked
        )
        select id::text from made`,
-      [TOKYO, HIROSHI, LADIES_CUT, KENJI.email],
-    ),
+    [TOKYO, HIROSHI, LADIES_CUT, KENJI.email],
   )
-
-  return id
-}
 
 const lotSchema = z.tuple([z.object({ lotNumber: z.string() })])
 

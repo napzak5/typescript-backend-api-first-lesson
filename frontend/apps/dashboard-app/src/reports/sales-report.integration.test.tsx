@@ -4,27 +4,31 @@ import {
   type SavedFile,
   savedFiles,
 } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+} from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
   notifications,
   termsOnceThere,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  ADMIN,
   arrangeSale,
-  dayFromToday,
-  MANAGER,
-  OSAKA,
-  OWNER,
   paySale,
   removeTokyo,
-  salonIdOf,
-  TOKYO,
   voidSale,
 } from '../__tests__/arrangements'
 import {
@@ -338,7 +342,7 @@ describe('the sales report, against the API', () => {
     const user = userEvent.setup()
     await sellToday()
     renderAt(reportsHrefOf(await salonIdOf(TOKYO)))
-    await signInAs(ADMIN)
+    await signInAs(OPERATOR)
     await screen.findByRole('region', { name: '期間の合計' })
     await removeTokyo()
 
@@ -356,7 +360,7 @@ describe('the sales report, against the API', () => {
     // Arrange
     await sellToday()
     renderAt(reportsHrefOf(await salonIdOf(TOKYO)))
-    await signInAs(ADMIN)
+    await signInAs(OPERATOR)
     await screen.findByRole('region', { name: '期間の合計' })
     await removeTokyo()
 
@@ -401,7 +405,7 @@ describe('the sales report, against the API', () => {
     const user = userEvent.setup()
     await sellToday()
     renderAt('/')
-    await signInAs(ADMIN)
+    await signInAs(OPERATOR)
     expect(await heading('サロンを選ぶ')).toHaveFocus()
     expect(
       screen.getByText('売上レポートを開くサロンを選びます。'),

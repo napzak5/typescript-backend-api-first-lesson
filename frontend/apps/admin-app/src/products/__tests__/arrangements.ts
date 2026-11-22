@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -56,20 +56,16 @@ export const storedProductsOf = async (salon: string) =>
     ),
   )
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** The ID of a product of a salon that was not removed, by its code. */
 export const productIdOf = async (
   salon: string,
   productCode: string,
 ): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `select p.id::text from products p join salons s on s.id = p."salonId"
+  idOf(
+    `select p.id::text from products p join salons s on s.id = p."salonId"
        where s.name = $1 and p."productCode" = $2 and p."deletedAt" is null`,
-      [salon, productCode],
-    ),
-  )[0].id
+    [salon, productCode],
+  )
 
 const removedSchema = z.array(z.object({ removed: z.boolean() }))
 

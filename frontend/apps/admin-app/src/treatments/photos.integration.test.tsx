@@ -1,24 +1,27 @@
 import { periodNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+} from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
   notifications,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  OWNER,
+  SAKURA,
+  STYLIST,
+  TOKYO,
+  VIP,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
-import {
-  dayFromToday,
-  OWNER,
-  SAKURA,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-  YUKI,
-} from '../bookings/__tests__/arrangements'
 import {
   treatmentHrefOf,
   treatmentPhotosHrefOf,
@@ -41,8 +44,6 @@ import {
  * which were written when the data was seeded. An owner works, unless a
  * test says otherwise; another account did something meanwhile.
  */
-
-const VIP = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 
 /** The address the seed data keeps a photo of a record at */
 const seedPhotoOf = (treatmentId: string, file: string): string =>

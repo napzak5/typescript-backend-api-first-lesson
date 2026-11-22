@@ -1,24 +1,23 @@
 import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { dayFromToday, salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
   termsOf,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  dayFromToday,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import {
   displayNameOf,
   rowIdOf,
@@ -603,7 +602,7 @@ describe('the screens of the purchase orders', () => {
   it('should let an administrator make an order, naming nobody', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openAs(purchaseOrderEntryHrefOf(await salonIdOf(TOKYO)), ADMIN)
+    await openAs(purchaseOrderEntryHrefOf(await salonIdOf(TOKYO)), OPERATOR)
     await openedEntry()
     await fillIn(user, 'ColorTech Japan', [[POWDER, '4']])
 
@@ -651,7 +650,7 @@ describe('the screens of the purchase orders', () => {
           await salonIdOf(OSAKA),
           await orderIdOf('PO-SEED-0001'),
         ),
-      ADMIN,
+      OPERATOR,
       'アドレスが正しいか、お確かめください。',
     ],
     [
@@ -676,7 +675,7 @@ describe('the screens of the purchase orders', () => {
   it('should say that a salon has no orders, and that it keeps no stock to order', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openAs(purchaseOrdersHrefOf(await salonIdOf(OSAKA)), ADMIN)
+    await openAs(purchaseOrdersHrefOf(await salonIdOf(OSAKA)), OPERATOR)
     expect(await screen.findByText('発注はありません')).toBeVisible()
 
     // Act
@@ -719,7 +718,7 @@ describe('the screens of the purchase orders', () => {
     ],
     [
       'a salon without orders',
-      ADMIN,
+      OPERATOR,
       async () => purchaseOrdersHrefOf(await salonIdOf(OSAKA)),
       async () => {
         await screen.findByText('発注はありません')

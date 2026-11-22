@@ -1,25 +1,24 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   goBack,
   goTo,
   heading,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OWNER,
+  STYLIST,
+  TOKYO,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OWNER,
-  refuse,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-  YUKI,
-} from '../bookings/__tests__/arrangements'
+import { refuse } from '../bookings/__tests__/arrangements'
 import { customerIdOf } from '../customers/__tests__/arrangements'
 import {
   customerHrefOf,
@@ -55,7 +54,7 @@ import {
 
 /** Opens the account of an address as the administrator, and waits for its record. */
 const openAccountOf = async (email: string): Promise<void> => {
-  await openAs(userAccountHrefOf(await userIdOf(email)), ADMIN)
+  await openAs(userAccountHrefOf(await userIdOf(email)), OPERATOR)
   await screen.findByRole('region', { name: 'アカウントの状態' })
 }
 
@@ -118,7 +117,7 @@ describe('the accounts of the users, against the API', () => {
       const user = userEvent.setup()
       await openAs(
         customerHrefOf(await salonIdOf(TOKYO), await customerIdOf(YUKI.email)),
-        ADMIN,
+        OPERATOR,
       )
       const part = await screen.findByRole('region', {
         name: 'ログインアカウント',
@@ -165,7 +164,7 @@ describe('the accounts of the users, against the API', () => {
       // Act
       await openAs(
         customerHrefOf(await salonIdOf(TOKYO), await customerIdOf(YUKI.email)),
-        ADMIN,
+        OPERATOR,
       )
 
       // Assert
@@ -183,7 +182,7 @@ describe('the accounts of the users, against the API', () => {
       const user = userEvent.setup()
       await openAs(
         staffAccountHrefOf(await salonIdOf(TOKYO), await staffIdOf(TANAKA)),
-        ADMIN,
+        OPERATOR,
       )
       const record = await screen.findByRole('region', {
         name: 'ログインアカウント',
@@ -270,7 +269,7 @@ describe('the accounts of the users, against the API', () => {
       ],
     ])('should say that %s is not found', async (_, pathOf) => {
       // Act
-      await openAs(await pathOf(), ADMIN)
+      await openAs(await pathOf(), OPERATOR)
 
       // Assert
       expect(
@@ -443,7 +442,7 @@ describe('the accounts of the users, against the API', () => {
         await salonIdOf(TOKYO),
         await staffIdOf(TANAKA),
       )
-      await openAs(staffAccount, ADMIN)
+      await openAs(staffAccount, OPERATOR)
       const record = await screen.findByRole('region', {
         name: 'ログインアカウント',
       })
@@ -527,13 +526,13 @@ describe('the accounts of the users, against the API', () => {
 
   it('should offer an administrator neither on their own account', async () => {
     // Arrange
-    await openAs('/', ADMIN)
+    await openAs('/', OPERATOR)
     await screen.findByRole('link', { name: 'サロンを選ぶ' })
-    await arrangeLock(ADMIN)
-    await arrangeTwoFactor(ADMIN)
+    await arrangeLock(OPERATOR)
+    await arrangeTwoFactor(OPERATOR)
 
     // Act
-    goTo(userAccountHrefOf(await userIdOf(ADMIN)))
+    goTo(userAccountHrefOf(await userIdOf(OPERATOR)))
 
     // Assert
     expect(await screen.findByText(OWN_ACCOUNT)).toBeVisible()
@@ -559,7 +558,7 @@ describe('the accounts of the users, against the API', () => {
             await salonIdOf(TOKYO),
             await customerIdOf(YUKI.email),
           ),
-          ADMIN,
+          OPERATOR,
         )
         return screen.findByRole('region', { name: 'ログインアカウント' })
       },

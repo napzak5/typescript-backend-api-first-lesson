@@ -1,11 +1,24 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  countOf,
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   firstSight,
   heading,
   notifications,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  KENJI,
+  OWNER,
+  STYLIST,
+  TOKYO,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
@@ -19,17 +32,7 @@ import {
 } from 'vitest'
 import * as z from 'zod'
 import { renderAt } from '../__tests__/screens'
-import {
-  arrange,
-  dayFromToday,
-  KENJI,
-  OWNER,
-  refuse,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-  YUKI,
-} from './__tests__/arrangements'
+import { arrange, refuse } from './__tests__/arrangements'
 
 const TAKEN =
   '担当の時間が、ほかの予約と重なっているため、予約を入れられませんでした。明細ごとに、担当の空きを確かめ直しました。'
@@ -111,12 +114,8 @@ const storedLines = async (id: string) =>
     ),
   )
 
-const countSchema = z.tuple([z.object({ count: z.number() })])
-
 const bookingCount = async (): Promise<number> =>
-  countSchema.parse(
-    await testApi().query('select count(*)::int as count from bookings'),
-  )[0].count
+  countOf('select count(*)::int as count from bookings')
 
 /** The days from today the tests put their bookings on: no seeded booking is then */
 const DAY = 5

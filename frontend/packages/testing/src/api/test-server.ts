@@ -5,6 +5,7 @@
  */
 export {
   type StartedTestApi,
+  type TestApi,
   type TestApiOptions,
   type TestMail,
   type TestServer,

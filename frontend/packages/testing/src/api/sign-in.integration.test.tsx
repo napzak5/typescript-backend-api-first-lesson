@@ -1,5 +1,6 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { OWNER } from '../seed'
 import { signInAs } from './sign-in'
 import { testApi } from './test-api'
 
@@ -40,13 +41,13 @@ describe('signInAs', () => {
     const view = render(<p>読んでいます</p>)
 
     // Act
-    const signedIn = signInAs('owner@beautysalon.jp')
+    const signedIn = signInAs(OWNER)
     view.rerender(<SignInForm />)
     await signedIn
 
     // Assert
     expect(sent).toEqual([
-      ['email', 'owner@beautysalon.jp'],
+      ['email', OWNER],
       ['password', testApi().seedPassword],
     ])
   })

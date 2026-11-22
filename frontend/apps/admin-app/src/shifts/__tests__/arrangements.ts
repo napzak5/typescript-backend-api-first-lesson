@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idsOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -58,17 +58,11 @@ export const storedScheduleOf = async (staffCode: string) =>
     ),
   )
 
-const idsSchema = z.array(z.object({ id: z.uuid() }))
-
 /** The rows of the schedule of a member as they were written: a schedule that was replaced has new ones. */
-export const scheduleRowIdsOf = async (staffCode: string): Promise<string[]> =>
-  idsSchema
-    .parse(
-      await testApi().query(
-        `select id::text from staff_schedules
-         where "staffId" = (select id from staff where "staffCode" = $1)
-         order by id`,
-        [staffCode],
-      ),
-    )
-    .map(({ id }) => id)
+export const scheduleRowIdsOf = (staffCode: string): Promise<string[]> =>
+  idsOf(
+    `select id::text from staff_schedules
+     where "staffId" = (select id from staff where "staffCode" = $1)
+     order by id`,
+    [staffCode],
+  )

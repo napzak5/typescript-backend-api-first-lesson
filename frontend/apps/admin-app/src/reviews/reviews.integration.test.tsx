@@ -1,19 +1,21 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  SAKURA,
+  STYLIST,
+  TOKYO,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  refuse,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
+import { refuse } from '../bookings/__tests__/arrangements'
 import {
   customersHrefOf,
   reviewHrefOf,
@@ -237,7 +239,7 @@ describe('the reviews of a salon', () => {
     // Assert
     await heading(EXCELLENT)
     await waitFor(() =>
-      expect(detailsOf()).toContainEqual(['お客様', 'Tanaka Yuki']),
+      expect(detailsOf()).toContainEqual(['お客様', YUKI.name]),
     )
     expect(detailsOf()).toEqual([
       ['サービスの評価', '5'],
@@ -245,7 +247,7 @@ describe('the reviews of a salon', () => {
       ['雰囲気の評価', '5'],
       ['清潔さの評価', '5'],
       ['価格の評価', '5'],
-      ['お客様', 'Tanaka Yuki'],
+      ['お客様', YUKI.name],
       ['予約', '来店の予約'],
       ['担当スタッフ', 'Hiroshi Tanaka'],
       ['投稿日時', expect.stringMatching(/^\d{4}年\d+月\d+日/)],
@@ -267,7 +269,7 @@ describe('the reviews of a salon', () => {
     expect(screen.queryByRole('region', { name: '運営への通報' })).toBeNull()
 
     // Act
-    await user.click(screen.getByRole('link', { name: 'Tanaka Yuki' }))
+    await user.click(screen.getByRole('link', { name: YUKI.name }))
 
     // Assert
     await heading('お客様の台帳')
@@ -501,7 +503,7 @@ describe('the reviews of a salon', () => {
   it('should let an administrator withdraw an answer, and offer no answer to write', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openReviewAs(EXCELLENT, ADMIN)
+    await openReviewAs(EXCELLENT, OPERATOR)
     expect(
       within(answerPart()).getByText(
         '管理者は、規約に反する返信を取り下げられます。返信を書くことと、運営への通報は、サロンのオーナーとマネージャーがします。',
@@ -714,7 +716,7 @@ describe('the reviews of a salon', () => {
     [
       'a review with its dialogs closed',
       () => reviewAt(GOOD),
-      () => screen.findByRole('link', { name: 'Sato Sakura' }),
+      () => screen.findByRole('link', { name: SAKURA.name }),
     ],
     [
       'the answer to a review',

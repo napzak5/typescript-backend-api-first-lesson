@@ -1,3 +1,4 @@
+import { OPERATOR, OWNER, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
@@ -5,7 +6,7 @@ import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { pressWithTheKeyboard } from './sales'
-import { enterCredentials, heading, OPERATOR, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * A salon added by an administrator from the choice of a salon, and the
@@ -16,7 +17,6 @@ import { enterCredentials, heading, OPERATOR, OWNER } from './sign-in'
  */
 
 const NEW_NAME = 'Salon Hikari 新宿店'
-const TOKYO = 'Beauty Studio Tokyo'
 
 /** Writes a value in an empty control, as somebody does who works with the keyboard alone. */
 const write = async (control: Locator, value: string): Promise<void> => {

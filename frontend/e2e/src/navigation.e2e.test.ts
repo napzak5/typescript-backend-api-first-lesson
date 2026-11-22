@@ -1,3 +1,4 @@
+import { CUSTOMER, OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Page } from '@playwright/test'
 import { ADMIN, PORTAL } from './applications'
 import { salonId } from './bookings'
@@ -10,14 +11,7 @@ import {
   menu,
   menuButton,
 } from './main-menu'
-import {
-  ADMIN_START,
-  CUSTOMER,
-  enterCredentials,
-  heading,
-  OWNER,
-  PORTAL_START,
-} from './sign-in'
+import { ADMIN_START, enterCredentials, heading, PORTAL_START } from './sign-in'
 
 /*
  * The links to the screens of an application. On a screen as wide as a

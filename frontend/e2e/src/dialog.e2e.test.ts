@@ -1,9 +1,10 @@
+import { OPERATOR, OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { cornersUnderTheDialog, edgesOf, expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
-import { enterCredentials, heading, OPERATOR, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * A dialog over its page, as the browser lays it out: its overlay covers

@@ -1,10 +1,11 @@
+import { OWNER, YUKI } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * Tanaka Yuki of the seed data asks the salon to erase their data: an
@@ -12,22 +13,13 @@ import { enterCredentials, heading, OWNER } from './sign-in'
  * the keyboard alone.
  */
 
-const YUKI = { email: 'customer1@example.com', name: 'Tanaka Yuki' }
-
 const REASON = '店頭で、ご本人から口頭でお申し出がありました。'
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
-const yukiId = async (api: TestApi): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query(
-      'select id::text from customers where email = $1 and "deletedAt" is null',
-      [YUKI.email],
-    ),
+const yukiId = (api: TestApi): Promise<string> =>
+  api.idOf(
+    'select id::text from customers where email = $1 and "deletedAt" is null',
+    [YUKI.email],
   )
-
-  return id
-}
 
 const requestsSchema = z.array(
   z.object({ status: z.string(), reason: z.string() }),

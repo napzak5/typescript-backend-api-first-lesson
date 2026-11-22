@@ -1,19 +1,22 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  salonIdOf,
+  signInAs,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import { notifications, termsOf } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OWNER,
+  STYLIST,
+  THERAPIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  THERAPIST,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import { staffAccountHrefOf, staffMemberHrefOf } from '../navigation'
 import {
   arrangeInactive,
@@ -162,7 +165,7 @@ describe('the accounts of the staff, against the API', () => {
     it('should let an administrator invite a member as an owner', async () => {
       // Arrange
       const user = userEvent.setup()
-      await openAccountOf(WATANABE.code, ADMIN)
+      await openAccountOf(WATANABE.code, OPERATOR)
       await screen.findByRole('radiogroup', { name: 'ロール' })
       expect(rolesOffered().map(([role]) => role)).toEqual([
         'オーナー',

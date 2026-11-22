@@ -3,6 +3,7 @@ import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { address, goTo, heading } from '@beauty-salon-frontend/testing/screens'
+import { CUSTOMER, OWNER, STYLIST } from '@beauty-salon-frontend/testing/seed'
 import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
@@ -23,11 +24,9 @@ const ADMIN_APP = 'https://admin.salon.example'
 
 /** An address that has no account, and one of the seed data that has */
 const VISITOR = 'first.visit@example.com'
-const CUSTOMER = 'customer1@example.com'
-const OWNER = 'owner@beautysalon.jp'
 /** A member of the staff of the seed data who has no account, and one who has */
 const STAFF_WITHOUT_ACCOUNT = 'yui.watanabe@beautysalon.jp'
-const STAFF_WITH_ACCOUNT = 'stylist1@beautysalon.jp'
+const STAFF_WITH_ACCOUNT = STYLIST
 
 /** A password the API takes, and one it finds easy to guess */
 const PASSWORD = 'kirei na kami de dekakeru'

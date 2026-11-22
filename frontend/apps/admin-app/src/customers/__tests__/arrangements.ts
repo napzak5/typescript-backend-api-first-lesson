@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { countOf, idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -8,16 +8,12 @@ import * as z from 'zod'
  * mail.
  */
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** The ID of a customer of the ledger, by their address of mail. */
 export const customerIdOf = async (email: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      'select id::text from customers where email = $1 and "deletedAt" is null',
-      [email],
-    ),
-  )[0].id
+  idOf(
+    'select id::text from customers where email = $1 and "deletedAt" is null',
+    [email],
+  )
 
 /** Lets a customer have been registered so many days before today, in Tokyo, at noon. */
 export const registeredDaysAgo = (
@@ -135,12 +131,7 @@ export const staffRemovedMeanwhile = (displayName: string): Promise<unknown> =>
 
 /** The ID of a member of the staff, by their name. */
 export const staffIdOf = async (displayName: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      'select id::text from staff where "displayName" = $1',
-      [displayName],
-    ),
-  )[0].id
+  idOf('select id::text from staff where "displayName" = $1', [displayName])
 
 const namesSchema = z.array(z.object({ displayName: z.string() }))
 
@@ -222,13 +213,9 @@ export const storedCustomerOf = async (email: string) =>
     ),
   )[0]
 
-const countSchema = z.tuple([z.object({ count: z.coerce.number() })])
-
 /** How many customers the ledger has, the removed ones too. */
 export const storedCustomerCount = async (): Promise<number> =>
-  countSchema.parse(
-    await testApi().query('select count(*) as count from customers'),
-  )[0].count
+  countOf('select count(*) as count from customers')
 
 /**
  * Lets the ledger have more customers, each with the tag, registered a
@@ -709,9 +696,6 @@ export const storedMergeOf = async (customerId: string) =>
 export const storedBookingCountOf = async (
   customerId: string,
 ): Promise<number> =>
-  countSchema.parse(
-    await testApi().query(
-      'select count(*) as count from bookings where "customerId" = $1',
-      [customerId],
-    ),
-  )[0].count
+  countOf('select count(*) as count from bookings where "customerId" = $1', [
+    customerId,
+  ])

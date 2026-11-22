@@ -1,10 +1,11 @@
+import { CUSTOMER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { HIROSHI, LADIES_CUT, salonId, TOKYO } from './bookings'
+import { HIROSHI, LADIES_CUT, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { CUSTOMER, enterCredentials, heading, STAFF } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * What the counter of a salon records of the points of a customer: the
@@ -75,17 +76,6 @@ const arrangeSale = async (
   return ids
 }
 
-const daySchema = z.tuple([z.object({ day: z.string() })])
-
-/** The day so many days after today in Tokyo: `2026-12-20`. */
-const dayFromToday = async (api: TestApi, days: number): Promise<string> =>
-  daySchema.parse(
-    await api.query(
-      `select to_char((now() at time zone 'Asia/Tokyo')::date + $1::int, 'YYYY-MM-DD') as day`,
-      [days],
-    ),
-  )[0].day
-
 const storedSchema = z.array(
   z.object({
     transactionType: z.string(),
@@ -130,9 +120,9 @@ test.describe('recording the points of a customer, in a browser', () => {
     // Arrange
     const { saleId, customerId } = await arrangeSale(api)
     const salon = await salonId(api)
-    const expiry = await dayFromToday(api, 90)
+    const expiry = await api.dayFromToday(90)
     await page.goto(`${ADMIN.origin}/salons/${salon}/sales/${saleId}`)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await expect(heading(page, '売上の内容')).toBeFocused()
 
     // Act: the points used at the sale
@@ -235,7 +225,7 @@ test.describe('the points of a customer, on a screen as narrow as a phone', () =
     await page.goto(
       `${ADMIN.origin}/salons/${salon}/customers/${customerId}/points`,
     )
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await expect(heading(page, 'ポイント')).toBeFocused()
     await expect(
       page.getByRole('table', { name: 'ポイントの履歴' }),

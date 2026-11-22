@@ -1,20 +1,22 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
-import { heading } from '@beauty-salon-frontend/testing/screens'
-import { screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openAs, renderAt } from '../__tests__/screens'
 import {
   dayFromToday,
+  salonIdOf,
+  signInAs,
+} from '@beauty-salon-frontend/testing/api'
+import { heading } from '@beauty-salon-frontend/testing/screens'
+import {
   MANAGER,
   OSAKA,
   OWNER,
   STYLIST,
-  salonIdOf,
   TOKYO,
-} from '../bookings/__tests__/arrangements'
+} from '@beauty-salon-frontend/testing/seed'
+import { screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { openAs, renderAt } from '../__tests__/screens'
 import { hoursChangeHrefOf, settingsHrefOf } from '../navigation'
 import { weekdayOf } from '../shifts/shift-week'
 import {

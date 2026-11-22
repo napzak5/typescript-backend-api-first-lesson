@@ -1,5 +1,12 @@
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
+import {
+  CUSTOMER,
+  MANAGER,
+  OPERATOR,
+  OWNER,
+  STYLIST,
+} from '@beauty-salon-frontend/testing/seed'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -51,9 +58,9 @@ describe('the salon of who is signed in, against the API', () => {
   })
 
   it.each<[string, string]>([
-    ['the owner of a salon', 'owner@beautysalon.jp'],
-    ['a manager', 'manager@beautysalon.jp'],
-    ['a member of the staff', 'stylist1@beautysalon.jp'],
+    ['the owner of a salon', OWNER],
+    ['a manager', MANAGER],
+    ['a member of the staff', STYLIST],
   ])(
     'should ask the API for the salon of %s, and give the salon they work at',
     async (_case, email) => {
@@ -74,8 +81,8 @@ describe('the salon of who is signed in, against the API', () => {
   )
 
   it.each<[string, string, string]>([
-    ['the operator of the platform', 'admin@beautysalon.jp', 'platform'],
-    ['a customer', 'customer1@example.com', 'none'],
+    ['the operator of the platform', OPERATOR, 'platform'],
+    ['a customer', CUSTOMER, 'none'],
   ])(
     'should know without asking the API that the salon of %s is %s (%s)',
     async (_case, email, type) => {

@@ -1,11 +1,12 @@
+import { OWNER, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { salonId, TOKYO } from './bookings'
+import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The payment methods of the salon in Tokyo kept by its owner: one added
@@ -18,13 +19,10 @@ import { enterCredentials, heading, OWNER } from './sign-in'
 
 const SALE = 'SL-E2E-0401'
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** Puts a sale of ￥5,000 to nobody of the ledger into the database, entered now and not paid. */
-const arrangeUnpaidSale = async (api: TestApi): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query(
-      `with sold as (
+const arrangeUnpaidSale = (api: TestApi): Promise<string> =>
+  api.idOf(
+    `with sold as (
          insert into sales ("saleNumber", "salonId", "saleDate", "saleTime", subtotal,
                             "taxAmount", "totalAmount")
          select $2, id, (now() at time zone 'Asia/Tokyo')::date, now(), 5000, 0, 5000
@@ -36,12 +34,8 @@ const arrangeUnpaidSale = async (api: TestApi): Promise<string> => {
          select id, 'service', 'カット', 1, 5000, 0, 5000 from sold
        )
        select id::text from sold`,
-      [TOKYO, SALE],
-    ),
+    [TOKYO, SALE],
   )
-
-  return id
-}
 
 const storedSchema = z.array(
   z.object({

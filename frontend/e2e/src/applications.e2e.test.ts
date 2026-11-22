@@ -1,16 +1,14 @@
+import { CUSTOMER, MANAGER, STYLIST } from '@beauty-salon-frontend/testing/seed'
 import { ADMIN, DASHBOARD, PORTAL } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import { menu, menuButton } from './main-menu'
 import {
   ADMIN_START,
-  CUSTOMER,
   DASHBOARD_START,
   enterCredentials,
   heading,
-  MANAGER,
   PORTAL_START,
-  STAFF,
   signInButton,
   signOutButton,
 } from './sign-in'
@@ -26,7 +24,7 @@ test.describe('the admin application', () => {
     await page.goto(ADMIN.origin)
 
     // Act
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
 
     // Assert
     await expect(heading(page, ADMIN_START)).toBeFocused()
@@ -77,11 +75,11 @@ test.describe('the dashboard application', () => {
     await page.goto(DASHBOARD.origin)
 
     // Act
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
 
     // Assert
     await expect(heading(page, NOT_FOR_THIS_ACCOUNT)).toBeFocused()
-    await expect(page.getByRole('main')).toContainText(STAFF)
+    await expect(page.getByRole('main')).toContainText(STYLIST)
   })
 })
 
@@ -170,7 +168,7 @@ test.describe('on a screen as narrow as a phone', () => {
   }) => {
     // Arrange
     await page.goto(ADMIN.origin)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await expect(heading(page, ADMIN_START)).toBeFocused()
     await expectSoundPage(page)
 

@@ -1,20 +1,22 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
-import { heading, termsOf } from '@beauty-salon-frontend/testing/screens'
-import { screen, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openAs, renderAt } from '../__tests__/screens'
 import {
   dayFromToday,
+  salonIdOf,
+  signInAs,
+} from '@beauty-salon-frontend/testing/api'
+import { heading, termsOf } from '@beauty-salon-frontend/testing/screens'
+import {
   MANAGER,
   OSAKA,
   OWNER,
   STYLIST,
-  salonIdOf,
   TOKYO,
-} from '../bookings/__tests__/arrangements'
+} from '@beauty-salon-frontend/testing/seed'
+import { screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { openAs, renderAt } from '../__tests__/screens'
 import {
   bookingsHrefOf,
   salonChangeHrefOf,
@@ -86,7 +88,7 @@ describe('the settings of a salon, against the API', () => {
     // Assert
     await openedSettings()
     expect(termsOf('サロン')).toEqual([
-      ['名前', 'Beauty Studio Tokyo'],
+      ['名前', TOKYO],
       ['カナ', '記録なし'],
       ['紹介', 'Premium beauty salon in the heart of Tokyo'],
       ['オンライン予約', '受け付ける'],

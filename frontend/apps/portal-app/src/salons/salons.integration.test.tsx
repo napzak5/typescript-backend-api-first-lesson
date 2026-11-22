@@ -1,38 +1,22 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
 import { address, heading } from '@beauty-salon-frontend/testing/screens'
+import { OSAKA, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import * as z from 'zod'
 import { renderAt } from '../__tests__/screens'
 
 const TITLE = applications.portal.name
 /** The heading of the first screen of the portal, the search of the salons */
 const START = 'サロンを探す'
 
-/** The two salons of the seed data */
-const TOKYO = 'Beauty Studio Tokyo'
-const OSAKA = 'Hair & Spa Osaka'
-
 /** An ID that no salon has */
 const NO_SALON = '00000000-0000-4000-8000-000000000000'
 
 const UNREAD =
   'を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。'
-
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
-const salonIdOf = async (name: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await testApi().query('select id::text from salons where name = $1', [
-      name,
-    ]),
-  )
-
-  return id
-}
 
 const salonPathOf = async (name: string): Promise<string> =>
   `/salons/${await salonIdOf(name)}`

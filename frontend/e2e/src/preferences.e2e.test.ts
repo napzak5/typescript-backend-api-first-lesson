@@ -1,10 +1,11 @@
+import { CUSTOMER, OSAKA, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
-import { HIROSHI, MIKA, staffId, TOKYO } from './bookings'
+import { HIROSHI, MIKA, staffId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { box, saveButton, text, value } from './mypage'
-import { accessTokenOf, CUSTOMER, enterCredentials, heading } from './sign-in'
+import { accessTokenOf, enterCredentials, heading } from './sign-in'
 
 /*
  * The customer is the first of the seed data: Yuki Tanaka, who has bookings
@@ -13,7 +14,6 @@ import { accessTokenOf, CUSTOMER, enterCredentials, heading } from './sign-in'
 
 const PART = '好みの設定'
 
-const OSAKA = 'Hair & Spa Osaka'
 const YUI = 'Yui Watanabe'
 const TAKESHI = 'Takeshi Ito'
 

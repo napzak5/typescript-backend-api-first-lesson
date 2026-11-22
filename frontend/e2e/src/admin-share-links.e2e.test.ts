@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises'
+import { MANAGER, OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN, PORTAL } from './applications'
@@ -6,7 +7,7 @@ import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { PDF, uploadThroughApi } from './files'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, MANAGER, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The share links of a file of the salon in Tokyo, in a browser: its

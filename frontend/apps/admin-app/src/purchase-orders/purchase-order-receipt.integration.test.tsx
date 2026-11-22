@@ -1,19 +1,19 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import {
   rowIdOf,
   rowRemovedMeanwhile,
@@ -401,7 +401,7 @@ describe('the goods that come for a purchase order, and what to order', () => {
     ],
   ])('should say that %s is not found', async (_case, pathOf) => {
     // Act
-    await openAs(await pathOf(), ADMIN)
+    await openAs(await pathOf(), OPERATOR)
 
     // Assert
     expect(await heading('発注が見つかりません')).toBeVisible()

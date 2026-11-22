@@ -4,7 +4,8 @@ import type {
   ModelsReviewUpdateRequest,
   ReviewCrudCreate201,
 } from '@beauty-salon-frontend/api-client'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
+import { KENJI, OPERATOR, OWNER } from '@beauty-salon-frontend/testing/seed'
 import { screen, within } from '@testing-library/react'
 import { expect } from 'vitest'
 import * as z from 'zod'
@@ -23,12 +24,6 @@ import { accessTokenOf } from '../../bookings/__tests__/arrangements'
  * through the API.
  */
 
-export const KENJI = 'customer2@example.com'
-export const VIP = 'vip.customer@example.com'
-export const ADMIN = 'admin@beautysalon.jp'
-const OWNER = 'owner@beautysalon.jp'
-
-export const OSAKA = 'Hair & Spa Osaka'
 export const TAKESHI = 'Takeshi Ito'
 
 /** What Kenji wrote about his first visit, in the seed data */
@@ -77,7 +72,7 @@ const visitsOf = async (email: string): Promise<Visit[]> =>
   )
 
 /** The visit of a customer that nobody has written about. */
-export const visitToReview = async (email = KENJI): Promise<Visit> => {
+export const visitToReview = async (email = KENJI.email): Promise<Visit> => {
   const found = (await visitsOf(email)).find(
     ({ reviewId }) => reviewId === null,
   )
@@ -90,7 +85,7 @@ export const visitToReview = async (email = KENJI): Promise<Visit> => {
 
 /** The visit of a customer that has its review, and the ID of the review. */
 export const visitReviewed = async (
-  email = KENJI,
+  email = KENJI.email,
 ): Promise<Visit & { reviewId: string }> => {
   for (const visit of await visitsOf(email)) {
     const { reviewId } = visit
@@ -101,22 +96,15 @@ export const visitReviewed = async (
   throw new Error(`No visit of ${email} has a review`)
 }
 
-const bookingSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** A booking of a customer that is no visit that took place: it waits for its day. */
-export const bookingToCome = async (email: string): Promise<string> => {
-  const [{ id }] = bookingSchema.parse(
-    await testApi().query(
-      `select bookings.id::text
+export const bookingToCome = (email: string): Promise<string> =>
+  idOf(
+    `select bookings.id::text
        from bookings join customers on customers.id = bookings."customerId"
        where customers.email = $1 and bookings.status in ('pending', 'confirmed')
        order by bookings."startTime" limit 1`,
-      [email],
-    ),
+    [email],
   )
-
-  return id
-}
 
 const rating = z.number().int().nullable()
 
@@ -175,7 +163,7 @@ const listedSchema = z.array(
  * What a customer wrote as it is stored, the latest first, which is the
  * order of their list; each with the day it was posted on at its salon.
  */
-export const storedReviewsOf = async (email = KENJI) =>
+export const storedReviewsOf = async (email = KENJI.email) =>
   listedSchema.parse(
     await testApi().query(
       `select reviews.id::text, salons.name as salon, reviews.title,
@@ -273,7 +261,7 @@ const writtenSchema = z.object({
 export const writes = async (
   visit: Visit,
   said: Partial<ModelsReviewCreateRequest> = {},
-  email = KENJI,
+  email = KENJI.email,
 ): Promise<string> => {
   const request: ModelsReviewCreateRequest = {
     salonId: visit.salonId,
@@ -301,7 +289,7 @@ export const writes = async (
 export const changes = async (
   reviewId: string,
   changed: ModelsReviewUpdateRequest,
-  email = KENJI,
+  email = KENJI.email,
 ): Promise<void> => {
   const answer = await send('PATCH', `/reviews/${reviewId}`, changed, email)
   expect(answer.status).toBe(200)
@@ -310,7 +298,7 @@ export const changes = async (
 /** A review is removed somewhere else: by the customer who wrote it, or by an administrator. */
 export const removes = async (
   reviewId: string,
-  email = KENJI,
+  email = KENJI.email,
 ): Promise<void> => {
   const answer = await send('DELETE', `/reviews/${reviewId}`, undefined, email)
   expect(answer.status).toBe(204)
@@ -349,7 +337,7 @@ export const findsHelpful = async (
 export const reports = async (
   reviewId: string,
   request: ModelsReviewReportRequest,
-  email = KENJI,
+  email = KENJI.email,
 ): Promise<void> => {
   const answer = await send(
     'POST',
@@ -360,26 +348,22 @@ export const reports = async (
   expect(answer.status).toBe(200)
 }
 
-const reportSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** An administrator dismisses the report of an account about a review. */
 export const dismissesReportOf = async (
   reviewId: string,
-  reporter = KENJI,
+  reporter = KENJI.email,
 ): Promise<void> => {
-  const [{ id }] = reportSchema.parse(
-    await testApi().query(
-      `select reports.id::text
+  const id = await idOf(
+    `select reports.id::text
        from review_reports reports join users on users.id = reports."reportedBy"
        where reports."reviewId" = $1 and users.email = $2`,
-      [reviewId, reporter],
-    ),
+    [reviewId, reporter],
   )
   const answer = await send(
     'POST',
     `/review-reports/${id}/dismiss`,
     undefined,
-    ADMIN,
+    OPERATOR,
   )
   expect(answer.status).toBe(200)
 }

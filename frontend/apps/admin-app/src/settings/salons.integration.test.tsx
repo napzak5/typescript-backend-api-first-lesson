@@ -1,25 +1,24 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { countOf, salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
   notifications,
   termsOf,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import { SALON_ENTRY_PATH, settingsHrefOf } from '../navigation'
 import { storedSalonOf } from './__tests__/arrangements'
 
@@ -66,12 +65,8 @@ const fillInSalon = async (email: string): Promise<void> => {
 const add = (): HTMLElement =>
   screen.getByRole('button', { name: 'サロンを登録する' })
 
-const countSchema = z.tuple([z.object({ count: z.coerce.number() })])
-
 /** How many salons there are, removed ones included */
-const salonCount = async (): Promise<number> =>
-  countSchema.parse(await testApi().query('select count(*) from salons'))[0]
-    .count
+const salonCount = (): Promise<number> => countOf('select count(*) from salons')
 
 const addedSchema = z.array(
   z.object({
@@ -140,7 +135,7 @@ describe('adding a salon, against the API', () => {
   it('should let an administrator add a salon from the choice of a salon, with the time zone and the currency chosen, and show it in its settings without hours', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openAs('/', ADMIN)
+    await openAs('/', OPERATOR)
     expect(await listedSalons()).toEqual(expect.arrayContaining([TOKYO, OSAKA]))
     await user.click(screen.getByRole('link', { name: 'サロンを登録する' }))
     expect(await heading('サロンを登録する')).toHaveFocus()
@@ -207,7 +202,7 @@ describe('adding a salon, against the API', () => {
     const user = userEvent.setup()
     const count = await salonCount()
     const { email } = await storedSalonOf(TOKYO)
-    await openAs(SALON_ENTRY_PATH, ADMIN)
+    await openAs(SALON_ENTRY_PATH, OPERATOR)
     await heading('サロンを登録する')
     await fillInSalon(email)
 
@@ -229,7 +224,7 @@ describe('adding a salon, against the API', () => {
     // Arrange
     const user = userEvent.setup()
     const count = await salonCount()
-    await openAs(SALON_ENTRY_PATH, ADMIN)
+    await openAs(SALON_ENTRY_PATH, OPERATOR)
     await heading('サロンを登録する')
     await fillInSalon('shinjuku@example.com')
     await user.clear(text('電話番号'))
@@ -273,7 +268,7 @@ describe('adding a salon, against the API', () => {
   it('should have no accessibility violations on the form, nor with what is wrong said', async () => {
     // Arrange
     const user = userEvent.setup()
-    const { container } = await openAs(SALON_ENTRY_PATH, ADMIN)
+    const { container } = await openAs(SALON_ENTRY_PATH, OPERATOR)
     await heading('サロンを登録する')
     expect(await findAccessibilityViolations(container)).toEqual([])
 
@@ -299,7 +294,7 @@ describe('removing a salon, against the API', () => {
     // Arrange
     const user = userEvent.setup()
     await bookingsFinished(OSAKA)
-    await openAs('/', ADMIN)
+    await openAs('/', OPERATOR)
     await user.click(await screen.findByRole('link', { name: OSAKA }))
     await user.click(
       within(
@@ -403,7 +398,7 @@ describe('removing a salon, against the API', () => {
   it('should show a salon removed meanwhile as not found', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openAs(settingsHrefOf(await salonIdOf(OSAKA)), ADMIN)
+    await openAs(settingsHrefOf(await salonIdOf(OSAKA)), OPERATOR)
     const dialog = await askToRemove(OSAKA)
     await testApi().query(
       'update salons set "deletedAt" = now() where name = $1',

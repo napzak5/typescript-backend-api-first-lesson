@@ -1,10 +1,11 @@
+import { OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The hours of the salon in Tokyo changed by its owner with the keyboard
@@ -12,20 +13,6 @@ import { enterCredentials, heading, OWNER } from './sign-in'
  * settings show it. The form, with what is wrong with it, is shown on a
  * screen as narrow as a phone as well.
  */
-
-const daySchema = z.tuple([z.object({ day: z.string() })])
-
-/** The day so many days after today at the salon. */
-const dayFromToday = async (api: TestApi, days: number): Promise<string> => {
-  const [{ day }] = daySchema.parse(
-    await api.query(
-      `select to_char((now() at time zone 'Asia/Tokyo')::date + $1::int, 'YYYY-MM-DD') as day`,
-      [days],
-    ),
-  )
-
-  return day
-}
 
 const storedSchema = z.array(
   z.object({
@@ -67,7 +54,7 @@ test.describe('the hours of a salon, in a browser', () => {
     api,
   }) => {
     // Arrange
-    const inspection = await dayFromToday(api, 14)
+    const inspection = await api.dayFromToday(14)
     await page.goto(`${ADMIN.origin}/salons/${await salonId(api)}/settings`)
     await enterCredentials(page, OWNER, api.seedPassword)
     await expect(heading(page, 'サロンの設定')).toBeVisible()

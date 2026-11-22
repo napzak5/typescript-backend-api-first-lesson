@@ -13,6 +13,7 @@
     "./api/test-server": "./src/api/test-server.ts",
     "./accessibility": "./src/accessibility.ts",
     "./screens": "./src/screens.tsx",
+    "./seed": "./src/seed.ts",
     "./answers": "./src/answers.ts"
   },
   "scripts": {
