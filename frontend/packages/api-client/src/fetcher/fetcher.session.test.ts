@@ -574,6 +574,106 @@ describe('customInstance with a session', () => {
       ])
       expect(sessionStore.read()).toEqual(SECOND)
     })
+
+    describe('while a renewal is under way', () => {
+      /**
+       * An API in the middle of a renewal. It replaces the tokens of the
+       * session when it takes the refresh token: from then on the first
+       * access token belongs to no session, and the answer that carries the
+       * new ones is still on its way.
+       */
+      const stubApiThatRenews = () => {
+        const renewal = Promise.withResolvers<Response>()
+        let replaced = false
+        const sent = stubApi({
+          answer: (authorization) => {
+            if (authorization === `Bearer ${SECOND.accessToken}`) {
+              return json(200, PROFILE)
+            }
+            return problem(401, replaced ? '1004' : '1003')
+          },
+          renew: () => {
+            replaced = true
+            return renewal.promise
+          },
+        })
+
+        return { sent, answerTheRenewal: renewal.resolve }
+      }
+
+      /** Long enough for an answer that has arrived to be read and acted on. */
+      const aMoment = (): Promise<void> =>
+        new Promise((resolve) => setTimeout(resolve, 20))
+
+      it('should wait for the renewal, and send the request again with the session it brought', async () => {
+        // Arrange
+        const { sent, answerTheRenewal } = stubApiThatRenews()
+        const { call, sessionStore } = await loadFresh()
+        sessionStore.write(FIRST)
+        const order: string[] = []
+        sessionStore.subscribe(() => {
+          order.push(
+            sessionStore.read() === null ? 'session removed' : 'session stored',
+          )
+        })
+
+        // Act
+        const first = call(RESOURCE, { method: 'GET' })
+        await vi.waitFor(() => expect(renewalsOf(sent)).toHaveLength(1))
+        const second = call(RESOURCE, { method: 'GET' })
+        await vi.waitFor(() => expect(requestsOf(sent)).toHaveLength(2))
+        await aMoment()
+        order.push('renewal answered')
+        answerTheRenewal(issued(SECOND))
+        const responses = await Promise.all([first, second])
+
+        // Assert
+        expect(responses.map((response) => response.status)).toEqual([200, 200])
+        expect(order).toEqual(['renewal answered', 'session stored'])
+        expect(sessionStore.read()).toEqual(SECOND)
+        expect(renewalsOf(sent)).toHaveLength(1)
+        expect(
+          requestsOf(sent).map((request) => request.authorization),
+        ).toEqual([
+          'Bearer access-1',
+          'Bearer access-1',
+          'Bearer access-2',
+          'Bearer access-2',
+        ])
+      })
+
+      it('should remove the session only when the renewal has brought no other', async () => {
+        // Arrange
+        const { sent, answerTheRenewal } = stubApiThatRenews()
+        const { call, sessionStore } = await loadFresh()
+        sessionStore.write(FIRST)
+        const order: string[] = []
+        sessionStore.subscribe(() => {
+          order.push(
+            sessionStore.read() === null ? 'session removed' : 'session stored',
+          )
+        })
+
+        // Act
+        const first = call(RESOURCE, { method: 'GET' })
+        await vi.waitFor(() => expect(renewalsOf(sent)).toHaveLength(1))
+        const second = call(RESOURCE, { method: 'GET' })
+        await vi.waitFor(() => expect(requestsOf(sent)).toHaveLength(2))
+        await aMoment()
+        order.push('renewal answered')
+        answerTheRenewal(problem(500, '5001'))
+        const responses = await Promise.all([first, second])
+
+        // Assert
+        expect(responses).toMatchObject([
+          { status: 401, data: { code: '1003' } },
+          { status: 401, data: { code: '1004' } },
+        ])
+        expect(order).toEqual(['renewal answered', 'session removed'])
+        expect(sessionStore.read()).toBeNull()
+        expect(requestsOf(sent)).toHaveLength(2)
+      })
+    })
   })
 
   describe('a 401 that is not about the access token', () => {
@@ -699,6 +799,40 @@ describe('customInstance with a session', () => {
         'Bearer access-1',
         'Bearer access-2',
       ])
+    })
+
+    it('should wait for the tab that renews before it gives up a session whose token belongs to none', async () => {
+      // Arrange
+      const sent = stubApi({
+        answer: (authorization) =>
+          authorization === `Bearer ${SECOND.accessToken}`
+            ? json(200, PROFILE)
+            : problem(401, '1004'),
+      })
+      const locks = stubLocks(async (_name, task) => {
+        // While this tab waited for the lock, the tab that held it stored the session it renewed
+        storeInAnotherTab(SECOND)
+        return task()
+      })
+      const { call, sessionStore } = await loadFresh()
+      sessionStore.write(FIRST)
+
+      // Act
+      const response = await call(RESOURCE, { method: 'GET' })
+
+      // Assert
+      expect(locks.request).toHaveBeenCalledTimes(1)
+      expect(locks.request).toHaveBeenCalledWith(
+        'beauty-salon:session-renewal',
+        expect.any(Function),
+      )
+      expect(response.status).toBe(200)
+      expect(renewalsOf(sent)).toEqual([])
+      expect(requestsOf(sent).map((request) => request.authorization)).toEqual([
+        'Bearer access-1',
+        'Bearer access-2',
+      ])
+      expect(sessionStore.read()).toEqual(SECOND)
     })
   })
 })
