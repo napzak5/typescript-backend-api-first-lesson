@@ -5,7 +5,6 @@ import {
   dailyHrefOf,
   navigationFor,
   reportsHrefOf,
-  salonIdIn,
   staffSalesHrefOf,
   trendsHrefOf,
 } from './navigation'
@@ -25,18 +24,6 @@ const salesOf = (current: string) =>
     label,
     current: href === current,
   }))
-
-describe('salonIdIn', () => {
-  it.each<[string, string | undefined]>([
-    [`/salons/${SALON_ID}/reports`, SALON_ID],
-    [`/salons/${SALON_ID}`, SALON_ID],
-    ['/', undefined],
-    ['/account/security', undefined],
-  ])('should read the salon of %s', (pathname, salonId) => {
-    // Act, Assert
-    expect(salonIdIn(pathname)).toBe(salonId)
-  })
-})
 
 describe('navigationFor', () => {
   it('should lead an administrator to the choice of a salon and to the screens of the sales of the salon chosen', () => {
@@ -58,6 +45,11 @@ describe('navigationFor', () => {
     [categorySalesHrefOf(SALON_ID), categorySalesHrefOf(SALON_ID)],
     [`${dailyHrefOf(SALON_ID)}/x`, dailyHrefOf(SALON_ID)],
     [`/salons/${SALON_ID}/elsewhere`, ''],
+    // An address that only begins with the same letters is no screen below
+    [`${trendsHrefOf(SALON_ID)}x`, ''],
+    [`${dailyHrefOf(SALON_ID)}x`, ''],
+    [`${staffSalesHrefOf(SALON_ID)}x`, ''],
+    [`${categorySalesHrefOf(SALON_ID)}x`, ''],
   ])('should mark the screen of the sales at %s alone', (pathname, current) => {
     // Act, Assert
     expect(navigationFor('owner', pathname)).toEqual(salesOf(current))

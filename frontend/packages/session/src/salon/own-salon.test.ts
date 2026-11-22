@@ -1,5 +1,6 @@
+import type { ModelsUserRoleType } from '@beauty-salon-frontend/api-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { readOwnSalon } from './own-salon'
+import { readOwnSalon, worksAtSalon } from './own-salon'
 
 /*
  * The answers the real API gives are met in the screen tests of the
@@ -54,6 +55,23 @@ const answering = (answer: () => Response | Promise<Response>) => {
 
   return fetched
 }
+
+describe('worksAtSalon', () => {
+  it.each<[ModelsUserRoleType | undefined, boolean]>([
+    ['owner', true],
+    ['manager', true],
+    ['staff', true],
+    ['admin', false],
+    ['customer', false],
+    [undefined, false],
+  ])(
+    'should say of the role %s whether it is one of a salon: %s',
+    (role, works) => {
+      // Act, Assert
+      expect(worksAtSalon(role)).toBe(works)
+    },
+  )
+})
 
 describe('readOwnSalon', () => {
   afterEach(() => {

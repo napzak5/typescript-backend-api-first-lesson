@@ -1,4 +1,7 @@
-import { staffOwnProfileGet } from '@beauty-salon-frontend/api-client'
+import {
+  type ModelsUserRoleType,
+  staffOwnProfileGet,
+} from '@beauty-salon-frontend/api-client'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
 import { useSession } from '../use-session'
@@ -64,7 +67,16 @@ export const readOwnSalon = async (): Promise<OwnSalonRead> => {
   )
 }
 
-const SALON_ROLES: readonly string[] = ['owner', 'manager', 'staff']
+/**
+ * Whether a role is one of a salon: that of the owner, of a manager or of
+ * a member of the staff, who belong to the salon they work at. Nobody
+ * (`undefined`) has none.
+ */
+export const worksAtSalon = (role: ModelsUserRoleType | undefined): boolean =>
+  match(role)
+    .with('owner', 'manager', 'staff', () => true)
+    .with('admin', 'customer', undefined, () => false)
+    .exhaustive()
 
 /**
  * The salon the screens of the signed-in account work on: every salon for
@@ -74,11 +86,10 @@ const SALON_ROLES: readonly string[] = ['owner', 'manager', 'staff']
 export const useOwnSalon = (): OwnSalonState => {
   const session = useSession()
   const role = session.type === 'signedIn' ? session.user.role : undefined
-  const member = role !== undefined && SALON_ROLES.includes(role)
   const read = useQuery({
     queryKey: OWN_SALON,
     queryFn: readOwnSalon,
-    enabled: member,
+    enabled: worksAtSalon(role),
   })
   const salon = match(role)
     .returnType<OwnSalon | undefined>()

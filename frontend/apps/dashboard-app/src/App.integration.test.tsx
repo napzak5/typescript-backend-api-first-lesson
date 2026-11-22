@@ -38,9 +38,6 @@ const signInAs = async (email: string): Promise<void> => {
   await user.click(screen.getByRole('button', { name: 'サインイン' }))
 }
 
-const sessionCountOfTheApi = async (): Promise<unknown> =>
-  testApi().query('select count(*)::int as count from sessions')
-
 describe('App, against the API', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_MODE', 'production')
@@ -65,6 +62,12 @@ describe('App, against the API', () => {
     expect(await heading(start)).toHaveFocus()
     expect(within(screen.getByRole('banner')).getByText(email)).toBeVisible()
     expect(document.title).toBe(`${start} | ${TITLE}`)
+    // The links of the header are those of the role, at the address it was led to
+    expect(
+      within(
+        await screen.findByRole('navigation', { name: 'メインメニュー' }),
+      ).getByRole('link', { name: start }),
+    ).toHaveAttribute('aria-current', 'page')
   })
 
   it.each([
@@ -116,117 +119,24 @@ describe('App, against the API', () => {
     expect(within(screen.getByRole('banner')).getByText(OWNER)).toBeVisible()
   })
 
-  it('should lead from the header to the security of the account, change the password there and come back to it', async () => {
+  it('should lead from the header to the security of the account, whose screens the application has', async () => {
     // Arrange
-    const user = userEvent.setup()
     renderAt('/')
     await signInAs(OWNER)
     await heading('売上レポート')
 
     // Act
-    await user.click(
+    await userEvent.click(
       within(screen.getByRole('banner')).getByRole('link', {
         name: 'アカウントの安全',
       }),
     )
-    expect(await heading('アカウントの安全')).toHaveFocus()
-    await screen.findByText('1 台の端末でサインインしています')
-    expect(await findAccessibilityViolations()).toEqual([])
-    await user.click(screen.getByRole('link', { name: 'パスワードを変更する' }))
-    expect(await heading('パスワードを変更する')).toHaveFocus()
-    await user.type(
-      screen.getByLabelText('現在のパスワード'),
-      testApi().seedPassword,
-    )
-    await user.type(
-      screen.getByLabelText('新しいパスワード'),
-      'aoi sora to shiroi kumo no aida',
-    )
-    await user.click(
-      screen.getByRole('button', { name: 'パスワードを変更する' }),
-    )
 
     // Assert
     expect(await heading('アカウントの安全')).toHaveFocus()
     expect(
-      await screen.findByText(
-        'パスワードを変更しました。この端末のほかは、すべての端末でサインアウトしました。変更したことを、メールでお知らせしました。',
-      ),
+      await screen.findByText('1 台の端末でサインインしています'),
     ).toBeVisible()
-    expect(await testApi().mails()).toEqual([
-      expect.objectContaining({
-        to: OWNER,
-        subject: 'パスワードが変更されました',
-      }),
-    ])
-  })
-
-  it('should set the second factor up from the security of the account, and show it on there', async () => {
-    // Arrange
-    const user = userEvent.setup()
-    renderAt('/account/security')
-    await signInAs(OWNER)
-    await heading('アカウントの安全')
-
-    // Act
-    await user.click(
-      within(
-        await screen.findByRole('region', { name: '2 要素認証' }),
-      ).getByRole('link', { name: '2 要素認証を設定する' }),
-    )
-    expect(await heading('2 要素認証を設定する')).toHaveFocus()
-    await user.type(
-      await screen.findByLabelText('パスワード'),
-      testApi().seedPassword,
-    )
-    await user.click(screen.getByRole('button', { name: '設定を始める' }))
-    const secret = (
-      within(
-        await screen.findByRole('region', { name: '認証アプリに登録する' }),
-      ).getByRole('code').textContent ?? ''
-    ).replaceAll(' ', '')
-    await user.type(
-      screen.getByLabelText('認証アプリのコード'),
-      await testApi().authenticatorCode(secret),
-    )
-    await user.click(
-      screen.getByRole('button', { name: '2 要素認証を有効にする' }),
-    )
-    expect(
-      await screen.findByRole('list', { name: 'バックアップコード' }),
-    ).toBeVisible()
-    expect(await findAccessibilityViolations()).toEqual([])
-    await user.click(
-      screen.getByRole('link', { name: 'アカウントの安全へ戻る' }),
-    )
-
-    // Assert: what was read before the set-up is not shown, not even at once
-    expect(await heading('アカウントの安全')).toHaveFocus()
-    const twoFactor = await screen.findByRole('region', { name: '2 要素認証' })
-    expect(within(twoFactor).queryByText('未設定')).toBeNull()
-    expect(within(twoFactor).getByText('有効')).toBeVisible()
-    expect(
-      within(twoFactor).getByRole('button', {
-        name: '2 要素認証を無効にする',
-      }),
-    ).toBeVisible()
-  })
-
-  it('should sign out from the header and show the sign-in screen again', async () => {
-    // Arrange
-    renderAt('/')
-    await signInAs(OWNER)
-    await heading('売上レポート')
-
-    // Act
-    await userEvent.click(screen.getByRole('button', { name: 'サインアウト' }))
-
-    // Assert
-    expect(await heading('サインイン')).toHaveFocus()
-    expect(
-      within(screen.getByRole('main')).getByRole('status'),
-    ).toHaveTextContent('サインアウトしました。')
-    expect(await sessionCountOfTheApi()).toEqual([{ count: 0 }])
   })
 
   it.each(['/', '/no-such-page'])(

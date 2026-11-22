@@ -1,9 +1,6 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
+import { isAtOrBelow } from '@beauty-salon-frontend/app-frame'
 import type { NavigationItem } from '@beauty-salon-frontend/ui'
-
-/** Whether an address is that of a screen, or of one below it. */
-const isAtOrBelow = (pathname: string, screen: string): boolean =>
-  pathname === screen || pathname.startsWith(`${screen}/`)
 
 /**
  * The links of the header. They are for a customer who is signed in: the

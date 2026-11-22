@@ -18,7 +18,8 @@ The styling and component rules are in the skill `frontend-ui`.
 | A component | Its stories, composed and run by Vitest in jsdom | `frontend/packages/ui/src/components/button/button.test.tsx` |
 | What a form does with its values and with the answer of the API | Unit tests of the pure functions. The longest text a form takes is written in characters outside the basic plane (`'𠮷'.repeat(255)`): the API counts each as one, and a form that counted `text.length` would refuse it | `frontend/packages/session/src/components/sign-in-screen/sign-in-flow.test.ts`, `frontend/packages/fields/src/lengths.test.ts` |
 | What a screen makes of its address and of what it read: the conditions of a search, dates and amounts, the pages of a list | The same | `frontend/apps/portal-app/src/salons/salon-format.test.ts` |
-| The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx` |
+| The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx`, `frontend/packages/app-frame/src/app-frame.test.tsx` |
+| The start of an application (`startApplication`): the element it is drawn in, the addresses of the browser, how its queries are read | Started in the document of jsdom, and ended after the test with the function it returns; no API | `frontend/packages/app-frame/src/start-application.test.tsx` |
 | The style rules, for every package and app | One test in the theme package | `frontend/packages/theme/src/style-rules.test.ts` |
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
 | The typefaces: the dependencies, their imports and `--font-family` agree | Read from the files of the theme | `frontend/packages/theme/src/typefaces.test.ts` |
@@ -26,7 +27,7 @@ The styling and component rules are in the skill `frontend-ui`.
 | The fetch function, the session and the generated client | In jsdom, over the real client and the real fetch function, with `fetch` itself stubbed | `frontend/packages/session/src/session.test.tsx` |
 | The functions of a screen that call the API, for the answers the real API cannot be made to give | The same | `frontend/apps/portal-app/src/account/account-api.test.ts` |
 | Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
-| A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/sign-in.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
+| A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/sign-in.integration.test.tsx`, `frontend/packages/app-frame/src/staff-application.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
 | A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/sign-in.e2e.test.ts` |
 
 `@beauty-salon-frontend/testing` holds what the tests share: the setup
@@ -606,7 +607,7 @@ the example to read: a customer books a time that the screen read.
   bookings are being read (`expectListReadAnew`).
 - **What must be read again is tested with what the application keeps.**
   The `QueryClient` of a test reads everything again whenever it is shown;
-  the one of an application (`main.tsx`) keeps what it read for five
+  the one of an application (`startApplication`) keeps what it read for five
   minutes. A screen that sets `staleTime: 0` for what somebody else
   changes is rendered with a client that has the `staleTime` of the
   application (`asTheApplicationKeeps` in
@@ -795,8 +796,9 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
   and asserted. The tests of an application add what it does with them:
   where they are, for whom, and the ways between them
   (`frontend/apps/portal-app/src/security/security.integration.test.tsx`,
-  the header of `App.integration.test.tsx` of the admin and the dashboard
-  application).
+  and `frontend/packages/app-frame/src/staff-application.integration.test.tsx`
+  for the admin and the dashboard application, whose
+  `App.integration.test.tsx` go there from the header and no further).
 - **Another device is another session of the API.** It signs in through
   the generated client (`authCrudLogin`), which stores nothing: the
   browser of the test stays signed in as it was. Twenty more devices are
@@ -1067,6 +1069,14 @@ adds:
 is not signed in sees. Everything behind the sign-in is in
 `App.integration.test.tsx`, and so is a route whose screen reads from the
 API as soon as it opens (the root of the portal).
+
+What every application that is all behind a session does is tested once,
+in `app-frame`, with an application of two screens
+(`staff-application.integration.test.tsx`: the links of the header for a
+role and an address, the screens of the account with the ways between
+them, signing out). The tests of the admin and the dashboard application
+keep what is theirs: who is let in, where each role starts, and that the
+header leads to the account.
 
 The test server needs a PostgreSQL: the one at `TEST_DATABASE_URL` when it is
 set (its user creates databases), otherwise a container. It always starts a
@@ -1461,8 +1471,9 @@ the gain is large, and the integration tests keep the default.
 A package with tests against the real API has a second configuration,
 `vitest.integration.config.ts`, and the script
 `"test:integration": "vitest run --config vitest.integration.config.ts"`
-(`frontend/packages/session`, and each application). It differs from the
-first in three lines, and `vitest.config.ts` gets
+(`frontend/packages/session`, `frontend/packages/app-frame`, and each
+application). It differs from the first in three lines, and
+`vitest.config.ts` gets
 `exclude: [...configDefaults.exclude, '**/*.integration.test.*']` so that
 `pnpm test` needs no database:
 

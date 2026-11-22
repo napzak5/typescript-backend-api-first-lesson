@@ -24,6 +24,7 @@ this one: a component is not done without its stories and its test.
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
 | What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls (`FormSays`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/` |
+| The start and the frame of an application: what `src/main.tsx` calls (`startApplication`), the frame around the routes (`AppFrame`), an application that is all behind a session, with the screens of the account (`StaffApplication`), the screen of an address that is none (`NotFoundPage`), the change of the password at a route (`PasswordChangePage`), and whether an address is at or below a screen (`isAtOrBelow`) | `frontend/packages/app-frame/src/` (`@beauty-salon-frontend/app-frame`) |
 | The screens of the security of an account (the password, the devices that are signed in, the second factor), which every application puts at an address of its own, and the rule of a password that is chosen | `frontend/packages/session/src/security/` |
 | Where the portal puts them: below the page of the customer | `frontend/apps/portal-app/src/security/` |
 | The screens of an account in the portal: registering, a new password, and the screens that a mailed link opens | `frontend/apps/portal-app/src/account/` |
@@ -36,9 +37,9 @@ this one: a component is not done without its stories and its test.
 | The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one; what a reader of the page of a salon does with the reviews of others (`reader-flow.ts`, the dialog that reports one) | `frontend/apps/portal-app/src/reviews/` |
 | Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
-| The salon of who is signed in (`useOwnSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/salon/`, `src/components/no-salon-notice/` |
+| The salon of who is signed in (`useOwnSalon`), whether a role is one of a salon (`worksAtSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/salon/`, `src/components/no-salon-notice/` |
 | How an answer of the API is read, in every application and package: why nothing came of a request (`Unread`, `Unsent`, `unreadOf`, `whyUnread`), the values it refused (`refusedValuesOf`), the parts of the patterns of the answers (`UNANSWERED_PARTS`, `REFUSED_PARTS`, their `PUBLIC_` forms for an operation that needs no session, `UNREAD_TYPES`), an answer the contract does not name (`outsideTheContract`), a page and a list read to its end (`pageOf`, `from`, `toTheEnd`), a list that goes on (`listingOf`, `cursorAfter`, `firstCursor`), whether a read came to nothing (`isUnread`), the sentences of too many requests and of what was not read or not sent (`unreadMessageOf`, `unsentMessageOf`), and of the values it refused (`CHECK_THE_VALUES_MESSAGE` for the attempt, `REFUSED_VALUE_MESSAGE` at a control) | `frontend/packages/answers/src/` (`@beauty-salon-frontend/answers`) |
-| What the screens of a salon share, in the admin and the dashboard applications: a table that goes on (`PagedTable`), the search by a keyword (`keyword.ts`, `KeywordSearch`), the clock of a salon (`salon-time.ts`), the salons searched for and read (`salons-api.ts`), the start of an application, which leads a member to the first screen of their salon and lets `admin` choose a salon (`StartScreen`, `SalonChoiceScreen`, `SalonChoices`), the salon of an address around the screens below it (`WithSalon`), the period of a count with its form, and the days of a search (`period.ts`: `daysErrorsOf`; `StatisticsPeriod`), an amount and the names of the kinds of payment and of service (`format.ts`) | `frontend/packages/salon-screens/src/` (`@beauty-salon-frontend/salon-screens`) |
+| What the screens of a salon share, in the admin and the dashboard applications: a table that goes on (`PagedTable`), the search by a keyword (`keyword.ts`, `KeywordSearch`), the clock of a salon (`salon-time.ts`), the salons searched for and read (`salons-api.ts`), the start of an application, which leads a member to the first screen of their salon and lets `admin` choose a salon (`StartScreen`, `SalonChoiceScreen`, `SalonChoices`), the salon of an address around the screens below it (`WithSalon`) and for the links of the header (`salonIdIn`), the period of a count with its form, and the days of a search (`period.ts`: `daysErrorsOf`; `StatisticsPeriod`), an amount and the names of the kinds of payment and of service (`format.ts`) | `frontend/packages/salon-screens/src/` (`@beauty-salon-frontend/salon-screens`) |
 | The staff and the services of a salon that a booking names, in the admin application | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
@@ -50,12 +51,15 @@ this one: a component is not done without its stories and its test.
 | The sales report of a salon in the dashboard: the screen with its period and its export as a CSV file, the four parts of a report, the words of its counts; the trends of the sales with their chart, the sales of one day, and the sales of every member of the staff and of every kind of service with a bar under an amount | `frontend/apps/dashboard-app/src/reports/` |
 | The links of the header of the dashboard, by the role and the salon of the address | `frontend/apps/dashboard-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
-| The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
+| The routes of an application, inside the frame of `app-frame` (`AppFrame`, or `StaffApplication` with the roles it is for) | `frontend/apps/<app>/src/App.tsx` |
 | The brand: the name of the product and of each application, the icons and the image of a shared link (`public/`) with the drawings they are drawn from (`sources/`, `pnpm --filter @beauty-salon-frontend/brand render`), and the Vite plugin that each application runs (`brand('admin')` in its `vite.config.ts`) | `frontend/packages/brand/` (`@beauty-salon-frontend/brand`, `@beauty-salon-frontend/brand/vite`) |
 
 An application imports one stylesheet, in `src/main.tsx`:
 `@beauty-salon-frontend/theme/styles.css` (tokens, reset, bare elements). A
 component brings its own styles, so importing `Button` is all it takes.
+The file does one thing more, `startApplication(<App />)`: the query client,
+the router and the element the application is drawn in are those of
+`app-frame`, the same in every application.
 
 ## Styling rules
 
@@ -1115,19 +1119,33 @@ also says that a review of somebody else was helpful, and reports one.
 | `useOwnSalon`, `NoSalonNotice` | The salon of who is signed in: `platform` for `admin`, the salon of a member of the staff, or none. And what an account of a salon role that belongs to no salon is told |
 
 ```tsx
-<NotificationProvider>
-  <AppShell title={title} navigation={items} account={<SessionAccount />}>
-    <RequireSession roles={ROLES}>
-      <Routes>…</Routes>
-    </RequireSession>
-  </AppShell>
-</NotificationProvider>
+<StaffApplication
+  title={applications.admin.name}
+  roles={ROLES}
+  navigationFor={navigationFor}
+  environment={import.meta.env.VITE_MODE}
+  portalUrl={import.meta.env.VITE_PORTAL_APP_URL}
+>
+  <Route path='/' element={<StartScreen … />} />
+  …
+</StaffApplication>
 ```
+
+`StaffApplication` of `app-frame` is what the admin and the dashboard
+application are made of: `AppFrame` (the links of the shared components as
+links of the router, `NotificationProvider`, `AppShell` with the account and
+the links of `navigationFor`, `EnvironmentBanner`) around `RequireSession`
+around the routes, with the screens of the security of the account and
+`NotFoundPage` after those of the application. The portal is for everybody:
+its `App.tsx` puts `AppFrame` around its own `Routes`, which end with
+`NotFoundPage`. A package reads no `import.meta.env`: the application hands
+over the values.
 
 - **Nobody is sent to a sign-in page.** `RequireSession` shows the sign-in
   screen in place of its content, at the address that was asked for; after
   signing in, the screen of that address is there. The admin and the
-  dashboard application wrap all their routes. The portal is for everybody:
+  dashboard application wrap all their routes (`StaffApplication`). The
+  portal is for everybody:
   it has the sign-in screen at `/sign-in` and the screens of an account
   beside it, and a screen for customers alone wraps itself
   (`<RequireSession roles={CUSTOMERS}>`, with the constant of `roles.ts`;
@@ -1150,14 +1168,16 @@ also says that a review of somebody else was helpful, and reports one.
   them for the salon of the address (`frontend/apps/admin-app/src/navigation.ts`). A link is the current one on
   every screen below it: the page of a salon belongs to the search, the
   page of a booking to the bookings, the form of the profile to the page
-  of the customer (`isAtOrBelow`: an address that only begins with the
-  same letters is not below).
+  of the customer (`isAtOrBelow` of `app-frame`: an address that only
+  begins with the same letters is not below). The salon of an address is
+  read with `salonIdIn` of `salon-screens`, and a role is asked whether it
+  is one of a salon with `worksAtSalon` of `session`.
 - **What the sign-in screen says besides the form** is the application's:
   `signInNotice` of `RequireSession` is why an account is asked for (above
   the form, where it is read first), `signInHelp` the ways on for somebody
   who cannot sign in (links, under the form). The portal offers a new
   password and a new account; the admin and the dashboard application lead
-  to the portal for a new password.
+  to the portal for a new password (`portalUrl` of `StaffApplication`).
 
 ### The security of an account, in every application
 
@@ -1166,13 +1186,15 @@ are in the session package (`frontend/packages/session/src/security/`), and
 each application puts them at an address of its own: the portal below the
 page of the customer (`/mypage/security`, for customers), the admin and the
 dashboard application at `/account/security`, which the header leads to
-(`<SessionAccount securityHref='/account/security' />`).
+(`<SessionAccount securityHref='/account/security' />`; both are written
+once, in `StaffApplication`).
 
 - **A screen of a package knows no router.** It takes the addresses it
   leads to (`passwordHref`, `securityHref`) and what it cannot do itself as
   a callback: `PasswordChangeScreen` calls `onChanged` after the change,
-  and the application goes back with `navigate`. `actions` is what the
-  application puts beside the heading (「マイページへ戻る」).
+  and the route of the application goes back with `navigate`
+  (`PasswordChangePage` of `app-frame`, in every application). `actions` is
+  what the application puts beside the heading (「マイページへ戻る」).
 - **The rule of a chosen password is said in one place.** The forms that
   register, set a new password, accept an invitation and change the
   password take it from the session package (`password-rule.ts`): the text
@@ -2609,8 +2631,8 @@ A share link opens a file for somebody who has no account
 - **What goes somewhere is a link, what does something is a button.**
   `ButtonLink` for 「新しい予約」 that opens another screen, `Button` for
   「予約を確定する」. This package does not know the router: an application
-  gives its link once, at its root (`LinkProvider` in `App.tsx`), and the
-  components draw their links with it.
+  gives its link once, at its root (`LinkProvider` in `AppFrame` of
+  `app-frame`), and the components draw their links with it.
 - **One of several links with the same text has a name of its own.** Every
   service of a menu has the link 「予約する」; its `aria-label` says which
   (「レディースカットを予約する」), and holds the text that is seen, so
@@ -2674,7 +2696,7 @@ A share link opens a file for somebody who has no account
   '予約を確定しました。' })`. The notification stays, also after the screen
   has changed, until the user closes it or the next one takes its place;
   nothing disappears by itself. `NotificationProvider` stands at the root of
-  an application that notifies, above its routes, and `AppShell` shows the
+  an application, above its routes (in `AppFrame`), and `AppShell` shows the
   notification at the top of the content. What went wrong with a form is said
   in the form, with an `Alert`.
 - **A state is said in words.** A `Badge` holds the word (「確定」); its tone

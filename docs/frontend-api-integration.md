@@ -62,7 +62,7 @@
 | admin-app | `frontend/apps/admin-app` | 3002 |
 | dashboard-app | `frontend/apps/dashboard-app` | 3003 |
 
-いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは、どのアプリも `@beauty-salon-frontend/ui`、`@beauty-salon-frontend/theme`、`@beauty-salon-frontend/session`、`@beauty-salon-frontend/api-client`、`@beauty-salon-frontend/answers`、`@beauty-salon-frontend/brand`、それにテストのための `@beauty-salon-frontend/testing` です（画面が、生成された関数を呼び、その応答を同じ読み方で読みます）。portal-app と admin-app は、`@beauty-salon-frontend/preferences` にも依存しています（好み設定のフォームを共有します）。admin-app と dashboard-app は、ファイルを保存するために `@beauty-salon-frontend/io` に、サロンの画面が共有するもの（続きのある表、キーワードの検索、サロンの時刻、サロンを探して読むこと、サロンを選ぶ画面、アドレスのサロンの `WithSalon`、集計する期間とそのフォーム、フォームの値の読み方、金額と支払い方法とメニューの区分の言葉）のために `@beauty-salon-frontend/salon-screens` にも依存しています。
+いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは、どのアプリも `@beauty-salon-frontend/ui`、`@beauty-salon-frontend/theme`、`@beauty-salon-frontend/app-frame`、`@beauty-salon-frontend/api-client`、`@beauty-salon-frontend/answers`、`@beauty-salon-frontend/fields`、`@beauty-salon-frontend/brand`、それにテストのための `@beauty-salon-frontend/testing` です（画面が、生成された関数を呼び、その応答を同じ読み方で読みます。アプリの起動と画面の枠は、`app-frame` のものです）。portal-app と admin-app は、`@beauty-salon-frontend/session` と `@beauty-salon-frontend/preferences` にも依存しています（セッションを読む画面があり、好み設定のフォームを共有します。dashboard-app は、セッションを `app-frame` と `salon-screens` を通して使います）。admin-app と dashboard-app は、ファイルを保存するために `@beauty-salon-frontend/io` に、サロンの画面が共有するもの（続きのある表、キーワードの検索、サロンの時刻、サロンを探して読むこと、サロンを選ぶ画面、アドレスのサロンの `WithSalon`、集計する期間とそのフォーム、フォームの値の読み方、金額と支払い方法とメニューの区分の言葉）のために `@beauty-salon-frontend/salon-screens` にも依存しています。
 
 ### 共有パッケージ（`frontend/packages/`）
 
@@ -72,20 +72,21 @@
 | `answers` | API の応答の読み方。読めなかったわけ（`Unread`）と書けなかったわけ（`Unsent`）、応答をそれにする `unreadOf` と、いくつかを読む部分のわけを 1 つにする `whyUnread`、断られた値（`refusedValuesOf`）、API 定義にない状態（`outsideTheContract`）、応答のパターンの部品（`UNANSWERED_PARTS`・`REFUSED_PARTS`、セッションの要らない操作の `PUBLIC_UNANSWERED_PARTS`・`PUBLIC_REFUSED_PARTS`、`UNREAD_TYPES`。マッチが、その場所で `P.union` に組む）、一覧のページ（`pageOf`、`from`）と、一覧を最後まで読むこと（`toTheEnd`）、続く一覧（`listingOf`、`cursorAfter`、`firstCursor`）、要求が多すぎるときと、読めなかったとき、送れなかったときの文（`TOO_MANY_REQUESTS_MESSAGE`、`unreadMessageOf`、`unsentMessageOf`）。画面の部品は持たない | `fields`、`session`、`preferences`、`salon-screens`、3つのアプリ |
 | `fields` | フォームが受け取る値の決まりと、その決まりが言う文。どのアプリのどのフォームも、同じ値には同じ決まりと同じ文を使う。日（`isDay`、日付の欄が受け付ける範囲の `EARLIEST_DAY`・`LATEST_DAY`）、姓と名（`lastNameError`、`firstNameError`）、メールアドレス（`emailError`、API が断ったときにも言う `EMAIL_MALFORMED`）、電話番号（`phoneError`、書かなくてもよい `alternativePhoneError`）、文字の長さ（API と同じく符号位置で数える `lengthOf`、長すぎるときの文 `tooLong`・`tooLongOf`・`eachTooLongOf`・`neededWithin`、その確かめ `tooLongError`・`neededError` と、空でもよい欄をまとめて確かめる `lengthErrors`、欄の説明の「N 文字まで。」を書く `upTo`、文の中の文字数を書く `charactersOf`）、選択肢にない値（`choiceOf`、`UNLISTED_MESSAGE`）、URL（API と同じ規則で確かめる `webAddressError`、1 行に 1 つ書く一覧の `webAddressLinesError`、その文 `WEB_ADDRESS_ERROR`・`notWebAddress`、長さ `LONGEST_WEB_ADDRESS`、欄の説明 `WEB_ADDRESS_DESCRIPTION`、リンクにしてよいアドレス `webAddressOf`）、1 行に 1 つずつ書く一覧の読み取り（`linesOf`）、お客様の記録（ポータルのプロフィールと管理画面の顧客台帳が、同じ決まりで書く。列の長さ `CUSTOMER_LENGTHS`、性別とメニューの区分の並び `GENDERS`・`SERVICE_CATEGORIES`、生年月日 `birthDateError`、好みのメニューとメモの読み方 `basicPreferencesIn`・`shownBasicPreferencesOf`、API が断った値の欄と文 `customerControlOf`・`customerRefusalOf`）。画面の部品は持たない | `session`、`preferences`、`salon-screens`、3つのアプリ |
 | `io` | ブラウザーに保存するセッション `sessionStore`、API が返したファイルの名前を読む `fileNameOf` と、画面が持つファイルをブラウザーに保存させる `saveFile`。API を知らない | `api-client`、`session`、admin-app、dashboard-app |
-| `session` | アプリのセッション: 状態を返すフック `useSession`、`signIn`、`signOut`、ユーザーが替わったときに取得済みのデータを消す `keepQueriesOfOneUser`、サインインが要る画面を囲む `RequireSession`（サインインの画面を含む）、ヘッダーのアカウント欄 `SessionAccount`、アカウントの安全の画面（`AccountSecurityScreen`、`PasswordChangeScreen`、`TwoFactorSetupScreen`）と、選ぶパスワードの規則（`PASSWORD_RULE` など）、サインインしている人の所属するサロン（`useOwnSalon`）と、どのサロンにも属していないアカウントへの知らせ（`NoSalonNotice`） | `salon-screens`、3つのアプリ（`src/main.tsx`、`src/App.tsx`、portal-app の `src/account/` と `src/security/`） |
+| `session` | アプリのセッション: 状態を返すフック `useSession`、`signIn`、`signOut`、ユーザーが替わったときに取得済みのデータを消す `keepQueriesOfOneUser`、サインインが要る画面を囲む `RequireSession`（サインインの画面を含む）、ヘッダーのアカウント欄 `SessionAccount`、アカウントの安全の画面（`AccountSecurityScreen`、`PasswordChangeScreen`、`TwoFactorSetupScreen`）と、選ぶパスワードの規則（`PASSWORD_RULE` など）、サインインしている人の所属するサロン（`useOwnSalon`）、ロールがサロンのものかどうか（`worksAtSalon`）と、どのサロンにも属していないアカウントへの知らせ（`NoSalonNotice`） | `app-frame`、`salon-screens`、portal-app（`src/App.tsx`、`src/account/`、`src/security/` など）、admin-app（`src/navigation.ts` など） |
+| `app-frame` | アプリの起動と、画面の枠。起動する `startApplication`（`QueryClient`、`keepQueriesOfOneUser`、`BrowserRouter`、描画先の要素）、枠の `AppFrame`（共有コンポーネントのリンクをルーターのリンクにすること、通知、ヘッダーとそのリンク、環境の名前）、どの画面にもセッションが要るアプリの `StaffApplication`（サインインの画面と、パスワードを忘れた人へのポータルへの案内、アカウントの安全の 3 つの画面のルート、アプリにないアドレスの画面）、アプリにないアドレスの画面 `NotFoundPage`、パスワードを変えたらアカウントの安全の画面へ戻る `PasswordChangePage`、アドレスが、ある画面かその下かを答える `isAtOrBelow` | 3つのアプリ（`src/main.tsx`、`src/App.tsx`、`src/navigation.ts`、portal-app の `src/security/`） |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `api-client`、`ui`（型のみ） |
 | `theme` | デザイントークン（`src/tokens.css`）、フォント（Inter と Noto Sans JP、`src/styles.css` が読み込む）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
 | `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、フォームの区切りの `FormPart`・`FormRow`・`FieldRow`、フォームを持つダイアログの `FormDialog`、検索の条件の `FilterForm`、メッセージの `Alert`、並んだボタンの `Actions`、控えめな文の `Note`、改行を保つ文の `WrittenText`、箇条書きの `BulletList`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、記録のない値の `NotRecorded`、カードの一覧の `CardList`、続きを読む一覧の `PagedList`・`LoadMore` と、その続きの状態（`moreOf`、名前を後から読む行の `moreOfRows`）と件数の文（`countOf`）、日と週を送る `PeriodSwitch`、読めなかったことの知らせの `UnreadNotice`、QR コードの `QrCode`、評価の星の `Rating`、言葉の一覧の `TagList`、リンクの `LinkProvider`・`Link`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` と、アプリのストーリーも表示する） | 3つのアプリ、`session`、`preferences`、`salon-screens` |
 | `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）と `ResizeObserver`、画面が保存したファイル（`savedFiles`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`io`、`answers`、`session`、`preferences`、`salon-screens`、3つのアプリのテスト、`frontend/e2e` |
 | `preferences` | 好み設定のフォーム（`PreferencesForm`、時間帯の行の `TimeSlotFields`）、フォームの読み取り（`readPreferencesChange`）と断られたときの言葉（`afterPreferencesChange`）、選べるスタッフの並びと名前（`staffChoicesOf`、`staffLabelOf`）、好み設定の表示（`PreferencesDetails`。スタッフの名前は、アプリが渡す関数 `staffNames` が決める。一覧にいるスタッフだけを名前にする `staffNamed`）。お客様がポータルで書くものと、サロンが台帳で書くものは、同じ好み設定で、見せ方も同じ | portal-app（`src/preferences/`、`src/reviews/`）、admin-app（`src/customers/`） |
-| `salon-screens` | 管理画面とダッシュボードのサロンの画面が共有するもの: 続きのある表（`PagedTable`）、キーワードの検索（`KeywordSearch`、`keywordOf`、長すぎるキーワードの文 `keywordError`）、サロンの時刻（`dayAt`、`timeOfDayAt` など）、サロンを探して読むこと（`findSalons`、`readSalon`）、アプリの始まりとサロンを選ぶ画面（`StartScreen`、`SalonChoiceScreen`、`SalonChoices`）、アドレスのサロン（`WithSalon`）と、ほかのサロンのアドレスへの知らせ（`OtherSalonNotice`）、集計する期間とそのフォーム（`readPeriod`、`StatisticsPeriod`）、金額と支払い方法とメニューの区分の言葉（`amountOf`、`methodKindNameOf`、`categoryNameOf`） | admin-app、dashboard-app |
+| `salon-screens` | 管理画面とダッシュボードのサロンの画面が共有するもの: 続きのある表（`PagedTable`）、キーワードの検索（`KeywordSearch`、`keywordOf`、長すぎるキーワードの文 `keywordError`）、サロンの時刻（`dayAt`、`timeOfDayAt` など）、サロンを探して読むこと（`findSalons`、`readSalon`）、アプリの始まりとサロンを選ぶ画面（`StartScreen`、`SalonChoiceScreen`、`SalonChoices`）、アドレスのサロン（`WithSalon`。ヘッダーのリンクのために、アドレスからサロンを読む `salonIdIn`）と、ほかのサロンのアドレスへの知らせ（`OtherSalonNotice`）、集計する期間とそのフォーム（`readPeriod`、`StatisticsPeriod`）、金額と支払い方法とメニューの区分の言葉（`amountOf`、`methodKindNameOf`、`categoryNameOf`） | admin-app、dashboard-app |
 | `brand` | アプリの名前（`PRODUCT_NAME`、`applications`）、アイコンと共有リンクの画像、それを配り、ページの head に名前を書く Vite のプラグイン | 3つのアプリ、`frontend/e2e`（テスト） |
 
-アプリが直接使っているのは、3 つのアプリの `ui`、`theme`、`session`、`api-client`、`answers`、`fields`、`brand` と、portal-app と admin-app の `preferences`、admin-app と dashboard-app の `io` と `salon-screens` です（`ui` は `config` から型を1つ借りています）。portal-app は、`io` を `api-client` と `session` を通して使っています。
+アプリが直接使っているのは、3 つのアプリの `ui`、`theme`、`app-frame`、`api-client`、`answers`、`fields`、`brand` と、portal-app と admin-app の `session` と `preferences`、admin-app と dashboard-app の `io` と `salon-screens` です（`ui` は `config` から型を1つ借りています）。portal-app は、`io` を `api-client` と `session` を通して使っています。
 
 実際のブラウザーで通すテスト（`@beauty-salon-frontend/e2e`）は、`frontend/e2e` にあります。`testing` から、テスト用のサーバーを呼ぶコードと、アクセシビリティの検査の規則を使います。
 
-アプリのビルド（`vite build`）は、`api-client`、`io`、`session`、`config`、`ui`、`preferences`、`assets` を、rslib でビルドした `dist/` を通して参照します。`theme` と `testing` はビルドせず、ソースのまま参照されます。`ui` のコンポーネントは自分のスタイルシートを自分で読み込むので、アプリが読み込むスタイルシートは `theme` の 1 つだけです（`src/main.tsx`）。アプリの開発サーバーとテストは、エクスポート条件 `@beauty-salon-frontend/source` を持つパッケージ（`ui`、`io`、`config`、`api-client`、`session`、`preferences`）をソースから読みます。コンポーネントの変更は、パッケージのビルドを待たずに画面に出ます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。テストはビルドを必要としません（[テスト](#テスト)）。
+アプリのビルド（`vite build`）は、`theme` と `testing` のほかのパッケージ（`answers`、`api-client`、`app-frame`、`brand`、`config`、`fields`、`io`、`preferences`、`salon-screens`、`session`、`ui`）を、rslib でビルドした `dist/` を通して参照します。`theme` と `testing` はビルドせず、ソースのまま参照されます。`ui` のコンポーネントは自分のスタイルシートを自分で読み込むので、アプリが読み込むスタイルシートは `theme` の 1 つだけです（`src/main.tsx`）。アプリの開発サーバーとテストは、エクスポート条件 `@beauty-salon-frontend/source` を持つパッケージ（ビルドするパッケージのすべて）をソースから読みます。コンポーネントの変更は、パッケージのビルドを待たずに画面に出ます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。テストはビルドを必要としません（[テスト](#テスト)）。
 
 ## 型の流れ（TypeSpec からコンポーネントまで）
 
@@ -243,7 +244,7 @@ export const useSession = (): Session
 - `unavailable` は、セッションはあるのに、API がだれのものかを答えなかった状態（応答がない、500、429 など）。`retry` で尋ね直す
 - `signIn(request)` は、API が受け付けたら（200）セッションを保存する。戻り値は、画面が分岐するための直和型 `SignInOutcome` で、`signedIn`、`wrongCredentials`（401 の `1002`）、`twoFactorCodeRequired`（401 の `1007`）、`invalid`（400。`fields` に、API が受け付けなかった項目の名前）、`tooManyAttempts`（429）、`notStored`（API は受け付けたが、ブラウザーが保存を拒んだ。サインインしていない状態のまま）、`failed`（応答がない、500 など）のどれか
 - `signOut()` は、API にセッションの終了を伝えてから、ブラウザーのセッションを消す。API がエラーを返しても、届かなくても、消す（共用のパソコンでサインアウトした人が、通信の失敗でサインインしたままにならないように）。そのとき、サーバーのセッションは期限まで残る
-- `keepQueriesOfOneUser(queryClient)` は、保存されているユーザーが替わったとき（サインアウト、別の人のサインイン。ほかのタブでのものを含む）に、取得済みのデータをすべて消す。次にサインインした人に、前の人のデータを見せないため。同じユーザーのトークンの再発行では消さない。3つのアプリの `src/main.tsx` が、`QueryClient` を作ったところで呼んでいる
+- `keepQueriesOfOneUser(queryClient)` は、保存されているユーザーが替わったとき（サインアウト、別の人のサインイン。ほかのタブでのものを含む）に、取得済みのデータをすべて消す。次にサインインした人に、前の人のデータを見せないため。同じユーザーのトークンの再発行では消さない。`app-frame` の `startApplication` が、`QueryClient` を作ったところで呼んでいる
 
 ### 画面とサインイン
 
@@ -1188,7 +1189,7 @@ dashboard-app の `src/reports/` に、サロンの売上レポートの画面�
 
 ## TanStack Query の設定
 
-3つのアプリとも `src/main.tsx` で同じ設定の `QueryClient` を作り、`QueryClientProvider` でアプリ全体を包んでいます（`frontend/apps/admin-app/src/main.tsx` より）。
+3つのアプリの `src/main.tsx` は、テーマのスタイルシートを読み込み、`app-frame` の `startApplication(<App />)` を呼ぶだけです。`startApplication` が、同じ設定の `QueryClient` を作り、`QueryClientProvider` と `BrowserRouter` でアプリ全体を包んで、`index.html` の `root` の要素に描きます（`frontend/packages/app-frame/src/start-application.tsx` より）。`root` の要素がないページでは、`body` の終わりに要素を作って描きます（例外は投げません）。
 
 ```tsx
 const queryClient = new QueryClient({
@@ -1203,7 +1204,7 @@ const queryClient = new QueryClient({
 })
 ```
 
-`VITE_MODE` が `production` 以外のときは React Query Devtools も表示します。`QueryClient` を作ったあと、`keepQueriesOfOneUser(queryClient)` を呼びます（[セッション](#アプリのセッションbeauty-salon-frontendsession)）。クエリを実行するのは、`useSession`（`RequireSession` と `SessionAccount` が使います）と、portal-app のアカウントの画面（リンクの確認）、サロンの画面、予約の画面です。予約の画面の、空いている時刻と予約のクエリは、この設定の `staleTime` を使わず、表示するたびに読みます（[予約の画面](#予約の画面)）。
+React Query Devtools の部品も置きます。この部品は、開発サーバーでだけ描かれ、ビルドしたアプリでは何も描きません（ライブラリーが `NODE_ENV` で決めます）。`QueryClient` を作ったあと、`keepQueriesOfOneUser(queryClient)` を呼びます（[セッション](#アプリのセッションbeauty-salon-frontendsession)）。クエリを実行するのは、`useSession`（`RequireSession` と `SessionAccount` が使います）と、portal-app のアカウントの画面（リンクの確認）、サロンの画面、予約の画面です。予約の画面の、空いている時刻と予約のクエリは、この設定の `staleTime` を使わず、表示するたびに読みます（[予約の画面](#予約の画面)）。
 
 `retry: 3` が再試行するのは、クエリが失敗（reject）したとき、つまり通信そのものが失敗したときです。API のエラー応答は値として返るので、再試行の対象になりません。画面の API を呼ぶ関数（`account-api.ts`、`salons-api.ts`、`bookings-api.ts`）は、通信の失敗も値にして返すので、どの場合も再試行されません。読み直すのは、利用者が「もう一度読み込む」を押したときです。
 
@@ -1213,10 +1214,10 @@ const queryClient = new QueryClient({
 
 | 変数 | 使っている場所 |
 |------|----------------|
-| `VITE_MODE` | `App.tsx` の `EnvironmentBanner`（本番以外で、画面の隅に環境名を表示する）、`main.tsx` の Devtools の表示判定 |
+| `VITE_MODE` | `App.tsx` が `app-frame` の枠（`AppFrame`、`StaffApplication`）に渡し、`EnvironmentBanner` が、本番以外で、画面の隅に環境名を表示する |
 | `VITE_BACKEND_BASE_URL` | API サーバーのオリジン（パスは付けない）。`config` パッケージの `env` を通して `customInstance` が使う。アプリのコードからは使われていない |
 | `VITE_ADMIN_APP_URL` | portal-app と admin-app にある。admin-app のオリジン。portal-app では、招待を受けたあとの「店舗向けの画面を開く」のリンク先。admin-app では、ブランドのプラグインが OGP の画像のアドレスに使う |
-| `VITE_PORTAL_APP_URL` | 3 つのアプリすべてにある。portal-app のオリジン。admin-app と dashboard-app では、サインインの画面の「パスワードを忘れた場合」のリンク先（`/forgot-password`）。portal-app では、ブランドのプラグインが OGP の画像のアドレスに使う |
+| `VITE_PORTAL_APP_URL` | 3 つのアプリすべてにある。portal-app のオリジン。admin-app と dashboard-app では、サインインの画面の「パスワードを忘れた場合」のリンク先（`/forgot-password`。`App.tsx` が `StaffApplication` に渡す）。portal-app では、ブランドのプラグインが OGP の画像のアドレスに使う |
 | `VITE_DASHBOARD_APP_URL` | dashboard-app だけにある。dashboard-app のオリジン。ブランドのプラグインが OGP の画像のアドレスに使う |
 
 - どのファイルが読まれるかは Vite のモードで決まります。開発サーバー（`pnpm dev`）と `build:dev` は `development`、`build:localhost` は `localhost`、`build:test` は `test`、`build:stg` は `staging`、`build:prod` は `production` です。3つのアプリとも、この 5 つのモードの `.env.<mode>` を持っています。
@@ -1312,6 +1313,7 @@ const found = useInfiniteQuery({
 
 - `ui` のコンポーネント: ストーリー（`*.stories.tsx`）を `composeStories` で読み込み、jsdom に描画して検証する（`*.test.tsx`）。どのストーリーにも、アクセシビリティの検査（axe-core、WCAG 2.2 AA）がある
 - 各アプリの `src/App.test.tsx`: `MemoryRouter` で枠を描画し、サインインしていない人に見えるもの（admin-app と dashboard-app ではサインインの画面、portal-app では、存在しないパスのページと `/sign-in`。トップページは API を読むので、結合テストにある）、共有コンポーネントのリンクがページを読み込み直さずに移動すること、アクセシビリティを検証する。API は呼ばない
+- `app-frame` の `src/`: `start-application.test.tsx`（`root` の要素に描くこと、その要素がないページ、ブラウザーのアドレスの画面、リンクがアドレスバーを書き換えること、クエリの設定、ユーザーが替わったら読み直すこと、StrictMode、終えたあと）、`app-frame.test.tsx`（アプリの名前とアカウントの欄、アドレスごとのヘッダーのリンク、共有コンポーネントのリンクがページを読み込み直さずに移動すること、通知、環境の名前、アクセシビリティ）、`staff-application.test.tsx`（サインインしていない人には、どのアドレスでもサインインの画面が出ること、ポータルへの案内）、`addresses.test.ts`（`isAtOrBelow`）、`NotFoundPage` のストーリーとそのテスト。API は呼ばない
 - `theme` の `src/style-rules.test.ts`: すべてのパッケージとアプリのスタイルシートとコンポーネントが、スタイルの規則を守っていることを検証する。`src/tokens.test.ts`: 文字と背景、コントロールの縁に使う色のトークンの組が、必要なコントラスト比を満たすことを検証する。`src/typefaces.test.ts`: テーマが依存するフォントのパッケージ、`src/styles.css` の読み込み、`--font-family` の名前が合っていることを検証する（名前を書き間違えても、エラーにはならず、OS のフォントで表示される）
 - `config` と `testing` の各パッケージ: モジュールの隣に `*.test.ts`
 - `api-client` の `src/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）。`fetcher.session.test.ts`: セッションがあるときの動作（トークンを付けること、期限切れのあとの再発行と送り直しが 1 回ずつであること、同時のリクエストで再発行が 1 回であること、ほかのタブが先に替えたセッションを通信せずに使うこと、断られた再発行と失敗した再発行の違い）。`src/fetcher/renew-session.test.ts`: 再発行のパスが、生成されたものと同じであること
@@ -1396,7 +1398,8 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 - dashboard-app の `src/reports/staff-sales.integration.test.tsx`: オーナーとマネージャーが売上レポートの上位 5 人から開くすべてのスタッフ（レポートの期間、明細の担当と会計の担当、取り消した会計、商品）、商品だけを売った日、辞めて名前の変わったスタッフ、売上のない期間、送る前の誤り、集計し直すこと、前の画面が読んだものを出さないこと、ほかのサロン、その間に削除されたサロン、アクセシビリティ
 - dashboard-app の `src/reports/category-sales.integration.test.tsx`: 売上レポートから開く区分別（メニューにないサービスの「その他」、1 件あたり、割合）、別の区分に移したサービス、商品だけを売った日、送る前の誤り、前の画面が読んだものを出さないこと、ほかのサロン、その間に削除されたサロン、アクセシビリティ。スタッフ別と区分別が数える売上は、`src/__tests__/arrangements.ts` の `sellToBreakDown`
 - dashboard-app の 5 つの画面のテストは、アプリをアドレスで出すことと、カードの項目と表の行の読み方を `src/__tests__/screens.tsx` で共有する
-- 各アプリの `src/App.integration.test.tsx`: そのアプリを使えるロールと使えないロール、開こうとしたアドレスの画面がサインインのあとに出ること、画面の移動、サインアウト、サインインした状態でのアクセシビリティ。admin-app と dashboard-app は、ヘッダーの「アカウントの安全」から、パスワードを変えて戻るまでと、アカウントの安全の画面から 2 要素認証を設定し、戻ると「有効」と出るまで
+- 各アプリの `src/App.integration.test.tsx`: そのアプリを使えるロールと使えないロール、開こうとしたアドレスの画面がサインインのあとに出ること、画面の移動、サインインした状態でのアクセシビリティ。portal-app は、サインアウトも。admin-app と dashboard-app は、ヘッダーの「アカウントの安全」からその画面が開くこと
+- `app-frame` の `src/staff-application.integration.test.tsx`: どの画面にもセッションが要るアプリに共通のことを、2 つの画面のアプリで確かめる。使えるロールと使えないロール、ロールとアドレスごとのヘッダーのリンク、開こうとしたアドレスの画面がサインインのあとに出ること、アプリにないアドレスの画面、画面の移動、ヘッダーの「アカウントの安全」から、パスワードを変えて戻るまで、変えずに戻ること、アカウントの安全の画面から 2 要素認証を設定し、戻ると「有効」と出るまで、サインアウト、サインインした状態でのアクセシビリティ
 - `testing` の `src/api/test-api.integration.test.ts`: この仕組みそのもの（シードのデータがあること、あるテストが書いたものが次のテストに残らないこと、トークンのないリクエストをテスト用のサーバーが受け付けないこと、テスト用のサーバーが返す認証アプリのコードを API が受け付けること、ブラウザーから呼ぶための API が、指定したポートで待ち受け、指定したオリジンだけを許可すること、API が送ったメールをテストが読めて、そのリンクのトークンを API が受け付けること）
 
 画面を操作するテストは、`@testing-library/user-event` で入力し、ボタンを押します。認証アプリのコードは `testApi().authenticatorCode(secret)` で得ます（テストには認証アプリがないため、テスト用のサーバーが計算します）。サインインの画面のテストは、API で 2 要素認証を設定してから始め、設定の画面のテストは、画面に出たキーから計算します。

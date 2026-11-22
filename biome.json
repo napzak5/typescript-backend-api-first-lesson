@@ -111,8 +111,7 @@
         "!**/*.test.tsx",
         "!**/*.stories.tsx",
         "!backend/packages/database/src/scripts/**",
-        "!backend/packages/database/src/seeds/**",
-        "!frontend/apps/*/src/main.tsx"
+        "!backend/packages/database/src/seeds/**"
       ],
       "plugins": [
         "./shared-config/biome/no-type-assertion.grit",

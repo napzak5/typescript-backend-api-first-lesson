@@ -1,12 +1,7 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
+import { isAtOrBelow } from '@beauty-salon-frontend/app-frame'
+import { salonIdIn } from '@beauty-salon-frontend/salon-screens'
 import type { NavigationItem } from '@beauty-salon-frontend/ui'
-
-/** The start of the addresses of the screens of one salon. */
-const SALON_PATH = /^\/salons\/([^/]+)(?:\/|$)/
-
-/** The salon whose screens an address is of, if it is one of them. */
-export const salonIdIn = (pathname: string): string | undefined =>
-  SALON_PATH.exec(pathname)?.[1]
 
 /** The sales report of a salon: where its screens begin. */
 export const reportsHrefOf = (salonId: string): string =>
@@ -27,10 +22,6 @@ export const staffSalesHrefOf = (salonId: string): string =>
 /** The sales of every kind of service of a salon. */
 export const categorySalesHrefOf = (salonId: string): string =>
   `${reportsHrefOf(salonId)}/categories`
-
-/** Whether an address is that of a screen, or of one below it. */
-const isAtOrBelow = (pathname: string, screen: string): boolean =>
-  pathname === screen || pathname.startsWith(`${screen}/`)
 
 /**
  * The links of the header: the screens of the sales of the salon of the

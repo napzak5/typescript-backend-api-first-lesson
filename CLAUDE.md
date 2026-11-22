@@ -193,6 +193,7 @@ frontend/
     ├── fields/           # The rules of the values a form takes, in every application: days, names, addresses of mail, telephone numbers, lengths, choices, addresses of the web, and the record of a customer
     ├── io/               # The session the browser keeps, and the files a page saves
     ├── session/          # The session of an application: who is signed in, the sign-in screen, the guard of the screens that need a session
+    ├── app-frame/        # The start and the frame of an application: the query client and the router, the header with its links, the screen of an address that is none, and the application that is all behind a session, with the screens of the account
     ├── preferences/      # What a customer wishes for, which the portal and the admin application share: the form, and how it is shown
     ├── salon-screens/    # What the screens of a salon share in the admin and the dashboard applications: the table that goes on, the clock of a salon, the choice of a salon and the salon of an address, the period of a count and the days of a search
     ├── config/           # Values of the environment

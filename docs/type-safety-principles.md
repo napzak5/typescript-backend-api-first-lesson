@@ -41,7 +41,6 @@ Biome プラグイン（`as`、型ガード、`throw`）が検査するのは、
 |--------|------|
 | `__tests__` ディレクトリ、`*.test.ts(x)`、`*.stories.tsx` | テストコード |
 | `backend/packages/database/src/scripts`、`backend/packages/database/src/seeds` | コマンドラインから実行するスクリプトとシードデータ |
-| `frontend/apps/*/src/main.tsx` | アプリの起動点。描画先の要素がないときに `throw` で起動を止める |
 
 `backend/packages/generated/src` と `frontend/packages/api-client/src/generated` は、Biome の対象そのものから外れています。`any` と `!` の検査（`noExplicitAny`、`noNonNullAssertion`）は、Biome が見るすべてのファイルに適用されます。
 
