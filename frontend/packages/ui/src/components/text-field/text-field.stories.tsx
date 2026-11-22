@@ -39,7 +39,7 @@ export const WithError: Story = {
     type: 'email',
     defaultValue: 'hanako@',
     description: '予約の確認をお送りします',
-    error: 'メールアドレスの形式で入力してください',
+    error: 'メールアドレスは、hanako@example.com のような形で入力してください',
   },
 }
 

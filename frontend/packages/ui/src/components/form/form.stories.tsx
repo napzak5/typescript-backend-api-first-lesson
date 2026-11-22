@@ -82,7 +82,8 @@ export const WithMessage: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      email: 'メールアドレスの形式で入力してください。',
+      email:
+        'メールアドレスは、hanako@example.com のような形で入力してください。',
       password: 'パスワードが短すぎます。15 文字以上で入力してください。',
     },
   },
@@ -104,7 +105,8 @@ export const WithChoiceError: Story = {
   args: {
     errors: {
       guests: '人数を選んでください。',
-      email: 'メールアドレスの形式で入力してください。',
+      email:
+        'メールアドレスは、hanako@example.com のような形で入力してください。',
     },
   },
   render: (form) => <GuestsForm {...form} />,

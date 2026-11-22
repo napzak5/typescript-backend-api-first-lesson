@@ -74,7 +74,7 @@ describe('TextField', () => {
     // Assert
     expect(input).toHaveAttribute('aria-invalid', 'true')
     expect(input).toHaveAccessibleDescription(
-      '予約の確認をお送りします メールアドレスの形式で入力してください',
+      '予約の確認をお送りします メールアドレスは、hanako@example.com のような形で入力してください',
     )
   })
 
