@@ -121,7 +121,7 @@ describe('PaymentMethodForm', () => {
 
     // Assert
     expect(text(/表示名/)).toHaveAccessibleDescription(
-      expect.stringContaining('表示名を、100 文字までで入力してください。'),
+      expect.stringContaining('表示名を、100 文字以内で入力してください。'),
     )
     expect(
       screen.getByRole('combobox', { name: /種類/ }),
@@ -141,5 +141,16 @@ describe('PaymentMethodForm', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'このサロンの支払い方法は、変えられません。',
     )
+  })
+
+  it.each<[string, string]>([
+    ['表示名', '100 文字まで。売上の画面とレシートに出る名前です。'],
+    ['決済代行会社', '100 文字まで。決済代行会社を介さないときは空にします。'],
+  ])('should say at %s how long it may be', async (label, description) => {
+    // Act
+    await stories.Recorded.run()
+
+    // Assert
+    expect(text(label)).toHaveAccessibleDescription(description)
   })
 })

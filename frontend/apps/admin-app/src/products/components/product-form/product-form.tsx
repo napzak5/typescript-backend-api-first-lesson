@@ -1,4 +1,5 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
+import { upTo } from '@beauty-salon-frontend/fields'
 import {
   Checkbox,
   FieldRow,
@@ -10,6 +11,13 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
+import {
+  LONGEST_CODE,
+  LONGEST_LABEL,
+  LONGEST_NAME,
+  LONGEST_SUPPLIER,
+  LONGEST_UNIT,
+} from '../../product-form'
 
 export type ProductFormProps = Pick<
   FormProps,
@@ -53,7 +61,7 @@ export const ProductForm = ({
           name='productCode'
           autoComplete='off'
           required
-          description='100 文字まで。このサロンの、削除していないほかの商品と同じコードは使えません。取り扱いをやめた商品のコードも使えません。'
+          description={`${upTo(LONGEST_CODE)}このサロンの、削除していないほかの商品と同じコードは使えません。取り扱いをやめた商品のコードも使えません。`}
           defaultValue={product?.productCode}
           error={errors['productCode']}
         />
@@ -62,7 +70,7 @@ export const ProductForm = ({
           name='unit'
           autoComplete='off'
           required
-          description='本、個、ml など。20 文字まで。在庫の数を数える単位です。'
+          description={`本、個、ml など。${upTo(LONGEST_UNIT)}在庫の数を数える単位です。`}
           defaultValue={product?.unit}
           error={errors['unit']}
         />
@@ -72,7 +80,7 @@ export const ProductForm = ({
         name='name'
         autoComplete='off'
         required
-        description='255 文字まで。'
+        description={upTo(LONGEST_NAME)}
         defaultValue={product?.name}
         error={errors['name']}
       />
@@ -87,7 +95,7 @@ export const ProductForm = ({
           label='カテゴリー'
           name='category'
           autoComplete='off'
-          description='100 文字まで。商品台帳で、カテゴリーで探せます。在庫の評価額をカテゴリーごとに集計します。'
+          description={`${upTo(LONGEST_LABEL)}商品台帳で、カテゴリーで探せます。在庫の評価額をカテゴリーごとに集計します。`}
           defaultValue={textOrNothing(product?.category)}
           error={errors['category']}
         />
@@ -95,7 +103,7 @@ export const ProductForm = ({
           label='ブランド'
           name='brand'
           autoComplete='off'
-          description='100 文字まで。'
+          description={upTo(LONGEST_LABEL)}
           defaultValue={textOrNothing(product?.brand)}
           error={errors['brand']}
         />
@@ -195,7 +203,7 @@ export const ProductForm = ({
           label='仕入先'
           name='supplier'
           autoComplete='off'
-          description='255 文字まで。'
+          description={upTo(LONGEST_SUPPLIER)}
           defaultValue={textOrNothing(product?.supplier)}
           error={errors['supplier']}
         />
@@ -203,7 +211,7 @@ export const ProductForm = ({
           label='仕入先の商品コード'
           name='supplierProductCode'
           autoComplete='off'
-          description='100 文字まで。発注するときに使います。'
+          description={`${upTo(LONGEST_LABEL)}発注するときに使います。`}
           defaultValue={textOrNothing(product?.supplierProductCode)}
           error={errors['supplierProductCode']}
         />
@@ -226,7 +234,7 @@ export const ProductForm = ({
           name='barcode'
           inputMode='numeric'
           autoComplete='off'
-          description='100 文字まで。商品台帳で、バーコードで探せます。'
+          description={`${upTo(LONGEST_LABEL)}商品台帳で、バーコードで探せます。`}
           defaultValue={textOrNothing(product?.barcode)}
           error={errors['barcode']}
         />

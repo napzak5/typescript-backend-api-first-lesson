@@ -325,4 +325,15 @@ describe('ServiceForm', () => {
       ),
     ).toBeInTheDocument()
   })
+
+  it.each<[string, string]>([
+    ['名前', '255 文字まで。お客様のメニューに出ます。'],
+    ['短い紹介', '500 文字まで。メニューの一覧に出ます。'],
+  ])('should say at %s how long it may be', async (label, description) => {
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(text(label)).toHaveAccessibleDescription(description)
+  })
 })

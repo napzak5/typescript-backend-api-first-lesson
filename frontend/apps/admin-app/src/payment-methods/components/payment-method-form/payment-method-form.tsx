@@ -1,4 +1,5 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
+import { upTo } from '@beauty-salon-frontend/fields'
 import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Checkbox,
@@ -9,6 +10,7 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
+import { LONGEST_NAME } from '../../payment-method-form'
 import { KIND_OPTIONS } from '../../payment-method-format'
 
 export type PaymentMethodFormProps = Pick<
@@ -64,7 +66,7 @@ export const PaymentMethodForm = ({
       name='displayName'
       autoComplete='off'
       required
-      description='100 文字まで。売上の画面とレシートに出る名前です。'
+      description={`${upTo(LONGEST_NAME)}売上の画面とレシートに出る名前です。`}
       defaultValue={method?.displayName}
       error={errors['displayName']}
     />
@@ -108,7 +110,7 @@ export const PaymentMethodForm = ({
         label='決済代行会社'
         name='processorName'
         autoComplete='off'
-        description='100 文字まで。決済代行会社を介さないときは空にします。'
+        description={`${upTo(LONGEST_NAME)}決済代行会社を介さないときは空にします。`}
         defaultValue={method?.processorName ?? undefined}
         error={errors['processorName']}
       />

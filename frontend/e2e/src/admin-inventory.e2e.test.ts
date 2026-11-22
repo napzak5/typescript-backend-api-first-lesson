@@ -225,7 +225,7 @@ test.describe('the stock of a salon, on a screen as narrow as a phone', () => {
     await expect(
       page.getByRole('textbox', { name: /^ロット番号/ }),
     ).toHaveAccessibleDescription(
-      /ロット番号を、100 文字までで入力してください。この商品は、在庫をロット番号で分けます。/,
+      /ロット番号を、100 文字以内で入力してください。この商品は、在庫をロット番号で分けます。/,
     )
     await expectSoundPage(page)
   })

@@ -11,7 +11,12 @@ import type {
   ModelsTreatmentRecordResponse,
   ModelsTreatmentRecordUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { isDay } from '@beauty-salon-frontend/fields'
+import {
+  eachTooLongOf,
+  isDay,
+  lengthOf,
+  tooLongOf,
+} from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   errorAt,
@@ -54,7 +59,7 @@ const MOST_QUANTITY = 99_999_999.99
 const STAFF_MISSING = '担当を選んでください。'
 const SERVICES_MISSING = '提供したサービスを選んでください。'
 const TOO_MANY_SERVICES = `提供したサービスは、${MOST_IN_A_LIST} 件までにしてください。`
-const TECHNIQUE_TOO_LONG = `技法の名前は、1 つ ${LONGEST_TECHNIQUE} 文字までで入力してください。`
+const TECHNIQUE_TOO_LONG = eachTooLongOf('技法の名前', LONGEST_TECHNIQUE)
 const TOO_MANY_TECHNIQUES = `技法は、${MOST_IN_A_LIST} 件までで入力してください。`
 const TIME_ERROR = `施術時間は、0 から ${LONGEST_TREATMENT} までの分の整数で入力してください。`
 const DATE_ERROR = '次に勧める日を、日付で入力してください。'
@@ -66,10 +71,10 @@ const PRODUCT_GONE =
 const QUANTITY_ERROR =
   '量は、0 より大きい数で、小数第 2 位まで入力してください。'
 const UNIT_MISSING = '単位を入力してください。'
-const UNIT_TOO_LONG = `単位は、${LONGEST_UNIT} 文字までで入力してください。`
+const UNIT_TOO_LONG = tooLongOf('単位', LONGEST_UNIT)
 const LOT_MISSING =
   'この商品は、ロットで管理しています。ロット番号を入力してください。'
-const LOT_TOO_LONG = `ロット番号は、${LONGEST_LOT_NUMBER} 文字までで入力してください。`
+const LOT_TOO_LONG = tooLongOf('ロット番号', LONGEST_LOT_NUMBER)
 const LOT_NOT_TAKEN =
   'この商品は、ロットで管理していません。ロット番号を消してください。'
 const LOT_CHANGED =
@@ -140,7 +145,7 @@ const lotErrorOf = (
   product: ModelsProductResponse | undefined,
   lotNumber: string | null,
 ): string | undefined => {
-  if (lotNumber !== null && lotNumber.length > LONGEST_LOT_NUMBER) {
+  if (lotNumber !== null && lengthOf(lotNumber) > LONGEST_LOT_NUMBER) {
     return LOT_TOO_LONG
   }
   if (product === undefined) {
@@ -185,7 +190,7 @@ const readMaterial = (
       materialControlOf(index, 'unit'),
       unit === ''
         ? UNIT_MISSING
-        : unit.length > LONGEST_UNIT
+        : lengthOf(unit) > LONGEST_UNIT
           ? UNIT_TOO_LONG
           : undefined,
     ),
@@ -223,7 +228,7 @@ const chosenIn = (values: FormData, name: string): string[] => [
 const techniquesErrorOf = (
   techniques: readonly string[],
 ): string | undefined => {
-  if (techniques.some((name) => name.length > LONGEST_TECHNIQUE)) {
+  if (techniques.some((name) => lengthOf(name) > LONGEST_TECHNIQUE)) {
     return TECHNIQUE_TOO_LONG
   }
 

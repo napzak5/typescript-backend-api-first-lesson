@@ -53,7 +53,7 @@ export const NewWithErrors: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      name: 'サロンの名前を、255 文字までで入力してください。',
+      name: 'サロンの名前を、255 文字以内で入力してください。',
       latitude:
         '緯度は、-90 から 90 までの数（小数は 8 桁まで）で入力してください。',
       email:

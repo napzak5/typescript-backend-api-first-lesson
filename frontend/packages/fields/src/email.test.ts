@@ -18,6 +18,11 @@ describe('emailError', () => {
       `${'a'.repeat(244)}@example.com`,
       '255 文字以内で入力してください。',
     ],
+    [
+      'an address of the longest length that holds a character outside the basic plane',
+      `${'a'.repeat(242)}😀@example.com`,
+      MALFORMED,
+    ],
     ['an address without its domain', 'hanako@', MALFORMED],
     ['a text without the at sign', 'hanako.example.com', MALFORMED],
     ['an address with a space in it', 'hanako @example.com', MALFORMED],

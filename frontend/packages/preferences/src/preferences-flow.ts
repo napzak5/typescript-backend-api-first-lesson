@@ -11,7 +11,7 @@ import type {
   ModelsStylePreference,
   ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
-import { tooLong } from '@beauty-salon-frontend/fields'
+import { lengthOf, tooLong } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormErrors,
@@ -268,7 +268,7 @@ const errorsOf = (entered: Entered): FormErrors => {
       return error === undefined ? [] : [error]
     }),
     ...(images === undefined ? [] : [[INSPIRATION_IMAGES, images]]),
-    ...(entered.communicationStyle.trim().length >
+    ...(lengthOf(entered.communicationStyle.trim()) >
     MAX_COMMUNICATION_STYLE_LENGTH
       ? [[COMMUNICATION_STYLE, COMMUNICATION_STYLE_TOO_LONG]]
       : []),

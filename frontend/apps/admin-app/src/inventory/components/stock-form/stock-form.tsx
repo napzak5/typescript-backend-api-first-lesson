@@ -2,7 +2,7 @@ import type {
   ModelsInventoryResponse,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/fields'
+import { EARLIEST_DAY, LATEST_DAY, upTo } from '@beauty-salon-frontend/fields'
 import {
   FieldRow,
   Form,
@@ -15,7 +15,8 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useState } from 'react'
-import { showsLot } from '../../stock-form'
+import { LONGEST_LOT } from '../../lot-number'
+import { LONGEST_LOCATION, LONGEST_SHELF, showsLot } from '../../stock-form'
 import { productOf, REMOVED_PRODUCT } from '../../stock-format'
 import styles from './stock-form.module.css'
 
@@ -34,8 +35,7 @@ export type StockFormProps = Pick<
   errors?: FormErrors | undefined
 }
 
-const LOT_KEPT =
-  '100 文字まで。この商品のほかの在庫の行と同じロット番号は使えません。'
+const LOT_KEPT = `${upTo(LONGEST_LOT)}この商品のほかの在庫の行と同じロット番号は使えません。`
 const LOT_TO_CLEAR =
   'この商品は、在庫をロット番号で分けません。ロット番号は、消すことだけができます。'
 
@@ -119,7 +119,7 @@ export const StockForm = ({
             label='保管場所'
             name='location'
             autoComplete='off'
-            description='100 文字まで。'
+            description={upTo(LONGEST_LOCATION)}
             defaultValue={row?.location ?? undefined}
             error={errors['location']}
           />
@@ -127,7 +127,7 @@ export const StockForm = ({
             label='棚'
             name='shelf'
             autoComplete='off'
-            description='50 文字まで。'
+            description={upTo(LONGEST_SHELF)}
             defaultValue={row?.shelf ?? undefined}
             error={errors['shelf']}
           />

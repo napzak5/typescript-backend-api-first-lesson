@@ -1,3 +1,4 @@
+import { upTo } from '@beauty-salon-frontend/fields'
 import {
   Button,
   Checkbox,
@@ -13,7 +14,11 @@ import {
   useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { PHOTO_TYPE_OPTIONS, photoControlOf } from '../../treatment-photos'
+import {
+  LONGEST_ANGLE,
+  PHOTO_TYPE_OPTIONS,
+  photoControlOf,
+} from '../../treatment-photos'
 import styles from './photo-form.module.css'
 
 export type PhotoFormProps = {
@@ -90,7 +95,7 @@ export const PhotoForm = ({
               label='撮った向き'
               name={photoControlOf(index, 'angle')}
               autoComplete='off'
-              description='正面、側面、後ろなど。50 文字まで。'
+              description={`正面、側面、後ろなど。${upTo(LONGEST_ANGLE)}`}
               error={photos.errors[photoControlOf(index, 'angle')]}
             />
           </FieldRow>

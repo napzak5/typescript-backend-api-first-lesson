@@ -5,7 +5,13 @@ import {
   daysErrorsOf,
   startOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, textOf, textOrNull } from '@beauty-salon-frontend/ui'
+import {
+  errorAt,
+  type FormRead,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { supplierError } from './order-entry'
 import { orderStatusIn } from './order-format'
 import type { OrderListParams } from './purchase-orders-api'
 
@@ -25,14 +31,11 @@ export type OrderConditions = {
   to?: string
 }
 
-/** The longest name of a supplier, as the API takes it */
-const LONGEST_SUPPLIER = 255
-
 /** A name of a supplier the API takes: none for a blank one or one too long. */
 const supplierIn = (text: string): string | undefined => {
   const supplier = textOrNull(text)
 
-  return supplier === null || [...supplier].length > LONGEST_SUPPLIER
+  return supplier === null || supplierError(supplier) !== undefined
     ? undefined
     : supplier
 }
@@ -59,8 +62,6 @@ export const orderConditionsIn = (query: URLSearchParams): OrderConditions => {
   }
 }
 
-const SUPPLIER_ERROR = `仕入先は ${LONGEST_SUPPLIER} 文字以内で入力してください。`
-
 /** The conditions that were filled in: each may be left empty. */
 export const readOrderConditions = (
   values: FormData,
@@ -70,9 +71,7 @@ export const readOrderConditions = (
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
   const errors = {
-    ...(supplier === null || supplierIn(supplier) !== undefined
-      ? {}
-      : { supplier: SUPPLIER_ERROR }),
+    ...Object.fromEntries(errorAt('supplier', supplierError(supplier))),
     ...daysErrorsOf(from, to, 'optional'),
   }
   if (Object.keys(errors).length > 0) {

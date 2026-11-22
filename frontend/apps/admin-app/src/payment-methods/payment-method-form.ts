@@ -10,6 +10,12 @@ import type {
   ModelsPaymentMethodUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import {
+  neededError,
+  neededWithin,
+  tooLongError,
+  tooLongOf,
+} from '@beauty-salon-frontend/fields'
+import {
   aboutTheAttempt,
   errorAt,
   type FormRead,
@@ -32,12 +38,13 @@ import type {
  * answers.
  */
 
-const LONGEST_NAME = 100
+/** The longest name of a method, and of the company that processes its payments */
+export const LONGEST_NAME = 100
 const LONGEST_FEE = 100
 
 const KIND_ERROR = '種類を選んでください。'
-const NAME_ERROR = `表示名を、${LONGEST_NAME} 文字までで入力してください。`
-const PROCESSOR_ERROR = `決済代行会社の名前は、${LONGEST_NAME} 文字までで入力してください。`
+const NAME_ERROR = neededWithin('表示名', LONGEST_NAME)
+const PROCESSOR_ERROR = tooLongOf('決済代行会社の名前', LONGEST_NAME)
 const FEE_ERROR =
   '手数料率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。'
 const MINIMUM_ERROR = '下限は、1 以上の円の整数で入力してください。'
@@ -87,15 +94,11 @@ const readWhole = (
     ...errorAt('method', method === undefined ? KIND_ERROR : undefined),
     ...errorAt(
       'displayName',
-      displayName === '' || displayName.length > LONGEST_NAME
-        ? NAME_ERROR
-        : undefined,
+      neededError(displayName, LONGEST_NAME, NAME_ERROR),
     ),
     ...errorAt(
       'processorName',
-      processorName !== null && processorName.length > LONGEST_NAME
-        ? PROCESSOR_ERROR
-        : undefined,
+      tooLongError(processorName, LONGEST_NAME, PROCESSOR_ERROR),
     ),
     ...errorAt(
       'fee',

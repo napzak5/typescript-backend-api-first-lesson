@@ -294,7 +294,7 @@ describe('the settings of a salon, against the API', () => {
     // Assert
     expect(text('名前')).toHaveAccessibleDescription(
       expect.stringContaining(
-        'サロンの名前を、255 文字までで入力してください。',
+        'サロンの名前を、255 文字以内で入力してください。',
       ),
     )
     expect(text('緯度')).toHaveAccessibleDescription(

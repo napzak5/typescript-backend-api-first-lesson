@@ -1,3 +1,4 @@
+import { charactersOf } from '@beauty-salon-frontend/fields'
 import {
   type ChoiceOption,
   Form,
@@ -156,7 +157,7 @@ export const ReviewForm = ({
           label='タイトル'
           name={TITLE}
           autoComplete='off'
-          description={`${MAX_TITLE_LENGTH} 文字以内で書いてください。空欄のままでも、かまいません。`}
+          description={`${charactersOf(MAX_TITLE_LENGTH)}以内で書いてください。空欄のままでも、かまいません。`}
           defaultValue={entered.title}
           error={errors[TITLE]}
         />

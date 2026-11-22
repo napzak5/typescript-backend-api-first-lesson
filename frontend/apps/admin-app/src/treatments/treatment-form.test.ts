@@ -222,7 +222,7 @@ describe('readTreatmentEntry', () => {
       errors: {
         staffId: '担当を選んでください。',
         services: '提供したサービスを選んでください。',
-        techniques: '技法の名前は、1 つ 100 文字までで入力してください。',
+        techniques: '技法の名前は、1 つ 100 文字以内で入力してください。',
         processingTime:
           '施術時間は、0 から 1440 までの分の整数で入力してください。',
         nextRecommendedDate:
@@ -369,9 +369,53 @@ describe('the materials of the form', () => {
         [materialControlOf(2, 'quantity')]:
           '量は、0 より大きい数で、小数第 2 位まで入力してください。',
         [materialControlOf(2, 'unit')]:
-          '単位は、20 文字までで入力してください。',
+          '単位は、20 文字以内で入力してください。',
         [materialControlOf(3, 'lotNumber')]:
           'この商品は、ロットで管理していません。ロット番号を消してください。',
+      },
+    })
+  })
+
+  it('should take a technique, a unit and a lot number as long as the API takes them, counted as it counts them', () => {
+    // Arrange
+    const values = formOf({ ...LEAST, techniques: '𠮷'.repeat(100) }, [
+      {
+        productId: COLOR_AGENT,
+        quantity: '1',
+        unit: '𠮷'.repeat(20),
+        lotNumber: '𠮷'.repeat(100),
+        notes: '',
+      },
+    ])
+
+    // Act
+    const read = readTreatmentEntry(values, booking, context)
+
+    // Assert
+    expect(read.type).toBe('valid')
+  })
+
+  it('should say that a lot number of 101 characters is too long', () => {
+    // Arrange
+    const values = formOf(LEAST, [
+      {
+        productId: COLOR_AGENT,
+        quantity: '1',
+        unit: '本',
+        lotNumber: 'L'.repeat(101),
+        notes: '',
+      },
+    ])
+
+    // Act
+    const read = readTreatmentEntry(values, booking, context)
+
+    // Assert
+    expect(read).toEqual({
+      type: 'invalid',
+      errors: {
+        [materialControlOf(0, 'lotNumber')]:
+          'ロット番号は、100 文字以内で入力してください。',
       },
     })
   })

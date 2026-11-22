@@ -36,7 +36,7 @@ export const Recorded: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      productCode: '商品コードを、100 文字までで入力してください。',
+      productCode: '商品コードを、100 文字以内で入力してください。',
       purchasePrice: '仕入価格は、0 以上の円の整数で入力してください。',
       reorderPoint:
         '発注点は、最低在庫数と同じか、それより大きい数にしてください。',

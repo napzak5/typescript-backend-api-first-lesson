@@ -136,7 +136,7 @@ describe('StockFilter', () => {
 
     // Assert
     expect(lot()).toHaveAccessibleDescription(
-      'ロット番号のすべて。大文字と小文字を区別します。 ロット番号は 100 文字以内で入力してください。',
+      'ロット番号のすべて。大文字と小文字を区別します。 ロット番号は、100 文字以内で入力してください。',
     )
     expect(lot()).toHaveFocus()
   })

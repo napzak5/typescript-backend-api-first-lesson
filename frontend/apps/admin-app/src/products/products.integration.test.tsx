@@ -643,7 +643,7 @@ describe('the product ledger of a salon, against the API', () => {
 
     // Assert
     expect(text(/^商品コード/)).toHaveAccessibleDescription(
-      expect.stringContaining('商品コードを、100 文字までで入力してください。'),
+      expect.stringContaining('商品コードを、100 文字以内で入力してください。'),
     )
     expect(text(/^商品コード/)).toHaveFocus()
     expect(text(/^発注点/)).toHaveAccessibleDescription(

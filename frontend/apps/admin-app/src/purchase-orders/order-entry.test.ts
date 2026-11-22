@@ -149,8 +149,21 @@ describe('readOrderEntry', () => {
       ),
     ).toMatchObject({
       type: 'invalid',
-      errors: { supplier: '仕入先は 255 文字以内で入力してください。' },
+      errors: { supplier: '仕入先は、255 文字以内で入力してください。' },
     })
+  })
+
+  it('should take a supplier of 255 characters, counted as the API counts them', () => {
+    expect(
+      readOrderEntry(
+        filled({
+          supplier: '𠮷'.repeat(255),
+          [quantityControlOf(colourLot.id)]: '3',
+        }),
+        salon,
+        STOCK_OF_THE_SALON,
+      ),
+    ).toMatchObject({ type: 'valid', value: { supplier: '𠮷'.repeat(255) } })
   })
 
   it('should say at the hundred and first item that an order holds a hundred', () => {

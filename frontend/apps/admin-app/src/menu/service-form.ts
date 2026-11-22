@@ -10,6 +10,12 @@ import type {
   ModelsServiceUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import {
+  neededError,
+  neededWithin,
+  tooLongError,
+  tooLongOf,
+} from '@beauty-salon-frontend/fields'
+import {
   linesOf,
   pictureAddressesError,
 } from '@beauty-salon-frontend/preferences'
@@ -45,8 +51,10 @@ import {
  * what is wrong with one.
  */
 
-const LONGEST_NAME = 255
-const LONGEST_SHORT_DESCRIPTION = 500
+/** The longest name of a service, and of an option, the API takes */
+export const LONGEST_NAME = 255
+/** The longest short introduction of a service */
+export const LONGEST_SHORT_DESCRIPTION = 500
 const LONGEST_URL = 500
 const LONGEST_DURATION = 1440
 
@@ -54,8 +62,8 @@ const LONGEST_DURATION = 1440
 export const FEWEST_PACKAGED = 2
 export const MOST_PACKAGED = 20
 
-const NAME_ERROR = `サービスの名前を、${LONGEST_NAME} 文字までで入力してください。`
-const SHORT_DESCRIPTION_ERROR = `短い紹介は、${LONGEST_SHORT_DESCRIPTION} 文字までで入力してください。`
+const NAME_ERROR = neededWithin('サービスの名前', LONGEST_NAME)
+const SHORT_DESCRIPTION_ERROR = tooLongOf('短い紹介', LONGEST_SHORT_DESCRIPTION)
 const DURATION_ERROR = `所要時間は、1 から ${LONGEST_DURATION} までの整数（分）で入力してください。`
 const PRICE_ERROR = '料金は、0 以上の整数で入力してください。'
 const DISCOUNT_ERROR =
@@ -71,7 +79,7 @@ const IMAGE_ERROR = `http:// か https:// で始まる URL を、${LONGEST_URL} 
 const PACKAGED_COUNT_ERROR = `パッケージにするときは、構成サービスを ${FEWEST_PACKAGED} 件から ${MOST_PACKAGED} 件まで選んでください。`
 const PACKAGED_MISSING = 'サービスを選んでください。'
 const PACKAGED_TWICE = '同じサービスは、1 回だけ入れられます。'
-const OPTION_NAME_ERROR = `オプションの名前を、${LONGEST_NAME} 文字までで入力してください。`
+const OPTION_NAME_ERROR = neededWithin('オプションの名前', LONGEST_NAME)
 const OPTION_TYPE_ERROR = 'オプションの種類を選んでください。'
 const OPTION_TIME_ERROR = '追加の時間は、0 以上の整数（分）で入力してください。'
 const OPTION_PRICE_ERROR = '追加の料金は、0 以上の整数で入力してください。'
@@ -160,7 +168,7 @@ const readOption = (values: FormData, index: number): OptionRead => {
   const errors = [
     ...errorAt(
       optionControlOf(index, 'name'),
-      name === '' || name.length > LONGEST_NAME ? OPTION_NAME_ERROR : undefined,
+      neededError(name, LONGEST_NAME, OPTION_NAME_ERROR),
     ),
     ...errorAt(
       optionControlOf(index, 'optionType'),
@@ -278,16 +286,14 @@ const readWhole = (values: FormData): FormRead<ModelsServiceCreateRequest> => {
   const packaged = isPackage ? packagedRowsIn(values, 0) : []
   const options = optionRowsIn(values, 0)
   const errors: Record<string, string> = Object.fromEntries([
-    ...errorAt(
-      'name',
-      name === '' || name.length > LONGEST_NAME ? NAME_ERROR : undefined,
-    ),
+    ...errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
     ...errorAt(
       'shortDescription',
-      shortDescription !== null &&
-        shortDescription.length > LONGEST_SHORT_DESCRIPTION
-        ? SHORT_DESCRIPTION_ERROR
-        : undefined,
+      tooLongError(
+        shortDescription,
+        LONGEST_SHORT_DESCRIPTION,
+        SHORT_DESCRIPTION_ERROR,
+      ),
     ),
     ...errorAt('duration', duration === undefined ? DURATION_ERROR : undefined),
     ...errorAt('price', price === undefined ? PRICE_ERROR : undefined),

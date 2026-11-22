@@ -279,10 +279,10 @@ describe('readNewReview', () => {
     })
   })
 
-  it('should take a title of 255 characters, and not count the spaces around it', () => {
+  it('should take a title of 255 characters, counted as the API counts them, and not count the spaces around it', () => {
     expect(
-      writing({ ...LEAST, title: `  ${'あ'.repeat(255)}  ` }),
-    ).toMatchObject({ type: 'valid', value: { title: 'あ'.repeat(255) } })
+      writing({ ...LEAST, title: `  ${'𠮷'.repeat(255)}  ` }),
+    ).toMatchObject({ type: 'valid', value: { title: '𠮷'.repeat(255) } })
   })
 
   it('should not send a title of 256 characters, and say how many there may be', () => {

@@ -29,6 +29,6 @@ export const Narrowed: Story = {
 /** A keyword that is too long */
 export const WithErrors: Story = {
   args: {
-    errors: { search: 'キーワードは 100 文字以内で入力してください。' },
+    errors: { search: 'キーワードは、100 文字以内で入力してください。' },
   },
 }

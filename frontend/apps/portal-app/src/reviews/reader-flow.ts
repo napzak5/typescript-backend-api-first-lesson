@@ -8,7 +8,7 @@ import type {
   ModelsReviewReportReasonType,
   ModelsReviewReportRequest,
 } from '@beauty-salon-frontend/api-client'
-import { tooLong } from '@beauty-salon-frontend/fields'
+import { lengthOf, tooLong } from '@beauty-salon-frontend/fields'
 import type { Session } from '@beauty-salon-frontend/session'
 import {
   aboutTheAttempt,
@@ -113,7 +113,7 @@ export const readReport = (
   if (reason === undefined) {
     return { type: 'invalid', errors: { [REASON]: REASON_MISSING } }
   }
-  if (details.length > MAX_DETAILS_LENGTH) {
+  if (lengthOf(details) > MAX_DETAILS_LENGTH) {
     return { type: 'invalid', errors: { [DETAILS]: DETAILS_TOO_LONG } }
   }
   if (reason === 'other' && details === '') {

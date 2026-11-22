@@ -104,6 +104,12 @@ describe('readPayment', () => {
       'VISA',
     ],
     ['without it', { cardLastFour: '', cardBrand: '' }, null, null],
+    [
+      'of a brand of 50 characters, counted as the API counts them',
+      { cardLastFour: '4242', cardBrand: '𠮷'.repeat(50) },
+      '4242',
+      '𠮷'.repeat(50),
+    ],
   ])('should read a payment by card %s', (_case, entries, lastFour, brand) => {
     // Act, Assert
     expect(
@@ -162,7 +168,7 @@ describe('readPayment', () => {
         amount: '5500',
         cardBrand: 'あ'.repeat(51),
       },
-      { cardBrand: 'カードのブランドは、50 文字までで入力してください。' },
+      { cardBrand: 'カードのブランドは、50 文字以内で入力してください。' },
     ],
     [
       'a method the salon uses no more',

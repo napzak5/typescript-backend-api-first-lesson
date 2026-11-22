@@ -185,4 +185,14 @@ describe('PhotoForm', () => {
       'この施術記録には、あと 1 枚まで足せます。写真の欄を減らしてください。',
     )
   })
+
+  it('should say at the direction of a photo how long it may be', async () => {
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: '撮った向き' }),
+    ).toHaveAccessibleDescription('正面、側面、後ろなど。50 文字まで。')
+  })
 })

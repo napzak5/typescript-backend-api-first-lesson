@@ -193,4 +193,15 @@ describe('StockForm', () => {
       'このサロンの在庫は、変えられません。',
     )
   })
+
+  it.each<[string, string]>([
+    ['保管場所', '100 文字まで。'],
+    ['棚', '50 文字まで。'],
+  ])('should say at %s how long it may be', async (label, description) => {
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(text(label)).toHaveAccessibleDescription(description)
+  })
 })

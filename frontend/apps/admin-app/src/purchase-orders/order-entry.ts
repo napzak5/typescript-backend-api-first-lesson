@@ -8,7 +8,7 @@ import type {
   ModelsPurchaseOrderCreateRequest,
   ModelsPurchaseOrderItemCreateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { isDay } from '@beauty-salon-frontend/fields'
+import { isDay, tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
 import { startOfDayAt } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
@@ -39,7 +39,7 @@ const MOST_YEN = 2_147_483_647
 const LONGEST_SUPPLIER = 255
 
 const SUPPLIER_MISSING = '仕入先を入力してください。'
-const SUPPLIER_TOO_LONG = `仕入先は ${LONGEST_SUPPLIER} 文字以内で入力してください。`
+const SUPPLIER_TOO_LONG = tooLongOf('仕入先', LONGEST_SUPPLIER)
 const QUANTITY_ERROR =
   '数量は、0 より大きく 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。'
 const PRICE_ERROR = '単価は、0 以上の円の整数で入力してください。'
@@ -151,15 +151,24 @@ type Supplier =
   | { type: 'named'; name: string }
   | { type: 'wrong'; error: string }
 
+/**
+ * What is wrong with the name of a supplier, `null` for one that was not
+ * written: none when nothing is. The list of the orders looks for a
+ * supplier by the same rule.
+ */
+export const supplierError = (name: string | null): string | undefined =>
+  tooLongError(name, LONGEST_SUPPLIER, SUPPLIER_TOO_LONG)
+
 const supplierOf = (text: string): Supplier => {
   const name = textOrNull(text)
   if (name === null) {
     return { type: 'wrong', error: SUPPLIER_MISSING }
   }
+  const error = supplierError(name)
 
-  return [...name].length > LONGEST_SUPPLIER
-    ? { type: 'wrong', error: SUPPLIER_TOO_LONG }
-    : { type: 'named', name }
+  return error === undefined
+    ? { type: 'named', name }
+    : { type: 'wrong', error }
 }
 
 /** The day the order is to be delivered on, as the moment it begins at the salon. */

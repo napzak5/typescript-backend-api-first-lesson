@@ -1,5 +1,6 @@
 import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { z } from 'zod'
+import { lotLengthError } from './lot-number'
 
 /*
  * What the stock screen shows, kept in the query of its address: every
@@ -12,9 +13,6 @@ export const EXPIRY_WINDOWS: readonly number[] = [0, 7, 30, 90]
 
 /** The days ahead the API looks when it is not told: those of the alerts as well */
 const EXPIRY_WINDOW = 30
-
-/** The longest lot number the API takes */
-const LONGEST_LOT = 100
 
 export type StockView =
   | {
@@ -33,7 +31,7 @@ const idSchema = z.uuid()
 
 /** A lot the API takes: written, and not too long. */
 const lotFrom = (value: string | null): string | undefined =>
-  value === null || value.trim() === '' || [...value].length > LONGEST_LOT
+  value === null || value.trim() === '' || lotLengthError(value) !== undefined
     ? undefined
     : value
 
@@ -93,16 +91,15 @@ export const isNarrowed = (view: StockView): boolean =>
   view.type === 'all' &&
   (view.productId !== undefined || view.lotNumber !== undefined)
 
-const LOT_ERROR = `ロット番号は ${LONGEST_LOT} 文字以内で入力してください。`
-
 /**
  * The conditions of the view of every row that were filled in: each may be
  * left empty. A lot is looked for without the spaces typed around it.
  */
 export const readStockConditions = (values: FormData): FormRead<StockView> => {
   const lot = textOf(values, 'lotNumber').trim()
-  if ([...lot].length > LONGEST_LOT) {
-    return { type: 'invalid', errors: { lotNumber: LOT_ERROR } }
+  const error = lotLengthError(lot)
+  if (error !== undefined) {
+    return { type: 'invalid', errors: { lotNumber: error } }
   }
   const productId = productFrom(textOf(values, 'productId'))
   const lotNumber = lotFrom(lot)

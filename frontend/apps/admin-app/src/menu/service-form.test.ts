@@ -203,19 +203,19 @@ describe('readServiceEntry', () => {
       'a blank name',
       { name: '  ' },
       'name',
-      'サービスの名前を、255 文字までで入力してください。',
+      'サービスの名前を、255 文字以内で入力してください。',
     ],
     [
       'a name of 256 letters',
       { name: 'あ'.repeat(256) },
       'name',
-      'サービスの名前を、255 文字までで入力してください。',
+      'サービスの名前を、255 文字以内で入力してください。',
     ],
     [
       'a short description of 501 letters',
       { shortDescription: 'あ'.repeat(501) },
       'shortDescription',
-      '短い紹介は、500 文字までで入力してください。',
+      '短い紹介は、500 文字以内で入力してください。',
     ],
     [
       'no time',
@@ -317,7 +317,7 @@ describe('readServiceEntry', () => {
       'an option without a name',
       { 'options.0.name': ' ' },
       'options.0.name',
-      'オプションの名前を、255 文字までで入力してください。',
+      'オプションの名前を、255 文字以内で入力してください。',
     ],
     [
       'an option of a kind the contract has not',
@@ -351,12 +351,13 @@ describe('readServiceEntry', () => {
     expect(read).toEqual({ type: 'invalid', errors: { [control]: error } })
   })
 
-  it('should take the longest name, the longest time and the price of the discount alike', () => {
+  it('should take the longest names, counted as the API counts them, the longest time and the price of the discount alike', () => {
     // Act
     const read = readServiceEntry(
       formWith({
-        name: 'あ'.repeat(255),
-        shortDescription: 'あ'.repeat(500),
+        name: '𠮷'.repeat(255),
+        shortDescription: '𠮷'.repeat(500),
+        'options.0.name': '𠮷'.repeat(255),
         duration: '1440',
         discountPrice: '5500',
         imageUrl: addressOf(500),
@@ -585,7 +586,7 @@ describe('afterServiceWrite', () => {
       'name',
       'too_big',
       'name',
-      'サービスの名前を、255 文字までで入力してください。',
+      'サービスの名前を、255 文字以内で入力してください。',
     ],
     [
       'discountPrice',

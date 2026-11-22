@@ -9,6 +9,12 @@ import type {
   ModelsProductUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import {
+  neededError,
+  neededWithin,
+  tooLongError,
+  tooLongOf,
+} from '@beauty-salon-frontend/fields'
+import {
   aboutTheAttempt,
   errorAt,
   type FormRead,
@@ -29,21 +35,26 @@ import type { ProductRemoval, ProductWrite } from './products-api'
  * characters, as the API counts it.
  */
 
-const LONGEST_CODE = 100
-const LONGEST_NAME = 255
-const LONGEST_LABEL = 100
-const LONGEST_UNIT = 20
-const LONGEST_SUPPLIER = 255
+/** The longest product code the API takes */
+export const LONGEST_CODE = 100
+/** The longest name of a product */
+export const LONGEST_NAME = 255
+/** The longest category, brand, product code of the supplier and barcode */
+export const LONGEST_LABEL = 100
+/** The longest unit */
+export const LONGEST_UNIT = 20
+/** The longest name of a supplier */
+export const LONGEST_SUPPLIER = 255
 const LONGEST_URL = 500
 
-const CODE_ERROR = `商品コードを、${LONGEST_CODE} 文字までで入力してください。`
-const NAME_ERROR = `商品名を、${LONGEST_NAME} 文字までで入力してください。`
-const CATEGORY_ERROR = `カテゴリーは、${LONGEST_LABEL} 文字までで入力してください。`
-const BRAND_ERROR = `ブランドは、${LONGEST_LABEL} 文字までで入力してください。`
-const UNIT_ERROR = `単位を、${LONGEST_UNIT} 文字までで入力してください。`
-const SUPPLIER_ERROR = `仕入先は、${LONGEST_SUPPLIER} 文字までで入力してください。`
-const SUPPLIER_CODE_ERROR = `仕入先の商品コードは、${LONGEST_LABEL} 文字までで入力してください。`
-const BARCODE_ERROR = `バーコードは、${LONGEST_LABEL} 文字までで入力してください。`
+const CODE_ERROR = neededWithin('商品コード', LONGEST_CODE)
+const NAME_ERROR = neededWithin('商品名', LONGEST_NAME)
+const CATEGORY_ERROR = tooLongOf('カテゴリー', LONGEST_LABEL)
+const BRAND_ERROR = tooLongOf('ブランド', LONGEST_LABEL)
+const UNIT_ERROR = neededWithin('単位', LONGEST_UNIT)
+const SUPPLIER_ERROR = tooLongOf('仕入先', LONGEST_SUPPLIER)
+const SUPPLIER_CODE_ERROR = tooLongOf('仕入先の商品コード', LONGEST_LABEL)
+const BARCODE_ERROR = tooLongOf('バーコード', LONGEST_LABEL)
 const LEAD_TIME_ERROR = '納品までの日数は、0 以上の整数で入力してください。'
 const EXPIRY_ERROR = '使用期限までの月数は、1 以上の整数で入力してください。'
 const URL_ERROR = `http:// または https:// で始まる URL を、${LONGEST_URL} 文字以内で入力してください。`
@@ -97,24 +108,6 @@ const CONTROLS: readonly string[] = [
 ]
 
 const webAddressSchema = z.httpUrl().max(LONGEST_URL)
-
-/** How many characters a text has, as the API counts them: a character outside the basic plane is one. */
-const lengthOf = (text: string): number => [...text].length
-/** The message of a text that must be there, when it is not, or is too long. */
-const requiredError = (
-  text: string,
-  longest: number,
-  message: string,
-): string | undefined =>
-  text === '' || lengthOf(text) > longest ? message : undefined
-
-/** The message of a text that may be left empty, when it is too long. */
-const optionalError = (
-  text: string | null,
-  longest: number,
-  message: string,
-): string | undefined =>
-  text !== null && lengthOf(text) > longest ? message : undefined
 
 /**
  * A level of the stock, as a person types it: digits of full width count,
@@ -189,15 +182,15 @@ const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
   const errors = Object.fromEntries([
     ...errorAt(
       'productCode',
-      requiredError(productCode, LONGEST_CODE, CODE_ERROR),
+      neededError(productCode, LONGEST_CODE, CODE_ERROR),
     ),
-    ...errorAt('name', requiredError(name, LONGEST_NAME, NAME_ERROR)),
+    ...errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
     ...errorAt(
       'category',
-      optionalError(category, LONGEST_LABEL, CATEGORY_ERROR),
+      tooLongError(category, LONGEST_LABEL, CATEGORY_ERROR),
     ),
-    ...errorAt('brand', optionalError(brand, LONGEST_LABEL, BRAND_ERROR)),
-    ...errorAt('unit', requiredError(unit, LONGEST_UNIT, UNIT_ERROR)),
+    ...errorAt('brand', tooLongError(brand, LONGEST_LABEL, BRAND_ERROR)),
+    ...errorAt('unit', neededError(unit, LONGEST_UNIT, UNIT_ERROR)),
     ...errorAt(
       'purchasePrice',
       purchasePrice === undefined ? priceError('仕入価格') : undefined,
@@ -233,17 +226,17 @@ const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
       : orderErrors(minimumStock, reorderPoint, maximumStock)),
     ...errorAt(
       'supplier',
-      optionalError(supplier, LONGEST_SUPPLIER, SUPPLIER_ERROR),
+      tooLongError(supplier, LONGEST_SUPPLIER, SUPPLIER_ERROR),
     ),
     ...errorAt(
       'supplierProductCode',
-      optionalError(supplierProductCode, LONGEST_LABEL, SUPPLIER_CODE_ERROR),
+      tooLongError(supplierProductCode, LONGEST_LABEL, SUPPLIER_CODE_ERROR),
     ),
     ...errorAt(
       'leadTimeDays',
       leadTimeDays === undefined ? LEAD_TIME_ERROR : undefined,
     ),
-    ...errorAt('barcode', optionalError(barcode, LONGEST_LABEL, BARCODE_ERROR)),
+    ...errorAt('barcode', tooLongError(barcode, LONGEST_LABEL, BARCODE_ERROR)),
     ...errorAt(
       'expiryMonths',
       expiryMonths === undefined || expiryMonths === 0

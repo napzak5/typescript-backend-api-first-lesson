@@ -10,7 +10,7 @@ import type {
   ModelsOpeningHours,
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { isDay } from '@beauty-salon-frontend/fields'
+import { isDay, tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormSays,
@@ -39,7 +39,13 @@ export const OPEN = 'open'
 export const CLOSED = 'closed'
 
 /** The longest name of a holiday the API takes */
-const LONGEST_HOLIDAY_NAME = 100
+/** The longest name of a holiday the API takes */
+export const LONGEST_HOLIDAY_NAME = 100
+
+const HOLIDAY_NAME_TOO_LONG = tooLongOf(
+  '祝日・休業日の名前',
+  LONGEST_HOLIDAY_NAME,
+)
 
 /** A value of a part or of a row, as a control of the form is named after it */
 export type HoursProperty =
@@ -361,9 +367,11 @@ export const readHoursChange = (
         ...(opens ? timeEntriesOf(times, nameOf) : []),
         [
           nameOf('holidayName'),
-          holidayName !== null && holidayName.length > LONGEST_HOLIDAY_NAME
-            ? `祝日・休業日の名前は、${LONGEST_HOLIDAY_NAME} 文字までで入力してください。`
-            : undefined,
+          tooLongError(
+            holidayName,
+            LONGEST_HOLIDAY_NAME,
+            HOLIDAY_NAME_TOO_LONG,
+          ),
         ],
       ],
     ),

@@ -1,5 +1,6 @@
 import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type { ModelsCustomerDeletionRequestCreateRequest } from '@beauty-salon-frontend/api-client'
+import { lengthOf, tooLongOf } from '@beauty-salon-frontend/fields'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -20,7 +21,7 @@ const LONGEST_REASON = 1_000
 
 const BLANK_REASON = '依頼の理由を入力してください。'
 
-const LONG_REASON = `依頼の理由は、${LONGEST_REASON.toLocaleString('ja-JP')} 文字までで入力してください。`
+const LONG_REASON = tooLongOf('依頼の理由', LONGEST_REASON)
 
 /**
  * The reason of a new request, from the form of the dialog: kept with the
@@ -33,7 +34,7 @@ export const readErasureAsk = (
   if (reason.trim() === '') {
     return { type: 'invalid', errors: { reason: BLANK_REASON } }
   }
-  if (reason.length > LONGEST_REASON) {
+  if (lengthOf(reason) > LONGEST_REASON) {
     return { type: 'invalid', errors: { reason: LONG_REASON } }
   }
 

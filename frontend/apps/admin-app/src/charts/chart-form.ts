@@ -10,7 +10,14 @@ import {
   type ModelsPreviousTreatment,
   ModelsTreatmentType,
 } from '@beauty-salon-frontend/api-client'
-import { EARLIEST_DAY, isDay } from '@beauty-salon-frontend/fields'
+import {
+  EARLIEST_DAY,
+  eachTooLongOf,
+  isDay,
+  lengthOf,
+  tooLongError,
+  tooLongOf,
+} from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type ChoiceOption,
@@ -76,8 +83,8 @@ const TREATMENT_MISSING = '施術を選んでください。'
 const DATE_MISSING = '施術日を入力してください。'
 const DATE_TOO_EARLY = '施術日は、1900年1月1日以降にしてください。'
 const DATE_TOO_LATE = '施術日は、今日までにしてください。'
-const SALON_NAME_TOO_LONG = `サロンの名前は、${LONGEST_SALON_NAME} 文字までで入力してください。`
-const PRODUCT_NAME_TOO_LONG = `商材の名前は、1 つ ${LONGEST_PRODUCT_NAME} 文字までで入力してください。`
+const SALON_NAME_TOO_LONG = tooLongOf('サロンの名前', LONGEST_SALON_NAME)
+const PRODUCT_NAME_TOO_LONG = eachTooLongOf('商材の名前', LONGEST_PRODUCT_NAME)
 const TOO_MANY_PRODUCTS = `商材は、${MOST_PRODUCTS} 件までで入力してください。`
 const treatmentFrom = (value: string): ModelsTreatmentType | undefined =>
   TREATMENTS.find((treatment) => treatment === value)
@@ -131,9 +138,7 @@ const readRow = (index: number, filled: FilledRow, today: string): RowRead => {
     ...errorAt(rowControlOf(index, 'date'), dateErrorOf(date, today)),
     ...errorAt(
       rowControlOf(index, 'salonName'),
-      salonName !== null && salonName.length > LONGEST_SALON_NAME
-        ? SALON_NAME_TOO_LONG
-        : undefined,
+      tooLongError(salonName, LONGEST_SALON_NAME, SALON_NAME_TOO_LONG),
     ),
   ]
   if (treatment === undefined || errors.length > 0) {
@@ -148,7 +153,7 @@ const readRow = (index: number, filled: FilledRow, today: string): RowRead => {
 
 /** What is wrong with a list of names of products, if anything. */
 const productsErrorOf = (names: readonly string[]): string | undefined => {
-  if (names.some((name) => name.length > LONGEST_PRODUCT_NAME)) {
+  if (names.some((name) => lengthOf(name) > LONGEST_PRODUCT_NAME)) {
     return PRODUCT_NAME_TOO_LONG
   }
 

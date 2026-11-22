@@ -1,5 +1,5 @@
 import { match } from 'ts-pattern'
-import { tooLong } from './lengths'
+import { lengthOf, tooLong } from './lengths'
 
 /** The longest last name, and the longest first name, that the API takes */
 const MAX_NAME_LENGTH = 100
@@ -14,7 +14,7 @@ export const FIRST_NAME_MISSING = '名を入力してください。'
 export const NAME_TOO_LONG = tooLong(MAX_NAME_LENGTH)
 
 const nameError = (name: string, missing: string): string | undefined =>
-  match(name.length)
+  match(lengthOf(name))
     .with(0, () => missing)
     .when(
       (length) => length > MAX_NAME_LENGTH,

@@ -8,9 +8,14 @@ import type {
   ModelsServiceCategoryResponse,
   ModelsServiceCategoryUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
+import {
+  neededError,
+  neededWithin,
+  SERVICE_CATEGORIES,
+} from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
+  errorAt,
   type FormRead,
   type FormSays,
   textOf,
@@ -28,10 +33,11 @@ import { FORBIDDEN_MESSAGE } from './service-form'
  * about the answers.
  */
 
-const LONGEST_NAME = 100
+/** The longest name of a category the API takes */
+export const LONGEST_NAME = 100
 const LONGEST_URL = 500
 
-const NAME_ERROR = `カテゴリーの名前を、${LONGEST_NAME} 文字までで入力してください。`
+const NAME_ERROR = neededWithin('カテゴリーの名前', LONGEST_NAME)
 const KIND_ERROR = '種類を選んでください。'
 const ORDER_ERROR = '表示順は、0 以上の整数で入力してください。'
 const ICON_ERROR = `ドメイン名で書いた http:// か https:// の URL を、${LONGEST_URL} 文字までで入力してください。`
@@ -75,7 +81,9 @@ const readWhole = (
   const iconUrl = optional('iconUrl')
   const color = optional('color')
   const errors = {
-    ...(name === '' || name.length > LONGEST_NAME ? { name: NAME_ERROR } : {}),
+    ...Object.fromEntries(
+      errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
+    ),
     ...(kind === undefined ? { category: KIND_ERROR } : {}),
     ...(displayOrder === null || displayOrder === undefined
       ? { displayOrder: ORDER_ERROR }

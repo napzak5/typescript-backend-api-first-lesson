@@ -3,6 +3,7 @@ import type {
   ModelsAttachmentContentType,
   ModelsAttachmentResponse,
 } from '@beauty-salon-frontend/api-client'
+import { charactersOf, lengthOf } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormErrors,
@@ -124,8 +125,8 @@ const whyRefused = (file: File): string | undefined => {
   if (file.size > MOST_FILE_SIZE) {
     return `ファイルが大きすぎます（${sizeNameOf(file.size)}）。10 MB までのファイルを選んでください。`
   }
-  if (file.name.length > MOST_FILENAME_LENGTH) {
-    return 'ファイル名が長すぎます。255 文字までの名前にしてから、選んでください。'
+  if (lengthOf(file.name) > MOST_FILENAME_LENGTH) {
+    return `ファイル名が長すぎます。${charactersOf(MOST_FILENAME_LENGTH)}までの名前にしてから、選んでください。`
   }
   if (hasRefusedCharacter(file.name)) {
     return 'ファイル名に、使えない文字が入っています。名前を変えてから、選んでください。'

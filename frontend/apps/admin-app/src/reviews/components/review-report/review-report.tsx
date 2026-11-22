@@ -1,3 +1,4 @@
+import { charactersOf } from '@beauty-salon-frontend/fields'
 import {
   Alert,
   Button,
@@ -89,7 +90,7 @@ export const ReviewReport = ({
         name={DETAILS}
         rows={4}
         maxLength={MAX_DETAILS_LENGTH}
-        description={`どこが規則に反するかを、${MAX_DETAILS_LENGTH} 文字以内で書いてください。理由が「その他」のときは、必ず書いてください。`}
+        description={`どこが規則に反するかを、${charactersOf(MAX_DETAILS_LENGTH)}以内で書いてください。理由が「その他」のときは、必ず書いてください。`}
         error={errors[DETAILS]}
       />
     </FormDialog>

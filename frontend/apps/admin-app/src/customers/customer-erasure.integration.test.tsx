@@ -172,7 +172,7 @@ describe('the requests of a customer to have their data erased, against the API'
     [
       'longer than 1,000 characters',
       'あ'.repeat(1_001),
-      '依頼の理由は、1,000 文字までで入力してください。',
+      '依頼の理由は、1,000 文字以内で入力してください。',
     ],
   ])(
     'should send no reason %s, and say so under it',

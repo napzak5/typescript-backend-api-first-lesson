@@ -130,6 +130,11 @@ describe('readCode', () => {
         'a'.repeat(64),
         'a'.repeat(64),
       ],
+      [
+        'of 64 characters outside the basic plane',
+        '𠮷'.repeat(64),
+        '𠮷'.repeat(64),
+      ],
     ])('should take a code %s', (_case, typed, sent) => {
       expect(readCode(formOf({ code: typed }), 'appOrBackup')).toEqual({
         type: 'valid',

@@ -43,7 +43,7 @@ const rowForm = (
   )
 
 const LOT_ERROR =
-  'ロット番号を、100 文字までで入力してください。この商品は、在庫をロット番号で分けます。'
+  'ロット番号を、100 文字以内で入力してください。この商品は、在庫をロット番号で分けます。'
 
 describe('showsLot', () => {
   it.each<[string, string | null, boolean | undefined, boolean]>([
@@ -72,6 +72,30 @@ describe('showsLot', () => {
 })
 
 describe('readStockEntry', () => {
+  it('should take a lot, a place and a shelf as long as the API takes them, counted as it counts them', () => {
+    expect(
+      readStockEntry(
+        formOf([
+          ['productId', colour.id],
+          ['lotNumber', '𠮷'.repeat(100)],
+          ['expiryDate', ''],
+          ['location', '𠮷'.repeat(100)],
+          ['shelf', '𠮷'.repeat(50)],
+          ['notes', ''],
+        ]),
+        SALON_ID,
+        PRODUCTS_OF_THE_SALON,
+      ),
+    ).toMatchObject({
+      type: 'valid',
+      value: {
+        lotNumber: '𠮷'.repeat(100),
+        location: '𠮷'.repeat(100),
+        shelf: '𠮷'.repeat(50),
+      },
+    })
+  })
+
   it('should read a row of a product kept by lots, with its lot', () => {
     expect(
       readStockEntry(
@@ -167,8 +191,8 @@ describe('readStockEntry', () => {
         lotNumber: LOT_ERROR,
         expiryDate:
           '使用期限は、1900年1月1日から2999年12月31日までの日付で入力してください。',
-        location: '保管場所は、100 文字までで入力してください。',
-        shelf: '棚は、50 文字までで入力してください。',
+        location: '保管場所は、100 文字以内で入力してください。',
+        shelf: '棚は、50 文字以内で入力してください。',
       },
     })
   })
@@ -241,6 +265,22 @@ describe('readStockChange', () => {
     })
   })
 
+  it('should take a changed lot as long as the API takes it, counted as it counts it, of a product kept by lots or not', () => {
+    const dropped = { ...colour, requiresLotTracking: false }
+    const unchanged = { ...colourLot, lotNumber: '𠮷'.repeat(100) }
+
+    expect(
+      readStockChange(
+        rowForm(colourLot, { lotNumber: '𠮷'.repeat(100) }),
+        colourLot,
+        colour,
+      ),
+    ).toEqual({ type: 'valid', value: { lotNumber: '𠮷'.repeat(100) } })
+    expect(
+      readStockChange(rowForm(unchanged, { shelf: 'Z-9' }), unchanged, dropped),
+    ).toEqual({ type: 'valid', value: { shelf: 'Z-9' } })
+  })
+
   it('should ask for the lot of a product kept by lots', () => {
     expect(
       readStockChange(rowForm(colourLot, { lotNumber: '' }), colourLot, colour),
@@ -278,7 +318,7 @@ describe('readStockChange', () => {
       ),
     ).toEqual({
       type: 'invalid',
-      errors: { lotNumber: 'ロット番号は、100 文字までで入力してください。' },
+      errors: { lotNumber: 'ロット番号は、100 文字以内で入力してください。' },
     })
   })
 
@@ -333,8 +373,8 @@ describe('afterStockWrite', () => {
       message: undefined,
       errors: {
         productId: 'この商品は、削除されました。ほかの商品を選んでください。',
-        lotNumber: 'ロット番号は、100 文字までで入力してください。',
-        shelf: '棚は、50 文字までで入力してください。',
+        lotNumber: 'ロット番号は、100 文字以内で入力してください。',
+        shelf: '棚は、50 文字以内で入力してください。',
       },
     })
   })
@@ -354,7 +394,7 @@ describe('afterStockWrite', () => {
     ).toEqual({
       message:
         'この商品の「在庫をロット番号で分ける」の印が、変わっていました。いまの印で読み直したので、ロット番号を確かめて、もう一度お試しください。',
-      errors: { shelf: '棚は、50 文字までで入力してください。' },
+      errors: { shelf: '棚は、50 文字以内で入力してください。' },
     })
   })
 

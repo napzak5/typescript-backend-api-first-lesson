@@ -20,6 +20,7 @@ export {
   methodKindNameOf,
 } from './format'
 export {
+  keywordError,
   keywordIn,
   keywordOf,
   LONGEST_KEYWORD,

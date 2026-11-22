@@ -450,7 +450,7 @@ describe('the payment methods of a salon, against the API', () => {
       expect.stringContaining('種類を選んでください。'),
     )
     expect(text(/表示名/)).toHaveAccessibleDescription(
-      expect.stringContaining('表示名を、100 文字までで入力してください。'),
+      expect.stringContaining('表示名を、100 文字以内で入力してください。'),
     )
     expect(text('1 回の金額の上限（円）')).toHaveAccessibleDescription(
       expect.stringContaining(

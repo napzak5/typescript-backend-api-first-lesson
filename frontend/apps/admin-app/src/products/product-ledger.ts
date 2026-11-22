@@ -1,9 +1,11 @@
 import type { ProductCrudListParams } from '@beauty-salon-frontend/api-client'
 import {
-  keywordIn,
-  LONGEST_KEYWORD,
-} from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+  lengthOf,
+  tooLongError,
+  tooLongOf,
+} from '@beauty-salon-frontend/fields'
+import { keywordError, keywordIn } from '@beauty-salon-frontend/salon-screens'
+import { errorAt, type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 
 /*
@@ -41,11 +43,19 @@ const purposeFrom = (value: string): Purpose | undefined =>
 /** The longest category and barcode the API takes */
 const LONGEST_NAME = 100
 
+const BARCODE_ERROR = tooLongOf('バーコード', LONGEST_NAME)
+
+/** What is wrong with a barcode that is looked for: none when nothing is. */
+const barcodeError = (barcode: string): string | undefined =>
+  tooLongError(barcode, LONGEST_NAME, BARCODE_ERROR)
+
 /** A barcode the API takes: not empty, and not too long. */
 const barcodeFrom = (value: string | null): string | undefined => {
   const barcode = (value ?? '').trim()
 
-  return barcode === '' || barcode.length > LONGEST_NAME ? undefined : barcode
+  return barcode === '' || barcodeError(barcode) !== undefined
+    ? undefined
+    : barcode
 }
 
 /**
@@ -54,7 +64,7 @@ const barcodeFrom = (value: string | null): string | undefined => {
  * stay.
  */
 const categoryFrom = (value: string | null): string | undefined =>
-  value === null || value.trim() === '' || value.length > LONGEST_NAME
+  value === null || value.trim() === '' || lengthOf(value) > LONGEST_NAME
     ? undefined
     : value
 
@@ -81,20 +91,16 @@ export const productConditionsIn = (
   }
 }
 
-const KEYWORD_ERROR = `キーワードは ${LONGEST_KEYWORD} 文字以内で入力してください。`
-
-const BARCODE_ERROR = `バーコードは ${LONGEST_NAME} 文字以内で入力してください。`
-
 /** The conditions that were filled in: every one may be left empty. */
 export const readProductConditions = (
   values: FormData,
 ): FormRead<ProductConditions> => {
   const keyword = textOf(values, 'keyword').trim()
   const barcode = textOf(values, 'barcode').trim()
-  const errors: Record<string, string> = {
-    ...(keyword.length > LONGEST_KEYWORD ? { keyword: KEYWORD_ERROR } : {}),
-    ...(barcode.length > LONGEST_NAME ? { barcode: BARCODE_ERROR } : {}),
-  }
+  const errors: Record<string, string> = Object.fromEntries([
+    ...errorAt('keyword', keywordError(keyword)),
+    ...errorAt('barcode', barcodeError(barcode)),
+  ])
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
   }

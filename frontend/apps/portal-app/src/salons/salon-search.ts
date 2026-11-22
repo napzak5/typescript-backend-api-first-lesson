@@ -1,3 +1,4 @@
+import { lengthOf } from '@beauty-salon-frontend/fields'
 /**
  * What a visitor looks for. A condition that is absent narrows nothing. The
  * names are those of the parameters of the API, and of the query of the
@@ -26,7 +27,7 @@ const boundedTextOf = (
 ): string | undefined => {
   const text = (value ?? '').trim()
 
-  return text === '' || text.length > longest ? undefined : text
+  return text === '' || lengthOf(text) > longest ? undefined : text
 }
 
 const minRatingOf = (value: string | null): number | undefined =>

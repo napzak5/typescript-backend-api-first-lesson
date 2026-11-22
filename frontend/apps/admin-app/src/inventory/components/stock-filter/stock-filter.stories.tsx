@@ -34,7 +34,7 @@ export const Narrowed: Story = {
 /** A lot that is too long */
 export const WithErrors: Story = {
   args: {
-    errors: { lotNumber: 'ロット番号は 100 文字以内で入力してください。' },
+    errors: { lotNumber: 'ロット番号は、100 文字以内で入力してください。' },
   },
 }
 

@@ -36,16 +36,16 @@ describe('conditionsIn', () => {
     ).toEqual({ keyword: 'カット' })
   })
 
-  it.each([
+  it.each<[string, number]>([
     ['keyword', 100],
     ['prefecture', 50],
     ['city', 100],
   ])(
-    'should keep a %s of %i characters, and drop a longer one',
+    'should keep a %s of %i characters, counted as the API counts them, and drop a longer one',
     (name, longest) => {
       expect(
-        conditionsIn(new URLSearchParams({ [name]: 'あ'.repeat(longest) })),
-      ).toEqual({ [name]: 'あ'.repeat(longest) })
+        conditionsIn(new URLSearchParams({ [name]: '𠮷'.repeat(longest) })),
+      ).toEqual({ [name]: '𠮷'.repeat(longest) })
       expect(
         conditionsIn(new URLSearchParams({ [name]: 'あ'.repeat(longest + 1) })),
       ).toEqual({})

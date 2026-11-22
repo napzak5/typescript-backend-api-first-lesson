@@ -160,7 +160,7 @@ describe('ChartForm', () => {
       screen.getByRole('textbox', { name: '避ける商材' }),
     ).toHaveAccessibleDescription(
       expect.stringContaining(
-        '商材の名前は、1 つ 100 文字までで入力してください。',
+        '商材の名前は、1 つ 100 文字以内で入力してください。',
       ),
     )
   })
@@ -183,7 +183,7 @@ describe('ChartForm', () => {
       screen.getByRole('textbox', { name: '避ける商材' }),
     ).toHaveAccessibleDescription(
       expect.stringContaining(
-        '商材の名前は、1 つ 100 文字までで入力してください。',
+        '商材の名前は、1 つ 100 文字以内で入力してください。',
       ),
     )
   })

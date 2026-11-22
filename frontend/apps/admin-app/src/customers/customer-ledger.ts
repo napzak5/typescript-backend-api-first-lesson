@@ -7,11 +7,11 @@ import { isDay } from '@beauty-salon-frontend/fields'
 import {
   dayAfter,
   daysErrorsOf,
+  keywordError,
   keywordIn,
-  LONGEST_KEYWORD,
   startOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import { errorAt, type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { CUSTOMER_STATUSES, TIERS } from './customer-format'
 
 /**
@@ -88,8 +88,6 @@ export const customerConditionsIn = (
   }
 }
 
-const KEYWORD_ERROR = `キーワードは ${LONGEST_KEYWORD} 文字以内で入力してください。`
-
 /** The conditions that were filled in: every one may be left empty, and the end comes not before the start. */
 export const readCustomerConditions = (
   values: FormData,
@@ -98,7 +96,7 @@ export const readCustomerConditions = (
   const from = textOf(values, 'from').trim()
   const to = textOf(values, 'to').trim()
   const errors: Record<string, string> = {
-    ...(search.length > LONGEST_KEYWORD ? { search: KEYWORD_ERROR } : {}),
+    ...Object.fromEntries(errorAt('search', keywordError(search))),
     ...daysErrorsOf(from, to, 'optional'),
   }
   if (Object.keys(errors).length > 0) {

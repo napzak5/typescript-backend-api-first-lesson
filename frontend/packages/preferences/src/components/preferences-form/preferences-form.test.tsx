@@ -297,4 +297,14 @@ describe('PreferencesForm', () => {
     // Assert
     expect(stories.Filled.args.onSubmit).not.toHaveBeenCalled()
   })
+
+  it('should say at the way to be talked to how long it may be', async () => {
+    // Act
+    await stories.Filled.run()
+
+    // Assert
+    expect(text('接客の好み')).toHaveAccessibleDescription(
+      '会話の多さなどを、100 文字以内で書いてください。',
+    )
+  })
 })

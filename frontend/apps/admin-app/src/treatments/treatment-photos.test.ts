@@ -227,7 +227,7 @@ describe('readPhotos', () => {
       'an angle longer than the API keeps',
       { angle: 'あ'.repeat(51) },
       'angle',
-      '撮った向きは、50 文字までで入力してください。',
+      '撮った向きは、50 文字以内で入力してください。',
     ],
     [
       'a photo shown outside without the consent of the customer',
@@ -252,12 +252,12 @@ describe('readPhotos', () => {
     })
   })
 
-  it('should take an address of 500 characters and an angle of 50', () => {
+  it('should take an address of 500 characters and an angle of 50, counted as the API counts them', () => {
     // Act
     const read = readPhotos(
       formOf({
         photoUrl: `https://photos.example.com/${'a'.repeat(473)}`,
-        angle: 'あ'.repeat(50),
+        angle: '𠮷'.repeat(50),
       }),
       aTreatment(),
     )
@@ -364,7 +364,7 @@ describe('afterPhotosAdded', () => {
         'photos.0.isPublic':
           'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。',
         'photos.0.photoType': '写真の区分を選んでください。',
-        'photos.0.angle': '撮った向きは、50 文字までで入力してください。',
+        'photos.0.angle': '撮った向きは、50 文字以内で入力してください。',
       },
     })
   })

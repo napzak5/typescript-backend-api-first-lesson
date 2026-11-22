@@ -733,7 +733,7 @@ describe('readHoursChange', () => {
         'a name of a holiday longer than 100 characters',
         [['dates.1.holidayName', 'あ'.repeat(101)]],
         'dates.1.holidayName',
-        '祝日・休業日の名前は、100 文字までで入力してください。',
+        '祝日・休業日の名前は、100 文字以内で入力してください。',
       ],
     ])(
       'should say what is wrong with %s, at its control',
@@ -750,6 +750,11 @@ describe('readHoursChange', () => {
       [
         'a name of a holiday of 100 characters',
         [['dates.1.holidayName', 'あ'.repeat(100)]],
+        'valid',
+      ],
+      [
+        'a name of a holiday of 100 characters outside the basic plane',
+        [['dates.1.holidayName', '𠮷'.repeat(100)]],
         'valid',
       ],
       ['a date that is today', [['dates.1.date', TODAY]], 'valid'],
