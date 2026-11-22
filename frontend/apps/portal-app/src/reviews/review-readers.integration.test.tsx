@@ -1,4 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked, sent } from '@beauty-salon-frontend/testing/answers'
 import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   address,
@@ -18,7 +19,7 @@ import {
 } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, type MockInstance, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import { renderAt } from '../__tests__/screens'
 import {
@@ -271,24 +272,8 @@ const askToReport = async (title: string): Promise<void> => {
 const sectionHeading = () =>
   screen.getByRole('heading', { level: 2, name: 'レビュー' })
 
-/**
- * What was asked of the API about reviews since `fetch` is watched: the
- * method and the path of each request.
- */
-const askedOfTheReviews = (fetched: MockInstance<typeof fetch>): string[] =>
-  fetched.mock.calls.flatMap(([input, init]) => {
-    const [, path = ''] = new URL(String(input)).pathname.split('/api/v1')
-
-    return path.startsWith('/reviews')
-      ? [`${init?.method ?? 'GET'} ${path}`]
-      : []
-  })
-
-/** What the requests that write were sent with, as they were read from their bodies. */
-const sentWith = (fetched: MockInstance<typeof fetch>): unknown[] =>
-  fetched.mock.calls.flatMap(([, init]) =>
-    typeof init?.body === 'string' ? [JSON.parse(init.body)] : [],
-  )
+/** A line of what was asked that is about the reviews: the screen asks for more than them. */
+const ofTheReviews = (line: string): boolean => line.includes(' /reviews')
 
 /** A member of the staff, in the part of the page that shows the people. */
 const personNamed = async (name: string): Promise<HTMLElement> => {
@@ -505,7 +490,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
         voters: [KENJI.email],
       })
       // The reviews are not read again: the answer says how many there are
-      expect(askedOfTheReviews(fetched)).toEqual([
+      expect(asked(fetched).filter(ofTheReviews)).toEqual([
         `POST /reviews/${review.id}/helpful`,
       ])
     })
@@ -556,7 +541,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       await userEvent.keyboard('{Enter}')
 
       // Assert
-      expect(askedOfTheReviews(fetched)).toEqual([
+      expect(asked(fetched).filter(ofTheReviews)).toEqual([
         `POST /reviews/${review.id}/helpful`,
       ])
       expect(await storedOf(review.id)).toMatchObject({
@@ -620,7 +605,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       )
       // The order on the screen is what was read before, with the count
       // the API answered: nothing is read to show it
-      expect(askedOfTheReviews(fetched)).toEqual([
+      expect(asked(fetched).filter(ofTheReviews)).toEqual([
         expect.stringMatching(/^POST \/reviews\/[\da-f-]+\/helpful$/),
       ])
       expect(await titles()).toEqual(tied)
@@ -724,7 +709,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
           .filter((option) => option.matches(':checked')),
       ).toEqual([])
       expect(details()).toHaveValue('')
-      expect(askedOfTheReviews(fetched)).toEqual([])
+      expect(asked(fetched).filter(ofTheReviews)).toEqual([])
     })
 
     it.each([
@@ -749,7 +734,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
         // Assert
         await screen.findByText(REPORTED)
         expect(screen.queryByRole('dialog')).toBeNull()
-        expect(sentWith(fetched)).toEqual([{ reason: value, details: null }])
+        expect(await sent(fetched)).toEqual([{ reason: value, details: null }])
         expect(await storedOf(review.id)).toMatchObject({
           reportCount: 1,
           reports: [
@@ -762,7 +747,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
           ],
         })
         expect(await titles()).toContain(review.title)
-        expect(askedOfTheReviews(fetched)).toEqual([
+        expect(asked(fetched).filter(ofTheReviews)).toEqual([
           `POST /reviews/${review.id}/report`,
         ])
       },
@@ -783,7 +768,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
       // Assert
       await screen.findByText(REPORTED)
-      expect(sentWith(fetched)).toEqual([
+      expect(await sent(fetched)).toEqual([
         { reason: 'other', details: 'ほかのサロンのことが書かれています' },
       ])
       expect(await storedOf(review.id)).toMatchObject({
@@ -831,7 +816,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
         /「その他」を選んだときは、何が問題かを入力してください。$/,
       )
       expect(details()).toHaveFocus()
-      expect(askedOfTheReviews(fetched)).toEqual([])
+      expect(asked(fetched).filter(ofTheReviews)).toEqual([])
       expect(await storedOf(review.id)).toMatchObject({ reports: [] })
     })
 
@@ -986,7 +971,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
       // Assert
       expect(screen.queryByRole('dialog')).toBeNull()
-      expect(askedOfTheReviews(fetched)).toEqual([])
+      expect(asked(fetched).filter(ofTheReviews)).toEqual([])
 
       // Act
       await askToReport(review.title)

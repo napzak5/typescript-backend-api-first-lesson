@@ -6,20 +6,13 @@ import {
   PNG_BYTES,
   savedFiles,
 } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { address, goTo, heading } from '@beauty-salon-frontend/testing/screens'
 import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type MockInstance,
-  vi,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
 import {
   BECOMINGS,
@@ -102,14 +95,6 @@ const shareConsent = async (
   return { file, ...(await share(file, options)) }
 }
 
-/** The operations of the API that were asked for, as the paths below `/api/v1`. */
-const operationsAsked = (fetched: MockInstance<typeof fetch>): string[] =>
-  fetched.mock.calls.flatMap(([input]) => {
-    const [, operation] = String(input).split('/api/v1')
-
-    return operation === undefined ? [] : [operation]
-  })
-
 describe('the screen of a share link, against the API', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_MODE', 'production')
@@ -184,10 +169,9 @@ describe('the screen of a share link, against the API', () => {
         failedAttempts: 0,
       })
       // What is known of the file was asked for once
-      expect(operationsAsked(fetched)).toEqual([
-        '/share/file',
-        '/share/download-url',
-      ])
+      expect(
+        asked(fetched).filter((line) => line.includes(' /share/')),
+      ).toEqual(['POST /share/file', 'POST /share/download-url'])
     })
 
     it('should show the file of another link opened in the same tab, and nothing of the one before', async () => {
@@ -471,9 +455,7 @@ describe('the screen of a share link, against the API', () => {
         ),
       ).toBeVisible()
       expect(
-        fetched.mock.calls.filter(([input]) =>
-          String(input).includes('/share/'),
-        ),
+        asked(fetched).filter((line) => line.includes(' /share/')),
       ).toEqual([])
     })
   })

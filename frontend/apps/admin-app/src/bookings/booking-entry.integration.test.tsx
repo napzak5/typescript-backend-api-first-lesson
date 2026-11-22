@@ -1,4 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked, sent } from '@beauty-salon-frontend/testing/answers'
 import {
   countOf,
   dayFromToday,
@@ -401,9 +402,9 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
           '予約金は、0 以上の円の整数で入力してください。',
         ),
       )
-      expect(
-        fetched.mock.calls.filter(([, init]) => init?.method === 'POST'),
-      ).toEqual([])
+      expect(asked(fetched).filter((line) => line.startsWith('POST '))).toEqual(
+        [],
+      )
     })
 
     it('should tell a member who is taken from one who is free before the booking is sent, until a line changes', async () => {
@@ -559,12 +560,6 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       return tokyo
     }
 
-    /** What the screen asked the API to change, a request each. */
-    const changesAsked = (fetched: MockInstance<typeof fetch>): unknown[] =>
-      fetched.mock.calls.flatMap(([, init]) =>
-        init?.method === 'PATCH' ? [JSON.parse(String(init.body))] : [],
-      )
-
     it('should open with what the booking has, send what was changed alone, and show it on the page', async () => {
       // Arrange
       const id = await arrangeWithNotes()
@@ -587,7 +582,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       expect(await heading('予約の内容')).toHaveFocus()
       expect(address()).toBe(`/salons/${tokyo}/bookings/${id}`)
       expect(notifications()).toContain('予約の記録を変えました。')
-      expect(changesAsked(fetched)).toEqual([
+      expect(await sent(fetched)).toEqual([
         {
           customerRequest: null,
           internalNotes: '次回はカラーも',
@@ -648,7 +643,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       // Assert
       expect(await heading('予約の内容')).toHaveFocus()
       expect(notifications()).toContain('変更された項目はありません。')
-      expect(changesAsked(fetched)).toEqual([])
+      expect(await sent(fetched)).toEqual([])
     })
 
     it('should keep the form as it was typed, and say so, when the database refuses the change', async () => {
@@ -695,7 +690,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
           '予約金は、0 以上の円の整数で入力してください。',
         ),
       )
-      expect(changesAsked(fetched)).toEqual([])
+      expect(await sent(fetched)).toEqual([])
     })
   })
 

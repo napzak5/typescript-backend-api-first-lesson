@@ -1,4 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import {
   address,
   asTheApplicationKeeps,
@@ -16,15 +17,7 @@ import {
 import { focusManager, onlineManager } from '@tanstack/react-query'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type MockInstance,
-  vi,
-} from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
 import {
   giveBack,
@@ -90,18 +83,8 @@ const ratingInResultOf = async (salon: string): Promise<HTMLElement> => {
   return within(link.closest('li') ?? document.body).getByRole('img')
 }
 
-/**
- * What was asked of the API about reviews since `fetch` is watched: the
- * method and the path of each request.
- */
-const askedOfTheReviews = (fetched: MockInstance<typeof fetch>): string[] =>
-  fetched.mock.calls.flatMap(([input, init]) => {
-    const [, path = ''] = new URL(String(input)).pathname.split('/api/v1')
-
-    return path.startsWith('/reviews')
-      ? [`${init?.method ?? 'GET'} ${path}`]
-      : []
-  })
+/** A line of what was asked that is about the reviews: the screen asks for more than them. */
+const ofTheReviews = (line: string): boolean => line.includes(' /reviews')
 
 describe('the review of a visit, against the API', () => {
   beforeEach(async () => {
@@ -215,7 +198,7 @@ describe('the review of a visit, against the API', () => {
       ])
       expect(within(part).queryByRole('link')).toBeNull()
       // The API gives no review of such a salon: the part asks for none
-      expect(askedOfTheReviews(fetched)).toEqual([])
+      expect(asked(fetched).filter(ofTheReviews)).toEqual([])
     })
 
     it('should show the review as it is now whenever the page is shown: with what the salon answered meanwhile', async () => {
@@ -478,7 +461,7 @@ describe('the review of a visit, against the API', () => {
       // Assert
       expect(group).toHaveAccessibleDescription('総合の評価を選んでください。')
       expect(ratingOf('5（とても満足）')).toHaveFocus()
-      expect(askedOfTheReviews(fetched)).toEqual([])
+      expect(asked(fetched).filter(ofTheReviews)).toEqual([])
       expect(text('タイトル')).toHaveValue('また行きます')
       expect(address()).toBe(writePathOf(visit.id))
       expect(await storedReviewOf(visit.id)).toBeNull()
@@ -751,7 +734,7 @@ describe('the review of a visit, against the API', () => {
       // Assert: by the time the failure of the form is said, a read that
       // the focus or the network started would have been asked for
       expect(await screen.findByRole('alert')).toHaveTextContent(NOT_SENT)
-      expect(askedOfTheReviews(fetched)).toEqual(['POST /reviews'])
+      expect(asked(fetched).filter(ofTheReviews)).toEqual(['POST /reviews'])
       expect(text('本文')).toHaveValue('書きかけのレビュー')
     })
   })

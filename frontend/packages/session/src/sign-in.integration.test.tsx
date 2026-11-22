@@ -3,6 +3,7 @@ import {
   authCrudVerifyTwoFactor,
 } from '@beauty-salon-frontend/api-client'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import {
   heading,
@@ -26,7 +27,7 @@ import {
   signOut,
 } from '.'
 
-const LOGIN = '/api/v1/auth/login'
+const LOGIN = 'POST /auth/login'
 
 /** An application whose one screen is for the roles it is given. */
 const renderApplication = (
@@ -232,7 +233,7 @@ describe('signing in on the screen, against the API', () => {
 
   it('should say what is missing at the fields, and send nothing', async () => {
     // Arrange
-    const sent = vi.spyOn(globalThis, 'fetch')
+    const fetched = vi.spyOn(globalThis, 'fetch')
     renderApplication()
     const submit = await screen.findByRole('button', { name: 'サインイン' })
 
@@ -248,15 +249,13 @@ describe('signing in on the screen, against the API', () => {
     expect(screen.getByLabelText('パスワード')).toHaveAccessibleDescription(
       'パスワードを入力してください。',
     )
-    expect(
-      sent.mock.calls.filter(([url]) => String(url).endsWith(LOGIN)),
-    ).toEqual([])
+    expect(asked(fetched).filter((line) => line === LOGIN)).toEqual([])
     expect(await findAccessibilityViolations()).toEqual([])
   })
 
   it('should say that an address is not one, and send nothing', async () => {
     // Arrange
-    const sent = vi.spyOn(globalThis, 'fetch')
+    const fetched = vi.spyOn(globalThis, 'fetch')
     renderApplication()
 
     // Act
@@ -268,9 +267,7 @@ describe('signing in on the screen, against the API', () => {
     ).toHaveAccessibleDescription(
       'メールアドレスは、hanako@example.com のような形で入力してください。',
     )
-    expect(
-      sent.mock.calls.filter(([url]) => String(url).endsWith(LOGIN)),
-    ).toEqual([])
+    expect(asked(fetched).filter((line) => line === LOGIN)).toEqual([])
   })
 
   describe('with two-factor authentication', () => {
@@ -323,7 +320,7 @@ describe('signing in on the screen, against the API', () => {
       renderApplication()
       await enterCredentials(CUSTOMER)
       const field = await screen.findByRole('textbox', { name: '認証コード' })
-      const sent = vi.spyOn(globalThis, 'fetch')
+      const fetched = vi.spyOn(globalThis, 'fetch')
 
       // Act
       await userEvent.click(screen.getByRole('button', { name: 'サインイン' }))
@@ -332,7 +329,7 @@ describe('signing in on the screen, against the API', () => {
       expect(field).toHaveAccessibleDescription(
         /認証コードを入力してください。/,
       )
-      expect(sent).not.toHaveBeenCalled()
+      expect(fetched).not.toHaveBeenCalled()
     })
 
     it('should lead back to the first step', async () => {

@@ -1,3 +1,4 @@
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -10,7 +11,7 @@ import {
 import { QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { afterEach, describe, expect, it, type MockInstance, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { signIn } from '../sign-in'
 import { useOwnSalon } from './own-salon'
 
@@ -34,14 +35,6 @@ const renderOwnSalon = () => {
     ),
   })
 }
-
-/** The operations of the API that were asked for, as the paths below `/api/v1`. */
-const operationsAsked = (fetched: MockInstance<typeof fetch>): string[] =>
-  fetched.mock.calls.flatMap(([input]) => {
-    const [, operation] = String(input).split('/api/v1')
-
-    return operation === undefined ? [] : [operation]
-  })
 
 /** What the hook gives for a member of the staff, as the database has their salon. */
 const memberOfTheDatabase = async (email: string): Promise<unknown> =>
@@ -76,7 +69,7 @@ describe('the salon of who is signed in, against the API', () => {
         expect(result.current.salon).toMatchObject({ type: 'member' }),
       )
       expect([result.current.salon]).toEqual(await memberOfTheDatabase(email))
-      expect(operationsAsked(fetched)).toContain(OWN_PROFILE)
+      expect(asked(fetched)).toContain(`GET ${OWN_PROFILE}`)
     },
   )
 
@@ -95,7 +88,7 @@ describe('the salon of who is signed in, against the API', () => {
 
       // Assert
       await waitFor(() => expect(result.current.salon).toEqual({ type }))
-      expect(operationsAsked(fetched)).toEqual(['/auth/me'])
+      expect(asked(fetched)).toEqual(['GET /auth/me'])
     },
   )
 

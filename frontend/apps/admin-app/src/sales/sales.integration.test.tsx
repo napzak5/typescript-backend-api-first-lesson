@@ -1,5 +1,6 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import {
   dayFromToday,
   salonIdOf,
@@ -741,9 +742,7 @@ describe('the sales of a salon, against the API', () => {
         ),
       )
       expect(
-        fetched.mock.calls.filter(([input]) =>
-          String(input).endsWith('/process'),
-        ),
+        asked(fetched).filter((line) => line.endsWith('/process')),
       ).toEqual([])
       expect(await storedPaymentsOf(saleId)).toEqual([])
     })

@@ -1,5 +1,6 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { asked } from '@beauty-salon-frontend/testing/answers'
 import {
   dayFromToday,
   salonIdOf,
@@ -572,7 +573,7 @@ describe('the points of customers, against the API', () => {
           expect.stringContaining(error),
         )
         expect(
-          fetched.mock.calls.filter(([, init]) => init?.method === 'POST'),
+          asked(fetched).filter((line) => line.startsWith('POST ')),
         ).toEqual([])
         expect(await storedPointsOf(YUKI.email)).toHaveLength(1)
       },
