@@ -1,9 +1,11 @@
 import {
   answering,
+  asked,
   empty,
   page,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -33,23 +35,6 @@ type Answer = () => Response | Promise<Response>
 afterEach(() => {
   vi.unstubAllGlobals()
 })
-
-/** The methods, the paths, the queries and the bodies of the requests that were sent */
-const askedOf = (fetched: ReturnType<typeof answering>) =>
-  Promise.all(
-    fetched.mock.calls.map(async ([asked, init]) => {
-      const request = new Request(asked, init)
-      const url = new URL(request.url)
-      const body = await request.text()
-
-      return [
-        request.method,
-        url.pathname,
-        Object.fromEntries(url.searchParams),
-        body === '' ? body : JSON.parse(body),
-      ]
-    }),
-  )
 
 const REQUEST = {
   expiresAt: '2026-11-28T01:00:00.000Z',
@@ -85,13 +70,8 @@ describe('readShareLinkPage', () => {
       total: 23,
       nextCursor: 'next',
     })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'GET',
-        `/api/v1/attachments/${consentForm.id}/share-links`,
-        { cursor: 'cursor', limit: '20' },
-        '',
-      ],
+    expect(asked(fetched)).toEqual([
+      `GET /attachments/${consentForm.id}/share-links?cursor=cursor&limit=20`,
     ])
   })
 
@@ -122,8 +102,8 @@ describe('readShareLink', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', shareLink: forTheCustomer })
-    expect(await askedOf(fetched)).toEqual([
-      ['GET', `/api/v1/attachments/share-links/${forTheCustomer.id}`, {}, ''],
+    expect(asked(fetched)).toEqual([
+      `GET /attachments/share-links/${forTheCustomer.id}`,
     ])
   })
 
@@ -160,14 +140,10 @@ describe('issueShareLink', () => {
       shareLink: forTheCustomer,
       token: TOKEN,
     })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'POST',
-        `/api/v1/attachments/${consentForm.id}/share-links`,
-        {},
-        REQUEST,
-      ],
+    expect(asked(fetched)).toEqual([
+      `POST /attachments/${consentForm.id}/share-links`,
     ])
+    expect(await sent(fetched)).toEqual([REQUEST])
   })
 
   it('should name the values the API refused', async () => {
@@ -213,14 +189,10 @@ describe('revokeShareLink', () => {
 
     // Assert
     expect(revoked).toEqual({ type: 'revoked' })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'DELETE',
-        `/api/v1/attachments/share-links/${forTheCustomer.id}`,
-        {},
-        '',
-      ],
+    expect(asked(fetched)).toEqual([
+      `DELETE /attachments/share-links/${forTheCustomer.id}`,
     ])
+    expect(await sent(fetched)).toEqual([])
   })
 
   it.each<[string, Answer, string]>([

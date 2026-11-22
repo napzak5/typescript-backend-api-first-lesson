@@ -1,7 +1,9 @@
 import {
   answering,
+  asked,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -45,14 +47,8 @@ describe('countStock', () => {
 
     // Assert
     expect(counted).toEqual({ type: 'counted', result: COUNT_OF_THE_SALON })
-    const [asked] = fetched.mock.calls.map(
-      ([input, init]) => new Request(input, init),
-    )
-    expect(asked?.method).toBe('POST')
-    expect(new URL(asked?.url ?? '').pathname).toBe(
-      '/api/v1/inventory/stock-count',
-    )
-    expect(await asked?.json()).toEqual(COUNT)
+    expect(asked(fetched)).toEqual(['POST /inventory/stock-count'])
+    expect(await sent(fetched)).toEqual([COUNT])
   })
 
   it.each<[string, Answer, unknown]>([
@@ -112,13 +108,9 @@ describe('readValueReport', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', report: VALUE_OF_THE_SALON })
-    expect(
-      fetched.mock.calls.map(([asked]) => {
-        const url = new URL(new Request(asked).url)
-
-        return [url.pathname, Object.fromEntries(url.searchParams)]
-      }),
-    ).toEqual([['/api/v1/inventory/value-report', { salonId: salon.id }]])
+    expect(asked(fetched)).toEqual([
+      `GET /inventory/value-report?salonId=${salon.id}`,
+    ])
   })
 
   it.each<[string, Answer, string]>([

@@ -1,8 +1,10 @@
 import {
   answering,
+  asked,
   page,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -60,14 +62,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** The paths and the queries of the requests that were sent */
-const askedOf = (fetched: ReturnType<typeof answering>) =>
-  fetched.mock.calls.map(([asked]) => {
-    const url = new URL(new Request(asked).url)
-
-    return [url.pathname, Object.fromEntries(url.searchParams)]
-  })
-
 describe('purchaseOrdersKeyOf and purchaseOrderKeyOf', () => {
   it('should read the orders below the salon, and an order by its ID in small letters', () => {
     expect(purchaseOrdersKeyOf(salon.id)).toEqual([
@@ -100,17 +94,8 @@ describe('readOrderPage', () => {
       total: 23,
       nextCursor: 'next',
     })
-    expect(askedOf(fetched)).toEqual([
-      [
-        '/api/v1/purchase-orders',
-        {
-          salonId: salon.id,
-          status: 'pending',
-          supplier: 'A&B 商事',
-          cursor: 'cursor',
-          limit: '20',
-        },
-      ],
+    expect(asked(fetched)).toEqual([
+      `GET /purchase-orders?cursor=cursor&limit=20&salonId=${salon.id}&status=pending&supplier=A%26B 商事`,
     ])
   })
 
@@ -140,9 +125,7 @@ describe('readOrder', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', order: pendingOrder })
-    expect(askedOf(fetched)).toEqual([
-      [`/api/v1/purchase-orders/${pendingOrder.id}`, {}],
-    ])
+    expect(asked(fetched)).toEqual([`GET /purchase-orders/${pendingOrder.id}`])
   })
 
   it.each<[string, Answer, string]>([
@@ -176,12 +159,8 @@ describe('makeOrder', () => {
 
     // Assert
     expect(made).toEqual({ type: 'made', order: pendingOrder })
-    const [asked] = fetched.mock.calls.map(
-      ([input, init]) => new Request(input, init),
-    )
-    expect(asked?.method).toBe('POST')
-    expect(new URL(asked?.url ?? '').pathname).toBe('/api/v1/purchase-orders')
-    expect(await asked?.json()).toEqual(ORDER)
+    expect(asked(fetched)).toEqual(['POST /purchase-orders'])
+    expect(await sent(fetched)).toEqual([ORDER])
   })
 
   it.each<[string, Answer, unknown]>([
@@ -234,50 +213,31 @@ describe('makeOrder', () => {
   })
 })
 
-/** The method, the path and the body of the one request that was sent */
-const sentOf = async (fetched: ReturnType<typeof answering>) => {
-  const [asked] = fetched.mock.calls.map(
-    ([input, init]) => new Request(input, init),
-  )
-  const body = await asked?.text()
-
-  return [
-    asked?.method,
-    new URL(asked?.url ?? '').pathname,
-    body === '' || body === undefined ? undefined : JSON.parse(body),
-  ]
-}
-
 const APPROVED = { ...pendingOrder, status: 'approved' }
 
-/** The operations on the status, each as it is called, with what it sends */
-const STEPS: [string, () => Promise<OrderStep>, unknown[]][] = [
+/** The operations on the status, each as it is called, with what it asks for and the bodies it sends */
+const STEPS: [string, () => Promise<OrderStep>, string, unknown[]][] = [
   [
     'moveOrder',
     () => moveOrder(pendingOrder.id, 'ordered'),
-    [
-      'PATCH',
-      `/api/v1/purchase-orders/${pendingOrder.id}`,
-      { status: 'ordered' },
-    ],
+    `PATCH /purchase-orders/${pendingOrder.id}`,
+    [{ status: 'ordered' }],
   ],
   [
     'approveOrder',
     () => approveOrder(pendingOrder.id),
-    ['POST', `/api/v1/purchase-orders/${pendingOrder.id}/approve`, undefined],
+    `POST /purchase-orders/${pendingOrder.id}/approve`,
+    [],
   ],
   [
     'cancelOrder',
     () => cancelOrder(pendingOrder.id, { cancellationReason: '在庫切れ' }),
-    [
-      'POST',
-      `/api/v1/purchase-orders/${pendingOrder.id}/cancel`,
-      { cancellationReason: '在庫切れ' },
-    ],
+    `POST /purchase-orders/${pendingOrder.id}/cancel`,
+    [{ cancellationReason: '在庫切れ' }],
   ],
 ]
 
-describe.each(STEPS)('%s', (_, step, sent) => {
+describe.each(STEPS)('%s', (_, step, line, bodies) => {
   it('should send the operation, and hand over the order it changed', async () => {
     // Arrange
     const fetched = answering(() => record(200, APPROVED))
@@ -287,7 +247,8 @@ describe.each(STEPS)('%s', (_, step, sent) => {
 
     // Assert
     expect(changed).toEqual({ type: 'changed', order: APPROVED })
-    expect(await sentOf(fetched)).toEqual(sent)
+    expect(asked(fetched)).toEqual([line])
+    expect(await sent(fetched)).toEqual(bodies)
   })
 
   it.each<[string, Answer, unknown]>([
@@ -331,9 +292,10 @@ describe('changeOrder', () => {
 
     // Assert
     expect(changed).toEqual({ type: 'changed', order: pendingOrder })
-    expect(await sentOf(fetched)).toEqual([
-      'PATCH',
-      `/api/v1/purchase-orders/${pendingOrder.id}`,
+    expect(asked(fetched)).toEqual([
+      `PATCH /purchase-orders/${pendingOrder.id}`,
+    ])
+    expect(await sent(fetched)).toEqual([
       { expectedDelivery: null, notes: '至急' },
     ])
   })
@@ -393,11 +355,10 @@ describe('receiveOrder', () => {
 
     // Assert
     expect(received).toEqual({ type: 'received', order: delivered })
-    expect(await sentOf(fetched)).toEqual([
-      'POST',
-      `/api/v1/purchase-orders/${shippedOrder.id}/receive`,
-      RECEIPT,
+    expect(asked(fetched)).toEqual([
+      `POST /purchase-orders/${shippedOrder.id}/receive`,
     ])
+    expect(await sent(fetched)).toEqual([RECEIPT])
   })
 
   it.each<[string, Answer, unknown]>([
@@ -470,15 +431,9 @@ describe('readEverySuggestion', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', items: SUGGESTIONS_OF_THE_SALON })
-    expect(askedOf(fetched)).toEqual([
-      [
-        '/api/v1/purchase-orders/reorder-suggestions',
-        { salonId: salon.id, limit: '100' },
-      ],
-      [
-        '/api/v1/purchase-orders/reorder-suggestions',
-        { salonId: salon.id, cursor: 'next', limit: '100' },
-      ],
+    expect(asked(fetched)).toEqual([
+      `GET /purchase-orders/reorder-suggestions?limit=100&salonId=${salon.id}`,
+      `GET /purchase-orders/reorder-suggestions?cursor=next&limit=100&salonId=${salon.id}`,
     ])
   })
 

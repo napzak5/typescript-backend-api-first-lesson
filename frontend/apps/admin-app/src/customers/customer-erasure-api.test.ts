@@ -1,7 +1,9 @@
 import {
   answering,
+  asked,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -36,10 +38,9 @@ describe('readErasureRequest', () => {
 
     // Assert
     expect(read).toEqual({ type: 'read', request })
-    const [asked] = fetched.mock.calls[0] ?? []
-    expect(new Request(asked ?? '').url).toMatch(
-      new RegExp(`/customers/${CUSTOMER}/deletion-request$`),
-    )
+    expect(asked(fetched)).toEqual([
+      `GET /customers/${CUSTOMER}/deletion-request`,
+    ])
   })
 
   it('should take 404 as no request: the customer of the page is in the ledger, or was', async () => {
@@ -85,14 +86,14 @@ describe('askForErasure', () => {
     const fetched = answering(() => record(202, request))
 
     // Act
-    const asked = await askForErasure(CUSTOMER, { reason: ' 電話で ' })
+    const asking = await askForErasure(CUSTOMER, { reason: ' 電話で ' })
 
     // Assert
-    expect(asked).toEqual({ type: 'asked', request })
-    const [input, init] = fetched.mock.calls[0] ?? []
-    const sent = new Request(input ?? '', init)
-    expect(sent.method).toBe('POST')
-    expect(await sent.json()).toEqual({ reason: ' 電話で ' })
+    expect(asking).toEqual({ type: 'asked', request })
+    expect(asked(fetched)).toEqual([
+      `POST /customers/${CUSTOMER}/deletion-request`,
+    ])
+    expect(await sent(fetched)).toEqual([{ reason: ' 電話で ' }])
   })
 
   it('should name the values the API refused', async () => {
@@ -100,10 +101,10 @@ describe('askForErasure', () => {
     answering(() => problem(400, [{ field: 'reason', rule: 'too_big' }]))
 
     // Act
-    const asked = await askForErasure(CUSTOMER, { reason: '理由' })
+    const asking = await askForErasure(CUSTOMER, { reason: '理由' })
 
     // Assert
-    expect(asked).toEqual({
+    expect(asking).toEqual({
       type: 'invalid',
       values: [{ field: 'reason', rule: 'too_big' }],
     })
@@ -120,10 +121,10 @@ describe('askForErasure', () => {
     answering(() => problem(status))
 
     // Act
-    const asked = await askForErasure(CUSTOMER, { reason: '理由' })
+    const asking = await askForErasure(CUSTOMER, { reason: '理由' })
 
     // Assert
-    expect(asked).toEqual({ type })
+    expect(asking).toEqual({ type })
   })
 
   it.each(UNREAD)('should take nothing after %s', async (_, answer, type) => {
@@ -131,10 +132,10 @@ describe('askForErasure', () => {
     answering(answer)
 
     // Act
-    const asked = await askForErasure(CUSTOMER, { reason: '理由' })
+    const asking = await askForErasure(CUSTOMER, { reason: '理由' })
 
     // Assert
-    expect(asked).toEqual({ type })
+    expect(asking).toEqual({ type })
   })
 })
 
@@ -153,8 +154,9 @@ describe('cancelErasureRequest', () => {
 
     // Assert
     expect(outcome).toEqual({ type: 'cancelled', request: cancelled })
-    const [input, init] = fetched.mock.calls[0] ?? []
-    expect(new Request(input ?? '', init).method).toBe('DELETE')
+    expect(asked(fetched)).toEqual([
+      `DELETE /customers/${CUSTOMER}/deletion-request`,
+    ])
   })
 
   it.each<[number, string]>([

@@ -1,4 +1,9 @@
-import { answering, json, UNREAD } from '@beauty-salon-frontend/testing/answers'
+import {
+  answering,
+  asked,
+  json,
+  UNREAD,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { salon } from '../bookings/components/examples'
 import { readServices, readStaffProfiles } from './salons-api'
@@ -46,16 +51,9 @@ describe('the reads of the names of a salon', () => {
     await readServices(salon.id)
 
     // Assert
-    const [staff, services] = fetched.mock.calls.map(
-      ([input]) => new URL(String(input)),
-    )
-    expect(Object.fromEntries(staff?.searchParams ?? [])).toEqual({
-      salonId: salon.id,
-      limit: '100',
-    })
-    expect(services?.pathname).toBe(`/api/v1/salons/${salon.id}/services`)
-    expect(Object.fromEntries(services?.searchParams ?? [])).toEqual({
-      limit: '100',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /staff-profiles?limit=100&salonId=${salon.id}`,
+      `GET /salons/${salon.id}/services?limit=100`,
+    ])
   })
 })

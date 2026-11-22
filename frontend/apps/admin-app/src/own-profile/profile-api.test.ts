@@ -2,6 +2,7 @@ import {
   answering,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -45,18 +46,14 @@ describe('readOwnProfile', () => {
 describe('saveOwnProfile', () => {
   it('should send only what it is given, and give the profile the API saved', async () => {
     // Arrange
-    const sent: unknown[] = []
-    answering(async (asked) => {
-      sent.push(await asked.json())
-      return record(200, aProfile())
-    })
+    const fetched = answering(() => record(200, aProfile()))
 
     // Act
     const saved = await saveOwnProfile({ bio: null })
 
     // Assert
     expect(saved).toEqual({ type: 'saved', profile: aProfile() })
-    expect(sent).toEqual([{ bio: null }])
+    expect(await sent(fetched)).toEqual([{ bio: null }])
   })
 
   it.each<[string, () => Response | Promise<Response>, string]>([

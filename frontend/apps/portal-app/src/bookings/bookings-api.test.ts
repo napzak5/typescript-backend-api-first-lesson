@@ -228,7 +228,7 @@ describe('the operations of the booking screens', () => {
         slots: [{ staffId: 'a' }],
       })
       expect(asked(fetched)).toEqual([
-        `GET /salons/${SALON_ID}/available-slots?serviceId=${SERVICE_ID}&date=2026-11-24&limit=100`,
+        `GET /salons/${SALON_ID}/available-slots?date=2026-11-24&limit=100&serviceId=${SERVICE_ID}`,
       ])
     })
 
@@ -238,7 +238,7 @@ describe('the operations of the booking screens', () => {
       await readSlots({ ...SLOTS, staffId: STAFF_ID, duration: 90 })
 
       expect(asked(fetched)).toEqual([
-        `GET /salons/${SALON_ID}/available-slots?staffId=${STAFF_ID}&duration=90&serviceId=${SERVICE_ID}&date=2026-11-24&limit=100`,
+        `GET /salons/${SALON_ID}/available-slots?date=2026-11-24&duration=90&limit=100&serviceId=${SERVICE_ID}&staffId=${STAFF_ID}`,
       ])
     })
 
@@ -248,7 +248,7 @@ describe('the operations of the booking screens', () => {
       await readSlots({ ...SLOTS, staffId: STAFF_ID })
 
       expect(asked(fetched)).toEqual([
-        `GET /salons/${SALON_ID}/available-slots?staffId=${STAFF_ID}&serviceId=${SERVICE_ID}&date=2026-11-24&limit=100`,
+        `GET /salons/${SALON_ID}/available-slots?date=2026-11-24&limit=100&serviceId=${SERVICE_ID}&staffId=${STAFF_ID}`,
       ])
     })
 
@@ -269,9 +269,9 @@ describe('the operations of the booking screens', () => {
         slots: ['a', 'b', 'c', 'd'].map((staffId) => ({ staffId })),
       })
       expect(asked(fetched)).toEqual([
-        `GET /salons/${SALON_ID}/available-slots?serviceId=${SERVICE_ID}&date=2026-11-24&limit=100`,
-        `GET /salons/${SALON_ID}/available-slots?cursor=second&serviceId=${SERVICE_ID}&date=2026-11-24&limit=100`,
-        `GET /salons/${SALON_ID}/available-slots?cursor=third&serviceId=${SERVICE_ID}&date=2026-11-24&limit=100`,
+        `GET /salons/${SALON_ID}/available-slots?date=2026-11-24&limit=100&serviceId=${SERVICE_ID}`,
+        `GET /salons/${SALON_ID}/available-slots?cursor=second&date=2026-11-24&limit=100&serviceId=${SERVICE_ID}`,
+        `GET /salons/${SALON_ID}/available-slots?cursor=third&date=2026-11-24&limit=100&serviceId=${SERVICE_ID}`,
       ])
     })
 
@@ -314,7 +314,7 @@ describe('the operations of the booking screens', () => {
         booking: { id: BOOKING_ID },
       })
       expect(asked(fetched)).toEqual(['POST /customers/me/bookings'])
-      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(BOOKING) })
+      expect(await sent(fetched)).toEqual([BOOKING])
     })
 
     it('should say that the account has no profile when the API finds no customer', async () => {
@@ -393,7 +393,7 @@ describe('the operations of the screens of the bookings of a customer', () => {
       await readOwnBookings({ bookingDateTo: '2026-11-18' }, 'second')
 
       expect(asked(fetched)).toEqual([
-        'GET /customers/me/bookings?cursor=second&bookingDateTo=2026-11-18&limit=20',
+        'GET /customers/me/bookings?bookingDateTo=2026-11-18&cursor=second&limit=20',
       ])
     })
 
@@ -505,9 +505,7 @@ describe('the operations of the screens of the bookings of a customer', () => {
       expect(asked(fetched)).toEqual([
         `POST /customers/me/bookings/${BOOKING_ID}/cancel`,
       ])
-      expect(sent(fetched)).toMatchObject({
-        body: JSON.stringify(CANCELLATION),
-      })
+      expect(await sent(fetched)).toEqual([CANCELLATION])
     })
 
     it('should send that there is no reason when none was given', async () => {
@@ -515,9 +513,7 @@ describe('the operations of the screens of the bookings of a customer', () => {
 
       await cancelOwnBooking(BOOKING_ID, { cancellationReason: null })
 
-      expect(sent(fetched)).toMatchObject({
-        body: '{"cancellationReason":null}',
-      })
+      expect(await sent(fetched)).toEqual([{ cancellationReason: null }])
     })
 
     it('should have failed when the API does not take the request: the dialog sends what the API takes', async () => {
@@ -542,7 +538,7 @@ describe('the operations of the screens of the bookings of a customer', () => {
       expect(asked(fetched)).toEqual([
         `POST /customers/me/bookings/${BOOKING_ID}/reschedule`,
       ])
-      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(MOVE) })
+      expect(await sent(fetched)).toEqual([MOVE])
     })
 
     it('should say that what was chosen is not taken when the API does not take the request', async () => {

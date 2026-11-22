@@ -1,6 +1,7 @@
 import type { ModelsUserRoleType } from '@beauty-salon-frontend/api-client'
 import {
   answering,
+  asked,
   problem,
   record,
 } from '@beauty-salon-frontend/testing/answers'
@@ -61,9 +62,7 @@ describe('readOwnSalon', () => {
 
     // Assert
     expect(read).toEqual({ type: 'member', salonId: SALON_ID })
-    expect(String(fetched.mock.calls[0]?.[0])).toBe(
-      'http://localhost:3000/api/v1/staff-profiles/me',
-    )
+    expect(asked(fetched)).toEqual(['GET /staff-profiles/me'])
   })
 
   it.each([

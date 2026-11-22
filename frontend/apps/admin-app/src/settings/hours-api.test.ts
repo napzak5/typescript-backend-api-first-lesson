@@ -3,6 +3,7 @@ import {
   answering,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -60,14 +61,9 @@ describe('attemptHoursChange', () => {
   it('should change hours that are as the form opened them, and give the salon the API wrote', async () => {
     // Arrange
     const written = withoutNewYear()
-    const sent: unknown[] = []
-    const fetched = answering(async (asked) => {
-      if (asked.method === 'PATCH') {
-        sent.push(await asked.json())
-        return found(written)
-      }
-      return found(SALON)
-    })
+    const fetched = answering((request) =>
+      request.method === 'PATCH' ? found(written) : found(SALON),
+    )
 
     // Act
     const outcome = await attemptHoursChange(SALON.id, hoursOf(SALON), {
@@ -76,7 +72,9 @@ describe('attemptHoursChange', () => {
 
     // Assert
     expect(outcome).toEqual({ type: 'written', salon: written })
-    expect(sent).toEqual([{ openingHours: written.openingHours }])
+    expect(await sent(fetched)).toEqual([
+      { openingHours: written.openingHours },
+    ])
     expect(fetched).toHaveBeenCalledTimes(2)
   })
 
@@ -124,7 +122,9 @@ describe('attemptHoursChange', () => {
     ...UNREAD,
   ])('should fail after %s', async (_, answer, type) => {
     // Arrange
-    answering((asked) => (asked.method === 'PATCH' ? answer() : found(SALON)))
+    answering((request) =>
+      request.method === 'PATCH' ? answer() : found(SALON),
+    )
 
     // Act
     const outcome = await attemptHoursChange(SALON.id, hoursOf(SALON), {
@@ -137,8 +137,8 @@ describe('attemptHoursChange', () => {
 
   it('should give the values the API refused, by their places in the request', async () => {
     // Arrange
-    answering((asked) =>
-      asked.method === 'PATCH'
+    answering((request) =>
+      request.method === 'PATCH'
         ? problem(400, [{ field: 'openingHours.0.dayOfWeek', rule: 'custom' }])
         : found(SALON),
     )

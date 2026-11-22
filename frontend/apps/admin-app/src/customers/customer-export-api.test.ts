@@ -1,5 +1,6 @@
 import {
   answering,
+  asked,
   json,
   problem,
   UNREAD,
@@ -102,17 +103,8 @@ describe('exportLedger', () => {
     )
 
     // Assert
-    const [input] = fetched.mock.calls[0] ?? []
-    const url = new URL(String(input))
-    expect(url.pathname).toBe('/api/v1/customers/export')
-    expect([...url.searchParams]).toEqual([
-      ['search', '山田'],
-      ['tags', 'VIP'],
-      ['tags', '紹介'],
-      ['registeredFrom', '2026-10-31T15:00:00.000Z'],
-      ['registeredTo', '2026-11-30T14:59:59.999Z'],
-      ['customerStatus', 'active'],
-      ['membershipTier', 'gold'],
+    expect(asked(fetched)).toEqual([
+      'GET /customers/export?customerStatus=active&membershipTier=gold&registeredFrom=2026-10-31T15:00:00.000Z&registeredTo=2026-11-30T14:59:59.999Z&search=山田&tags=VIP&tags=紹介',
     ])
   })
 

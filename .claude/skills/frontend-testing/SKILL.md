@@ -40,9 +40,9 @@ every story (`@beauty-salon-frontend/testing/stories`), `savedFiles`,
 the tests of screens share (`@beauty-salon-frontend/testing/screens`, under
 "A screen"), the values a form was sent with
 (`@beauty-salon-frontend/testing/forms`: `formOf`, `formOfEntries`), the
-answers of the API a test makes up
-(`@beauty-salon-frontend/testing/answers`, under "Code that calls the
-API"), the files a test sends (`PNG_BYTES`, `PDF_TEXT`, `PDF_BYTES`),
+answers of the API a test makes up and what its stand-in for `fetch` was
+asked (`@beauty-salon-frontend/testing/answers`, under "Code that calls
+the API"), the files a test sends (`PNG_BYTES`, `PDF_TEXT`, `PDF_BYTES`),
 the names of the seed data (`@beauty-salon-frontend/testing/seed`), and the
 real API of the integration tests with what a test reads from its database
 and the sign-in on the screen (`@beauty-salon-frontend/testing/api`:
@@ -310,13 +310,40 @@ and package: `@beauty-salon-frontend/testing/answers`.
 | A body of the test's own | `json(status, body)` |
 
 `answering((request) => …)` stands in for `fetch` and hands the test each
-request; an answer that depends on the address reads it with
-`new URL(request.url)`. `asked(fetched)` and `sent(fetched)` say what a
-function asked for. Three tables are the rows of an `it.each`: `UNREAD`
-(the answers that say nothing, with what a read makes of them),
-`UNWRITTEN` (the same after the bodies the API does not take, 413 and 415)
-and `OUTSIDE_THE_CONTRACT` (the statuses of what stands in front of the
-API).
+request, which the answer names `request`; an answer that depends on the
+address reads it with `new URL(request.url)`. Three tables are the rows of
+an `it.each`: `UNREAD` (the answers that say nothing, with what a read
+makes of them), `UNWRITTEN` (the same after the bodies the API does not
+take, 413 and 415) and `OUTSIDE_THE_CONTRACT` (the statuses of what stands
+in front of the API).
+
+What a function asked for is read from that stand-in with two readers:
+
+| What is read | Written as |
+|---|---|
+| The requests, a line each in the order they were sent: `METHOD path?query` | `expect(asked(fetched)).toEqual(['GET /salons?cursor=b&limit=20'])` |
+| The bodies of the requests that had one, in the order they were sent | `expect(await sent(fetched)).toEqual([{ name: 'a' }])` |
+
+- **The path** of a line is the one below `/api/v1`. A request that went
+  elsewhere (a storage, a probe of the system at `/api/system`) is named
+  with its whole address: `` `PUT ${UPLOAD_URL}` ``.
+- **The query** is written as it reads, its values in the order of their
+  names: the order the code wrote them in is nothing the API is told, so a
+  test does not depend on it. Values of one name stay in the order they
+  were sent in (`tags=VIP&tags=紹介`). A `&`, a `=` or a `%` inside a name
+  or a value stays encoded (`supplier=A%26B 商事`), so a line says one
+  thing.
+- **A body** that is JSON is the value it reads as, so the order of its
+  properties says nothing; any other body (the bytes of a file) is the
+  list of its bytes (`[...new Uint8Array(BYTES)]`). A write that sends no
+  body is `expect(await sent(fetched)).toEqual([])`.
+- **Every request is named.** The expectation is the whole list, so it
+  also says what was not asked for: a second read, a check that was to be
+  left out. A table of an `it.each` carries the line as one column.
+- A test does not read `fetched.mock.calls` itself and does not collect
+  the requests in its answer. The exception is what the two readers do
+  not read, the headers of a request: the tests of `customInstance` and
+  of the session (the token), and the headers of an upload to a storage.
 
 A test file builds an answer itself only where the answer is what the file
 is about: a file or a CSV, a body the storage sends, the links of a record.

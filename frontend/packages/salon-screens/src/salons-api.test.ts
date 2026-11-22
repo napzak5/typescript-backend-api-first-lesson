@@ -1,5 +1,6 @@
 import {
   answering,
+  asked,
   json,
   problem,
   UNREAD,
@@ -52,12 +53,9 @@ describe('the reads of salons', () => {
     await findSalons('表参道', SALON_ID)
 
     // Assert
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      keyword: '表参道',
-      cursor: SALON_ID,
-      limit: '20',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /salons?cursor=${SALON_ID}&keyword=表参道&limit=20`,
+    ])
   })
 
   it('should not ask for a salon whose address holds no ID', async () => {

@@ -1,5 +1,6 @@
 import {
   answering,
+  asked,
   page,
   problem,
   UNREAD,
@@ -71,13 +72,9 @@ describe('readEveryStockRow', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', items: STOCK_OF_THE_SALON })
-    expect(
-      fetched.mock.calls.map(([asked]) =>
-        Object.fromEntries(new URL(new Request(asked).url).searchParams),
-      ),
-    ).toEqual([
-      { salonId: salon.id, limit: '100' },
-      { salonId: salon.id, cursor: first?.id, limit: '100' },
+    expect(asked(fetched)).toEqual([
+      `GET /inventory?limit=100&salonId=${salon.id}`,
+      `GET /inventory?cursor=${first?.id}&limit=100&salonId=${salon.id}`,
     ])
   })
 
@@ -97,69 +94,42 @@ describe('readEveryStockRow', () => {
 })
 
 describe('readStockPage', () => {
-  it.each<[string, StockView, string, Record<string, string>]>([
+  it.each<[string, StockView, string]>([
     [
       'every row of a lot of a product',
       { type: 'all', productId: colour.id, lotNumber: 'LOT-2026-041' },
-      '/api/v1/inventory',
-      {
-        salonId: salon.id,
-        productId: colour.id,
-        lotNumber: 'LOT-2026-041',
-        cursor: 'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
-        limit: '20',
-      },
+      `GET /inventory?cursor=c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35&limit=20&lotNumber=LOT-2026-041&productId=${colour.id}&salonId=${salon.id}`,
     ],
     [
       'the rows of the products whose stock is low',
       { type: 'lowStock' },
-      '/api/v1/inventory/low-stock',
-      {
-        salonId: salon.id,
-        cursor: 'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
-        limit: '20',
-      },
+      `GET /inventory/low-stock?cursor=c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35&limit=20&salonId=${salon.id}`,
     ],
     [
       'the rows that expire within a week',
       { type: 'expiring', days: 7 },
-      '/api/v1/inventory/expiring',
-      {
-        salonId: salon.id,
-        days: '7',
-        cursor: 'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
-        limit: '20',
-      },
+      `GET /inventory/expiring?cursor=c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35&days=7&limit=20&salonId=${salon.id}`,
     ],
-  ])(
-    'should ask for a page of %s, after the cursor',
-    async (_, view, path, query) => {
-      // Arrange
-      const fetched = answering(() => page([colourLot]))
+  ])('should ask for a page of %s, after the cursor', async (_, view, line) => {
+    // Arrange
+    const fetched = answering(() => page([colourLot]))
 
-      // Act
-      const read = await readStockPage(
-        salon.id,
-        view,
-        'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
-      )
+    // Act
+    const read = await readStockPage(
+      salon.id,
+      view,
+      'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
+    )
 
-      // Assert
-      expect(read).toEqual({
-        type: 'found',
-        items: [colourLot],
-        total: 1,
-        nextCursor: null,
-      })
-      expect(
-        fetched.mock.calls.map(([asked]) => {
-          const url = new URL(new Request(asked).url)
-
-          return [url.pathname, Object.fromEntries(url.searchParams)]
-        }),
-      ).toEqual([[path, query]])
-    },
-  )
+    // Assert
+    expect(read).toEqual({
+      type: 'found',
+      items: [colourLot],
+      total: 1,
+      nextCursor: null,
+    })
+    expect(asked(fetched)).toEqual([line])
+  })
 
   it.each<[string, Answer, string]>([
     [

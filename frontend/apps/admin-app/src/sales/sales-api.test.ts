@@ -1,8 +1,10 @@
 import {
   answering,
+  asked,
   page,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -151,15 +153,9 @@ describe('the functions that call the API', () => {
     )
 
     // Assert
-    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      salonId: salon.id,
-      startDate: '2026-11-01',
-      endDate: '2026-11-20',
-      paymentStatus: 'processing',
-      cursor: sale.id,
-      limit: '50',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /sales?cursor=${sale.id}&endDate=2026-11-20&limit=50&paymentStatus=processing&salonId=${salon.id}&startDate=2026-11-01`,
+    ])
   })
 
   it('should read the sales of a booking to the end, 100 at a time', async () => {
@@ -176,13 +172,10 @@ describe('the functions that call the API', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', sales: [voided, sale] })
-    const asked = new URL(String(fetched.mock.calls[1]?.[0]))
-    expect(Object.fromEntries(asked.searchParams)).toEqual({
-      salonId: salon.id,
-      bookingId: booking.id,
-      cursor: voided.id,
-      limit: '100',
-    })
+    expect(asked(fetched)).toEqual([
+      `GET /sales?bookingId=${booking.id}&limit=100&salonId=${salon.id}`,
+      `GET /sales?bookingId=${booking.id}&cursor=${voided.id}&limit=100&salonId=${salon.id}`,
+    ])
   })
 
   it('should send the payment it records', async () => {
@@ -193,35 +186,30 @@ describe('the functions that call the API', () => {
     await recordPayment(sale.id, PAYMENT)
 
     // Assert
-    const [input, init] = fetched.mock.calls[0] ?? []
-    expect(String(input)).toMatch(new RegExp(`/sales/${sale.id}/process$`))
-    expect(init?.method).toBe('POST')
-    expect(JSON.parse(String(init?.body))).toEqual(PAYMENT)
+    expect(asked(fetched)).toEqual([`POST /sales/${sale.id}/process`])
+    expect(await sent(fetched)).toEqual([PAYMENT])
   })
 
-  it.each<[string, () => Promise<unknown>, string, string, unknown]>([
+  it.each<[string, () => Promise<unknown>, string, unknown]>([
     [
       'a change of a sale',
       () => updateSale(sale.id, CHANGE),
-      `/sales/${sale.id}`,
-      'PATCH',
+      `PATCH /sales/${sale.id}`,
       CHANGE,
     ],
     [
       'the voiding of a sale',
       () => voidSale(sale.id, VOIDING),
-      `/sales/${sale.id}/void`,
-      'POST',
+      `POST /sales/${sale.id}/void`,
       VOIDING,
     ],
     [
       'a refund',
       () => refundPayment(payment.id, REFUND),
-      `/payments/${payment.id}/refund`,
-      'POST',
+      `POST /payments/${payment.id}/refund`,
       REFUND,
     ],
-  ])('should send %s', async (_what, call, path, method, body) => {
+  ])('should send %s', async (_what, call, line, body) => {
     // Arrange
     const fetched = answering(() => problem(500))
 
@@ -229,10 +217,8 @@ describe('the functions that call the API', () => {
     await call()
 
     // Assert
-    const [input, init] = fetched.mock.calls[0] ?? []
-    expect(String(input)).toMatch(new RegExp(`${path}$`))
-    expect(init?.method).toBe(method)
-    expect(JSON.parse(String(init?.body))).toEqual(body)
+    expect(asked(fetched)).toEqual([line])
+    expect(await sent(fetched)).toEqual([body])
   })
 
   it.each<[string, () => Promise<{ type: string }>]>([

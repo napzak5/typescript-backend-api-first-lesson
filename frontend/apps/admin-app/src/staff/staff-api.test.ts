@@ -1,6 +1,7 @@
 import type { ModelsStaffCreateRequest } from '@beauty-salon-frontend/api-client'
 import {
   answering,
+  asked,
   page,
   problem,
   problemWithCode,
@@ -86,10 +87,10 @@ describe('attemptStaffEntry', () => {
   it('should read the ledger to its end in its largest pages, and find the address of mail taken by a member there', async () => {
     // Arrange
     const first = aNewMember()
-    const fetched = answering((asked) =>
-      asked.method === 'POST'
+    const fetched = answering((request) =>
+      request.method === 'POST'
         ? problemWithCode(409, TAKEN)
-        : new URL(asked.url).searchParams.has('cursor')
+        : new URL(request.url).searchParams.has('cursor')
           ? page([member])
           : page([first], first.id),
     )
@@ -102,12 +103,11 @@ describe('attemptStaffEntry', () => {
 
     // Assert
     expect(attempt).toEqual({ type: 'duplicate', field: 'email' })
-    expect(
-      fetched.mock.calls
-        .map(([asked, init]) => new Request(asked, init))
-        .filter(({ method }) => method === 'GET')
-        .map(({ url }) => Object.fromEntries(new URL(url).searchParams)),
-    ).toEqual([{ limit: '100' }, { cursor: first.id, limit: '100' }])
+    expect(asked(fetched)).toEqual([
+      `POST /salons/${salon.id}/staff`,
+      `GET /salons/${salon.id}/staff?limit=100`,
+      `GET /salons/${salon.id}/staff?cursor=${first.id}&limit=100`,
+    ])
   })
 
   it('should take the address of mail as taken without reading the ledger when no staff code was sent', async () => {
@@ -133,8 +133,8 @@ describe('attemptStaffEntry', () => {
     'should not say which value is taken when the ledger could not be read after %s',
     async (_, answer, type) => {
       // Arrange
-      answering((asked) =>
-        asked.method === 'POST' ? problemWithCode(409, TAKEN) : answer(),
+      answering((request) =>
+        request.method === 'POST' ? problemWithCode(409, TAKEN) : answer(),
       )
 
       // Act
@@ -189,8 +189,8 @@ describe('attemptStaffChange', () => {
 
   it('should not take the address of mail of the member being changed as taken by another', async () => {
     // Arrange
-    answering((asked) =>
-      asked.method === 'PATCH' ? problemWithCode(409, TAKEN) : page([member]),
+    answering((request) =>
+      request.method === 'PATCH' ? problemWithCode(409, TAKEN) : page([member]),
     )
 
     // Act

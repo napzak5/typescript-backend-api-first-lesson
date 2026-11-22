@@ -1,8 +1,10 @@
 import {
   answering,
+  asked,
   page,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -25,23 +27,6 @@ type Answer = () => Response | Promise<Response>
 afterEach(() => {
   vi.unstubAllGlobals()
 })
-
-/** The methods, the paths, the queries and the bodies of the requests that were sent */
-const askedOf = (fetched: ReturnType<typeof answering>) =>
-  Promise.all(
-    fetched.mock.calls.map(async ([asked, init]) => {
-      const request = new Request(asked, init)
-      const url = new URL(request.url)
-      const body = await request.text()
-
-      return [
-        request.method,
-        url.pathname,
-        Object.fromEntries(url.searchParams),
-        body === '' ? null : JSON.parse(body),
-      ]
-    }),
-  )
 
 describe('reviewReportsKeyOf', () => {
   it('should read the reports below the salon', () => {
@@ -72,19 +57,8 @@ describe('readReportPage', () => {
       total: 23,
       nextCursor: 'next',
     })
-    expect(await askedOf(fetched)).toEqual([
-      [
-        'GET',
-        '/api/v1/review-reports',
-        {
-          salonId: salon.id,
-          status: 'pending',
-          reviewId: waitingReport.reviewId,
-          cursor: 'cursor',
-          limit: '20',
-        },
-        null,
-      ],
+    expect(asked(fetched)).toEqual([
+      `GET /review-reports?cursor=cursor&limit=20&reviewId=${waitingReport.reviewId}&salonId=${salon.id}&status=pending`,
     ])
   })
 
@@ -114,9 +88,10 @@ describe('dismissReport', () => {
 
     // Assert
     expect(dismissal).toEqual({ type: 'dismissed', report: dismissedReport })
-    expect(await askedOf(fetched)).toEqual([
-      ['POST', `/api/v1/review-reports/${waitingReport.id}/dismiss`, {}, null],
+    expect(asked(fetched)).toEqual([
+      `POST /review-reports/${waitingReport.id}/dismiss`,
     ])
+    expect(await sent(fetched)).toEqual([])
   })
 
   it.each<[string, Answer, string]>([

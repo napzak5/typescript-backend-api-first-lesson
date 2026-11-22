@@ -2,6 +2,7 @@ import {
   answering,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -29,11 +30,11 @@ type Answer = () => Response | Promise<Response>
 
 /** Lets the API refuse an invitation, and answer the account and the member read again after it so. */
 const refusing = (account: Answer, member: Answer) =>
-  answering((asked) => {
-    if (asked.method === 'POST') {
+  answering((request) => {
+    if (request.method === 'POST') {
       return problem(409)
     }
-    return new URL(asked.url).pathname.endsWith('/account')
+    return new URL(request.url).pathname.endsWith('/account')
       ? account()
       : member()
   })
@@ -86,18 +87,14 @@ describe('readAccount and readInvitation', () => {
 describe('attemptInvitation', () => {
   it('should send the role chosen, and give the invitation the API mailed', async () => {
     // Arrange
-    const sent: unknown[] = []
-    answering(async (asked) => {
-      sent.push(await asked.json())
-      return record(201, anInvitation())
-    })
+    const fetched = answering(() => record(201, anInvitation()))
 
     // Act
     const attempt = await attemptInvitation(SALON, MEMBER, 'manager')
 
     // Assert
     expect(attempt).toEqual({ type: 'invited', invitation: anInvitation() })
-    expect(sent).toEqual([{ role: 'manager' }])
+    expect(await sent(fetched)).toEqual([{ role: 'manager' }])
   })
 
   it.each<[string, Answer, string]>([
@@ -122,8 +119,8 @@ describe('attemptInvitation', () => {
     'should not tell why an invitation was refused when the account could not be read again after %s',
     async (_, given, type) => {
       // Arrange
-      const fetched = answering((asked) =>
-        asked.method === 'POST' ? problem(409) : given(),
+      const fetched = answering((request) =>
+        request.method === 'POST' ? problem(409) : given(),
       )
 
       // Act

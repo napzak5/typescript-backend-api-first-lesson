@@ -1,8 +1,10 @@
 import {
   answering,
+  asked,
   page,
   problem,
   record,
+  sent,
   UNREAD,
   UNWRITTEN,
 } from '@beauty-salon-frontend/testing/answers'
@@ -88,18 +90,16 @@ describe('menuOf', () => {
 describe('readCategories', () => {
   it('should ask for the largest pages', async () => {
     // Arrange
-    const asked: string[] = []
-    answering((request) => {
-      asked.push(new URL(request.url).search)
-      return page([aCategory()])
-    })
+    const fetched = answering(() => page([aCategory()]))
 
     // Act
     const read = await readCategories(salon.id)
 
     // Assert
     expect(read).toEqual({ type: 'found', items: [aCategory()] })
-    expect(asked).toEqual(['?limit=100'])
+    expect(asked(fetched)).toEqual([
+      `GET /salons/${salon.id}/service-categories?limit=100`,
+    ])
   })
 
   it.each<[string, Answer, string]>([
@@ -181,11 +181,7 @@ describe('addCategory', () => {
 describe('changeCategory', () => {
   it('should send only what it is given, and give the category the API wrote', async () => {
     // Arrange
-    const sent: unknown[] = []
-    answering(async (asked) => {
-      sent.push(await asked.json())
-      return record(200, aCategory())
-    })
+    const fetched = answering(() => record(200, aCategory()))
 
     // Act
     const written = await changeCategory(salon.id, aCategory().id, {
@@ -194,7 +190,7 @@ describe('changeCategory', () => {
 
     // Assert
     expect(written).toEqual({ type: 'written', category: aCategory() })
-    expect(sent).toEqual([{ color: null }])
+    expect(await sent(fetched)).toEqual([{ color: null }])
   })
 
   it.each(UNWRITTEN)(
@@ -256,11 +252,7 @@ describe('addService', () => {
 describe('changeService', () => {
   it('should send only what it is given, and give the service the API wrote', async () => {
     // Arrange
-    const sent: unknown[] = []
-    answering(async (asked) => {
-      sent.push(await asked.json())
-      return record(200, aService())
-    })
+    const fetched = answering(() => record(200, aService()))
 
     // Act
     const written = await changeService(salon.id, aService().id, {
@@ -269,7 +261,7 @@ describe('changeService', () => {
 
     // Assert
     expect(written).toEqual({ type: 'written', service: aService() })
-    expect(sent).toEqual([{ discountPrice: null }])
+    expect(await sent(fetched)).toEqual([{ discountPrice: null }])
   })
 
   it.each(UNWRITTEN)(
@@ -309,11 +301,7 @@ describe('removeService', () => {
 describe('changeServices', () => {
   it('should send the services and the values, and give the services the API changed', async () => {
     // Arrange
-    const sent: unknown[] = []
-    answering(async (asked) => {
-      sent.push(await asked.json())
-      return record(200, { updated: ['b', 'a'] })
-    })
+    const fetched = answering(() => record(200, { updated: ['b', 'a'] }))
 
     // Act
     const changed = await changeServices(salon.id, {
@@ -323,7 +311,7 @@ describe('changeServices', () => {
 
     // Assert
     expect(changed).toEqual({ type: 'changed', updated: ['b', 'a'] })
-    expect(sent).toEqual([
+    expect(await sent(fetched)).toEqual([
       { serviceIds: ['b', 'a'], updates: { allowOnlineBooking: false } },
     ])
   })

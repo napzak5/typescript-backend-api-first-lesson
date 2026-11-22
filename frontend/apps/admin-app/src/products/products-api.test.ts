@@ -1,5 +1,6 @@
 import {
   answering,
+  asked,
   page,
   problem,
   UNREAD,
@@ -45,11 +46,10 @@ describe('readProducts', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', items: [first, second] })
-    expect(
-      fetched.mock.calls.map(([asked]) =>
-        Object.fromEntries(new URL(new Request(asked).url).searchParams),
-      ),
-    ).toEqual([{ limit: '100' }, { cursor: first.id, limit: '100' }])
+    expect(asked(fetched)).toEqual([
+      `GET /salons/${salon.id}/products?limit=100`,
+      `GET /salons/${salon.id}/products?cursor=${first.id}&limit=100`,
+    ])
   })
 
   it.each<[string, () => Response]>([
@@ -111,18 +111,8 @@ describe('readProductPage', () => {
       total: 1,
       nextCursor: null,
     })
-    expect(
-      fetched.mock.calls.map(([asked]) =>
-        Object.fromEntries(new URL(new Request(asked).url).searchParams),
-      ),
-    ).toEqual([
-      {
-        keyword: 'シャンプー',
-        isActive: 'true',
-        isForSale: 'true',
-        cursor: 'c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35',
-        limit: '20',
-      },
+    expect(asked(fetched)).toEqual([
+      `GET /salons/${salon.id}/products?cursor=c5e7a9b1-3d4f-4a6b-8c0e-2f4a6c8e0b35&isActive=true&isForSale=true&keyword=シャンプー&limit=20`,
     ])
   })
 

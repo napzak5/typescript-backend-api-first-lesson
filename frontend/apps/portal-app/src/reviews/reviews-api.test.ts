@@ -242,7 +242,7 @@ describe('the operations of the screens of the reviews', () => {
       await readOwnReviews(CUSTOMER.id, undefined)
 
       expect(asked(fetched)).toEqual([
-        `GET /reviews?customerId=${CUSTOMER.id}&sortBy=recent&limit=10`,
+        `GET /reviews?customerId=${CUSTOMER.id}&limit=10&sortBy=recent`,
       ])
     })
 
@@ -252,7 +252,7 @@ describe('the operations of the screens of the reviews', () => {
       await readOwnReviews(CUSTOMER.id, 'second')
 
       expect(asked(fetched)).toEqual([
-        `GET /reviews?cursor=second&customerId=${CUSTOMER.id}&sortBy=recent&limit=10`,
+        `GET /reviews?cursor=second&customerId=${CUSTOMER.id}&limit=10&sortBy=recent`,
       ])
     })
 
@@ -290,10 +290,10 @@ describe('the operations of the screens of the reviews', () => {
 
       expect(asked(fetched).toSorted()).toEqual(
         [
-          `GET /reviews?customerId=${CUSTOMER.id}&sortBy=recent&limit=10`,
+          `GET /reviews?customerId=${CUSTOMER.id}&limit=10&sortBy=recent`,
           `GET /salons/${TOKYO.id}`,
           `GET /salons/${OSAKA.id}`,
-          `GET /staff-profiles?salonId=${TOKYO.id}&limit=100`,
+          `GET /staff-profiles?limit=100&salonId=${TOKYO.id}`,
         ].toSorted(),
       )
     })
@@ -420,7 +420,7 @@ describe('the operations of the screens of the reviews', () => {
           'GET /customers/me',
           `GET /reviews?bookingId=${BOOKING_ID}&limit=1`,
           `GET /salons/${TOKYO.id}`,
-          `GET /staff-profiles?salonId=${TOKYO.id}&limit=100`,
+          `GET /staff-profiles?limit=100&salonId=${TOKYO.id}`,
         ].toSorted(),
       )
     })
@@ -519,7 +519,7 @@ describe('the operations of the screens of the reviews', () => {
           `GET /reviews/${REVIEW_ID}`,
           'GET /customers/me',
           `GET /salons/${TOKYO.id}`,
-          `GET /staff-profiles?salonId=${TOKYO.id}&limit=100`,
+          `GET /staff-profiles?limit=100&salonId=${TOKYO.id}`,
         ].toSorted(),
       )
     })
@@ -546,7 +546,7 @@ describe('the operations of the screens of the reviews', () => {
         staffName: null,
       })
       expect(asked(fetched)).not.toContain(
-        `GET /staff-profiles?salonId=${TOKYO.id}&limit=100`,
+        `GET /staff-profiles?limit=100&salonId=${TOKYO.id}`,
       )
     })
 
@@ -661,7 +661,7 @@ describe('the operations of the screens of the reviews', () => {
         review: REVIEW,
       })
       expect(asked(fetched)).toEqual(['POST /reviews'])
-      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(REQUEST) })
+      expect(await sent(fetched)).toEqual([REQUEST])
     })
 
     it('should say that the visit cannot be written about when the API says that it conflicts', async () => {
@@ -680,7 +680,7 @@ describe('the operations of the screens of the reviews', () => {
         review: REVIEW,
       })
       expect(asked(fetched)).toEqual([`PATCH /reviews/${REVIEW_ID}`])
-      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(CHANGES) })
+      expect(await sent(fetched)).toEqual([CHANGES])
     })
 
     it('should say that the review is gone when the API does not find it', async () => {
@@ -720,7 +720,7 @@ describe('the operations of the screens of the reviews', () => {
         helpfulCount: 13,
       })
       expect(asked(fetched)).toEqual([`POST /reviews/${REVIEW_ID}/helpful`])
-      expect(sent(fetched)).not.toHaveProperty('body')
+      expect(await sent(fetched)).toEqual([])
     })
 
     it('should say that the review is gone when the API does not find it', async () => {
@@ -746,7 +746,7 @@ describe('the operations of the screens of the reviews', () => {
         type: 'reported',
       })
       expect(asked(fetched)).toEqual([`POST /reviews/${REVIEW_ID}/report`])
-      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(REPORT) })
+      expect(await sent(fetched)).toEqual([REPORT])
     })
 
     it('should say that the review is gone when the API does not find it', async () => {

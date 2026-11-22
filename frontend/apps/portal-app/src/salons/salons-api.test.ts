@@ -1,6 +1,7 @@
 import type { ModelsReviewSortType } from '@beauty-salon-frontend/api-client'
 import {
   answering,
+  asked,
   OUTSIDE_THE_CONTRACT,
   page,
   pageOfAGateway,
@@ -30,14 +31,6 @@ const SALON_ID = '0b7f5c1e-3a52-4d8e-9c41-6f2e8d1a7b90'
 const HIROSHI = '6f81a3c4-e075-429b-93bd-5f7193acc0ce'
 const MIKA = '7092b4d5-f186-43ac-a4ce-60829bbdd1df'
 const TAKESHI = '81a3c5e6-0297-44bd-b5df-7193acce02e0'
-
-/** What was asked for: the path below `/api/v1`, with its query. */
-const asked = (fetched: ReturnType<typeof answering>): string[] =>
-  fetched.mock.calls.map(([input]) => {
-    const [, operation] = String(input).split('/api/v1')
-
-    return decodeURIComponent(operation ?? '')
-  })
 
 /** Every operation of the screens of the salons, called as a screen calls it. */
 const OPERATIONS: [string, () => Promise<{ type: string }>][] = [
@@ -120,7 +113,7 @@ describe('the operations of the screens of the salons', () => {
       )
 
       expect(asked(fetched)).toEqual([
-        '/salons?keyword=cut&prefecture=東京都&city=渋谷区&minRating=4.5&isActive=true&limit=20',
+        'GET /salons?city=渋谷区&isActive=true&keyword=cut&limit=20&minRating=4.5&prefecture=東京都',
       ])
       expect(found).toEqual({
         type: 'found',
@@ -136,7 +129,7 @@ describe('the operations of the screens of the salons', () => {
       await findSalons({}, 'b')
 
       expect(asked(fetched)).toEqual([
-        '/salons?cursor=b&isActive=true&limit=20',
+        'GET /salons?cursor=b&isActive=true&limit=20',
       ])
     })
   })
@@ -149,7 +142,7 @@ describe('the operations of the screens of the salons', () => {
         type: 'found',
         salon: { id: SALON_ID },
       })
-      expect(asked(fetched)).toEqual([`/salons/${SALON_ID}`])
+      expect(asked(fetched)).toEqual([`GET /salons/${SALON_ID}`])
     })
 
     it.each(['beauty-studio-tokyo', '', '0b7f5c1e', `${SALON_ID}/services`])(
@@ -174,8 +167,8 @@ describe('the operations of the screens of the salons', () => {
       const menu = await readMenu(SALON_ID)
 
       expect(asked(fetched).toSorted()).toEqual([
-        `/salons/${SALON_ID}/service-categories?isActive=true&limit=100`,
-        `/salons/${SALON_ID}/services?isActive=true&limit=100`,
+        `GET /salons/${SALON_ID}/service-categories?isActive=true&limit=100`,
+        `GET /salons/${SALON_ID}/services?isActive=true&limit=100`,
       ])
       expect(menu).toEqual({
         type: 'found',
@@ -207,9 +200,9 @@ describe('the operations of the screens of the salons', () => {
       expect(
         asked(fetched).filter((operation) => operation.includes('/services')),
       ).toEqual([
-        `/salons/${SALON_ID}/services?isActive=true&limit=100`,
-        `/salons/${SALON_ID}/services?cursor=service-2&isActive=true&limit=100`,
-        `/salons/${SALON_ID}/services?cursor=service-3&isActive=true&limit=100`,
+        `GET /salons/${SALON_ID}/services?isActive=true&limit=100`,
+        `GET /salons/${SALON_ID}/services?cursor=service-2&isActive=true&limit=100`,
+        `GET /salons/${SALON_ID}/services?cursor=service-3&isActive=true&limit=100`,
       ])
     })
 
@@ -254,8 +247,8 @@ describe('the operations of the screens of the salons', () => {
         staff: [{ id: 'first' }, { id: 'second' }],
       })
       expect(asked(fetched)).toEqual([
-        `/staff-profiles?salonId=${SALON_ID}&limit=100`,
-        `/staff-profiles?cursor=first&salonId=${SALON_ID}&limit=100`,
+        `GET /staff-profiles?limit=100&salonId=${SALON_ID}`,
+        `GET /staff-profiles?cursor=first&limit=100&salonId=${SALON_ID}`,
       ])
     })
   })
@@ -273,7 +266,9 @@ describe('the operations of the screens of the salons', () => {
         type: 'found',
         summary,
       })
-      expect(asked(fetched)).toEqual([`/salons/${SALON_ID}/reviews/summary`])
+      expect(asked(fetched)).toEqual([
+        `GET /salons/${SALON_ID}/reviews/summary`,
+      ])
     })
   })
 
@@ -313,8 +308,8 @@ describe('the operations of the screens of the salons', () => {
       })
       expect(asked(fetched).toSorted()).toEqual(
         [
-          `/staff/${HIROSHI}/reviews/summary`,
-          `/staff/${MIKA}/reviews/summary`,
+          `GET /staff/${HIROSHI}/reviews/summary`,
+          `GET /staff/${MIKA}/reviews/summary`,
         ].toSorted(),
       )
     })
@@ -383,7 +378,7 @@ describe('the operations of the screens of the salons', () => {
         const reviews = await readReviews(SALON_ID, sortBy, undefined)
 
         expect(asked(fetched)).toEqual([
-          `/reviews?salonId=${SALON_ID}&sortBy=${sortBy}&limit=10`,
+          `GET /reviews?limit=10&salonId=${SALON_ID}&sortBy=${sortBy}`,
         ])
         expect(reviews).toEqual({
           type: 'found',
@@ -400,7 +395,7 @@ describe('the operations of the screens of the salons', () => {
       await readReviews(SALON_ID, 'helpful', 'a')
 
       expect(asked(fetched)).toEqual([
-        `/reviews?cursor=a&salonId=${SALON_ID}&sortBy=helpful&limit=10`,
+        `GET /reviews?cursor=a&limit=10&salonId=${SALON_ID}&sortBy=helpful`,
       ])
     })
   })

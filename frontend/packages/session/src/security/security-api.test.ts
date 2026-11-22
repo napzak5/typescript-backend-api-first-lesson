@@ -1,11 +1,13 @@
 import { sessionStore } from '@beauty-salon-frontend/io'
 import {
   answering,
+  asked,
   empty,
   OUTSIDE_THE_CONTRACT,
   pageOfAGateway,
   problem,
   record,
+  sent,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { twoFactorSetup } from './components/examples'
@@ -138,9 +140,9 @@ describe('the operations of the security of an account', () => {
       await readOwnSessions(undefined)
       await readOwnSessions(SESSION_ID)
 
-      expect(fetched.mock.calls.map(([url]) => String(url))).toEqual([
-        'http://localhost:3000/api/v1/auth/sessions?limit=20',
-        `http://localhost:3000/api/v1/auth/sessions?cursor=${SESSION_ID}&limit=20`,
+      expect(asked(fetched)).toEqual([
+        'GET /auth/sessions?limit=20',
+        `GET /auth/sessions?cursor=${SESSION_ID}&limit=20`,
       ])
     })
 
@@ -187,10 +189,8 @@ describe('the operations of the security of an account', () => {
 
       await call()
 
-      const [url, init] = fetched.mock.calls[0] ?? []
-      expect(String(url)).toBe(`http://localhost:3000/api/v1/auth/2fa/${path}`)
-      expect(init?.method).toBe('POST')
-      expect(JSON.parse(String(init?.body))).toEqual(body)
+      expect(asked(fetched)).toEqual([`POST /auth/2fa/${path}`])
+      expect(await sent(fetched)).toEqual([body])
     })
 
     it('should name the values the API did not take, with their rules', async () => {

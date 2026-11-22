@@ -1,8 +1,10 @@
 import {
   answering,
+  asked,
   page,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -27,14 +29,6 @@ import {
  */
 
 type Answer = () => Response | Promise<Response>
-
-/** The paths and the queries that were asked for */
-const askedOf = (fetched: ReturnType<typeof answering>) =>
-  fetched.mock.calls.map(([asked]) => {
-    const url = new URL(new Request(asked).url)
-
-    return [url.pathname, Object.fromEntries(url.searchParams)]
-  })
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -74,18 +68,8 @@ describe('readAlertPage', () => {
       total: 22,
       nextCursor: 'next',
     })
-    expect(askedOf(fetched)).toEqual([
-      [
-        '/api/v1/inventory-alerts',
-        {
-          salonId: salon.id,
-          alert: 'expired',
-          severity: 'critical',
-          acknowledged: 'false',
-          cursor: 'cursor',
-          limit: '20',
-        },
-      ],
+    expect(asked(fetched)).toEqual([
+      `GET /inventory-alerts?acknowledged=false&alert=expired&cursor=cursor&limit=20&salonId=${salon.id}&severity=critical`,
     ])
   })
 
@@ -97,8 +81,8 @@ describe('readAlertPage', () => {
     await readAlertPage(salon.id, {}, undefined)
 
     // Assert
-    expect(askedOf(fetched)).toEqual([
-      ['/api/v1/inventory-alerts', { salonId: salon.id, limit: '20' }],
+    expect(asked(fetched)).toEqual([
+      `GET /inventory-alerts?limit=20&salonId=${salon.id}`,
     ])
   })
 
@@ -132,8 +116,8 @@ describe('readAlertSummary', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', summary: SUMMARY_OF_THE_SALON })
-    expect(askedOf(fetched)).toEqual([
-      ['/api/v1/inventory-alerts/summary', { salonId: salon.id }],
+    expect(asked(fetched)).toEqual([
+      `GET /inventory-alerts/summary?salonId=${salon.id}`,
     ])
   })
 
@@ -173,14 +157,8 @@ describe('acknowledgeAlert', () => {
       type: 'acknowledged',
       alert: outOfGlovesAlert,
     })
-    const [asked] = fetched.mock.calls.map(
-      ([input, init]) => new Request(input, init),
-    )
-    expect(asked?.method).toBe('POST')
-    expect(new URL(asked?.url ?? '').pathname).toBe(
-      '/api/v1/inventory-alerts/acknowledge',
-    )
-    expect(await asked?.json()).toEqual(ACKNOWLEDGEMENT)
+    expect(asked(fetched)).toEqual(['POST /inventory-alerts/acknowledge'])
+    expect(await sent(fetched)).toEqual([ACKNOWLEDGEMENT])
   })
 
   it.each<[string, Answer, unknown]>([

@@ -1,7 +1,9 @@
 import {
   answering,
+  asked,
   problem,
   record,
+  sent,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -25,21 +27,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** The methods, the paths and the bodies of the requests that were sent */
-const askedOf = (fetched: ReturnType<typeof answering>) =>
-  Promise.all(
-    fetched.mock.calls.map(async ([asked, init]) => {
-      const request = new Request(asked, init)
-      const body = await request.text()
-
-      return [
-        request.method,
-        new URL(request.url).pathname,
-        body === '' ? null : JSON.parse(body),
-      ]
-    }),
-  )
-
 const user = aUser()
 
 describe('userKeyOf', () => {
@@ -58,9 +45,7 @@ describe('readUser', () => {
 
     // Assert
     expect(read).toEqual({ type: 'found', user })
-    expect(await askedOf(fetched)).toEqual([
-      ['GET', `/api/v1/admin/auth/users/${user.id}`, null],
-    ])
+    expect(asked(fetched)).toEqual([`GET /admin/auth/users/${user.id}`])
   })
 
   it.each<[string, Answer, string]>([
@@ -94,9 +79,8 @@ describe('unlockAccount', () => {
 
     // Assert
     expect(unlocking).toEqual({ type: 'unlocked', user })
-    expect(await askedOf(fetched)).toEqual([
-      ['POST', `/api/v1/admin/auth/unlock/${user.id}`, null],
-    ])
+    expect(asked(fetched)).toEqual([`POST /admin/auth/unlock/${user.id}`])
+    expect(await sent(fetched)).toEqual([])
   })
 
   it.each<[string, Answer, string]>([
@@ -128,9 +112,10 @@ describe('resetTwoFactor', () => {
 
     // Assert
     expect(reset).toEqual({ type: 'reset', user: changed })
-    expect(await askedOf(fetched)).toEqual([
-      ['POST', `/api/v1/admin/auth/reset-two-factor/${user.id}`, null],
+    expect(asked(fetched)).toEqual([
+      `POST /admin/auth/reset-two-factor/${user.id}`,
     ])
+    expect(await sent(fetched)).toEqual([])
   })
 
   it.each<[string, Answer, string]>([
