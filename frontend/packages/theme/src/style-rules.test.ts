@@ -1,5 +1,7 @@
+import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import {
   checkStyleRules,
   findStyleRuleViolations,
@@ -365,6 +367,127 @@ describe('checkStyleRules', () => {
 
     // Assert
     expect(broken).toEqual(['page.tsx: no-literal-class-name'])
+  })
+})
+
+describe('readSourceFiles', () => {
+  const made: string[] = []
+  const closed: string[] = []
+
+  /** A directory with the files given, removed after the test. */
+  const directoryWith = (files: Record<string, string>): string => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'style-rules-'))
+    made.push(directory)
+    for (const [relative, content] of Object.entries(files)) {
+      const file = path.join(directory, relative)
+      fs.mkdirSync(path.dirname(file), { recursive: true })
+      fs.writeFileSync(file, content)
+    }
+
+    return directory
+  }
+
+  /** Lets nobody read a directory: whoever enters it fails. */
+  const close = (directory: string): void => {
+    fs.chmodSync(directory, 0o000)
+    closed.push(directory)
+  }
+
+  afterEach(() => {
+    for (const directory of closed.splice(0)) {
+      fs.chmodSync(directory, 0o755)
+    }
+    for (const directory of made.splice(0)) {
+      fs.rmSync(directory, { recursive: true })
+    }
+  })
+
+  it('should read the stylesheets, the components and the modules below a directory, however deep, with what they contain', () => {
+    // Arrange
+    const directory = directoryWith({
+      'tokens.css': ':root {}',
+      'packages/ui/src/components/button/button.module.css': '.root {}',
+      'packages/ui/src/components/button/button.tsx': 'export {}',
+      'packages/ui/src/tone.ts': 'export const TONE = 1',
+    })
+
+    // Act
+    const files = readSourceFiles(directory)
+
+    // Assert
+    expect(files.toSorted((a, b) => a.path.localeCompare(b.path))).toEqual([
+      {
+        path: 'packages/ui/src/components/button/button.module.css',
+        content: '.root {}',
+      },
+      {
+        path: 'packages/ui/src/components/button/button.tsx',
+        content: 'export {}',
+      },
+      { path: 'packages/ui/src/tone.ts', content: 'export const TONE = 1' },
+      { path: 'tokens.css', content: ':root {}' },
+    ])
+  })
+
+  it('should leave out the tests of the modules, which write rules down as text, and what is no stylesheet and no module', () => {
+    // Arrange
+    const directory = directoryWith({
+      'src/page.tsx': 'export {}',
+      'src/rules.test.ts': 'export {}',
+      'src/page.test.tsx': 'export {}',
+      'package.json': '{}',
+      'README.md': '',
+      'src/logo.svg': '<svg />',
+    })
+
+    // Act
+    const paths = readSourceFiles(directory).map((file) => file.path)
+
+    // Assert
+    expect(paths.toSorted()).toEqual(['src/page.test.tsx', 'src/page.tsx'])
+  })
+
+  it.each<[directory: string]>([
+    ['node_modules'],
+    ['dist'],
+    ['storybook-static'],
+    ['coverage'],
+  ])('should not enter %s, at the top or inside a package', (skipped) => {
+    // Arrange: nobody may read the directories, so entering one fails
+    const directory = directoryWith({
+      'src/page.tsx': 'export {}',
+      [`${skipped}/library/styles.css`]: '.a {}',
+      [`packages/ui/${skipped}/index.ts`]: 'export {}',
+      'packages/ui/src/tone.ts': 'export {}',
+    })
+    close(path.join(directory, skipped))
+    close(path.join(directory, 'packages/ui', skipped))
+
+    // Act
+    const paths = readSourceFiles(directory).map((file) => file.path)
+
+    // Assert
+    expect(paths.toSorted()).toEqual([
+      'packages/ui/src/tone.ts',
+      'src/page.tsx',
+    ])
+  })
+
+  it('should enter a directory whose name only begins like one it leaves out', () => {
+    // Arrange
+    const directory = directoryWith({
+      'distribution/map.tsx': 'export {}',
+      'coverage-notes/notes.css': '.a {}',
+    })
+
+    // Act
+    const paths = readSourceFiles(directory).map((file) => file.path)
+
+    // Assert
+    expect(paths.toSorted()).toEqual([
+      'coverage-notes/notes.css',
+      'distribution/map.tsx',
+    ])
   })
 })
 
