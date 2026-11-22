@@ -269,7 +269,7 @@ DB の制約では保証されない規則は、確認と書き込みの間に�
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/service.tsp`、`specs/operations/service-operations.tsp` |
-| ドメイン（カテゴリー） | `backend/packages/domain/src/models/service-category.ts`、`schemas/service-category.schema.ts`、`mappers/read/service-category.mapper.ts`、`repositories/service-category.repository.ts`、`business-logic/service-category/`（権限は `_shared/authorization.ts`、循環の判定は `_shared/hierarchy.ts`） |
+| ドメイン（カテゴリー） | `backend/packages/domain/src/models/service-category.ts`、`schemas/service-category.schema.ts`、`mappers/write/service-category.mapper.ts`（リクエストを、そのまま行として返す）、`mappers/read/service-category.mapper.ts`、`repositories/service-category.repository.ts`、`business-logic/service-category/`（権限は `_shared/authorization.ts`、循環の判定は `_shared/hierarchy.ts`） |
 | ドメイン（サービス） | `backend/packages/domain/src/models/service.ts`、`schemas/service.schema.ts`、`mappers/write/service.mapper.ts`（リクエストを、サービスの行とオプションの行に分ける）、`mappers/read/service.mapper.ts`、`repositories/service.repository.ts`、`business-logic/service/`（権限は `_shared/authorization.ts`、項目にまたがる規則は `_shared/rules.ts`、リポジトリが返した拒否の理由からエラーへの変換は `_shared/refusals.ts`） |
 | ドメイン（共通） | `backend/packages/domain/src/business-logic/_shared/existing-salon.ts`（サロンの存在の確認）、`schemas/rules.ts`（複数のドメインのスキーマが使う規則） |
 | インフラ | `backend/packages/infrastructure/src/repositories/service-category.repository.impl.ts`、`service.repository.impl.ts` |

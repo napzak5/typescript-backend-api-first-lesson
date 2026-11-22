@@ -209,8 +209,8 @@ if (inserted === undefined) {
 `??` は `null` と `undefined` のときだけ既定値にします。`||` は `0` や空文字列も置き換えてしまうので、真偽値どうしの演算にだけ使います。
 
 ```typescript
-// backend/packages/domain/src/business-logic/salon/list-salons.usecase.ts
-const limit = request.data.limit ?? DEFAULT_LIMIT
+// backend/packages/domain/src/mappers/write/page.ts
+limit: request.limit ?? DEFAULT_LIMIT,
 
 // backend/packages/domain/src/schemas/salon.schema.ts
 const needsTimes = !isHoliday || openTime !== null || closeTime !== null

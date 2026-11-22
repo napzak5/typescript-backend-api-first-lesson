@@ -60,7 +60,7 @@
 |----------|----------|--------------------|
 | 型（ID・API 型・DB 型） | `domain/src/models/<domain>.ts` | `backend/packages/domain/src/models/salon.ts` |
 | リクエストの検証スキーマ | `domain/src/schemas/<domain>.schema.ts` | `backend/packages/domain/src/schemas/salon.schema.ts` |
-| API → DB の変換（変換が必要な列がなく、リクエストが 1 つのテーブルの行だけなら、なくてもよい） | `domain/src/mappers/write/<domain>.mapper.ts` | `backend/packages/domain/src/mappers/write/salon.mapper.ts` |
+| API → DB の変換（値を写すだけのときも書く） | `domain/src/mappers/write/<domain>.mapper.ts` | `backend/packages/domain/src/mappers/write/salon.mapper.ts` |
 | DB → API の変換 | `domain/src/mappers/read/<domain>.mapper.ts` | `backend/packages/domain/src/mappers/read/salon.mapper.ts` |
 | リポジトリのインターフェース | `domain/src/repositories/<domain>.repository.ts` | `backend/packages/domain/src/repositories/salon.repository.ts` |
 | ユースケース（1操作1ファイル） | `domain/src/business-logic/<domain>/<action>-<domain>.usecase.ts` | `backend/packages/domain/src/business-logic/salon/create-salon.usecase.ts` ほか4つ |
@@ -258,7 +258,11 @@ const storedDoesNotMatch = (id: string, cause: unknown): DomainError =>
 - Read マッパーは `Result` を返します。保存されているデータが API モデルに合わない場合は、クライアントの誤りではないので `validation` ではなく `database` エラーにします。
 - 変換する列が 1 つもない Read マッパーは、失敗することがないので、`Result` ではなく値を返します。スタッフのプロフィール（`backend/packages/domain/src/mappers/read/staff-profile.mapper.ts`）がその例で、レスポンスのプロパティを 1 つずつ名指しするだけです。
 - Update では、リクエストに存在するプロパティだけを変更にします（`fromUpdateRequest`）。プロパティがなければその列に触れず、`null` なら列を NULL にします。
-- Write マッパーが要るのは、表現を変える列があるときと、リクエストが複数のテーブルの行を含むときです。サービスカテゴリーにはどちらもなく、Write マッパーもありません。リクエストのプロパティがそのまま列で、どの列も API と DB で表現が同じなので、検証済みのリクエストをそのままリポジトリに渡します（`backend/packages/domain/src/models/service-category.ts` の `ServiceCategoryManagedColumn` のコメント）。サービスにも表現を変える列はありませんが、リクエストがサービスの行とオプション（`service_options`）の行を含むので、`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）がその 2 つを分けます。顧客にもどちらもありませんが、`CustomerWriteMapper`（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）があります。何も変換せず、リクエストをそのまま行として返すだけです。リクエストの型と行の型が合っていることを、コンパイラがここで検査します。スタッフには表現を変える列が 1 つあります。`numeric` 列の `commissionRate` で、`StaffWriteMapper`（`backend/packages/domain/src/mappers/write/staff.mapper.ts`）が number を文字列に変えます。ほかの項目はそのまま渡します。
+- Write マッパーは、どのドメインにも書きます（まだないドメインは、`backend/packages/domain/src/__tests__/use-case-flow.test.ts` の一覧にあります）。ユースケースは、検証を通ったリクエスト（`request.data`）を Write マッパーに渡し、ほかの所では使いません。Write マッパーが返すのは、リポジトリが受け取るもの（新しい行、変更、一覧の条件）です。値を写すだけのときも、Write マッパーを通します。サービスカテゴリーには表現を変える列がなく、リクエストも 1 つのテーブルの行だけなので、`ServiceCategoryWriteMapper`（`backend/packages/domain/src/mappers/write/service-category.mapper.ts`）は、リクエストをそのまま行として返します。リクエストの型と行の型が合っていることを、コンパイラがここで検査します。顧客の `CustomerWriteMapper`（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）も同じです。サービスにも表現を変える列はありませんが、リクエストがサービスの行とオプション（`service_options`）の行を含むので、`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）がその 2 つを分けます。スタッフには表現を変える列が 1 つあります。`numeric` 列の `commissionRate` で、`StaffWriteMapper`（`backend/packages/domain/src/mappers/write/staff.mapper.ts`）が number を文字列に変えます。ほかの項目はそのまま渡します。
+- 一覧の条件も、Write マッパーが作ります（`fromSearchRequest`）。件数（リクエストが言わなければ 20）とカーソルは、どの一覧でも `toPaging`（`backend/packages/domain/src/mappers/write/page.ts`）が決めます。リクエストが言わない絞り込みは `null` にします。サロンの下にあるデータの一覧は、パスのサロンの ID を 2 つ目の引数で受け取ります（`ServiceCategoryWriteMapper.fromSearchRequest`）。
+- 一覧のページ（`data` と `meta`）は、Read マッパーが作ります（`toApiSalonPage`）。`meta` を組み立てるのは、どの一覧でも `toApiPage`（`backend/packages/domain/src/mappers/read/page.ts`）です。次のページのカーソルは、ページの最後の項目の ID です。
+
+
 
 ### 4. リポジトリインターフェース: DB 型と Result で宣言する
 
@@ -301,7 +305,8 @@ export class GetSalonUseCase {
 - 現在時刻が要るユースケースは、`new Date()` を呼ばず、依存の `clock`（`() => Date`）から受け取ります。認証のユースケース（`AuthUseCaseDependencies`）と顧客のユースケース（`CustomerUseCaseDependencies`）がそうです。顧客の登録と更新は、生年月日が未来の日付でないことを、`customerRuleIssues`（`backend/packages/domain/src/business-logic/customer/_shared/rules.ts`）に `clock()` の値を渡して判定します。テストでは時刻を固定できます。
 - `execute` の入力は `unknown` です。検証はここで一度だけ行います（本文は `parseWith`、ID は `parseSalonId`）。
 - 公開でないオペレーションのユースケースは、第 1 引数に操作者（`actor: Actor`）を取ります。上の取得と一覧は公開なので取りません。
-- 書き込みの手順は「権限の判定 → 検証 → API から DB への変換 → 保存 → DB から API への変換」です（`create-salon.usecase.ts`）。
+- 書き込みの手順は「権限の判定 → 検証 → API から DB への変換 → 保存 → DB から API への変換」です（`create-salon.usecase.ts`）。一覧も同じ形で、「検証 → 一覧の条件への変換（Write マッパー） → 取得 → ページへの変換（Read マッパー）」です（`list-salons.usecase.ts`）。
+- 検証したリクエスト（`request.data`）を使うのは、Write マッパーの呼び出しだけです。その後の判定も、リポジトリの呼び出しも、Write マッパーが返した値で行います。API の答えは、Read マッパーが作ります。`backend/packages/domain/src/__tests__/use-case-flow.test.ts` が、ユースケースのソースを読んでこの流れを確かめます。まだこの流れになっていないドメインは、そのテストの一覧にあります。
 
 権限は、ユースケースが最初に判定します。判定そのものは `_shared/authorization.ts` に純粋な関数として置き、許可されなければ `DomainErrors.forbidden()` を返します。
 
@@ -840,7 +845,7 @@ async execute(
 
 - パスは対象を指定しません。対象は、操作者の範囲から決めます（`backend/packages/domain/src/business-logic/staff-profile/_shared/own-profile.ts` の `ownProfileOf`）。範囲が `salon` なら、その `staffId` のスタッフで、それ以外は `forbidden` です。結果は直和型（`ownProfile` | `notAStaffMember`）で、ユースケースは `match` で分けます。顧客本人のプロフィール（`business-logic/customer/_shared/profile.ts`）と同じ形です。
 - 更新のユースケースは、権限を判定してから本文を検証します。スキーマ（`staffProfileUpdateRequestSchema`）は、台帳の登録のスキーマから、本人が書ける 5 項目を `pick` して作ります。規則を書き写さないので、台帳の規則を変えれば、こちらも変わります。
-- Write マッパーはありません。リクエストのプロパティ名と型が、カラムと同じだからです。検証した値を、そのままリポジトリの `update(id, changes)` に渡します（`StaffProfileChanges` は、`DbStaffProfile` から書ける列を `Pick` した型）。
+- Write マッパー（`StaffProfileWriteMapper.fromUpdateRequest`）は、何も変換しません。リクエストのプロパティ名と型が、カラムと同じだからです。検証した値を、そのまま変更として返し、ユースケースがリポジトリの `update(id, changes)` に渡します（`StaffProfileChanges` は、`DbStaffProfile` から書ける列を `Pick` した型）。
 - リポジトリの `update` は、見せるスタッフの条件（`shown`）を WHERE に含めた 1 つの文で書き、見せる列を `RETURNING` で返します。サロンの条件があるので、`UPDATE … FROM salons` です。条件に合う行がなければ null を返し、ユースケースが `notFound` にします。先に読んでから書くことはしません。
 - ルーターは、`/me` を `/:id` より前に登録します。逆にすると、`me` が ID として検証されます。
 
