@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -261,7 +262,7 @@ describe('ListStaffUseCase', () => {
   it('answers a query that could not be decoded with its error, to an actor who may', async () => {
     const dependencies = staffDependencies()
     const undecodable = Result.error(
-      DomainErrors.validation('Invalid staff search', [
+      DomainErrors.validation(staffMessages.invalidStaffSearch, [
         { field: 'limit', rule: 'invalid_format', message: 'Not a number' },
       ]),
     )
@@ -280,7 +281,9 @@ describe('ListStaffUseCase', () => {
     const result = await new ListStaffUseCase(staffDependencies()).execute(
       actors.ofSalon('staff'),
       SALON_ID,
-      Result.error(DomainErrors.validation('Invalid staff search', [])),
+      Result.error(
+        DomainErrors.validation(staffMessages.invalidStaffSearch, []),
+      ),
     )
 
     expect(result).toEqual(forbidden)
@@ -308,7 +311,7 @@ describe('ListStaffUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid staff search' },
+        error: { message: staffMessages.invalidStaffSearch },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
@@ -468,7 +471,9 @@ describe('GetStaffUseCase', () => {
       const result = await get(dependencies, actors.admin, SALON_ID, id)
 
       expect(rulesOf(result)).toEqual(['id:invalid_format'])
-      expect(result).toMatchObject({ error: { message: 'Invalid staff ID' } })
+      expect(result).toMatchObject({
+        error: { message: staffMessages.invalidStaffId },
+      })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
   )
@@ -656,7 +661,7 @@ describe('CreateStaffUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid staff member' },
+        error: { message: staffMessages.invalidStaffMember },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
@@ -869,7 +874,7 @@ describe('UpdateStaffUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid staff update' },
+        error: { message: staffMessages.invalidStaffUpdate },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },

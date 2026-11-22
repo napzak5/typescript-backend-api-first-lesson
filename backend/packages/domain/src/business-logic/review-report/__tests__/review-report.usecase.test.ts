@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { reviewReportMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -424,7 +425,10 @@ describe('ListReviewReportsUseCase', () => {
     async (_, actor) => {
       const dependencies = reviewReportDependencies()
       const undecoded = Result.error(
-        DomainErrors.validation('Invalid review report search', []),
+        DomainErrors.validation(
+          reviewReportMessages.invalidReviewReportSearch,
+          [],
+        ),
       )
 
       expect(
@@ -440,7 +444,7 @@ describe('ListReviewReportsUseCase', () => {
   it('answers an administrator with the failure of decoding the query, without asking the repository', async () => {
     const dependencies = reviewReportDependencies()
     const undecoded = Result.error(
-      DomainErrors.validation('Invalid review report search', [
+      DomainErrors.validation(reviewReportMessages.invalidReviewReportSearch, [
         { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
       ]),
     )
@@ -515,13 +519,16 @@ describe('ListReviewReportsUseCase', () => {
       }),
     ).toEqual({
       type: 'error',
-      error: DomainErrors.validation('Invalid review report search', [
-        {
-          field: 'cursor',
-          rule: 'not_found',
-          message: 'Must name a review report that is listed',
-        },
-      ]),
+      error: DomainErrors.validation(
+        reviewReportMessages.invalidReviewReportSearch,
+        [
+          {
+            field: 'cursor',
+            rule: 'not_found',
+            message: 'Must name a review report that is listed',
+          },
+        ],
+      ),
     })
   })
 

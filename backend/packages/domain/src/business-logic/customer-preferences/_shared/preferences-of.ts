@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerPreferencesMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import { CustomerPreferencesReadMapper } from '../../../mappers/read/customer-preferences.mapper'
 import { CustomerPreferencesWriteMapper } from '../../../mappers/write/customer-preferences.mapper'
@@ -17,7 +18,7 @@ import { customerPreferencesRuleIssues } from './rules'
  * not there (`customerNotFound`); the rest is the same.
  */
 
-const MESSAGE = 'Invalid customer preferences update'
+const MESSAGE = customerPreferencesMessages.invalidCustomerPreferencesUpdate
 
 export const readPreferencesOf = async (
   repository: ICustomerPreferencesRepository,

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffInvitationMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { StaffInvitationWriteMapper } from '../../mappers/write/staff-invitation.mapper'
 import type { Actor } from '../../models/auth'
@@ -44,7 +45,7 @@ export class JoinStaffInvitationUseCase {
     const request = parseWith(
       authStaffInvitationJoinRequestSchema,
       input,
-      'Invalid staff invitation',
+      staffInvitationMessages.invalidStaffInvitation,
     )
     if (request.type === 'error') {
       return request

@@ -4,6 +4,7 @@ import type {
   ApiInventorySearchRequest,
   ApiInventoryTransactionSearchRequest,
 } from '@beauty-salon-backend/domain'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
@@ -12,7 +13,7 @@ export const decodeInventorySearchQuery = queryDecoder(
   z.looseObject({
     limit: numberParameter.exactOptional(),
   }) satisfies z.ZodType<Pick<ApiInventorySearchRequest, 'limit'>>,
-  'Invalid inventory search',
+  inventoryMessages.invalidInventorySearch,
 )
 
 /** The parameters of the low-stock list that are not text, as their types. */
@@ -23,7 +24,7 @@ export const decodeLowStockSearchQuery = queryDecoder(
   }) satisfies z.ZodType<
     Pick<ApiInventoryLowStockSearchRequest, 'limit' | 'threshold'>
   >,
-  'Invalid low-stock search',
+  inventoryMessages.invalidLowStockSearch,
 )
 
 /** The parameters of the expiring list that are not text, as their types. */
@@ -34,7 +35,7 @@ export const decodeExpiringSearchQuery = queryDecoder(
   }) satisfies z.ZodType<
     Pick<ApiInventoryExpiringSearchRequest, 'limit' | 'days'>
   >,
-  'Invalid expiring search',
+  inventoryMessages.invalidExpiringSearch,
 )
 
 /** The parameter of the history of a stock row that is not text, as its type. */
@@ -42,5 +43,5 @@ export const decodeMovementSearchQuery = queryDecoder(
   z.looseObject({
     limit: numberParameter.exactOptional(),
   }) satisfies z.ZodType<Pick<ApiInventoryTransactionSearchRequest, 'limit'>>,
-  'Invalid stock movement search',
+  inventoryMessages.invalidStockMovementSearch,
 )

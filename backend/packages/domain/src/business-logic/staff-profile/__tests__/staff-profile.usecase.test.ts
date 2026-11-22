@@ -1,4 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
+import {
+  staffMessages,
+  staffProfileMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { brokenRules, SALON_ID } from '../../../__tests__/fixtures/fixtures'
 import {
@@ -240,7 +244,7 @@ describe('ListStaffProfilesUseCase', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid staff profile search',
+        message: staffProfileMessages.invalidStaffProfileSearch,
         issues: [
           {
             field: 'cursor',
@@ -283,7 +287,10 @@ describe('ListStaffProfilesUseCase', () => {
 
       expect(result).toMatchObject({
         type: 'error',
-        error: { type: 'validation', message: 'Invalid staff profile search' },
+        error: {
+          type: 'validation',
+          message: staffProfileMessages.invalidStaffProfileSearch,
+        },
       })
       expect(rulesOf(result)).toEqual(expected)
       expect(repositoryCalls(dependencies)).toEqual([])
@@ -369,7 +376,7 @@ describe('GetStaffProfileUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid staff ID' },
+      error: { type: 'validation', message: staffMessages.invalidStaffId },
     })
     expect(rulesOf(result)).toHaveLength(1)
     expect(rulesOf(result).at(0)).toMatch(/^id:/)

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { reviewReportMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ReviewReportReadMapper } from '../../mappers/read/review-report.mapper'
 import { ReviewReportWriteMapper } from '../../mappers/write/review-report.mapper'
 import type { Actor } from '../../models/auth'
@@ -10,7 +11,7 @@ import { notFound } from '../booking/_shared/plan'
 import { mayHandleReviewReports } from './_shared/authorization'
 import type { ReviewReportUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid review report search'
+const MESSAGE = reviewReportMessages.invalidReviewReportSearch
 
 export class ListReviewReportsUseCase {
   constructor(private readonly dependencies: ReviewReportUseCaseDependencies) {}

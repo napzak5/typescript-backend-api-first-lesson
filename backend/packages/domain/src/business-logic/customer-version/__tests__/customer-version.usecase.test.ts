@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerVersionMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -195,13 +196,16 @@ describe('GetCustomerHistoryUseCase', () => {
 
     it('passes on a query the caller could not decode', async () => {
       const undecoded = Result.error(
-        DomainErrors.validation('Invalid customer history search', [
-          {
-            field: 'limit',
-            rule: 'invalid_format',
-            message: 'Must be a number',
-          },
-        ]),
+        DomainErrors.validation(
+          customerVersionMessages.invalidCustomerHistorySearch,
+          [
+            {
+              field: 'limit',
+              rule: 'invalid_format',
+              message: 'Must be a number',
+            },
+          ],
+        ),
       )
 
       const result = await history(dependenciesWith(), undecoded)

@@ -5,6 +5,7 @@ import {
   type Omit,
   Result,
 } from '@beauty-salon-backend/utility'
+import { paymentMethodMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 
@@ -21,7 +22,7 @@ export const parsePaymentMethodId = (
     parseWith(
       paymentMethodIdParameterSchema,
       { id },
-      'Invalid payment method ID',
+      paymentMethodMessages.invalidPaymentMethodId,
     ),
     (parameters) => parameters.id,
   )

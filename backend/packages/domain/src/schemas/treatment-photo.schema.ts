@@ -1,4 +1,6 @@
 import { TreatmentPhotoTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import type {
   ApiTreatmentPhotoBulkCreateRequest,
@@ -34,7 +36,7 @@ const treatmentPhotoSchema = z
       context.issues.push({
         code: 'custom',
         path: ['isPublic'],
-        message: 'Must have the consent of the customer',
+        message: asOneString(treatmentRecordMessages.publicNeedsConsent),
         input: context.value.isPublic,
         continue: true,
       })
@@ -62,7 +64,9 @@ export const treatmentPhotoBulkCreateRequestSchema = z.strictObject({
           context.issues.push({
             code: 'custom',
             path: [index, 'photoUrl'],
-            message: 'Must not repeat the address of an earlier photo',
+            message: asOneString(
+              treatmentRecordMessages.noRepeatedPhotoAddress,
+            ),
             input: photoUrl,
             continue: true,
           })
@@ -71,7 +75,9 @@ export const treatmentPhotoBulkCreateRequestSchema = z.strictObject({
           context.issues.push({
             code: 'custom',
             path: [index, 'sortOrder'],
-            message: 'Must not repeat the sortOrder of an earlier photo',
+            message: asOneString(
+              treatmentRecordMessages.noRepeatedPhotoSortOrder,
+            ),
             input: sortOrder,
             continue: true,
           })

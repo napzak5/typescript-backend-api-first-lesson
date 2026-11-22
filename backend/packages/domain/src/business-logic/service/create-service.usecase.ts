@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { serviceMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import { ServiceReadMapper } from '../../mappers/read/service.mapper'
 import { ServiceWriteMapper } from '../../mappers/write/service.mapper'
@@ -13,7 +14,7 @@ import type { ServiceUseCaseDependencies } from './_shared/dependencies'
 import { invalidService, toRefusalError } from './_shared/refusals'
 import { serviceRuleIssues } from './_shared/rules'
 
-const MESSAGE = 'Invalid service'
+const MESSAGE = serviceMessages.invalidService
 
 export class CreateServiceUseCase {
   constructor(private readonly dependencies: ServiceUseCaseDependencies) {}

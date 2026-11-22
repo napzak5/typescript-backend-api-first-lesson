@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { BOOKING_ID } from '../../../__tests__/fixtures/booking-fixtures'
@@ -249,7 +250,7 @@ describe('CreateSaleUseCase', () => {
 
     expect(result).toEqual({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid sale', issues },
+      error: { type: 'validation', message: saleMessages.invalidSale, issues },
     })
     expect(repositoryCalls(dependencies)).toEqual(['create'])
   })
@@ -644,7 +645,7 @@ describe('ListSalesUseCase', () => {
     async (_case, actor) => {
       const dependencies = saleDependencies()
       const undecodable = Result.error(
-        DomainErrors.validation('Invalid sale search', []),
+        DomainErrors.validation(saleMessages.invalidSaleSearch, []),
       )
 
       expect(await list(dependencies, actor)).toEqual(forbidden)
@@ -668,7 +669,7 @@ describe('ListSalesUseCase', () => {
   it('reports a search that could not be decoded as the caller found it', async () => {
     const dependencies = saleDependencies()
     const undecodable = Result.error(
-      DomainErrors.validation('Invalid sale search', [
+      DomainErrors.validation(saleMessages.invalidSaleSearch, [
         { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
       ]),
     )
@@ -723,7 +724,7 @@ describe('ListSalesUseCase', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid sale search',
+        message: saleMessages.invalidSaleSearch,
         issues: [
           { field: 'cursor', rule: 'not_found', message: 'Must name a sale' },
         ],
@@ -1052,7 +1053,11 @@ describe('UpdateSaleUseCase', () => {
 
     expect(result).toEqual({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid sale update', issues },
+      error: {
+        type: 'validation',
+        message: saleMessages.invalidSaleUpdate,
+        issues,
+      },
     })
   })
 

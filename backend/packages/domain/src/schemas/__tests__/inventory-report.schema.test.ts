@@ -1,3 +1,4 @@
+import { textOfOneString } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { z } from 'zod'
 import { SALON_ID } from '../../__tests__/fixtures/fixtures'
@@ -20,8 +21,10 @@ const brokenBy = (schema: z.ZodType, value: unknown): string[] =>
 const messagesOf = (schema: z.ZodType, value: unknown): string[] =>
   schema
     .safeParse(value)
-    .error?.issues.map(({ path, message }) => `${path.join('.')}:${message}`) ??
-  []
+    .error?.issues.map(
+      ({ path, message }) =>
+        `${path.join('.')}:${textOfOneString(message)?.en ?? message}`,
+    ) ?? []
 
 const stockCount = (overrides: Record<string, unknown> = {}) => ({
   salonId: SALON_ID,

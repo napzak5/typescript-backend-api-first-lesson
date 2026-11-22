@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { serviceMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ServiceReadMapper } from '../../mappers/read/service.mapper'
 import { ServiceWriteMapper } from '../../mappers/write/service.mapper'
 import type { ApiPage } from '../../models/page'
@@ -9,7 +10,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { requireSalon } from '../_shared/existing-salon'
 import type { ServiceUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid service search'
+const MESSAGE = serviceMessages.invalidServiceSearch
 
 export class ListServicesUseCase {
   constructor(private readonly dependencies: ServiceUseCaseDependencies) {}

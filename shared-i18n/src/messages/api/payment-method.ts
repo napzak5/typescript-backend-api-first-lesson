@@ -1,0 +1,21 @@
+import { text } from '../../languages/localized-text'
+
+/** What the API says of the payment methods of a salon. */
+export const paymentMethodMessages = {
+  invalidPaymentMethod: text({
+    en: 'Invalid payment method',
+    ja: '支払い方法の内容が正しくありません',
+  }),
+  invalidPaymentMethodId: text({
+    en: 'Invalid payment method ID',
+    ja: '支払い方法の ID が正しくありません',
+  }),
+  invalidPaymentMethodSearch: text({
+    en: 'Invalid payment method search',
+    ja: '支払い方法の検索の条件が正しくありません',
+  }),
+  invalidPaymentMethodUpdate: text({
+    en: 'Invalid payment method update',
+    ja: '支払い方法の変更の内容が正しくありません',
+  }),
+}

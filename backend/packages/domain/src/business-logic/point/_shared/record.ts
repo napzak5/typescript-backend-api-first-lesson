@@ -3,7 +3,7 @@ import { match } from 'ts-pattern'
 import { PointReadMapper } from '../../../mappers/read/point.mapper'
 import type { LedgerReach } from '../../../models/booking'
 import type { ApiPointTransactionResponse } from '../../../models/point'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, type Told } from '../../../shared'
 import { notFound } from '../../booking/_shared/plan'
 import type { PointUseCaseDependencies } from './dependencies'
 import type { PointMovement } from './plan'
@@ -19,7 +19,7 @@ export const recordMovement = async (
   { pointRepository }: PointUseCaseDependencies,
   reach: LedgerReach,
   movement: PointMovement,
-  message: string,
+  message: Told,
 ): Promise<Result<ApiPointTransactionResponse, DomainError>> => {
   const recorded = await pointRepository.record(reach, movement)
   if (recorded.type === 'error') {

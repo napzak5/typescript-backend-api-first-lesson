@@ -1,6 +1,7 @@
 import {
   type DomainError,
   DomainErrors,
+  type Told,
   type ValidationIssue,
 } from '../../../shared'
 import { referrerMissing } from './rules'
@@ -42,7 +43,7 @@ export const customerNotFound = (
  * (`pathOf` the index of the part).
  */
 export const referrersNotFound = (
-  message: string,
+  message: Told,
   referrers: readonly (string | null | undefined)[],
   missing: readonly string[],
   pathOf: (index: number) => string,

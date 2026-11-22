@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { brokenRules, SALON_ID } from '../../../__tests__/fixtures/fixtures'
@@ -218,7 +219,7 @@ describe('RecordInventoryMovementUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid stock movement', [
+        DomainErrors.validation(inventoryMessages.invalidStockMovement, [
           {
             field: 'inventoryId',
             rule: 'not_found',
@@ -419,7 +420,7 @@ describe('ListInventoryMovementsUseCase', () => {
   it('passes on a query the API could not decode', async () => {
     const dependencies = inventoryDependencies()
     const undecodable = Result.error(
-      DomainErrors.validation('Invalid stock movement search', [
+      DomainErrors.validation(inventoryMessages.invalidStockMovementSearch, [
         { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
       ]),
     )
@@ -494,7 +495,7 @@ describe('ListInventoryMovementsUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid stock movement search', [
+        DomainErrors.validation(inventoryMessages.invalidStockMovementSearch, [
           {
             field: 'cursor',
             rule: 'not_found',

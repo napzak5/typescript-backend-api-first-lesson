@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { paymentMethodMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PaymentMethodReadMapper } from '../../mappers/read/payment-method.mapper'
 import { PaymentMethodWriteMapper } from '../../mappers/write/payment-method.mapper'
@@ -18,7 +19,7 @@ import { requireSalon } from '../_shared/existing-salon'
 import { mayKeepPaymentMethods } from './_shared/authorization'
 import type { PaymentMethodUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid payment method update'
+const MESSAGE = paymentMethodMessages.invalidPaymentMethodUpdate
 
 /**
  * The limit a request is told about when its change would leave the limits

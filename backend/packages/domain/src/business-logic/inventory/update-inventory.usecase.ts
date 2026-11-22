@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { InventoryReadMapper } from '../../mappers/read/inventory.mapper'
 import { InventoryWriteMapper } from '../../mappers/write/inventory.mapper'
@@ -12,7 +13,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { inventoryKeeperReachOf } from './_shared/authorization'
 import type { InventoryUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid stock row'
+const MESSAGE = inventoryMessages.invalidStockRow
 
 export class UpdateInventoryUseCase {
   constructor(private readonly dependencies: InventoryUseCaseDependencies) {}

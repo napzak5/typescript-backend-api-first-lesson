@@ -1,4 +1,6 @@
 import { ReviewSortTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { bookingIdSchema } from '../models/booking'
 import { customerIdSchema } from '../models/customer'
@@ -44,7 +46,7 @@ const staffRatingNeedsStaff = (
     context.issues.push({
       code: 'custom',
       path: ['staffRating'],
-      message: 'Must be null when staffId is null',
+      message: asOneString(reviewMessages.nullWithoutStaff),
       input: staffRating,
       continue: true,
     })
@@ -113,7 +115,10 @@ export const reviewSearchRequestSchema = z
       minRating === undefined ||
       maxRating === undefined ||
       minRating <= maxRating,
-    { path: ['minRating'], message: 'Must not be greater than maxRating' },
+    {
+      path: ['minRating'],
+      message: asOneString(reviewMessages.notGreaterThanMaxRating),
+    },
   ) satisfies z.ZodType<ApiReviewSearchRequest>
 
 /** A search of reviews that passed the rules of its own. */

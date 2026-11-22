@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
 import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
@@ -11,7 +12,7 @@ import { saleReachOf } from './_shared/authorization'
 import { planCalculation } from './_shared/calculation'
 import type { SaleUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid calculation'
+const MESSAGE = saleMessages.invalidCalculation
 
 export class CalculateSaleUseCase {
   constructor(private readonly dependencies: SaleUseCaseDependencies) {}

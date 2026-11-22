@@ -1,3 +1,4 @@
+import { textOfOneString } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { z } from 'zod'
 import {
@@ -17,8 +18,10 @@ const brokenBy = (schema: z.ZodType, value: unknown): string[] =>
 const messagesOf = (schema: z.ZodType, value: unknown): string[] =>
   schema
     .safeParse(value)
-    .error?.issues.map(({ path, message }) => `${path.join('.')}:${message}`) ??
-  []
+    .error?.issues.map(
+      ({ path, message }) =>
+        `${path.join('.')}:${textOfOneString(message)?.en ?? message}`,
+    ) ?? []
 
 describe('treatmentPhotoBulkCreateRequestSchema', () => {
   it('takes an addition that states everything, and gives it back as it is', () => {

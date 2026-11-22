@@ -1,4 +1,9 @@
 import { PaymentStatusTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import {
+  ruleMessages,
+  saleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { bookingIdSchema } from '../models/booking'
 import { customerIdSchema } from '../models/customer'
@@ -88,7 +93,7 @@ const salesDetailSchema = salesDetailShape.check((context) => {
       context.issues.push({
         code: 'custom',
         path: ['discountAmount'],
-        message: 'Must not be more than quantity times unitPrice',
+        message: asOneString(saleMessages.discountWithinPrice),
         input: discountAmount,
         continue: true,
       })
@@ -100,8 +105,7 @@ const salesDetailSchema = salesDetailShape.check((context) => {
       context.issues.push({
         code: 'custom',
         path: ['totalAmount'],
-        message:
-          'Must be quantity times unitPrice, less discountAmount, plus taxAmount',
+        message: asOneString(saleMessages.totalOfLine),
         input: totalAmount,
         continue: true,
       })
@@ -115,7 +119,9 @@ const salesDetailSchema = salesDetailShape.check((context) => {
     context.issues.push({
       code: 'custom',
       path: ['itemId'],
-      message: `Must be null unless itemType is ${SERVICE_ITEM} or ${PRODUCT_ITEM}`,
+      message: asOneString(
+        saleMessages.nullUnlessItemType(SERVICE_ITEM, PRODUCT_ITEM),
+      ),
       input: itemId,
       continue: true,
     })
@@ -137,7 +143,7 @@ const salesDetailListSchema = z
         context.issues.push({
           code: 'custom',
           path: [index, 'sortOrder'],
-          message: 'Must not repeat the sortOrder of an earlier line',
+          message: asOneString(saleMessages.noRepeatedSortOrder),
           input: sortOrder,
           continue: true,
         })
@@ -148,9 +154,6 @@ const salesDetailListSchema = z
 
 export const POINTS_OF_A_CUSTOMER: readonly ('pointsUsed' | 'pointsEarned')[] =
   ['pointsUsed', 'pointsEarned']
-
-/** What points are told that a sale without a customer states. */
-export const NO_POINTS_FOR_NOBODY = 'Must be null for a sale without a customer'
 
 /** What a request states of a sale, to enter it or to correct it. */
 const statedOfSale = {
@@ -176,7 +179,7 @@ export const saleCreateRequestSchema = z
         context.issues.push({
           code: 'custom',
           path: [points],
-          message: NO_POINTS_FOR_NOBODY,
+          message: asOneString(saleMessages.noPointsWithoutCustomer),
           input: context.value[points],
         })
       }
@@ -234,7 +237,10 @@ const saleSearch = z.strictObject({
 export const saleSearchRequestSchema = saleSearch.refine(
   ({ startDate, endDate }) =>
     startDate === undefined || endDate === undefined || startDate <= endDate,
-  { path: ['endDate'], message: 'Must not be earlier than startDate' },
+  {
+    path: ['endDate'],
+    message: asOneString(ruleMessages.notEarlierThan('startDate')),
+  },
 ) satisfies z.ZodType<ApiSaleSearchRequest>
 
 /** The query of a list that passed the rules of its own. */

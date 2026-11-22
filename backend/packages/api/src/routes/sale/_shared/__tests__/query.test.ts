@@ -1,3 +1,4 @@
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { decodeSaleSearchQuery } from '../query'
 
@@ -86,7 +87,7 @@ describe('decodeSaleSearchQuery', () => {
 
     expect(decoded).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid sale search' },
+      error: { type: 'validation', message: saleMessages.invalidSaleSearch },
     })
   })
 })

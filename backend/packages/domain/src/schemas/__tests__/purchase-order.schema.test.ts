@@ -1,3 +1,4 @@
+import { textOfOneString } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { z } from 'zod'
 import { SALON_ID } from '../../__tests__/fixtures/fixtures'
@@ -24,7 +25,11 @@ const brokenBy = (schema: z.ZodType, value: unknown): string[] =>
 
 /** The messages of the rules a value breaks. */
 const messagesOf = (schema: z.ZodType, value: unknown): string[] =>
-  schema.safeParse(value).error?.issues.map(({ message }) => message) ?? []
+  schema
+    .safeParse(value)
+    .error?.issues.map(
+      ({ message }) => textOfOneString(message)?.en ?? message,
+    ) ?? []
 
 const MAX_INTEGER = 2_147_483_647
 
@@ -586,12 +591,9 @@ describe('purchaseOrderReceiveRequestSchema', () => {
       'items.1.quantity:not_multiple_of',
       'items.2.inventoryId:custom',
     ])
-    expect(
-      purchaseOrderReceiveRequestSchema
-        .safeParse(value)
-        .error?.issues.map(({ message }) => message)
-        .at(-1),
-    ).toBe('Must not repeat a stock row received earlier in the receipt')
+    expect(messagesOf(purchaseOrderReceiveRequestSchema, value).at(-1)).toBe(
+      'Must not repeat a stock row received earlier in the receipt',
+    )
   })
 })
 

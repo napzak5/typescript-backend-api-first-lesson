@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffProfileMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { brokenRules } from '../../../__tests__/fixtures/fixtures'
@@ -276,7 +277,10 @@ describe('UpdateOwnStaffProfileUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid staff profile update' },
+      error: {
+        type: 'validation',
+        message: staffProfileMessages.invalidStaffProfileUpdate,
+      },
     })
     expect(rulesOf(result)).toEqual(expected)
     expect(repositoryCalls(dependencies)).toEqual([])

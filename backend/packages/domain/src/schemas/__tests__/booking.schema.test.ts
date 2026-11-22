@@ -1,4 +1,7 @@
-import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  bookingMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import {
@@ -378,7 +381,7 @@ describe('bookingCreateRequestSchema', () => {
         issues: [
           {
             field: 'services.1.startTime',
-            message: 'Must be within 24 hours of the earliest service',
+            message: bookingMessages.withinHoursOfEarliest(24),
           },
         ],
       },
@@ -626,7 +629,7 @@ describe('bookingRescheduleRequestSchema', () => {
       ])
       expect(parseReschedule(movingTo(startTime))).toMatchObject({
         type: 'error',
-        error: { issues: [{ message: 'Must be on a whole minute' }] },
+        error: { issues: [{ message: bookingMessages.wholeMinute }] },
       })
     },
   )
@@ -867,7 +870,7 @@ describe('bookingCompleteRequestSchema', () => {
           {
             field: 'actualEndTime',
             rule: 'custom',
-            message: 'Must be after actualStartTime',
+            message: bookingMessages.afterActualStartTime,
           },
         ],
       },

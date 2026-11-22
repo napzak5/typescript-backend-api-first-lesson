@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import { BookingReadMapper } from '../../mappers/read/booking.mapper'
 import { BookingWriteMapper } from '../../mappers/write/booking.mapper'
@@ -10,7 +11,7 @@ import { bookingReachOf } from './_shared/authorization'
 import type { BookingUseCaseDependencies } from './_shared/dependencies'
 import { cannotBeRescheduled, toRefusalError } from './_shared/refusals'
 
-const MESSAGE = 'Invalid booking reschedule'
+const MESSAGE = bookingMessages.invalidBookingReschedule
 
 export class RescheduleBookingUseCase {
   constructor(private readonly dependencies: BookingUseCaseDependencies) {}

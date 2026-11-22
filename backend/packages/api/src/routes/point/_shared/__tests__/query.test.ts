@@ -1,3 +1,4 @@
+import { pointMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   decodeExpiringPointsQuery,
@@ -59,7 +60,7 @@ describe('decodePointTransactionSearchQuery', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid point transaction search',
+        message: pointMessages.invalidPointTransactionSearch,
         issues: [{ field: 'limit', rule }],
       },
     })
@@ -90,7 +91,7 @@ describe('decodeExpiringPointsQuery', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid expiring points search',
+        message: pointMessages.invalidExpiringPointsSearch,
         issues: [{ field: 'days', rule }],
       },
     })

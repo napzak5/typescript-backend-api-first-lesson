@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -284,7 +285,11 @@ describe('CreateBookingUseCase', () => {
 
     expect(result).toEqual({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid booking', issues },
+      error: {
+        type: 'validation',
+        message: bookingMessages.invalidBooking,
+        issues,
+      },
     })
     expect(repositoryCalls(dependencies)).toEqual(['create'])
   })
@@ -709,7 +714,7 @@ describe('ListBookingsUseCase', () => {
     async (_case, actor) => {
       const dependencies = bookingDependencies()
       const undecodable = Result.error(
-        DomainErrors.validation('Invalid booking search', []),
+        DomainErrors.validation(bookingMessages.invalidBookingSearch, []),
       )
 
       expect(await list(dependencies, actor)).toEqual(forbidden)
@@ -733,7 +738,7 @@ describe('ListBookingsUseCase', () => {
   it('reports a search that could not be decoded as the caller found it', async () => {
     const dependencies = bookingDependencies()
     const undecodable = Result.error(
-      DomainErrors.validation('Invalid booking search', [
+      DomainErrors.validation(bookingMessages.invalidBookingSearch, [
         { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
       ]),
     )
@@ -788,7 +793,7 @@ describe('ListBookingsUseCase', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid booking search',
+        message: bookingMessages.invalidBookingSearch,
         issues: [
           {
             field: 'cursor',

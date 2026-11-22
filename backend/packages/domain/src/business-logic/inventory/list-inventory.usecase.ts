@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { InventoryReadMapper } from '../../mappers/read/inventory.mapper'
 import { InventoryWriteMapper } from '../../mappers/write/inventory.mapper'
 import type { Actor } from '../../models/auth'
@@ -11,7 +12,7 @@ import { inventoryReachOf } from './_shared/authorization'
 import type { InventoryUseCaseDependencies } from './_shared/dependencies'
 import { cursorNotFound } from './_shared/refusals'
 
-const MESSAGE = 'Invalid inventory search'
+const MESSAGE = inventoryMessages.invalidInventorySearch
 
 export class ListInventoryUseCase {
   constructor(private readonly dependencies: InventoryUseCaseDependencies) {}

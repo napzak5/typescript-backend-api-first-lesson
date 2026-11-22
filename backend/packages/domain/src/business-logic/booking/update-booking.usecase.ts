@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { BookingReadMapper } from '../../mappers/read/booking.mapper'
 import { BookingWriteMapper } from '../../mappers/write/booking.mapper'
 import type { Actor } from '../../models/auth'
@@ -39,7 +40,7 @@ export class UpdateBookingUseCase {
     const request = parseWith(
       bookingUpdateRequestSchema,
       input,
-      'Invalid booking update',
+      bookingMessages.invalidBookingUpdate,
     )
     if (request.type === 'error') {
       return request

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import { BookingReadMapper } from '../../mappers/read/booking.mapper'
 import { BookingWriteMapper } from '../../mappers/write/booking.mapper'
@@ -17,7 +18,7 @@ import {
   toRefusalError,
 } from './_shared/refusals'
 
-const MESSAGE = 'Invalid booking service'
+const MESSAGE = bookingMessages.invalidBookingService
 
 export class CreateBookingServiceUseCase {
   constructor(private readonly dependencies: BookingUseCaseDependencies) {}

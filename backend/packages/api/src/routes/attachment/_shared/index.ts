@@ -3,6 +3,7 @@ import type {
   ApiAttachmentSearchRequest,
 } from '@beauty-salon-backend/domain'
 import type { operations } from '@beauty-salon-backend/generated'
+import { attachmentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import type { JsonBody } from '../../../shared/operation-types'
 import {
@@ -50,7 +51,7 @@ export const decodeAttachmentSearchQuery = queryDecoder(
   z.looseObject({
     limit: numberParameter.exactOptional(),
   }) satisfies z.ZodType<Pick<ApiAttachmentSearchRequest, 'limit'>>,
-  'Invalid attachment search',
+  attachmentMessages.invalidAttachmentSearch,
 )
 
 /** The parameter of a download that is not text, as its type. */
@@ -58,5 +59,5 @@ export const decodeAttachmentDownloadQuery = queryDecoder(
   z.looseObject({
     inline: booleanParameter.exactOptional(),
   }) satisfies z.ZodType<Pick<ApiAttachmentDownloadUrlRequest, 'inline'>>,
-  'Invalid attachment download',
+  attachmentMessages.invalidAttachmentDownload,
 )

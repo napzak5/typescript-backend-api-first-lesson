@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
 import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
 import type { Actor } from '../../models/auth'
@@ -10,7 +11,7 @@ import { isWithin } from '../booking/_shared/authorization'
 import { saleReachOf } from './_shared/authorization'
 import type { SaleUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid sale search'
+const MESSAGE = saleMessages.invalidSaleSearch
 
 export class ListSalesUseCase {
   constructor(private readonly dependencies: SaleUseCaseDependencies) {}

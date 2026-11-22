@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type { Actor } from '../../models/auth'
 import { authTwoFactorDisableRequestSchema } from '../../schemas/auth.schema'
@@ -9,7 +10,7 @@ import { checkPassword } from './_shared/password-check'
 import { checkSecondFactor } from './_shared/second-factor'
 import { sessionGone } from './_shared/session-gone'
 
-const MESSAGE = 'Invalid request to disable two-factor authentication'
+const MESSAGE = authMessages.invalidRequestToDisableTwoFactorAuthentication
 
 const notEnabled = Result.error(
   DomainErrors.conflict('Two-factor authentication is not enabled'),

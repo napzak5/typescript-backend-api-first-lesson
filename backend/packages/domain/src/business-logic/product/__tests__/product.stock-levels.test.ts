@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   brokenOrders,
@@ -132,7 +133,10 @@ describe('stockLevelIssues', () => {
         naming('minimumStock', 'maximumStock'),
       ),
     ).toEqual([
-      { field: 'maximumStock', message: 'Must not be less than minimumStock' },
+      {
+        field: 'maximumStock',
+        message: ruleMessages.notLessThan('minimumStock'),
+      },
     ])
   })
 
@@ -143,7 +147,10 @@ describe('stockLevelIssues', () => {
         naming('maximumStock'),
       ),
     ).toEqual([
-      { field: 'maximumStock', message: 'Must not be less than reorderPoint' },
+      {
+        field: 'maximumStock',
+        message: ruleMessages.notLessThan('reorderPoint'),
+      },
     ])
   })
 
@@ -154,7 +161,10 @@ describe('stockLevelIssues', () => {
         naming('minimumStock'),
       ),
     ).toEqual([
-      { field: 'minimumStock', message: 'Must not be more than reorderPoint' },
+      {
+        field: 'minimumStock',
+        message: ruleMessages.notMoreThan('reorderPoint'),
+      },
     ])
   })
 
@@ -168,8 +178,14 @@ describe('stockLevelIssues', () => {
         naming('minimumStock'),
       ),
     ).toEqual([
-      { field: 'minimumStock', message: 'Must not be more than reorderPoint' },
-      { field: 'minimumStock', message: 'Must not be more than maximumStock' },
+      {
+        field: 'minimumStock',
+        message: ruleMessages.notMoreThan('reorderPoint'),
+      },
+      {
+        field: 'minimumStock',
+        message: ruleMessages.notMoreThan('maximumStock'),
+      },
     ])
   })
 })

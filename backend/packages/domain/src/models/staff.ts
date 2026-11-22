@@ -5,6 +5,7 @@ import {
   type Omit,
   Result,
 } from '@beauty-salon-backend/utility'
+import { staffMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 
@@ -16,7 +17,7 @@ const staffIdParameterSchema = z.object({ id: staffIdSchema })
 
 export const parseStaffId = (id: unknown): Result<StaffId, DomainError> =>
   Result.map(
-    parseWith(staffIdParameterSchema, { id }, 'Invalid staff ID'),
+    parseWith(staffIdParameterSchema, { id }, staffMessages.invalidStaffId),
     (parameters) => parameters.id,
   )
 
@@ -30,7 +31,7 @@ export const parseStaffIdOfPath = (
   staffId: unknown,
 ): Result<StaffId, DomainError> =>
   Result.map(
-    parseWith(staffIdOfPathSchema, { staffId }, 'Invalid staff ID'),
+    parseWith(staffIdOfPathSchema, { staffId }, staffMessages.invalidStaffId),
     (parameters) => parameters.staffId,
   )
 

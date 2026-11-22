@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { availableSlotMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { AvailableSlotReadMapper } from '../../mappers/read/available-slot.mapper'
 import { SalonReadMapper } from '../../mappers/read/salon.mapper'
 import { AvailableSlotWriteMapper } from '../../mappers/write/available-slot.mapper'
@@ -13,7 +14,7 @@ import { comesAfter, slotPositionOf } from './_shared/page'
 import { timeZoneUnknown } from './_shared/refusals'
 import { slotsOf } from './_shared/slots'
 
-const MESSAGE = 'Invalid available slot search'
+const MESSAGE = availableSlotMessages.invalidAvailableSlotSearch
 
 export class ListAvailableSlotsUseCase {
   constructor(

@@ -1,3 +1,4 @@
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { decodeBookingSearchQuery } from '../query'
 
@@ -86,7 +87,10 @@ describe('decodeBookingSearchQuery', () => {
 
     expect(decoded).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid booking search' },
+      error: {
+        type: 'validation',
+        message: bookingMessages.invalidBookingSearch,
+      },
     })
   })
 })

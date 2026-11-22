@@ -3,7 +3,7 @@ import { DATE } from '../../__tests__/fixtures/available-slot-fixtures'
 import { CUT_ID } from '../../__tests__/fixtures/booking-fixtures'
 import { brokenRules } from '../../__tests__/fixtures/fixtures'
 import { STAFF_MEMBER_ID } from '../../__tests__/fixtures/staff-fixtures'
-import { parseWith } from '../../shared'
+import { parseWith, toldIn } from '../../shared'
 import {
   availableSlotCheckRequestSchema,
   availableSlotSearchRequestSchema,
@@ -22,7 +22,9 @@ const messagesOf = (
   result: ReturnType<typeof search | typeof check>,
 ): string[] =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.issues.map(({ field, message }) => `${field}: ${message}`)
+    ? result.error.issues.map(
+        ({ field, message }) => `${field}: ${toldIn(message, 'en')}`,
+      )
     : []
 
 const CURSOR = `2026-11-16T01:00:00.000Z_${STAFF_MEMBER_ID}`

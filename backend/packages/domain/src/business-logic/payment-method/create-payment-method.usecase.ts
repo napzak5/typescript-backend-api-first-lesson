@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { paymentMethodMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { PaymentMethodReadMapper } from '../../mappers/read/payment-method.mapper'
 import { PaymentMethodWriteMapper } from '../../mappers/write/payment-method.mapper'
 import type { Actor } from '../../models/auth'
@@ -38,7 +39,7 @@ export class CreatePaymentMethodUseCase {
     const request = parseWith(
       paymentMethodCreateRequestSchema,
       input,
-      'Invalid payment method',
+      paymentMethodMessages.invalidPaymentMethod,
     )
     if (request.type === 'error') {
       return request

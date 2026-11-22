@@ -1,6 +1,7 @@
+import { serviceCategoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { type DomainError, DomainErrors } from '../../../shared'
 
-const MESSAGE = 'Invalid service category'
+const MESSAGE = serviceCategoryMessages.invalidServiceCategory
 
 /** `parentId` names no category of the salon the category belongs to. */
 export const parentNotFound = (): DomainError =>

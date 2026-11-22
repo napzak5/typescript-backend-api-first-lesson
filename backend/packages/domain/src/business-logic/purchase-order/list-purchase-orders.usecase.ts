@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { purchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PurchaseOrderReadMapper } from '../../mappers/read/purchase-order.mapper'
 import { PurchaseOrderWriteMapper } from '../../mappers/write/purchase-order.mapper'
@@ -11,7 +12,7 @@ import { isWithin } from '../booking/_shared/authorization'
 import { purchaseOrderReachOf } from './_shared/authorization'
 import type { PurchaseOrderUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid purchase order search'
+const MESSAGE = purchaseOrderMessages.invalidPurchaseOrderSearch
 
 export class ListPurchaseOrdersUseCase {
   constructor(

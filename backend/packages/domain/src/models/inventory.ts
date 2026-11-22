@@ -8,6 +8,7 @@ import {
   type Omit,
   Result,
 } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import type { SalonId } from './salon'
@@ -28,7 +29,11 @@ export const parseInventoryId = (
   id: unknown,
 ): Result<InventoryId, DomainError> =>
   Result.map(
-    parseWith(inventoryIdParameterSchema, { id }, 'Invalid inventory ID'),
+    parseWith(
+      inventoryIdParameterSchema,
+      { id },
+      inventoryMessages.invalidInventoryId,
+    ),
     (parameters) => parameters.id,
   )
 

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { InventoryTransactionReadMapper } from '../../mappers/read/inventory-transaction.mapper'
 import { InventoryTransactionWriteMapper } from '../../mappers/write/inventory-transaction.mapper'
@@ -13,7 +14,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { inventoryReachOf } from './_shared/authorization'
 import type { InventoryUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid stock movement search'
+const MESSAGE = inventoryMessages.invalidStockMovementSearch
 
 export class ListInventoryMovementsUseCase {
   constructor(private readonly dependencies: InventoryUseCaseDependencies) {}

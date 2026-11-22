@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { productMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { ProductReadMapper } from '../../mappers/read/product.mapper'
 import { ProductWriteMapper } from '../../mappers/write/product.mapper'
@@ -12,7 +13,7 @@ import { mayKeepProducts } from './_shared/authorization'
 import type { ProductUseCaseDependencies } from './_shared/dependencies'
 import { stockLevelIssues } from './_shared/stock-levels'
 
-const MESSAGE = 'Invalid product update'
+const MESSAGE = productMessages.invalidProductUpdate
 
 export class UpdateProductUseCase {
   constructor(private readonly dependencies: ProductUseCaseDependencies) {}

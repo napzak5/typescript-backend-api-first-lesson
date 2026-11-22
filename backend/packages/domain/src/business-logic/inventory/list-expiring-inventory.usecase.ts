@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { InventoryReadMapper } from '../../mappers/read/inventory.mapper'
 import { InventoryWriteMapper } from '../../mappers/write/inventory.mapper'
 import type { Actor } from '../../models/auth'
@@ -12,7 +13,7 @@ import type { InventoryUseCaseDependencies } from './_shared/dependencies'
 import { lastExpiringDayOf } from './_shared/expiry'
 import { cursorNotFound, salonNotFound } from './_shared/refusals'
 
-const MESSAGE = 'Invalid expiring search'
+const MESSAGE = inventoryMessages.invalidExpiringSearch
 
 export class ListExpiringInventoryUseCase {
   constructor(private readonly dependencies: InventoryUseCaseDependencies) {}

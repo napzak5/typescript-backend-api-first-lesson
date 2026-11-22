@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerVersionMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerVersionReadMapper } from '../../mappers/read/customer-version.mapper'
 import { CustomerVersionWriteMapper } from '../../mappers/write/customer-version.mapper'
@@ -11,7 +12,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayDeleteCustomers } from '../customer/_shared/authorization'
 import type { CustomerVersionUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid customer history search'
+const MESSAGE = customerVersionMessages.invalidCustomerHistorySearch
 
 export class GetCustomerHistoryUseCase {
   constructor(

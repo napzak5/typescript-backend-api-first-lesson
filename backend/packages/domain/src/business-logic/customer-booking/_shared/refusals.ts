@@ -1,7 +1,7 @@
 import { match } from 'ts-pattern'
 import type { Actor } from '../../../models/auth'
 import type { CustomerBookingCreation } from '../../../repositories/booking.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, type Told } from '../../../shared'
 import { timeZoneUnknown } from '../../available-slot/_shared/refusals'
 import { profileNotFound } from '../../customer/_shared/profile'
 
@@ -19,7 +19,7 @@ type AnsweredRefusal = Exclude<
 export const toBookingRefusalError = (
   refusal: AnsweredRefusal,
   actor: Actor,
-  message: string,
+  message: Told,
 ): DomainError =>
   match(refusal)
     .with({ type: 'profileNotFound' }, () => profileNotFound(actor))

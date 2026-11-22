@@ -1,13 +1,11 @@
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type {
   DbPaymentTransaction,
   DbSale,
   RequestedSaleChange,
   SaleChange,
 } from '../../../models/sale'
-import {
-  NO_POINTS_FOR_NOBODY,
-  POINTS_OF_A_CUSTOMER,
-} from '../../../schemas/sale.schema'
+import { POINTS_OF_A_CUSTOMER } from '../../../schemas/sale.schema'
 import type { ValidationIssue } from '../../../shared'
 import { notFound } from '../../booking/_shared/plan'
 import {
@@ -153,7 +151,13 @@ export const planSaleChange = (
       ? POINTS_OF_A_CUSTOMER.flatMap((name) =>
           points[name] === null
             ? []
-            : [{ field: name, rule: 'custom', message: NO_POINTS_FOR_NOBODY }],
+            : [
+                {
+                  field: name,
+                  rule: 'custom',
+                  message: saleMessages.noPointsWithoutCustomer,
+                },
+              ],
         )
       : []),
     ...(details ?? []).flatMap((line, index) =>

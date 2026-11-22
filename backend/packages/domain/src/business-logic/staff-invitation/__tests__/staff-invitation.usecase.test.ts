@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffInvitationMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -68,7 +69,7 @@ const refused = {
   type: 'error',
   error: {
     type: 'validation',
-    message: 'Invalid staff invitation',
+    message: staffInvitationMessages.invalidStaffInvitation,
     issues: [
       {
         field: 'token',
@@ -654,7 +655,7 @@ describe('CreateStaffInvitationUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid staff invitation' },
+        error: { message: staffInvitationMessages.invalidStaffInvitation },
       })
       expect(calls(dependencies)).toEqual([])
     },
@@ -867,7 +868,7 @@ describe('VerifyStaffInvitationUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid staff invitation' },
+        error: { message: staffInvitationMessages.invalidStaffInvitation },
       })
       expect(calls(dependencies)).toEqual([])
     },
@@ -997,7 +998,7 @@ describe('AcceptStaffInvitationUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid staff invitation' },
+        error: { message: staffInvitationMessages.invalidStaffInvitation },
       })
       expect(calls(dependencies)).toEqual([])
     },
@@ -1067,7 +1068,7 @@ describe('AcceptStaffInvitationUseCase', () => {
 
       expect(rulesOf(result)).toEqual(['password:blocklisted'])
       expect(result).toMatchObject({
-        error: { message: 'Invalid staff invitation' },
+        error: { message: staffInvitationMessages.invalidStaffInvitation },
       })
       expect(calls(dependencies)).toEqual([
         'tokens.hashOf',
@@ -1251,7 +1252,7 @@ describe('JoinStaffInvitationUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid staff invitation' },
+        error: { message: staffInvitationMessages.invalidStaffInvitation },
       })
       expect(calls(dependencies)).toEqual([])
     },

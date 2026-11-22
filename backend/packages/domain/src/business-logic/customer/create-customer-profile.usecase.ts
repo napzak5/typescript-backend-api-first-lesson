@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerProfileReadMapper } from '../../mappers/read/customer-profile.mapper'
 import { CustomerProfileWriteMapper } from '../../mappers/write/customer-profile.mapper'
@@ -10,7 +11,7 @@ import type { CustomerUseCaseDependencies } from './_shared/dependencies'
 import { profileAccessOf } from './_shared/profile'
 import { customerRuleIssues } from './_shared/rules'
 
-const MESSAGE = 'Invalid customer profile'
+const MESSAGE = customerMessages.invalidCustomerProfile
 
 const ALREADY_HAS_PROFILE = 'This account already has a customer profile'
 

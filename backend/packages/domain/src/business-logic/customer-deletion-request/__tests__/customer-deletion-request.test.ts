@@ -1,4 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
+import {
+  customerDeletionRequestMessages,
+  customerMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -285,7 +289,10 @@ describe('RequestCustomerDeletionUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid customer ID' },
+      error: {
+        type: 'validation',
+        message: customerMessages.invalidCustomerId,
+      },
     })
     expect(rulesOf(result)).toEqual(['id:invalid_format'])
     expect(requestOf(dependencies)).not.toHaveBeenCalled()
@@ -302,7 +309,7 @@ describe('RequestCustomerDeletionUseCase', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid customer deletion request',
+        message: customerDeletionRequestMessages.invalidCustomerDeletionRequest,
       },
     })
     expect(rulesOf(result)).toEqual(['reason:invalid_format'])

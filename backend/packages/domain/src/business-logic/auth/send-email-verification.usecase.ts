@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authEmailVerificationSendRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, parseWith } from '../../shared'
@@ -23,7 +24,7 @@ export class SendEmailVerificationUseCase {
     const request = parseWith(
       authEmailVerificationSendRequestSchema,
       input,
-      'Invalid email verification request',
+      authMessages.invalidEmailVerificationRequest,
     )
     if (request.type === 'error') {
       return request

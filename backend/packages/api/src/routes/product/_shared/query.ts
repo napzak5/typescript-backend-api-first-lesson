@@ -1,4 +1,5 @@
 import type { ApiProductSearchRequest } from '@beauty-salon-backend/domain'
+import { productMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   booleanParameter,
@@ -19,5 +20,5 @@ export const decodeProductSearchQuery = queryDecoder(
       'limit' | 'isActive' | 'isForSale' | 'isForTreatment'
     >
   >,
-  'Invalid product search',
+  productMessages.invalidProductSearch,
 )

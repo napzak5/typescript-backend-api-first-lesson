@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffProfileMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { StaffProfileReadMapper } from '../../mappers/read/staff-profile.mapper'
 import { StaffProfileWriteMapper } from '../../mappers/write/staff-profile.mapper'
 import type { ApiPage } from '../../models/page'
@@ -7,7 +8,7 @@ import { staffProfileSearchRequestSchema } from '../../schemas/staff-profile.sch
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import type { StaffProfileUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid staff profile search'
+const MESSAGE = staffProfileMessages.invalidStaffProfileSearch
 
 export class ListStaffProfilesUseCase {
   constructor(private readonly dependencies: StaffProfileUseCaseDependencies) {}

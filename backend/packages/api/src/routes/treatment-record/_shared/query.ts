@@ -1,4 +1,5 @@
 import type { ApiTreatmentRecordSearchRequest } from '@beauty-salon-backend/domain'
+import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
@@ -7,5 +8,5 @@ export const decodeTreatmentRecordSearchQuery = queryDecoder(
   z.looseObject({
     limit: numberParameter.exactOptional(),
   }) satisfies z.ZodType<Pick<ApiTreatmentRecordSearchRequest, 'limit'>>,
-  'Invalid treatment record search',
+  treatmentRecordMessages.invalidTreatmentRecordSearch,
 )

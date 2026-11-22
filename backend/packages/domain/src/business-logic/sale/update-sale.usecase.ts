@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
 import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
@@ -10,7 +11,7 @@ import { saleReachOf } from './_shared/authorization'
 import type { SaleUseCaseDependencies } from './_shared/dependencies'
 import { toChangeRefusalError, toRefusalError } from './_shared/refusals'
 
-const MESSAGE = 'Invalid sale update'
+const MESSAGE = saleMessages.invalidSaleUpdate
 
 /**
  * Corrects a sale: the properties the request names are written, and lines

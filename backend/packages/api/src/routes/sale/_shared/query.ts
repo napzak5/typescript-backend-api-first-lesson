@@ -1,4 +1,5 @@
 import type { ApiSaleSearchRequest } from '@beauty-salon-backend/domain'
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
@@ -7,5 +8,5 @@ export const decodeSaleSearchQuery = queryDecoder(
   z.looseObject({
     limit: numberParameter.exactOptional(),
   }) satisfies z.ZodType<Pick<ApiSaleSearchRequest, 'limit'>>,
-  'Invalid sale search',
+  saleMessages.invalidSaleSearch,
 )

@@ -1,5 +1,6 @@
 import type { components } from '@beauty-salon-backend/generated'
 import { Result } from '@beauty-salon-backend/utility'
+import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import type { PaymentMethodId } from './payment-method'
@@ -13,7 +14,11 @@ const paymentIdParameterSchema = z.object({ id: paymentIdSchema })
 
 export const parsePaymentId = (id: unknown): Result<PaymentId, DomainError> =>
   Result.map(
-    parseWith(paymentIdParameterSchema, { id }, 'Invalid payment ID'),
+    parseWith(
+      paymentIdParameterSchema,
+      { id },
+      paymentMessages.invalidPaymentId,
+    ),
     (parameters) => parameters.id,
   )
 

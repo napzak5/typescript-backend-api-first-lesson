@@ -1,4 +1,5 @@
 import type { ApiInventoryAlertSearchRequest } from '@beauty-salon-backend/domain'
+import { inventoryAlertMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   booleanParameter,
@@ -14,5 +15,5 @@ export const decodeInventoryAlertSearchQuery = queryDecoder(
   }) satisfies z.ZodType<
     Pick<ApiInventoryAlertSearchRequest, 'limit' | 'acknowledged'>
   >,
-  'Invalid inventory alert search',
+  inventoryAlertMessages.invalidInventoryAlertSearch,
 )

@@ -4,6 +4,7 @@ import type { CustomerPreferencesRefusal } from '../../../repositories/customer-
 import {
   type DomainError,
   DomainErrors,
+  type Told,
   type ValidationIssue,
 } from '../../../shared'
 
@@ -43,7 +44,7 @@ const staffNotFoundIssues = (
 export const toRefusalError = (
   refusal: CustomerPreferencesRefusal,
   changes: DbCustomerPreferencesChanges,
-  message: string,
+  message: Told,
   customerNotFound: () => DomainError,
 ): DomainError =>
   match(refusal)

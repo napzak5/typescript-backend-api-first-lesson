@@ -1,4 +1,6 @@
 import { PointMovementReferenceTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { customerIdSchema } from '../models/customer'
 import {
@@ -75,7 +77,7 @@ export const pointAdjustRequestSchema = z
       .int()
       .min(MIN_INTEGER)
       .max(MAX_INTEGER)
-      .refine((points) => points !== 0, 'Must not be 0'),
+      .refine((points) => points !== 0, asOneString(ruleMessages.notZero)),
     ...reference,
   })
   .check(referenceInPairs) satisfies z.ZodType<ApiPointAdjustRequest>
@@ -94,7 +96,10 @@ const pointSearch = z.strictObject({
 export const pointTransactionSearchRequestSchema = pointSearch.refine(
   ({ startDate, endDate }) =>
     startDate === undefined || endDate === undefined || startDate <= endDate,
-  { path: ['endDate'], message: 'Must not be earlier than startDate' },
+  {
+    path: ['endDate'],
+    message: asOneString(ruleMessages.notEarlierThan('startDate')),
+  },
 ) satisfies z.ZodType<ApiPointTransactionSearchRequest>
 
 /** A search of point transactions that passed the rules of its own. */

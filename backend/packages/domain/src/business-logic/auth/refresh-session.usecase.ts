@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { parseISO } from 'date-fns'
 import { SessionReadMapper } from '../../mappers/read/session.mapper'
 import { SessionWriteMapper } from '../../mappers/write/session.mapper'
@@ -30,7 +31,7 @@ export class RefreshSessionUseCase {
     const request = parseWith(
       authTokenRefreshRequestSchema,
       input,
-      'Invalid token refresh',
+      authMessages.invalidTokenRefresh,
     )
     if (request.type === 'error') {
       return request

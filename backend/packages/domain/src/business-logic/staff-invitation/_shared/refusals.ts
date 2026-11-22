@@ -1,3 +1,4 @@
+import { staffInvitationMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { StaffId } from '../../../models/staff'
 import { type DomainError, DomainErrors } from '../../../shared'
 import { mailedTokenRefused } from '../../auth/_shared/mailed-token'
@@ -19,7 +20,7 @@ export const mailedMomentsAgo = (id: StaffId): DomainError =>
 
 /** One answer for an invitation that cannot be used, whatever the reason. */
 export const invitationRefused = (): DomainError =>
-  mailedTokenRefused('Invalid staff invitation')
+  mailedTokenRefused(staffInvitationMessages.invalidStaffInvitation)
 
 /**
  * Told to whoever holds the token, and so reads the mailbox of the

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryAlertMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { InventoryAlertReadMapper } from '../../mappers/read/inventory-alert.mapper'
 import { InventoryAlertWriteMapper } from '../../mappers/write/inventory-alert.mapper'
@@ -14,7 +15,7 @@ import { subjectIdOf } from './_shared/alerts'
 import type { InventoryAlertUseCaseDependencies } from './_shared/dependencies'
 import { unknownTimeZone } from './_shared/refusals'
 
-const MESSAGE = 'Invalid inventory alert acknowledgement'
+const MESSAGE = inventoryAlertMessages.invalidInventoryAlertAcknowledgement
 
 export class AcknowledgeInventoryAlertUseCase {
   constructor(

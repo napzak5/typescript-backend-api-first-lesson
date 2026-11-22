@@ -1,3 +1,4 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
 import { z } from 'zod'
 import {
   brokenOrders,
@@ -56,15 +57,12 @@ const stockLevelsInOrder = (
   }
   const named = (level: StockLevel): boolean =>
     context.value[level] !== undefined
-  for (const { field, message } of stockLevelIssues(
-    brokenOrders(context.value),
-    named,
-  )) {
+  for (const issue of stockLevelIssues(brokenOrders(context.value), named)) {
     context.issues.push({
       code: 'custom',
-      path: [field],
-      message,
-      input: context.value[field],
+      path: [issue.field],
+      message: asOneString(issue.message),
+      input: context.value[issue.field],
     })
   }
 }

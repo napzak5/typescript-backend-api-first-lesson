@@ -1,4 +1,9 @@
 import { OrderStatusTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString, type LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  purchaseOrderMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   amountsOf,
@@ -77,7 +82,7 @@ const brokenAlready = (
  * as the schema spells them, so one ID in other letters is the same row.
  */
 const noRowNamedTwice =
-  (message: string) =>
+  (written: LocalizedText) =>
   (
     context: z.core.ParsePayload<{ items: { inventoryId: string }[] }>,
   ): void => {
@@ -87,7 +92,7 @@ const noRowNamedTwice =
         context.issues.push({
           code: 'custom',
           path: ['items', index, 'inventoryId'],
-          message,
+          message: asOneString(written),
           input: inventoryId,
           continue: true,
         })
@@ -119,7 +124,9 @@ const itemTotalsWithinInteger = (
       maximum,
       inclusive: true,
       path: ['items', index, 'unitPrice'],
-      message: `Must be at most ${maximum}: the total of the item, quantity × unitPrice rounded, has to be at most ${MAX_INTEGER}`,
+      message: asOneString(
+        purchaseOrderMessages.unitPriceWithinTotal(maximum, MAX_INTEGER),
+      ),
       input: unitPrice,
       continue: true,
     })
@@ -147,7 +154,7 @@ const amountsWithinInteger = (
   context.issues.push({
     code: 'custom',
     path: ['items'],
-    message: `The amounts of a purchase order must not exceed ${MAX_INTEGER}: the subtotal, what the items come to, and the total, the subtotal with the tax and the shipping cost`,
+    message: asOneString(purchaseOrderMessages.amountsWithinLimit(MAX_INTEGER)),
     input: items,
   })
 }
@@ -163,9 +170,7 @@ export const purchaseOrderCreateRequestSchema = z
     paymentTerms: nonBlankText.nullable(),
     notes: nonBlankText.nullable(),
   })
-  .check(
-    noRowNamedTwice('Must not repeat a stock row ordered earlier in the order'),
-  )
+  .check(noRowNamedTwice(purchaseOrderMessages.noRepeatedOrderedRow))
   .check(itemTotalsWithinInteger)
   .check(
     amountsWithinInteger,
@@ -211,9 +216,7 @@ export const purchaseOrderReceiveRequestSchema = z
     deliveryNotes: nonBlankText.nullable(),
   })
   .check(
-    noRowNamedTwice(
-      'Must not repeat a stock row received earlier in the receipt',
-    ),
+    noRowNamedTwice(purchaseOrderMessages.noRepeatedReceivedRow),
   ) satisfies z.ZodType<ApiPurchaseOrderReceiveRequest>
 
 /** A receipt that passed the rules of its own. */
@@ -246,7 +249,10 @@ export const purchaseOrderSearchRequestSchema = z
   .refine(
     ({ startDate, endDate }) =>
       startDate === undefined || endDate === undefined || startDate <= endDate,
-    { path: ['endDate'], message: 'Must not be earlier than startDate' },
+    {
+      path: ['endDate'],
+      message: asOneString(ruleMessages.notEarlierThan('startDate')),
+    },
   ) satisfies z.ZodType<ApiPurchaseOrderSearchRequest>
 
 /** A search of purchase orders that passed the rules of its own. */

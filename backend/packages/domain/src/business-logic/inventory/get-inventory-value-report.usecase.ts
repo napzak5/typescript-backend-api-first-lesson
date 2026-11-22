@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { InventoryReportReadMapper } from '../../mappers/read/inventory-report.mapper'
 import { InventoryReportWriteMapper } from '../../mappers/write/inventory-report.mapper'
 import type { Actor } from '../../models/auth'
@@ -10,7 +11,7 @@ import { inventoryKeeperReachOf } from './_shared/authorization'
 import type { InventoryUseCaseDependencies } from './_shared/dependencies'
 import { salonNotFound } from './_shared/refusals'
 
-const MESSAGE = 'Invalid inventory value report'
+const MESSAGE = inventoryMessages.invalidInventoryValueReport
 
 export class GetInventoryValueReportUseCase {
   constructor(private readonly dependencies: InventoryUseCaseDependencies) {}

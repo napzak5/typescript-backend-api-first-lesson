@@ -22,6 +22,10 @@ export const ruleMessages = {
     en: 'Must be a number',
     ja: '数にしてください',
   }),
+  notZero: text({
+    en: 'Must not be 0',
+    ja: '0 にはできません',
+  }),
   trueOrFalse: text({
     en: 'Must be true or false',
     ja: 'true か false にしてください',
@@ -49,6 +53,12 @@ export const ruleMessages = {
       en: `Must be later than ${earlier}`,
       ja: `${earlier} より後にしてください`,
     }),
+  /** `later` is a property of the request. */
+  earlierThan: (later: string) =>
+    text({
+      en: `Must be earlier than ${later}`,
+      ja: `${later} より前にしてください`,
+    }),
   /** `earliest` is a property of the request, or a day. */
   notEarlierThan: (earliest: string) =>
     text({
@@ -61,11 +71,29 @@ export const ruleMessages = {
       en: `Must not be later than ${latest}`,
       ja: `${latest} より後にはできません`,
     }),
+  /** `least` is a property of the request. */
+  notLessThan: (least: string) =>
+    text({
+      en: `Must not be less than ${least}`,
+      ja: `${least} より小さくはできません`,
+    }),
+  /** `most` is a property of the request. */
+  notMoreThan: (most: string) =>
+    text({
+      en: `Must not be more than ${most}`,
+      ja: `${most} より大きくはできません`,
+    }),
   /** `other` is a property of the request. */
   notNullWhenGiven: (other: string) =>
     text({
       en: `Must not be null when ${other} is given`,
       ja: `${other} を指定するときは、null にできません`,
+    }),
+  /** `other` is a property of the request. */
+  requiredWhenGiven: (other: string) =>
+    text({
+      en: `Required when ${other} is given`,
+      ja: `${other} を指定するときは、指定してください`,
     }),
   noRepeatedEntry: text({
     en: 'Must not repeat an earlier entry',

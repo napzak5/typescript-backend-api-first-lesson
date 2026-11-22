@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { StaffReadMapper } from '../../mappers/read/staff.mapper'
 import { StaffWriteMapper } from '../../mappers/write/staff.mapper'
 import type { Actor } from '../../models/auth'
@@ -11,7 +12,7 @@ import { requireSalon } from '../_shared/existing-salon'
 import { mayKeepStaffLedger } from './_shared/authorization'
 import type { StaffUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid staff search'
+const MESSAGE = staffMessages.invalidStaffSearch
 
 export class ListStaffUseCase {
   constructor(private readonly dependencies: StaffUseCaseDependencies) {}

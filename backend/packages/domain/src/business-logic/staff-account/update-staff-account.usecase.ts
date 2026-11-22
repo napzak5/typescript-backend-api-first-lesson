@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffAccountMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { StaffAccountReadMapper } from '../../mappers/read/staff-account.mapper'
 import { StaffAccountWriteMapper } from '../../mappers/write/staff-account.mapper'
@@ -50,7 +51,7 @@ export class UpdateStaffAccountUseCase {
     const request = parseWith(
       staffAccountUpdateRequestSchema,
       input,
-      'Invalid staff account update',
+      staffAccountMessages.invalidStaffAccountUpdate,
     )
     if (request.type === 'error') {
       return request

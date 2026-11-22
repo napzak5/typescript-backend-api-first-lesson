@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -216,7 +217,9 @@ describe('ExportCustomersUseCase', () => {
         await exportOf(dependencies, { search: '' }, actor),
         await new ExportCustomersUseCase(dependencies).execute(
           actor,
-          Result.error(DomainErrors.validation('Invalid customer export', [])),
+          Result.error(
+            DomainErrors.validation(customerMessages.invalidCustomerExport, []),
+          ),
         ),
       ]
 
@@ -228,7 +231,7 @@ describe('ExportCustomersUseCase', () => {
   it('passes on a query the caller could not decode', async () => {
     const dependencies = customerDependencies()
     const undecoded = Result.error(
-      DomainErrors.validation('Invalid customer export', [
+      DomainErrors.validation(customerMessages.invalidCustomerExport, [
         { field: 'tags', rule: 'invalid_type', message: 'Not a list' },
       ]),
     )
@@ -296,7 +299,10 @@ describe('ExportCustomersUseCase', () => {
     expect(rulesOf(result)).toEqual(rules)
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid customer export' },
+      error: {
+        type: 'validation',
+        message: customerMessages.invalidCustomerExport,
+      },
     })
     expect(callsOf(dependencies.customerRepository)).toEqual([])
   })

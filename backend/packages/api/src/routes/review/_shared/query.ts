@@ -1,4 +1,5 @@
 import type { ApiReviewSearchRequest } from '@beauty-salon-backend/domain'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   booleanParameter,
@@ -19,5 +20,5 @@ export const decodeReviewSearchQuery = queryDecoder(
       'limit' | 'isVerified' | 'minRating' | 'maxRating'
     >
   >,
-  'Invalid review search',
+  reviewMessages.invalidReviewSearch,
 )

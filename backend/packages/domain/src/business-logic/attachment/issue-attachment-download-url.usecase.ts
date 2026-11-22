@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { attachmentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { addMinutes } from 'date-fns'
 import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
 import { AttachmentWriteMapper } from '../../mappers/write/attachment.mapper'
@@ -50,7 +51,7 @@ export class IssueAttachmentDownloadUrlUseCase {
     const request = parseWith(
       attachmentDownloadUrlRequestSchema,
       query.data,
-      'Invalid attachment download',
+      attachmentMessages.invalidAttachmentDownload,
     )
     if (request.type === 'error') {
       return request

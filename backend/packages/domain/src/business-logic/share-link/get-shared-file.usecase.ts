@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { shareLinkMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ShareLinkReadMapper } from '../../mappers/read/share-link.mapper'
 import { ShareLinkWriteMapper } from '../../mappers/write/share-link.mapper'
 import type { ApiSharedFileResponse } from '../../models/share-link'
@@ -22,7 +23,7 @@ export class GetSharedFileUseCase {
     const request = parseWith(
       sharedFileGetRequestSchema,
       input,
-      'Invalid shared file request',
+      shareLinkMessages.invalidSharedFileRequest,
     )
     if (request.type === 'error') {
       return request

@@ -9,6 +9,7 @@ import {
   type Omit,
   Result,
 } from '@beauty-salon-backend/utility'
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import type { CustomerId } from './customer'
@@ -24,7 +25,11 @@ const bookingIdParameterSchema = z.object({ id: bookingIdSchema })
 
 export const parseBookingId = (id: unknown): Result<BookingId, DomainError> =>
   Result.map(
-    parseWith(bookingIdParameterSchema, { id }, 'Invalid booking ID'),
+    parseWith(
+      bookingIdParameterSchema,
+      { id },
+      bookingMessages.invalidBookingId,
+    ),
     (parameters) => parameters.id,
   )
 
@@ -38,7 +43,11 @@ export const parseBookingIdOfPath = (
   bookingId: unknown,
 ): Result<BookingId, DomainError> =>
   Result.map(
-    parseWith(bookingIdOfPathSchema, { bookingId }, 'Invalid booking ID'),
+    parseWith(
+      bookingIdOfPathSchema,
+      { bookingId },
+      bookingMessages.invalidBookingId,
+    ),
     (parameters) => parameters.bookingId,
   )
 
@@ -54,7 +63,7 @@ export const parseBookingServiceId = (
     parseWith(
       bookingServiceIdParameterSchema,
       { id },
-      'Invalid booking service ID',
+      bookingMessages.invalidBookingServiceId,
     ),
     (parameters) => parameters.id,
   )

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryAlertMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { InventoryAlertReadMapper } from '../../mappers/read/inventory-alert.mapper'
 import { InventoryAlertWriteMapper } from '../../mappers/write/inventory-alert.mapper'
 import type { Actor } from '../../models/auth'
@@ -12,7 +13,7 @@ import { alertDaysOf, alertsOf } from './_shared/alerts'
 import type { InventoryAlertUseCaseDependencies } from './_shared/dependencies'
 import { unknownTimeZone } from './_shared/refusals'
 
-const MESSAGE = 'Invalid inventory alert summary request'
+const MESSAGE = inventoryAlertMessages.invalidInventoryAlertSummaryRequest
 
 export class GetInventoryAlertSummaryUseCase {
   constructor(

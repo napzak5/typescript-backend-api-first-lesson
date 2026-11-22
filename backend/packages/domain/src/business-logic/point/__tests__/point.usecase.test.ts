@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { pointMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -309,7 +310,7 @@ describe('ListPointTransactionsUseCase', () => {
   it('answers a query that could not be decoded', async () => {
     const dependencies = pointDependencies()
     const undecoded = Result.error(
-      DomainErrors.validation('Invalid point transaction search', [
+      DomainErrors.validation(pointMessages.invalidPointTransactionSearch, [
         { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
       ]),
     )
@@ -358,7 +359,7 @@ describe('ListPointTransactionsUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid point transaction search', [
+        DomainErrors.validation(pointMessages.invalidPointTransactionSearch, [
           {
             field: 'cursor',
             rule: 'not_found',
@@ -429,7 +430,7 @@ const movements = [
       input: unknown,
     ) => new EarnPointsUseCase(dependencies).execute(actor, input),
     request: pointEarnRequest,
-    message: 'Invalid point earning',
+    message: pointMessages.invalidPointEarning,
     movers: keepers,
     notMovers: notKeepers,
   },
@@ -442,7 +443,7 @@ const movements = [
       input: unknown,
     ) => new UsePointsUseCase(dependencies).execute(actor, input),
     request: pointUseRequest,
-    message: 'Invalid point use',
+    message: pointMessages.invalidPointUse,
     movers: keepers,
     notMovers: notKeepers,
   },
@@ -455,7 +456,7 @@ const movements = [
       input: unknown,
     ) => new AdjustPointsUseCase(dependencies).execute(actor, input),
     request: pointAdjustRequest,
-    message: 'Invalid point adjustment',
+    message: pointMessages.invalidPointAdjustment,
     movers: keepers.filter(([name]) => name !== 'a staff member'),
     notMovers: notAdjusters,
   },
@@ -511,7 +512,7 @@ describe.each(movements)(
         'customerId:invalid_format',
         'referenceType:custom',
       ])
-      expect(validationMessageOf(result)).toBe(message)
+      expect(validationMessageOf(result)).toBe(message.en)
       repositoryWasNotCalled(dependencies)
     })
 
@@ -608,7 +609,7 @@ describe('EarnPointsUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid point earning', [
+        DomainErrors.validation(pointMessages.invalidPointEarning, [
           {
             field: 'expiryDate',
             rule: 'too_small',
@@ -747,7 +748,7 @@ describe('GetExpiringPointsUseCase', () => {
   it('answers a query that could not be decoded', async () => {
     const dependencies = pointDependencies()
     const undecoded = Result.error(
-      DomainErrors.validation('Invalid expiring points search', [
+      DomainErrors.validation(pointMessages.invalidExpiringPointsSearch, [
         { field: 'days', rule: 'invalid_format', message: 'Must be a number' },
       ]),
     )
@@ -863,7 +864,7 @@ describe('ExpirePointsUseCase', () => {
     })
     expect(today).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid point expiry', [
+        DomainErrors.validation(pointMessages.invalidPointExpiry, [
           {
             field: 'processBefore',
             rule: 'too_big',
@@ -934,7 +935,7 @@ describe('ExpirePointsUseCase', () => {
       }),
     ).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid point expiry', [
+        DomainErrors.validation(pointMessages.invalidPointExpiry, [
           {
             field: 'customerId',
             rule: 'not_found',

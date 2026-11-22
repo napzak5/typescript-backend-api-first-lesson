@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { shareLinkMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ShareLinkReadMapper } from '../../mappers/read/share-link.mapper'
 import { ShareLinkWriteMapper } from '../../mappers/write/share-link.mapper'
 import { parseAttachmentId } from '../../models/attachment'
@@ -10,7 +11,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { shareLinkReachOf } from './_shared/authorization'
 import type { ShareLinkUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid share link search'
+const MESSAGE = shareLinkMessages.invalidShareLinkSearch
 
 export class ListShareLinksUseCase {
   constructor(private readonly dependencies: ShareLinkUseCaseDependencies) {}

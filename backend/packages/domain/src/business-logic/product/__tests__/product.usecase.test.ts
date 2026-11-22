@@ -1,4 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
+import {
+  productMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -419,7 +423,7 @@ describe('ListProductsUseCase', () => {
   it('passes on a query that could not be decoded to an actor who may read', async () => {
     const dependencies = productDependencies()
     const undecodable = Result.error(
-      DomainErrors.validation('Invalid product search', [
+      DomainErrors.validation(productMessages.invalidProductSearch, [
         { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
       ]),
     )
@@ -461,7 +465,7 @@ describe('ListProductsUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid product search' },
+        error: { message: productMessages.invalidProductSearch },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
@@ -498,7 +502,7 @@ describe('ListProductsUseCase', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid product search',
+        message: productMessages.invalidProductSearch,
         issues: [
           {
             field: 'cursor',
@@ -685,7 +689,7 @@ describe('CreateProductUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid product' },
+        error: { message: productMessages.invalidProduct },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
@@ -833,7 +837,7 @@ describe('GetProductUseCase', () => {
 
       expect(rulesOf(result)).toEqual(['id:invalid_format'])
       expect(result).toMatchObject({
-        error: { message: 'Invalid product ID' },
+        error: { message: productMessages.invalidProductId },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
@@ -1021,7 +1025,7 @@ describe('UpdateProductUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid product update' },
+        error: { message: productMessages.invalidProductUpdate },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
@@ -1103,7 +1107,7 @@ describe('UpdateProductUseCase', () => {
 
       expect(messagesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid product update' },
+        error: { message: productMessages.invalidProductUpdate },
       })
     },
   )
@@ -1128,17 +1132,17 @@ describe('UpdateProductUseCase', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid product update',
+        message: productMessages.invalidProductUpdate,
         issues: [
           {
             field: 'minimumStock',
             rule: 'custom',
-            message: 'Must not be more than maximumStock',
+            message: ruleMessages.notMoreThan('maximumStock'),
           },
           {
             field: 'reorderPoint',
             rule: 'custom',
-            message: 'Must not be more than maximumStock',
+            message: ruleMessages.notMoreThan('maximumStock'),
           },
         ],
       },

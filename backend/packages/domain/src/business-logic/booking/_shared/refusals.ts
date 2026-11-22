@@ -2,7 +2,7 @@ import { match } from 'ts-pattern'
 import type { BookingServiceId, DbBooking } from '../../../models/booking'
 import type { BookingCreationRefusal } from '../../../repositories/booking.repository'
 import { MAX_INTEGER } from '../../../schemas/rules'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, type Told } from '../../../shared'
 
 /** A refusal that says something about the request or about what it meets. */
 type AnsweredRefusal = Exclude<
@@ -17,7 +17,7 @@ type AnsweredRefusal = Exclude<
  */
 export const toRefusalError = (
   refusal: AnsweredRefusal,
-  message: string,
+  message: Told,
 ): DomainError =>
   match(refusal)
     .with({ type: 'invalid' }, ({ issues }) =>

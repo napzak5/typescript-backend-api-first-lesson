@@ -1,3 +1,5 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   type ApiCustomerBatchGetRequest,
@@ -40,7 +42,7 @@ const noRepeatedCustomers = (
       context.issues.push({
         code: 'custom',
         path: [index, 'id'],
-        message: 'Must not repeat the customer of an earlier item',
+        message: asOneString(customerMessages.noRepeatedCustomer),
         input: id,
       })
     }

@@ -1,3 +1,4 @@
+import { availableSlotMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { decodeAvailableSlotSearchQuery } from '../query'
 
@@ -95,7 +96,10 @@ describe('decodeAvailableSlotSearchQuery', () => {
 
     expect(decoded).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid available slot search' },
+      error: {
+        type: 'validation',
+        message: availableSlotMessages.invalidAvailableSlotSearch,
+      },
     })
   })
 })

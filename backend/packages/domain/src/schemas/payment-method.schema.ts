@@ -1,4 +1,6 @@
 import { PaymentMethodTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   type AmountLimits,
@@ -23,8 +25,8 @@ import { atLeastOneProperty, MAX_INTEGER, nonBlankText } from './rules'
  */
 
 export const LIMITS_OUT_OF_ORDER = {
-  minimumAmount: 'Must not be more than maximumAmount',
-  maximumAmount: 'Must not be less than minimumAmount',
+  minimumAmount: ruleMessages.notMoreThan('maximumAmount'),
+  maximumAmount: ruleMessages.notLessThan('minimumAmount'),
 }
 
 /** A limit of the amount of one payment; null is no limit. */
@@ -57,7 +59,7 @@ const limitsInOrder = (
     context.issues.push({
       code: 'custom',
       path: ['maximumAmount'],
-      message: LIMITS_OUT_OF_ORDER.maximumAmount,
+      message: asOneString(LIMITS_OUT_OF_ORDER.maximumAmount),
       input: maximumAmount,
     })
   }

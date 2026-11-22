@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
 import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
 import type { Actor } from '../../models/auth'
@@ -9,7 +10,7 @@ import { mayHandleCustomers } from './_shared/authorization'
 import { customerNotFound, inOrderOf } from './_shared/bulk'
 import type { CustomerUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid customer batch'
+const MESSAGE = customerMessages.invalidCustomerBatch
 
 export class BatchGetCustomersUseCase {
   constructor(private readonly dependencies: CustomerUseCaseDependencies) {}

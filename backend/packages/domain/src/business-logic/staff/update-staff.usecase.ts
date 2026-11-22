@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { StaffReadMapper } from '../../mappers/read/staff.mapper'
 import { StaffWriteMapper } from '../../mappers/write/staff.mapper'
 import type { Actor } from '../../models/auth'
@@ -41,7 +42,7 @@ export class UpdateStaffUseCase {
     const request = parseWith(
       staffUpdateRequestSchema,
       input,
-      'Invalid staff update',
+      staffMessages.invalidStaffUpdate,
     )
     if (request.type === 'error') {
       return request

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { pointMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { PointReadMapper } from '../../mappers/read/point.mapper'
 import { PointWriteMapper } from '../../mappers/write/point.mapper'
 import type { Actor } from '../../models/auth'
@@ -11,7 +12,7 @@ import type { PointUseCaseDependencies } from './_shared/dependencies'
 import { expiringOf } from './_shared/lots'
 import { expiringUntilOf } from './_shared/plan'
 
-const MESSAGE = 'Invalid expiring points search'
+const MESSAGE = pointMessages.invalidExpiringPointsSearch
 
 export class GetExpiringPointsUseCase {
   constructor(private readonly dependencies: PointUseCaseDependencies) {}

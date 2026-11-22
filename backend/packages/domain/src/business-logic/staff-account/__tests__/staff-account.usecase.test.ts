@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffAccountMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -499,7 +500,10 @@ describe('UpdateStaffAccountUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid staff account update' },
+      error: {
+        type: 'validation',
+        message: staffAccountMessages.invalidStaffAccountUpdate,
+      },
     })
   })
 
@@ -552,7 +556,7 @@ describe('UpdateStaffAccountUseCase', () => {
         type: 'error',
         error: {
           type: 'validation',
-          message: 'Invalid staff account update',
+          message: staffAccountMessages.invalidStaffAccountUpdate,
           issues: fields.map((field) => ({ field })),
         },
       })

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -398,7 +399,7 @@ describe('BulkCreateCustomersUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid customers' },
+      error: { type: 'validation', message: customerMessages.invalidCustomers },
     })
     expect(rulesOf(result)).toEqual([
       'items.0.referredBy:not_found',

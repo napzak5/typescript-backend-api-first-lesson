@@ -2,6 +2,10 @@ import type {
   ApiCustomerAllergySearchRequest,
   ApiMedicalChartSearchRequest,
 } from '@beauty-salon-backend/domain'
+import {
+  customerAllergyMessages,
+  medicalChartMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   booleanParameter,
@@ -17,7 +21,7 @@ export const decodeMedicalChartSearchQuery = queryDecoder(
   }) satisfies z.ZodType<
     Pick<ApiMedicalChartSearchRequest, 'limit' | 'hasAllergies'>
   >,
-  'Invalid medical chart search',
+  medicalChartMessages.invalidMedicalChartSearch,
 )
 
 /** The parameter of the list of the allergies of a customer that is no text, as its type. */
@@ -25,5 +29,5 @@ export const decodeCustomerAllergySearchQuery = queryDecoder(
   z.looseObject({
     limit: numberParameter.exactOptional(),
   }) satisfies z.ZodType<Pick<ApiCustomerAllergySearchRequest, 'limit'>>,
-  'Invalid customer allergy search',
+  customerAllergyMessages.invalidCustomerAllergySearch,
 )
