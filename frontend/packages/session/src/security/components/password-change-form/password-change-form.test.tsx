@@ -5,7 +5,7 @@ import {
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
-import { PASSWORD_RULE } from '../../password-rule'
+import { PASSWORD_RULE } from '../../utils/password-rule'
 import * as passwordChangeFormStories from './password-change-form.stories'
 
 const stories = composeStories(passwordChangeFormStories)

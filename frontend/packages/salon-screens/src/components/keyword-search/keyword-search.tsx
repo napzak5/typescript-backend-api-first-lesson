@@ -3,7 +3,7 @@ import {
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { LONGEST_KEYWORD } from '../../keyword'
+import { LONGEST_KEYWORD } from '../../utils/keyword'
 
 export type KeywordSearchProps = {
   /** What is searched for, as the landmark of the search names it: 「サロンを探す」 */

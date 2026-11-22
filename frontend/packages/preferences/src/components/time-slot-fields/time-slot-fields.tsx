@@ -5,7 +5,7 @@ import {
   TextField,
   useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
-import { endOf, startOf } from '../../preferences-flow'
+import { endOf, startOf } from '../../utils/preferences-flow'
 import styles from './time-slot-fields.module.css'
 
 export type TimeSlotFieldsProps = {

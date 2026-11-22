@@ -23,23 +23,23 @@ this one: a component is not done without its stories and its test.
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
 | What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls (`FormSays`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
-| The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/` |
-| The start and the frame of an application: what `src/main.tsx` calls (`startApplication`), the frame around the routes (`AppFrame`), an application that is all behind a session, with the screens of the account (`StaffApplication`), the screen of an address that is none (`NotFoundPage`), the change of the password at a route (`PasswordChangePage`), and whether an address is at or below a screen (`isAtOrBelow`) | `frontend/packages/app-frame/src/` (`@beauty-salon-frontend/app-frame`) |
-| The screens of the security of an account (the password, the devices that are signed in, the second factor), which every application puts at an address of its own, and the rule of a password that is chosen | `frontend/packages/session/src/security/` |
+| The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/screens/`; what they show is in `src/components/` |
+| The start and the frame of an application: what `src/main.tsx` calls (`startApplication`), the frame around the routes (`AppFrame`), an application that is all behind a session, with the screens of the account (`StaffApplication`), the screen of an address that is none (`NotFoundPage`), the change of the password at a route (`PasswordChangePage`), and whether an address is at or below a screen (`isAtOrBelow`) | `frontend/packages/app-frame/src/screens/`, `src/components/not-found-page/`, `src/utils/addresses.ts` (`@beauty-salon-frontend/app-frame`) |
+| The screens of the security of an account (the password, the devices that are signed in, the second factor), which every application puts at an address of its own, and the rule of a password that is chosen | `frontend/packages/session/src/security/` (the rule: `utils/password-rule.ts`) |
 | Where the portal puts them: below the page of the customer | `frontend/apps/portal-app/src/security/` |
 | The screens of an account in the portal: registering, a new password, and the screens that a mailed link opens | `frontend/apps/portal-app/src/account/` |
 | The screens of the salons in the portal: the search and the page of a salon, and the components they show | `frontend/apps/portal-app/src/salons/` |
 | The screens of a booking in the portal: choosing the member of the staff, the day and the time, the page of a booking, the bookings of a customer, and cancelling and moving one | `frontend/apps/portal-app/src/bookings/` |
 | The page of a customer in the portal, and the form of their profile | `frontend/apps/portal-app/src/profile/` |
 | What a customer wishes for in the portal: the part of their page, and the screen of the form | `frontend/apps/portal-app/src/preferences/` |
-| What a customer wishes for, which the portal and the admin application share: the form with the rows of time slots, how it is read and what a refusal says, the staff it offers, a list written a line each, and how the record is shown (`PreferencesDetails`) | `frontend/packages/preferences/src/` |
+| What a customer wishes for, which the portal and the admin application share: the form with the rows of time slots, how it is read and what a refusal says, the staff it offers, a list written a line each, and how the record is shown (`PreferencesDetails`) | `frontend/packages/preferences/src/components/`, `src/utils/` |
 | The rules of the values a form takes, in every application and package: a day and the days a control offers (`isDay`, `EARLIEST_DAY`, `LATEST_DAY`), a name (`lastNameError`, `firstNameError`), an address of mail (`emailError`, `EMAIL_MALFORMED`), a telephone number (`phoneError`, `alternativePhoneError`), the length of a text and what is said of one that is too long (`lengthOf`, `tooLong`, `tooLongOf`, `eachTooLongOf`, `neededWithin`, `tooLongError`, `neededError`, `lengthErrors`, `upTo`, `charactersOf`), a choice of a list (`choiceOf`, `UNLISTED_MESSAGE`), an address of the web (`webAddressError`, `webAddressLinesError`, `WEB_ADDRESS_ERROR`, `notWebAddress`, `LONGEST_WEB_ADDRESS`, `WEB_ADDRESS_DESCRIPTION`, and `webAddressOf` for a link), a list written a line each (`linesOf`), and the record of a customer (`CUSTOMER_LENGTHS`, `GENDERS`, `SERVICE_CATEGORIES`, `birthDateError`, `basicPreferencesIn`, `shownBasicPreferencesOf`, `customerControlOf`, `customerRefusalOf`) | `frontend/packages/fields/src/` (`@beauty-salon-frontend/fields`) |
 | The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one; what a reader of the page of a salon does with the reviews of others (`reader-flow.ts`, the dialog that reports one) | `frontend/apps/portal-app/src/reviews/` |
 | Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
-| The salon of who is signed in (`useOwnSalon`), whether a role is one of a salon (`worksAtSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/salon/`, `src/components/no-salon-notice/` |
+| The salon of who is signed in (`useOwnSalon`), whether a role is one of a salon (`worksAtSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/hooks/own-salon.ts`, `src/components/no-salon-notice/` |
 | How an answer of the API is read, in every application and package: why nothing came of a request (`Unread`, `Unsent`, `unreadOf`, `whyUnread`), the values it refused (`refusedValuesOf`), the parts of the patterns of the answers (`UNANSWERED_PARTS`, `REFUSED_PARTS`, their `PUBLIC_` forms for an operation that needs no session, `UNREAD_TYPES`), an answer the contract does not name (`outsideTheContract`), a page and a list read to its end (`pageOf`, `from`, `toTheEnd`), a list that goes on (`listingOf`, `cursorAfter`, `firstCursor`), whether a read came to nothing (`isUnread`), the sentences of too many requests and of what was not read or not sent (`unreadMessageOf`, `unsentMessageOf`), and of the values it refused (`CHECK_THE_VALUES_MESSAGE` for the attempt, `REFUSED_VALUE_MESSAGE` at a control) | `frontend/packages/answers/src/` (`@beauty-salon-frontend/answers`) |
-| What the screens of a salon share, in the admin and the dashboard applications: a table that goes on (`PagedTable`), the search by a keyword (`keyword.ts`, `KeywordSearch`), the clock of a salon (`salon-time.ts`), the salons searched for and read (`salons-api.ts`), the start of an application, which leads a member to the first screen of their salon and lets `admin` choose a salon (`StartScreen`, `SalonChoiceScreen`, `SalonChoices`), the salon of an address around the screens below it (`WithSalon`) and for the links of the header (`salonIdIn`), the period of a count with its form, and the days of a search (`period.ts`: `daysErrorsOf`; `StatisticsPeriod`), an amount and the names of the kinds of payment and of service (`format.ts`) | `frontend/packages/salon-screens/src/` (`@beauty-salon-frontend/salon-screens`) |
+| What the screens of a salon share, in the admin and the dashboard applications: a table that goes on (`PagedTable`), the search by a keyword (`utils/keyword.ts`, `KeywordSearch`), the clock of a salon (`utils/salon-time.ts`), the salons searched for and read (`api/salons-api.ts`), the start of an application, which leads a member to the first screen of their salon and lets `admin` choose a salon (`StartScreen`, `SalonChoiceScreen`, `SalonChoices`), the salon of an address around the screens below it (`WithSalon`) and for the links of the header (`salonIdIn`), the period of a count with its form, and the days of a search (`utils/period.ts`: `daysErrorsOf`; `StatisticsPeriod`), an amount and the names of the kinds of payment and of service (`utils/format.ts`) | `frontend/packages/salon-screens/src/` (`@beauty-salon-frontend/salon-screens`) |
 | The staff and the services of a salon that a booking names, in the admin application | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
@@ -60,6 +60,36 @@ component brings its own styles, so importing `Button` is all it takes.
 The file does one thing more, `startApplication(<App />)`: the query client,
 the router and the element the application is drawn in are those of
 `app-frame`, the same in every application.
+
+## Folders
+
+A shared package sorts the modules of its `src` by what they are, under the
+same names in every package. A folder is there when something is in it.
+
+| Folder | What is in it |
+|--------|---------------|
+| `api/` | The functions that call the API: `salons-api.ts`, `security-api.ts`, `sign-in.ts` and `sign-out.ts` of `session` |
+| `components/<name>/` | A component that only shows: what it shows comes in as props, and it calls no API, reads no session and knows no router. The four files of "Components", below, and what one component alone uses (`form-values.ts` in `form/` of `ui`) |
+| `hooks/` | A module whose subject is a hook: `use-session.ts`, `own-salon.ts`, `wide-screen.ts` of `ui` |
+| `screens/` | A component that knows the API, the session or the router: a screen (`sign-in-screen.tsx`), what stands around screens (`require-session.tsx`, `with-salon.tsx`, `app-frame.tsx`), the start of an application (`start-application.tsx`) |
+| `utils/` | The functions that are none of these, pure ones for the most part: how the values of a form are read and what an answer makes it say (`sign-in-flow.ts`), formats, addresses, the clock of a salon, the class of a tone |
+
+- A test is beside the module it tests, in the same folder. The integration
+  test of a screen is in `screens/`
+  (`frontend/packages/session/src/screens/sign-in.integration.test.tsx`).
+- `src/` itself keeps the entry of the package (`index.ts`) and a test of
+  the package as a whole (`session.test.tsx` and
+  `session.integration.test.tsx` of `session`).
+- A feature with modules of several kinds is a folder with the same folders
+  in it: `frontend/packages/session/src/security/` has `api/`,
+  `components/`, `screens/` and `utils/`.
+- A package whose modules are all of one kind keeps them in `src/`, and its
+  name says the kind: `fields`, `answers`, `theme`.
+- What the stories of several components share is in `__stories__/`
+  (`frontend/packages/salon-screens/src/__stories__/examples.ts`) or in
+  `components/examples.ts`.
+- An area of an application (`src/<area>/`) has its components in
+  `components/<name>/`, and its other modules lie in the area itself.
 
 ## Styling rules
 
@@ -254,13 +284,14 @@ nobody reads is removed.
   there: the list of what a customer wrote and the page of a booking show
   a review with `ReviewContent` of `salons/components/`.
 - What several applications share and `ui` may not know has a package of its
-  own. `@beauty-salon-frontend/session` is the one there is: it knows the API
-  client and the query library, and builds its screens from `ui`. Its
-  components are split in two. Those that only show (`SignInForm`,
-  `SessionGate`, `AccountMenu`, in `src/components/`) take what they show as
-  props, have the four files and are in the catalogue; those that know the
-  session and the API (`SignInScreen`, `RequireSession`, `SessionAccount`)
-  hand them their props and are tested against the real API.
+  own. `@beauty-salon-frontend/session` is one: it knows the API client and
+  the query library, and builds its screens from `ui`. Its components are
+  split in two. Those that only show (`SignInForm`, `SessionGate`,
+  `AccountMenu`, in `src/components/`) take what they show as props, have
+  the four files and are in the catalogue; those that know the session and
+  the API (`SignInScreen`, `RequireSession`, `SessionAccount`, in
+  `src/screens/`) hand them their props and are tested against the real
+  API. The folders of such a package are those of "Folders", above.
 - Export a new component and its props from `frontend/packages/ui/src/index.ts`.
 
 ## Form components
@@ -389,8 +420,8 @@ shortest).
   the API and decides what the form says. A form with steps is a component
   of its own around a `Form`, with its own stories: the sign-in form
   (`frontend/packages/session/src/components/sign-in-form/`, with
-  `sign-in-screen/` around it), which moves the focus to the code when the
-  second step begins.
+  `SignInScreen` of `src/screens/` around it), which moves the focus to the
+  code when the second step begins.
 - **Every form is a `Form`, a `FilterForm` or a `FormDialog`**, so that
   Enter sends it, the first control with an error takes the focus and its
   buttons stand alike. The conditions of a list, the days of a count and
@@ -2576,7 +2607,7 @@ A share link opens a file for somebody who has no account
   account stays in the header, beside the name: the way in.
 - **What is drawn differently on a narrow screen is drawn once.**
   `AppShell`, `FilterForm` and `PageHeader` ask the browser whether the
-  window is 40rem wide (`useWideScreen` of `ui/src/wide-screen.ts`,
+  window is 40rem wide (`useWideScreen` of `ui/src/hooks/wide-screen.ts`,
   `matchMedia`, which hears when the window is turned) and draw either the
   row of links or the menu, either the conditions in a row or their sheet,
   either the other actions in the row or their sheet. They do not draw

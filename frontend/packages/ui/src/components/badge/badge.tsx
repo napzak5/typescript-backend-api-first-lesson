@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { classNames } from '../../class-names'
-import { type Tone, toneClass } from '../../tone'
+import { classNames } from '../../utils/class-names'
+import { type Tone, toneClass } from '../../utils/tone'
 import styles from './badge.module.css'
 
 /** The colour of a badge: that of a state, or `neutral` for a state that is none of them */

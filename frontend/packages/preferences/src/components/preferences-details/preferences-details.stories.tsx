@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { staffLabelOf, staffNamed } from '../../staff-choices'
+import { staffLabelOf, staffNamed } from '../../utils/staff-choices'
 import {
   noPreferences,
   preferences,

@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import styles from './note.module.css'
 
 /**

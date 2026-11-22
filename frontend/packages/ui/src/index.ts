@@ -1,4 +1,3 @@
-export { classNames } from './class-names'
 export {
   Actions,
   type ActionsLayout,
@@ -179,5 +178,6 @@ export {
   WrittenText,
   type WrittenTextProps,
 } from './components/written-text/written-text'
-export type { Tone } from './tone'
-export { useWideScreen } from './wide-screen'
+export { useWideScreen } from './hooks/wide-screen'
+export { classNames } from './utils/class-names'
+export type { Tone } from './utils/tone'

@@ -5,7 +5,7 @@ import {
   useLayoutEffect,
   useRef,
 } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import { Note } from '../note/note'
 import styles from './dialog.module.css'
 

@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import controlStyles from '../field/control.module.css'
 import { Field } from '../field/field'
 import styles from './text-area.module.css'

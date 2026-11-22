@@ -19,11 +19,11 @@ export {
   type PreferencesChangeRead,
   type PreferencesRefusal,
   readPreferencesChange,
-} from './preferences-flow'
+} from './utils/preferences-flow'
 export {
   type StaffChoice,
   staffChoicesOf,
   staffIdsOf,
   staffLabelOf,
   staffNamed,
-} from './staff-choices'
+} from './utils/staff-choices'

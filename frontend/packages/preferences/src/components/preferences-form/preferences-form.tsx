@@ -22,8 +22,8 @@ import {
   PREFERRED_STAFF,
   SPECIAL_REQUESTS,
   TIME_SLOTS,
-} from '../../preferences-flow'
-import { type StaffChoice, staffLabelOf } from '../../staff-choices'
+} from '../../utils/preferences-flow'
+import { type StaffChoice, staffLabelOf } from '../../utils/staff-choices'
 import { TimeSlotFields } from '../time-slot-fields/time-slot-fields'
 import styles from './preferences-form.module.css'
 

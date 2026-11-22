@@ -5,7 +5,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useWideScreen } from '../../wide-screen'
+import { useWideScreen } from '../../hooks/wide-screen'
 import { Actions } from '../actions/actions'
 import { Button } from '../button/button'
 import { ButtonLink } from '../button-link/button-link'

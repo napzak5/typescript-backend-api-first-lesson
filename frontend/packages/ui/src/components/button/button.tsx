@@ -1,5 +1,5 @@
 import type { ComponentProps, MouseEvent } from 'react'
-import { classNames } from '../../class-names'
+import { classNames } from '../../utils/class-names'
 import styles from './button.module.css'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'danger'

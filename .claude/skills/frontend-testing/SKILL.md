@@ -16,10 +16,10 @@ The styling and component rules are in the skill `frontend-ui`.
 | Subject | Test | Example |
 |---------|------|---------|
 | A component | Its stories, composed and run by Vitest in jsdom | `frontend/packages/ui/src/components/button/button.test.tsx` |
-| What a form does with its values and with the answer of the API | Unit tests of the pure functions. The values a form was sent with are made by `formOf({ name: value })`, or by `formOfEntries([[name, value], …])` where a name has several values (`@beauty-salon-frontend/testing/forms`): a test does not fill a `FormData` itself, but for a form whose rows it has to lay out. The longest text a form takes is written in characters outside the basic plane (`'𠮷'.repeat(255)`): the API counts each as one, and a form that counted `text.length` would refuse it | `frontend/packages/session/src/components/sign-in-screen/sign-in-flow.test.ts`, `frontend/packages/fields/src/lengths.test.ts` |
+| What a form does with its values and with the answer of the API | Unit tests of the pure functions. The values a form was sent with are made by `formOf({ name: value })`, or by `formOfEntries([[name, value], …])` where a name has several values (`@beauty-salon-frontend/testing/forms`): a test does not fill a `FormData` itself, but for a form whose rows it has to lay out. The longest text a form takes is written in characters outside the basic plane (`'𠮷'.repeat(255)`): the API counts each as one, and a form that counted `text.length` would refuse it | `frontend/packages/session/src/utils/sign-in-flow.test.ts`, `frontend/packages/fields/src/lengths.test.ts` |
 | What a screen makes of its address and of what it read: the conditions of a search, dates and amounts, the pages of a list | The same | `frontend/apps/portal-app/src/salons/salon-format.test.ts` |
-| The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx`, `frontend/packages/app-frame/src/app-frame.test.tsx` |
-| The start of an application (`startApplication`): the element it is drawn in, the addresses of the browser, how its queries are read | Started in the document of jsdom, and ended after the test with the function it returns; no API | `frontend/packages/app-frame/src/start-application.test.tsx` |
+| The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx`, `frontend/packages/app-frame/src/screens/app-frame.test.tsx` |
+| The start of an application (`startApplication`): the element it is drawn in, the addresses of the browser, how its queries are read | Started in the document of jsdom, and ended after the test with the function it returns; no API | `frontend/packages/app-frame/src/screens/start-application.test.tsx` |
 | The style rules, for every package and app | One test in the theme package | `frontend/packages/theme/src/style-rules.test.ts` |
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
 | The typefaces: the dependencies, their imports and `--font-family` agree | Read from the files of the theme | `frontend/packages/theme/src/typefaces.test.ts` |
@@ -27,8 +27,13 @@ The styling and component rules are in the skill `frontend-ui`.
 | The fetch function, the session and the generated client | In jsdom, over the real client and the real fetch function, with `fetch` itself stubbed | `frontend/packages/session/src/session.test.tsx` |
 | The functions of a screen that call the API, for the answers the real API cannot be made to give | The same | `frontend/apps/portal-app/src/account/account-api.test.ts` |
 | Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
-| A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/sign-in.integration.test.tsx`, `frontend/packages/app-frame/src/staff-application.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
+| A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/screens/sign-in.integration.test.tsx`, `frontend/packages/app-frame/src/screens/staff-application.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
 | A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/sign-in.e2e.test.ts` |
+
+A test is beside the module it tests. In a shared package that is the folder
+of the kind of the module (`api/`, `components/<name>/`, `hooks/`,
+`screens/`, `utils/`: "Folders" in the skill `frontend-ui`), and the
+integration test of a screen is in `screens/`.
 
 `@beauty-salon-frontend/testing` holds what the tests share: the setup
 (`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, the
@@ -492,7 +497,7 @@ describe('the session against the API', () => {
 
 A screen that calls the API is tested as its user works it: the test types
 into its controls and presses its buttons, and the requests go to the real
-API. `frontend/packages/session/src/sign-in.integration.test.tsx` is the
+API. `frontend/packages/session/src/screens/sign-in.integration.test.tsx` is the
 example to read.
 
 ```tsx
@@ -633,7 +638,7 @@ example to read: a search and the page of a record, rendered at an address.
   same for one record. A write is refused by a trigger that raises an
   exception (`before delete on sessions`, `before update of "passwordHash"
   on users`: `refuse` in
-  `frontend/packages/session/src/security/security.integration.test.tsx`),
+  `frontend/packages/session/src/security/screens/security.integration.test.tsx`),
   where taking the table away would also refuse the session of the
   request. The fresh database after the test undoes all of them.
 - **A row with a date is written relative to today, in the database**
@@ -910,13 +915,13 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
   the requests (`asked(fetched).filter(ofTheReviews)`: the one that
   wrote, and no read after it).
 - **A screen of a package that every application uses is tested in the
-  package** (`frontend/packages/session/src/security/security.integration.test.tsx`):
+  package** (`frontend/packages/session/src/security/screens/security.integration.test.tsx`):
   in `AppShell` and `RequireSession` as an application has them, without a
   router. What it hands to the application is a `vi.fn()` (`onChanged`),
   and asserted. The tests of an application add what it does with them:
   where they are, for whom, and the ways between them
   (`frontend/apps/portal-app/src/security/security.integration.test.tsx`,
-  and `frontend/packages/app-frame/src/staff-application.integration.test.tsx`
+  and `frontend/packages/app-frame/src/screens/staff-application.integration.test.tsx`
   for the admin and the dashboard application, whose
   `App.integration.test.tsx` go there from the header and no further).
 - **Another device is another session of the API.** It signs in through

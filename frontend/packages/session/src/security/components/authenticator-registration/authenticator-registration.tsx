@@ -8,7 +8,7 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
-import { CODE, secretGroupsOf } from '../../two-factor-flow'
+import { CODE, secretGroupsOf } from '../../utils/two-factor-flow'
 import styles from './authenticator-registration.module.css'
 
 export type AuthenticatorRegistrationProps = {
