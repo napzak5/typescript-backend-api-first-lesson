@@ -60,3 +60,18 @@ export const staffChoicesOf = (
 /** How a member of the staff is named where staff of several salons stand together: 「田中 美咲（Beauty Salon Tokyo）」. */
 export const staffLabelOf = ({ displayName, salonName }: StaffChoice): string =>
   `${displayName}（${salonName}）`
+
+/**
+ * The names of the members of the staff with the given IDs, in the order
+ * of the IDs. A member who is not among `staff` has no name to show, and is
+ * left out.
+ */
+export const staffNamed = (
+  ids: readonly string[],
+  staff: readonly StaffChoice[],
+): string[] =>
+  ids.flatMap((id) => {
+    const member = staff.find((choice) => choice.id === id)
+
+    return member === undefined ? [] : [staffLabelOf(member)]
+  })

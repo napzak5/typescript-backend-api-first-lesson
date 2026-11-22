@@ -11,6 +11,7 @@ import type {
   ModelsStylePreference,
   ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
+import { tooLong } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormErrors,
@@ -195,7 +196,7 @@ const TIME_MALFORMED = '時刻は、09:30 のように入力してください�
 const END_NOT_LATER = '終了は、開始より後の時刻にしてください。'
 const OVERLAPPING =
   'ほかの時間帯と重なっています。重ならない時刻にしてください。'
-const COMMUNICATION_STYLE_TOO_LONG = `${MAX_COMMUNICATION_STYLE_LENGTH} 文字以内で入力してください。`
+const COMMUNICATION_STYLE_TOO_LONG = tooLong(MAX_COMMUNICATION_STYLE_LENGTH)
 
 /** A time of day as the API takes it: `09:30`. Two of them compare as text. */
 const TIME_OF_DAY = /^(?:[01]\d|2[0-3]):[0-5]\d$/
