@@ -10,6 +10,12 @@ type AnsweredRefusal = Exclude<
   { type: 'bookingNumberTaken' }
 >
 
+/** The day of a visit cannot be told in a time zone the runtime does not know. */
+export const timeZoneUnknown = (): DomainError =>
+  DomainErrors.conflict(
+    'The time zone of the salon is not one that is known, so the day of the visit cannot be told; correct the time zone of the salon first',
+  )
+
 /**
  * Why a booking was not created, as the error a client gets. A booking
  * number that is taken is not among the reasons: the client did not choose
@@ -23,11 +29,7 @@ export const toRefusalError = (
     .with({ type: 'invalid' }, ({ issues }) =>
       DomainErrors.validation(message, issues),
     )
-    .with({ type: 'timeZoneUnknown' }, () =>
-      DomainErrors.conflict(
-        'The time zone of the salon is not one that is known, so the day of the visit cannot be told; correct the time zone of the salon first',
-      ),
-    )
+    .with({ type: 'timeZoneUnknown' }, timeZoneUnknown)
     .with({ type: 'staffOccupied' }, ({ staffIds }) =>
       DomainErrors.conflict(
         `Other bookings occupy ${staffIds.length === 1 ? 'staff member' : 'staff members'} ${staffIds.join(', ')} at a time of this booking`,

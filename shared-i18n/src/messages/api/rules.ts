@@ -53,12 +53,6 @@ export const ruleMessages = {
       en: `Must be later than ${earlier}`,
       ja: `${earlier} より後にしてください`,
     }),
-  /** `later` is a property of the request. */
-  earlierThan: (later: string) =>
-    text({
-      en: `Must be earlier than ${later}`,
-      ja: `${later} より前にしてください`,
-    }),
   /** `earliest` is a property of the request, or a day. */
   notEarlierThan: (earliest: string) =>
     text({
@@ -88,12 +82,6 @@ export const ruleMessages = {
     text({
       en: `Must not be null when ${other} is given`,
       ja: `${other} を指定するときは、null にできません`,
-    }),
-  /** `other` is a property of the request. */
-  requiredWhenGiven: (other: string) =>
-    text({
-      en: `Required when ${other} is given`,
-      ja: `${other} を指定するときは、指定してください`,
     }),
   noRepeatedEntry: text({
     en: 'Must not repeat an earlier entry',

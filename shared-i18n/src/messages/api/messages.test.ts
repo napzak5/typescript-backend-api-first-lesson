@@ -12,6 +12,7 @@ import {
   saleMessages,
   salesReportMessages,
   salonMessages,
+  staffScheduleMessages,
 } from './index'
 
 const JAPANESE = /[぀-ヿ一-鿿]/
@@ -133,22 +134,6 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
     },
   ],
   [
-    'ruleMessages.earlierThan',
-    ruleMessages.earlierThan('closeTime'),
-    {
-      en: 'Must be earlier than closeTime',
-      ja: 'closeTime より前にしてください',
-    },
-  ],
-  [
-    'ruleMessages.requiredWhenGiven',
-    ruleMessages.requiredWhenGiven('lockedUntil'),
-    {
-      en: 'Required when lockedUntil is given',
-      ja: 'lockedUntil を指定するときは、指定してください',
-    },
-  ],
-  [
     'attachmentMessages.filenameOfType',
     attachmentMessages.filenameOfType('image/webp'),
     {
@@ -234,6 +219,22 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
     {
       en: 'Must be within 31 days of startDate, both included',
       ja: 'startDate から、両端を含めて 31 日以内にしてください',
+    },
+  ],
+  [
+    'staffScheduleMessages.requiredWhenGiven',
+    staffScheduleMessages.requiredWhenGiven('lockedUntil'),
+    {
+      en: 'Required when lockedUntil is given',
+      ja: 'lockedUntil を指定するときは、指定してください',
+    },
+  ],
+  [
+    'staffScheduleMessages.earlierThan',
+    staffScheduleMessages.earlierThan('closeTime'),
+    {
+      en: 'Must be earlier than closeTime',
+      ja: 'closeTime より前にしてください',
     },
   ],
 ]

@@ -114,14 +114,14 @@ const staffScheduleSchema = z
       report(
         'breakEndTime',
         breakEndTime,
-        ruleMessages.requiredWhenGiven('breakStartTime'),
+        staffScheduleMessages.requiredWhenGiven('breakStartTime'),
       )
     }
     if (breakStartTime === null && breakEndTime !== null) {
       report(
         'breakStartTime',
         breakStartTime,
-        ruleMessages.requiredWhenGiven('breakEndTime'),
+        staffScheduleMessages.requiredWhenGiven('breakEndTime'),
       )
     }
 
@@ -150,7 +150,11 @@ const staffScheduleSchema = z
       )
     }
     if (breakEnd !== null && end !== null && end <= breakEnd) {
-      report('breakEndTime', breakEndTime, ruleMessages.earlierThan('endTime'))
+      report(
+        'breakEndTime',
+        breakEndTime,
+        staffScheduleMessages.earlierThan('endTime'),
+      )
     }
   }) satisfies z.ZodType<ApiStaffSchedule>
 

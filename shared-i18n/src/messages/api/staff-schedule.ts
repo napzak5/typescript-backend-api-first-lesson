@@ -34,6 +34,18 @@ export const staffScheduleMessages = {
     en: 'Required for a working day',
     ja: '勤務する日は、指定してください',
   }),
+  /** `other` is a property of the request. */
+  requiredWhenGiven: (other: string) =>
+    text({
+      en: `Required when ${other} is given`,
+      ja: `${other} を指定するときは、指定してください`,
+    }),
+  /** `later` is a property of the request. */
+  earlierThan: (later: string) =>
+    text({
+      en: `Must be earlier than ${later}`,
+      ja: `${later} より前にしてください`,
+    }),
   noRepeatedDayOfWeek: text({
     en: 'Must not repeat the day of the week of an earlier entry',
     ja: '前の要素と同じ曜日は指定できません',

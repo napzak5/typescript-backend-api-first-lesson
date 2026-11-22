@@ -1,5 +1,4 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import {
@@ -14,7 +13,7 @@ import {
   amountsTooBig,
   bookingServiceNotFound,
   servicesAreSettled,
-  toRefusalError,
+  timeZoneUnknown,
 } from './_shared/refusals'
 
 export class DeleteBookingServiceUseCase {
@@ -79,11 +78,7 @@ export class DeleteBookingServiceUseCase {
           ),
         ),
       )
-      .with({ type: 'timeZoneUnknown' }, (refusal) =>
-        Result.error(
-          toRefusalError(refusal, bookingMessages.invalidBookingService),
-        ),
-      )
+      .with({ type: 'timeZoneUnknown' }, () => Result.error(timeZoneUnknown()))
       .with({ type: 'amountsTooBig' }, () => Result.error(amountsTooBig()))
       .exhaustive()
   }
