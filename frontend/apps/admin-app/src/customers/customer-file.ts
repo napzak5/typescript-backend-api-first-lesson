@@ -8,19 +8,19 @@ import {
   type ModelsCustomerResponse,
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
+import {
+  EARLIEST_DAY,
+  GENDERS,
+  PREFERENCE_NOTES,
+  PREFERRED_SERVICES,
+  SERVICE_CATEGORIES,
+} from '@beauty-salon-frontend/fields'
 import { aboutTheAttempt } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
+import { CANNOT_HANDLE_CUSTOMERS, readCustomerEntry } from './customer-form'
 import {
-  CANNOT_HANDLE_CUSTOMERS,
-  PREFERENCE_NOTES,
-  PREFERRED_SERVICES,
-  readCustomerEntry,
-} from './customer-form'
-import {
-  CATEGORIES,
   CUSTOMER_STATUSES,
-  GENDERS,
   HAIR_THICKNESSES,
   HAIR_TYPES,
   SCALP_CONDITIONS,
@@ -366,7 +366,7 @@ const tagsSchema = z.array(z.string()) satisfies z.ZodMiniType<
   ModelsCustomerCreateRequest['tags']
 >
 
-const PREFERENCES_MALFORMED = `好みは、台帳の出力と同じ JSON（{"preferredServices":["cut"],"notes":null}）で書くか、空にしてください。preferredServices は、${oneOf(CATEGORIES)}です。`
+const PREFERENCES_MALFORMED = `好みは、台帳の出力と同じ JSON（{"preferredServices":["cut"],"notes":null}）で書くか、空にしてください。preferredServices は、${oneOf(SERVICE_CATEGORIES)}です。`
 
 const TAGS_MALFORMED =
   'タグは、「、」かカンマで区切るか、台帳の出力と同じ JSON の文字列の配列で書いてください。'
@@ -655,7 +655,7 @@ const refusedMessageOf = (column: Column | undefined, rule: string): string =>
     )
     .with(
       ['birthDate', P.string],
-      () => '生年月日は、1900-01-01 から今日までの日付を書いてください。',
+      () => `生年月日は、${EARLIEST_DAY} から今日までの日付を書いてください。`,
     )
     .otherwise(
       () => 'この値は受け付けられませんでした。書き方を確かめてください。',

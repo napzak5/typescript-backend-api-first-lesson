@@ -6,7 +6,7 @@ import type {
   ModelsTreatmentMaterial,
   ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import { LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
+import { LATEST_DAY } from '@beauty-salon-frontend/fields'
 import {
   Button,
   CheckboxGroup,

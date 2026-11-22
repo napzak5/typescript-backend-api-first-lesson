@@ -103,6 +103,17 @@ describe('PreferencesDetails', () => {
     })
   })
 
+  it('should name a member nobody shows any more as the screen names them, in the place of their ID', async () => {
+    // Act
+    await stories.StaffThatLeftSaidSo.run()
+
+    // Assert
+    expect(details()).toMatchObject({
+      指名したいスタッフ: '一覧にないスタッフ',
+      避けたいスタッフ: '一覧にないスタッフ、鈴木 結衣（Hair Studio Osaka）',
+    })
+  })
+
   it('should keep the line breaks of what was written in several lines', async () => {
     // Act
     await stories.Wordy.run()

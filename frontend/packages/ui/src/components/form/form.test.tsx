@@ -113,7 +113,7 @@ describe('Form', () => {
     // Assert
     expect(email()).toHaveFocus()
     expect(email()).toHaveAccessibleDescription(
-      'メールアドレスの形式で入力してください。',
+      'メールアドレスは、hanako@example.com のような形で入力してください。',
     )
   })
 

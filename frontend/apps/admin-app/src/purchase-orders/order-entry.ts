@@ -8,7 +8,8 @@ import type {
   ModelsPurchaseOrderCreateRequest,
   ModelsPurchaseOrderItemCreateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { isDay, startOfDayAt } from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/fields'
+import { startOfDayAt } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
   type FormRead,

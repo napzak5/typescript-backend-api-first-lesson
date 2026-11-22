@@ -31,7 +31,8 @@ this one: a component is not done without its stories and its test.
 | The screens of a booking in the portal: choosing the member of the staff, the day and the time, the page of a booking, the bookings of a customer, and cancelling and moving one | `frontend/apps/portal-app/src/bookings/` |
 | The page of a customer in the portal, and the form of their profile | `frontend/apps/portal-app/src/profile/` |
 | What a customer wishes for in the portal: the part of their page, and the screen of the form | `frontend/apps/portal-app/src/preferences/` |
-| The form of what a customer wishes for, which the portal and the admin application share: the form with the rows of time slots, how it is read and what a refusal says, the staff it offers, a list written a line each | `frontend/packages/preferences/src/` |
+| What a customer wishes for, which the portal and the admin application share: the form with the rows of time slots, how it is read and what a refusal says, the staff it offers, a list written a line each, and how the record is shown (`PreferencesDetails`) | `frontend/packages/preferences/src/` |
+| The rules of the values a form takes, in every application and package: a day and the days a control offers (`isDay`, `EARLIEST_DAY`, `LATEST_DAY`), a name (`lastNameError`, `firstNameError`), an address of mail (`emailError`, `EMAIL_MALFORMED`), a telephone number (`phoneError`, `alternativePhoneError`), a text that is too long (`tooLong`, `lengthErrors`), a choice of a list (`choiceOf`, `UNLISTED_MESSAGE`), an address of the web (`webAddressOf`), and the record of a customer (`CUSTOMER_LENGTHS`, `GENDERS`, `SERVICE_CATEGORIES`, `birthDateError`, `basicPreferencesIn`, `shownBasicPreferencesOf`, `customerControlOf`, `customerRefusalOf`) | `frontend/packages/fields/src/` (`@beauty-salon-frontend/fields`) |
 | The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one; what a reader of the page of a salon does with the reviews of others (`reader-flow.ts`, the dialog that reports one) | `frontend/apps/portal-app/src/reviews/` |
 | Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
@@ -295,8 +296,10 @@ nobody reads is removed.
   the control itself. A placeholder is not a label.
 - **`description` and `error`** are shown below the control and tied to it
   with `aria-describedby`; an `error` also sets `aria-invalid`. An error says
-  what to do (「メールアドレスの形式で入力してください」) and is text, never
-  colour alone. Pass `undefined` when there is nothing to say.
+  what to do
+  (「メールアドレスは、hanako@example.com のような形で入力してください」)
+  and is text, never colour alone. Pass `undefined` when there is nothing to
+  say.
 - **Everything else goes to the native control**: `name`, `value` or
   `defaultValue`, `onChange`, `autoComplete`, `required`, `disabled`,
   `readOnly`, `min`, `maxLength`. A component works with a value its caller
@@ -455,6 +458,19 @@ shortest).
   missing value, an address that is none, a password outside the lengths the
   API takes (counted as the API counts them). Whether a password is easy to
   guess is the API's to say; the form says it at the control.
+- **The rule of a value is written once**, in
+  `@beauty-salon-frontend/fields`, with the sentence it says: a name, an
+  address of mail, a telephone number, a day, a text that is too long
+  (`tooLong(most)`, and `lengthErrors` for the controls of a form that may
+  be left empty), a choice that is none of a list. A form calls the rule
+  and writes neither the pattern nor the sentence again, so the same value
+  is told the same in the portal, in the ledger of a salon and where a
+  member signs in. A record that two applications write (the customer:
+  their profile in the portal, the ledger in the admin application) has
+  its lengths, its lists and what a refused value says there too
+  (`customerControlOf`, `customerRefusalOf`); a form adds what it alone
+  holds (the referrer and the referral code of the ledger). The package
+  has no components and knows no screen.
 - A form that stands alone on a screen is one column,
   `max-inline-size: var(--size-form-column)`.
 
@@ -802,11 +818,15 @@ have.
   record in the portal as the salon does in its ledger, under the same
   rules. The package has the component, how the form is read
   (`readPreferencesChange`), what a refusal says
-  (`afterPreferencesChange`) and the choices it offers
-  (`staffChoicesOf`). What an application reads, and the part of a page
-  that shows the record, stay in the application: their readers differ
-  (the customer is not shown a member nobody can read; the salon is told
-  「一覧にないスタッフ」). The package is built as `ui` is (rslib, the
+  (`afterPreferencesChange`), the choices it offers (`staffChoicesOf`)
+  and how the record is shown (`PreferencesDetails`). What an application
+  reads stays in the application, and so does what its reader is told of
+  a member nobody shows any more: `PreferencesDetails` takes
+  `staffNames`, a function from the IDs to the names, and shows what it
+  answers (the portal leaves such a member out, `staffNamed` of the
+  package; the salon is told 「一覧にないスタッフ」, `staffNamesOf` in
+  `customer-format.ts` of the admin application). The package is built as
+  `ui` is (rslib, the
   condition `@beauty-salon-frontend/source`), its stories are listed in
   the catalogue of `ui`, and `Dockerfile.frontend` copies its manifest.
 
@@ -960,7 +980,8 @@ the bookings and the profile are, above, and add what those do not have.
 - **An address somebody wrote** (the pictures of a review) is shown as a
   link that the page does not load, with `rel='noreferrer nofollow ugc'`,
   each on a line of its own, in a list with a name (「写真」). A value
-  that is no address of the web is shown as text (`webAddressOf`). A test
+  that is no address of the web is shown as text (`webAddressOf` of
+  `fields`, in every application). A test
   that counts the rows of the outer list counts its own items alone.
 
 ### A public page offers more to who is signed in

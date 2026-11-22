@@ -1,7 +1,7 @@
 import { CHECK_THE_VALUES_MESSAGE } from '@beauty-salon-frontend/answers'
+import { EMAIL_MALFORMED, emailError } from '@beauty-salon-frontend/fields'
 import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import * as z from 'zod/mini'
 import type { SignInOutcome } from '../../sign-in'
 import type { SignInFormErrors } from '../sign-in-form/sign-in-form'
 
@@ -33,8 +33,6 @@ export const INITIAL_SIGN_IN_STATE: SignInState = {
   message: undefined,
   errors: {},
 }
-const emailSchema = z.email()
-
 /**
  * The values of the first step. The address is taken without the spaces
  * around it, which come with a pasted value; the password is taken as it is.
@@ -45,13 +43,7 @@ const readCredentials = (
   const email = textOf(values, 'email').trim()
   const password = textOf(values, 'password')
   const errors: SignInFormErrors = {
-    email: match(email)
-      .with('', () => 'メールアドレスを入力してください。')
-      .when(
-        (address) => !emailSchema.safeParse(address).success,
-        () => 'メールアドレスの形式で入力してください。',
-      )
-      .otherwise(() => undefined),
+    email: emailError(email),
     password: password === '' ? 'パスワードを入力してください。' : undefined,
   }
 
@@ -108,7 +100,7 @@ export const readAttempt = (
 
 /** What to say at a control whose value the API does not take. */
 const messageOfField: Record<keyof SignInFormErrors, string> = {
-  email: 'メールアドレスの形式で入力してください。',
+  email: EMAIL_MALFORMED,
   password: 'パスワードを確かめて、入力し直してください。',
   twoFactorCode: '認証コードを確かめて、入力し直してください。',
 }

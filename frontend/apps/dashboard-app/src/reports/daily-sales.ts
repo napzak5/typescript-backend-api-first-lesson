@@ -1,8 +1,5 @@
-import {
-  dayAfter,
-  EARLIEST_DAY,
-  isDay,
-} from '@beauty-salon-frontend/salon-screens'
+import { EARLIEST_DAY, isDay } from '@beauty-salon-frontend/fields'
+import { dayAfter } from '@beauty-salon-frontend/salon-screens'
 import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 
 /*

@@ -23,6 +23,7 @@
     "@beauty-salon-frontend/answers": "workspace:*",
     "@beauty-salon-frontend/api-client": "workspace:*",
     "@beauty-salon-frontend/brand": "workspace:*",
+    "@beauty-salon-frontend/fields": "workspace:*",
     "@beauty-salon-frontend/io": "workspace:*",
     "@beauty-salon-frontend/preferences": "workspace:*",
     "@beauty-salon-frontend/salon-screens": "workspace:*",

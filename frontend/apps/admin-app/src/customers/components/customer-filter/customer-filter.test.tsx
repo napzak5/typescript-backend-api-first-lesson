@@ -68,9 +68,11 @@ describe('CustomerFilter', () => {
     expect(tags()).toHaveAccessibleDescription(
       '「、」か「,」で区切ると、すべてのタグを持つお客様を探します。',
     )
-    expect(from()).toHaveAttribute('type', 'date')
-    expect(from()).toHaveAttribute('min', '1900-01-01')
-    expect(to()).toHaveAttribute('max', '2999-12-31')
+    for (const day of [from(), to()]) {
+      expect(day).toHaveAttribute('type', 'date')
+      expect(day).toHaveAttribute('min', '1900-01-01')
+      expect(day).toHaveAttribute('max', '2999-12-31')
+    }
     expect(optionsOf(status())).toEqual([
       'すべて',
       '通常',

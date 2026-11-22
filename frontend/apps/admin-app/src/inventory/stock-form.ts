@@ -10,7 +10,7 @@ import type {
   ModelsInventoryUpdateRequest,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import { isDay } from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   errorAt,

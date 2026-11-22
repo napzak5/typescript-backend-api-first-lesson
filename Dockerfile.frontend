@@ -45,6 +45,7 @@ COPY frontend/packages/answers/package.json ./frontend/packages/answers/
 COPY frontend/packages/api-client/package.json ./frontend/packages/api-client/
 COPY frontend/packages/brand/package.json ./frontend/packages/brand/
 COPY frontend/packages/config/package.json ./frontend/packages/config/
+COPY frontend/packages/fields/package.json ./frontend/packages/fields/
 COPY frontend/packages/io/package.json ./frontend/packages/io/
 COPY frontend/packages/preferences/package.json ./frontend/packages/preferences/
 COPY frontend/packages/salon-screens/package.json ./frontend/packages/salon-screens/

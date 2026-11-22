@@ -10,7 +10,7 @@ import {
   type ModelsCustomerAllergyResponse,
   type ModelsCustomerAllergyUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { EARLIEST_DAY, isDay } from '@beauty-salon-frontend/salon-screens'
+import { EARLIEST_DAY, isDay } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type BadgeTone,

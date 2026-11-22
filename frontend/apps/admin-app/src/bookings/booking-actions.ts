@@ -5,7 +5,8 @@ import type {
   ModelsBookingResponse,
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
-import { isDay, momentOf } from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/fields'
+import { momentOf } from '@beauty-salon-frontend/salon-screens'
 import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { StatusChange } from './bookings-api'

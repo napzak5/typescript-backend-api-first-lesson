@@ -1,5 +1,6 @@
+import { isDay } from '@beauty-salon-frontend/fields'
 import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
-import { dayAfter, dayNameOf, isDay } from './salon-time'
+import { dayAfter, dayNameOf } from './salon-time'
 
 /** The days something of a salon is counted over, on its clock; both ends counted. */
 export type Period = { from: string; to: string }

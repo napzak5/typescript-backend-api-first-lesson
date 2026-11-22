@@ -269,7 +269,9 @@ describe('signing in on the screen, against the API', () => {
     // Assert
     expect(
       screen.getByRole('textbox', { name: 'メールアドレス' }),
-    ).toHaveAccessibleDescription('メールアドレスの形式で入力してください。')
+    ).toHaveAccessibleDescription(
+      'メールアドレスは、hanako@example.com のような形で入力してください。',
+    )
     expect(
       sent.mock.calls.filter(([url]) => String(url).endsWith(LOGIN)),
     ).toEqual([])

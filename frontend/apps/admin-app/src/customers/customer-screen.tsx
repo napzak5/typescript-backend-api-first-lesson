@@ -10,6 +10,7 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
+import { PreferencesDetails } from '@beauty-salon-frontend/preferences'
 import {
   dayAt,
   lastYearUntil,
@@ -61,7 +62,6 @@ import {
   type ErasureShown,
 } from './components/customer-erasure/customer-erasure'
 import { CustomerKeeping } from './components/customer-keeping/customer-keeping'
-import { CustomerPreferences } from './components/customer-preferences/customer-preferences'
 import {
   CustomerRecord,
   type CustomerRecordProps,
@@ -87,6 +87,7 @@ import {
 import { ANSWERED_BY_OTHERS, afterDataExport } from './customer-export'
 import { exportCustomerData } from './customer-export-api'
 import { type Referrer, referrerOf } from './customer-form'
+import { staffNamesOf } from './customer-format'
 import {
   afterRemoval,
   afterRestoration,
@@ -155,8 +156,9 @@ const RecordPart = ({
 
 /**
  * What the customer wants the salons to keep in mind, with the members of
- * the staff named. It is read with the page; the customer may change it
- * from the portal at any time, and the salon from here.
+ * the staff named as the salons show them; of one who is shown no more it
+ * says that there is one. It is read with the page; the customer may
+ * change it from the portal at any time, and the salon from here.
  */
 const PreferencesPart = ({ salon, customer }: PartProps) => {
   const read = useQuery({
@@ -179,7 +181,10 @@ const PreferencesPart = ({ salon, customer }: PartProps) => {
           <LoadingIndicator label='好み設定を読み込んでいます' />
         ))
         .with({ type: 'found' }, ({ preferences, staff }) => (
-          <CustomerPreferences preferences={preferences} staff={staff} />
+          <PreferencesDetails
+            preferences={preferences}
+            staffNames={(ids) => staffNamesOf(ids, staff)}
+          />
         ))
         .with({ type: 'notFound' }, () => <p>{GONE}</p>)
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (

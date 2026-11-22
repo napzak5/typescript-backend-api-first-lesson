@@ -1,4 +1,4 @@
-import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/fields'
 import {
   countNarrowing,
   FilterForm,

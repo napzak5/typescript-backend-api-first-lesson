@@ -1,7 +1,7 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { Option } from '../customers/customer-format'
 import type { Carried, Purpose } from './product-ledger'
 
 /*
@@ -68,13 +68,13 @@ export const categoriesOf = (
   ].sort((one, other) => one.localeCompare(other, 'ja'))
 
 /** Whether the salon carries the products the ledger shows, to choose from */
-export const CARRIED_OPTIONS: readonly (Option & { value: Carried })[] = [
+export const CARRIED_OPTIONS: readonly (ChoiceOption & { value: Carried })[] = [
   { value: 'carried', label: '取り扱い中' },
   { value: 'dropped', label: '取り扱いをやめた' },
 ]
 
 /** What the products the ledger shows are for, to choose from */
-export const USE_OPTIONS: readonly (Option & { value: Purpose })[] = [
+export const USE_OPTIONS: readonly (ChoiceOption & { value: Purpose })[] = [
   { value: 'sale', label: '店頭で販売する' },
   { value: 'treatment', label: '施術で使う' },
 ]

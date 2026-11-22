@@ -10,11 +10,11 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   aboutTheAttempt,
+  type ChoiceOption,
   type FormSays,
   textOf,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { Option } from '../customers/customer-format'
 import { LEVELS } from '../staff/staff-format'
 import type { ServicesChange } from './menu-api'
 import {
@@ -58,7 +58,7 @@ export const SWITCH_OFF = 'off'
 export const serviceChoicesOf = (
   categories: readonly ModelsServiceCategoryResponse[],
   services: readonly ModelsServiceResponse[],
-): Option[] => {
+): ChoiceOption[] => {
   const byId = categoriesById(categories)
 
   return menuSectionsOf(categories, services).flatMap(

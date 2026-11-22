@@ -1,39 +1,49 @@
-import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/api-client'
-import type { StaffChoice } from '@beauty-salon-frontend/preferences'
+import type {
+  ModelsCustomerPreferencesResponse,
+  ModelsTimeSlot,
+} from '@beauty-salon-frontend/api-client'
+import { webAddressOf } from '@beauty-salon-frontend/fields'
 import { DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
-import { webAddressOf } from '../../../salons/salon-format'
-import { staffNamed, timeSlotOf, UNSET } from '../../preferences-format'
 import styles from './preferences-details.module.css'
 
 export type PreferencesDetailsProps = {
   preferences: ModelsCustomerPreferencesResponse
   /**
-   * The members of the staff that can be named. One the preferences name
-   * who is not among them is not shown: their salon no longer shows them
+   * The names of the members of the staff with the given IDs, as the
+   * screen names them, in the order of the IDs. What a screen does with a
+   * member nobody shows any more is its own: it leaves them out, or says
+   * that there is one
    */
-  staff: readonly StaffChoice[]
+  staffNames: (ids: readonly string[]) => readonly string[]
 }
+
+/** What stands where a preference would, when the customer has none */
+const UNSET = '指定なし'
 
 /** The entries of a list, as a sentence lists them; the word for none when there is none. */
 const listed = (entries: readonly string[]): string =>
   entries.length === 0 ? UNSET : entries.join('、')
 
+/** A time slot as it is read: 「10:00〜12:00」. */
+const timeSlotOf = ({ startTime, endTime }: ModelsTimeSlot): string =>
+  `${startTime}〜${endTime}`
+
 /**
- * What a customer wants the salons to keep in mind, as they read it: whom
+ * What a customer wants the salons to keep in mind, as it is read: whom
  * they wish for and whom they avoid, when they like to come, what they
  * like of a style, and how they like to be served. What was not said is
  * said to be missing.
  *
  * The address of a picture is a link and no picture: the page loads
- * nothing from a site nobody has looked at.
+ * nothing from a site nobody has looked at. A stored value that is no
+ * address of the web is text.
  */
 export const PreferencesDetails = ({
   preferences,
-  staff,
+  staffNames,
 }: PreferencesDetailsProps) => {
-  const wished = staffNamed(
+  const wished = staffNames(
     preferences.preferredStaffId === null ? [] : [preferences.preferredStaffId],
-    staff,
   )
   const style = preferences.stylePreferences
   const images = style?.inspirationImages ?? []
@@ -44,7 +54,7 @@ export const PreferencesDetails = ({
         { term: '指名したいスタッフ', description: listed(wished) },
         {
           term: '避けたいスタッフ',
-          description: listed(staffNamed(preferences.avoidStaffIds, staff)),
+          description: listed(staffNames(preferences.avoidStaffIds)),
         },
         {
           term: '希望する時間帯',

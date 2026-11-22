@@ -1,5 +1,5 @@
 import type { ModelsCustomerAllergyResponse } from '@beauty-salon-frontend/api-client'
-import { EARLIEST_DAY } from '@beauty-salon-frontend/salon-screens'
+import { EARLIEST_DAY } from '@beauty-salon-frontend/fields'
 import {
   Form,
   type FormErrors,

@@ -72,12 +72,22 @@ describe('readAttempt', () => {
       })
     })
 
-    it.each([
+    it.each<[string, string]>([
       ['', 'メールアドレスを入力してください。'],
       ['   ', 'メールアドレスを入力してください。'],
-      ['hanako', 'メールアドレスの形式で入力してください。'],
-      ['hanako@', 'メールアドレスの形式で入力してください。'],
-      ['hanako @example.com', 'メールアドレスの形式で入力してください。'],
+      [
+        'hanako',
+        'メールアドレスは、hanako@example.com のような形で入力してください。',
+      ],
+      [
+        'hanako@',
+        'メールアドレスは、hanako@example.com のような形で入力してください。',
+      ],
+      [
+        'hanako @example.com',
+        'メールアドレスは、hanako@example.com のような形で入力してください。',
+      ],
+      [`${'a'.repeat(244)}@example.com`, '255 文字以内で入力してください。'],
     ])('should say of the address "%s": %s', (email, message) => {
       // Act
       const read = readAttempt(
@@ -232,7 +242,8 @@ describe('afterAttempt', () => {
       step: { type: 'credentials' },
       message: undefined,
       errors: {
-        email: 'メールアドレスの形式で入力してください。',
+        email:
+          'メールアドレスは、hanako@example.com のような形で入力してください。',
         password: 'パスワードを確かめて、入力し直してください。',
         twoFactorCode: undefined,
       },
@@ -262,7 +273,9 @@ describe('afterAttempt', () => {
 
     // Assert
     expect(state.step).toEqual({ type: 'credentials' })
-    expect(state.errors.email).toBe('メールアドレスの形式で入力してください。')
+    expect(state.errors.email).toBe(
+      'メールアドレスは、hanako@example.com のような形で入力してください。',
+    )
   })
 
   it.each([[[]], [['rememberMe']]])(

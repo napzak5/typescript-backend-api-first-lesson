@@ -7,6 +7,11 @@ import type {
   ModelsSalonResponse,
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import {
+  alternativePhoneError,
+  emailError,
+  phoneError,
+} from '@beauty-salon-frontend/fields'
 import { linesOf } from '@beauty-salon-frontend/preferences'
 import {
   aboutTheAttempt,
@@ -19,7 +24,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
-import { emailError, phoneError } from '../customers/customer-form'
 import { tagsIn } from '../customers/customer-ledger'
 import { numberOf } from '../treatments/treatment-form'
 import type { SalonChange } from './settings-api'
@@ -231,10 +235,7 @@ const readWhole = (values: FormData): Whole => {
       longitude === undefined ? LONGITUDE_ERROR : undefined,
     ),
     ...errorAt('phoneNumber', phoneError(phoneNumber)),
-    ...errorAt(
-      'alternativePhone',
-      alternativePhone === null ? undefined : phoneError(alternativePhone),
-    ),
+    ...errorAt('alternativePhone', alternativePhoneError(alternativePhone)),
     ...errorAt('email', emailError(email)),
     ...errorAt('websiteUrl', linkError(websiteUrl)),
     ...errorAt('logoUrl', linkError(logoUrl)),

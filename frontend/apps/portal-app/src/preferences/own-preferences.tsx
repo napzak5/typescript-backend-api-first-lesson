@@ -1,5 +1,9 @@
 import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import {
+  PreferencesDetails,
+  staffNamed,
+} from '@beauty-salon-frontend/preferences'
+import {
   ButtonLink,
   Card,
   LoadingIndicator,
@@ -7,7 +11,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
-import { PreferencesDetails } from './components/preferences-details/preferences-details'
 import { OWN_PREFERENCES, readOwnPreferences } from './preferences-api'
 
 /**
@@ -33,7 +36,10 @@ export const OwnPreferences = () => {
         ))
         .with({ type: 'found' }, ({ preferences, staff }) => (
           <>
-            <PreferencesDetails preferences={preferences} staff={staff} />
+            <PreferencesDetails
+              preferences={preferences}
+              staffNames={(ids) => staffNamed(ids, staff)}
+            />
             <ButtonLink href='/mypage/preferences'>
               好みの設定を変更する
             </ButtonLink>

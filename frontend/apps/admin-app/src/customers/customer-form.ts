@@ -5,12 +5,29 @@ import {
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
 import type {
-  ModelsCustomerBasicPreferences,
   ModelsCustomerCreateRequest,
   ModelsCustomerResponse,
   ModelsCustomerUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { EARLIEST_DAY, isDay } from '@beauty-salon-frontend/salon-screens'
+import {
+  alternativePhoneError,
+  basicPreferencesIn,
+  birthDateError,
+  CUSTOMER_LENGTHS,
+  choiceOf,
+  customerControlOf,
+  customerRefusalOf,
+  emailError,
+  firstNameError,
+  GENDERS,
+  lastNameError,
+  lengthErrors,
+  PREFERENCE_NOTES,
+  PREFERRED_SERVICES,
+  phoneError,
+  shownBasicPreferencesOf,
+  UNLISTED_MESSAGE,
+} from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormRead,
@@ -21,11 +38,8 @@ import {
   textOrNull,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import * as z from 'zod/mini'
 import {
-  CATEGORIES,
   CUSTOMER_STATUSES,
-  GENDERS,
   HAIR_THICKNESSES,
   HAIR_TYPES,
   SCALP_CONDITIONS,
@@ -39,12 +53,6 @@ import { customerNameOf } from './customers-api'
  * to change one, and what it says about the answers. A control is named as
  * the property of the request is.
  */
-
-/** The control of the kinds of service a customer likes: the property inside `preferences` */
-export const PREFERRED_SERVICES = 'preferences.preferredServices'
-
-/** The control of what else a customer wants a salon to know */
-export const PREFERENCE_NOTES = 'preferences.notes'
 
 /** The control of the customer who referred this one: their ID, chosen from the ledger */
 export const REFERRER = 'referredBy'
@@ -82,98 +90,10 @@ export const referrerNameOf = (referrer: Referrer): string =>
 /** What the form holds: every property of a customer */
 type Whole = ModelsCustomerCreateRequest
 
-const MAX_NAME_LENGTH = 100
-const MAX_EMAIL_LENGTH = 255
-const MAX_PHONE_LENGTH = 20
-const MIN_PHONE_DIGITS = 10
-
-/** The lengths of the values that may be left empty, under the names of their controls */
-const MAX_LENGTHS: Record<string, number> = {
-  lastNameKana: 100,
-  firstNameKana: 100,
-  postalCode: 10,
-  prefecture: 50,
-  city: 100,
-  address: 255,
-  building: 255,
-  occupation: 100,
+/** The lengths of the values that may be left empty, under the names of their controls: those of a customer, and the referral code that the ledger alone holds */
+const LENGTHS: Readonly<Record<string, number>> = {
+  ...CUSTOMER_LENGTHS,
   referralCode: 50,
-}
-
-const UNLISTED = '選択肢から選んでください。'
-
-export const tooLong = (most: number): string =>
-  `${most} 文字以内で入力してください。`
-
-export const nameError = (name: string, missing: string): string | undefined =>
-  match(name.length)
-    .with(0, () => missing)
-    .when(
-      (length) => length > MAX_NAME_LENGTH,
-      () => tooLong(MAX_NAME_LENGTH),
-    )
-    .otherwise(() => undefined)
-
-const emailSchema = z.email()
-
-export const emailError = (email: string): string | undefined =>
-  match(email)
-    .with('', () => 'メールアドレスを入力してください。')
-    .when(
-      (text) => text.length > MAX_EMAIL_LENGTH,
-      () => tooLong(MAX_EMAIL_LENGTH),
-    )
-    .when(
-      (text) => !emailSchema.safeParse(text).success,
-      () =>
-        'メールアドレスは、hanako@example.com のような形で入力してください。',
-    )
-    .otherwise(() => undefined)
-
-/** What the API takes for a phone number: digits with the usual separators, ten digits or more. */
-export const isPhoneNumber = (text: string): boolean =>
-  text.length <= MAX_PHONE_LENGTH &&
-  /^[\d\s\-+()]+$/.test(text) &&
-  text.replace(/\D/g, '').length >= MIN_PHONE_DIGITS
-
-export const PHONE_MALFORMED =
-  '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。'
-
-export const phoneError = (phoneNumber: string): string | undefined =>
-  match(phoneNumber)
-    .with('', () => '電話番号を入力してください。')
-    .when(
-      (text) => !isPhoneNumber(text),
-      () => PHONE_MALFORMED,
-    )
-    .otherwise(() => undefined)
-
-const BIRTH_DATE_OUT_OF_RANGE =
-  '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。'
-
-/** One of the values of an enum, or nothing for a control left empty; `undefined` for what is none of them. */
-const choiceOf = <Value extends string>(
-  values: readonly Value[],
-  text: string,
-): Value | null | undefined =>
-  text === '' ? null : values.find((value) => value === text)
-
-/**
- * What a customer likes, as it is compared and sent: the kinds in the order
- * of the contract, and nothing at all (`null`) when no kind is chosen and
- * nothing is written.
- */
-const preferencesOf = (
-  chosen: readonly string[],
-  notes: string | null,
-): ModelsCustomerBasicPreferences | null => {
-  const preferredServices = CATEGORIES.filter((category) =>
-    chosen.includes(category),
-  )
-
-  return preferredServices.length === 0 && notes === null
-    ? null
-    : { preferredServices, notes }
 }
 
 /**
@@ -200,39 +120,25 @@ const readWhole = (
   const hairThickness = choiceOf(HAIR_THICKNESSES, text('hairThickness'))
   const scalpCondition = choiceOf(SCALP_CONDITIONS, text('scalpCondition'))
   const found: Record<string, string | undefined> = {
-    lastName: nameError(lastName, '姓を入力してください。'),
-    firstName: nameError(firstName, '名を入力してください。'),
+    lastName: lastNameError(lastName),
+    firstName: firstNameError(firstName),
     email: emailError(email),
     phoneNumber: phoneError(phoneNumber),
-    alternativePhone:
-      alternativePhone === null || isPhoneNumber(alternativePhone)
-        ? undefined
-        : PHONE_MALFORMED,
-    birthDate:
-      birthDate === null ||
-      (isDay(birthDate) && birthDate >= EARLIEST_DAY && birthDate <= today)
-        ? undefined
-        : BIRTH_DATE_OUT_OF_RANGE,
-    gender: gender === undefined ? UNLISTED : undefined,
+    alternativePhone: alternativePhoneError(alternativePhone),
+    birthDate: birthDateError(birthDate, today),
+    gender: gender === undefined ? UNLISTED_MESSAGE : undefined,
     membershipTier:
       membershipTier === undefined || membershipTier === null
-        ? UNLISTED
+        ? UNLISTED_MESSAGE
         : undefined,
     customerStatus:
       customerStatus === undefined || customerStatus === null
-        ? UNLISTED
+        ? UNLISTED_MESSAGE
         : undefined,
-    hairType: hairType === undefined ? UNLISTED : undefined,
-    hairThickness: hairThickness === undefined ? UNLISTED : undefined,
-    scalpCondition: scalpCondition === undefined ? UNLISTED : undefined,
-    ...Object.fromEntries(
-      Object.entries(MAX_LENGTHS).map(
-        ([name, most]): [string, string | undefined] => [
-          name,
-          (optional(name) ?? '').length > most ? tooLong(most) : undefined,
-        ],
-      ),
-    ),
+    hairType: hairType === undefined ? UNLISTED_MESSAGE : undefined,
+    hairThickness: hairThickness === undefined ? UNLISTED_MESSAGE : undefined,
+    scalpCondition: scalpCondition === undefined ? UNLISTED_MESSAGE : undefined,
+    ...lengthErrors(LENGTHS, optional),
   }
   const errors = Object.fromEntries(
     Object.entries(found).flatMap(([name, error]): [string, string][] =>
@@ -272,12 +178,7 @@ const readWhole = (
       gender,
       occupation: optional('occupation'),
       membershipTier,
-      preferences: preferencesOf(
-        values
-          .getAll(PREFERRED_SERVICES)
-          .flatMap((value) => (typeof value === 'string' ? [value] : [])),
-        optional(PREFERENCE_NOTES),
-      ),
+      preferences: basicPreferencesIn(values),
       notes: optional('notes'),
       internalNotes: optional('internalNotes'),
       tags: tagsIn(textOf(values, 'tags')),
@@ -301,16 +202,6 @@ export const readCustomerEntry = (
   today: string,
 ): FormRead<ModelsCustomerCreateRequest, Record<string, string>> =>
   readWhole(values, today)
-/** What the form shows of what a customer likes: `null` shows as nothing chosen and nothing written. */
-const shownPreferencesOf = (
-  preferences: ModelsCustomerBasicPreferences | null,
-): ModelsCustomerBasicPreferences | null =>
-  preferences === null
-    ? null
-    : preferencesOf(
-        preferences.preferredServices,
-        textOrNull(preferences.notes),
-      )
 /**
  * The properties a form was sent with other values for than the customer
  * it was opened with. A value is compared as the form reads it: without
@@ -361,7 +252,7 @@ const changesOf = (
   ...(sent.membershipTier === shown.membershipTier
     ? {}
     : { membershipTier: sent.membershipTier }),
-  ...(same(sent.preferences, shownPreferencesOf(shown.preferences))
+  ...(same(sent.preferences, shownBasicPreferencesOf(shown.preferences))
     ? {}
     : { preferences: sent.preferences }),
   ...(sent.notes === textOrNull(shown.notes) ? {} : { notes: sent.notes }),
@@ -442,17 +333,7 @@ export type CustomerEntryAttempt = Exclude<
 
 /** The control a value of the request is entered at: every kind of service is chosen at one, every tag at one. */
 const controlOf = (field: string): string =>
-  match(field)
-    .when(
-      (name) =>
-        name === 'preferences' || name.startsWith(`${PREFERRED_SERVICES}.`),
-      () => PREFERRED_SERVICES,
-    )
-    .when(
-      (name) => name.startsWith('tags.'),
-      () => 'tags',
-    )
-    .otherwise((name) => name)
+  field.startsWith('tags.') ? 'tags' : customerControlOf(field)
 
 /** The controls of the form */
 const CONTROLS: readonly string[] = [
@@ -496,13 +377,12 @@ const CONTROLS: readonly string[] = [
  */
 const messageAt = (control: string, rule: string): string =>
   match(control)
-    .with('birthDate', () => BIRTH_DATE_OUT_OF_RANGE)
     .with(REFERRER, () =>
       rule === 'circular'
         ? 'お客様ご自身は、紹介元に選べません。ほかのお客様を選んでください。'
         : '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
     )
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .otherwise(() => customerRefusalOf(control, rule) ?? REFUSED_VALUE_MESSAGE)
 
 const DUPLICATES: Record<'email' | 'referralCode', string> = {
   email:

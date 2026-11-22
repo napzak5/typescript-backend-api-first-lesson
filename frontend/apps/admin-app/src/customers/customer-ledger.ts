@@ -3,10 +3,10 @@ import type {
   ModelsCustomerStatusType,
   ModelsMembershipTierType,
 } from '@beauty-salon-frontend/api-client'
+import { isDay } from '@beauty-salon-frontend/fields'
 import {
   dayAfter,
   daysErrorsOf,
-  isDay,
   keywordIn,
   LONGEST_KEYWORD,
   startOfDayAt,

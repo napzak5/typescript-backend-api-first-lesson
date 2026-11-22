@@ -10,6 +10,7 @@ import type {
   ModelsReviewResponse,
   ModelsReviewUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { tooLong } from '@beauty-salon-frontend/fields'
 import {
   linesOf,
   pictureAddressesError,
@@ -164,7 +165,7 @@ const saidOf = (entered: Entered): Said => ({
 })
 
 const OVERALL_RATING_MISSING = '総合の評価を選んでください。'
-const TITLE_TOO_LONG = `${MAX_TITLE_LENGTH} 文字以内で入力してください。`
+const TITLE_TOO_LONG = tooLong(MAX_TITLE_LENGTH)
 const TOO_MANY_IMAGES = `画像は ${MAX_IMAGES} 個までです。行を減らしてください。`
 
 /** What cannot be right of what the form was sent with, under the names of the controls. */

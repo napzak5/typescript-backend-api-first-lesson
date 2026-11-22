@@ -1,12 +1,14 @@
-import {
+import type {
   ModelsCustomerGenderType,
-  type ModelsCustomerProfileResponse,
-  type ModelsHairThicknessType,
-  type ModelsHairType,
-  type ModelsMembershipTierType,
-  type ModelsScalpConditionType,
+  ModelsCustomerProfileResponse,
+  ModelsHairThicknessType,
+  ModelsHairType,
+  ModelsMembershipTierType,
+  ModelsScalpConditionType,
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
+import { GENDERS, SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
+import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 
 const TIER_NAMES: Record<ModelsMembershipTierType, string> = {
   regular: 'レギュラー',
@@ -38,17 +40,15 @@ const CATEGORY_NAMES: Record<ModelsServiceCategoryType, string> = {
   other: 'その他',
 }
 
-type Option = { value: string; label: string }
-
 /** What the form offers as a gender, in the order of the contract. */
-export const GENDER_OPTIONS: readonly Option[] = Object.values(
-  ModelsCustomerGenderType,
-).map((gender) => ({ value: gender, label: GENDER_NAMES[gender] }))
+export const GENDER_OPTIONS: readonly ChoiceOption[] = GENDERS.map(
+  (gender) => ({ value: gender, label: GENDER_NAMES[gender] }),
+)
 
 /** The kinds of service the form offers, in the order of the contract. */
-export const CATEGORY_OPTIONS: readonly Option[] = Object.values(
-  ModelsServiceCategoryType,
-).map((category) => ({ value: category, label: CATEGORY_NAMES[category] }))
+export const CATEGORY_OPTIONS: readonly ChoiceOption[] = SERVICE_CATEGORIES.map(
+  (category) => ({ value: category, label: CATEGORY_NAMES[category] }),
+)
 
 const HAIR_TYPE_NAMES: Record<ModelsHairType, string> = {
   straight: 'ストレート',
@@ -150,9 +150,9 @@ export const genderNameOf = (gender: ModelsCustomerGenderType): string =>
 export const categoryNamesOf = (
   categories: readonly ModelsServiceCategoryType[],
 ): string[] =>
-  Object.values(ModelsServiceCategoryType)
-    .filter((category) => categories.includes(category))
-    .map((category) => CATEGORY_NAMES[category])
+  SERVICE_CATEGORIES.filter((category) => categories.includes(category)).map(
+    (category) => CATEGORY_NAMES[category],
+  )
 
 /** The ways a customer lets a salon reach them: those that are allowed, by name. */
 export const contactsOf = ({

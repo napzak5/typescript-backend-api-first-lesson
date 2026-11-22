@@ -2,6 +2,7 @@ import {
   CHECK_THE_VALUES_MESSAGE,
   NOT_SENT_MESSAGE,
 } from '@beauty-salon-frontend/answers'
+import { EMAIL_MALFORMED, emailError } from '@beauty-salon-frontend/fields'
 import {
   newPasswordError,
   refusedPasswordMessage,
@@ -13,21 +14,7 @@ import {
   textOf,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import * as z from 'zod/mini'
 import type { Refusal, RefusedValue } from './account-api'
-
-const EMAIL_MISSING = 'メールアドレスを入力してください。'
-const EMAIL_MALFORMED = 'メールアドレスの形式で入力してください。'
-const emailSchema = z.email().check(z.maxLength(255))
-
-const emailError = (email: string): string | undefined =>
-  match(email)
-    .with('', () => EMAIL_MISSING)
-    .when(
-      (address) => !emailSchema.safeParse(address).success,
-      () => EMAIL_MALFORMED,
-    )
-    .otherwise(() => undefined)
 
 /**
  * The address of the control `email`, without the spaces around it, which

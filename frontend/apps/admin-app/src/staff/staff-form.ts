@@ -12,7 +12,16 @@ import type {
   ModelsStaffResponse,
   ModelsStaffUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { isDay } from '@beauty-salon-frontend/salon-screens'
+import {
+  alternativePhoneError,
+  emailError,
+  firstNameError,
+  isDay,
+  lastNameError,
+  lengthErrors,
+  phoneError,
+  tooLong,
+} from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormRead,
@@ -22,14 +31,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { yenOf } from '../bookings/booking-entry'
-import {
-  emailError,
-  isPhoneNumber,
-  nameError,
-  PHONE_MALFORMED,
-  phoneError,
-  tooLong,
-} from '../customers/customer-form'
 import { numberOf } from '../treatments/treatment-form'
 import {
   controlOf,
@@ -127,8 +128,8 @@ const readWhole = (values: FormData): FormRead<Whole> => {
   )
   const bufferTimeAfter = wholeNumberIn(text('bufferTimeAfter'), 0, MOST_BUFFER)
   const found: Record<string, string | undefined> = {
-    lastName: nameError(lastName, '姓を入力してください。'),
-    firstName: nameError(firstName, '名を入力してください。'),
+    lastName: lastNameError(lastName),
+    firstName: firstNameError(firstName),
     displayName: match(displayName.length)
       .with(0, () => '表示名を入力してください。')
       .when(
@@ -138,10 +139,7 @@ const readWhole = (values: FormData): FormRead<Whole> => {
       .otherwise(() => undefined),
     email: emailError(email),
     phoneNumber: phoneError(phoneNumber),
-    alternativePhone:
-      alternativePhone === null || isPhoneNumber(alternativePhone)
-        ? undefined
-        : PHONE_MALFORMED,
+    alternativePhone: alternativePhoneError(alternativePhone),
     level: level === undefined ? 'レベルを選んでください。' : undefined,
     hireDate:
       hireDate === null || isDay(hireDate) ? undefined : HIRE_DATE_OUT_OF_RANGE,
@@ -151,14 +149,7 @@ const readWhole = (values: FormData): FormRead<Whole> => {
       maxConcurrentBookings === undefined ? CONCURRENT_ERROR : undefined,
     bufferTimeBefore: bufferTimeBefore === undefined ? BUFFER_ERROR : undefined,
     bufferTimeAfter: bufferTimeAfter === undefined ? BUFFER_ERROR : undefined,
-    ...Object.fromEntries(
-      Object.entries(LONGEST).map(
-        ([name, most]): [string, string | undefined] => [
-          name,
-          (optional(name) ?? '').length > most ? tooLong(most) : undefined,
-        ],
-      ),
-    ),
+    ...lengthErrors(LONGEST, optional),
   }
   const errors = {
     ...Object.fromEntries(

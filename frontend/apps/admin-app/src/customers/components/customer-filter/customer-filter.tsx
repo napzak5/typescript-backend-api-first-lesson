@@ -1,3 +1,4 @@
+import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/fields'
 import {
   countNarrowing,
   FilterForm,
@@ -85,8 +86,8 @@ export const CustomerFilter = ({
             name='from'
             autoComplete='off'
             type='date'
-            min='1900-01-01'
-            max='2999-12-31'
+            min={EARLIEST_DAY}
+            max={LATEST_DAY}
             value={values.from}
             error={errors['from']}
             onChange={(event) => hold('from', event.target.value)}
@@ -96,8 +97,8 @@ export const CustomerFilter = ({
             name='to'
             autoComplete='off'
             type='date'
-            min='1900-01-01'
-            max='2999-12-31'
+            min={EARLIEST_DAY}
+            max={LATEST_DAY}
             value={values.to}
             error={errors['to']}
             onChange={(event) => hold('to', event.target.value)}

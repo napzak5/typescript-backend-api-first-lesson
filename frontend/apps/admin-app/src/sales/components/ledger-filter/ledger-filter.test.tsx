@@ -53,8 +53,11 @@ describe('LedgerFilter', () => {
     )
     expect(from()).toHaveValue('2026-11-20')
     expect(to()).toHaveValue('2026-11-20')
-    expect(from()).toHaveAttribute('type', 'date')
-    expect(to()).toHaveAttribute('max', '2999-12-31')
+    for (const day of [from(), to()]) {
+      expect(day).toHaveAttribute('type', 'date')
+      expect(day).toHaveAttribute('min', '1900-01-01')
+      expect(day).toHaveAttribute('max', '2999-12-31')
+    }
     expect(status()).toHaveValue('')
     expect(
       within(status())

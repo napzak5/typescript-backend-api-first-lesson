@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { staffLabelOf, staffNamed } from '../../staff-choices'
 import {
   noPreferences,
   preferences,
@@ -9,9 +10,12 @@ import {
 import { PreferencesDetails } from './preferences-details'
 
 const meta: Meta<typeof PreferencesDetails> = {
-  title: 'Portal/Preferences/PreferencesDetails',
+  title: 'Preferences/PreferencesDetails',
   component: PreferencesDetails,
-  args: { preferences, staff },
+  args: {
+    preferences,
+    staffNames: (ids) => staffNamed(ids, staff),
+  },
 }
 
 export default meta
@@ -31,9 +35,24 @@ export const Wordy: Story = {
   args: { preferences: wordyPreferences },
 }
 
-/** The member who was wished for, and one of those to avoid, are no longer shown by their salons */
+/** The member who was wished for, and one of those to avoid, are no longer shown by their salons: the screen leaves them out */
 export const StaffThatLeft: Story = {
   args: { preferences: preferencesOfStaffThatLeft },
+}
+
+/** The same preferences on a screen that says of a member nobody shows any more that there is one */
+export const StaffThatLeftSaidSo: Story = {
+  args: {
+    preferences: preferencesOfStaffThatLeft,
+    staffNames: (ids) =>
+      ids.map((id) => {
+        const member = staff.find((choice) => choice.id === id)
+
+        return member === undefined
+          ? '一覧にないスタッフ'
+          : staffLabelOf(member)
+      }),
+  },
 }
 
 /** A stored value that is no address of the web is text, and no link */

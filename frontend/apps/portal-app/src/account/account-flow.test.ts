@@ -40,12 +40,12 @@ describe('readEmail', () => {
     [
       'a value that is no address',
       { email: 'hanako@' },
-      'メールアドレスの形式で入力してください。',
+      'メールアドレスは、hanako@example.com のような形で入力してください。',
     ],
     [
       'an address longer than the API stores',
       { email: `${'a'.repeat(244)}@example.com` },
-      'メールアドレスの形式で入力してください。',
+      '255 文字以内で入力してください。',
     ],
   ])('should say what to do about %s', (_case, values, error) => {
     expect(readEmail(formOf(values))).toEqual({
@@ -131,7 +131,8 @@ describe('readRegistration', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        email: 'メールアドレスの形式で入力してください。',
+        email:
+          'メールアドレスは、hanako@example.com のような形で入力してください。',
         password: TOO_SHORT,
       },
     })
@@ -171,7 +172,11 @@ describe('afterRefusal', () => {
       'このパスワードは使えません。別のパスワードを入力してください。',
     ],
     ['newPassword', 'too_small', TOO_SHORT],
-    ['email', 'invalid_format', 'メールアドレスの形式で入力してください。'],
+    [
+      'email',
+      'invalid_format',
+      'メールアドレスは、hanako@example.com のような形で入力してください。',
+    ],
   ])(
     'should say at the control %s what the API means by %s',
     (field, rule, error) => {
@@ -194,7 +199,8 @@ describe('afterRefusal', () => {
     ).toEqual({
       message: undefined,
       errors: {
-        email: 'メールアドレスの形式で入力してください。',
+        email:
+          'メールアドレスは、hanako@example.com のような形で入力してください。',
         password: TOO_SHORT,
       },
     })
@@ -246,6 +252,8 @@ describe('messageAfter', () => {
         type: 'invalid',
         values: [{ field: 'email', rule: 'invalid_format' }],
       }),
-    ).toBe('メールアドレスの形式で入力してください。')
+    ).toBe(
+      'メールアドレスは、hanako@example.com のような形で入力してください。',
+    )
   })
 })

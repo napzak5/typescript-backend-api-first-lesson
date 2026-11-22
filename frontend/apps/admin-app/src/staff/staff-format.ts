@@ -3,9 +3,8 @@ import {
   ModelsStaffLevelType,
   type ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
-import { NONE } from '@beauty-salon-frontend/ui'
+import { type ChoiceOption, NONE } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { Option } from '../customers/customer-format'
 import type { TreatmentRemovalSays } from '../treatments/treatment-format'
 import type { StaffRemoval } from './staff-api'
 
@@ -30,7 +29,7 @@ const LEVEL_NAMES: Record<ModelsStaffLevelType, string> = {
 export const levelNameOf = (level: ModelsStaffLevelType): string =>
   LEVEL_NAMES[level]
 
-export const LEVEL_OPTIONS: readonly Option[] = LEVELS.map((level) => ({
+export const LEVEL_OPTIONS: readonly ChoiceOption[] = LEVELS.map((level) => ({
   value: level,
   label: LEVEL_NAMES[level],
 }))
