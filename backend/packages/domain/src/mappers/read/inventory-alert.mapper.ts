@@ -1,13 +1,21 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
-import type { InventoryAlert } from '../../business-logic/inventory-alert/_shared/alerts'
+import {
+  type InventoryAlert,
+  type InventoryAlertList,
+  subjectIdOf,
+} from '../../business-logic/inventory-alert/_shared/alerts'
 import type {
   ApiInventoryAlertAcknowledgementResponse,
   ApiInventoryAlertResponse,
+  ApiInventoryAlertSummaryResponse,
   DbInventoryAlertAcknowledgement,
+  InventoryAlertSeverity,
 } from '../../models/inventory-alert'
+import type { ApiPage, Paging } from '../../models/page'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPageEndingAt } from './page'
 
 /**
  * An alert of the stock, as it was worked out, → API response. What changes
@@ -109,5 +117,46 @@ export const InventoryAlertReadMapper = {
     }
 
     return Result.success(apiAlerts)
+  },
+
+  /**
+   * The alerts of a page as a page of the list. The cursor of the page
+   * after it is what its last alert is about: its stock row, or its
+   * product.
+   */
+  toApiInventoryAlertPage(
+    { alerts, total, hasMore }: InventoryAlertList,
+    paging: Paging<string>,
+  ): Result<ApiPage<ApiInventoryAlertResponse>, DomainError> {
+    const last = alerts.at(-1)
+
+    return Result.map(
+      InventoryAlertReadMapper.toApiInventoryAlerts(alerts),
+      (data) =>
+        toApiPageEndingAt(
+          data,
+          { total, hasMore },
+          paging,
+          last === undefined ? null : subjectIdOf(last),
+        ),
+    )
+  },
+
+  /** The counts of the alerts of a salon: all of them, those of each severity, and those no acknowledgement holds for. */
+  toApiInventoryAlertSummary(
+    alerts: InventoryAlert[],
+  ): ApiInventoryAlertSummaryResponse {
+    const counted = (severity: InventoryAlertSeverity): number =>
+      alerts.filter((alert) => alert.severity === severity).length
+
+    return {
+      totalAlerts: alerts.length,
+      criticalAlerts: counted('critical'),
+      warningAlerts: counted('warning'),
+      infoAlerts: counted('info'),
+      unacknowledged: alerts.filter(
+        ({ acknowledgement }) => acknowledgement === null,
+      ).length,
+    }
   },
 }

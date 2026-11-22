@@ -1,15 +1,23 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import type { ApiPage, Paging } from '../../models/page'
+import type { ProductId } from '../../models/product'
 import type {
   ApiPurchaseOrderItem,
   ApiPurchaseOrderResponse,
   ApiReorderSuggestionResponse,
   DbPurchaseOrderItem,
   DbReorderSuggestion,
+  PurchaseOrderId,
   PurchaseOrderWithItems,
 } from '../../models/purchase-order'
+import type {
+  PurchaseOrderListing,
+  ReorderSuggestionListing,
+} from '../../repositories/purchase-order.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPage, toApiPageEndingAt } from './page'
 
 /**
  * A row of `purchase_orders` with its rows of `purchase_order_items` → API
@@ -200,5 +208,45 @@ export const PurchaseOrderReadMapper = {
       apiOrders.push(mapped.data)
     }
     return Result.success(apiOrders)
+  },
+
+  /** The orders a list found as a page of it. */
+  toApiPurchaseOrderPage(
+    {
+      orders,
+      total,
+      hasMore,
+    }: Extract<PurchaseOrderListing, { type: 'listed' }>,
+    paging: Paging<PurchaseOrderId>,
+  ): Result<ApiPage<ApiPurchaseOrderResponse>, DomainError> {
+    return Result.map(
+      PurchaseOrderReadMapper.toApiPurchaseOrders(orders),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
+  },
+
+  /**
+   * The suggestions a list found as a page of it. A suggestion has no ID
+   * of its own: the cursor of the page after it is the product of its
+   * last suggestion.
+   */
+  toApiReorderSuggestionPage(
+    {
+      suggestions,
+      total,
+      hasMore,
+    }: Extract<ReorderSuggestionListing, { type: 'listed' }>,
+    paging: Paging<ProductId>,
+  ): Result<ApiPage<ApiReorderSuggestionResponse>, DomainError> {
+    return Result.map(
+      PurchaseOrderReadMapper.toApiReorderSuggestions(suggestions),
+      (data) =>
+        toApiPageEndingAt(
+          data,
+          { total, hasMore },
+          paging,
+          data.at(-1)?.productId ?? null,
+        ),
+    )
   },
 }

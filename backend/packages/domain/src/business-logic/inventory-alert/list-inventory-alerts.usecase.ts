@@ -1,12 +1,13 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { InventoryAlertReadMapper } from '../../mappers/read/inventory-alert.mapper'
+import { InventoryAlertWriteMapper } from '../../mappers/write/inventory-alert.mapper'
 import type { Actor } from '../../models/auth'
 import type {
   ApiInventoryAlertResponse,
   DbInventoryAlertFacts,
 } from '../../models/inventory-alert'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import type { InventoryAlertFactsAfter } from '../../repositories/inventory-alert.repository'
 import { inventoryAlertSearchRequestSchema } from '../../schemas/inventory-alert.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -18,25 +19,17 @@ import {
   alertsOf,
   matchesFilter,
   pageOfAlerts,
-  subjectIdOf,
 } from './_shared/alerts'
 import type { InventoryAlertUseCaseDependencies } from './_shared/dependencies'
 import { unknownTimeZone } from './_shared/refusals'
 
 const MESSAGE = 'Invalid inventory alert search'
 
-const DEFAULT_LIMIT = 20
-
 /** The facts of the first page, which begins nowhere in particular. */
 type FirstFacts = {
   type: 'listed'
   facts: DbInventoryAlertFacts
   after: null
-}
-
-export type InventoryAlertPage = {
-  data: ApiInventoryAlertResponse[]
-  meta: ApiPaginationMeta
 }
 
 export class ListInventoryAlertsUseCase {
@@ -61,7 +54,7 @@ export class ListInventoryAlertsUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<InventoryAlertPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiInventoryAlertResponse>, DomainError>> {
     const reach = inventoryReachOf(actor)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
@@ -77,15 +70,10 @@ export class ListInventoryAlertsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, salonId } = request.data
+    const { salonId, filter, ...paging } =
+      InventoryAlertWriteMapper.fromSearchRequest(request.data)
     if (!isWithin(reach, salonId)) {
       return Result.error(DomainErrors.forbidden())
-    }
-    const limit = request.data.limit ?? DEFAULT_LIMIT
-    const filter = {
-      alert: request.data.alert ?? null,
-      severity: request.data.severity ?? null,
-      acknowledged: request.data.acknowledged ?? null,
     }
 
     const { inventoryAlertRepository, salonRepository, clock } =
@@ -105,7 +93,7 @@ export class ListInventoryAlertsUseCase {
 
     const criteria = { salonId, lastExpiringDay: days.lastExpiringDay }
     const listed =
-      cursor === undefined
+      paging.after === null
         ? Result.map(
             await inventoryAlertRepository.listFacts(criteria),
             (facts): InventoryAlertFactsAfter | FirstFacts => ({
@@ -114,11 +102,11 @@ export class ListInventoryAlertsUseCase {
               after: null,
             }),
           )
-        : await inventoryAlertRepository.listFactsAfter(criteria, cursor)
+        : await inventoryAlertRepository.listFactsAfter(criteria, paging.after)
 
     return Result.flatMap(listed, (listing) =>
       match(listing)
-        .returnType<Result<InventoryAlertPage, DomainError>>()
+        .returnType<Result<ApiPage<ApiInventoryAlertResponse>, DomainError>>()
         .with({ type: 'cursorNotFound' }, () =>
           Result.error(
             DomainErrors.validation(MESSAGE, [
@@ -130,29 +118,18 @@ export class ListInventoryAlertsUseCase {
             ]),
           ),
         )
-        .with({ type: 'listed' }, ({ facts, after }) => {
-          const alerts = alertsOf(facts, days).filter((alert) =>
-            matchesFilter(alert, filter),
-          )
-          const page = pageOfAlerts(alerts, after, limit)
-          const last = page.alerts.at(-1)
-
-          return Result.map(
-            InventoryAlertReadMapper.toApiInventoryAlerts(page.alerts),
-            (data) => ({
-              data,
-              meta: {
-                total: alerts.length,
-                limit,
-                hasMore: page.hasMore,
-                cursor: cursor ?? null,
-                nextCursor:
-                  page.hasMore && last !== undefined ? subjectIdOf(last) : null,
-                prevCursor: null,
-              },
-            }),
-          )
-        })
+        .with({ type: 'listed' }, ({ facts, after }) =>
+          InventoryAlertReadMapper.toApiInventoryAlertPage(
+            pageOfAlerts(
+              alertsOf(facts, days).filter((alert) =>
+                matchesFilter(alert, filter),
+              ),
+              after,
+              paging.limit,
+            ),
+            paging,
+          ),
+        )
         .exhaustive(),
     )
   }

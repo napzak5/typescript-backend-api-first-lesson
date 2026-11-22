@@ -10,6 +10,7 @@ import {
 } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
+import type { SalonId } from './salon'
 
 // ID: a UUID that has been checked.
 export const inventoryIdSchema = uuidSchema.brand<'InventoryId'>()
@@ -85,6 +86,13 @@ type InventoryManagedColumn =
 export type DbNewInventory = DeepRequired<
   Omit<typeof inventory.$inferInsert, InventoryManagedColumn>
 >
+
+/**
+ * The stock row a request asks to add: the row, with its salon as the ID
+ * that was checked, by which the use case decides whether the actor
+ * reaches it.
+ */
+export type RequestedInventory = DbNewInventory & { salonId: SalonId }
 
 /**
  * What a change can write: what a request states of a stock row, but not

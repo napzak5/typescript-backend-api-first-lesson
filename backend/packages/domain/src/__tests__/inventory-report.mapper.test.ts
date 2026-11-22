@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { InventoryReportReadMapper } from '../mappers/read/inventory-report.mapper'
 import {
-  InventoryTransactionWriteMapper,
+  InventoryReportWriteMapper,
   STOCK_COUNT_REASON,
-} from '../mappers/write/inventory-transaction.mapper'
+} from '../mappers/write/inventory-report.mapper'
 import { staffIdSchema } from '../models/staff'
-import { inventoryStockCountRequestSchema } from '../schemas/inventory.schema'
+import {
+  inventoryStockCountRequestSchema,
+  inventoryValueReportRequestSchema,
+} from '../schemas/inventory.schema'
 import { STAFF_ID } from './auth-fixtures'
 import { SALON_ID } from './fixtures'
 import {
@@ -16,7 +19,7 @@ import {
   OTHER_INVENTORY_ID,
 } from './inventory-fixtures'
 
-describe('InventoryTransactionWriteMapper.fromStockCountRequest', () => {
+describe('InventoryReportWriteMapper.fromStockCountRequest', () => {
   const count = (reason: string | null) =>
     inventoryStockCountRequestSchema.parse({
       salonId: SALON_ID,
@@ -29,7 +32,7 @@ describe('InventoryTransactionWriteMapper.fromStockCountRequest', () => {
 
   it('writes what was counted as a quantity, in the order of the count, by the staff member', () => {
     expect(
-      InventoryTransactionWriteMapper.fromStockCountRequest(
+      InventoryReportWriteMapper.fromStockCountRequest(
         count('月末の棚卸し'),
         staffIdSchema.parse(STAFF_ID),
       ),
@@ -46,7 +49,7 @@ describe('InventoryTransactionWriteMapper.fromStockCountRequest', () => {
 
   it("records a count without a reason as a count's, by no staff member", () => {
     expect(
-      InventoryTransactionWriteMapper.fromStockCountRequest(count(null), null),
+      InventoryReportWriteMapper.fromStockCountRequest(count(null), null),
     ).toMatchObject({ reason: '棚卸しの差異', performedBy: null })
     expect(STOCK_COUNT_REASON).toBe('棚卸しの差異')
   })
@@ -59,9 +62,29 @@ describe('InventoryTransactionWriteMapper.fromStockCountRequest', () => {
     })
 
     expect(
-      InventoryTransactionWriteMapper.fromStockCountRequest(counted, null)
-        .items,
+      InventoryReportWriteMapper.fromStockCountRequest(counted, null).items,
     ).toEqual([{ inventoryId: INVENTORY_ID, countedQuantity: '99999999.99' }])
+  })
+})
+
+describe('InventoryReportWriteMapper.fromValueReportRequest', () => {
+  it('values the stock of the salon in every category when the request names none', () => {
+    expect(
+      InventoryReportWriteMapper.fromValueReportRequest(
+        inventoryValueReportRequestSchema.parse({ salonId: SALON_ID }),
+      ),
+    ).toStrictEqual({ salonId: SALON_ID, category: null })
+  })
+
+  it('narrows the report to the category the request names', () => {
+    expect(
+      InventoryReportWriteMapper.fromValueReportRequest(
+        inventoryValueReportRequestSchema.parse({
+          salonId: SALON_ID,
+          category: 'Hair Care',
+        }),
+      ),
+    ).toStrictEqual({ salonId: SALON_ID, category: 'Hair Care' })
   })
 })
 

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { PurchaseOrderWriteMapper } from '../../mappers/write/purchase-order.mapper'
 import type { Actor } from '../../models/auth'
 import {
   type ApiPurchaseOrderResponse,
@@ -40,12 +41,16 @@ export class CancelPurchaseOrderUseCase {
       return request
     }
 
+    const { cancellationReason } = PurchaseOrderWriteMapper.fromCancelRequest(
+      request.data,
+    )
+
     return resultOfChange(
       orderId.data,
       await this.dependencies.purchaseOrderRepository.cancel(
         reach,
         orderId.data,
-        request.data.cancellationReason,
+        cancellationReason,
       ),
       'an order is cancelled until it is delivered',
     )

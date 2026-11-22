@@ -3,9 +3,13 @@ import { z } from 'zod'
 import type {
   ApiInventoryTransactionResponse,
   DbInventoryTransaction,
+  InventoryTransactionId,
 } from '../../models/inventory'
+import type { ApiPage, Paging } from '../../models/page'
+import type { InventoryMovementListing } from '../../repositories/inventory.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * A row of `inventory_transactions` → API response. Property names are the
@@ -79,5 +83,20 @@ export const InventoryTransactionReadMapper = {
       apiRows.push(mapped.data)
     }
     return Result.success(apiRows)
+  },
+
+  /** The movements a list found as a page of it. */
+  toApiInventoryTransactionPage(
+    {
+      transactions,
+      total,
+      hasMore,
+    }: Extract<InventoryMovementListing, { type: 'listed' }>,
+    paging: Paging<InventoryTransactionId>,
+  ): Result<ApiPage<ApiInventoryTransactionResponse>, DomainError> {
+    return Result.map(
+      InventoryTransactionReadMapper.toApiInventoryTransactions(transactions),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

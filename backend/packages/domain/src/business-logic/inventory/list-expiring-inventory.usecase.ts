@@ -1,13 +1,16 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { InventoryReadMapper } from '../../mappers/read/inventory.mapper'
+import { InventoryWriteMapper } from '../../mappers/write/inventory.mapper'
 import type { Actor } from '../../models/auth'
+import type { ApiInventoryResponse } from '../../models/inventory'
+import type { ApiPage } from '../../models/page'
 import { inventoryExpiringSearchRequestSchema } from '../../schemas/inventory.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { isWithin } from '../booking/_shared/authorization'
 import { inventoryReachOf } from './_shared/authorization'
 import type { InventoryUseCaseDependencies } from './_shared/dependencies'
-import { EXPIRING_SOON_DAYS, lastExpiringDayOf } from './_shared/expiry'
-import { DEFAULT_LIMIT, type InventoryPage, pageOf } from './_shared/page'
-import { salonNotFound } from './_shared/refusals'
+import { lastExpiringDayOf } from './_shared/expiry'
+import { cursorNotFound, salonNotFound } from './_shared/refusals'
 
 const MESSAGE = 'Invalid expiring search'
 
@@ -28,7 +31,7 @@ export class ListExpiringInventoryUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<InventoryPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiInventoryResponse>, DomainError>> {
     const reach = inventoryReachOf(actor)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
@@ -45,12 +48,13 @@ export class ListExpiringInventoryUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, salonId } = request.data
+    const { days, ...place } = InventoryWriteMapper.fromExpiringSearchRequest(
+      request.data,
+    )
+    const { salonId } = place
     if (!isWithin(reach, salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
-    const limit = request.data.limit ?? DEFAULT_LIMIT
-    const days = request.data.days ?? EXPIRING_SOON_DAYS
 
     const { inventoryRepository, salonRepository, clock } = this.dependencies
     const found = await salonRepository.findById(salonId)
@@ -72,15 +76,15 @@ export class ListExpiringInventoryUseCase {
       )
     }
 
-    const listed = await inventoryRepository.listExpiring({
-      salonId,
-      limit,
-      after: cursor ?? null,
-      until,
-    })
+    const criteria = { ...place, until }
+    const listed = await inventoryRepository.listExpiring(criteria)
+    if (listed.type === 'error') {
+      return listed
+    }
+    if (listed.data === null) {
+      return Result.error(cursorNotFound(MESSAGE))
+    }
 
-    return Result.flatMap(listed, (rows) =>
-      pageOf(rows, { limit, cursor: cursor ?? null }, MESSAGE),
-    )
+    return InventoryReadMapper.toApiInventoryPage(listed.data, criteria)
   }
 }

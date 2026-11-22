@@ -1,8 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
-import type { ApiInventoryResponse, DbInventory } from '../../models/inventory'
+import type {
+  ApiInventoryResponse,
+  DbInventory,
+  InventoryId,
+} from '../../models/inventory'
+import type { ApiPage, Paging } from '../../models/page'
+import type { InventoryList } from '../../repositories/inventory.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * A row of `inventory` → API response. Property names are the column names;
@@ -81,5 +88,15 @@ export const InventoryReadMapper = {
       apiRows.push(mapped.data)
     }
     return Result.success(apiRows)
+  },
+
+  /** The stock rows a list found as a page of it. */
+  toApiInventoryPage(
+    { rows, total, hasMore }: InventoryList,
+    paging: Paging<InventoryId>,
+  ): Result<ApiPage<ApiInventoryResponse>, DomainError> {
+    return Result.map(InventoryReadMapper.toApiInventories(rows), (data) =>
+      toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

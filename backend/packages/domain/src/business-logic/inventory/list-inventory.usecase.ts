@@ -1,11 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { InventoryReadMapper } from '../../mappers/read/inventory.mapper'
+import { InventoryWriteMapper } from '../../mappers/write/inventory.mapper'
 import type { Actor } from '../../models/auth'
+import type { ApiInventoryResponse } from '../../models/inventory'
+import type { ApiPage } from '../../models/page'
 import { inventorySearchRequestSchema } from '../../schemas/inventory.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { isWithin } from '../booking/_shared/authorization'
 import { inventoryReachOf } from './_shared/authorization'
 import type { InventoryUseCaseDependencies } from './_shared/dependencies'
-import { DEFAULT_LIMIT, type InventoryPage, pageOf } from './_shared/page'
+import { cursorNotFound } from './_shared/refusals'
 
 const MESSAGE = 'Invalid inventory search'
 
@@ -27,7 +31,7 @@ export class ListInventoryUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<InventoryPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiInventoryResponse>, DomainError>> {
     const reach = inventoryReachOf(actor)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
@@ -40,23 +44,19 @@ export class ListInventoryUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, salonId, productId, lotNumber } = request.data
-    if (salonId !== undefined && !isWithin(reach, salonId)) {
+    const criteria = InventoryWriteMapper.fromSearchRequest(request.data, reach)
+    if (criteria.salonId !== null && !isWithin(reach, criteria.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
-    const limit = request.data.limit ?? DEFAULT_LIMIT
 
-    const listed = await this.dependencies.inventoryRepository.list({
-      reach,
-      limit,
-      after: cursor ?? null,
-      salonId: salonId ?? null,
-      productId: productId ?? null,
-      lotNumber: lotNumber ?? null,
-    })
+    const listed = await this.dependencies.inventoryRepository.list(criteria)
+    if (listed.type === 'error') {
+      return listed
+    }
+    if (listed.data === null) {
+      return Result.error(cursorNotFound(MESSAGE))
+    }
 
-    return Result.flatMap(listed, (rows) =>
-      pageOf(rows, { limit, cursor: cursor ?? null }, MESSAGE),
-    )
+    return InventoryReadMapper.toApiInventoryPage(listed.data, criteria)
   }
 }

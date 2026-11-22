@@ -1,24 +1,19 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { InventoryTransactionReadMapper } from '../../mappers/read/inventory-transaction.mapper'
+import { InventoryTransactionWriteMapper } from '../../mappers/write/inventory-transaction.mapper'
 import type { Actor } from '../../models/auth'
 import {
   type ApiInventoryTransactionResponse,
   parseInventoryId,
 } from '../../models/inventory'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import { inventoryTransactionSearchRequestSchema } from '../../schemas/inventory.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { inventoryReachOf } from './_shared/authorization'
 import type { InventoryUseCaseDependencies } from './_shared/dependencies'
-import { DEFAULT_LIMIT } from './_shared/page'
 
 const MESSAGE = 'Invalid stock movement search'
-
-export type InventoryTransactionPage = {
-  data: ApiInventoryTransactionResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListInventoryMovementsUseCase {
   constructor(private readonly dependencies: InventoryUseCaseDependencies) {}
@@ -35,7 +30,7 @@ export class ListInventoryMovementsUseCase {
     actor: Actor,
     id: unknown,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<InventoryTransactionPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiInventoryTransactionResponse>, DomainError>> {
     const reach = inventoryReachOf(actor)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
@@ -55,26 +50,23 @@ export class ListInventoryMovementsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, transactionType, startDate, endDate } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = InventoryTransactionWriteMapper.fromSearchRequest(
+      request.data,
+      inventoryId.data,
+    )
 
     const listed = await this.dependencies.inventoryRepository.listMovements(
       reach,
-      {
-        inventoryId: inventoryId.data,
-        limit,
-        after: cursor ?? null,
-        transactionType: transactionType ?? null,
-        startDate: startDate ?? null,
-        endDate: endDate ?? null,
-      },
+      criteria,
     )
     if (listed.type === 'error') {
       return listed
     }
 
     return match(listed.data)
-      .returnType<Result<InventoryTransactionPage, DomainError>>()
+      .returnType<
+        Result<ApiPage<ApiInventoryTransactionResponse>, DomainError>
+      >()
       .with({ type: 'inventoryNotFound' }, () =>
         Result.error(DomainErrors.notFound('Inventory', inventoryId.data)),
       )
@@ -89,23 +81,10 @@ export class ListInventoryMovementsUseCase {
           ]),
         ),
       )
-      .with({ type: 'listed' }, ({ transactions, total, hasMore }) =>
-        Result.map(
-          InventoryTransactionReadMapper.toApiInventoryTransactions(
-            transactions,
-          ),
-          (data) => ({
-            data,
-            meta: {
-              total,
-              limit,
-              hasMore,
-              cursor: cursor ?? null,
-              nextCursor: hasMore ? (transactions.at(-1)?.id ?? null) : null,
-              // Pages are only walked forwards.
-              prevCursor: null,
-            },
-          }),
+      .with({ type: 'listed' }, (list) =>
+        InventoryTransactionReadMapper.toApiInventoryTransactionPage(
+          list,
+          criteria,
         ),
       )
       .exhaustive()

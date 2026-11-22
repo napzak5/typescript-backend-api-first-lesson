@@ -9,3 +9,17 @@ export const salonNotFound = (message: string): DomainError =>
   DomainErrors.validation(message, [
     { field: 'salonId', rule: 'not_found', message: 'Must name a salon' },
   ])
+
+/**
+ * The cursor of a list of stock rows names a row the list does not reach,
+ * so the list cannot tell where the page begins. It is an error of the
+ * request.
+ */
+export const cursorNotFound = (message: string): DomainError =>
+  DomainErrors.validation(message, [
+    {
+      field: 'cursor',
+      rule: 'not_found',
+      message: 'Must name a stock row of the list',
+    },
+  ])

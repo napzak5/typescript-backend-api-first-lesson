@@ -48,6 +48,7 @@ export class UpdateProductUseCase {
     if (request.type === 'error') {
       return request
     }
+    const changes = ProductWriteMapper.fromUpdateRequest(request.data)
 
     const { productRepository, salonRepository } = this.dependencies
     const salonExists = await requireSalon(salonRepository, salonId.data)
@@ -58,7 +59,7 @@ export class UpdateProductUseCase {
     const updated = await productRepository.update(
       salonId.data,
       productId.data,
-      ProductWriteMapper.fromUpdateRequest(request.data),
+      changes,
     )
     if (updated.type === 'error') {
       return updated
@@ -78,7 +79,7 @@ export class UpdateProductUseCase {
             MESSAGE,
             stockLevelIssues(
               broken,
-              (level) => request.data[level] !== undefined,
+              (level) => changes[level] !== undefined,
             ).map(({ field, message }) => ({
               field,
               rule: 'custom',

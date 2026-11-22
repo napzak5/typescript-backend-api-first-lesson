@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { InventoryReportReadMapper } from '../../mappers/read/inventory-report.mapper'
+import { InventoryReportWriteMapper } from '../../mappers/write/inventory-report.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiInventoryValueReportResponse } from '../../models/inventory'
 import { inventoryValueReportRequestSchema } from '../../schemas/inventory.schema'
@@ -32,7 +33,8 @@ export class GetInventoryValueReportUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { salonId, category } = request.data
+    const { salonId, category } =
+      InventoryReportWriteMapper.fromValueReportRequest(request.data)
     if (!isWithin(reach, salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
@@ -46,10 +48,7 @@ export class GetInventoryValueReportUseCase {
       return Result.error(salonNotFound(MESSAGE))
     }
 
-    const categories = await inventoryRepository.valueReport(
-      salonId,
-      category ?? null,
-    )
+    const categories = await inventoryRepository.valueReport(salonId, category)
 
     return Result.flatMap(categories, (rows) =>
       InventoryReportReadMapper.toApiValueReport(salonId, rows),

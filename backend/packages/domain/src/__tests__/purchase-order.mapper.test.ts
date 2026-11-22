@@ -1,16 +1,25 @@
 import { describe, expect, it } from 'vitest'
 import { PurchaseOrderReadMapper } from '../mappers/read/purchase-order.mapper'
 import { PurchaseOrderWriteMapper } from '../mappers/write/purchase-order.mapper'
+import type { LedgerReach } from '../models/booking'
+import { productIdSchema } from '../models/product'
+import { purchaseOrderIdSchema } from '../models/purchase-order'
+import { salonIdSchema } from '../models/salon'
 import { staffIdSchema } from '../models/staff'
 import {
   purchaseOrderCreateRequestSchema,
+  purchaseOrderReceiveRequestSchema,
+  purchaseOrderSearchRequestSchema,
   purchaseOrderUpdateRequestSchema,
+  reorderSuggestionSearchRequestSchema,
 } from '../schemas/purchase-order.schema'
 import { STAFF_ID } from './auth-fixtures'
-import { SALON_ID } from './fixtures'
+import { OTHER_SALON_ID, SALON_ID } from './fixtures'
 import { INVENTORY_ID, OTHER_INVENTORY_ID } from './inventory-fixtures'
+import { OTHER_PRODUCT_ID, PRODUCT_ID } from './product-fixtures'
 import {
   dbPurchaseOrderItems,
+  dbReorderSuggestion,
   OTHER_PURCHASE_ORDER_ID,
   PURCHASE_ORDER_ID,
   purchaseOrderCreateRequest,
@@ -243,5 +252,342 @@ describe('PurchaseOrderWriteMapper', () => {
         }),
       ),
     ).toEqual({ status: 'pending', deliveryNotes: null })
+  })
+})
+
+describe('PurchaseOrderWriteMapper: a cancellation and a receipt', () => {
+  it('takes the reason of a cancellation as it is stated', () => {
+    expect(
+      PurchaseOrderWriteMapper.fromCancelRequest({
+        cancellationReason: '仕入先の在庫切れ',
+      }),
+    ).toStrictEqual({ cancellationReason: '仕入先の在庫切れ' })
+  })
+
+  it('takes what arrived in the order of the receipt, its notes and the staff member who received it', () => {
+    expect(
+      PurchaseOrderWriteMapper.fromReceiveRequest(
+        purchaseOrderReceiveRequestSchema.parse({
+          items: [
+            { inventoryId: OTHER_INVENTORY_ID, quantity: 2.5 },
+            { inventoryId: INVENTORY_ID, quantity: 4 },
+          ],
+          deliveryNotes: '箱に傷あり',
+        }),
+        staffIdSchema.parse(STAFF_ID),
+      ),
+    ).toStrictEqual({
+      items: [
+        { inventoryId: OTHER_INVENTORY_ID, quantity: 2.5 },
+        { inventoryId: INVENTORY_ID, quantity: 4 },
+      ],
+      deliveryNotes: '箱に傷あり',
+      performedBy: STAFF_ID,
+    })
+  })
+
+  it('takes a receipt without notes, by no staff member', () => {
+    expect(
+      PurchaseOrderWriteMapper.fromReceiveRequest(
+        purchaseOrderReceiveRequestSchema.parse({
+          items: [{ inventoryId: INVENTORY_ID, quantity: 1 }],
+          deliveryNotes: null,
+        }),
+        null,
+      ),
+    ).toStrictEqual({
+      items: [{ inventoryId: INVENTORY_ID, quantity: 1 }],
+      deliveryNotes: null,
+      performedBy: null,
+    })
+  })
+})
+
+describe('PurchaseOrderWriteMapper.fromSearchRequest', () => {
+  const everySalon: LedgerReach = { type: 'everySalon' }
+  const unfiltered = {
+    salonId: null,
+    status: null,
+    supplier: null,
+    startDate: null,
+    endDate: null,
+  }
+
+  it('lists the first 20 orders within the reach when the request names nothing', () => {
+    expect(
+      PurchaseOrderWriteMapper.fromSearchRequest(
+        purchaseOrderSearchRequestSchema.parse({}),
+        everySalon,
+      ),
+    ).toStrictEqual({
+      reach: everySalon,
+      limit: 20,
+      after: null,
+      ...unfiltered,
+    })
+  })
+
+  it('takes the reach it is given, the place of the page and every filter the request names', () => {
+    const ownSalon: LedgerReach = {
+      type: 'salon',
+      salonId: salonIdSchema.parse(OTHER_SALON_ID),
+    }
+
+    expect(
+      PurchaseOrderWriteMapper.fromSearchRequest(
+        purchaseOrderSearchRequestSchema.parse({
+          limit: 5,
+          cursor: PURCHASE_ORDER_ID,
+          salonId: SALON_ID,
+          status: 'approved',
+          supplier: 'Beauty Supply Tokyo',
+          startDate: '2026-11-01T00:00:00.000Z',
+          endDate: '2026-11-30T23:59:59.999Z',
+        }),
+        ownSalon,
+      ),
+    ).toStrictEqual({
+      reach: ownSalon,
+      limit: 5,
+      after: PURCHASE_ORDER_ID,
+      salonId: SALON_ID,
+      status: 'approved',
+      supplier: 'Beauty Supply Tokyo',
+      startDate: '2026-11-01T00:00:00.000Z',
+      endDate: '2026-11-30T23:59:59.999Z',
+    })
+  })
+
+  it.each<[string, Record<string, string>]>([
+    ['the salon', { salonId: SALON_ID }],
+    ['the status', { status: 'draft' }],
+    ['the supplier', { supplier: 'Beauty Supply Tokyo' }],
+    ['the first moment', { startDate: '2026-11-01T00:00:00.000Z' }],
+    ['the last moment', { endDate: '2026-11-30T23:59:59.999Z' }],
+  ])('narrows the list by %s alone', (_named, filter) => {
+    expect(
+      PurchaseOrderWriteMapper.fromSearchRequest(
+        purchaseOrderSearchRequestSchema.parse(filter),
+        everySalon,
+      ),
+    ).toStrictEqual({
+      reach: everySalon,
+      limit: 20,
+      after: null,
+      ...unfiltered,
+      ...filter,
+    })
+  })
+})
+
+describe('PurchaseOrderWriteMapper.fromReorderSuggestionSearchRequest', () => {
+  it('suggests the first 20 products of the salon when the request names no more than the salon', () => {
+    expect(
+      PurchaseOrderWriteMapper.fromReorderSuggestionSearchRequest(
+        reorderSuggestionSearchRequestSchema.parse({ salonId: SALON_ID }),
+      ),
+    ).toStrictEqual({ salonId: SALON_ID, limit: 20, after: null })
+  })
+
+  it('takes the place of the page the request names', () => {
+    expect(
+      PurchaseOrderWriteMapper.fromReorderSuggestionSearchRequest(
+        reorderSuggestionSearchRequestSchema.parse({
+          salonId: OTHER_SALON_ID,
+          limit: 5,
+          cursor: PRODUCT_ID,
+        }),
+      ),
+    ).toStrictEqual({ salonId: OTHER_SALON_ID, limit: 5, after: PRODUCT_ID })
+  })
+})
+
+describe('PurchaseOrderReadMapper.toApiPurchaseOrderPage', () => {
+  const paging = {
+    limit: 2,
+    after: purchaseOrderIdSchema.parse(PURCHASE_ORDER_ID),
+  }
+
+  it('answers with the orders, the counts of the list and the place of the page', () => {
+    expect(
+      PurchaseOrderReadMapper.toApiPurchaseOrderPage(
+        {
+          type: 'listed',
+          orders: [
+            storedPurchaseOrder(),
+            storedPurchaseOrder({ id: OTHER_PURCHASE_ORDER_ID }),
+          ],
+          total: 5,
+          hasMore: true,
+        },
+        paging,
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        data: [{ id: PURCHASE_ORDER_ID }, { id: OTHER_PURCHASE_ORDER_ID }],
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: PURCHASE_ORDER_ID,
+          nextCursor: OTHER_PURCHASE_ORDER_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('names no next page when the list ends with this one', () => {
+    expect(
+      PurchaseOrderReadMapper.toApiPurchaseOrderPage(
+        {
+          type: 'listed',
+          orders: [storedPurchaseOrder()],
+          total: 1,
+          hasMore: false,
+        },
+        { limit: 20, after: null },
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        meta: {
+          total: 1,
+          limit: 20,
+          hasMore: false,
+          cursor: null,
+          nextCursor: null,
+        },
+      },
+    })
+  })
+
+  it('fails on the first order that does not match the API model', () => {
+    expect(
+      PurchaseOrderReadMapper.toApiPurchaseOrderPage(
+        {
+          type: 'listed',
+          orders: [
+            storedPurchaseOrder(),
+            storedPurchaseOrder({
+              id: OTHER_PURCHASE_ORDER_ID,
+              orderDate: 'x',
+            }),
+          ],
+          total: 2,
+          hasMore: false,
+        },
+        paging,
+      ),
+    ).toMatchObject({
+      type: 'error',
+      error: {
+        message: `Stored purchase order ${OTHER_PURCHASE_ORDER_ID} does not match the API model`,
+      },
+    })
+  })
+})
+
+describe('PurchaseOrderReadMapper.toApiReorderSuggestionPage', () => {
+  const paging = { limit: 2, after: productIdSchema.parse(PRODUCT_ID) }
+
+  it('answers with the suggestions, the counts of the list and the place of the page, which goes on after the product of its last suggestion', () => {
+    expect(
+      PurchaseOrderReadMapper.toApiReorderSuggestionPage(
+        {
+          type: 'listed',
+          suggestions: [
+            dbReorderSuggestion(),
+            dbReorderSuggestion({ productId: OTHER_PRODUCT_ID }),
+          ],
+          total: 5,
+          hasMore: true,
+        },
+        paging,
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        data: [{ productId: PRODUCT_ID }, { productId: OTHER_PRODUCT_ID }],
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: PRODUCT_ID,
+          nextCursor: OTHER_PRODUCT_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('names no next page when the list ends with this one, an empty one too', () => {
+    expect(
+      PurchaseOrderReadMapper.toApiReorderSuggestionPage(
+        {
+          type: 'listed',
+          suggestions: [dbReorderSuggestion()],
+          total: 1,
+          hasMore: false,
+        },
+        { limit: 20, after: null },
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        meta: {
+          total: 1,
+          limit: 20,
+          hasMore: false,
+          cursor: null,
+          nextCursor: null,
+        },
+      },
+    })
+    expect(
+      PurchaseOrderReadMapper.toApiReorderSuggestionPage(
+        { type: 'listed', suggestions: [], total: 0, hasMore: false },
+        { limit: 20, after: null },
+      ),
+    ).toStrictEqual({
+      type: 'success',
+      data: {
+        data: [],
+        meta: {
+          total: 0,
+          limit: 20,
+          hasMore: false,
+          cursor: null,
+          nextCursor: null,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('fails on the first suggestion that does not match the API model', () => {
+    expect(
+      PurchaseOrderReadMapper.toApiReorderSuggestionPage(
+        {
+          type: 'listed',
+          suggestions: [
+            dbReorderSuggestion(),
+            dbReorderSuggestion({
+              productId: OTHER_PRODUCT_ID,
+              currentStock: 'few',
+            }),
+          ],
+          total: 2,
+          hasMore: false,
+        },
+        paging,
+      ),
+    ).toMatchObject({
+      type: 'error',
+      error: {
+        message: `Reorder suggestion of product ${OTHER_PRODUCT_ID} does not match the API model`,
+      },
+    })
   })
 })
