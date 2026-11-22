@@ -1,16 +1,12 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
+import { isAtOrBelow } from '@beauty-salon-frontend/app-frame'
+import { salonIdIn } from '@beauty-salon-frontend/salon-screens'
+import { worksAtSalon } from '@beauty-salon-frontend/session'
 import type { NavigationItem } from '@beauty-salon-frontend/ui'
 import { mayKeepStaffLedger } from './staff/staff-format'
 
-/** The start of the addresses of the screens of one salon: of any but the salon to be added. */
-const SALON_PATH = /^\/salons\/(?!new(?:\/|$))([^/]+)(?:\/|$)/
-
 /** The screen that adds a salon, for an administrator. */
 export const SALON_ENTRY_PATH = '/salons/new'
-
-/** The salon whose screens an address is of, if it is one of them. */
-export const salonIdIn = (pathname: string): string | undefined =>
-  SALON_PATH.exec(pathname)?.[1]
 
 /** The screen an administrator runs the platform with: the state of the system, and the operations run by hand. */
 export const OPERATIONS_PATH = '/operations'
@@ -483,12 +479,6 @@ export const bookingOfCustomerHrefOf = (
   customerId: string,
 ): string => `${bookingEntryHrefOf(salonId, date)}&customerId=${customerId}`
 
-/** Whether an address is that of a screen, or of one below it. */
-const isAtOrBelow = (pathname: string, screen: string): boolean =>
-  pathname === screen || pathname.startsWith(`${screen}/`)
-
-const SALON_ROLES: readonly string[] = ['owner', 'manager', 'staff']
-
 /** Where a member of the staff sees and changes how they are introduced to the customers */
 export const OWN_PROFILE_PATH = '/account/profile'
 
@@ -508,7 +498,11 @@ export const navigationFor = (
   role: ModelsUserResponse['role'] | undefined,
   pathname: string,
 ): NavigationItem[] => {
-  const salonId = salonIdIn(pathname)
+  // The screen that adds a salon is below the same address as the screens
+  // of a salon, and is of none
+  const salonId = isAtOrBelow(pathname, SALON_ENTRY_PATH)
+    ? undefined
+    : salonIdIn(pathname)
   const choice: NavigationItem[] =
     role === 'admin'
       ? [
@@ -520,7 +514,7 @@ export const navigationFor = (
           },
         ]
       : []
-  const member = role !== undefined && SALON_ROLES.includes(role)
+  const member = worksAtSalon(role)
   const profile: NavigationItem[] = member
     ? [
         {

@@ -79,6 +79,12 @@ describe('App, against the API', () => {
       header().queryByRole('link', { name: 'サインイン' }),
     ).not.toBeInTheDocument()
     expect(statusMessages()).toContain('サインインしました。')
+    // The links of the header are those of a customer, at the start
+    expect(
+      within(
+        await screen.findByRole('navigation', { name: 'メインメニュー' }),
+      ).getByRole('link', { name: START }),
+    ).toHaveAttribute('aria-current', 'page')
   })
 
   it.each([

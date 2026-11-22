@@ -6,6 +6,7 @@ export {
   type OwnSalon,
   type OwnSalonState,
   useOwnSalon,
+  worksAtSalon,
 } from './salon/own-salon'
 export {
   AccountSecurityScreen,

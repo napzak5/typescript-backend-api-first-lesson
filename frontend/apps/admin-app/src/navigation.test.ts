@@ -42,10 +42,10 @@ import {
   reviewHrefOf,
   reviewResponseHrefOf,
   reviewsHrefOf,
+  SALON_ENTRY_PATH,
   saleChangeHrefOf,
   salesHrefOf,
   salonChangeHrefOf,
-  salonIdIn,
   scheduleChangeHrefOf,
   scheduleHrefOf,
   serviceChangeHrefOf,
@@ -115,30 +115,6 @@ const NO_LINKS: [string, Role | undefined][] = [
   ['the account is of a customer', 'customer'],
 ]
 
-describe('salonIdIn', () => {
-  it.each([
-    ['the bookings of a salon', BOOKINGS, SALON_ID],
-    ['a booking', `${BOOKINGS}/0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c02`, SALON_ID],
-    ['the address of the salon itself', `/salons/${SALON_ID}`, SALON_ID],
-    ['the start', '/', undefined],
-    ['the salon to be added', '/salons/new', undefined],
-    ['what the salon to be added would lead to', '/salons/new/x', undefined],
-    [
-      'a salon whose address begins with the same letters',
-      '/salons/newer/bookings',
-      'newer',
-    ],
-    ['the security of the account', '/account/security', undefined],
-    [
-      'an address that only begins with the same letters',
-      '/salonsx/a',
-      undefined,
-    ],
-  ])('should find the salon of %s', (_case, pathname, salonId) => {
-    expect(salonIdIn(pathname)).toBe(salonId)
-  })
-})
-
 describe('navigationFor', () => {
   it('should lead an administrator to the choice of a salon, to the operations, and to the bookings, the sales, the customers, the treatment records, the shifts and the staff of the salon chosen', () => {
     expect(navigationFor('admin', `${BOOKINGS}/x`)).toEqual([
@@ -165,6 +141,25 @@ describe('navigationFor', () => {
       { href: '/', label: 'サロンを選ぶ', current: true },
       OPERATIONS,
     ])
+  })
+
+  it.each<[string, string]>([
+    ['the screen that adds a salon', SALON_ENTRY_PATH],
+    ['what that screen would lead to', `${SALON_ENTRY_PATH}/x`],
+  ])(
+    'should lead an administrator to no screen of a salon from %s: no salon is added yet',
+    (_case, pathname) => {
+      expect(navigationFor('admin', pathname)).toEqual([
+        { href: '/', label: 'サロンを選ぶ', current: false },
+        OPERATIONS,
+      ])
+    },
+  )
+
+  it('should lead to the screens of a salon whose address only begins like the screen that adds one', () => {
+    expect(
+      navigationFor('admin', '/salons/newer/bookings').map(({ href }) => href),
+    ).toContain('/salons/newer/bookings')
   })
 
   it('should mark the operations as the screen an administrator is on there', () => {

@@ -22,6 +22,7 @@
   "dependencies": {
     "@beauty-salon-frontend/answers": "workspace:*",
     "@beauty-salon-frontend/api-client": "workspace:*",
+    "@beauty-salon-frontend/app-frame": "workspace:*",
     "@beauty-salon-frontend/brand": "workspace:*",
     "@beauty-salon-frontend/fields": "workspace:*",
     "@beauty-salon-frontend/preferences": "workspace:*",
@@ -39,7 +40,6 @@
     "@beauty-salon-frontend/testing": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
     "@storybook/react-vite": "^10.6.7",
-    "@tanstack/react-query-devtools": "^5.108.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.12",

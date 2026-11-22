@@ -1,11 +1,10 @@
+import { PasswordChangePage } from '@beauty-salon-frontend/app-frame'
 import {
   AccountSecurityScreen,
-  PasswordChangeScreen,
   RequireSession,
   TwoFactorSetupScreen,
 } from '@beauty-salon-frontend/session'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
-import { useNavigate } from 'react-router'
 import { MY_PAGE } from '../profile/my-page'
 import { CUSTOMERS } from '../roles'
 import { SignInHelp } from '../sign-in-help'
@@ -33,17 +32,6 @@ export const OwnSecurityScreen = () => (
   </RequireSession>
 )
 
-const OwnPassword = () => {
-  const navigate = useNavigate()
-
-  return (
-    <PasswordChangeScreen
-      securityHref={SECURITY_PATH}
-      onChanged={() => void navigate(SECURITY_PATH)}
-    />
-  )
-}
-
 /** Changes the password of the customer, and leads back to the security of the account. */
 export const OwnPasswordScreen = () => (
   <RequireSession
@@ -51,7 +39,7 @@ export const OwnPasswordScreen = () => (
     signInNotice='パスワードを変更するには、サインインしてください。'
     signInHelp={<SignInHelp />}
   >
-    <OwnPassword />
+    <PasswordChangePage securityHref={SECURITY_PATH} />
   </RequireSession>
 )
 

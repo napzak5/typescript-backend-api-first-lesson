@@ -36,6 +36,7 @@ export {
   readDays,
   readPeriod,
 } from './period'
+export { salonIdIn } from './salon-address'
 export {
   KEYWORD,
   queryOfKeyword,
