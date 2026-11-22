@@ -71,6 +71,11 @@ export const inventoryCreateRequestSchema = z.strictObject({
   ...statedOfStockRow,
 }) satisfies z.ZodType<ApiInventoryCreateRequest>
 
+/** A new stock row that passed the rules of its own. */
+export type InventoryCreateRequest = z.infer<
+  typeof inventoryCreateRequestSchema
+>
+
 export const inventoryUpdateRequestSchema = z
   .strictObject(statedOfStockRow)
   .exactPartial()
@@ -84,6 +89,11 @@ export const inventorySearchRequestSchema = z.strictObject({
   lotNumber: nonBlankText.max(100).exactOptional(),
 }) satisfies z.ZodType<ApiInventorySearchRequest>
 
+/** A search of stock rows that passed the rules of its own. */
+export type InventorySearchRequest = z.infer<
+  typeof inventorySearchRequestSchema
+>
+
 export const inventoryLowStockSearchRequestSchema = z.strictObject({
   limit,
   cursor: inventoryIdSchema.exactOptional(),
@@ -91,12 +101,22 @@ export const inventoryLowStockSearchRequestSchema = z.strictObject({
   threshold: z.number().min(0).max(MAX_STOCK).exactOptional(),
 }) satisfies z.ZodType<ApiInventoryLowStockSearchRequest>
 
+/** A search of the rows that run low that passed the rules of its own. */
+export type InventoryLowStockSearchRequest = z.infer<
+  typeof inventoryLowStockSearchRequestSchema
+>
+
 export const inventoryExpiringSearchRequestSchema = z.strictObject({
   limit,
   cursor: inventoryIdSchema.exactOptional(),
   salonId: salonIdSchema,
   days: z.number().int().min(0).max(365).exactOptional(),
 }) satisfies z.ZodType<ApiInventoryExpiringSearchRequest>
+
+/** A search of the rows that expire soon that passed the rules of its own. */
+export type InventoryExpiringSearchRequest = z.infer<
+  typeof inventoryExpiringSearchRequestSchema
+>
 
 type StatedMovement = {
   transactionType: InventoryTransactionType
@@ -219,6 +239,11 @@ export const inventoryTransactionSearchRequestSchema = z
     { path: ['endDate'], message: 'Must not be earlier than startDate' },
   ) satisfies z.ZodType<ApiInventoryTransactionSearchRequest>
 
+/** A search of stock movements that passed the rules of its own. */
+export type InventoryTransactionSearchRequest = z.infer<
+  typeof inventoryTransactionSearchRequestSchema
+>
+
 /** One stock row as counted: the stock found on the shelf. */
 const stockCountItemSchema = z.strictObject({
   inventoryId: inventoryIdSchema,
@@ -265,3 +290,8 @@ export const inventoryValueReportRequestSchema = z.strictObject({
   salonId: salonIdSchema,
   category: nonBlankText.max(100).exactOptional(),
 }) satisfies z.ZodType<ApiInventoryValueReportRequest>
+
+/** A request for the value of the stock that passed the rules of its own. */
+export type InventoryValueReportRequest = z.infer<
+  typeof inventoryValueReportRequestSchema
+>

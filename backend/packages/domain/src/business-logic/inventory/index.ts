@@ -6,10 +6,7 @@ export { GetInventoryUseCase } from './get-inventory.usecase'
 export { GetInventoryValueReportUseCase } from './get-inventory-value-report.usecase'
 export { ListExpiringInventoryUseCase } from './list-expiring-inventory.usecase'
 export { ListInventoryUseCase } from './list-inventory.usecase'
-export {
-  type InventoryTransactionPage,
-  ListInventoryMovementsUseCase,
-} from './list-inventory-movements.usecase'
+export { ListInventoryMovementsUseCase } from './list-inventory-movements.usecase'
 export { ListLowStockInventoryUseCase } from './list-low-stock-inventory.usecase'
 export { PerformStockCountUseCase } from './perform-stock-count.usecase'
 export { RecordInventoryMovementUseCase } from './record-inventory-movement.usecase'

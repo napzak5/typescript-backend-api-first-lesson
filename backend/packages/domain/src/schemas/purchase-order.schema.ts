@@ -216,11 +216,21 @@ export const purchaseOrderReceiveRequestSchema = z
     ),
   ) satisfies z.ZodType<ApiPurchaseOrderReceiveRequest>
 
+/** A receipt that passed the rules of its own. */
+export type PurchaseOrderReceiveRequest = z.infer<
+  typeof purchaseOrderReceiveRequestSchema
+>
+
 export const reorderSuggestionSearchRequestSchema = z.strictObject({
   limit: z.number().int().min(1).max(100).exactOptional(),
   cursor: productIdSchema.exactOptional(),
   salonId: salonIdSchema,
 }) satisfies z.ZodType<ApiReorderSuggestionSearchRequest>
+
+/** A search of reorder suggestions that passed the rules of its own. */
+export type ReorderSuggestionSearchRequest = z.infer<
+  typeof reorderSuggestionSearchRequestSchema
+>
 
 /** Two moments in the spelling of `toISOString` compare as text. */
 export const purchaseOrderSearchRequestSchema = z
@@ -238,3 +248,8 @@ export const purchaseOrderSearchRequestSchema = z
       startDate === undefined || endDate === undefined || startDate <= endDate,
     { path: ['endDate'], message: 'Must not be earlier than startDate' },
   ) satisfies z.ZodType<ApiPurchaseOrderSearchRequest>
+
+/** A search of purchase orders that passed the rules of its own. */
+export type PurchaseOrderSearchRequest = z.infer<
+  typeof purchaseOrderSearchRequestSchema
+>

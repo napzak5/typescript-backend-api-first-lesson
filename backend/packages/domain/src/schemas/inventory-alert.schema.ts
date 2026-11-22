@@ -33,9 +33,19 @@ export const inventoryAlertSearchRequestSchema = z.strictObject({
   acknowledged: z.boolean().exactOptional(),
 }) satisfies z.ZodType<ApiInventoryAlertSearchRequest>
 
+/** A search of alerts that passed the rules of its own. */
+export type InventoryAlertSearchRequest = z.infer<
+  typeof inventoryAlertSearchRequestSchema
+>
+
 export const inventoryAlertSummaryRequestSchema = z.strictObject({
   salonId: salonIdSchema,
 }) satisfies z.ZodType<ApiInventoryAlertSummaryRequest>
+
+/** A request for the counts of the alerts that passed the rules of its own. */
+export type InventoryAlertSummaryRequest = z.infer<
+  typeof inventoryAlertSummaryRequestSchema
+>
 
 /**
  * An alert of a stock row names the row, and one of a product names none:

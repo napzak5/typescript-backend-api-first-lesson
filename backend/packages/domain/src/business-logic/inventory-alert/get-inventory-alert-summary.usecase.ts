@@ -1,4 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { InventoryAlertReadMapper } from '../../mappers/read/inventory-alert.mapper'
+import { InventoryAlertWriteMapper } from '../../mappers/write/inventory-alert.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiInventoryAlertSummaryResponse } from '../../models/inventory-alert'
 import { inventoryAlertSummaryRequestSchema } from '../../schemas/inventory-alert.schema'
@@ -6,7 +8,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { isWithin } from '../booking/_shared/authorization'
 import { inventoryReachOf } from '../inventory/_shared/authorization'
 import { salonNotFound } from '../inventory/_shared/refusals'
-import { alertDaysOf, alertsOf, summaryOf } from './_shared/alerts'
+import { alertDaysOf, alertsOf } from './_shared/alerts'
 import type { InventoryAlertUseCaseDependencies } from './_shared/dependencies'
 import { unknownTimeZone } from './_shared/refusals'
 
@@ -41,7 +43,9 @@ export class GetInventoryAlertSummaryUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { salonId } = request.data
+    const { salonId } = InventoryAlertWriteMapper.fromSummaryRequest(
+      request.data,
+    )
     if (!isWithin(reach, salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
@@ -66,6 +70,10 @@ export class GetInventoryAlertSummaryUseCase {
       lastExpiringDay: days.lastExpiringDay,
     })
 
-    return Result.map(listed, (facts) => summaryOf(alertsOf(facts, days)))
+    return Result.map(listed, (facts) =>
+      InventoryAlertReadMapper.toApiInventoryAlertSummary(
+        alertsOf(facts, days),
+      ),
+    )
   }
 }

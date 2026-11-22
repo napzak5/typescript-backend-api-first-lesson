@@ -1,7 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { InventoryReportReadMapper } from '../../mappers/read/inventory-report.mapper'
-import { InventoryTransactionWriteMapper } from '../../mappers/write/inventory-transaction.mapper'
+import { InventoryReportWriteMapper } from '../../mappers/write/inventory-report.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiInventoryStockCountResponse } from '../../models/inventory'
 import { inventoryStockCountRequestSchema } from '../../schemas/inventory.schema'
@@ -42,12 +42,16 @@ export class PerformStockCountUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (!isWithin(reach, request.data.salonId)) {
+    const count = InventoryReportWriteMapper.fromStockCountRequest(
+      request.data,
+      performerOf(actor),
+    )
+    if (!isWithin(reach, count.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
 
     const { inventoryRepository, salonRepository } = this.dependencies
-    const salonExists = await salonRepository.exists(request.data.salonId)
+    const salonExists = await salonRepository.exists(count.salonId)
     if (salonExists.type === 'error') {
       return salonExists
     }
@@ -55,12 +59,7 @@ export class PerformStockCountUseCase {
       return Result.error(salonNotFound(MESSAGE))
     }
 
-    const counted = await inventoryRepository.performStockCount(
-      InventoryTransactionWriteMapper.fromStockCountRequest(
-        request.data,
-        performerOf(actor),
-      ),
-    )
+    const counted = await inventoryRepository.performStockCount(count)
     if (counted.type === 'error') {
       return counted
     }

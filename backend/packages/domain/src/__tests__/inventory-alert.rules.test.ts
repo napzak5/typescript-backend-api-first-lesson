@@ -15,7 +15,6 @@ import {
   stockRowAlertOf,
   subjectIdOf,
   subjectOf,
-  summaryOf,
 } from '../business-logic/inventory-alert/_shared/alerts'
 import type {
   DbAcknowledgementOfAlert,
@@ -582,10 +581,11 @@ describe('pageOfAlerts', () => {
   const places = (page: { alerts: InventoryAlert[] }) =>
     page.alerts.map(({ position }) => position.place)
 
-  it('should give the first alerts up to the limit, and say that more follow', () => {
+  it('should give the first alerts up to the limit, and say how many there are and that more follow', () => {
     const page = pageOfAlerts(alerts, null, 2)
 
     expect(places(page)).toEqual([1, 2])
+    expect(page.total).toBe(3)
     expect(page.hasMore).toBe(true)
   })
 
@@ -601,6 +601,7 @@ describe('pageOfAlerts', () => {
     )
 
     expect(places(page)).toEqual([2, 3])
+    expect(page.total).toBe(3)
     expect(page.hasMore).toBe(false)
   })
 
@@ -621,56 +622,7 @@ describe('pageOfAlerts', () => {
       5,
     )
 
-    expect(page).toEqual({ alerts: [], hasMore: false })
-  })
-})
-
-describe('summaryOf', () => {
-  it('should count the alerts, those of each severity and those not acknowledged', () => {
-    const alerts = alertsOf(
-      {
-        products: [
-          productStock(),
-          productStock({
-            productId: OTHER_PRODUCT_ID,
-            stock: '0.00',
-            place: 2,
-          }),
-          productStock({
-            productId: '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0f03',
-            stock: '25.00',
-            place: 3,
-          }),
-        ],
-        rows: [
-          stockRow(),
-          stockRow({
-            inventoryId: OTHER_INVENTORY_ID,
-            expiryDate: '2026-11-01',
-          }),
-        ],
-        acknowledgements: [productAcknowledgement(), stockRowAcknowledgement()],
-      },
-      DAYS,
-    )
-
-    expect(summaryOf(alerts)).toEqual({
-      totalAlerts: 5,
-      criticalAlerts: 2,
-      warningAlerts: 2,
-      infoAlerts: 1,
-      unacknowledged: 3,
-    })
-  })
-
-  it('should count nothing of a salon without alerts', () => {
-    expect(summaryOf([])).toEqual({
-      totalAlerts: 0,
-      criticalAlerts: 0,
-      warningAlerts: 0,
-      infoAlerts: 0,
-      unacknowledged: 0,
-    })
+    expect(page).toStrictEqual({ alerts: [], total: 3, hasMore: false })
   })
 })
 

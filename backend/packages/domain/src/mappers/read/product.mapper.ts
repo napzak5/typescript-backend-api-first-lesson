@@ -1,8 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
-import type { ApiProductResponse, DbProduct } from '../../models/product'
+import type { ApiPage, Paging } from '../../models/page'
+import type {
+  ApiProductResponse,
+  DbProduct,
+  ProductId,
+} from '../../models/product'
+import type { ProductList } from '../../repositories/product.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * A row of `products` → API response. Property names are the column names;
@@ -87,5 +94,15 @@ export const ProductReadMapper = {
       apiProducts.push(mapped.data)
     }
     return Result.success(apiProducts)
+  },
+
+  /** The products a list found as a page of it. */
+  toApiProductPage(
+    { products, total, hasMore }: ProductList,
+    paging: Paging<ProductId>,
+  ): Result<ApiPage<ApiProductResponse>, DomainError> {
+    return Result.map(ProductReadMapper.toApiProducts(products), (data) =>
+      toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

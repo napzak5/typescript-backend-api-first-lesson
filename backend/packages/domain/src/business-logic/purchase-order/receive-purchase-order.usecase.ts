@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { PurchaseOrderReadMapper } from '../../mappers/read/purchase-order.mapper'
+import { PurchaseOrderWriteMapper } from '../../mappers/write/purchase-order.mapper'
 import type { Actor } from '../../models/auth'
 import {
   type ApiPurchaseOrderResponse,
@@ -53,7 +54,10 @@ export class ReceivePurchaseOrderUseCase {
     const received = await this.dependencies.purchaseOrderRepository.receive(
       reach,
       orderId.data,
-      { ...request.data, performedBy: actingStaffOf(actor) },
+      PurchaseOrderWriteMapper.fromReceiveRequest(
+        request.data,
+        actingStaffOf(actor),
+      ),
     )
 
     return Result.flatMap(received, (receipt) =>

@@ -42,18 +42,20 @@ export class RecordInventoryMovementUseCase {
     if (request.type === 'error') {
       return request
     }
-    const reach = movementReachOf(actor, request.data.transactionType)
+    const { inventoryId, movement } =
+      InventoryTransactionWriteMapper.fromMovementRequest(
+        request.data,
+        performerOf(actor),
+      )
+    const reach = movementReachOf(actor, movement.transactionType)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
     }
 
     const recorded = await this.dependencies.inventoryRepository.recordMovement(
       reach,
-      request.data.inventoryId,
-      InventoryTransactionWriteMapper.fromMovementRequest(
-        request.data,
-        performerOf(actor),
-      ),
+      inventoryId,
+      movement,
     )
     if (recorded.type === 'error') {
       return recorded

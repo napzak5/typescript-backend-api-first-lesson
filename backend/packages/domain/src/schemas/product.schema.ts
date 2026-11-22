@@ -119,3 +119,6 @@ export const productSearchRequestSchema = z.strictObject({
   isForSale: z.boolean().exactOptional(),
   isForTreatment: z.boolean().exactOptional(),
 }) satisfies z.ZodType<ApiProductSearchRequest>
+
+/** A search of products that passed the rules of its own. */
+export type ProductSearchRequest = z.infer<typeof productSearchRequestSchema>

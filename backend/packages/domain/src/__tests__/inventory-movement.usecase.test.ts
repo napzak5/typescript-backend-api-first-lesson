@@ -124,7 +124,7 @@ describe('RecordInventoryMovementUseCase', () => {
     ['a staff member', staff, 'use'],
     ['a staff member', staff, 'return'],
   ])(
-    'records the movement of %s of a %s within their salon, by them',
+    'records the movement of %s of a %s within their salon, by them, with the reason it states',
     async (_case, actor, kind) => {
       const dependencies = inventoryDependencies()
 
@@ -138,6 +138,7 @@ describe('RecordInventoryMovementUseCase', () => {
         INVENTORY_ID,
         expect.objectContaining({
           transactionType: kind,
+          reason: ofKind[kind].reason,
           performedBy: STAFF_ID,
         }),
       )

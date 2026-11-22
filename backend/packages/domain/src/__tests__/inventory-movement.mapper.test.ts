@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { InventoryTransactionReadMapper } from '../mappers/read/inventory-transaction.mapper'
 import { InventoryTransactionWriteMapper } from '../mappers/write/inventory-transaction.mapper'
-import type { ApiInventoryMovementRequest } from '../models/inventory'
+import {
+  type ApiInventoryMovementRequest,
+  inventoryIdSchema,
+  inventoryTransactionIdSchema,
+} from '../models/inventory'
 import { type StaffId, staffIdSchema } from '../models/staff'
-import { inventoryMovementRequestSchema } from '../schemas/inventory.schema'
+import {
+  inventoryMovementRequestSchema,
+  inventoryTransactionSearchRequestSchema,
+} from '../schemas/inventory.schema'
 import { STAFF_ID } from './auth-fixtures'
 import { SALON_ID } from './fixtures'
 import {
@@ -11,6 +18,7 @@ import {
   INVENTORY_ID,
   INVENTORY_TRANSACTION_ID,
   inventoryMovementRequest,
+  OTHER_INVENTORY_ID,
   OTHER_INVENTORY_TRANSACTION_ID,
 } from './inventory-fixtures'
 import { PRODUCT_ID } from './product-fixtures'
@@ -154,17 +162,26 @@ describe('InventoryTransactionWriteMapper', () => {
       performedBy,
     )
 
-  it('writes what the request states, the quantity with two decimals, the total cost and the staff member', () => {
-    expect(write()).toEqual({
-      transactionType: 'purchase',
-      quantity: '3.00',
-      unitCost: 1200,
-      totalCost: 3600,
-      referenceType: 'purchase_order',
-      referenceId: OTHER_INVENTORY_TRANSACTION_ID,
-      reason: null,
-      performedBy: STAFF_ID,
+  it('tells the stock row from the movement, and writes what the request states, the quantity with two decimals, the total cost and the staff member', () => {
+    expect(write()).toStrictEqual({
+      inventoryId: INVENTORY_ID,
+      movement: {
+        transactionType: 'purchase',
+        quantity: '3.00',
+        unitCost: 1200,
+        totalCost: 3600,
+        referenceType: 'purchase_order',
+        referenceId: OTHER_INVENTORY_TRANSACTION_ID,
+        reason: null,
+        performedBy: STAFF_ID,
+      },
     })
+  })
+
+  it('names the stock row the request names', () => {
+    expect(write({ inventoryId: OTHER_INVENTORY_ID }).inventoryId).toBe(
+      OTHER_INVENTORY_ID,
+    )
   })
 
   it('writes no cost and no staff member where there are none', () => {
@@ -179,7 +196,7 @@ describe('InventoryTransactionWriteMapper', () => {
           reason: '期限切れ',
         },
         null,
-      ),
+      ).movement,
     ).toEqual({
       transactionType: 'disposal',
       quantity: '-0.50',
@@ -207,8 +224,158 @@ describe('InventoryTransactionWriteMapper', () => {
           quantity,
           unitCost,
           reason: '棚卸',
-        }),
+        }).movement,
       ).toMatchObject({ quantity: written, unitCost, totalCost })
     },
   )
+})
+
+describe('InventoryTransactionReadMapper.toApiInventoryTransactionPage', () => {
+  const paging = {
+    limit: 2,
+    after: inventoryTransactionIdSchema.parse(INVENTORY_TRANSACTION_ID),
+  }
+
+  it('answers with the movements, the counts of the list and the place of the page', () => {
+    expect(
+      InventoryTransactionReadMapper.toApiInventoryTransactionPage(
+        {
+          type: 'listed',
+          transactions: [
+            dbInventoryTransaction({ id: OTHER_INVENTORY_TRANSACTION_ID }),
+            dbInventoryTransaction(),
+          ],
+          total: 5,
+          hasMore: true,
+        },
+        paging,
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        data: [
+          { id: OTHER_INVENTORY_TRANSACTION_ID },
+          { id: INVENTORY_TRANSACTION_ID },
+        ],
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: INVENTORY_TRANSACTION_ID,
+          nextCursor: INVENTORY_TRANSACTION_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('names no next page when the list ends with this one', () => {
+    expect(
+      InventoryTransactionReadMapper.toApiInventoryTransactionPage(
+        {
+          type: 'listed',
+          transactions: [dbInventoryTransaction()],
+          total: 1,
+          hasMore: false,
+        },
+        { limit: 20, after: null },
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        meta: {
+          total: 1,
+          limit: 20,
+          hasMore: false,
+          cursor: null,
+          nextCursor: null,
+        },
+      },
+    })
+  })
+
+  it('fails on the first movement that does not match the API model', () => {
+    expect(
+      InventoryTransactionReadMapper.toApiInventoryTransactionPage(
+        {
+          type: 'listed',
+          transactions: [
+            dbInventoryTransaction(),
+            dbInventoryTransaction({
+              id: OTHER_INVENTORY_TRANSACTION_ID,
+              createdAt: 'never',
+            }),
+          ],
+          total: 2,
+          hasMore: false,
+        },
+        paging,
+      ),
+    ).toMatchObject({
+      type: 'error',
+      error: {
+        message: `Stored stock movement ${OTHER_INVENTORY_TRANSACTION_ID} does not match the API model`,
+      },
+    })
+  })
+})
+
+describe('InventoryTransactionWriteMapper.fromSearchRequest', () => {
+  const inventoryId = inventoryIdSchema.parse(INVENTORY_ID)
+  const unfiltered = { transactionType: null, startDate: null, endDate: null }
+
+  it('lists the first 20 movements of the stock row when the request names nothing', () => {
+    expect(
+      InventoryTransactionWriteMapper.fromSearchRequest(
+        inventoryTransactionSearchRequestSchema.parse({}),
+        inventoryId,
+      ),
+    ).toStrictEqual({
+      inventoryId: INVENTORY_ID,
+      limit: 20,
+      after: null,
+      ...unfiltered,
+    })
+  })
+
+  it('takes the stock row it is given, the place of the page and every filter the request names', () => {
+    expect(
+      InventoryTransactionWriteMapper.fromSearchRequest(
+        inventoryTransactionSearchRequestSchema.parse({
+          limit: 5,
+          cursor: INVENTORY_TRANSACTION_ID,
+          transactionType: 'use',
+          startDate: '2026-11-01T00:00:00.000Z',
+          endDate: '2026-11-30T23:59:59.999Z',
+        }),
+        inventoryIdSchema.parse(OTHER_INVENTORY_ID),
+      ),
+    ).toStrictEqual({
+      inventoryId: OTHER_INVENTORY_ID,
+      limit: 5,
+      after: INVENTORY_TRANSACTION_ID,
+      transactionType: 'use',
+      startDate: '2026-11-01T00:00:00.000Z',
+      endDate: '2026-11-30T23:59:59.999Z',
+    })
+  })
+
+  it.each<[string, Record<string, string>]>([
+    ['the kind of movement', { transactionType: 'disposal' }],
+    ['the first moment', { startDate: '2026-11-01T00:00:00.000Z' }],
+    ['the last moment', { endDate: '2026-11-30T23:59:59.999Z' }],
+  ])('narrows the list by %s alone', (_named, filter) => {
+    expect(
+      InventoryTransactionWriteMapper.fromSearchRequest(
+        inventoryTransactionSearchRequestSchema.parse(filter),
+        inventoryId,
+      ),
+    ).toStrictEqual({
+      inventoryId: INVENTORY_ID,
+      limit: 20,
+      after: null,
+      ...unfiltered,
+      ...filter,
+    })
+  })
 })

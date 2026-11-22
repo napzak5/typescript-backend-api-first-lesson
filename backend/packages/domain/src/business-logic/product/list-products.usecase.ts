@@ -1,7 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { ProductReadMapper } from '../../mappers/read/product.mapper'
+import { ProductWriteMapper } from '../../mappers/write/product.mapper'
 import type { Actor } from '../../models/auth'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import type { ApiProductResponse } from '../../models/product'
 import { parseSalonIdOfPath } from '../../models/salon'
 import { productSearchRequestSchema } from '../../schemas/product.schema'
@@ -10,13 +11,7 @@ import { requireSalon } from '../_shared/existing-salon'
 import { mayReadProducts } from './_shared/authorization'
 import type { ProductUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid product search'
-
-export type ProductPage = {
-  data: ApiProductResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListProductsUseCase {
   constructor(private readonly dependencies: ProductUseCaseDependencies) {}
@@ -38,7 +33,7 @@ export class ListProductsUseCase {
     actor: Actor,
     salon: unknown,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<ProductPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiProductResponse>, DomainError>> {
     const salonId = parseSalonIdOfPath(salon)
     if (salonId.type === 'error') {
       return salonId
@@ -54,16 +49,10 @@ export class ListProductsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const {
-      cursor,
-      keyword,
-      category,
-      barcode,
-      isActive,
-      isForSale,
-      isForTreatment,
-    } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = ProductWriteMapper.fromSearchRequest(
+      request.data,
+      salonId.data,
+    )
 
     const { productRepository, salonRepository } = this.dependencies
     const salonExists = await requireSalon(salonRepository, salonId.data)
@@ -71,17 +60,7 @@ export class ListProductsUseCase {
       return salonExists
     }
 
-    const listed = await productRepository.list({
-      salonId: salonId.data,
-      limit,
-      after: cursor ?? null,
-      keyword: keyword ?? null,
-      category: category ?? null,
-      barcode: barcode ?? null,
-      isActive: isActive ?? null,
-      isForSale: isForSale ?? null,
-      isForTreatment: isForTreatment ?? null,
-    })
+    const listed = await productRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -97,20 +76,6 @@ export class ListProductsUseCase {
       )
     }
 
-    const { products, total, hasMore } = listed.data
-    const lastProductId = products.at(-1)?.id ?? null
-
-    return Result.map(ProductReadMapper.toApiProducts(products), (data) => ({
-      data,
-      meta: {
-        total,
-        limit,
-        hasMore,
-        cursor: cursor ?? null,
-        nextCursor: hasMore ? lastProductId : null,
-        // Pages are only walked forwards.
-        prevCursor: null,
-      },
-    }))
+    return ProductReadMapper.toApiProductPage(listed.data, criteria)
   }
 }

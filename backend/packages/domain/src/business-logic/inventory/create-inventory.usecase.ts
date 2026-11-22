@@ -39,12 +39,13 @@ export class CreateInventoryUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (!isWithin(reach, request.data.salonId)) {
+    const row = InventoryWriteMapper.fromCreateRequest(request.data)
+    if (!isWithin(reach, row.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
 
     const { inventoryRepository, salonRepository } = this.dependencies
-    const salonExists = await salonRepository.exists(request.data.salonId)
+    const salonExists = await salonRepository.exists(row.salonId)
     if (salonExists.type === 'error') {
       return salonExists
     }
@@ -52,9 +53,7 @@ export class CreateInventoryUseCase {
       return Result.error(salonNotFound(MESSAGE))
     }
 
-    const created = await inventoryRepository.create(
-      InventoryWriteMapper.fromCreateRequest(request.data),
-    )
+    const created = await inventoryRepository.create(row)
     if (created.type === 'error') {
       return created
     }

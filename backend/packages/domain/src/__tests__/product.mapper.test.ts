@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { ProductReadMapper } from '../mappers/read/product.mapper'
 import { ProductWriteMapper } from '../mappers/write/product.mapper'
+import { productIdSchema } from '../models/product'
+import { salonIdSchema } from '../models/salon'
+import { productSearchRequestSchema } from '../schemas/product.schema'
 import { SALON_ID } from './fixtures'
 import {
   dbProduct,
@@ -267,6 +270,153 @@ describe('ProductWriteMapper', () => {
       minimumStock: '5',
       maximumStock: '50',
       reorderPoint: '10.5',
+    })
+  })
+})
+
+describe('ProductReadMapper.toApiProductPage', () => {
+  const paging = { limit: 2, after: productIdSchema.parse(PRODUCT_ID) }
+
+  it('answers with the products, the counts of the list and the place of the page', () => {
+    expect(
+      ProductReadMapper.toApiProductPage(
+        {
+          products: [dbProduct({ id: OTHER_PRODUCT_ID }), dbProduct()],
+          total: 5,
+          hasMore: true,
+        },
+        paging,
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        data: [{ id: OTHER_PRODUCT_ID }, { id: PRODUCT_ID }],
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: PRODUCT_ID,
+          nextCursor: PRODUCT_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('names no next page when the list ends with this one', () => {
+    expect(
+      ProductReadMapper.toApiProductPage(
+        { products: [dbProduct()], total: 1, hasMore: false },
+        { limit: 20, after: null },
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        meta: {
+          total: 1,
+          limit: 20,
+          hasMore: false,
+          cursor: null,
+          nextCursor: null,
+        },
+      },
+    })
+  })
+
+  it('fails on the first product that does not match the API model', () => {
+    expect(
+      ProductReadMapper.toApiProductPage(
+        {
+          products: [
+            dbProduct(),
+            dbProduct({ id: OTHER_PRODUCT_ID, createdAt: 'never' }),
+          ],
+          total: 2,
+          hasMore: false,
+        },
+        paging,
+      ),
+    ).toMatchObject({
+      type: 'error',
+      error: {
+        message: `Stored product ${OTHER_PRODUCT_ID} does not match the API model`,
+      },
+    })
+  })
+})
+
+describe('ProductWriteMapper.fromSearchRequest', () => {
+  const salonId = salonIdSchema.parse(SALON_ID)
+  const unfiltered = {
+    keyword: null,
+    category: null,
+    barcode: null,
+    isActive: null,
+    isForSale: null,
+    isForTreatment: null,
+  }
+
+  it('lists the first 20 products of the salon when the request names nothing', () => {
+    expect(
+      ProductWriteMapper.fromSearchRequest(
+        productSearchRequestSchema.parse({}),
+        salonId,
+      ),
+    ).toStrictEqual({
+      salonId: SALON_ID,
+      limit: 20,
+      after: null,
+      ...unfiltered,
+    })
+  })
+
+  it('takes the place of the page and every filter the request names', () => {
+    expect(
+      ProductWriteMapper.fromSearchRequest(
+        productSearchRequestSchema.parse({
+          limit: 5,
+          cursor: PRODUCT_ID,
+          keyword: 'シャンプー',
+          category: 'Hair Care',
+          barcode: '4901234567890',
+          isActive: false,
+          isForSale: false,
+          isForTreatment: false,
+        }),
+        salonId,
+      ),
+    ).toStrictEqual({
+      salonId: SALON_ID,
+      limit: 5,
+      after: PRODUCT_ID,
+      keyword: 'シャンプー',
+      category: 'Hair Care',
+      barcode: '4901234567890',
+      isActive: false,
+      isForSale: false,
+      isForTreatment: false,
+    })
+  })
+
+  it.each<[string, Record<string, string | boolean>]>([
+    ['a keyword', { keyword: 'シャンプー' }],
+    ['the category', { category: 'Hair Care' }],
+    ['the barcode', { barcode: '4901234567890' }],
+    ['whether the salon stocks it', { isActive: true }],
+    ['whether it is sold', { isForSale: true }],
+    ['whether it is used in treatments', { isForTreatment: true }],
+  ])('narrows the list by %s alone', (_named, filter) => {
+    expect(
+      ProductWriteMapper.fromSearchRequest(
+        productSearchRequestSchema.parse(filter),
+        salonId,
+      ),
+    ).toStrictEqual({
+      salonId: SALON_ID,
+      limit: 20,
+      after: null,
+      ...unfiltered,
+      ...filter,
     })
   })
 })

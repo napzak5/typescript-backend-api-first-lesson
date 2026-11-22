@@ -215,7 +215,7 @@
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/inventory.tsp`（`InventoryAlertType`、`InventoryAlertSeverityType`、`InventoryAlertResponse`、`InventoryAlertAcknowledgementResponse`、`InventoryAlertSearchRequest`、`InventoryAlertAcknowledgeRequest`、`InventoryAlertSummaryRequest`、`InventoryAlertSummaryResponse`）、`specs/models/_shared/common.tsp`（`InventoryAlertAcknowledgementId`）、`specs/operations/inventory-operations.tsp`（`InventoryAlertCrud`） |
-| ドメイン | `backend/packages/domain/src/models/inventory-alert.ts`、`schemas/inventory-alert.schema.ts`、`mappers/read/inventory-alert.mapper.ts`、`repositories/inventory-alert.repository.ts`、`business-logic/inventory-alert/`（アラートと確認の規則は `_shared/alerts.ts`） |
+| ドメイン | `backend/packages/domain/src/models/inventory-alert.ts`、`schemas/inventory-alert.schema.ts`、`mappers/write/inventory-alert.mapper.ts`（行は作らない。リクエストを、一覧の条件、集計するサロン、確認するアラートにする）、`mappers/read/inventory-alert.mapper.ts`（アラートのほかに、一覧のページと、集計も作る）、`repositories/inventory-alert.repository.ts`、`business-logic/inventory-alert/`（アラートと確認の規則は `_shared/alerts.ts`） |
 | インフラ | `backend/packages/infrastructure/src/repositories/inventory-alert.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/inventory-alert/`（`/api/v1/inventory-alerts` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611171700_inventory_alert_acknowledgements.sql` |

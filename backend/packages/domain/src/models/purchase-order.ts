@@ -11,6 +11,7 @@ import {
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import type { InventoryId } from './inventory'
+import type { SalonId } from './salon'
 
 // ID: a UUID that has been checked.
 export const purchaseOrderIdSchema = uuidSchema.brand<'PurchaseOrderId'>()
@@ -92,6 +93,13 @@ type PurchaseOrderUnstatedColumn =
 export type DbNewPurchaseOrder = DeepRequired<
   Omit<typeof purchaseOrders.$inferInsert, PurchaseOrderUnstatedColumn>
 >
+
+/**
+ * The order a request asks to draft: the row, with its salon as the ID
+ * that was checked, by which the use case decides whether the actor
+ * reaches it.
+ */
+export type RequestedPurchaseOrder = DbNewPurchaseOrder & { salonId: SalonId }
 
 /**
  * What the creation of an order writes of an item besides what it copies

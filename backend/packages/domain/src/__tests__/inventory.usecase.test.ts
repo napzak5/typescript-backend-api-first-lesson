@@ -199,6 +199,10 @@ describe('ListInventoryUseCase', () => {
       query({ cursor: INVENTORY_ID }),
     )
 
+    expect(result).toMatchObject({
+      type: 'error',
+      error: { type: 'validation', message: 'Invalid inventory search' },
+    })
     expect(rulesOf(result)).toEqual(['cursor:not_found'])
     expect(messagesOf(result)).toEqual({
       cursor: 'Must name a stock row of the list',
@@ -699,16 +703,52 @@ describe('ListLowStockInventoryUseCase', () => {
     expect(missing.inventoryRepository.listLowStock).not.toHaveBeenCalled()
   })
 
-  it('refuses a cursor the list cannot start from, and hands on what could not be done', async () => {
-    expect(
-      rulesOf(
-        await lowStock(
-          inventoryDependencies({
-            listLowStock: vi.fn(async () => Result.success(null)),
-          }),
-        ),
+  it('names the cursor it was given, and the last row as the cursor of the next page when more follow', async () => {
+    const dependencies = inventoryDependencies({
+      listLowStock: vi.fn(async () =>
+        Result.success({
+          rows: [dbInventory(), dbInventory({ id: OTHER_INVENTORY_ID })],
+          total: 5,
+          hasMore: true,
+        }),
       ),
-    ).toEqual(['cursor:not_found'])
+    })
+
+    const result = await lowStock(
+      dependencies,
+      owner,
+      query({ salonId: SALON_ID, limit: 2, cursor: INVENTORY_ID }),
+    )
+
+    expect(result).toMatchObject({
+      type: 'success',
+      data: {
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: INVENTORY_ID,
+          nextCursor: OTHER_INVENTORY_ID,
+        },
+      },
+    })
+  })
+
+  it('refuses a cursor the list cannot start from, and hands on what could not be done', async () => {
+    const refused = await lowStock(
+      inventoryDependencies({
+        listLowStock: vi.fn(async () => Result.success(null)),
+      }),
+    )
+
+    expect(refused).toMatchObject({
+      type: 'error',
+      error: { type: 'validation', message: 'Invalid low-stock search' },
+    })
+    expect(rulesOf(refused)).toEqual(['cursor:not_found'])
+    expect(messagesOf(refused)).toEqual({
+      cursor: 'Must name a stock row of the list',
+    })
     expect(
       await lowStock(
         inventoryDependencies({
@@ -844,7 +884,63 @@ describe('ListExpiringInventoryUseCase', () => {
       listExpiring: vi.fn(async () => Result.success(null)),
     })
 
-    expect(rulesOf(await expiring(dependencies))).toEqual(['cursor:not_found'])
+    const refused = await expiring(dependencies)
+
+    expect(refused).toMatchObject({
+      type: 'error',
+      error: { type: 'validation', message: 'Invalid expiring search' },
+    })
+    expect(rulesOf(refused)).toEqual(['cursor:not_found'])
+    expect(messagesOf(refused)).toEqual({
+      cursor: 'Must name a stock row of the list',
+    })
+  })
+
+  it('starts the page after the cursor it was given, and names it and the last row as the cursor of the next page when more follow', async () => {
+    const dependencies = inventoryDependencies(
+      {
+        listExpiring: vi.fn(async () =>
+          Result.success({
+            rows: [dbInventory(), dbInventory({ id: OTHER_INVENTORY_ID })],
+            total: 5,
+            hasMore: true,
+          }),
+        ),
+      },
+      {},
+      () => new Date('2026-11-14T09:00:00.000Z'),
+    )
+
+    const result = await expiring(
+      dependencies,
+      owner,
+      query({ salonId: SALON_ID, limit: 2, cursor: INVENTORY_ID }),
+    )
+
+    expect(
+      vi.mocked(dependencies.inventoryRepository.listExpiring).mock.calls,
+    ).toEqual([
+      [
+        {
+          salonId: SALON_ID,
+          limit: 2,
+          after: INVENTORY_ID,
+          until: '2026-12-14',
+        },
+      ],
+    ])
+    expect(result).toMatchObject({
+      type: 'success',
+      data: {
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: INVENTORY_ID,
+          nextCursor: OTHER_INVENTORY_ID,
+        },
+      },
+    })
   })
 
   it('takes the page the repository gives as it is', async () => {

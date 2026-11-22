@@ -1,8 +1,9 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { PurchaseOrderReadMapper } from '../../mappers/read/purchase-order.mapper'
+import { PurchaseOrderWriteMapper } from '../../mappers/write/purchase-order.mapper'
 import type { Actor } from '../../models/auth'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import type { ApiPurchaseOrderResponse } from '../../models/purchase-order'
 import { purchaseOrderSearchRequestSchema } from '../../schemas/purchase-order.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -11,13 +12,6 @@ import { purchaseOrderReachOf } from './_shared/authorization'
 import type { PurchaseOrderUseCaseDependencies } from './_shared/dependencies'
 
 const MESSAGE = 'Invalid purchase order search'
-
-const DEFAULT_LIMIT = 20
-
-export type PurchaseOrderPage = {
-  data: ApiPurchaseOrderResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListPurchaseOrdersUseCase {
   constructor(
@@ -38,7 +32,7 @@ export class ListPurchaseOrdersUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<PurchaseOrderPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiPurchaseOrderResponse>, DomainError>> {
     const reach = purchaseOrderReachOf(actor)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
@@ -54,29 +48,22 @@ export class ListPurchaseOrdersUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, salonId, status, supplier, startDate, endDate } =
-      request.data
-    if (salonId !== undefined && !isWithin(reach, salonId)) {
+    const criteria = PurchaseOrderWriteMapper.fromSearchRequest(
+      request.data,
+      reach,
+    )
+    if (criteria.salonId !== null && !isWithin(reach, criteria.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
-    const limit = request.data.limit ?? DEFAULT_LIMIT
 
-    const listed = await this.dependencies.purchaseOrderRepository.list({
-      reach,
-      limit,
-      after: cursor ?? null,
-      salonId: salonId ?? null,
-      status: status ?? null,
-      supplier: supplier ?? null,
-      startDate: startDate ?? null,
-      endDate: endDate ?? null,
-    })
+    const listed =
+      await this.dependencies.purchaseOrderRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
 
     return match(listed.data)
-      .returnType<Result<PurchaseOrderPage, DomainError>>()
+      .returnType<Result<ApiPage<ApiPurchaseOrderResponse>, DomainError>>()
       .with({ type: 'cursorNotFound' }, () =>
         Result.error(
           DomainErrors.validation(MESSAGE, [
@@ -88,22 +75,8 @@ export class ListPurchaseOrdersUseCase {
           ]),
         ),
       )
-      .with({ type: 'listed' }, ({ orders, total, hasMore }) =>
-        Result.map(
-          PurchaseOrderReadMapper.toApiPurchaseOrders(orders),
-          (data) => ({
-            data,
-            meta: {
-              total,
-              limit,
-              hasMore,
-              cursor: cursor ?? null,
-              nextCursor: hasMore ? (orders.at(-1)?.order.id ?? null) : null,
-              // Pages are only walked forwards.
-              prevCursor: null,
-            },
-          }),
-        ),
+      .with({ type: 'listed' }, (list) =>
+        PurchaseOrderReadMapper.toApiPurchaseOrderPage(list, criteria),
       )
       .exhaustive()
   }

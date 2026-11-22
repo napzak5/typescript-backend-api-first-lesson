@@ -1,8 +1,9 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { PurchaseOrderReadMapper } from '../../mappers/read/purchase-order.mapper'
+import { PurchaseOrderWriteMapper } from '../../mappers/write/purchase-order.mapper'
 import type { Actor } from '../../models/auth'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import type { ApiReorderSuggestionResponse } from '../../models/purchase-order'
 import { reorderSuggestionSearchRequestSchema } from '../../schemas/purchase-order.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -12,13 +13,6 @@ import { purchaseOrderReachOf } from './_shared/authorization'
 import type { PurchaseOrderUseCaseDependencies } from './_shared/dependencies'
 
 const MESSAGE = 'Invalid reorder suggestion search'
-
-const DEFAULT_LIMIT = 20
-
-export type ReorderSuggestionPage = {
-  data: ApiReorderSuggestionResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListReorderSuggestionsUseCase {
   constructor(
@@ -40,7 +34,7 @@ export class ListReorderSuggestionsUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<ReorderSuggestionPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiReorderSuggestionResponse>, DomainError>> {
     const reach = purchaseOrderReachOf(actor)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
@@ -56,14 +50,14 @@ export class ListReorderSuggestionsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, salonId } = request.data
-    if (!isWithin(reach, salonId)) {
+    const criteria =
+      PurchaseOrderWriteMapper.fromReorderSuggestionSearchRequest(request.data)
+    if (!isWithin(reach, criteria.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
-    const limit = request.data.limit ?? DEFAULT_LIMIT
 
     const { purchaseOrderRepository, salonRepository } = this.dependencies
-    const salonExists = await salonRepository.exists(salonId)
+    const salonExists = await salonRepository.exists(criteria.salonId)
     if (salonExists.type === 'error') {
       return salonExists
     }
@@ -71,15 +65,14 @@ export class ListReorderSuggestionsUseCase {
       return Result.error(salonNotFound(MESSAGE))
     }
 
-    const listed = await purchaseOrderRepository.listReorderSuggestions({
-      salonId,
-      limit,
-      after: cursor ?? null,
-    })
+    const listed =
+      await purchaseOrderRepository.listReorderSuggestions(criteria)
 
     return Result.flatMap(listed, (listing) =>
       match(listing)
-        .returnType<Result<ReorderSuggestionPage, DomainError>>()
+        .returnType<
+          Result<ApiPage<ApiReorderSuggestionResponse>, DomainError>
+        >()
         .with({ type: 'cursorNotFound' }, () =>
           Result.error(
             DomainErrors.validation(MESSAGE, [
@@ -91,21 +84,8 @@ export class ListReorderSuggestionsUseCase {
             ]),
           ),
         )
-        .with({ type: 'listed' }, ({ suggestions, total, hasMore }) =>
-          Result.map(
-            PurchaseOrderReadMapper.toApiReorderSuggestions(suggestions),
-            (data) => ({
-              data,
-              meta: {
-                total,
-                limit,
-                hasMore,
-                cursor: cursor ?? null,
-                nextCursor: hasMore ? (data.at(-1)?.productId ?? null) : null,
-                prevCursor: null,
-              },
-            }),
-          ),
+        .with({ type: 'listed' }, (list) =>
+          PurchaseOrderReadMapper.toApiReorderSuggestionPage(list, criteria),
         )
         .exhaustive(),
     )

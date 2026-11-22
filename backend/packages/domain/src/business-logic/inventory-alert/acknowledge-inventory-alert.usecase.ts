@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { InventoryAlertReadMapper } from '../../mappers/read/inventory-alert.mapper'
+import { InventoryAlertWriteMapper } from '../../mappers/write/inventory-alert.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiInventoryAlertResponse } from '../../models/inventory-alert'
 import { inventoryAlertAcknowledgeRequestSchema } from '../../schemas/inventory-alert.schema'
@@ -48,12 +49,16 @@ export class AcknowledgeInventoryAlertUseCase {
     if (request.type === 'error') {
       return request
     }
-    const key = `${request.data.alert}:${subjectIdOf(request.data)}`
+    const acknowledgement = InventoryAlertWriteMapper.fromAcknowledgeRequest(
+      request.data,
+      performerOf(actor),
+    )
+    const key = `${acknowledgement.alert}:${subjectIdOf(acknowledgement)}`
 
     const { inventoryAlertRepository, clock } = this.dependencies
     const acknowledged = await inventoryAlertRepository.acknowledge(
       reach,
-      { ...request.data, acknowledgedBy: performerOf(actor) },
+      acknowledgement,
       clock(),
     )
 

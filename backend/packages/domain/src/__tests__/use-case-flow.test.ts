@@ -20,21 +20,10 @@ const LOGIC = join(SOURCES, 'business-logic')
  * off this list by the change that makes it follow: one that follows and is
  * still listed fails below.
  */
-const NOT_YET = [
-  'auth',
-  'inventory',
-  'inventory-alert',
-  'product',
-  'purchase-order',
-]
+const NOT_YET = ['auth']
 
 /** The read mappers that have no write mapper of their name yet. */
-const WITHOUT_WRITE_MAPPER = [
-  'inventory-alert',
-  'inventory-report',
-  'session',
-  'user',
-]
+const WITHOUT_WRITE_MAPPER = ['session', 'user']
 
 /** The folders of `business-logic` that hold the use cases of a domain. */
 const DOMAINS = readdirSync(LOGIC, { withFileTypes: true })

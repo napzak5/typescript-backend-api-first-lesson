@@ -333,15 +333,23 @@ export const matchesFilter = (
   (filter.acknowledged === null ||
     (acknowledgement !== null) === filter.acknowledged)
 
+/** The alerts of a page, how many the list has in all, and whether more follow the page. */
+export type InventoryAlertList = {
+  alerts: InventoryAlert[]
+  total: number
+  hasMore: boolean
+}
+
 /**
  * The alerts of a page: those after the position of the cursor, at most
- * the limit of them, and whether more follow.
+ * the limit of them, with how many alerts the list has in all and whether
+ * more follow.
  */
 export const pageOfAlerts = (
   alerts: InventoryAlert[],
   after: InventoryAlertPosition | null,
   limit: number,
-): { alerts: InventoryAlert[]; hasMore: boolean } => {
+): InventoryAlertList => {
   const following =
     after === null
       ? alerts
@@ -349,31 +357,8 @@ export const pageOfAlerts = (
 
   return {
     alerts: following.slice(0, limit),
+    total: alerts.length,
     hasMore: following.length > limit,
-  }
-}
-
-/** The counts of the alerts of a salon. */
-export const summaryOf = (
-  alerts: InventoryAlert[],
-): {
-  totalAlerts: number
-  criticalAlerts: number
-  warningAlerts: number
-  infoAlerts: number
-  unacknowledged: number
-} => {
-  const counted = (severity: InventoryAlertSeverity): number =>
-    alerts.filter((alert) => alert.severity === severity).length
-
-  return {
-    totalAlerts: alerts.length,
-    criticalAlerts: counted('critical'),
-    warningAlerts: counted('warning'),
-    infoAlerts: counted('info'),
-    unacknowledged: alerts.filter(
-      ({ acknowledgement }) => acknowledgement === null,
-    ).length,
   }
 }
 

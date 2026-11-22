@@ -43,7 +43,11 @@ export class CreatePurchaseOrderUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (!isWithin(reach, request.data.salonId)) {
+    const { order, items } = PurchaseOrderWriteMapper.fromCreateRequest(
+      request.data,
+      actingStaffOf(actor),
+    )
+    if (!isWithin(reach, order.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
 
@@ -52,18 +56,13 @@ export class CreatePurchaseOrderUseCase {
       salonRepository,
       purchaseOrderNumberIssuer,
     } = this.dependencies
-    const salonExists = await salonRepository.exists(request.data.salonId)
+    const salonExists = await salonRepository.exists(order.salonId)
     if (salonExists.type === 'error') {
       return salonExists
     }
     if (!salonExists.data) {
       return Result.error(salonNotFound(MESSAGE))
     }
-
-    const { order, items } = PurchaseOrderWriteMapper.fromCreateRequest(
-      request.data,
-      actingStaffOf(actor),
-    )
 
     return underFreeNumber(
       'purchase order',
