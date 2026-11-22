@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type { Actor } from '../../models/auth'
 import { authPasswordChangeRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -28,7 +29,8 @@ export class ChangePasswordUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { currentPassword, newPassword } = request.data
+    const { currentPassword, newPassword } =
+      UserWriteMapper.fromPasswordChangeRequest(request.data)
 
     const { userRepository, passwordHasher, mailer, clock } = this.dependencies
     const now = clock()

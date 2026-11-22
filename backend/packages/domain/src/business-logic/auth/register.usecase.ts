@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authRegisterRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
@@ -33,7 +34,9 @@ export class RegisterUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { email, password } = request.data
+    const { email, password } = UserWriteMapper.fromRegisterRequest(
+      request.data,
+    )
 
     const blocked = blocklistIssue('password', password, email)
     if (blocked !== null) {

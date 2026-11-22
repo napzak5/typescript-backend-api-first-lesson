@@ -1,6 +1,12 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
-import type { ApiUserResponse, DbUser } from '../../models/auth'
+import { otpauthUri } from '../../business-logic/auth/_shared/two-factor-setup'
+import type {
+  ApiAuthTwoFactorBackupCodesResponse,
+  ApiAuthTwoFactorSetupResponse,
+  ApiUserResponse,
+  DbUser,
+} from '../../models/auth'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { timestampSchema } from './columns'
 
@@ -66,5 +72,26 @@ export const UserReadMapper = {
           error,
         ),
     )
+  },
+
+  /**
+   * What the start of a two-factor setup answers with, the only place the
+   * secret and the backup codes are shown: the secret as it is, and as the
+   * address an authenticator app reads from a QR code, which names the
+   * account by its email.
+   */
+  toApiTwoFactorSetup(
+    email: string,
+    secret: string,
+    backupCodes: string[],
+  ): ApiAuthTwoFactorSetupResponse {
+    return { qrCodeUrl: otpauthUri(email, secret), secret, backupCodes }
+  },
+
+  /** The new backup codes, shown this once. */
+  toApiTwoFactorBackupCodes(
+    backupCodes: string[],
+  ): ApiAuthTwoFactorBackupCodesResponse {
+    return { backupCodes }
   },
 }

@@ -1,18 +1,13 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { SessionReadMapper } from '../../mappers/read/session.mapper'
+import { SessionWriteMapper } from '../../mappers/write/session.mapper'
 import type { Actor, ApiSessionResponse } from '../../models/auth'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import { sessionSearchRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid session search'
-
-export type SessionPage = {
-  data: ApiSessionResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListSessionsUseCase {
   constructor(private readonly dependencies: AuthUseCaseDependencies) {}
@@ -30,21 +25,19 @@ export class ListSessionsUseCase {
   async execute(
     actor: Actor,
     input: unknown,
-  ): Promise<Result<SessionPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiSessionResponse>, DomainError>> {
     const request = parseWith(sessionSearchRequestSchema, input, MESSAGE)
     if (request.type === 'error') {
       return request
     }
-    const { cursor } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
 
     const { sessionRepository, clock } = this.dependencies
-    const listed = await sessionRepository.listOfUser({
-      userId: actor.userId,
-      now: clock().toISOString(),
-      limit,
-      after: cursor ?? null,
-    })
+    const criteria = SessionWriteMapper.fromSearchRequest(
+      request.data,
+      actor.userId,
+      clock().toISOString(),
+    )
+    const listed = await sessionRepository.listOfUser(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -60,23 +53,10 @@ export class ListSessionsUseCase {
       )
     }
 
-    const { sessions, total, hasMore } = listed.data
-    const lastSessionId = sessions.at(-1)?.id ?? null
-
-    return Result.map(
-      SessionReadMapper.toApiSessions(sessions, actor.sessionId),
-      (data) => ({
-        data,
-        meta: {
-          total,
-          limit,
-          hasMore,
-          cursor: cursor ?? null,
-          nextCursor: hasMore ? lastSessionId : null,
-          // Pages are only walked forwards.
-          prevCursor: null,
-        },
-      }),
+    return SessionReadMapper.toApiSessionPage(
+      listed.data,
+      criteria,
+      actor.sessionId,
     )
   }
 }

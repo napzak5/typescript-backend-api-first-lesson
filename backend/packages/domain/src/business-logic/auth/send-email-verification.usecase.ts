@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authEmailVerificationSendRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
@@ -27,7 +28,9 @@ export class SendEmailVerificationUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { email } = request.data
+    const { email } = UserWriteMapper.fromEmailVerificationSendRequest(
+      request.data,
+    )
 
     const { userRepository, tokenIssuer, mailer, publicAppUrl, clock } =
       this.dependencies

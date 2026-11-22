@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { UserReadMapper } from '../../mappers/read/user.mapper'
+import { SessionReadMapper } from '../../mappers/read/session.mapper'
+import { SessionWriteMapper } from '../../mappers/write/session.mapper'
 import type { ApiAuthLoginResponse, ClientInfo } from '../../models/auth'
 import { authLoginRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -58,7 +59,8 @@ export class LoginUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { email, password, rememberMe, twoFactorCode } = request.data
+    const { email, password, rememberMe, twoFactorCode } =
+      SessionWriteMapper.fromLoginRequest(request.data)
 
     const {
       userRepository,
@@ -139,12 +141,6 @@ export class LoginUseCase {
       mailer.deliver(backupCodeUsedMail(user.email, backupCodesLeft))
     }
 
-    return Result.map(UserReadMapper.toApiUser(signedIn.data), (apiUser) => ({
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      token: 'Bearer',
-      expiresIn: tokens.expiresIn,
-      user: apiUser,
-    }))
+    return SessionReadMapper.toApiLogin(tokens, signedIn.data)
   }
 }

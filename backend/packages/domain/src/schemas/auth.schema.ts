@@ -124,3 +124,6 @@ export const sessionSearchRequestSchema = z.strictObject({
   limit: z.number().int().min(1).max(100).exactOptional(),
   cursor: sessionIdSchema.exactOptional(),
 }) satisfies z.ZodType<ApiSessionSearchRequest>
+
+/** A query of the sessions that passed the rules of its own. */
+export type SessionSearchRequest = z.infer<typeof sessionSearchRequestSchema>

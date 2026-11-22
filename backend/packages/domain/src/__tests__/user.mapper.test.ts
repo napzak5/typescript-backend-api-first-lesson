@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { UserReadMapper } from '../mappers/read/user.mapper'
+import { UserWriteMapper } from '../mappers/write/user.mapper'
 import type { DbUser } from '../models/auth'
 import {
   BACKUP_CODE_HASH,
   CUSTOMER_ID,
   dataOf,
   dbUser,
+  PASSWORD,
   SEALED_SECRET,
   STAFF_ID,
   twoFactorUser,
@@ -162,4 +164,114 @@ describe('UserReadMapper.toApiUser', () => {
       })
     },
   )
+})
+
+describe('UserReadMapper: the answers of a two-factor setup', () => {
+  it('shows the secret as it is and as the address an authenticator app reads, which names the account, and the backup codes', () => {
+    expect(
+      UserReadMapper.toApiTwoFactorSetup(
+        'owner+salon@salon.example',
+        'JBSWY3DPEHPK3PXP',
+        ['ABCD-EFGH-IJKL-MNOP', 'QRST-UVWX-YZ23-4567'],
+      ),
+    ).toStrictEqual({
+      qrCodeUrl:
+        'otpauth://totp/Beauty%20Salon:owner%2Bsalon%40salon.example?secret=JBSWY3DPEHPK3PXP&issuer=Beauty%20Salon&algorithm=SHA1&digits=6&period=30',
+      secret: 'JBSWY3DPEHPK3PXP',
+      backupCodes: ['ABCD-EFGH-IJKL-MNOP', 'QRST-UVWX-YZ23-4567'],
+    })
+  })
+
+  it('shows the new backup codes in the order they were issued', () => {
+    expect(
+      UserReadMapper.toApiTwoFactorBackupCodes([
+        'QRST-UVWX-YZ23-4567',
+        'ABCD-EFGH-IJKL-MNOP',
+      ]),
+    ).toStrictEqual({
+      backupCodes: ['QRST-UVWX-YZ23-4567', 'ABCD-EFGH-IJKL-MNOP'],
+    })
+  })
+})
+
+describe('UserWriteMapper', () => {
+  const EMAIL = 'owner@salon.example'
+  const TOKEN = 'the-token-of-a-mail'
+  const NEW_PASSWORD = 'a new password of the owner'
+  const CODE = '492039'
+
+  it('takes the email and the password of a registration as they are presented', () => {
+    expect(
+      UserWriteMapper.fromRegisterRequest({ email: EMAIL, password: PASSWORD }),
+    ).toStrictEqual({ email: EMAIL, password: PASSWORD })
+  })
+
+  it('takes the email a verification mail is asked for', () => {
+    expect(
+      UserWriteMapper.fromEmailVerificationSendRequest({ email: EMAIL }),
+    ).toStrictEqual({ email: EMAIL })
+  })
+
+  it('takes the token that confirms an email', () => {
+    expect(
+      UserWriteMapper.fromEmailVerificationConfirmRequest({ token: TOKEN }),
+    ).toStrictEqual({ token: TOKEN })
+  })
+
+  it('takes the email a password reset is asked for', () => {
+    expect(
+      UserWriteMapper.fromPasswordForgotRequest({ email: EMAIL }),
+    ).toStrictEqual({ email: EMAIL })
+  })
+
+  it('takes the token of a password reset that is looked at', () => {
+    expect(
+      UserWriteMapper.fromPasswordResetVerifyRequest({ token: TOKEN }),
+    ).toStrictEqual({ token: TOKEN })
+  })
+
+  it('takes the token of a password reset and the password the account gets', () => {
+    expect(
+      UserWriteMapper.fromPasswordResetConfirmRequest({
+        token: TOKEN,
+        newPassword: NEW_PASSWORD,
+      }),
+    ).toStrictEqual({ token: TOKEN, newPassword: NEW_PASSWORD })
+  })
+
+  it('tells the password that shows who asks from the one that takes its place', () => {
+    expect(
+      UserWriteMapper.fromPasswordChangeRequest({
+        currentPassword: PASSWORD,
+        newPassword: NEW_PASSWORD,
+      }),
+    ).toStrictEqual({ currentPassword: PASSWORD, newPassword: NEW_PASSWORD })
+  })
+
+  it('takes the password that starts a two-factor setup', () => {
+    expect(
+      UserWriteMapper.fromTwoFactorEnableRequest({ password: PASSWORD }),
+    ).toStrictEqual({ password: PASSWORD })
+  })
+
+  it('takes the code that confirms a two-factor setup', () => {
+    expect(
+      UserWriteMapper.fromTwoFactorVerifyRequest({ code: CODE }),
+    ).toStrictEqual({ code: CODE })
+  })
+
+  it('tells the password from the code that turn the second factor off', () => {
+    expect(
+      UserWriteMapper.fromTwoFactorDisableRequest({
+        password: PASSWORD,
+        code: CODE,
+      }),
+    ).toStrictEqual({ password: PASSWORD, code: CODE })
+  })
+
+  it('takes the code that asks for new backup codes', () => {
+    expect(
+      UserWriteMapper.fromTwoFactorBackupCodesRequest({ code: CODE }),
+    ).toStrictEqual({ code: CODE })
+  })
 })

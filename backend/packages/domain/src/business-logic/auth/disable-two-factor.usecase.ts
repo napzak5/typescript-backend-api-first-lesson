@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type { Actor } from '../../models/auth'
 import { authTwoFactorDisableRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -32,7 +33,9 @@ export class DisableTwoFactorUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { password, code } = request.data
+    const { password, code } = UserWriteMapper.fromTwoFactorDisableRequest(
+      request.data,
+    )
 
     const { userRepository, mailer, clock } = this.dependencies
     const now = clock()
