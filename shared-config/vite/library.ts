@@ -158,6 +158,16 @@ const library = (
 })
 
 /**
+ * The configuration of a build, and of nothing else. Vitest reads
+ * `vite.config.ts` too, in a package that has no configuration of its own
+ * for its tests: they run as they would without this file.
+ */
+const whenBuilt =
+  (configuration: (mode: string) => UserConfig): UserConfigFnObject =>
+  ({ command, mode }) =>
+    command === 'build' ? configuration(mode) : {}
+
+/**
  * A library with one output file for each module under `src`: a component
  * keeps the import of its own stylesheet, so an application that imports a
  * component gets its styles and no others. It runs in a browser.
@@ -166,9 +176,8 @@ const library = (
  * (`*.module.css`) the bundler of an application would name its classes a
  * second time, and the names the built module holds would name nothing.
  */
-export const moduleLibrary =
-  (root = process.cwd()): UserConfigFnObject =>
-  ({ mode }) =>
+export const moduleLibrary = (root = process.cwd()): UserConfigFnObject =>
+  whenBuilt((mode) =>
     library(root, mode, [importsOwnStyles()], {
       lib: { entry: modulesOf(root), formats: ['es'] },
       rolldownOptions: {
@@ -181,25 +190,25 @@ export const moduleLibrary =
         },
       },
       cssCodeSplit: true,
-    })
+    }),
+  )
 
 /**
  * A library with one output file for each entry (`src/index.ts`, unless
  * the package has more than one), for a browser or for Node.js. What
  * Node.js brings stays an import of a library that runs in it.
  */
-export const bundledLibrary =
-  (
-    manifest: Manifest,
-    runsIn: RunsIn,
-    entry: Record<string, string> = { index: 'src/index.ts' },
-    root = process.cwd(),
-  ): UserConfigFnObject =>
-  ({ mode }) => ({
+export const bundledLibrary = (
+  manifest: Manifest,
+  runsIn: RunsIn,
+  entry: Record<string, string> = { index: 'src/index.ts' },
+  root = process.cwd(),
+): UserConfigFnObject =>
+  whenBuilt((mode) => ({
     ...library(root, mode, [], {
       ssr: runsIn === 'node',
       lib: { entry, formats: ['es'] },
       rolldownOptions: { external: leftOut(manifest) },
     }),
     ssr: { noExternal: true },
-  })
+  }))

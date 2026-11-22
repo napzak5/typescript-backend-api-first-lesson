@@ -330,6 +330,25 @@ describe('a library that is bundled', () => {
   )
 })
 
+describe('a configuration that is read when nothing is built', () => {
+  it.each<[string, UserConfigFnObject]>([
+    ['a library of modules', moduleLibrary(MODULES)],
+    [
+      'a library that is bundled',
+      bundledLibrary(MANIFEST, 'browser', undefined, BUNDLED),
+    ],
+  ])(
+    'should configure nothing, so that the tests of a package run as they would without it: %s',
+    (_, library) => {
+      // Act
+      const configuration = library({ command: 'serve', mode: 'test' })
+
+      // Assert
+      expect(configuration).toEqual({})
+    },
+  )
+})
+
 describe('the declarations of a library', () => {
   it.each<[string, UserConfigFnObject]>([
     ['a library of modules', moduleLibrary(UNSOUND)],

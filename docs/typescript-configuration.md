@@ -130,6 +130,7 @@ export default bundledLibrary(manifest, 'browser')
 - `import.meta.env.*` は、書いたままに残します。値は、アプリのビルドのものです
 - JSX は、`NODE_ENV` が何であっても `react/jsx-runtime` で組み立てます。開発用のランタイムは、本番のアプリにはありません
 - `public/` の中身は、`dist` に写しません
+- 設定は、ビルドのときだけ効きます。Vitest の設定を持たないパッケージ（`brand`、`config`）では、Vitest も `vite.config.ts` を読みますが、何も設定されず、テストはこのファイルがないときと同じに動きます
 
 外に残す `import`:
 
