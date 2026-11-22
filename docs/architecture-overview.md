@@ -87,9 +87,9 @@ shape the system, and why:
   number, `timestamptz` to ISO 8601) and check `jsonb` values against the API
   model. A domain has both: a request that was checked goes to its write
   mapper and nowhere else, and what the API answers with comes from a read
-  mapper, also where nothing is converted. The domains that do not follow
-  this yet are listed in `domain/src/__tests__/use-case-flow.test.ts`, which
-  fails when a use case of any other domain leaves the flow.
+  mapper, also where nothing is converted.
+  `domain/src/__tests__/use-case-flow.test.ts` reads the use cases of every
+  domain and fails when one leaves the flow.
 - **Nothing is passed through a global.** Dependencies are built once at
   start-up and handed down as arguments, and only the server's entry point
   reads the environment. The integration tests call the same `createApp` with
@@ -133,7 +133,7 @@ Salon files show the pattern:
 ```
 domain/src/
 ├── models/salon.ts                    ID, API and database types
-├── models/page.ts                     ApiPage, ApiPaginationMeta, Paging (every list)
+├── models/page.ts                     ApiPage, Paging (every list)
 ├── schemas/salon.schema.ts            Zod schema of each request
 ├── schemas/rules.ts                   nonBlankText, lowerCaseEmail, phoneNumber, MAX_INTEGER,
 │                                      noRepeatedEntries, atLeastOneProperty (the schemas of
@@ -174,8 +174,13 @@ Authentication has the same layout, with what only it needs added:
 domain/src/
 ├── models/auth.ts                     IDs, API and database types, Actor and ActorScope
 ├── schemas/auth.schema.ts             Zod schema of each request
-├── mappers/read/user.mapper.ts        Row of users → API response
-├── mappers/read/session.mapper.ts     Rows of sessions → API response
+├── mappers/write/user.mapper.ts       Requests of an account → what they present, as it is
+├── mappers/write/session.mapper.ts    Login and token refresh → what they present; the
+│                                      query of the session list → its criteria
+├── mappers/read/user.mapper.ts        Row of users → API response; the answers of a
+│                                      two-factor set-up
+├── mappers/read/session.mapper.ts     Rows of sessions → API response, a list → a page;
+│                                      the tokens of a login or a refresh → API response
 ├── repositories/user.repository.ts    IUserRepository
 ├── repositories/session.repository.ts ISessionRepository
 ├── services/                          IPasswordHasher, ITokenIssuer, ITwoFactorAuthenticator,
