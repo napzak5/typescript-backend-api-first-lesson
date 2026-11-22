@@ -141,7 +141,7 @@ export default bundledLibrary(manifest, 'browser')
 
 `database` は、ビルドの後に `sql/` を `dist/sql` に写します（`backend/packages/database/vite.config.ts`）。
 
-設定のテストは `shared-config/vite/library.test.ts` です。`shared-config/vite/__fixtures__/` の小さなライブラリーをビルドして、`dist` の中身を確かめます。各パッケージの `vite.config.ts` の型は、ルートの `tsconfig.json` が検査します。
+設定のテストは `shared-config/vite/library.test.ts` です。`shared-config/vite/__fixtures__/` の小さなライブラリーをビルドして、`dist` の中身を確かめます。各パッケージの `vite.config.ts` の型は、ルートの `tsconfig.json` が検査します（`backend/packages/*`、`frontend/packages/*`、`shared-i18n`）。
 
 ### バックエンドのパッケージ
 

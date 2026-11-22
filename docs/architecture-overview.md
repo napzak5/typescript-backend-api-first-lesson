@@ -121,6 +121,7 @@ shape the system, and why:
 │   ├── packages/            Shared packages, including the generated API client
 │   └── apps/                admin-app, portal-app, dashboard-app
 ├── shared-config/           Shared tsconfig files, the build of the packages, Biome plugins
+├── shared-i18n/             The languages, how one is chosen, and the messages (i18n)
 ├── scripts/                 Repository scripts, run with node
 ├── docs/
 ├── Dockerfile.backend, Dockerfile.frontend, docker-compose.yml
@@ -953,8 +954,9 @@ An arrow means "depends on":
                                       API shape (from TypeSpec)
 ```
 
-(`api` also takes its response types from `generated`. `utility` and `config`
-are left out; the table below is complete.)
+(`api` also takes its response types from `generated`. `utility`, `config`
+and the shared package `@beauty-salon-shared/i18n` are left out; the table
+below is complete.)
 
 The two packages at the bottom are the two sources of truth, and both are
 generated. The domain sits on both: it infers its database types from
@@ -997,7 +999,7 @@ taken out of one) is in
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
 | `domain` | Models, schemas, mappers, use cases, repository and service interfaces, `DomainError` | `database` (types), `generated`, `utility` |
 | `infrastructure` | `connectDatabase`, `pingDatabase`, the repositories (one class per repository interface of the domain: `SalonRepository`, `BookingRepository` and so on), `Argon2PasswordHasher`, `RandomTokenIssuer`, `RandomBookingNumberIssuer`, `RandomSaleNumberIssuer`, `RandomPaymentNumberIssuer`, `TotpAuthenticator`, `SmtpMailer`, `S3FileStorage`, `createLogger` | `database`, `domain`, `utility` |
-| `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`; `database` in tests |
+| `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`, and `@beauty-salon-shared/i18n` (the language of a request, the messages of the API); `database` in tests |
 | `server` (application) | Entry point and `startServer` | `api`, `config`, `domain`, `infrastructure`, `utility` |
 
 `api` does not depend on `config`: it receives plain values (`AppSettings`),
@@ -2344,7 +2346,7 @@ returns the body the contract defines for it, not problem details.
 | `rateLimited` | `rateLimiting` | 429 |
 | `unexpected` | `errorHandler`, for anything it does not recognize | 500 |
 
-The first seven are the `DomainError` union
+The first nine are the `DomainError` union
 (`backend/packages/domain/src/shared/errors.ts`); the others are the
 `HttpError` union of the API layer. `unauthenticated` carries a `reason`,
 which decides the code of the problem (`1001` to `1004`, and `1007` when a
@@ -2354,6 +2356,16 @@ the header (`toBearerChallenge`); the table of them is in
 carries the cause.
 The cause is logged instead: `sendProblem` logs a `database` error, and
 `errorHandler` logs an unexpected one with its stack.
+
+A problem is told in the language the request asks for with
+`Accept-Language`: its `title` and its `detail` are English or Japanese,
+English when the header is absent. The texts are messages of the shared
+package `@beauty-salon-shared/i18n` (`shared-i18n/`), each written in both
+languages, so that a missing translation does not compile. The errors whose
+detail the domain writes (`validation`, `notFound`, `alreadyExists`,
+`conflict`) are told in English as a whole, whatever was asked for.
+`Content-Language` names the language of the answer. How a language is
+chosen and where a message goes is in [i18n](./i18n.md).
 
 ## Configuration, Logging and Probes
 

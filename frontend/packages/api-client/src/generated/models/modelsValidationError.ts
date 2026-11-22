@@ -15,7 +15,7 @@ export interface ModelsValidationError {
   field: string;
   /** 違反した検証ルール名またはコード。 */
   rule: string;
-  /** ユーザーに提示する具体的なエラーメッセージ。 */
+  /** ユーザーに提示する具体的なエラーメッセージ。言語は、レスポンスの Content-Language ヘッダーのとおり。 */
   message: string;
   /** 検証対象となった実際の値。セキュリティ観点で出力が許容される場合のみ利用する。出力不可の場合はnull */
   value: unknown;

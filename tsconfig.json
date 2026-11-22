@@ -10,6 +10,7 @@
   "include": [
     "scripts/**/*.ts",
     "backend/packages/*/vite.config.ts",
-    "frontend/packages/*/vite.config.ts"
+    "frontend/packages/*/vite.config.ts",
+    "shared-i18n/vite.config.ts"
   ]
 }

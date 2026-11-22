@@ -17,6 +17,7 @@ backend/packages/api/src/
 ├── shared/
 │   ├── api-version.ts              # API_VERSION, API_BASE_PATH, SYSTEM_BASE_PATH
 │   ├── authentication.ts           # createAuthenticated: the wrapper for handlers that need a signed-in user
+│   ├── language.ts                 # languageAsked: the language a request asks to be answered in
 │   ├── never-stored.ts             # neverStored: Cache-Control: no-store for routes whose responses no cache may keep
 │   ├── operation-types.ts          # JsonBody: the JSON body of a generated response; SalonParams: the salon of a route below a salon
 │   ├── page-links.ts               # pageLinks: the links of a page of a list
@@ -997,8 +998,9 @@ The order matters. Every request gets its ID and logger first. The probes are an
 
 - `responses.ts`
   - `responseMeta(req)` returns the `meta` of a successful response: `correlationId` (the request ID), `timestamp` and `version`.
-  - `sendProblem(req, res, error)` sends an `ApiError` as problem details with the matching status, and a 401 with its `WWW-Authenticate` header. It logs the cause of a `database` error through `req.log`, because that cause never reaches the response.
-- `problem-details.ts` defines `HttpError` (what goes wrong in the HTTP layer itself), `ApiError = DomainError | HttpError` and the mapping below. The mapping is an exhaustive match, so a new kind of error does not compile until it has a status. `toBearerChallenge(error)` returns the `WWW-Authenticate` value of an `unauthenticated` error and `null` for every other one.
+  - `sendProblem(req, res, error)` sends an `ApiError` as problem details with the matching status, and a 401 with its `WWW-Authenticate` header. It logs the cause of a `database` error through `req.log`, because that cause never reaches the response. The problem is told in the language the request asks for where the error is written in it; `Content-Language` names that language, and `Vary` gets `Accept-Language` ([i18n](./i18n.md)).
+- `language.ts` exports `languageAsked(req)`: the language of `Accept-Language`, English when the header is absent or names no language of the API.
+- `problem-details.ts` defines `HttpError` (what goes wrong in the HTTP layer itself), `ApiError = DomainError | HttpError` and the mapping below. The mapping is an exhaustive match, so a new kind of error does not compile until it has a status. It takes the language to tell the problem in: the titles, and the details the HTTP layer writes, are the messages `problemMessages` of `@beauty-salon-shared/i18n/messages/api`. `languageOf(error, asked)` is that language: the one asked for, but English for the errors whose detail the domain writes. It names every kind of error too, so a new one does not compile until it is said who writes its detail. `toBearerChallenge(error)` returns the `WWW-Authenticate` value of an `unauthenticated` error and `null` for every other one.
 - `authentication.ts` exports `createAuthenticated(dependencies)`, which `createApp` calls once, and the type `Authenticated`. The wrapper runs `AuthenticateUseCase` on `req.headers.authorization` and either calls the handler with the actor or sends the error with `sendProblem`. Before it calls the handler, it notes the user ID of the actor for the request log (`noteSignedInUser`).
 - `signed-in-user.ts` keeps, for as long as a request lives, which user it was authenticated as: `noteSignedInUser(req, userId)` writes it and `signedInUserOf(req)` reads it, `undefined` for a request that was not authenticated. The request logging reads it (see [Middleware](#middleware)).
 - `page-links.ts` holds `pageLinks`, the links of a page of any list, and `queryOf`, the query of a request URL, for the links that repeat it (see [Links](#links)).

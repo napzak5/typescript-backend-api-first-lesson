@@ -35,7 +35,7 @@ Sum 型の定義と ts-pattern の書き方は [Sum型とパターンマッチ�
 
 ### 機械的な検査の対象
 
-Biome プラグイン（`as`、型ガード、`throw`）が検査するのは、`backend/packages/*/src`、`backend/apps/*/src`、`frontend/packages/*/src`、`frontend/apps/*/src` です。新しいパッケージは、何もしなくても対象になります。次のものは `biome.json` で対象から外しています。
+Biome プラグイン（`as`、型ガード、`throw`）が検査するのは、`backend/packages/*/src`、`backend/apps/*/src`、`frontend/packages/*/src`、`frontend/apps/*/src`、`frontend/e2e/src`、`shared-i18n/src` です。この並びに足すパッケージは、何もしなくても対象になります。リポジトリの直下に置く共有のパッケージは、`biome.json` の `includes` に足します。次のものは `biome.json` で対象から外しています。
 
 | 対象外 | 理由 |
 |--------|------|

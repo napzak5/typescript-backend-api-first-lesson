@@ -76,7 +76,7 @@ Keep the change as small as the task. No abstraction, option or parameter for a 
 - No `any`, no type assertions (`as`), no type guards, no thrown exceptions in application code. `pnpm lint` fails on each of them.
 - Every state is a sum type, matched exhaustively with ts-pattern. Every failure is a `Result` that carries a `DomainError`.
 - Types come from the database schema and the generated API types, never from hand-written declarations. Mappers change representations, not property names.
-- A handler receives the request body as `unknown` and the use case validates it. Every error response is problem details (`application/problem+json`), sent by `sendProblem`.
+- A handler receives the request body as `unknown` and the use case validates it. Every error response is problem details (`application/problem+json`), sent by `sendProblem`, which tells it in the language of `Accept-Language` where the error is written in it. A title, and a detail the HTTP layer writes, is a message of `@beauty-salon-shared/i18n/messages/api` in English and in Japanese (`docs/i18n.md`).
 - A handler that is not public is wrapped with `authenticated`, and its use case decides from the `Actor` whether the request is allowed.
 - Logging is structured (`req.log` or the injected `Logger`). Configuration is parsed once and passed down as values; application code does not read `process.env`.
 

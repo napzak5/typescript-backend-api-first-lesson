@@ -11,7 +11,7 @@
 | 型 | 定義場所 | ケース |
 |----|----------|--------|
 | `Result<T, E>` | `backend/packages/utility/src/result/result.ts` | `success` / `error` |
-| `DomainError` | `backend/packages/domain/src/shared/errors.ts` | `validation` / `unauthenticated` / `forbidden` / `notFound` / `alreadyExists` / `conflict` / `database` / `storage` |
+| `DomainError` | `backend/packages/domain/src/shared/errors.ts` | `validation` / `unauthenticated` / `forbidden` / `passwordRequired` / `notFound` / `alreadyExists` / `conflict` / `database` / `storage` |
 | `HttpError` | `backend/packages/api/src/shared/problem-details.ts` | `routeNotFound` / `malformedBody` / `unsupportedMediaType` / `bodyTooLarge` / `badRequest` / `rateLimited` / `unexpected` |
 | `ApiError` | 同上 | `DomainError` と `HttpError` の和 |
 | `OpeningHoursChange` | `backend/packages/domain/src/models/salon.ts` | `keep` / `replace` |
@@ -144,7 +144,7 @@ const attempt = async <T>(
 
 ## DomainError
 
-ユースケースが返すエラーはこの7種類です。
+ユースケースが返すエラーはこの 9 種類です。
 
 ```typescript
 // backend/packages/domain/src/shared/errors.ts
@@ -227,27 +227,28 @@ export const mayDeleteSalon = (actor: Actor, salonId: SalonId): boolean =>
 
 `toBearerChallenge`（`backend/packages/api/src/shared/problem-details.ts`）は、`unauthenticated` のときだけ `reason` を同じように `match` して `WWW-Authenticate` の値を返し、それ以外のエラーには `null` を返します。
 
-エラーから問題詳細への変換も同じ形です。`ApiError` の14ケースを1つの `match` で扱っています。`unauthenticated` は `reason` によってコードが違うので、`type` と `reason` を1つのパターンに書き、`reason` ごとに分岐しています。
+エラーから問題詳細への変換も同じ形です。`ApiError` の 16 のケースを 1 つの `match` で扱っています。`unauthenticated` は `reason` によってコードが違うので、`type` と `reason` を1つのパターンに書き、`reason` ごとに分岐しています。
 
 ```typescript
 // backend/packages/api/src/shared/problem-details.ts（抜粋）
-const toProblem = (error: ApiError): Problem =>
-  match(error)
+const toProblem = (error: ApiError, language: Locale): Problem => {
+  const said = (text: LocalizedText): string => textIn(text, language)
+
+  return match(error)
     .returnType<Problem>()
     // ... validation
     .with({ type: 'unauthenticated', reason: 'missingCredentials' }, () => ({
       type: 'urn:beauty-salon:problem:authentication-required',
-      title: 'Authentication required',
+      title: said(problemMessages.authenticationRequired.title),
       status: 401,
-      detail:
-        'Send the access token in the Authorization header as a Bearer token',
+      detail: said(problemMessages.authenticationRequired.detail),
       code: '1001',
       errors: null,
     }))
-    // ... unauthenticated の残りの4つの reason、forbidden
+    // ... unauthenticated の残りの4つの reason、forbidden、passwordRequired
     .with({ type: 'notFound' }, ({ entity, id }) => ({
       type: 'urn:beauty-salon:problem:not-found',
-      title: 'Resource not found',
+      title: said(problemMessages.notFound.title),
       status: 404,
       detail: `${entity} ${id} was not found`,
       code: '3001',
@@ -255,7 +256,10 @@ const toProblem = (error: ApiError): Problem =>
     }))
     // ... alreadyExists、conflict、database、storage、HttpError の7ケース
     .exhaustive()
+}
 ```
+
+`title` と、API の層が決める `detail` は、すべての言語で書いたメッセージ（`@beauty-salon-shared/i18n/messages/api` の `problemMessages`）で、`said` がその応答の言語で読みます（[多言語](./i18n.md)）。
 
 `.returnType<Problem>()` を付けると、各分岐の戻り値が `Problem` に合うかどうかが分岐ごとに検査されます。オブジェクトリテラルを返す分岐で、`code` のようなリテラル型のプロパティを型アサーションなしで書けます。
 
@@ -358,7 +362,7 @@ if (error.type === 'database' || error.type === 'storage') {
 `DomainError` または `HttpError` にケースを足す手順です。
 
 1. 型にケースを足す（`DomainError` なら `DomainErrors` にファクトリも足す）
-2. `toProblem` の `.exhaustive()` がコンパイルエラーになるので、ステータス・`code`・`detail` を決めて分岐を足す。api パッケージは domain パッケージの型をビルド成果物から読むため、ビルドしてから `pnpm typecheck` を実行する（理由は [TypeScript設定ガイド](./typescript-configuration.md)）
+2. `toProblem` と `languageOf`（そのエラーを言う言語）の `.exhaustive()` がコンパイルエラーになるので、ステータス・`code`・`detail` と、`detail` をだれが書くか（ドメインか、API の層か）を決めて、両方に分岐を足す。`title` と、API の層が決める `detail` は、`shared-i18n/src/messages/api/problems.ts` に、英語と日本語で書く。api パッケージは domain パッケージの型をビルド成果物から読むため、ビルドしてから `pnpm typecheck` を実行する（理由は [TypeScript設定ガイド](./typescript-configuration.md)）
 3. `backend/packages/api/src/shared/__tests__/problem-details.test.ts` に、そのケースのテストを足す
 
 `.otherwise()` で終えている `match`（`toHttpError` など）は、ケースを足してもコンパイラが教えてくれません。`HttpError` にケースを足したときは、それを作る場所も自分で足します。

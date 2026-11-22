@@ -251,7 +251,7 @@ namespace SalonOperations {
 - ファイルを返すオペレーション（売上レポートの CSV の `SalesReportCrud` の `export`、顧客台帳の CSV の `CustomerCrud` の `export`、顧客のデータの JSON の `CustomerCrud` の `exportData`）だけは包まない。`@header contentType` でメディアタイプを宣言し、`@body` を、CSV なら `string`、JSON ならファイルの中身のモデル（`CustomerDataExportResponse`）にして、ファイルそのものを返す。ファイル名は `@header contentDisposition` に書く。サーバーに保存しないファイルに、ダウンロード URL は作らない
 - 作成は 201 と `Location` ヘッダー、削除は本文なしの 204 を返す
 - 更新は `@patch` にする（部分更新）
-- エラーのレスポンスはすべて `ProblemResponse<ステータス>` にする。本文は `ProblemDetails`、メディアタイプは `application/problem+json` になる。そのオペレーションのユースケースが返すもの（検証エラー 400、未検出 404、重複 409）をステータスごとに列挙する
+- エラーのレスポンスはすべて `ProblemResponse<ステータス>` にする。本文は `ProblemDetails`、メディアタイプは `application/problem+json` になり、本文の文の言語を言う `Content-Language` ヘッダー（`LanguageType`）が付く。そのオペレーションのユースケースが返すもの（検証エラー 400、未検出 404、重複 409）をステータスごとに列挙する
 - どのルートでもサーバーが返すエラーも定義に含める。すべてのオペレーションに、呼び出し方に合うエイリアスを 1 つ加える（下の表）。本文を受け取るオペレーションには `RequestBodyErrors`（413、415）も加える。生成されるクライアントの戻り値はステータスコードのユニオンなので、定義にないステータスはクライアントが扱えない
 - 権限の確認があるオペレーションの `@doc` には、実行できるロールを書く（「admin だけが実行できます。」）
 - パスの ID は ID スカラーで型付けする（`@path id: SalonId`）
@@ -305,7 +305,7 @@ namespace SalonOperations {
 | `CursorPaginationResponse<T>` | `data: T[]`、`meta: PaginationMeta`、`links: PaginationLinks` |
 | `PaginationMeta` | `total`、`limit`、`hasMore`、`cursor`、`nextCursor`、`prevCursor` |
 | `ProblemDetails` | RFC 9457（旧 RFC 7807）の problem details に `code`、`errors`、`correlationId`、`timestamp` を加えたもの |
-| `ProblemResponse<TStatus>` | ステータス `TStatus` で `ProblemDetails` を `application/problem+json` として返すエラーレスポンス |
+| `ProblemResponse<TStatus>` | ステータス `TStatus` で `ProblemDetails` を `application/problem+json` として返すエラーレスポンス。`Content-Language` ヘッダー（`LanguageType`: `en`、`ja`）付き。リクエストの `Accept-Language` は、オペレーションごとの引数にはしない（[多言語](./i18n.md)） |
 | `UnauthenticatedResponse` | 401 の `ProblemResponse` に `WWW-Authenticate` ヘッダーを加えたもの |
 | `PermissionDeniedResponse` | 403 の `ProblemResponse` |
 | `PublicErrors` | `RateLimitedResponse`（429、`Retry-After` ヘッダー付き）と `InternalServerErrorResponse`（500） |

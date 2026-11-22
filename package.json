@@ -18,7 +18,7 @@
     "build:test": "pnpm -r run build:test",
     "build:stg": "pnpm -r run build:stg",
     "build:prod": "pnpm -r run build:prod",
-    "build:backend": "pnpm --filter './backend/**' run build:prod",
+    "build:backend": "pnpm --filter './shared-i18n' --filter './backend/**' run build:prod",
     "build:frontend": "pnpm --filter './frontend/**' run build:prod",
     "prepare:frontend": "pnpm --filter './frontend/packages/**' run build:prod",
     "start:backend": "pnpm --filter '@beauty-salon-backend/server' run start",

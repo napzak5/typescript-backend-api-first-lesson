@@ -5,6 +5,7 @@ packages:
   - frontend/apps/*
   - frontend/e2e
   - shared-config
+  - shared-i18n
   - specs
 
 # Dependency lifecycle scripts are denied unless listed as `true` here.

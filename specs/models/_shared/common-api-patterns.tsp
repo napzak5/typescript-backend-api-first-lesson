@@ -13,13 +13,13 @@ namespace BeautySalon.Models {
     @doc("エラー種別を特定するための URI。参照することで関連ドキュメントに誘導できる。")
     type: string;
 
-    @doc("ユーザーに短く要点を伝えるエラー概要メッセージ。")
+    @doc("ユーザーに短く要点を伝えるエラー概要メッセージ。言語は、レスポンスの Content-Language ヘッダーのとおり。")
     title: string;
 
     @doc("レスポンスに付与される HTTP ステータスコード。")
     status: int32;
 
-    @doc("今回の発生状況に固有の詳細説明。サポート対応時の一次情報となる。詳細が不要な場合はnull")
+    @doc("今回の発生状況に固有の詳細説明。サポート対応時の一次情報となる。言語は、レスポンスの Content-Language ヘッダーのとおり。詳細が不要な場合はnull")
     detail: string | null;
 
     @doc("この事象を一意に識別するための URI。監査ログやダッシュボードと連携する。URIが不要な場合はnull")
@@ -38,12 +38,28 @@ namespace BeautySalon.Models {
     timestamp: utcDateTime;
   }
 
+  @doc("""
+    エラーの文の言語区分 - エラーレスポンスの title、detail、errors[].message を書く言語
+    
+    en: 英語 - Accept-Language ヘッダーがない、または合う言語がないリクエストにも、この言語で答える
+    ja: 日本語
+    """)
+  enum LanguageType {
+    en,
+    ja,
+  }
+
   // エラーレスポンス。本体は ProblemDetails で、メディアタイプは RFC 9457 が定める application/problem+json。
   // TStatus には HTTP ステータスコードを指定する。
   // @doc を付けないのは、OpenAPI のレスポンスの説明をステータスコードごとの既定の文にするため。
   model ProblemResponse<TStatus> {
     @statusCode statusCode: TStatus;
     @header contentType: "application/problem+json";
+
+    @doc("本体の文の言語。リクエストの Accept-Language ヘッダー (RFC 9110 12.5.4) に合う言語を選ぶ。")
+    @header("Content-Language")
+    contentLanguage: LanguageType;
+
     @body error: ProblemDetails;
   }
 
@@ -182,7 +198,7 @@ namespace BeautySalon.Models {
     @doc("違反した検証ルール名またはコード。")
     rule: string;
 
-    @doc("ユーザーに提示する具体的なエラーメッセージ。")
+    @doc("ユーザーに提示する具体的なエラーメッセージ。言語は、レスポンスの Content-Language ヘッダーのとおり。")
     message: string;
 
     @doc("検証対象となった実際の値。セキュリティ観点で出力が許容される場合のみ利用する。出力不可の場合はnull")

@@ -464,7 +464,7 @@ Docker イメージのビルドも行います。イメージは、手元では 
 
 ### `.github/workflows/docker-validation.yml`
 
-Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、ロックファイルなどを変更する
+Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、`shared-i18n/`、ロックファイルなどを変更する
 プルリクエストで実行されます。バックエンドと 3 つのフロントエンドのイメージをビルドし、コンテナを
 起動して応答を確認します。バックエンドは `/api/system/ready` が応答することと、停止時の終了コードが
 0 であることを確認します。フロントエンドは、バンドルにその環境の `VITE_*` の値が入っていることも

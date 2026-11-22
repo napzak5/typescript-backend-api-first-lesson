@@ -106,6 +106,7 @@
         "frontend/packages/*/src/**",
         "frontend/apps/*/src/**",
         "frontend/e2e/src/**",
+        "shared-i18n/src/**",
         "!**/__tests__/**",
         "!**/*.test.ts",
         "!**/*.test.tsx",

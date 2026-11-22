@@ -1,8 +1,10 @@
 import type { components } from '@beauty-salon-backend/generated'
 import type { Request, Response } from 'express'
 import { API_VERSION } from './api-version'
+import { languageAsked } from './language'
 import {
   type ApiError,
+  languageOf,
   type ProblemDetails,
   toBearerChallenge,
   toProblemDetails,
@@ -10,11 +12,14 @@ import {
 
 type ResponseMeta = components['schemas']['Models.ResponseMeta']
 
+/** The languages the contract says a problem is told in. */
+type ContentLanguage = components['schemas']['Models.LanguageType']
+
 /**
  * What a response takes from its request. Naming only these properties lets
  * a handler pass its request whatever its path parameters and body are.
  */
-type AnsweredRequest = Pick<Request, 'id' | 'log' | 'originalUrl'>
+type AnsweredRequest = Pick<Request, 'headers' | 'id' | 'log' | 'originalUrl'>
 
 /**
  * The ID of the request, which is also on its log lines and in the
@@ -36,6 +41,11 @@ const PROBLEM_MEDIA_TYPE = 'application/problem+json'
  * Sends an error as problem details with the matching status, and a 401 with
  * its challenge. A database error and an error of the object storage are
  * logged here, because their cause never reaches the response.
+ *
+ * The problem is told in the language the request asks for
+ * (`Accept-Language`) where the error is written in it. `Content-Language`
+ * names the language it is told in, and `Vary` says that the answer depends
+ * on what the request asked for.
  */
 export const sendProblem = (
   req: AnsweredRequest,
@@ -46,15 +56,27 @@ export const sendProblem = (
     req.log.error({ cause: error.cause }, error.message)
   }
 
-  const problem = toProblemDetails(error, {
-    instance: req.originalUrl,
-    correlationId: correlationIdOf(req),
-    timestamp: new Date().toISOString(),
-  })
+  const asked = languageAsked(req)
+  // A language of the product that the contract does not name does not compile
+  const language: ContentLanguage = languageOf(error, asked)
+  const problem = toProblemDetails(
+    error,
+    {
+      instance: req.originalUrl,
+      correlationId: correlationIdOf(req),
+      timestamp: new Date().toISOString(),
+    },
+    asked,
+  )
   const challenge = toBearerChallenge(error)
   if (challenge !== null) {
     res.set('WWW-Authenticate', challenge)
   }
 
-  res.status(problem.status).type(PROBLEM_MEDIA_TYPE).json(problem)
+  res
+    .status(problem.status)
+    .vary('Accept-Language')
+    .set('Content-Language', language)
+    .type(PROBLEM_MEDIA_TYPE)
+    .json(problem)
 }
