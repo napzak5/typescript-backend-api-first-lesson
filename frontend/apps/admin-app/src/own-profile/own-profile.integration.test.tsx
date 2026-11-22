@@ -237,7 +237,7 @@ describe('the own profile, against the API', () => {
       'an address that is no web address',
       '写真の URL',
       'photos.example.com/tanaka.jpg',
-      'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
   ])(
     'should say at the control what is wrong with %s, and send nothing',

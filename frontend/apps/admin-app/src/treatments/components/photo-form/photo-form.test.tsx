@@ -186,13 +186,16 @@ describe('PhotoForm', () => {
     )
   })
 
-  it('should say at the direction of a photo how long it may be', async () => {
+  it.each<[string, string]>([
+    ['撮った向き', '正面、側面、後ろなど。50 文字まで。'],
+    ['写真の URL', 'http:// か https:// で始まる URL。500 文字まで。'],
+  ])('should say at %s how long it may be', async (label, description) => {
     // Act
     await stories.New.run()
 
     // Assert
     expect(
-      screen.getByRole('textbox', { name: '撮った向き' }),
-    ).toHaveAccessibleDescription('正面、側面、後ろなど。50 文字まで。')
+      screen.getByRole('textbox', { name: label }),
+    ).toHaveAccessibleDescription(description)
   })
 })

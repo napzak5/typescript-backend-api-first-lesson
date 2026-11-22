@@ -11,7 +11,13 @@ import type {
   ModelsStylePreference,
   ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
-import { lengthOf, tooLong } from '@beauty-salon-frontend/fields'
+import {
+  LONGEST_WEB_ADDRESS,
+  lengthOf,
+  linesOf,
+  tooLong,
+  webAddressLinesError,
+} from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormErrors,
@@ -22,7 +28,6 @@ import {
   textOrNull,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { linesOf, pictureAddressesError } from './lines'
 import type { StaffChoice } from './staff-choices'
 
 /*
@@ -256,7 +261,10 @@ const timeSlotError = (
 /** What cannot be right of what the form was sent with, under the names of the controls. */
 const errorsOf = (entered: Entered): FormErrors => {
   const wished = entered.preferredStaffId ?? ''
-  const images = pictureAddressesError(entered.inspirationImages)
+  const images = webAddressLinesError(
+    entered.inspirationImages,
+    LONGEST_WEB_ADDRESS,
+  )
 
   return Object.fromEntries([
     ...(wished !== '' && (entered.avoidStaffIds ?? []).includes(wished)

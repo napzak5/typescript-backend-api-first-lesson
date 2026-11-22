@@ -10,15 +10,16 @@ import type {
   ModelsServiceUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import {
+  linesOf,
   neededError,
   neededWithin,
+  notWebAddress,
   tooLongError,
   tooLongOf,
+  WEB_ADDRESS_ERROR,
+  webAddressError,
+  webAddressLinesError,
 } from '@beauty-salon-frontend/fields'
-import {
-  linesOf,
-  pictureAddressesError,
-} from '@beauty-salon-frontend/preferences'
 import {
   aboutTheAttempt,
   errorAt,
@@ -29,7 +30,6 @@ import {
   textOrNull,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import * as z from 'zod'
 import { tagsIn } from '../customers/customer-ledger'
 import { LEVELS } from '../staff/staff-format'
 import { numberOf } from '../treatments/treatment-form'
@@ -55,7 +55,6 @@ import {
 export const LONGEST_NAME = 255
 /** The longest short introduction of a service */
 export const LONGEST_SHORT_DESCRIPTION = 500
-const LONGEST_URL = 500
 const LONGEST_DURATION = 1440
 
 /** The fewest and the most services a package is made of */
@@ -75,7 +74,8 @@ const STATUS_ERROR = '提供の状態を選んでください。'
 const AVAILABILITY_ERROR = '提供日を選んでください。'
 const MOST_BOOKINGS_ERROR =
   '1 日の予約の上限は、1 以上の整数で入力してください。上限がなければ、空のままにします。'
-const IMAGE_ERROR = `http:// か https:// で始まる URL を、${LONGEST_URL} 文字までで入力してください。`
+/** What is said of a picture of the list: the API takes one at an address of any length */
+const IMAGES_ERROR = notWebAddress(null)
 const PACKAGED_COUNT_ERROR = `パッケージにするときは、構成サービスを ${FEWEST_PACKAGED} 件から ${MOST_PACKAGED} 件まで選んでください。`
 const PACKAGED_MISSING = 'サービスを選んでください。'
 const PACKAGED_TWICE = '同じサービスは、1 回だけ入れられます。'
@@ -100,8 +100,6 @@ const CONTAINED =
 /** What is said when the account may not change the menu of the salon */
 export const FORBIDDEN_MESSAGE =
   'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。'
-
-const imageSchema = z.httpUrl().check(z.maxLength(LONGEST_URL))
 
 /** The name of a control of the option of the row `index`, counted from 0; what is wrong with it is kept under the same name. */
 export const optionControlOf = (
@@ -281,7 +279,7 @@ const readWhole = (values: FormData): FormRead<ModelsServiceCreateRequest> => {
     1,
   )
   const imageUrl = optional('imageUrl')
-  const imagesError = pictureAddressesError(textOf(values, 'imageUrls'))
+  const imagesError = webAddressLinesError(textOf(values, 'imageUrls'), null)
   const isPackage = values.has('isPackage')
   const packaged = isPackage ? packagedRowsIn(values, 0) : []
   const options = optionRowsIn(values, 0)
@@ -322,12 +320,7 @@ const readWhole = (values: FormData): FormRead<ModelsServiceCreateRequest> => {
       'maxBookingsPerDay',
       maxBookingsPerDay === undefined ? MOST_BOOKINGS_ERROR : undefined,
     ),
-    ...errorAt(
-      'imageUrl',
-      imageUrl === null || imageSchema.safeParse(imageUrl).success
-        ? undefined
-        : IMAGE_ERROR,
-    ),
+    ...errorAt('imageUrl', webAddressError(imageUrl)),
     ...errorAt('imageUrls', imagesError),
     ...packagedErrorsOf(isPackage, packaged),
     ...options.flatMap((option) =>
@@ -513,7 +506,7 @@ const CONTROLS: Readonly<Record<string, string>> = {
   serviceStatus: STATUS_ERROR,
   availability: AVAILABILITY_ERROR,
   maxBookingsPerDay: MOST_BOOKINGS_ERROR,
-  imageUrl: IMAGE_ERROR,
+  imageUrl: WEB_ADDRESS_ERROR,
   categoryId: CATEGORY_GONE,
   isPackage: CONTAINED,
 }
@@ -546,7 +539,7 @@ const saidOf = ({
     return [field, PACKAGED_TWICE]
   }
   if (field === 'imageUrls' || field.startsWith('imageUrls.')) {
-    return ['imageUrls', IMAGE_ERROR]
+    return ['imageUrls', IMAGES_ERROR]
   }
   const option = OPTION_FIELD.exec(field)?.[1]
   if (option !== undefined) {

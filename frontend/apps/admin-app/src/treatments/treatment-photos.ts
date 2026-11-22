@@ -10,7 +10,12 @@ import {
   ModelsTreatmentPhotoType,
   type ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import { tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
+import {
+  tooLongError,
+  tooLongOf,
+  WEB_ADDRESS_ERROR,
+  webAddressError,
+} from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type ChoiceOption,
@@ -21,7 +26,6 @@ import {
   textOrNull,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import * as z from 'zod'
 import type { PhotoRemoval, PhotosAdding } from './treatments-api'
 
 /*
@@ -34,7 +38,6 @@ import type { PhotoRemoval, PhotosAdding } from './treatments-api'
 
 /** The most photos a record holds */
 export const MOST_PHOTOS = 20
-const LONGEST_URL = 500
 /** The longest direction a photo was taken from, as the API takes it */
 export const LONGEST_ANGLE = 50
 
@@ -88,7 +91,6 @@ export const photoControlOf = (
 
 const TYPE_MISSING = '写真の区分を選んでください。'
 const URL_MISSING = '写真の URL を入力してください。'
-const URL_ERROR = `http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL を、${LONGEST_URL} 文字までで入力してください。`
 const ANGLE_TOO_LONG = tooLongOf('撮った向き', LONGEST_ANGLE)
 const NO_CONSENT =
   'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。'
@@ -104,12 +106,6 @@ const noRoomOf = (room: number): string =>
   room === 0
     ? `この施術記録の写真は、${MOST_PHOTOS} 枚になりました。写真を外してから足してください。`
     : `この施術記録には、あと ${room} 枚まで足せます。写真の欄を減らしてください。`
-/** An address of the web as the API takes it for a photo: of a domain name, not of a machine or its number */
-const photoAddressSchema = z.httpUrl().check(z.maxLength(LONGEST_URL))
-
-/** Whether a text is an address the API keeps a photo at. */
-const isPhotoAddress = (text: string): boolean =>
-  photoAddressSchema.safeParse(text).success
 /** A photo as it was filled in */
 type FilledPhoto = {
   photoType: string
@@ -167,8 +163,8 @@ const photoErrorsOf = (
       photoControlOf(index, 'photoUrl'),
       filled.photoUrl === ''
         ? URL_MISSING
-        : !isPhotoAddress(filled.photoUrl)
-          ? URL_ERROR
+        : webAddressError(filled.photoUrl) !== undefined
+          ? WEB_ADDRESS_ERROR
           : repeated !== -1
             ? repeatedUrlOf(repeated + 1)
             : held.some(({ photoUrl }) => photoUrl === filled.photoUrl)
@@ -177,9 +173,7 @@ const photoErrorsOf = (
     ),
     ...errorAt(
       photoControlOf(index, 'thumbnailUrl'),
-      filled.thumbnailUrl === '' || isPhotoAddress(filled.thumbnailUrl)
-        ? undefined
-        : URL_ERROR,
+      webAddressError(textOrNull(filled.thumbnailUrl)),
     ),
     ...errorAt(
       photoControlOf(index, 'angle'),
@@ -254,7 +248,7 @@ const photoSaidOf = (name: string): string =>
     .with('photoType', () => TYPE_MISSING)
     .with('angle', () => ANGLE_TOO_LONG)
     .with('isPublic', () => NO_CONSENT)
-    .otherwise(() => URL_ERROR)
+    .otherwise(() => WEB_ADDRESS_ERROR)
 
 /**
  * What the form says after the API refused the photos, or after nothing

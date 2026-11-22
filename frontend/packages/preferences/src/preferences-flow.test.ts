@@ -675,7 +675,7 @@ describe('readPreferencesChange', () => {
           type: 'invalid',
           errors: {
             'stylePreferences.inspirationImages':
-              '2 行目を確かめてください。http:// または https:// で始まる URL を、500 文字以内で書いてください。',
+              '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
           },
         })
       },
@@ -761,7 +761,7 @@ describe('readPreferencesChange', () => {
           '指名したいスタッフは、避けたいスタッフに選べません。どちらかを変えてください。',
         'preferredTimeSlots.0.endTime': '終了の時刻を入力してください。',
         'stylePreferences.inspirationImages':
-          '1 行目を確かめてください。http:// または https:// で始まる URL を、500 文字以内で書いてください。',
+          '1 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
         communicationStyle: '100 文字以内で入力してください。',
       },
     })

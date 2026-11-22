@@ -287,7 +287,7 @@ describe('afterCategoryWrite', () => {
       message: undefined,
       errors: {
         iconUrl:
-          'ドメイン名で書いた http:// か https:// の URL を、500 文字までで入力してください。',
+          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
         description:
           'この値は受け付けられませんでした。入力を確かめてください。',
       },

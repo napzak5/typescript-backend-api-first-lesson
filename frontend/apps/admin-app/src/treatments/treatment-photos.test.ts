@@ -191,37 +191,37 @@ describe('readPhotos', () => {
       'an address that is no web address',
       { photoUrl: 'ftp://photos.example.com/a.jpg' },
       'photoUrl',
-      'http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'an address that is not one',
       { photoUrl: 'photos.example.com/a.jpg' },
       'photoUrl',
-      'http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'an address longer than the API keeps',
       { photoUrl: `https://photos.example.com/${'a'.repeat(474)}` },
       'photoUrl',
-      'http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'an address of a machine by its number',
       { photoUrl: 'http://127.0.0.1:4100/a.jpg' },
       'photoUrl',
-      'http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'an address of this machine',
       { photoUrl: 'http://localhost/a.jpg' },
       'photoUrl',
-      'http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'a smaller photo at an address that is not one',
       { thumbnailUrl: 'small.jpg' },
       'thumbnailUrl',
-      'http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'an angle longer than the API keeps',
@@ -360,7 +360,7 @@ describe('afterPhotosAdded', () => {
       message: undefined,
       errors: {
         'photos.1.photoUrl':
-          'http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL を、500 文字までで入力してください。',
+          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
         'photos.0.isPublic':
           'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。',
         'photos.0.photoType': '写真の区分を選んでください。',

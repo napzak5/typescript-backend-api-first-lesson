@@ -10,13 +10,15 @@ import type {
 import {
   alternativePhoneError,
   emailError,
+  linesOf,
   neededError,
   neededWithin,
   phoneError,
   tooLongError,
   tooLongOf,
+  webAddressError,
+  webAddressLinesError,
 } from '@beauty-salon-frontend/fields'
-import { linesOf } from '@beauty-salon-frontend/preferences'
 import {
   aboutTheAttempt,
   type ChoiceOption,
@@ -27,7 +29,6 @@ import {
   textOrNull,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import * as z from 'zod'
 import { tagsIn } from '../customers/customer-ledger'
 import { numberOf } from '../treatments/treatment-form'
 import type { SalonChange } from './settings-api'
@@ -47,7 +48,6 @@ export const LONGEST_POSTAL_CODE = 10
 const LONGEST_PREFECTURE = 50
 const LONGEST_CITY = 100
 const LONGEST_ADDRESS = 255
-const LONGEST_URL = 500
 const LONGEST_TAX_RATE = 100
 
 const NAME_ERROR = neededWithin('サロンの名前', LONGEST_NAME)
@@ -61,7 +61,6 @@ const LATITUDE_ERROR =
   '緯度は、-90 から 90 までの数（小数は 8 桁まで）で入力してください。'
 const LONGITUDE_ERROR =
   '経度は、-180 から 180 までの数（小数は 8 桁まで）で入力してください。'
-const URL_ERROR = `http:// または https:// で始まる URL を、${LONGEST_URL} 文字以内で入力してください。`
 const TAX_RATE_ERROR =
   '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。'
 const EMAIL_TAKEN =
@@ -127,9 +126,6 @@ export const CURRENCY_CHOICES: readonly ChoiceOption[] = CURRENCIES.map(
   (code) => ({ value: code, label: `${code}（${currencyNames.of(code)}）` }),
 )
 
-const addressSchema = z.httpUrl()
-const linkSchema = addressSchema.check(z.maxLength(LONGEST_URL))
-
 /** A place on the map as the form shows it: its digits, never an exponent (「0.0000001」, not 「1e-7」), or nothing. */
 export const coordinateTextOf = (coordinate: number | null): string =>
   coordinate === null ? '' : coordinate.toFixed(8).replace(/\.?0+$/, '')
@@ -151,21 +147,6 @@ const coordinateOf = (
     ? coordinate
     : undefined
 }
-
-/** What is wrong with the addresses of the photos, written a line each: the first line that is no address. */
-const photosError = (text: string): string | undefined => {
-  const wrong = text
-    .split('\n')
-    .map((line) => line.trim())
-    .findIndex((line) => line !== '' && !addressSchema.safeParse(line).success)
-
-  return wrong === -1
-    ? undefined
-    : `${wrong + 1} 行目を確かめてください。http:// または https:// で始まる URL を書いてください。`
-}
-
-const linkError = (link: string | null): string | undefined =>
-  link === null || linkSchema.safeParse(link).success ? undefined : URL_ERROR
 
 /** The information of a salon the form holds, as it would be sent. */
 type SalonValues = Required<
@@ -225,9 +206,10 @@ const readWhole = (values: FormData): Whole => {
     ...errorAt('phoneNumber', phoneError(phoneNumber)),
     ...errorAt('alternativePhone', alternativePhoneError(alternativePhone)),
     ...errorAt('email', emailError(email)),
-    ...errorAt('websiteUrl', linkError(websiteUrl)),
-    ...errorAt('logoUrl', linkError(logoUrl)),
-    ...errorAt('imageUrls', photosError(photos)),
+    ...errorAt('websiteUrl', webAddressError(websiteUrl)),
+    ...errorAt('logoUrl', webAddressError(logoUrl)),
+    // The API takes a photo at an address of any length
+    ...errorAt('imageUrls', webAddressLinesError(photos, null)),
     ...errorAt(
       'taxRate',
       taxRate === undefined || taxRate === null || taxRate > LONGEST_TAX_RATE

@@ -51,7 +51,7 @@ export const WithErrors: Story = {
       'preferredTimeSlots.1.endTime':
         '終了は、開始より後の時刻にしてください。',
       'stylePreferences.inspirationImages':
-        '2 行目を確かめてください。http:// または https:// で始まる URL を、500 文字以内で書いてください。',
+        '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
       communicationStyle: '100 文字以内で入力してください。',
     },
   },

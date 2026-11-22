@@ -21,7 +21,7 @@ export const WithErrors: Story = {
   args: {
     errors: {
       imageUrl:
-        'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+        'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     },
   },
 }

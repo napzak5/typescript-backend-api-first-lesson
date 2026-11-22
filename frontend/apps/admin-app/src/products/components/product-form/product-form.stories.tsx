@@ -41,7 +41,7 @@ export const WithErrors: Story = {
       reorderPoint:
         '発注点は、最低在庫数と同じか、それより大きい数にしてください。',
       safetyDataSheet:
-        'http:// または https:// で始まる URL を、500 文字以内で入力してください。',
+        'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     },
   },
 }

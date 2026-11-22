@@ -115,15 +115,16 @@ describe('CategoryForm', () => {
     )
   })
 
-  it('should say at the name how long it may be', async () => {
+  it.each<[string, string]>([
+    ['名前', '100 文字まで。お客様のメニューの見出しになります。'],
+    ['アイコンの URL', 'http:// か https:// で始まる URL。500 文字まで。'],
+  ])('should say at %s how long it may be', async (label, description) => {
     // Act
     await stories.New.run()
 
     // Assert
     expect(
-      screen.getByRole('textbox', { name: '名前' }),
-    ).toHaveAccessibleDescription(
-      '100 文字まで。お客様のメニューの見出しになります。',
-    )
+      screen.getByRole('textbox', { name: label }),
+    ).toHaveAccessibleDescription(description)
   })
 })

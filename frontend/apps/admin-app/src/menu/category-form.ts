@@ -12,6 +12,8 @@ import {
   neededError,
   neededWithin,
   SERVICE_CATEGORIES,
+  WEB_ADDRESS_ERROR,
+  webAddressError,
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
@@ -35,12 +37,10 @@ import { FORBIDDEN_MESSAGE } from './service-form'
 
 /** The longest name of a category the API takes */
 export const LONGEST_NAME = 100
-const LONGEST_URL = 500
 
 const NAME_ERROR = neededWithin('カテゴリーの名前', LONGEST_NAME)
 const KIND_ERROR = '種類を選んでください。'
 const ORDER_ERROR = '表示順は、0 以上の整数で入力してください。'
-const ICON_ERROR = `ドメイン名で書いた http:// か https:// の URL を、${LONGEST_URL} 文字までで入力してください。`
 const COLOR_ERROR =
   '色は、#C8A2C8 のように、# と 16 進数 6 桁で入力してください。'
 
@@ -52,7 +52,6 @@ const PARENT_GONE =
 const PARENT_BELOW =
   'このカテゴリーの下にあるカテゴリーは、親にできません。その間に、親が変わっていました。選び直してください。'
 
-const iconSchema = z.httpUrl().check(z.maxLength(LONGEST_URL))
 const colorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/)
 
 /** The controls of the form, by the names of the request */
@@ -88,9 +87,7 @@ const readWhole = (
     ...(displayOrder === null || displayOrder === undefined
       ? { displayOrder: ORDER_ERROR }
       : {}),
-    ...(iconUrl === null || iconSchema.safeParse(iconUrl).success
-      ? {}
-      : { iconUrl: ICON_ERROR }),
+    ...Object.fromEntries(errorAt('iconUrl', webAddressError(iconUrl))),
     ...(color === null || colorSchema.safeParse(color).success
       ? {}
       : { color: COLOR_ERROR }),
@@ -170,7 +167,7 @@ const refusalAt = (field: string, rule: string): string =>
   match(field)
     .with('name', () => NAME_ERROR)
     .with('displayOrder', () => ORDER_ERROR)
-    .with('iconUrl', () => ICON_ERROR)
+    .with('iconUrl', () => WEB_ADDRESS_ERROR)
     .with('color', () => COLOR_ERROR)
     .with('parentId', () => (rule === 'circular' ? PARENT_BELOW : PARENT_GONE))
     .otherwise(() => REFUSED_VALUE_MESSAGE)

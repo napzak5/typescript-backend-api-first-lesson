@@ -172,7 +172,9 @@ describe('ProductForm', () => {
       expect.stringContaining('最低在庫数と同じか、それより大きい数'),
     )
     expect(text(/安全データシートの URL/)).toHaveAccessibleDescription(
-      expect.stringContaining('http:// または https:// で始まる URL'),
+      expect.stringContaining(
+        'ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      ),
     )
   })
 
@@ -201,6 +203,11 @@ describe('ProductForm', () => {
     ['仕入先', '255 文字まで。'],
     ['仕入先の商品コード', '100 文字まで。発注するときに使います。'],
     ['バーコード', '100 文字まで。商品台帳で、バーコードで探せます。'],
+    ['商品画像の URL', 'http:// か https:// で始まる URL。500 文字まで。'],
+    [
+      '安全データシートの URL',
+      'メーカーの安全データシート（SDS）の URL。500 文字まで。',
+    ],
   ])('should say at %s how long it may be', async (label, description) => {
     // Act
     await stories.New.run()

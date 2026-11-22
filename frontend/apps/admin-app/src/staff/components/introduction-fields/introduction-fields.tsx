@@ -1,3 +1,4 @@
+import { WEB_ADDRESS_DESCRIPTION } from '@beauty-salon-frontend/fields'
 import { type FormErrors, TextArea, TextField } from '@beauty-salon-frontend/ui'
 import { tagsTextOf } from '../../../customers/customer-ledger'
 import type { Introduced } from '../../introduction'
@@ -62,7 +63,7 @@ export const IntroductionFields = ({
       name='imageUrl'
       type='url'
       autoComplete='off'
-      description='http:// か https:// で始まる URL。500 文字まで。'
+      description={WEB_ADDRESS_DESCRIPTION}
       defaultValue={shown?.imageUrl ?? undefined}
       error={errors['imageUrl']}
     />

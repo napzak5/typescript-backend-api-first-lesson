@@ -13,6 +13,8 @@ import {
   neededWithin,
   tooLongError,
   tooLongOf,
+  WEB_ADDRESS_ERROR,
+  webAddressError,
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
@@ -23,7 +25,6 @@ import {
   textOrNull,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { z } from 'zod'
 import { yenOf } from '../bookings/booking-entry'
 import { numberOf } from '../treatments/treatment-form'
 import type { TreatmentRemovalSays } from '../treatments/treatment-format'
@@ -45,7 +46,6 @@ export const LONGEST_LABEL = 100
 export const LONGEST_UNIT = 20
 /** The longest name of a supplier */
 export const LONGEST_SUPPLIER = 255
-const LONGEST_URL = 500
 
 const CODE_ERROR = neededWithin('商品コード', LONGEST_CODE)
 const NAME_ERROR = neededWithin('商品名', LONGEST_NAME)
@@ -57,7 +57,6 @@ const SUPPLIER_CODE_ERROR = tooLongOf('仕入先の商品コード', LONGEST_LAB
 const BARCODE_ERROR = tooLongOf('バーコード', LONGEST_LABEL)
 const LEAD_TIME_ERROR = '納品までの日数は、0 以上の整数で入力してください。'
 const EXPIRY_ERROR = '使用期限までの月数は、1 以上の整数で入力してください。'
-const URL_ERROR = `http:// または https:// で始まる URL を、${LONGEST_URL} 文字以内で入力してください。`
 
 const priceError = (name: string): string =>
   `${name}は、0 以上の円の整数で入力してください。`
@@ -107,8 +106,6 @@ const CONTROLS: readonly string[] = [
   'isActive',
 ]
 
-const webAddressSchema = z.httpUrl().max(LONGEST_URL)
-
 /**
  * A level of the stock, as a person types it: digits of full width count,
  * and so do the commas between them. Nothing is no level; what the API
@@ -125,12 +122,10 @@ export const levelOf = (text: string): number | null | undefined => {
 }
 
 /** A web address that may be left empty: `undefined` when it is none the API takes. */
-const webAddressOf = (text: string): string | null | undefined => {
+const optionalWebAddressOf = (text: string): string | null | undefined => {
   const address = textOrNull(text)
 
-  return address === null || webAddressSchema.safeParse(address).success
-    ? address
-    : undefined
+  return webAddressError(address) === undefined ? address : undefined
 }
 
 /**
@@ -175,10 +170,12 @@ const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
   const supplier = textOrNull(textOf(values, 'supplier'))
   const supplierProductCode = textOrNull(textOf(values, 'supplierProductCode'))
   const leadTimeDays = numberOf(textOf(values, 'leadTimeDays'), 0)
-  const imageUrl = webAddressOf(textOf(values, 'imageUrl'))
+  const imageUrl = optionalWebAddressOf(textOf(values, 'imageUrl'))
   const barcode = textOrNull(textOf(values, 'barcode'))
   const expiryMonths = numberOf(textOf(values, 'expiryMonths'), 0)
-  const safetyDataSheet = webAddressOf(textOf(values, 'safetyDataSheet'))
+  const safetyDataSheet = optionalWebAddressOf(
+    textOf(values, 'safetyDataSheet'),
+  )
   const errors = Object.fromEntries([
     ...errorAt(
       'productCode',
@@ -243,10 +240,13 @@ const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
         ? EXPIRY_ERROR
         : undefined,
     ),
-    ...errorAt('imageUrl', imageUrl === undefined ? URL_ERROR : undefined),
+    ...errorAt(
+      'imageUrl',
+      imageUrl === undefined ? WEB_ADDRESS_ERROR : undefined,
+    ),
     ...errorAt(
       'safetyDataSheet',
-      safetyDataSheet === undefined ? URL_ERROR : undefined,
+      safetyDataSheet === undefined ? WEB_ADDRESS_ERROR : undefined,
     ),
   ])
   if (
@@ -446,7 +446,7 @@ const refusalAt = (field: string, rule: string): string =>
     .with('leadTimeDays', () => LEAD_TIME_ERROR)
     .with('barcode', () => BARCODE_ERROR)
     .with('expiryMonths', () => EXPIRY_ERROR)
-    .with('imageUrl', 'safetyDataSheet', () => URL_ERROR)
+    .with('imageUrl', 'safetyDataSheet', () => WEB_ADDRESS_ERROR)
     .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /** What the form says after the API did not take it. */

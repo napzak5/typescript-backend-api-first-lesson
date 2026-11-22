@@ -25,6 +25,15 @@ export {
   tooLongOf,
   upTo,
 } from './lengths'
+export { linesOf } from './lines'
 export { firstNameError, lastNameError } from './names'
 export { alternativePhoneError, phoneError } from './phones'
-export { webAddressOf } from './web-addresses'
+export {
+  LONGEST_WEB_ADDRESS,
+  notWebAddress,
+  WEB_ADDRESS_DESCRIPTION,
+  WEB_ADDRESS_ERROR,
+  webAddressError,
+  webAddressLinesError,
+  webAddressOf,
+} from './web-addresses'
