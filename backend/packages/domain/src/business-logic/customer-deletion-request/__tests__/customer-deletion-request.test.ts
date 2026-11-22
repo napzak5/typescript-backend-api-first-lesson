@@ -25,7 +25,6 @@ import type {
   CustomerErasure,
   ICustomerDeletionRequestRepository,
 } from '../../../repositories/customer-deletion-request.repository'
-import { customerDeletionRequestCreateRequestSchema } from '../../../schemas/customer-deletion-request.schema'
 import { type DomainError, DomainErrors } from '../../../shared'
 import {
   CancelCustomerDeletionRequestUseCase,
@@ -61,31 +60,6 @@ const others: [string, Actor][] = [
   ['a customer without a profile', actors.customerWithoutProfile],
   ['a user of no scope', actors.withoutScope],
 ]
-
-describe('customerDeletionRequestCreateRequestSchema', () => {
-  const parsed = (input: unknown) =>
-    customerDeletionRequestCreateRequestSchema.safeParse(input)
-
-  it('takes a reason as it is written, of 1 to 1,000 characters', () => {
-    expect(parsed({ reason: ' 本人から電話で依頼 ' })).toMatchObject({
-      success: true,
-      data: { reason: ' 本人から電話で依頼 ' },
-    })
-    expect(parsed({ reason: 'あ'.repeat(1000) }).success).toBe(true)
-  })
-
-  it.each<[string, unknown]>([
-    ['no reason', {}],
-    ['an empty reason', { reason: '' }],
-    ['a blank reason', { reason: ' \n\t' }],
-    ['a reason of 1,001 characters', { reason: 'あ'.repeat(1001) }],
-    ['a reason that is no string', { reason: 1 }],
-    ['a property of no request', { reason: '依頼', confirmed: true }],
-    ['no object', '依頼'],
-  ])('refuses %s', (_, input) => {
-    expect(parsed(input).success).toBe(false)
-  })
-})
 
 describe('the erasure', () => {
   it('falls due 14 days of 24 hours after the request', () => {

@@ -1,12 +1,16 @@
+import { Result } from '@beauty-salon-backend/utility'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import {
+  apiCustomerAllergy,
   CUSTOMER_ALLERGY_ID,
+  customerAllergyCreateRequest,
   dbCustomerAllergy,
   OTHER_CUSTOMER_ALLERGY_ID,
 } from '../../__tests__/fixtures/customer-allergy-fixtures'
 import { customerIdSchema } from '../../models/customer'
 import { customerAllergyIdSchema } from '../../models/customer-allergy'
+import { customerAllergyCreateRequestSchema } from '../../schemas/customer-allergy.schema'
 import { CustomerAllergyReadMapper } from '../read/customer-allergy.mapper'
 import { CustomerAllergyWriteMapper } from '../write/customer-allergy.mapper'
 
@@ -79,5 +83,101 @@ describe('CustomerAllergyWriteMapper.fromSearchRequest', () => {
       limit: 4,
       after: CUSTOMER_ALLERGY_ID,
     })
+  })
+})
+
+describe('CustomerAllergyReadMapper', () => {
+  it('shows every column but the customer under its name, the times in ISO 8601', () => {
+    expect(
+      CustomerAllergyReadMapper.toApiCustomerAllergy(dbCustomerAllergy()),
+    ).toEqual(Result.success(apiCustomerAllergy))
+  })
+
+  it('shows what is null as null', () => {
+    expect(
+      CustomerAllergyReadMapper.toApiCustomerAllergy(
+        dbCustomerAllergy({
+          symptoms: null,
+          notes: null,
+          confirmedDate: null,
+          allergyType: 'latex',
+          severityType: 'mild',
+        }),
+      ),
+    ).toEqual(
+      Result.success({
+        ...apiCustomerAllergy,
+        symptoms: null,
+        notes: null,
+        confirmedDate: null,
+        allergyType: 'latex',
+        severityType: 'mild',
+      }),
+    )
+  })
+
+  it('tells a stored allergy whose time cannot be read does not match the model', () => {
+    expect(
+      CustomerAllergyReadMapper.toApiCustomerAllergy(
+        dbCustomerAllergy({ updatedAt: 'yesterday' }),
+      ),
+    ).toMatchObject({
+      type: 'error',
+      error: {
+        type: 'database',
+        message: `Stored customer allergy ${CUSTOMER_ALLERGY_ID} does not match the API model`,
+      },
+    })
+  })
+
+  it('shows allergies in their order, and stops at the first that does not match', () => {
+    const other = dbCustomerAllergy({ id: OTHER_CUSTOMER_ALLERGY_ID })
+
+    expect(
+      CustomerAllergyReadMapper.toApiCustomerAllergies([
+        other,
+        dbCustomerAllergy(),
+      ]),
+    ).toEqual(
+      Result.success([
+        { ...apiCustomerAllergy, id: OTHER_CUSTOMER_ALLERGY_ID },
+        apiCustomerAllergy,
+      ]),
+    )
+    expect(
+      CustomerAllergyReadMapper.toApiCustomerAllergies([
+        dbCustomerAllergy(),
+        dbCustomerAllergy({
+          id: OTHER_CUSTOMER_ALLERGY_ID,
+          createdAt: 'now',
+        }),
+      ]),
+    ).toMatchObject({
+      type: 'error',
+      error: {
+        message: `Stored customer allergy ${OTHER_CUSTOMER_ALLERGY_ID} does not match the API model`,
+      },
+    })
+  })
+})
+
+describe('CustomerAllergyWriteMapper', () => {
+  it('writes every item of an addition under its column', () => {
+    const request = customerAllergyCreateRequestSchema.parse(
+      customerAllergyCreateRequest(),
+    )
+
+    expect(CustomerAllergyWriteMapper.fromCreateRequest(request)).toEqual(
+      customerAllergyCreateRequest(),
+    )
+  })
+
+  it('writes what an update names, and nothing else', () => {
+    expect(
+      CustomerAllergyWriteMapper.fromUpdateRequest({
+        symptoms: null,
+        allergenName: 'ニッケル',
+      }),
+    ).toEqual({ symptoms: null, allergenName: 'ニッケル' })
   })
 })

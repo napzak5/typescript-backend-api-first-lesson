@@ -155,6 +155,19 @@ export const treatmentPhotoCreateRequest = (
   ...overrides,
 })
 
+/** An addition of the photos given, each of its own address and place. */
+export const treatmentPhotoBulkCreateRequest = (
+  ...photos: Record<string, unknown>[]
+) => ({
+  photos: photos.map((photo, index) => ({
+    ...treatmentPhotoCreateRequest({
+      photoUrl: `https://images.example.com/${index}.jpg`,
+      sortOrder: index,
+    }),
+    ...photo,
+  })),
+})
+
 /**
  * What the records of a period come to: three records, two of which
  * state a processing time.

@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   ATTACHMENT_ID,
   apiAttachment,
+  apiUploadedAttachment,
   DOWNLOAD_URL,
   dbAttachment,
   OTHER_ATTACHMENT_ID,
   UPLOAD_URL,
+  UPLOADED,
 } from '../../__tests__/fixtures/attachment-fixtures'
 import { USER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import { SALON_ID } from '../../__tests__/fixtures/fixtures'
@@ -174,4 +176,69 @@ describe('AttachmentWriteMapper.fromDownloadUrlRequest', () => {
       AttachmentWriteMapper.fromDownloadUrlRequest({ inline }),
     ).toStrictEqual({ inline })
   })
+})
+
+describe('AttachmentReadMapper', () => {
+  it('returns the columns under their names and the timestamps as ISO 8601, without the time the attachment was deleted', () => {
+    expect(AttachmentReadMapper.toApiAttachment(dbAttachment())).toStrictEqual({
+      type: 'success',
+      data: apiAttachment(),
+    })
+    expect(
+      AttachmentReadMapper.toApiAttachment(
+        dbAttachment({ ...UPLOADED, deletedAt: '2026-11-19 09:00:00+09' }),
+      ),
+    ).toStrictEqual({ type: 'success', data: apiUploadedAttachment() })
+  })
+
+  it('returns an attachment of no salon with null', () => {
+    expect(
+      AttachmentReadMapper.toApiAttachment(dbAttachment({ salonId: null })),
+    ).toStrictEqual({
+      type: 'success',
+      data: apiAttachment({ salonId: null }),
+    })
+  })
+
+  it('maps a list in its order, and an empty one', () => {
+    const second = dbAttachment({ id: OTHER_ATTACHMENT_ID })
+
+    expect(
+      AttachmentReadMapper.toApiAttachments([second, dbAttachment()]),
+    ).toStrictEqual({
+      type: 'success',
+      data: [apiAttachment({ id: OTHER_ATTACHMENT_ID }), apiAttachment()],
+    })
+    expect(AttachmentReadMapper.toApiAttachments([])).toStrictEqual({
+      type: 'success',
+      data: [],
+    })
+  })
+
+  it.each([
+    ['uploadExpiresAt', { uploadExpiresAt: 'in a while' }],
+    ['uploadedAt', { uploadedAt: 'yesterday' }],
+    ['createdAt', { createdAt: '' }],
+    ['updatedAt', { updatedAt: 'never' }],
+  ])(
+    'reports a stored %s that is no time as an error of the database, alone and in a list',
+    (_column, overrides) => {
+      const stored = dbAttachment(overrides)
+
+      const alone = AttachmentReadMapper.toApiAttachment(stored)
+      const listed = AttachmentReadMapper.toApiAttachments([
+        dbAttachment(),
+        stored,
+      ])
+
+      expect(alone).toMatchObject({
+        type: 'error',
+        error: {
+          type: 'database',
+          message: `Stored attachment ${ATTACHMENT_ID} does not match the API model`,
+        },
+      })
+      expect(listed).toEqual(alone)
+    },
+  )
 })

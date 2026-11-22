@@ -6,14 +6,13 @@ import {
   OTHER_SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
 import {
+  apiMedicalChart,
   dbMedicalChart,
   MEDICAL_CHART_ID,
   medicalChartCreateRequest,
   medicalChartDependencies,
   OTHER_MEDICAL_CHART_ID,
 } from '../../../__tests__/fixtures/medical-chart-fixtures'
-import { MedicalChartReadMapper } from '../../../mappers/read/medical-chart.mapper'
-import { MedicalChartWriteMapper } from '../../../mappers/write/medical-chart.mapper'
 import type { Actor } from '../../../models/auth'
 import type {
   MedicalChartChange,
@@ -21,7 +20,6 @@ import type {
   MedicalChartListing,
   MedicalChartOfCustomer,
 } from '../../../repositories/medical-chart.repository'
-import { medicalChartCreateRequestSchema } from '../../../schemas/medical-chart.schema'
 import { type DomainError, DomainErrors } from '../../../shared'
 import {
   CreateMedicalChartUseCase,
@@ -47,14 +45,6 @@ const untouched = ({
   Object.values(medicalChartRepository).every(
     (method) => vi.mocked(method).mock.calls.length === 0,
   )
-
-/** The chart of the fixtures as the API shows it. */
-const apiChart = {
-  id: MEDICAL_CHART_ID,
-  ...medicalChartCreateRequest(),
-  createdAt: '2026-11-18T01:00:00.123Z',
-  updatedAt: '2026-11-18T01:30:00.000Z',
-}
 
 /** Everyone who keeps the charts: the customer ledger is one for every salon. */
 const keepers: [string, Actor][] = [
@@ -91,7 +81,7 @@ describe('CreateMedicalChartUseCase', () => {
 
       const result = await create(dependencies, actor)
 
-      expect(result).toEqual(Result.success(apiChart))
+      expect(result).toEqual(Result.success(apiMedicalChart))
       expect(dependencies.medicalChartRepository.create).toHaveBeenCalledWith(
         medicalChartCreateRequest(),
       )
@@ -209,7 +199,9 @@ describe('GetMedicalChartUseCase', () => {
     async (_who, actor) => {
       const dependencies = medicalChartDependencies()
 
-      expect(await get(dependencies, actor)).toEqual(Result.success(apiChart))
+      expect(await get(dependencies, actor)).toEqual(
+        Result.success(apiMedicalChart),
+      )
       expect(
         dependencies.medicalChartRepository.findByCustomer,
       ).toHaveBeenCalledWith(CUSTOMER_ID)
@@ -281,7 +273,7 @@ describe('UpdateMedicalChartUseCase', () => {
       const dependencies = medicalChartDependencies()
 
       expect(await update(dependencies, actor)).toEqual(
-        Result.success(apiChart),
+        Result.success(apiMedicalChart),
       )
       expect(dependencies.medicalChartRepository.update).toHaveBeenCalledWith(
         MEDICAL_CHART_ID,
@@ -386,7 +378,7 @@ describe('ListMedicalChartsUseCase', () => {
 
       expect(await list(dependencies, actor)).toEqual(
         Result.success({
-          data: [apiChart],
+          data: [apiMedicalChart],
           meta: {
             total: 1,
             limit: 20,
@@ -521,85 +513,5 @@ describe('ListMedicalChartsUseCase', () => {
     })
 
     expect(await list(dependencies)).toEqual(databaseDown)
-  })
-})
-
-describe('MedicalChartReadMapper', () => {
-  it('shows every column under its name, the times in ISO 8601', () => {
-    expect(MedicalChartReadMapper.toApiMedicalChart(dbMedicalChart())).toEqual(
-      Result.success(apiChart),
-    )
-  })
-
-  it.each<[string, unknown]>([
-    ['no list', {}],
-    [
-      'a treatment of a kind that is not one',
-      [{ treatment: 'spa', date: '2026-03-14', salonName: null, notes: null }],
-    ],
-    [
-      'a treatment without its notes',
-      [{ treatment: 'cut', date: '2026-03-14', salonName: null }],
-    ],
-  ])(
-    'tells a stored chart whose previous treatments are %s does not match the model',
-    (_case, previousTreatments) => {
-      expect(
-        MedicalChartReadMapper.toApiMedicalChart(
-          dbMedicalChart({ previousTreatments }),
-        ),
-      ).toMatchObject({
-        type: 'error',
-        error: {
-          type: 'database',
-          message: `Stored medical chart ${MEDICAL_CHART_ID} does not match the API model`,
-        },
-      })
-    },
-  )
-
-  it('shows charts in their order, and stops at the first that does not match', () => {
-    const other = dbMedicalChart({ id: OTHER_MEDICAL_CHART_ID })
-
-    expect(
-      MedicalChartReadMapper.toApiMedicalCharts([other, dbMedicalChart()]),
-    ).toEqual(
-      Result.success([{ ...apiChart, id: OTHER_MEDICAL_CHART_ID }, apiChart]),
-    )
-    expect(
-      MedicalChartReadMapper.toApiMedicalCharts([
-        dbMedicalChart(),
-        dbMedicalChart({
-          id: OTHER_MEDICAL_CHART_ID,
-          previousTreatments: null,
-        }),
-      ]),
-    ).toMatchObject({
-      type: 'error',
-      error: {
-        message: `Stored medical chart ${OTHER_MEDICAL_CHART_ID} does not match the API model`,
-      },
-    })
-  })
-})
-
-describe('MedicalChartWriteMapper', () => {
-  it('writes every item of a creation under its column', () => {
-    const request = medicalChartCreateRequestSchema.parse(
-      medicalChartCreateRequest(),
-    )
-
-    expect(MedicalChartWriteMapper.fromCreateRequest(request)).toEqual(
-      medicalChartCreateRequest(),
-    )
-  })
-
-  it('writes what an update names, and nothing else', () => {
-    expect(
-      MedicalChartWriteMapper.fromUpdateRequest({
-        medicalConditions: null,
-        preferredProducts: ['A'],
-      }),
-    ).toEqual({ medicalConditions: null, preferredProducts: ['A'] })
   })
 })

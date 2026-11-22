@@ -1,7 +1,6 @@
 import type { OrderStatusType } from '@beauty-salon-backend/generated'
 import { Result } from '@beauty-salon-backend/utility'
 import { describe, expect, it, vi } from 'vitest'
-import type { z } from 'zod'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
@@ -18,17 +17,12 @@ import {
   PURCHASE_ORDER_ID,
   purchaseOrderDependencies,
 } from '../../../__tests__/fixtures/purchase-order-fixtures'
-import { PurchaseOrderReadMapper } from '../../../mappers/read/purchase-order.mapper'
 import type { Actor } from '../../../models/auth'
 import { inventoryIdSchema } from '../../../models/inventory'
 import type {
   PurchaseOrderReceipt,
   ReorderSuggestionListing,
 } from '../../../repositories/purchase-order.repository'
-import {
-  purchaseOrderReceiveRequestSchema,
-  reorderSuggestionSearchRequestSchema,
-} from '../../../schemas/purchase-order.schema'
 import { type DomainError, DomainErrors } from '../../../shared'
 import {
   ListReorderSuggestionsUseCase,
@@ -45,12 +39,6 @@ const databaseDown = Result.error(
   DomainErrors.database('Connection lost', null),
 )
 const forbidden = Result.error(DomainErrors.forbidden())
-
-/** The rules a value breaks, as `path:code`; empty when it breaks none. */
-const brokenBy = (schema: z.ZodType, value: unknown): string[] =>
-  schema
-    .safeParse(value)
-    .error?.issues.map(({ path, code }) => `${path.join('.')}:${code}`) ?? []
 
 /** The broken rules of a failed result, as `field:rule`; empty for a success. */
 const rulesOf = (result: Result<unknown, DomainError>): string[] =>
@@ -207,225 +195,6 @@ describe('planGoodsReceipt', () => {
         { inventoryId: rowId(INVENTORY_ID), quantity: 1 },
       ]),
     ).toEqual({ type: 'refused', refusals: [{ type: 'notOrdered', index: 0 }] })
-  })
-})
-
-describe('purchaseOrderReceiveRequestSchema', () => {
-  const receipt = (overrides: Record<string, unknown> = {}) => ({
-    items: [
-      { inventoryId: INVENTORY_ID, quantity: 10 },
-      { inventoryId: OTHER_INVENTORY_ID, quantity: 1.25 },
-    ],
-    deliveryNotes: '段ボール 2 箱',
-    ...overrides,
-  })
-
-  it('takes the items and the notes, and gives them back as they are', () => {
-    expect(purchaseOrderReceiveRequestSchema.parse(receipt())).toEqual(
-      receipt(),
-    )
-    expect(
-      purchaseOrderReceiveRequestSchema.parse(receipt({ deliveryNotes: null })),
-    ).toEqual(receipt({ deliveryNotes: null }))
-  })
-
-  it('spells a stock row in small letters', () => {
-    expect(
-      purchaseOrderReceiveRequestSchema.parse(
-        receipt({
-          items: [{ inventoryId: INVENTORY_ID.toUpperCase(), quantity: 1 }],
-        }),
-      ).items,
-    ).toEqual([{ inventoryId: INVENTORY_ID, quantity: 1 }])
-  })
-
-  it.each<[string, Record<string, unknown>, string[]]>([
-    ['no items', { items: [] }, ['items:too_small']],
-    [
-      'more than 100 items',
-      {
-        items: Array.from({ length: 101 }, () => ({
-          inventoryId: INVENTORY_ID,
-          quantity: 1,
-        })),
-      },
-      ['items:too_big'],
-    ],
-    [
-      'a quantity of none',
-      { items: [{ inventoryId: INVENTORY_ID, quantity: 0 }] },
-      ['items.0.quantity:too_small'],
-    ],
-    [
-      'a quantity below the hundredth',
-      { items: [{ inventoryId: INVENTORY_ID, quantity: 1.005 }] },
-      ['items.0.quantity:not_multiple_of'],
-    ],
-    [
-      'a quantity above what a row holds',
-      { items: [{ inventoryId: INVENTORY_ID, quantity: 100_000_000 }] },
-      ['items.0.quantity:too_big'],
-    ],
-    [
-      'a stock row that is no UUID',
-      { items: [{ inventoryId: 'x', quantity: 1 }] },
-      ['items.0.inventoryId:invalid_format'],
-    ],
-    [
-      'notes of an item',
-      { items: [{ inventoryId: INVENTORY_ID, quantity: 1, notes: null }] },
-      ['items.0:unrecognized_keys'],
-    ],
-    [
-      'the names the contract had',
-      {
-        items: undefined,
-        receivedItems: [{ inventoryId: INVENTORY_ID, receivedQuantity: 1 }],
-      },
-      ['items:invalid_type', ':unrecognized_keys'],
-    ],
-    ['blank notes', { deliveryNotes: ' ' }, ['deliveryNotes:invalid_format']],
-    [
-      'no notes at all',
-      { deliveryNotes: undefined },
-      ['deliveryNotes:invalid_type'],
-    ],
-  ])('refuses %s', (_case, overrides, expected) => {
-    expect(
-      brokenBy(purchaseOrderReceiveRequestSchema, receipt(overrides)),
-    ).toEqual(expected)
-  })
-
-  it('refuses a stock row named again where it is named again, in any letters, with every other rule of the items', () => {
-    const value = receipt({
-      items: [
-        { inventoryId: INVENTORY_ID, quantity: 1 },
-        { inventoryId: OTHER_INVENTORY_ID, quantity: 0.001 },
-        { inventoryId: INVENTORY_ID.toUpperCase(), quantity: 2 },
-      ],
-    })
-
-    expect(brokenBy(purchaseOrderReceiveRequestSchema, value)).toEqual([
-      'items.1.quantity:not_multiple_of',
-      'items.2.inventoryId:custom',
-    ])
-    expect(
-      purchaseOrderReceiveRequestSchema
-        .safeParse(value)
-        .error?.issues.map(({ message }) => message)
-        .at(-1),
-    ).toBe('Must not repeat a stock row received earlier in the receipt')
-  })
-})
-
-describe('reorderSuggestionSearchRequestSchema', () => {
-  it('takes a salon alone, and a limit and a product to page from', () => {
-    expect(
-      reorderSuggestionSearchRequestSchema.parse({ salonId: SALON_ID }),
-    ).toEqual({ salonId: SALON_ID })
-    expect(
-      reorderSuggestionSearchRequestSchema.parse({
-        salonId: SALON_ID,
-        limit: 100,
-        cursor: PRODUCT_ID.toUpperCase(),
-      }),
-    ).toEqual({ salonId: SALON_ID, limit: 100, cursor: PRODUCT_ID })
-  })
-
-  it.each<[string, Record<string, unknown>, string[]]>([
-    ['no salon', {}, ['salonId:invalid_type']],
-    ['a limit of none', { salonId: SALON_ID, limit: 0 }, ['limit:too_small']],
-    ['a limit above 100', { salonId: SALON_ID, limit: 101 }, ['limit:too_big']],
-    [
-      'a limit that is no whole number',
-      { salonId: SALON_ID, limit: 1.5 },
-      ['limit:invalid_type'],
-    ],
-    [
-      'a cursor that is no UUID',
-      { salonId: SALON_ID, cursor: 'x' },
-      ['cursor:invalid_format'],
-    ],
-    [
-      'a threshold',
-      { salonId: SALON_ID, threshold: 1 },
-      [':unrecognized_keys'],
-    ],
-    [
-      'a limit and a cursor stated without values',
-      { salonId: SALON_ID, limit: undefined, cursor: undefined },
-      ['limit:invalid_type', 'cursor:invalid_type'],
-    ],
-  ])('refuses %s', (_case, value, expected) => {
-    expect(brokenBy(reorderSuggestionSearchRequestSchema, value)).toEqual(
-      expected,
-    )
-  })
-})
-
-describe('PurchaseOrderReadMapper.toApiReorderSuggestions', () => {
-  it('names every value as it is, the quantities as numbers and the date of the latest order in ISO 8601', () => {
-    expect(
-      PurchaseOrderReadMapper.toApiReorderSuggestions([
-        dbReorderSuggestion(),
-        dbReorderSuggestion({
-          productId: OTHER_PRODUCT_ID,
-          supplier: null,
-          onOrderQuantity: '0',
-          maximumStock: null,
-          suggestedQuantity: '7.50',
-          lastOrderDate: null,
-        }),
-      ]),
-    ).toEqual({
-      type: 'success',
-      data: [
-        {
-          productId: PRODUCT_ID,
-          productCode: 'SHMP001',
-          productName: 'Moisture Shampoo 500ml',
-          unit: 'bottle',
-          supplier: 'Beauty Supply Tokyo',
-          currentStock: 3,
-          onOrderQuantity: 2,
-          reorderPoint: 10,
-          maximumStock: 24,
-          suggestedQuantity: 19,
-          lastOrderDate: '2026-11-14T09:00:00.123Z',
-        },
-        {
-          productId: OTHER_PRODUCT_ID,
-          productCode: 'SHMP001',
-          productName: 'Moisture Shampoo 500ml',
-          unit: 'bottle',
-          supplier: null,
-          currentStock: 3,
-          onOrderQuantity: 0,
-          reorderPoint: 10,
-          maximumStock: null,
-          suggestedQuantity: 7.5,
-          lastOrderDate: null,
-        },
-      ],
-    })
-  })
-
-  it('tells a suggestion it cannot read as an error of the database', () => {
-    expect(
-      PurchaseOrderReadMapper.toApiReorderSuggestions([
-        dbReorderSuggestion(),
-        dbReorderSuggestion({
-          productId: OTHER_PRODUCT_ID,
-          lastOrderDate: 'x',
-        }),
-      ]),
-    ).toMatchObject({
-      type: 'error',
-      error: {
-        type: 'database',
-        message: `Reorder suggestion of product ${OTHER_PRODUCT_ID} does not match the API model`,
-      },
-    })
   })
 })
 

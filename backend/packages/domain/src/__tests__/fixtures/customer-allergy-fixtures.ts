@@ -50,6 +50,14 @@ export const dbCustomerAllergy = (
   }
 }
 
+/** The allergy of the fixtures as the API shows it: without its customer. */
+export const apiCustomerAllergy = {
+  id: CUSTOMER_ALLERGY_ID,
+  ...customerAllergyCreateRequest(),
+  createdAt: '2026-11-18T02:00:00.654Z',
+  updatedAt: '2026-11-18T02:15:00.000Z',
+}
+
 /**
  * A repository of the customer with the one allergy above, in which every
  * write succeeds; a test overrides what it needs.

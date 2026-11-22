@@ -1,24 +1,18 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { describe, expect, it, vi } from 'vitest'
-import type { z } from 'zod'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import { brokenRules, SALON_ID } from '../../../__tests__/fixtures/fixtures'
 import {
-  dbTreatmentPhoto,
   PHOTO_ID,
   TREATMENT_RECORD_ID,
-  treatmentPhotoCreateRequest,
+  treatmentPhotoBulkCreateRequest,
   treatmentRecordDependencies,
 } from '../../../__tests__/fixtures/treatment-record-fixtures'
-import { TreatmentRecordReadMapper } from '../../../mappers/read/treatment-record.mapper'
-import { TreatmentRecordWriteMapper } from '../../../mappers/write/treatment-record.mapper'
 import type { Actor } from '../../../models/auth'
-import type { DbTreatmentPhoto } from '../../../models/treatment-record'
 import type {
   TreatmentPhotoAddition,
   TreatmentPhotoRemoval,
 } from '../../../repositories/treatment-record.repository'
-import { treatmentPhotoBulkCreateRequestSchema } from '../../../schemas/treatment-photo.schema'
 import { type DomainError, DomainErrors } from '../../../shared'
 import {
   AddTreatmentPhotosUseCase,
@@ -26,30 +20,6 @@ import {
   type TreatmentRecordUseCaseDependencies,
 } from '..'
 import { MAX_PHOTOS_OF_RECORD, photoAdditionRefusal } from '../_shared/photos'
-
-/** The rules a value breaks, as `path:code`; empty when it breaks none. */
-const brokenBy = (schema: z.ZodType, value: unknown): string[] =>
-  schema
-    .safeParse(value)
-    .error?.issues.map(({ path, code }) => `${path.join('.')}:${code}`) ?? []
-
-/** The messages of the rules a value breaks, by their paths. */
-const messagesOf = (schema: z.ZodType, value: unknown): string[] =>
-  schema
-    .safeParse(value)
-    .error?.issues.map(({ path, message }) => `${path.join('.')}:${message}`) ??
-  []
-
-/** An addition of the photos given, each of its own address and place. */
-const additionOf = (...photos: Record<string, unknown>[]) => ({
-  photos: photos.map((photo, index) => ({
-    ...treatmentPhotoCreateRequest({
-      photoUrl: `https://images.example.com/${index}.jpg`,
-      sortOrder: index,
-    }),
-    ...photo,
-  })),
-})
 
 const databaseDown = Result.error(
   DomainErrors.database('Connection lost', null),
@@ -85,214 +55,6 @@ const outsiders: [string, Actor][] = [
   ['a customer account without a profile', actors.customerWithoutProfile],
   ['an account of no scope', actors.withoutScope],
 ]
-
-describe('treatmentPhotoBulkCreateRequestSchema', () => {
-  it('takes an addition that states everything, and gives it back as it is', () => {
-    const addition = { photos: [treatmentPhotoCreateRequest()] }
-
-    expect(treatmentPhotoBulkCreateRequestSchema.parse(addition)).toEqual(
-      addition,
-    )
-  })
-
-  it('takes every kind of photo, null for what a photo may leave unstated, and a private photo without consent', () => {
-    const addition = additionOf(
-      { photoType: 'before' },
-      { photoType: 'during' },
-      { photoType: 'after' },
-      {
-        photoType: 'other',
-        thumbnailUrl: null,
-        angle: null,
-        description: null,
-        isPublic: false,
-        customerConsent: false,
-      },
-    )
-
-    expect(brokenBy(treatmentPhotoBulkCreateRequestSchema, addition)).toEqual(
-      [],
-    )
-  })
-
-  it('takes the bounds of the columns, a long description, and an address of http', () => {
-    const addition = additionOf(
-      {
-        photoUrl: `http://images.example.com/${'a'.repeat(470)}.jpg`,
-        thumbnailUrl: `https://images.example.com/${'b'.repeat(469)}.jpg`,
-        angle: 'a'.repeat(50),
-        description: '説明'.repeat(5000),
-        sortOrder: 2_147_483_647,
-      },
-      { sortOrder: 0 },
-    )
-    expect(addition.photos[0]?.photoUrl).toHaveLength(500)
-    expect(addition.photos[0]?.thumbnailUrl).toHaveLength(500)
-
-    expect(brokenBy(treatmentPhotoBulkCreateRequestSchema, addition)).toEqual(
-      [],
-    )
-  })
-
-  it('takes twenty photos, and refuses none and twenty-one', () => {
-    const photos = (count: number) =>
-      additionOf(...Array.from({ length: count }, () => ({})))
-
-    expect(brokenBy(treatmentPhotoBulkCreateRequestSchema, photos(20))).toEqual(
-      [],
-    )
-    expect(brokenBy(treatmentPhotoBulkCreateRequestSchema, photos(0))).toEqual([
-      'photos:too_small',
-    ])
-    expect(brokenBy(treatmentPhotoBulkCreateRequestSchema, photos(21))).toEqual(
-      ['photos:too_big'],
-    )
-  })
-
-  it.each<[string, Record<string, unknown>, string[]]>([
-    [
-      'a kind that is not one',
-      { photoType: 'Before' },
-      ['photos.0.photoType:invalid_value'],
-    ],
-    [
-      'an address that is not one',
-      { photoUrl: 'images/after.jpg' },
-      ['photos.0.photoUrl:invalid_format'],
-    ],
-    [
-      'an address of another scheme',
-      { photoUrl: 'ftp://images.example.com/after.jpg' },
-      ['photos.0.photoUrl:invalid_format'],
-    ],
-    [
-      'an address beyond 500 characters',
-      { photoUrl: `https://images.example.com/${'a'.repeat(470)}.jpg` },
-      ['photos.0.photoUrl:too_big'],
-    ],
-    [
-      'a thumbnail that is no address',
-      { thumbnailUrl: 'small.jpg' },
-      ['photos.0.thumbnailUrl:invalid_format'],
-    ],
-    [
-      'a thumbnail beyond 500 characters',
-      { thumbnailUrl: `https://images.example.com/${'b'.repeat(470)}.jpg` },
-      ['photos.0.thumbnailUrl:too_big'],
-    ],
-    ['a blank angle', { angle: '  ' }, ['photos.0.angle:invalid_format']],
-    [
-      'an angle beyond 50 characters',
-      { angle: 'a'.repeat(51) },
-      ['photos.0.angle:too_big'],
-    ],
-    [
-      'a blank description',
-      { description: '\n' },
-      ['photos.0.description:invalid_format'],
-    ],
-    ['a place below zero', { sortOrder: -1 }, ['photos.0.sortOrder:too_small']],
-    [
-      'a place that is no whole number',
-      { sortOrder: 0.5 },
-      ['photos.0.sortOrder:invalid_type'],
-    ],
-    [
-      'a place beyond an integer',
-      { sortOrder: 2_147_483_648 },
-      ['photos.0.sortOrder:too_big'],
-    ],
-    [
-      'a public photo without consent',
-      { isPublic: true, customerConsent: false },
-      ['photos.0.isPublic:custom'],
-    ],
-    [
-      'a consent that is no boolean',
-      { customerConsent: 'yes' },
-      ['photos.0.customerConsent:invalid_type'],
-    ],
-    [
-      'a key the photo does not have',
-      { takenAt: '2026-11-20' },
-      ['photos.0:unrecognized_keys'],
-    ],
-  ])('refuses %s', (_case, photo, broken) => {
-    expect(
-      brokenBy(treatmentPhotoBulkCreateRequestSchema, additionOf(photo)),
-    ).toEqual(broken)
-  })
-
-  it('refuses a photo that leaves out a key, null where a photo states a value, and an addition with a key of its own', () => {
-    const { thumbnailUrl: _left, ...withoutThumbnail } =
-      treatmentPhotoCreateRequest()
-
-    expect(
-      brokenBy(treatmentPhotoBulkCreateRequestSchema, {
-        photos: [withoutThumbnail],
-      }),
-    ).toEqual(['photos.0.thumbnailUrl:invalid_type'])
-    expect(
-      brokenBy(
-        treatmentPhotoBulkCreateRequestSchema,
-        additionOf({ photoUrl: null, isPublic: null }),
-      ),
-    ).toEqual([
-      'photos.0.photoUrl:invalid_type',
-      'photos.0.isPublic:invalid_type',
-    ])
-    expect(
-      brokenBy(treatmentPhotoBulkCreateRequestSchema, {
-        ...additionOf({}),
-        recordId: TREATMENT_RECORD_ID,
-      }),
-    ).toEqual([':unrecognized_keys'])
-  })
-
-  it('tells a public photo without consent so, and keeps a private one without consent', () => {
-    expect(
-      messagesOf(
-        treatmentPhotoBulkCreateRequestSchema,
-        additionOf({ isPublic: true, customerConsent: false }),
-      ),
-    ).toEqual(['photos.0.isPublic:Must have the consent of the customer'])
-  })
-
-  it('refuses each later photo of the address or the place of an earlier one, and tells which', () => {
-    const shared = 'https://images.example.com/shared.jpg'
-    const addition = additionOf(
-      { photoUrl: shared, sortOrder: 3 },
-      { sortOrder: 4 },
-      { photoUrl: shared, sortOrder: 4 },
-      { photoUrl: shared, sortOrder: 3 },
-    )
-
-    expect(messagesOf(treatmentPhotoBulkCreateRequestSchema, addition)).toEqual(
-      [
-        'photos.2.photoUrl:Must not repeat the address of an earlier photo',
-        'photos.2.sortOrder:Must not repeat the sortOrder of an earlier photo',
-        'photos.3.photoUrl:Must not repeat the address of an earlier photo',
-        'photos.3.sortOrder:Must not repeat the sortOrder of an earlier photo',
-      ],
-    )
-  })
-
-  it('tells a public photo without consent and a repeated address together', () => {
-    const addition = additionOf(
-      {
-        photoUrl: 'https://images.example.com/twice.jpg',
-        isPublic: true,
-        customerConsent: false,
-      },
-      { photoUrl: 'https://images.example.com/twice.jpg' },
-    )
-
-    expect(brokenBy(treatmentPhotoBulkCreateRequestSchema, addition)).toEqual([
-      'photos.0.isPublic:custom',
-      'photos.1.photoUrl:custom',
-    ])
-  })
-})
 
 describe('photoAdditionRefusal', () => {
   const addresses = (count: number, from = 0): string[] =>
@@ -335,94 +97,12 @@ describe('photoAdditionRefusal', () => {
   })
 })
 
-describe('TreatmentRecordWriteMapper.fromPhotoBulkCreateRequest', () => {
-  it('writes every column of each photo as the request names it, in its order', () => {
-    const request = treatmentPhotoBulkCreateRequestSchema.parse(
-      additionOf(
-        { photoType: 'before', isPublic: false, customerConsent: true },
-        { angle: null, description: null, thumbnailUrl: null },
-      ),
-    )
-
-    expect(
-      TreatmentRecordWriteMapper.fromPhotoBulkCreateRequest(request),
-    ).toEqual([
-      {
-        photoType: 'before',
-        photoUrl: 'https://images.example.com/0.jpg',
-        thumbnailUrl: 'https://images.example.com/after-small.jpg',
-        angle: 'side',
-        description: '毛先まで色が入った',
-        isPublic: false,
-        customerConsent: true,
-        sortOrder: 0,
-      },
-      {
-        photoType: 'after',
-        photoUrl: 'https://images.example.com/1.jpg',
-        thumbnailUrl: null,
-        angle: null,
-        description: null,
-        isPublic: true,
-        customerConsent: true,
-        sortOrder: 1,
-      },
-    ])
-  })
-})
-
-describe('TreatmentRecordReadMapper.toApiPhotoBulkCreate', () => {
-  it('shows each photo with its ID and without its record and time, in the order given', () => {
-    const later: DbTreatmentPhoto = {
-      ...dbTreatmentPhoto(),
-      id: '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d22',
-      photoType: 'before',
-      photoUrl: 'https://images.example.com/before.jpg',
-      thumbnailUrl: 'https://images.example.com/before-small.jpg',
-      angle: null,
-      description: '退色',
-      isPublic: true,
-      sortOrder: 5,
-    }
-
-    expect(
-      TreatmentRecordReadMapper.toApiPhotoBulkCreate([
-        later,
-        dbTreatmentPhoto(),
-      ]).created,
-    ).toEqual([
-      {
-        id: '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d22',
-        photoType: 'before',
-        photoUrl: 'https://images.example.com/before.jpg',
-        thumbnailUrl: 'https://images.example.com/before-small.jpg',
-        angle: null,
-        description: '退色',
-        isPublic: true,
-        customerConsent: true,
-        sortOrder: 5,
-      },
-      {
-        id: PHOTO_ID,
-        photoType: 'after',
-        photoUrl: 'https://images.example.com/after.jpg',
-        thumbnailUrl: null,
-        angle: 'side',
-        description: null,
-        isPublic: false,
-        customerConsent: true,
-        sortOrder: 0,
-      },
-    ])
-  })
-})
-
 describe('AddTreatmentPhotosUseCase', () => {
   const add = (
     dependencies: TreatmentRecordUseCaseDependencies,
     actor: Actor = actors.admin,
     id: unknown = TREATMENT_RECORD_ID,
-    input: unknown = additionOf({}),
+    input: unknown = treatmentPhotoBulkCreateRequest({}),
   ) => new AddTreatmentPhotosUseCase(dependencies).execute(actor, id, input)
 
   const adding = (outcome: TreatmentPhotoAddition) =>
@@ -439,7 +119,7 @@ describe('AddTreatmentPhotosUseCase', () => {
         dependencies,
         actor,
         TREATMENT_RECORD_ID.toUpperCase(),
-        additionOf({ photoType: 'before' }, {}),
+        treatmentPhotoBulkCreateRequest({ photoType: 'before' }, {}),
       )
 
       expect(result).toEqual(
@@ -489,7 +169,10 @@ describe('AddTreatmentPhotosUseCase', () => {
       dependencies,
       actors.admin,
       TREATMENT_RECORD_ID,
-      additionOf({ isPublic: true, customerConsent: false }),
+      treatmentPhotoBulkCreateRequest({
+        isPublic: true,
+        customerConsent: false,
+      }),
     )
     expect(refused).toMatchObject({
       type: 'error',

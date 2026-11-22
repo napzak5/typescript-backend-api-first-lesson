@@ -2,6 +2,7 @@ import { Result } from '@beauty-salon-backend/utility'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
+  apiCustomerAllergy,
   CUSTOMER_ALLERGY_ID,
   customerAllergyCreateRequest,
   customerAllergyDependencies,
@@ -12,8 +13,6 @@ import {
   brokenRules,
   OTHER_SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
-import { CustomerAllergyReadMapper } from '../../../mappers/read/customer-allergy.mapper'
-import { CustomerAllergyWriteMapper } from '../../../mappers/write/customer-allergy.mapper'
 import type { Actor } from '../../../models/auth'
 import type {
   CustomerAllergyAddition,
@@ -21,7 +20,6 @@ import type {
   CustomerAllergyListing,
   CustomerAllergyRemoval,
 } from '../../../repositories/customer-allergy.repository'
-import { customerAllergyCreateRequestSchema } from '../../../schemas/customer-allergy.schema'
 import { type DomainError, DomainErrors } from '../../../shared'
 import {
   AddCustomerAllergyUseCase,
@@ -47,14 +45,6 @@ const untouched = ({
   Object.values(customerAllergyRepository).every(
     (method) => vi.mocked(method).mock.calls.length === 0,
   )
-
-/** The allergy of the fixtures as the API shows it: without its customer. */
-const apiAllergy = {
-  id: CUSTOMER_ALLERGY_ID,
-  ...customerAllergyCreateRequest(),
-  createdAt: '2026-11-18T02:00:00.654Z',
-  updatedAt: '2026-11-18T02:15:00.000Z',
-}
 
 /** Everyone who keeps the allergies: the customer ledger is one for every salon. */
 const keepers: [string, Actor][] = [
@@ -95,7 +85,9 @@ describe('AddCustomerAllergyUseCase', () => {
     async (_who, actor) => {
       const dependencies = customerAllergyDependencies()
 
-      expect(await add(dependencies, actor)).toEqual(Result.success(apiAllergy))
+      expect(await add(dependencies, actor)).toEqual(
+        Result.success(apiCustomerAllergy),
+      )
       expect(dependencies.customerAllergyRepository.add).toHaveBeenCalledWith(
         CUSTOMER_ID,
         customerAllergyCreateRequest(),
@@ -231,7 +223,7 @@ describe('UpdateCustomerAllergyUseCase', () => {
       const dependencies = customerAllergyDependencies()
 
       expect(await update(dependencies, actor)).toEqual(
-        Result.success(apiAllergy),
+        Result.success(apiCustomerAllergy),
       )
       expect(
         dependencies.customerAllergyRepository.update,
@@ -465,7 +457,7 @@ describe('ListCustomerAllergiesUseCase', () => {
 
       expect(await list(dependencies, actor)).toEqual(
         Result.success({
-          data: [apiAllergy],
+          data: [apiCustomerAllergy],
           meta: {
             total: 1,
             limit: 20,
@@ -621,101 +613,5 @@ describe('ListCustomerAllergiesUseCase', () => {
     })
 
     expect(await list(dependencies)).toEqual(databaseDown)
-  })
-})
-
-describe('CustomerAllergyReadMapper', () => {
-  it('shows every column but the customer under its name, the times in ISO 8601', () => {
-    expect(
-      CustomerAllergyReadMapper.toApiCustomerAllergy(dbCustomerAllergy()),
-    ).toEqual(Result.success(apiAllergy))
-  })
-
-  it('shows what is null as null', () => {
-    expect(
-      CustomerAllergyReadMapper.toApiCustomerAllergy(
-        dbCustomerAllergy({
-          symptoms: null,
-          notes: null,
-          confirmedDate: null,
-          allergyType: 'latex',
-          severityType: 'mild',
-        }),
-      ),
-    ).toEqual(
-      Result.success({
-        ...apiAllergy,
-        symptoms: null,
-        notes: null,
-        confirmedDate: null,
-        allergyType: 'latex',
-        severityType: 'mild',
-      }),
-    )
-  })
-
-  it('tells a stored allergy whose time cannot be read does not match the model', () => {
-    expect(
-      CustomerAllergyReadMapper.toApiCustomerAllergy(
-        dbCustomerAllergy({ updatedAt: 'yesterday' }),
-      ),
-    ).toMatchObject({
-      type: 'error',
-      error: {
-        type: 'database',
-        message: `Stored customer allergy ${CUSTOMER_ALLERGY_ID} does not match the API model`,
-      },
-    })
-  })
-
-  it('shows allergies in their order, and stops at the first that does not match', () => {
-    const other = dbCustomerAllergy({ id: OTHER_CUSTOMER_ALLERGY_ID })
-
-    expect(
-      CustomerAllergyReadMapper.toApiCustomerAllergies([
-        other,
-        dbCustomerAllergy(),
-      ]),
-    ).toEqual(
-      Result.success([
-        { ...apiAllergy, id: OTHER_CUSTOMER_ALLERGY_ID },
-        apiAllergy,
-      ]),
-    )
-    expect(
-      CustomerAllergyReadMapper.toApiCustomerAllergies([
-        dbCustomerAllergy(),
-        dbCustomerAllergy({
-          id: OTHER_CUSTOMER_ALLERGY_ID,
-          createdAt: 'now',
-        }),
-      ]),
-    ).toMatchObject({
-      type: 'error',
-      error: {
-        message: `Stored customer allergy ${OTHER_CUSTOMER_ALLERGY_ID} does not match the API model`,
-      },
-    })
-  })
-})
-
-describe('CustomerAllergyWriteMapper', () => {
-  it('writes every item of an addition under its column', () => {
-    const request = customerAllergyCreateRequestSchema.parse(
-      customerAllergyCreateRequest(),
-    )
-
-    expect(CustomerAllergyWriteMapper.fromCreateRequest(request)).toEqual(
-      customerAllergyCreateRequest(),
-    )
-  })
-
-  it('writes what an update names, and nothing else', () => {
-    expect(
-      CustomerAllergyWriteMapper.fromUpdateRequest({
-        symptoms: null,
-        allergenName: 'ニッケル',
-      }),
-    ).toEqual({ symptoms: null, allergenName: 'ニッケル' })
   })
 })

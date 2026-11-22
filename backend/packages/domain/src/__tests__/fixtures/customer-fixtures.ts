@@ -95,6 +95,19 @@ export const customerProfileCreateRequest =
     allowEmail: true,
   })
 
+/**
+ * A request to merge the other customer into the customer of the fixtures;
+ * where the two differ, the values of the one that is kept win.
+ */
+export const customerMergeRequest = (
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> => ({
+  primaryCustomerId: CUSTOMER_ID,
+  secondaryCustomerId: OTHER_CUSTOMER_ID,
+  conflictResolution: 'keep_primary',
+  ...overrides,
+})
+
 /** A row of `customers` as the driver returns it: the customer `CUSTOMER_ID`. */
 export const dbCustomer = (
   overrides: Partial<DbCustomer> = {},

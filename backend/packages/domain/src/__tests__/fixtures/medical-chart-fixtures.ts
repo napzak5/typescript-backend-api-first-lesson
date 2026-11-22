@@ -60,6 +60,14 @@ export const dbMedicalChart = (
   }
 }
 
+/** The chart of the fixtures as the API shows it. */
+export const apiMedicalChart = {
+  id: MEDICAL_CHART_ID,
+  ...medicalChartCreateRequest(),
+  createdAt: '2026-11-18T01:00:00.123Z',
+  updatedAt: '2026-11-18T01:30:00.000Z',
+}
+
 /**
  * A repository that holds the one chart above, in which every write
  * succeeds; a test overrides what it needs.

@@ -18,6 +18,8 @@ import {
   PHOTO_ID,
   storedTreatmentRecord,
   TREATMENT_RECORD_ID,
+  treatmentFigures,
+  treatmentPhotoBulkCreateRequest,
   treatmentRecordCreateRequest,
 } from '../../__tests__/fixtures/treatment-record-fixtures'
 import type { LedgerReach } from '../../models/booking'
@@ -26,6 +28,7 @@ import {
   type DbTreatmentPhoto,
   treatmentRecordIdSchema,
 } from '../../models/treatment-record'
+import { treatmentPhotoBulkCreateRequestSchema } from '../../schemas/treatment-photo.schema'
 import {
   treatmentRecordCreateRequestSchema,
   treatmentRecordSearchRequestSchema,
@@ -422,5 +425,158 @@ describe('TreatmentRecordWriteMapper.fromStatisticsGetRequest', () => {
       startDate: '2026-11-01T00:00:00.000Z',
       endDate: '2026-11-30T23:59:59.999Z',
     })
+  })
+})
+
+describe('TreatmentRecordWriteMapper.fromPhotoBulkCreateRequest', () => {
+  it('writes every column of each photo as the request names it, in its order', () => {
+    const request = treatmentPhotoBulkCreateRequestSchema.parse(
+      treatmentPhotoBulkCreateRequest(
+        { photoType: 'before', isPublic: false, customerConsent: true },
+        { angle: null, description: null, thumbnailUrl: null },
+      ),
+    )
+
+    expect(
+      TreatmentRecordWriteMapper.fromPhotoBulkCreateRequest(request),
+    ).toEqual([
+      {
+        photoType: 'before',
+        photoUrl: 'https://images.example.com/0.jpg',
+        thumbnailUrl: 'https://images.example.com/after-small.jpg',
+        angle: 'side',
+        description: '毛先まで色が入った',
+        isPublic: false,
+        customerConsent: true,
+        sortOrder: 0,
+      },
+      {
+        photoType: 'after',
+        photoUrl: 'https://images.example.com/1.jpg',
+        thumbnailUrl: null,
+        angle: null,
+        description: null,
+        isPublic: true,
+        customerConsent: true,
+        sortOrder: 1,
+      },
+    ])
+  })
+})
+
+describe('TreatmentRecordReadMapper.toApiPhotoBulkCreate', () => {
+  it('shows each photo with its ID and without its record and time, in the order given', () => {
+    const later: DbTreatmentPhoto = {
+      ...dbTreatmentPhoto(),
+      id: '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d22',
+      photoType: 'before',
+      photoUrl: 'https://images.example.com/before.jpg',
+      thumbnailUrl: 'https://images.example.com/before-small.jpg',
+      angle: null,
+      description: '退色',
+      isPublic: true,
+      sortOrder: 5,
+    }
+
+    expect(
+      TreatmentRecordReadMapper.toApiPhotoBulkCreate([
+        later,
+        dbTreatmentPhoto(),
+      ]).created,
+    ).toEqual([
+      {
+        id: '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d22',
+        photoType: 'before',
+        photoUrl: 'https://images.example.com/before.jpg',
+        thumbnailUrl: 'https://images.example.com/before-small.jpg',
+        angle: null,
+        description: '退色',
+        isPublic: true,
+        customerConsent: true,
+        sortOrder: 5,
+      },
+      {
+        id: PHOTO_ID,
+        photoType: 'after',
+        photoUrl: 'https://images.example.com/after.jpg',
+        thumbnailUrl: null,
+        angle: 'side',
+        description: null,
+        isPublic: false,
+        customerConsent: true,
+        sortOrder: 0,
+      },
+    ])
+  })
+})
+
+describe('TreatmentRecordReadMapper.toApiStatistics', () => {
+  it('passes the counts on as they were counted, and averages the processing times of the records that state one', () => {
+    expect(
+      TreatmentRecordReadMapper.toApiStatistics(treatmentFigures()),
+    ).toEqual({
+      totalTreatments: 3,
+      treatmentsByCategory: [
+        { category: 'cut', count: 3 },
+        { category: 'color', count: 1 },
+      ],
+      averageProcessingTime: 97.5,
+      topServices: [
+        { serviceId: CUT_ID, count: 3 },
+        { serviceId: COLOR_ID, count: 1 },
+      ],
+    })
+  })
+
+  it.each<[number, number, number]>([
+    [120, 1, 120],
+    [1, 3, 0.3],
+    [2, 3, 0.7],
+    [1, 4, 0.3],
+    [1, 8, 0.1],
+    [3, 8, 0.4],
+    [1439, 6, 239.8],
+  ])(
+    'averages %i minutes over %i records as %d, rounded half up to one decimal',
+    (sum, count, average) => {
+      expect(
+        TreatmentRecordReadMapper.toApiStatistics(
+          treatmentFigures({
+            processingTimeSum: sum,
+            processingTimeCount: count,
+          }),
+        ).averageProcessingTime,
+      ).toBe(average)
+    },
+  )
+
+  it('has no average when no record states a processing time, and nothing to list without records', () => {
+    expect(
+      TreatmentRecordReadMapper.toApiStatistics({
+        total: 0,
+        processingTimeSum: 0,
+        processingTimeCount: 0,
+        byCategory: [],
+        topServices: [],
+      }),
+    ).toEqual({
+      totalTreatments: 0,
+      treatmentsByCategory: [],
+      averageProcessingTime: null,
+      topServices: [],
+    })
+    expect(
+      TreatmentRecordReadMapper.toApiStatistics(
+        treatmentFigures({ processingTimeSum: 0, processingTimeCount: 0 }),
+      ).averageProcessingTime,
+    ).toBeNull()
+  })
+
+  it('averages records whose processing time is zero', () => {
+    expect(
+      TreatmentRecordReadMapper.toApiStatistics(
+        treatmentFigures({ processingTimeSum: 0, processingTimeCount: 2 }),
+      ).averageProcessingTime,
+    ).toBe(0)
   })
 })

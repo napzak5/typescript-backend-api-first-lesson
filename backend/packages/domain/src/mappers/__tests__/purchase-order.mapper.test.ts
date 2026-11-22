@@ -597,3 +597,69 @@ describe('PurchaseOrderReadMapper.toApiReorderSuggestionPage', () => {
     })
   })
 })
+
+describe('PurchaseOrderReadMapper.toApiReorderSuggestions', () => {
+  it('names every value as it is, the quantities as numbers and the date of the latest order in ISO 8601', () => {
+    expect(
+      PurchaseOrderReadMapper.toApiReorderSuggestions([
+        dbReorderSuggestion(),
+        dbReorderSuggestion({
+          productId: OTHER_PRODUCT_ID,
+          supplier: null,
+          onOrderQuantity: '0',
+          maximumStock: null,
+          suggestedQuantity: '7.50',
+          lastOrderDate: null,
+        }),
+      ]),
+    ).toEqual({
+      type: 'success',
+      data: [
+        {
+          productId: PRODUCT_ID,
+          productCode: 'SHMP001',
+          productName: 'Moisture Shampoo 500ml',
+          unit: 'bottle',
+          supplier: 'Beauty Supply Tokyo',
+          currentStock: 3,
+          onOrderQuantity: 2,
+          reorderPoint: 10,
+          maximumStock: 24,
+          suggestedQuantity: 19,
+          lastOrderDate: '2026-11-14T09:00:00.123Z',
+        },
+        {
+          productId: OTHER_PRODUCT_ID,
+          productCode: 'SHMP001',
+          productName: 'Moisture Shampoo 500ml',
+          unit: 'bottle',
+          supplier: null,
+          currentStock: 3,
+          onOrderQuantity: 0,
+          reorderPoint: 10,
+          maximumStock: null,
+          suggestedQuantity: 7.5,
+          lastOrderDate: null,
+        },
+      ],
+    })
+  })
+
+  it('tells a suggestion it cannot read as an error of the database', () => {
+    expect(
+      PurchaseOrderReadMapper.toApiReorderSuggestions([
+        dbReorderSuggestion(),
+        dbReorderSuggestion({
+          productId: OTHER_PRODUCT_ID,
+          lastOrderDate: 'x',
+        }),
+      ]),
+    ).toMatchObject({
+      type: 'error',
+      error: {
+        type: 'database',
+        message: `Reorder suggestion of product ${OTHER_PRODUCT_ID} does not match the API model`,
+      },
+    })
+  })
+})

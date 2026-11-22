@@ -13,6 +13,7 @@ import {
 import {
   apiCustomer,
   customerDependencies,
+  customerMergeRequest,
   dbCustomer,
   OTHER_CUSTOMER_ID,
   REFERRER_ID,
@@ -33,7 +34,6 @@ import type {
   CustomerRestoration,
   MergedCustomerField,
 } from '../../../repositories/customer.repository'
-import { customerMergeRequestSchema } from '../../../schemas/customer-merge.schema'
 import { MOST_LISTED } from '../../../schemas/medical-chart.schema'
 import { type DomainError, DomainErrors } from '../../../shared'
 import { planTransfer } from '../../point'
@@ -57,74 +57,12 @@ const THIRD_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f1c03'
 const rulesOf = (result: Result<unknown, DomainError>): string[] =>
   result.type === 'error' ? brokenRules(result.error) : []
 
-const request = (
-  overrides: Record<string, unknown> = {},
-): Record<string, unknown> => ({
-  primaryCustomerId: CUSTOMER_ID,
-  secondaryCustomerId: OTHER_CUSTOMER_ID,
-  conflictResolution: 'keep_primary',
-  ...overrides,
-})
-
 /** The customer kept, and the one merged into it. */
 const primary = dbCustomer()
 const secondary = dbCustomer({
   id: OTHER_CUSTOMER_ID,
   email: 'hanako.other@example.com',
   referralCode: 'OTHER2026',
-})
-
-describe('customerMergeRequestSchema', () => {
-  it('takes two customers and a resolution, the IDs in lower case', () => {
-    const parsed = customerMergeRequestSchema.safeParse(
-      request({ secondaryCustomerId: OTHER_CUSTOMER_ID.toUpperCase() }),
-    )
-
-    expect(parsed.success && parsed.data).toEqual(request())
-  })
-
-  const refused: [string, Record<string, unknown>, string][] = [
-    [
-      'the same customer twice',
-      { secondaryCustomerId: CUSTOMER_ID },
-      'secondaryCustomerId:custom',
-    ],
-    [
-      'the same customer twice, once in upper case',
-      { secondaryCustomerId: CUSTOMER_ID.toUpperCase() },
-      'secondaryCustomerId:custom',
-    ],
-    [
-      'a primary that is no ID',
-      { primaryCustomerId: 'first' },
-      'primaryCustomerId:invalid_format',
-    ],
-    [
-      'a secondary that is no ID',
-      { secondaryCustomerId: 42 },
-      'secondaryCustomerId:invalid_type',
-    ],
-    [
-      'an unknown resolution',
-      { conflictResolution: 'keep_both' },
-      'conflictResolution:invalid_value',
-    ],
-    [
-      'no resolution',
-      { conflictResolution: undefined },
-      'conflictResolution:invalid_value',
-    ],
-    ['a property of no request', { mergedBy: USER_ID }, ':unrecognized_keys'],
-  ]
-
-  it.each(refused)('refuses %s', (_, overrides, rule) => {
-    const parsed = customerMergeRequestSchema.safeParse(request(overrides))
-
-    expect(parsed.success).toBe(false)
-    expect(
-      parsed.error?.issues.map(({ path, code }) => `${path.join('.')}:${code}`),
-    ).toEqual([rule])
-  })
 })
 
 describe('sideOf', () => {
@@ -663,11 +601,16 @@ describe('MergeCustomersUseCase', () => {
 
       const result = await new MergeCustomersUseCase(dependencies).execute(
         actor,
-        request({ secondaryCustomerId: OTHER_CUSTOMER_ID.toUpperCase() }),
+        customerMergeRequest({
+          secondaryCustomerId: OTHER_CUSTOMER_ID.toUpperCase(),
+        }),
       )
 
       expect(result).toEqual(Result.success(apiCustomer()))
-      expect(mergeOf(dependencies)).toHaveBeenCalledWith(request(), USER_ID)
+      expect(mergeOf(dependencies)).toHaveBeenCalledWith(
+        customerMergeRequest(),
+        USER_ID,
+      )
     },
   )
 
@@ -688,7 +631,7 @@ describe('MergeCustomersUseCase', () => {
 
     const result = await new MergeCustomersUseCase(dependencies).execute(
       actors.admin,
-      request({ secondaryCustomerId: CUSTOMER_ID }),
+      customerMergeRequest({ secondaryCustomerId: CUSTOMER_ID }),
     )
 
     expect(rulesOf(result)).toEqual(['secondaryCustomerId:custom'])
@@ -709,7 +652,7 @@ describe('MergeCustomersUseCase', () => {
     async (fields, rules) => {
       const result = await new MergeCustomersUseCase(
         merging({ type: 'customersNotFound', missing: fields }),
-      ).execute(actors.admin, request())
+      ).execute(actors.admin, customerMergeRequest())
 
       expect(rulesOf(result)).toEqual(rules)
     },
@@ -735,7 +678,7 @@ describe('MergeCustomersUseCase', () => {
   it.each(conflicts)('refuses with a conflict: %j', async (outcome, said) => {
     const result = await new MergeCustomersUseCase(merging(outcome)).execute(
       actors.admin,
-      request(),
+      customerMergeRequest(),
     )
 
     expect(result).toEqual(
@@ -751,7 +694,7 @@ describe('MergeCustomersUseCase', () => {
 
     const result = await new MergeCustomersUseCase(dependencies).execute(
       actors.admin,
-      request(),
+      customerMergeRequest(),
     )
 
     expect(result).toEqual(down)

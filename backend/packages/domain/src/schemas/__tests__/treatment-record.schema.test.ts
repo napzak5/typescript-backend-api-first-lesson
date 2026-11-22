@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { z } from 'zod'
 import { COLOR_ID, CUT_ID } from '../../__tests__/fixtures/booking-fixtures'
+import { OTHER_SALON_ID, SALON_ID } from '../../__tests__/fixtures/fixtures'
 import { PRODUCT_ID } from '../../__tests__/fixtures/product-fixtures'
 import {
   TREATMENT_RECORD_ID,
@@ -10,6 +11,7 @@ import {
   treatmentRecordCreateRequestSchema,
   treatmentRecordSearchRequestSchema,
   treatmentRecordUpdateRequestSchema,
+  treatmentStatisticsGetRequestSchema,
 } from '../treatment-record.schema'
 
 /** The rules a value breaks, as `path:code`; empty when it breaks none. */
@@ -324,5 +326,74 @@ describe('treatmentRecordSearchRequestSchema', () => {
     expect(brokenBy(treatmentRecordSearchRequestSchema, request)).toEqual(
       expected,
     )
+  })
+})
+
+describe('treatmentStatisticsGetRequestSchema', () => {
+  it('takes a salon alone, and a period of one moment', () => {
+    expect(
+      brokenBy(treatmentStatisticsGetRequestSchema, { salonId: SALON_ID }),
+    ).toEqual([])
+    expect(
+      brokenBy(treatmentStatisticsGetRequestSchema, {
+        salonId: SALON_ID,
+        startDate: '2026-11-01T00:00:00Z',
+        endDate: '2026-11-01T00:00:00Z',
+      }),
+    ).toEqual([])
+  })
+
+  it('gives the moments back in the spelling of toISOString, and the salon in lower case', () => {
+    expect(
+      treatmentStatisticsGetRequestSchema.parse({
+        salonId: SALON_ID.toUpperCase(),
+        startDate: '2026-11-01T00:00:00Z',
+        endDate: '2026-11-30T23:59:59.5Z',
+      }),
+    ).toEqual({
+      salonId: SALON_ID,
+      startDate: '2026-11-01T00:00:00.000Z',
+      endDate: '2026-11-30T23:59:59.500Z',
+    })
+  })
+
+  it.each<[string, Record<string, unknown>, string[]]>([
+    ['no salon', {}, ['salonId:invalid_type']],
+    [
+      'a salon that is no UUID',
+      { salonId: 'salon-1' },
+      ['salonId:invalid_format'],
+    ],
+    [
+      'two salons',
+      { salonId: [SALON_ID, OTHER_SALON_ID] },
+      ['salonId:invalid_type'],
+    ],
+    [
+      'a moment with an offset',
+      { salonId: SALON_ID, startDate: '2026-11-01T09:00:00+09:00' },
+      ['startDate:invalid_format'],
+    ],
+    [
+      'a day without a time',
+      { salonId: SALON_ID, endDate: '2026-11-30' },
+      ['endDate:invalid_format'],
+    ],
+    [
+      'an end before the start',
+      {
+        salonId: SALON_ID,
+        startDate: '2026-11-02T00:00:00Z',
+        endDate: '2026-11-01T23:59:59.999Z',
+      },
+      ['endDate:custom'],
+    ],
+    [
+      'a parameter the statistics do not have',
+      { salonId: SALON_ID, staffId: SALON_ID },
+      [':unrecognized_keys'],
+    ],
+  ])('refuses %s', (_case, query, broken) => {
+    expect(brokenBy(treatmentStatisticsGetRequestSchema, query)).toEqual(broken)
   })
 })
