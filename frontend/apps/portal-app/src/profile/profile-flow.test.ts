@@ -1,12 +1,14 @@
 import type { ModelsCustomerProfileResponse } from '@beauty-salon-frontend/api-client'
+import {
+  PREFERENCE_NOTES,
+  PREFERRED_SERVICES,
+} from '@beauty-salon-frontend/fields'
 import { describe, expect, it } from 'vitest'
 import { newProfile, profile } from './components/examples'
 import {
   afterProfile,
   afterProfileChange,
   afterWholeProfile,
-  PREFERENCE_NOTES,
-  PREFERRED_SERVICES,
   readProfile,
   readProfileChange,
   readWholeProfile,

@@ -1,4 +1,7 @@
-import type { ModelsCustomerPreferencesUpdateRequest } from '@beauty-salon-frontend/api-client'
+import type {
+  ModelsCustomerPreferencesResponse,
+  ModelsCustomerPreferencesUpdateRequest,
+} from '@beauty-salon-frontend/api-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   answering,
@@ -10,7 +13,6 @@ import {
   record,
   sent,
 } from '../__tests__/api-answers'
-import { noPreferences } from './components/examples'
 import {
   readOwnPreferences,
   readOwnPreferencesToChange,
@@ -24,6 +26,16 @@ import {
  * status the contract does not name), what each operation asks for, and
  * what it makes of the answers to its several requests.
  */
+
+/** What the API answers for a customer who has said nothing yet */
+const noPreferences: ModelsCustomerPreferencesResponse = {
+  preferredStaffId: null,
+  avoidStaffIds: [],
+  preferredTimeSlots: [],
+  stylePreferences: null,
+  communicationStyle: null,
+  specialRequests: null,
+}
 
 const TOKYO = {
   id: '5d0c3f6a-2b9e-4c71-8a54-e1f7b3d9c026',

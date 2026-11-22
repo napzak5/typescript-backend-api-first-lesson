@@ -1,11 +1,12 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import { webAddressOf } from '@beauty-salon-frontend/fields'
 import {
   DescriptionList,
   type DescriptionListItem,
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { addressOf, telephoneHrefOf, webAddressOf } from '../../salon-format'
+import { addressOf, telephoneHrefOf } from '../../salon-format'
 import styles from './salon-about.module.css'
 
 export type SalonAboutProps = {

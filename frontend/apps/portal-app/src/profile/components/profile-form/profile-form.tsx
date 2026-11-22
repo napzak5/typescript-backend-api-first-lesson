@@ -1,5 +1,10 @@
 import type { ModelsCustomerProfileResponse } from '@beauty-salon-frontend/api-client'
 import {
+  EARLIEST_DAY,
+  PREFERENCE_NOTES,
+  PREFERRED_SERVICES,
+} from '@beauty-salon-frontend/fields'
+import {
   Checkbox,
   CheckboxGroup,
   FieldRow,
@@ -11,11 +16,6 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import {
-  EARLIEST_BIRTH_DATE,
-  PREFERENCE_NOTES,
-  PREFERRED_SERVICES,
-} from '../../profile-flow'
 import { CATEGORY_OPTIONS, GENDER_OPTIONS } from '../../profile-format'
 
 export type ProfileFormProps = Pick<
@@ -157,7 +157,7 @@ export const ProfileForm = ({
           name='birthDate'
           type='date'
           autoComplete='bday'
-          min={EARLIEST_BIRTH_DATE}
+          min={EARLIEST_DAY}
           max={today}
           defaultValue={profile?.birthDate ?? undefined}
           error={errors['birthDate']}

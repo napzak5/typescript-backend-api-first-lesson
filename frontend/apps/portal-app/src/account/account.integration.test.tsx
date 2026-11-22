@@ -459,7 +459,9 @@ describe('the screens of an account, against the API', () => {
       // Assert
       expect(emailField()).toHaveFocus()
       expect(emailField()).toHaveAccessibleDescription(
-        expect.stringContaining('メールアドレスの形式で入力してください。'),
+        expect.stringContaining(
+          'メールアドレスは、hanako@example.com のような形で入力してください。',
+        ),
       )
       expect(
         screen.queryByRole('button', { name: 'メールアドレスを確認する' }),
@@ -530,7 +532,7 @@ describe('the screens of an account, against the API', () => {
       // Assert
       expect(emailField()).toHaveFocus()
       expect(emailField()).toHaveAccessibleDescription(
-        'メールアドレスの形式で入力してください。',
+        'メールアドレスは、hanako@example.com のような形で入力してください。',
       )
       expect(fetched).not.toHaveBeenCalled()
     })

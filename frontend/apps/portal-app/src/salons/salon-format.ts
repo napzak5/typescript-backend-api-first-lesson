@@ -196,13 +196,6 @@ export const postedOf = (
   return title === null ? posted : `「${title}」（${posted}）`
 }
 
-/**
- * The address of a website, when it is one a link may lead to. Anything
- * else the salon wrote there is shown as text and is no link.
- */
-export const webAddressOf = (url: string): string | null =>
-  /^https?:\/\//i.test(url) ? url : null
-
 /** The address that calls a telephone number: its digits, and a leading plus sign. */
 export const telephoneHrefOf = (phoneNumber: string): string =>
   `tel:${phoneNumber.replace(/[^\d+]/g, '')}`

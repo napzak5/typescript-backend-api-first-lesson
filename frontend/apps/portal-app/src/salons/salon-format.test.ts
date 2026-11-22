@@ -19,7 +19,6 @@ import {
   postedOf,
   telephoneHrefOf,
   timeOfDayAt,
-  webAddressOf,
   weekdayOf,
   weeklyHoursOf,
 } from './salon-format'
@@ -353,28 +352,6 @@ describe('postedOf', () => {
 
     expect(postedOf(review, 'Asia/Tokyo')).toBe('2026年11月10日 投稿')
     expect(postedOf(review, 'Pacific/Auckland')).toBe('2026年11月11日 投稿')
-  })
-})
-
-describe('webAddressOf', () => {
-  it.each([
-    'https://komorebi.example/omotesando',
-    'http://komorebi.example',
-    'HTTPS://KOMOREBI.EXAMPLE',
-  ])('should take %s for an address a link may lead to', (url) => {
-    expect(webAddressOf(url)).toBe(url)
-  })
-
-  it.each([
-    'javascript:alert(1)',
-    'data:text/html,<script>alert(1)</script>',
-    'komorebi.example',
-    '//komorebi.example',
-    ' https://komorebi.example',
-    'ftp://komorebi.example',
-    '',
-  ])('should take %j for no such address', (url) => {
-    expect(webAddressOf(url)).toBeNull()
   })
 })
 
