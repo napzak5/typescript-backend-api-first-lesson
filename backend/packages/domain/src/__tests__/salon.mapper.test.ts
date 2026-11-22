@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { SalonReadMapper } from '../mappers/read/salon.mapper'
 import { SalonWriteMapper } from '../mappers/write/salon.mapper'
+import { salonIdSchema } from '../models/salon'
+import { salonSearchRequestSchema } from '../schemas/salon.schema'
 import {
   dbOpeningHours,
   dbSalon,
   OTHER_SALON_ID,
+  SALON_ID,
   salonCreateRequest,
 } from './fixtures'
 
@@ -337,5 +340,91 @@ describe('SalonReadMapper.toApiSalons', () => {
         message: `Stored salon ${OTHER_SALON_ID} does not match the API model`,
       },
     })
+  })
+})
+
+describe('SalonWriteMapper.fromSearchRequest', () => {
+  it('asks for the first 20 salons, with no filter, when the request names nothing', () => {
+    expect(SalonWriteMapper.fromSearchRequest({})).toEqual({
+      limit: 20,
+      after: null,
+      keyword: null,
+      prefecture: null,
+      city: null,
+      isActive: null,
+      minRating: null,
+      features: [],
+    })
+  })
+
+  it('takes the place and every filter the request names, as they are', () => {
+    const request = salonSearchRequestSchema.parse({
+      limit: 5,
+      cursor: OTHER_SALON_ID,
+      keyword: 'Aoyama',
+      prefecture: '東京都',
+      city: '港区',
+      isActive: false,
+      minRating: 0,
+      features: ['wifi', 'parking'],
+    })
+
+    expect(SalonWriteMapper.fromSearchRequest(request)).toEqual({
+      limit: 5,
+      after: OTHER_SALON_ID,
+      keyword: 'Aoyama',
+      prefecture: '東京都',
+      city: '港区',
+      isActive: false,
+      minRating: 0,
+      features: ['wifi', 'parking'],
+    })
+  })
+})
+
+describe('SalonReadMapper.toApiSalonPage', () => {
+  it('answers with the salons of the list and where the list goes on', () => {
+    const result = SalonReadMapper.toApiSalonPage(
+      {
+        salons: [
+          { salon: dbSalon(), openingHours: [dbOpeningHours()] },
+          { salon: dbSalon({ id: OTHER_SALON_ID }), openingHours: [] },
+        ],
+        total: 5,
+        hasMore: true,
+      },
+      { limit: 2, after: salonIdSchema.parse(SALON_ID) },
+    )
+
+    expect(result).toMatchObject({
+      type: 'success',
+      data: {
+        data: [
+          { id: SALON_ID, openingHours: [{ date: '2026-11-16' }] },
+          { id: OTHER_SALON_ID, openingHours: [] },
+        ],
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: SALON_ID,
+          nextCursor: OTHER_SALON_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('fails as a whole when one stored salon is invalid', () => {
+    const result = SalonReadMapper.toApiSalonPage(
+      {
+        salons: [{ salon: dbSalon({ rating: 'great' }), openingHours: [] }],
+        total: 1,
+        hasMore: false,
+      },
+      { limit: 20, after: null },
+    )
+
+    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
   })
 })

@@ -42,7 +42,10 @@ export class CreateServiceUseCase {
     if (request.type === 'error') {
       return request
     }
-    const issues = serviceRuleIssues(request.data)
+    const { service, options } = ServiceWriteMapper.fromCreateRequest(
+      request.data,
+    )
+    const issues = serviceRuleIssues(service)
     if (issues.length > 0) {
       return Result.error(invalidService(MESSAGE, issues))
     }
@@ -53,9 +56,6 @@ export class CreateServiceUseCase {
       return salonExists
     }
 
-    const { service, options } = ServiceWriteMapper.fromCreateRequest(
-      request.data,
-    )
     const created = await serviceRepository.create(
       salonId.data,
       service,

@@ -5,7 +5,7 @@ import { PaymentMethodWriteMapper } from '../../mappers/write/payment-method.map
 import type { Actor } from '../../models/auth'
 import {
   type ApiPaymentMethodResponse,
-  type ApiPaymentMethodUpdateRequest,
+  type DbPaymentMethodChanges,
   parsePaymentMethodId,
 } from '../../models/payment-method'
 import { parseSalonIdOfPath } from '../../models/salon'
@@ -24,13 +24,13 @@ const MESSAGE = 'Invalid payment method update'
  * The limit a request is told about when its change would leave the limits
  * of the payment method out of order. A request that names both limits out
  * of order does not get as far as the stored payment method, so this is the
- * one limit the request names, which no longer goes with the other one as
+ * one limit the changes name, which no longer goes with the other one as
  * it is stored.
  */
 const limitOf = (
-  request: ApiPaymentMethodUpdateRequest,
+  changes: DbPaymentMethodChanges,
 ): 'minimumAmount' | 'maximumAmount' =>
-  request.maximumAmount === undefined ? 'minimumAmount' : 'maximumAmount'
+  changes.maximumAmount === undefined ? 'minimumAmount' : 'maximumAmount'
 
 export class UpdatePaymentMethodUseCase {
   constructor(
@@ -70,6 +70,8 @@ export class UpdatePaymentMethodUseCase {
       return request
     }
 
+    const changes = PaymentMethodWriteMapper.fromUpdateRequest(request.data)
+
     const { paymentMethodRepository, salonRepository } = this.dependencies
     const salonExists = await requireSalon(salonRepository, salonId.data)
     if (salonExists.type === 'error') {
@@ -79,7 +81,7 @@ export class UpdatePaymentMethodUseCase {
     const updated = await paymentMethodRepository.update(
       salonId.data,
       paymentMethodId.data,
-      PaymentMethodWriteMapper.fromUpdateRequest(request.data),
+      changes,
     )
     if (updated.type === 'error') {
       return updated
@@ -96,7 +98,7 @@ export class UpdatePaymentMethodUseCase {
         ),
       )
       .with({ type: 'limitsOutOfOrder' }, () => {
-        const field = limitOf(request.data)
+        const field = limitOf(changes)
 
         return Result.error(
           DomainErrors.validation(MESSAGE, [

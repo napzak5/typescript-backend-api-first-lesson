@@ -3,8 +3,5 @@ export { isWithinSubtree } from './_shared/hierarchy'
 export { CreateServiceCategoryUseCase } from './create-service-category.usecase'
 export { DeleteServiceCategoryUseCase } from './delete-service-category.usecase'
 export { GetServiceCategoryUseCase } from './get-service-category.usecase'
-export {
-  ListServiceCategoriesUseCase,
-  type ServiceCategoryPage,
-} from './list-service-categories.usecase'
+export { ListServiceCategoriesUseCase } from './list-service-categories.usecase'
 export { UpdateServiceCategoryUseCase } from './update-service-category.usecase'

@@ -42,7 +42,7 @@ export type DbServiceCategory = DeepRequired<
  * category stays in its salon.
  *
  * Every other column is text, a number or a boolean, in the database as in
- * the API, so a request is written as it is: there is no write mapper.
+ * the API, so the write mapper passes a request on as it is.
  */
 type ServiceCategoryManagedColumn = 'id' | 'salonId' | 'createdAt' | 'updatedAt'
 

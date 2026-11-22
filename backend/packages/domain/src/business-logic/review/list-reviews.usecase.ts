@@ -1,7 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { ReviewReadMapper } from '../../mappers/read/review.mapper'
+import type { ApiPaginationMeta } from '../../models/page'
 import type { ApiReviewResponse } from '../../models/review'
-import type { ApiPaginationMeta } from '../../models/salon'
 import { reviewSearchRequestSchema } from '../../schemas/review.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { notFound } from '../booking/_shared/plan'

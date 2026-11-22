@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { StaffAccountReadMapper } from '../../mappers/read/staff-account.mapper'
+import { StaffAccountWriteMapper } from '../../mappers/write/staff-account.mapper'
 import type { Actor } from '../../models/auth'
 import { parseSalonIdOfPath } from '../../models/salon'
 import { parseStaffId } from '../../models/staff'
@@ -54,8 +55,8 @@ export class UpdateStaffAccountUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { role } = request.data
-    if (role !== undefined && !mayGiveRole(actor, role)) {
+    const changes = StaffAccountWriteMapper.fromUpdateRequest(request.data)
+    if (changes.role !== undefined && !mayGiveRole(actor, changes.role)) {
       return Result.error(DomainErrors.forbidden())
     }
     if (isOwnStaffRecord(actor, staffId.data)) {
@@ -71,7 +72,7 @@ export class UpdateStaffAccountUseCase {
     const updated = await staffAccountRepository.update(
       salonId.data,
       staffId.data,
-      request.data,
+      changes,
     )
     if (updated.type === 'error') {
       return updated

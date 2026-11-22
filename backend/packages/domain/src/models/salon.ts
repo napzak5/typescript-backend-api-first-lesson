@@ -46,7 +46,6 @@ export type ApiSalonSearchRequest = NonNullable<
 >
 export type ApiOpeningHours = components['schemas']['Models.OpeningHours']
 export type ApiBusinessHours = components['schemas']['Models.BusinessHours']
-export type ApiPaginationMeta = components['schemas']['Models.PaginationMeta']
 
 // Database types, inferred from the Drizzle schema
 export type DbSalon = DeepRequired<typeof salons.$inferSelect>

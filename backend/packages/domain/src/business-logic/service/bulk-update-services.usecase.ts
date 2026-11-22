@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
+import { ServiceReadMapper } from '../../mappers/read/service.mapper'
 import { ServiceWriteMapper } from '../../mappers/write/service.mapper'
 import type { Actor } from '../../models/auth'
 import { parseSalonIdOfPath } from '../../models/salon'
@@ -47,8 +48,9 @@ export class BulkUpdateServicesUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { serviceIds, updates } = request.data
-    if (updates.packageServiceIds?.some((id) => serviceIds.includes(id))) {
+    const { serviceIds, changes, options } =
+      ServiceWriteMapper.fromBulkUpdateRequest(request.data)
+    if (serviceIds.some((id) => changes.packageServiceIds?.includes(id))) {
       return Result.error(
         invalidService(MESSAGE, [packageContainsItself], UPDATES),
       )
@@ -60,7 +62,6 @@ export class BulkUpdateServicesUseCase {
       return salonExists
     }
 
-    const { changes, options } = ServiceWriteMapper.fromUpdateRequest(updates)
     const updated = await serviceRepository.updateMany(
       salonId.data,
       serviceIds,
@@ -73,7 +74,9 @@ export class BulkUpdateServicesUseCase {
 
     return match(updated.data)
       .returnType<Result<ApiServiceBulkUpdateResponse, DomainError>>()
-      .with({ type: 'updated' }, () => Result.success({ updated: serviceIds }))
+      .with({ type: 'updated' }, () =>
+        Result.success(ServiceReadMapper.toApiServiceBulkUpdate(serviceIds)),
+      )
       .with({ type: P.not('updated') }, (refusal) =>
         Result.error(toRefusalError(refusal, MESSAGE, UPDATES)),
       )

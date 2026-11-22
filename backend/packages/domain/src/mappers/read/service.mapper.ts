@@ -1,14 +1,19 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import type { ApiPage, Paging } from '../../models/page'
 import type {
+  ApiServiceBulkUpdateResponse,
   ApiServiceOption,
   ApiServiceResponse,
   DbService,
   DbServiceOption,
+  ServiceId,
   ServiceWithOptions,
 } from '../../models/service'
+import type { ServiceList } from '../../repositories/service.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * Database rows → API response. Property names are the column names; only
@@ -83,5 +88,20 @@ export const ServiceReadMapper = {
       apiServices.push(mapped.data)
     }
     return Result.success(apiServices)
+  },
+
+  /** The services of a list as a page of it. */
+  toApiServicePage(
+    { services, total, hasMore }: ServiceList,
+    paging: Paging<ServiceId>,
+  ): Result<ApiPage<ApiServiceResponse>, DomainError> {
+    return Result.map(ServiceReadMapper.toApiServices(services), (data) =>
+      toApiPage(data, { total, hasMore }, paging),
+    )
+  },
+
+  /** What a bulk update answers with: the services it changed. */
+  toApiServiceBulkUpdate(updated: ServiceId[]): ApiServiceBulkUpdateResponse {
+    return { updated }
   },
 }

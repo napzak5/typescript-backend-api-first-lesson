@@ -1,7 +1,9 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { StaffReadMapper } from '../../mappers/read/staff.mapper'
+import { StaffWriteMapper } from '../../mappers/write/staff.mapper'
 import type { Actor } from '../../models/auth'
-import { type ApiPaginationMeta, parseSalonIdOfPath } from '../../models/salon'
+import type { ApiPage } from '../../models/page'
+import { parseSalonIdOfPath } from '../../models/salon'
 import type { ApiStaffResponse } from '../../models/staff'
 import { staffSearchRequestSchema } from '../../schemas/staff.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -9,13 +11,7 @@ import { requireSalon } from '../_shared/existing-salon'
 import { mayKeepStaffLedger } from './_shared/authorization'
 import type { StaffUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid staff search'
-
-export type StaffPage = {
-  data: ApiStaffResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListStaffUseCase {
   constructor(private readonly dependencies: StaffUseCaseDependencies) {}
@@ -37,7 +33,7 @@ export class ListStaffUseCase {
     actor: Actor,
     salon: unknown,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<StaffPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiStaffResponse>, DomainError>> {
     const salonId = parseSalonIdOfPath(salon)
     if (salonId.type === 'error') {
       return salonId
@@ -53,8 +49,10 @@ export class ListStaffUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = StaffWriteMapper.fromSearchRequest(
+      request.data,
+      salonId.data,
+    )
 
     const { staffRepository, salonRepository } = this.dependencies
     const salonExists = await requireSalon(salonRepository, salonId.data)
@@ -62,11 +60,7 @@ export class ListStaffUseCase {
       return salonExists
     }
 
-    const listed = await staffRepository.list({
-      salonId: salonId.data,
-      limit,
-      after: cursor ?? null,
-    })
+    const listed = await staffRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -82,20 +76,6 @@ export class ListStaffUseCase {
       )
     }
 
-    const { staff, total, hasMore } = listed.data
-    const lastStaffId = staff.at(-1)?.id ?? null
-
-    return Result.map(StaffReadMapper.toApiStaffList(staff), (data) => ({
-      data,
-      meta: {
-        total,
-        limit,
-        hasMore,
-        cursor: cursor ?? null,
-        nextCursor: hasMore ? lastStaffId : null,
-        // Pages are only walked forwards.
-        prevCursor: null,
-      },
-    }))
+    return StaffReadMapper.toApiStaffPage(listed.data, criteria)
   }
 }

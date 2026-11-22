@@ -1,8 +1,11 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
-import type { ApiStaffResponse, DbStaff } from '../../models/staff'
+import type { ApiPage, Paging } from '../../models/page'
+import type { ApiStaffResponse, DbStaff, StaffId } from '../../models/staff'
+import type { StaffList } from '../../repositories/staff.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * A row of `staff` → the response of the staff ledger. Property names are
@@ -50,5 +53,15 @@ export const StaffReadMapper = {
       apiStaff.push(mapped.data)
     }
     return Result.success(apiStaff)
+  },
+
+  /** The staff members of a list as a page of it. */
+  toApiStaffPage(
+    { staff, total, hasMore }: StaffList,
+    paging: Paging<StaffId>,
+  ): Result<ApiPage<ApiStaffResponse>, DomainError> {
+    return Result.map(StaffReadMapper.toApiStaffList(staff), (data) =>
+      toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

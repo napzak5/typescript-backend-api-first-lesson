@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { StaffInvitationReadMapper } from '../../mappers/read/staff-invitation.mapper'
+import { StaffInvitationWriteMapper } from '../../mappers/write/staff-invitation.mapper'
 import type { Actor } from '../../models/auth'
 import { parseSalonIdOfPath } from '../../models/salon'
 import { parseStaffId } from '../../models/staff'
@@ -65,7 +66,7 @@ export class CreateStaffInvitationUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { role } = request.data
+    const { role } = StaffInvitationWriteMapper.fromCreateRequest(request.data)
     if (!mayGiveRole(actor, role)) {
       return Result.error(DomainErrors.forbidden())
     }

@@ -50,7 +50,10 @@ export class UpdateServiceUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (request.data.packageServiceIds?.includes(serviceId.data)) {
+    const { changes, options } = ServiceWriteMapper.fromUpdateRequest(
+      request.data,
+    )
+    if (changes.packageServiceIds?.includes(serviceId.data)) {
       return Result.error(invalidService(MESSAGE, [packageContainsItself]))
     }
 
@@ -60,9 +63,6 @@ export class UpdateServiceUseCase {
       return salonExists
     }
 
-    const { changes, options } = ServiceWriteMapper.fromUpdateRequest(
-      request.data,
-    )
     const updated = await serviceRepository.update(
       salonId.data,
       serviceId.data,

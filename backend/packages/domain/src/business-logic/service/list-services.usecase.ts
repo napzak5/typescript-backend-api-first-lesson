@@ -1,19 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { ServiceReadMapper } from '../../mappers/read/service.mapper'
-import { type ApiPaginationMeta, parseSalonIdOfPath } from '../../models/salon'
+import { ServiceWriteMapper } from '../../mappers/write/service.mapper'
+import type { ApiPage } from '../../models/page'
+import { parseSalonIdOfPath } from '../../models/salon'
 import type { ApiServiceResponse } from '../../models/service'
 import { serviceSearchRequestSchema } from '../../schemas/service.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { requireSalon } from '../_shared/existing-salon'
 import type { ServiceUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid service search'
-
-export type ServicePage = {
-  data: ApiServiceResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListServicesUseCase {
   constructor(private readonly dependencies: ServiceUseCaseDependencies) {}
@@ -27,7 +23,7 @@ export class ListServicesUseCase {
   async execute(
     salon: unknown,
     input: unknown,
-  ): Promise<Result<ServicePage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiServiceResponse>, DomainError>> {
     const salonId = parseSalonIdOfPath(salon)
     if (salonId.type === 'error') {
       return salonId
@@ -36,8 +32,10 @@ export class ListServicesUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, categoryId, isActive } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = ServiceWriteMapper.fromSearchRequest(
+      request.data,
+      salonId.data,
+    )
 
     const { serviceRepository, salonRepository } = this.dependencies
     const salonExists = await requireSalon(salonRepository, salonId.data)
@@ -45,13 +43,7 @@ export class ListServicesUseCase {
       return salonExists
     }
 
-    const listed = await serviceRepository.list({
-      salonId: salonId.data,
-      limit,
-      after: cursor ?? null,
-      categoryId: categoryId ?? null,
-      isActive: isActive ?? null,
-    })
+    const listed = await serviceRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -67,20 +59,6 @@ export class ListServicesUseCase {
       )
     }
 
-    const { services, total, hasMore } = listed.data
-    const lastServiceId = services.at(-1)?.service.id ?? null
-
-    return Result.map(ServiceReadMapper.toApiServices(services), (data) => ({
-      data,
-      meta: {
-        total,
-        limit,
-        hasMore,
-        cursor: cursor ?? null,
-        nextCursor: hasMore ? lastServiceId : null,
-        // Pages are only walked forwards.
-        prevCursor: null,
-      },
-    }))
+    return ServiceReadMapper.toApiServicePage(listed.data, criteria)
   }
 }

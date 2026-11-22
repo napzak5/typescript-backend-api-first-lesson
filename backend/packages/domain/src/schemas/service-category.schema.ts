@@ -42,3 +42,8 @@ export const serviceCategorySearchRequestSchema = z.strictObject({
   cursor: categoryIdSchema.exactOptional(),
   isActive: z.boolean().exactOptional(),
 }) satisfies z.ZodType<ApiServiceCategorySearchRequest>
+
+/** A search that was checked: its cursor is the ID of a category. */
+export type ServiceCategorySearchRequest = z.infer<
+  typeof serviceCategorySearchRequestSchema
+>

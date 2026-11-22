@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
+import { StaffInvitationWriteMapper } from '../../mappers/write/staff-invitation.mapper'
 import type { Actor } from '../../models/auth'
 import { authStaffInvitationJoinRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -48,13 +49,14 @@ export class JoinStaffInvitationUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { token } = StaffInvitationWriteMapper.fromJoinRequest(request.data)
     if (reachesSalon(actor)) {
       return Result.error(accountBelongsToStaff())
     }
 
     const { staffInvitationRepository, tokenIssuer, clock } = this.dependencies
     const joined = await staffInvitationRepository.join(
-      tokenIssuer.hashOf(request.data.token),
+      tokenIssuer.hashOf(token),
       actor.userId,
       clock().toISOString(),
     )

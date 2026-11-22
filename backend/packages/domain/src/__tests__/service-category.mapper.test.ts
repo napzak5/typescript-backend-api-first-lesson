@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { ServiceCategoryReadMapper } from '../mappers/read/service-category.mapper'
+import { ServiceCategoryWriteMapper } from '../mappers/write/service-category.mapper'
+import { salonIdSchema } from '../models/salon'
+import { categoryIdSchema } from '../models/service-category'
+import { serviceCategorySearchRequestSchema } from '../schemas/service-category.schema'
 import { SALON_ID } from './fixtures'
 import {
   CATEGORY_ID,
   dbServiceCategory,
   OTHER_CATEGORY_ID,
+  serviceCategoryCreateRequest,
 } from './service-category-fixtures'
 
 describe('ServiceCategoryReadMapper.toApiServiceCategory', () => {
@@ -163,5 +168,119 @@ describe('ServiceCategoryReadMapper.toApiServiceCategories', () => {
     ])
 
     expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+  })
+})
+
+describe('ServiceCategoryReadMapper.toApiServiceCategoryPage', () => {
+  it('answers with the categories of the list and where the list goes on', () => {
+    const result = ServiceCategoryReadMapper.toApiServiceCategoryPage(
+      {
+        categories: [
+          dbServiceCategory(),
+          dbServiceCategory({ id: OTHER_CATEGORY_ID }),
+        ],
+        total: 4,
+        hasMore: true,
+      },
+      { limit: 2, after: categoryIdSchema.parse(CATEGORY_ID) },
+    )
+
+    expect(result).toMatchObject({
+      type: 'success',
+      data: {
+        data: [{ id: CATEGORY_ID }, { id: OTHER_CATEGORY_ID }],
+        meta: {
+          total: 4,
+          limit: 2,
+          hasMore: true,
+          cursor: CATEGORY_ID,
+          nextCursor: OTHER_CATEGORY_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('fails as a whole when one stored category is invalid', () => {
+    const result = ServiceCategoryReadMapper.toApiServiceCategoryPage(
+      {
+        categories: [dbServiceCategory({ updatedAt: 'recently' })],
+        total: 1,
+        hasMore: false,
+      },
+      { limit: 20, after: null },
+    )
+
+    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+  })
+})
+
+describe('ServiceCategoryWriteMapper.fromCreateRequest', () => {
+  it('writes every property to the column of its name, as it is', () => {
+    expect(
+      ServiceCategoryWriteMapper.fromCreateRequest(
+        serviceCategoryCreateRequest(),
+      ),
+    ).toStrictEqual(serviceCategoryCreateRequest())
+  })
+
+  it('keeps null as null', () => {
+    const request = {
+      ...serviceCategoryCreateRequest(),
+      description: null,
+      iconUrl: null,
+      color: null,
+    }
+
+    expect(ServiceCategoryWriteMapper.fromCreateRequest(request)).toStrictEqual(
+      request,
+    )
+  })
+})
+
+describe('ServiceCategoryWriteMapper.fromUpdateRequest', () => {
+  it('changes only the properties that are present', () => {
+    expect(
+      ServiceCategoryWriteMapper.fromUpdateRequest({
+        name: 'カラー',
+        isActive: false,
+      }),
+    ).toStrictEqual({ name: 'カラー', isActive: false })
+  })
+
+  it('clears a nullable column when the property is null', () => {
+    expect(
+      ServiceCategoryWriteMapper.fromUpdateRequest({ parentId: null }),
+    ).toStrictEqual({ parentId: null })
+  })
+})
+
+describe('ServiceCategoryWriteMapper.fromSearchRequest', () => {
+  const salonId = salonIdSchema.parse(SALON_ID)
+
+  it('asks for the first 20 categories of the salon when the request names nothing', () => {
+    expect(ServiceCategoryWriteMapper.fromSearchRequest({}, salonId)).toEqual({
+      salonId: SALON_ID,
+      limit: 20,
+      after: null,
+      isActive: null,
+    })
+  })
+
+  it('takes the place and the filter the request names, as they are', () => {
+    const request = serviceCategorySearchRequestSchema.parse({
+      limit: 3,
+      cursor: CATEGORY_ID,
+      isActive: false,
+    })
+
+    expect(
+      ServiceCategoryWriteMapper.fromSearchRequest(request, salonId),
+    ).toEqual({
+      salonId: SALON_ID,
+      limit: 3,
+      after: CATEGORY_ID,
+      isActive: false,
+    })
   })
 })

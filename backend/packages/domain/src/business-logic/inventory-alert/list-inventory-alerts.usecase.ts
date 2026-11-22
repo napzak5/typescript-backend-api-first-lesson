@@ -6,7 +6,7 @@ import type {
   ApiInventoryAlertResponse,
   DbInventoryAlertFacts,
 } from '../../models/inventory-alert'
-import type { ApiPaginationMeta } from '../../models/salon'
+import type { ApiPaginationMeta } from '../../models/page'
 import type { InventoryAlertFactsAfter } from '../../repositories/inventory-alert.repository'
 import { inventoryAlertSearchRequestSchema } from '../../schemas/inventory-alert.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'

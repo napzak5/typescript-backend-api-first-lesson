@@ -7,10 +7,14 @@ import type {
   DbSalonChanges,
   OpeningHoursChange,
 } from '../../models/salon'
+import type { SalonListCriteria } from '../../repositories/salon.repository'
+import type { SalonSearchRequest } from '../../schemas/salon.schema'
+import { toPaging } from './page'
 
 /**
- * API request → database rows. Property names are the column names, so the
- * only conversion is the representation of `numeric` columns, which the
+ * API request → what the repository takes: the rows of a salon, the changes
+ * of one, the criteria of a list. Property names are the column names, so
+ * the only conversion is the representation of `numeric` columns, which the
  * driver reads and writes as strings to keep their precision.
  */
 
@@ -79,6 +83,21 @@ export const SalonWriteMapper = {
         openingHours === undefined
           ? { type: 'keep' }
           : { type: 'replace', openingHours: toDbOpeningHours(openingHours) },
+    }
+  },
+
+  /** A filter the request does not name is none (`null`, or no features). */
+  fromSearchRequest(request: SalonSearchRequest): SalonListCriteria {
+    const { keyword, prefecture, city, isActive, minRating, features } = request
+
+    return {
+      ...toPaging(request),
+      keyword: keyword ?? null,
+      prefecture: prefecture ?? null,
+      city: city ?? null,
+      isActive: isActive ?? null,
+      minRating: minRating ?? null,
+      features: features ?? [],
     }
   },
 }

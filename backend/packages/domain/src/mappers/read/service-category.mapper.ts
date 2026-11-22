@@ -1,11 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import type { ApiPage, Paging } from '../../models/page'
 import type {
   ApiServiceCategoryResponse,
+  CategoryId,
   DbServiceCategory,
 } from '../../models/service-category'
+import type { ServiceCategoryList } from '../../repositories/service-category.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * A row of `service_categories` → API response. Property names are the
@@ -55,5 +59,16 @@ export const ServiceCategoryReadMapper = {
       apiCategories.push(mapped.data)
     }
     return Result.success(apiCategories)
+  },
+
+  /** The categories of a list as a page of it. */
+  toApiServiceCategoryPage(
+    { categories, total, hasMore }: ServiceCategoryList,
+    paging: Paging<CategoryId>,
+  ): Result<ApiPage<ApiServiceCategoryResponse>, DomainError> {
+    return Result.map(
+      ServiceCategoryReadMapper.toApiServiceCategories(categories),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

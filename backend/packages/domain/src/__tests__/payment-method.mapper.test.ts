@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { PaymentMethodReadMapper } from '../mappers/read/payment-method.mapper'
 import { PaymentMethodWriteMapper } from '../mappers/write/payment-method.mapper'
+import { paymentMethodIdSchema } from '../models/payment-method'
+import { salonIdSchema } from '../models/salon'
+import { paymentMethodSearchRequestSchema } from '../schemas/payment-method.schema'
 import { SALON_ID } from './fixtures'
 import {
   dbPaymentMethod,
@@ -197,5 +200,82 @@ describe('PaymentMethodWriteMapper', () => {
     expect(
       PaymentMethodWriteMapper.fromUpdateRequest(everything),
     ).toStrictEqual({ ...everything, fee: '3.6' })
+  })
+})
+
+describe('PaymentMethodReadMapper.toApiPaymentMethodPage', () => {
+  it('answers with the payment methods of the list and where the list goes on', () => {
+    const result = PaymentMethodReadMapper.toApiPaymentMethodPage(
+      {
+        paymentMethods: [
+          dbPaymentMethod(),
+          dbPaymentMethod({ id: OTHER_PAYMENT_METHOD_ID }),
+        ],
+        total: 3,
+        hasMore: true,
+      },
+      { limit: 2, after: paymentMethodIdSchema.parse(PAYMENT_METHOD_ID) },
+    )
+
+    expect(result).toMatchObject({
+      type: 'success',
+      data: {
+        data: [{ id: PAYMENT_METHOD_ID }, { id: OTHER_PAYMENT_METHOD_ID }],
+        meta: {
+          total: 3,
+          limit: 2,
+          hasMore: true,
+          cursor: PAYMENT_METHOD_ID,
+          nextCursor: OTHER_PAYMENT_METHOD_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('fails as a whole when one stored payment method is invalid', () => {
+    const result = PaymentMethodReadMapper.toApiPaymentMethodPage(
+      {
+        paymentMethods: [dbPaymentMethod({ updatedAt: 'recently' })],
+        total: 1,
+        hasMore: false,
+      },
+      { limit: 20, after: null },
+    )
+
+    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+  })
+})
+
+describe('PaymentMethodWriteMapper.fromSearchRequest', () => {
+  const salonId = salonIdSchema.parse(SALON_ID)
+
+  it('asks for the first 20 payment methods of the salon when the request names nothing', () => {
+    expect(PaymentMethodWriteMapper.fromSearchRequest({}, salonId)).toEqual({
+      salonId: SALON_ID,
+      limit: 20,
+      after: null,
+      method: null,
+      isActive: null,
+    })
+  })
+
+  it('takes the place and every filter the request names, as they are', () => {
+    const request = paymentMethodSearchRequestSchema.parse({
+      limit: 3,
+      cursor: PAYMENT_METHOD_ID,
+      method: 'cash',
+      isActive: false,
+    })
+
+    expect(
+      PaymentMethodWriteMapper.fromSearchRequest(request, salonId),
+    ).toEqual({
+      salonId: SALON_ID,
+      limit: 3,
+      after: PAYMENT_METHOD_ID,
+      method: 'cash',
+      isActive: false,
+    })
   })
 })

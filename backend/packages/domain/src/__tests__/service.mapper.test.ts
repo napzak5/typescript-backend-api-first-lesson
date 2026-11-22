@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { ServiceReadMapper } from '../mappers/read/service.mapper'
 import { ServiceWriteMapper } from '../mappers/write/service.mapper'
+import { salonIdSchema } from '../models/salon'
+import { serviceIdSchema } from '../models/service'
+import {
+  serviceBulkUpdateRequestSchema,
+  serviceSearchRequestSchema,
+} from '../schemas/service.schema'
 import { SALON_ID } from './fixtures'
 import { CATEGORY_ID } from './service-category-fixtures'
 import {
@@ -458,6 +464,126 @@ describe('ServiceReadMapper.toApiServices', () => {
         type: 'database',
         message: expect.stringContaining(THIRD_SERVICE_ID),
       },
+    })
+  })
+})
+
+describe('ServiceReadMapper.toApiServicePage', () => {
+  it('answers with the services of the list and where the list goes on', () => {
+    const result = ServiceReadMapper.toApiServicePage(
+      {
+        services: [
+          { service: dbService(), options: [dbServiceOption()] },
+          { service: dbService({ id: OTHER_SERVICE_ID }), options: [] },
+        ],
+        total: 9,
+        hasMore: true,
+      },
+      { limit: 2, after: serviceIdSchema.parse(THIRD_SERVICE_ID) },
+    )
+
+    expect(result).toMatchObject({
+      type: 'success',
+      data: {
+        data: [
+          { id: SERVICE_ID, options: [{ name: 'トリートメント' }] },
+          { id: OTHER_SERVICE_ID, options: [] },
+        ],
+        meta: {
+          total: 9,
+          limit: 2,
+          hasMore: true,
+          cursor: THIRD_SERVICE_ID,
+          nextCursor: OTHER_SERVICE_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('fails as a whole when one stored service is invalid', () => {
+    const result = ServiceReadMapper.toApiServicePage(
+      {
+        services: [
+          { service: dbService({ updatedAt: 'recently' }), options: [] },
+        ],
+        total: 1,
+        hasMore: false,
+      },
+      { limit: 20, after: null },
+    )
+
+    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+  })
+})
+
+describe('ServiceReadMapper.toApiServiceBulkUpdate', () => {
+  it('answers with the services that were changed, in the order they were named', () => {
+    const updated = [OTHER_SERVICE_ID, SERVICE_ID].map((id) =>
+      serviceIdSchema.parse(id),
+    )
+
+    expect(ServiceReadMapper.toApiServiceBulkUpdate(updated)).toStrictEqual({
+      updated: [OTHER_SERVICE_ID, SERVICE_ID],
+    })
+  })
+})
+
+describe('ServiceWriteMapper.fromBulkUpdateRequest', () => {
+  it('tells the services, the changes of each and the options apart', () => {
+    const request = serviceBulkUpdateRequestSchema.parse({
+      serviceIds: [SERVICE_ID, OTHER_SERVICE_ID],
+      updates: { price: 5000, isActive: false, options: [] },
+    })
+
+    expect(ServiceWriteMapper.fromBulkUpdateRequest(request)).toStrictEqual({
+      serviceIds: [SERVICE_ID, OTHER_SERVICE_ID],
+      changes: { price: 5000, isActive: false },
+      options: { type: 'replace', options: [] },
+    })
+  })
+
+  it('keeps the options of every service when the changes name none', () => {
+    const request = serviceBulkUpdateRequestSchema.parse({
+      serviceIds: [SERVICE_ID],
+      updates: { discountPrice: null },
+    })
+
+    expect(ServiceWriteMapper.fromBulkUpdateRequest(request)).toStrictEqual({
+      serviceIds: [SERVICE_ID],
+      changes: { discountPrice: null },
+      options: { type: 'keep' },
+    })
+  })
+})
+
+describe('ServiceWriteMapper.fromSearchRequest', () => {
+  const salonId = salonIdSchema.parse(SALON_ID)
+
+  it('asks for the first 20 services of the salon when the request names nothing', () => {
+    expect(ServiceWriteMapper.fromSearchRequest({}, salonId)).toEqual({
+      salonId: SALON_ID,
+      limit: 20,
+      after: null,
+      categoryId: null,
+      isActive: null,
+    })
+  })
+
+  it('takes the place and every filter the request names, as they are', () => {
+    const request = serviceSearchRequestSchema.parse({
+      limit: 3,
+      cursor: SERVICE_ID,
+      categoryId: CATEGORY_ID,
+      isActive: false,
+    })
+
+    expect(ServiceWriteMapper.fromSearchRequest(request, salonId)).toEqual({
+      salonId: SALON_ID,
+      limit: 3,
+      after: SERVICE_ID,
+      categoryId: CATEGORY_ID,
+      isActive: false,
     })
   })
 })

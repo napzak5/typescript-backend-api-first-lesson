@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { ServiceCategoryReadMapper } from '../../mappers/read/service-category.mapper'
+import { ServiceCategoryWriteMapper } from '../../mappers/write/service-category.mapper'
 import type { Actor } from '../../models/auth'
 import { parseSalonIdOfPath } from '../../models/salon'
 import type { ApiServiceCategoryResponse } from '../../models/service-category'
@@ -51,7 +52,7 @@ export class CreateServiceCategoryUseCase {
 
     const created = await serviceCategoryRepository.create(
       salonId.data,
-      request.data,
+      ServiceCategoryWriteMapper.fromCreateRequest(request.data),
     )
     if (created.type === 'error') {
       return created

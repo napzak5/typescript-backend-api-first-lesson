@@ -95,3 +95,8 @@ export const paymentMethodSearchRequestSchema = z.strictObject({
   method: PaymentMethodTypeSchema.exactOptional(),
   isActive: z.boolean().exactOptional(),
 }) satisfies z.ZodType<ApiPaymentMethodSearchRequest>
+
+/** A search that was checked: its cursor is the ID of a payment method. */
+export type PaymentMethodSearchRequest = z.infer<
+  typeof paymentMethodSearchRequestSchema
+>

@@ -1,21 +1,17 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { PaymentMethodReadMapper } from '../../mappers/read/payment-method.mapper'
+import { PaymentMethodWriteMapper } from '../../mappers/write/payment-method.mapper'
 import type { Actor } from '../../models/auth'
+import type { ApiPage } from '../../models/page'
 import type { ApiPaymentMethodResponse } from '../../models/payment-method'
-import { type ApiPaginationMeta, parseSalonIdOfPath } from '../../models/salon'
+import { parseSalonIdOfPath } from '../../models/salon'
 import { paymentMethodSearchRequestSchema } from '../../schemas/payment-method.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { requireSalon } from '../_shared/existing-salon'
 import { mayReadPaymentMethods } from './_shared/authorization'
 import type { PaymentMethodUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid payment method search'
-
-export type PaymentMethodPage = {
-  data: ApiPaymentMethodResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListPaymentMethodsUseCase {
   constructor(
@@ -39,7 +35,7 @@ export class ListPaymentMethodsUseCase {
     actor: Actor,
     salon: unknown,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<PaymentMethodPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiPaymentMethodResponse>, DomainError>> {
     const salonId = parseSalonIdOfPath(salon)
     if (salonId.type === 'error') {
       return salonId
@@ -59,8 +55,10 @@ export class ListPaymentMethodsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, method, isActive } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = PaymentMethodWriteMapper.fromSearchRequest(
+      request.data,
+      salonId.data,
+    )
 
     const { paymentMethodRepository, salonRepository } = this.dependencies
     const salonExists = await requireSalon(salonRepository, salonId.data)
@@ -68,13 +66,7 @@ export class ListPaymentMethodsUseCase {
       return salonExists
     }
 
-    const listed = await paymentMethodRepository.list({
-      salonId: salonId.data,
-      limit,
-      after: cursor ?? null,
-      method: method ?? null,
-      isActive: isActive ?? null,
-    })
+    const listed = await paymentMethodRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -90,23 +82,6 @@ export class ListPaymentMethodsUseCase {
       )
     }
 
-    const { paymentMethods, total, hasMore } = listed.data
-    const lastPaymentMethodId = paymentMethods.at(-1)?.id ?? null
-
-    return Result.map(
-      PaymentMethodReadMapper.toApiPaymentMethods(paymentMethods),
-      (data) => ({
-        data,
-        meta: {
-          total,
-          limit,
-          hasMore,
-          cursor: cursor ?? null,
-          nextCursor: hasMore ? lastPaymentMethodId : null,
-          // Pages are only walked forwards.
-          prevCursor: null,
-        },
-      }),
-    )
+    return PaymentMethodReadMapper.toApiPaymentMethodPage(listed.data, criteria)
   }
 }

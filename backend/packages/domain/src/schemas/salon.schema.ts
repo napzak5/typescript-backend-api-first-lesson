@@ -198,3 +198,6 @@ export const salonSearchRequestSchema = z.strictObject({
   minRating: z.number().min(0).max(5).exactOptional(),
   features: z.array(nonBlankText).exactOptional(),
 }) satisfies z.ZodType<ApiSalonSearchRequest>
+
+/** A search that was checked: its cursor is the ID of a salon. */
+export type SalonSearchRequest = z.infer<typeof salonSearchRequestSchema>
