@@ -14,3 +14,8 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Default: Story = {}
+
+/** Nothing was written: it is said as a list says a value that was not recorded */
+export const NotWritten: Story = {
+  args: { children: null },
+}

@@ -37,6 +37,11 @@ export const Many: Story = {
   },
 }
 
+/** No words: there are none, and that is what was recorded */
+export const Empty: Story = {
+  args: { label: '資格', items: [] },
+}
+
 export const Repeated: Story = {
   args: { items: ['Wi-Fi', 'ドリンクサービス', 'Wi-Fi'] },
 }

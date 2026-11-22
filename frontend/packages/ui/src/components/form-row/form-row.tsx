@@ -17,7 +17,8 @@ export type FormRowProps = Omit<
  * One of the rows a form repeats (a treatment, an option, a day), inside a
  * `FormPart`: a frame of its own, with its name on the upper edge, as a
  * `fieldset` and its `legend`, so that a screen reader says which row a
- * control is in. What else a fieldset takes goes to it.
+ * control is in. What else a fieldset takes goes to it. The rows that are
+ * added and taken away are kept by `useRepeatedRows`.
  */
 export const FormRow = ({ label, children, ...row }: FormRowProps) => (
   <fieldset {...row} className={styles['row']}>

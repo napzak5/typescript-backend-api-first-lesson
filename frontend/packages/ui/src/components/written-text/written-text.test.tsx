@@ -22,6 +22,15 @@ describe('WrittenText', () => {
     expect(written).toHaveClass('writtenText')
   })
 
+  it('should say that nothing was recorded, when nothing was written', async () => {
+    // Act
+    await stories.NotWritten.run()
+
+    // Assert
+    expect(screen.getByText('記録なし')).toHaveClass('notRecorded')
+    expect(document.querySelector('p')).toBeNull()
+  })
+
   it('should hand what else it is given to the paragraph', async () => {
     // Act
     await stories.Default.run({
