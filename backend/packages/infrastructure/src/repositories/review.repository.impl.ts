@@ -21,8 +21,11 @@ import {
   planReviewReport,
   planReviewResponse,
   type ReportedReview,
+  type RequestedReview,
+  type RequestedReviewChange,
+  type RequestedReviewReport,
+  type RequestedReviewResponse,
   type ReviewChange,
-  type ReviewCreateRequest,
   type ReviewCreation,
   type ReviewedBooking,
   type ReviewId,
@@ -34,12 +37,9 @@ import {
   type ReviewRemover,
   type ReviewReporter,
   type ReviewReporting,
-  type ReviewReportRequest,
   type ReviewResponder,
   type ReviewResponding,
-  type ReviewRespondRequest,
   type ReviewTally,
-  type ReviewUpdateRequest,
   type SalonId,
   type StaffId,
 } from '@beauty-salon-backend/domain'
@@ -404,7 +404,7 @@ export class ReviewRepository implements IReviewRepository {
 
   async create(
     customerId: CustomerId,
-    request: ReviewCreateRequest,
+    request: RequestedReview,
   ): Promise<Result<ReviewCreation, DomainError>> {
     return attempt('Failed to create review', () =>
       this.db.transaction(async (tx): Promise<ReviewCreation> => {
@@ -443,7 +443,7 @@ export class ReviewRepository implements IReviewRepository {
   async update(
     id: ReviewId,
     customerId: CustomerId,
-    request: ReviewUpdateRequest,
+    request: RequestedReviewChange,
   ): Promise<Result<ReviewChange, DomainError>> {
     return attempt('Failed to update review', () =>
       this.db.transaction(async (tx): Promise<ReviewChange> => {
@@ -536,7 +536,7 @@ export class ReviewRepository implements IReviewRepository {
   async report(
     id: ReviewId,
     reporter: ReviewReporter,
-    request: ReviewReportRequest,
+    request: RequestedReviewReport,
   ): Promise<Result<ReviewReporting, DomainError>> {
     return attempt('Failed to report review', () =>
       this.db.transaction(async (tx): Promise<ReviewReporting> => {
@@ -582,7 +582,7 @@ export class ReviewRepository implements IReviewRepository {
   async respond(
     id: ReviewId,
     responder: ReviewResponder,
-    { ownerResponse }: ReviewRespondRequest,
+    { ownerResponse }: RequestedReviewResponse,
   ): Promise<Result<ReviewResponding, DomainError>> {
     return attempt('Failed to respond to review', () =>
       this.db.transaction(async (tx): Promise<ReviewResponding> => {

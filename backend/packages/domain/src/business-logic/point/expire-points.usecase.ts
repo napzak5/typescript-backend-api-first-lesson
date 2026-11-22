@@ -1,5 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
+import { PointReadMapper } from '../../mappers/read/point.mapper'
+import { PointWriteMapper } from '../../mappers/write/point.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiPointExpireResponse } from '../../models/point'
 import { pointExpireRequestSchema } from '../../schemas/point.schema'
@@ -35,15 +37,18 @@ export class ExpirePointsUseCase {
     if (request.type === 'error') {
       return request
     }
+    const { customerId, processBefore } = PointWriteMapper.fromExpireRequest(
+      request.data,
+    )
     const now = this.dependencies.clock()
-    const issues = issuesOfProcessBefore(request.data.processBefore, now)
+    const issues = issuesOfProcessBefore(processBefore, now)
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
 
     const expired = await this.dependencies.pointRepository.expire(
-      request.data.customerId,
-      request.data.processBefore ?? earliestExpiryDateOf(now),
+      customerId,
+      processBefore ?? earliestExpiryDateOf(now),
     )
     if (expired.type === 'error') {
       return expired
@@ -58,8 +63,8 @@ export class ExpirePointsUseCase {
           ]),
         ),
       )
-      .with({ type: 'expired' }, ({ processedCount, totalPoints }) =>
-        Result.success({ processedCount, totalPoints }),
+      .with({ type: 'expired' }, (outcome) =>
+        Result.success(PointReadMapper.toApiPointExpiry(outcome)),
       )
       .exhaustive()
   }

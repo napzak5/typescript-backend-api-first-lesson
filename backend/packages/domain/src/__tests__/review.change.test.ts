@@ -5,9 +5,9 @@ import {
   planReviewRemoval,
   type ReviewChangeContext,
   type ReviewRemover,
-  type ReviewUpdateRequest,
 } from '../business-logic/review'
 import { type CustomerId, customerIdSchema } from '../models/customer'
+import type { RequestedReviewChange } from '../models/review'
 import { reviewUpdateRequestSchema } from '../schemas/review.schema'
 import { CUSTOMER_ID } from './auth-fixtures'
 import { heldReview } from './review-fixtures'
@@ -16,7 +16,7 @@ const customerId: CustomerId = customerIdSchema.parse(CUSTOMER_ID)
 const OTHER_CUSTOMER_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0c05'
 
 /** A change that passed the rules of its own. */
-const change = (input: Record<string, unknown>): ReviewUpdateRequest =>
+const change = (input: Record<string, unknown>): RequestedReviewChange =>
   reviewUpdateRequestSchema.parse(input)
 
 /** What the change meets: the customer is there, and so is the review. */

@@ -33,3 +33,6 @@ export type ApiReviewReportSearchRequest = NonNullable<
 
 // Database types, inferred from the Drizzle schema
 export type DbReviewReport = DeepRequired<typeof reviewReports.$inferSelect>
+
+/** The report of a review that an account asks to write: why, and what it says of it. */
+export type RequestedReviewReport = Pick<DbReviewReport, 'reason' | 'details'>

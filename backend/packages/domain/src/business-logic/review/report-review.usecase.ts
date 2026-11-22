@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { ReviewReportReadMapper } from '../../mappers/read/review-report.mapper'
+import { ReviewReportWriteMapper } from '../../mappers/write/review-report.mapper'
 import type { Actor } from '../../models/auth'
 import { parseReviewId } from '../../models/review'
 import type { ApiReviewReportResponse } from '../../models/review-report'
@@ -43,7 +44,7 @@ export class ReportReviewUseCase {
     const reported = await this.dependencies.reviewRepository.report(
       reviewId.data,
       reporter.data,
-      request.data,
+      ReviewReportWriteMapper.fromReportRequest(request.data),
     )
     if (reported.type === 'error') {
       return reported

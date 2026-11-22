@@ -97,6 +97,11 @@ export const pointTransactionSearchRequestSchema = pointSearch.refine(
   { path: ['endDate'], message: 'Must not be earlier than startDate' },
 ) satisfies z.ZodType<ApiPointTransactionSearchRequest>
 
+/** A search of point transactions that passed the rules of its own. */
+export type PointTransactionSearchRequest = z.infer<
+  typeof pointTransactionSearchRequestSchema
+>
+
 export const pointExpiringSearchRequestSchema = z.strictObject({
   days: z.number().int().min(1).max(365).exactOptional(),
 }) satisfies z.ZodType<ApiPointExpiringSearchRequest>
@@ -105,3 +110,6 @@ export const pointExpireRequestSchema = z.strictObject({
   customerId: customerIdSchema.nullable(),
   processBefore: calendarDate.nullable(),
 }) satisfies z.ZodType<ApiPointExpireRequest>
+
+/** A request to expire points that passed the rules of its own. */
+export type PointExpireRequest = z.infer<typeof pointExpireRequestSchema>

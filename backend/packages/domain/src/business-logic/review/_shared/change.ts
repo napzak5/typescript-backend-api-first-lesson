@@ -1,5 +1,5 @@
 import type { CustomerId } from '../../../models/customer'
-import type { ReviewUpdateRequest } from '../../../schemas/review.schema'
+import type { RequestedReviewChange } from '../../../models/review'
 import type { ValidationIssue } from '../../../shared'
 
 /**
@@ -44,7 +44,7 @@ export type ReviewNotReached =
  * - otherwise the review is not reached (`ReviewNotReached`)
  */
 export type ReviewChangePlan =
-  | { type: 'planned'; write: ReviewUpdateRequest }
+  | { type: 'planned'; write: RequestedReviewChange }
   | { type: 'invalid'; issues: ValidationIssue[] }
   | ReviewNotReached
 
@@ -86,7 +86,7 @@ const reachOf = (
  */
 export const planReviewChange = (
   customerId: CustomerId,
-  request: ReviewUpdateRequest,
+  request: RequestedReviewChange,
   context: ReviewChangeContext,
 ): ReviewChangePlan => {
   const reach = reachOf({ type: 'author', customerId }, context)

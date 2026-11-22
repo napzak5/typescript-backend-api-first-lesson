@@ -10,7 +10,7 @@ import {
 import {
   bookingIdSchema,
   customerIdSchema,
-  type ReviewCreateRequest,
+  type RequestedReview,
   reviewIdSchema,
   salonIdSchema,
   staffIdSchema,
@@ -1777,7 +1777,7 @@ describe('Reviews API', () => {
     it('resolves every method to a database error when the database does not answer', async () => {
       const connection = connectUnreachableDatabase()
       const repository = new ReviewRepository(connection.database)
-      const request: ReviewCreateRequest = {
+      const request: RequestedReview = {
         salonId: salonIdSchema.parse(UNKNOWN_ID),
         customerId: customerIdSchema.parse(UNKNOWN_ID),
         bookingId: bookingIdSchema.parse(UNKNOWN_ID),

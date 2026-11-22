@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
+import { ReviewReadMapper } from '../../mappers/read/review.mapper'
 import type { Actor } from '../../models/auth'
 import {
   type ApiReviewHelpfulResponse,
@@ -42,7 +43,7 @@ export class MarkReviewHelpfulUseCase {
     return match(marked.data)
       .returnType<Result<ApiReviewHelpfulResponse, DomainError>>()
       .with({ type: 'marked' }, ({ helpfulCount }) =>
-        Result.success({ helpfulCount }),
+        Result.success(ReviewReadMapper.toApiReviewHelpful(helpfulCount)),
       )
       .with(
         { type: 'reviewNotFound' },

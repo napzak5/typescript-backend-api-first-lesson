@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { ReviewReadMapper } from '../../mappers/read/review.mapper'
+import { ReviewWriteMapper } from '../../mappers/write/review.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiReviewResponse } from '../../models/review'
 import { reviewCreateRequestSchema } from '../../schemas/review.schema'
@@ -35,13 +36,14 @@ export class CreateReviewUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (request.data.customerId !== reviewer.data) {
+    const requested = ReviewWriteMapper.fromCreateRequest(request.data)
+    if (requested.customerId !== reviewer.data) {
       return Result.error(DomainErrors.forbidden())
     }
 
     const created = await this.dependencies.reviewRepository.create(
       reviewer.data,
-      request.data,
+      requested,
     )
     if (created.type === 'error') {
       return created

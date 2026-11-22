@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { PointWriteMapper } from '../../mappers/write/point.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiPointTransactionResponse } from '../../models/point'
 import { pointEarnRequestSchema } from '../../schemas/point.schema'
@@ -32,19 +33,15 @@ export class EarnPointsUseCase {
     if (request.type === 'error') {
       return request
     }
+    const earning = PointWriteMapper.fromEarnRequest(request.data)
     const issues = issuesOfExpiry(
-      request.data.expiryDate,
+      earning.request.expiryDate,
       this.dependencies.clock(),
     )
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
 
-    return recordMovement(
-      this.dependencies,
-      reach,
-      { type: 'earned', request: request.data },
-      MESSAGE,
-    )
+    return recordMovement(this.dependencies, reach, earning, MESSAGE)
   }
 }

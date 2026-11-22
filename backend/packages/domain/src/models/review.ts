@@ -3,6 +3,10 @@ import type { components, operations } from '@beauty-salon-backend/generated'
 import { type DeepRequired, Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
+import type { BookingId } from './booking'
+import type { CustomerId } from './customer'
+import type { SalonId } from './salon'
+import type { StaffId } from './staff'
 
 // ID: a UUID that has been checked.
 export const reviewIdSchema = uuidSchema.brand<'ReviewId'>()
@@ -71,3 +75,40 @@ export type ReviewTally = {
   /** How many reviews give each overall rating, from 1 to 5. */
   ratingCounts: [number, number, number, number, number]
 }
+
+/**
+ * What a customer says in a review: the stars, the texts and the images,
+ * as the row stores them.
+ */
+type SaidInReview = Pick<
+  ReviewWrite,
+  | 'overallRating'
+  | 'serviceRating'
+  | 'staffRating'
+  | 'atmosphereRating'
+  | 'cleanlinessRating'
+  | 'valueRating'
+  | 'title'
+  | 'comment'
+  | 'imageUrls'
+>
+
+/**
+ * The review a customer asks to write: what they say, and what the review
+ * is of. Whether it is verified is not the request's to say (`planReview`).
+ */
+export type RequestedReview = SaidInReview & {
+  salonId: SalonId
+  customerId: CustomerId
+  bookingId: BookingId
+  staffId: StaffId | null
+}
+
+/**
+ * What a customer asks to change of a review: what they say in it, and
+ * nothing of what the review is of.
+ */
+export type RequestedReviewChange = Partial<SaidInReview>
+
+/** The response a salon asks to write to a review; null takes it down. */
+export type RequestedReviewResponse = Pick<DbReview, 'ownerResponse'>

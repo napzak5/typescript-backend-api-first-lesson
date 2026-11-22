@@ -3,12 +3,11 @@ import { addDays, format, subDays } from 'date-fns'
 import { match } from 'ts-pattern'
 import type { DbBooking } from '../../../models/booking'
 import type { CustomerId } from '../../../models/customer'
-import type { PointWrite } from '../../../models/point'
 import type {
-  PointAdjustRequest,
-  PointEarnRequest,
-  PointUseRequest,
-} from '../../../schemas/point.schema'
+  PointWrite,
+  RequestedPointEarning,
+  RequestedPoints,
+} from '../../../models/point'
 import { MAX_INTEGER } from '../../../schemas/rules'
 import type { ValidationIssue } from '../../../shared'
 import { notFound } from '../../booking/_shared/plan'
@@ -23,11 +22,14 @@ import { notFound } from '../../booking/_shared/plan'
  * one customer the second meets what the first left.
  */
 
+/** Points that a request gives a customer. */
+export type PointEarning = { type: 'earned'; request: RequestedPointEarning }
+
 /** What a request asks of the balance of a customer. */
 export type PointMovement =
-  | { type: 'earned'; request: PointEarnRequest }
-  | { type: 'used'; request: PointUseRequest }
-  | { type: 'adjusted'; request: PointAdjustRequest }
+  | PointEarning
+  | { type: 'used'; request: RequestedPoints }
+  | { type: 'adjusted'; request: RequestedPoints }
 
 /** How many points a movement adds to the balance; a use takes them away. */
 export const pointsOf = (movement: PointMovement): number =>

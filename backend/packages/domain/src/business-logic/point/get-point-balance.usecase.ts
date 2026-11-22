@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { PointReadMapper } from '../../mappers/read/point.mapper'
 import type { Actor } from '../../models/auth'
 import { parseCustomerId } from '../../models/customer'
 import type { ApiPointBalanceResponse } from '../../models/point'
@@ -36,6 +37,8 @@ export class GetPointBalanceUseCase {
       return Result.error(DomainErrors.notFound('Customer', id.data))
     }
 
-    return Result.success({ customerId: id.data, balance: balance.data })
+    return Result.success(
+      PointReadMapper.toApiPointBalance(id.data, balance.data),
+    )
   }
 }
