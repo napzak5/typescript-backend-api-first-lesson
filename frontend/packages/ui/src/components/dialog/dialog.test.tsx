@@ -249,7 +249,7 @@ describe('Dialog', () => {
     // Arrange: the page behind a modal dialog is inert, so the focus can
     // leave the dialog once it is closed; jsdom does not make it inert, so
     // where the focus was when it closed is noted. A browser shows the rest
-    // (frontend/e2e/src/admin-bookings.e2e.test.ts)
+    // (frontend/e2e/src/admin/bookings.e2e.test.ts)
     await stories.ClosedByItsAnswer.run()
     const focusedWhenClosed: (Element | null)[] = []
     const noteTheFocus = (): void => {

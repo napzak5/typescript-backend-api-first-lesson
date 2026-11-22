@@ -5,17 +5,17 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./setup": "./src/setup.ts",
-    "./stories": "./src/stories.ts",
+    "./setup": "./src/setup/setup.ts",
+    "./stories": "./src/stories/stories.ts",
     "./api": "./src/api/index.ts",
     "./api/setup": "./src/api/setup.ts",
     "./api/global-setup": "./src/api/global-setup.ts",
     "./api/test-server": "./src/api/test-server.ts",
-    "./accessibility": "./src/accessibility.ts",
-    "./screens": "./src/screens.tsx",
-    "./seed": "./src/seed.ts",
-    "./answers": "./src/answers.ts",
-    "./forms": "./src/forms.ts"
+    "./accessibility": "./src/accessibility/accessibility.ts",
+    "./screens": "./src/screens/screens.tsx",
+    "./seed": "./src/fixtures/seed.ts",
+    "./answers": "./src/fixtures/answers.ts",
+    "./forms": "./src/fixtures/forms.ts"
   },
   "scripts": {
     "clean": "rm -rf *.tsbuildinfo",

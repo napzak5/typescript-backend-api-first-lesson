@@ -1,6 +1,6 @@
 import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { OWNER } from '../seed'
+import { OWNER } from '../fixtures/seed'
 import { signInAs } from './sign-in'
 import { testApi } from './test-api'
 

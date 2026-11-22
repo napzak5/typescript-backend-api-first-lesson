@@ -6,7 +6,7 @@ import {
   APPLICATIONS,
   DASHBOARD,
   PORTAL,
-} from './src/applications'
+} from './src/support/applications'
 
 const inCi = process.env['CI'] !== undefined
 
@@ -23,7 +23,7 @@ export default defineConfig({
   testDir: './src',
   testMatch: '**/*.e2e.test.ts',
   outputDir: './test-results',
-  globalSetup: './src/global-setup.ts',
+  globalSetup: './src/support/global-setup.ts',
 
   // One API and one database for all the tests: they take their turns
   fullyParallel: false,

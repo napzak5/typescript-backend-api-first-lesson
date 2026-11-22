@@ -1,14 +1,14 @@
 // The matchers of `./setup` are part of what a test file sees when it
 // imports from this package: their types come with this import
-import './setup'
+import './setup/setup'
 
 export {
   type AccessibilityViolation,
   findAccessibilityViolations,
-} from './accessibility'
-export { itShouldBeSentByTheEnterKey } from './enter-key'
-export { PDF_BYTES, PDF_TEXT, PNG_BYTES } from './file-bytes'
-export { type SavedFile, savedFiles } from './saved-files'
-export { itShouldBeAccessibleInEveryStory } from './story-accessibility'
-export { atTheWidthOfTheStory } from './story-width'
-export { setWindowWidth } from './window-width'
+} from './accessibility/accessibility'
+export { PDF_BYTES, PDF_TEXT, PNG_BYTES } from './fixtures/file-bytes'
+export { type SavedFile, savedFiles } from './setup/saved-files'
+export { setWindowWidth } from './setup/window-width'
+export { itShouldBeSentByTheEnterKey } from './stories/enter-key'
+export { itShouldBeAccessibleInEveryStory } from './stories/story-accessibility'
+export { atTheWidthOfTheStory } from './stories/story-width'
