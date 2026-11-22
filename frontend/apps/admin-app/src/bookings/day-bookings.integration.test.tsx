@@ -1,12 +1,15 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  goBack,
+  heading,
+} from '@beauty-salon-frontend/testing/screens'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   ADMIN,
   arrange,
@@ -19,48 +22,10 @@ import {
   SAKURA,
   STYLIST,
   salonIdOf,
-  signInAs,
   THERAPIST,
   TOKYO,
   YUKI,
 } from './__tests__/arrangements'
-
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** Goes back in the history, as the back button of the browser does */
-let goBack = (): void => {}
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  const navigate = useNavigate()
-  address = `${pathname}${search}`
-  goBack = () => {
-    void navigate(-1)
-  }
-
-  return null
-}
-
-/** Renders the application at `path`, with the address of `before` behind it in the history. */
-const renderAt = (path: string, before?: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter
-        initialEntries={before === undefined ? [path] : [before, path]}
-      >
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 const navigationItems = () =>
   within(screen.getByRole('navigation', { name: 'メインメニュー' }))
@@ -116,7 +81,7 @@ describe('the bookings of a salon, against the API', () => {
         // Assert: on the heading of the screen that shows the salon
         expect(await screen.findByText(salon)).toBeVisible()
         expect(await heading('予約台帳')).toHaveFocus()
-        expect(address).toBe(`/salons/${salonId}/bookings`)
+        expect(address()).toBe(`/salons/${salonId}/bookings`)
         expect(navigationItems()).toEqual([
           ['予約', `/salons/${salonId}/bookings`, 'page'],
           ['売上', `/salons/${salonId}/sales`, null],
@@ -168,7 +133,7 @@ describe('the bookings of a salon, against the API', () => {
             .map((link) => link.textContent),
         ).toEqual([OSAKA]),
       )
-      expect(address).toBe('/?keyword=Osaka')
+      expect(address()).toBe('/?keyword=Osaka')
 
       // Act
       await user.click(screen.getByRole('link', { name: OSAKA }))
@@ -176,7 +141,7 @@ describe('the bookings of a salon, against the API', () => {
       // Assert
       expect(await screen.findByText(OSAKA)).toBeVisible()
       expect(await heading('予約台帳')).toHaveFocus()
-      expect(address).toBe(`/salons/${osaka}/bookings`)
+      expect(address()).toBe(`/salons/${osaka}/bookings`)
       expect(navigationItems()).toEqual([
         ['サロンを選ぶ', '/', null],
         ['運用', '/operations', null],
@@ -209,7 +174,7 @@ describe('the bookings of a salon, against the API', () => {
 
       // Assert
       expect(await heading('どのサロンにも属していません')).toHaveFocus()
-      expect(address).toBe('/')
+      expect(address()).toBe('/')
     })
 
     it('should tell a member of the staff of another salon that its bookings are not theirs to see', async () => {
@@ -230,7 +195,7 @@ describe('the bookings of a salon, against the API', () => {
 
       // Assert
       expect(notice).not.toBeInTheDocument()
-      await waitFor(() => expect(address).toBe(`/salons/${tokyo}/bookings`))
+      await waitFor(() => expect(address()).toBe(`/salons/${tokyo}/bookings`))
     })
 
     it('should say that a salon of an address is not there', async () => {
@@ -355,7 +320,7 @@ describe('the bookings of a salon, against the API', () => {
         ),
       ).toBeVisible()
       expect(await heading('予約の内容')).toHaveFocus()
-      expect(address).toBe(`/salons/${tokyo}/bookings/${removed}`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings/${removed}`)
     })
 
     it('should narrow the list by the state and by the member of the staff, in the address', async () => {
@@ -397,7 +362,7 @@ describe('the bookings of a salon, against the API', () => {
           'BK-TEST-0003',
         ]),
       )
-      expect(address).toBe(
+      expect(address()).toBe(
         `/salons/${tokyo}/bookings?date=${today}&status=confirmed`,
       )
 
@@ -414,14 +379,14 @@ describe('the bookings of a salon, against the API', () => {
           'BK-TEST-0003',
         ]),
       )
-      expect(address).toMatch(/&status=confirmed&staffId=[0-9a-f-]{36}$/)
+      expect(address()).toMatch(/&status=confirmed&staffId=[0-9a-f-]{36}$/)
 
       // Act
       await user.click(screen.getByRole('link', { name: '条件を外す' }))
 
       // Assert
       await waitFor(async () => expect(await rowsOf(today)).toHaveLength(3))
-      expect(address).toBe(`/salons/${tokyo}/bookings?date=${today}`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings?date=${today}`)
     })
 
     it('should put the conditions in place of the address, so that the way back leaves the list', async () => {
@@ -430,7 +395,9 @@ describe('the bookings of a salon, against the API', () => {
       const tokyo = await salonIdOf(TOKYO)
       await arrange({ bookingNumber: 'BK-TEST-0001', day: 0, at: '10:00' })
       const today = await dayFromToday(0)
-      renderAt(`/salons/${tokyo}/bookings`, '/account/security')
+      renderAt(`/salons/${tokyo}/bookings`, {
+        before: ['/account/security'],
+      })
       await signInAs(OWNER)
       await rowsOf(today)
       await user.selectOptions(
@@ -439,7 +406,7 @@ describe('the bookings of a salon, against the API', () => {
       )
       await user.click(screen.getByRole('button', { name: '表示する' }))
       await waitFor(() =>
-        expect(address).toBe(
+        expect(address()).toBe(
           `/salons/${tokyo}/bookings?date=${today}&status=confirmed`,
         ),
       )
@@ -448,7 +415,7 @@ describe('the bookings of a salon, against the API', () => {
       act(() => goBack())
 
       // Assert
-      await waitFor(() => expect(address).toBe('/account/security'))
+      await waitFor(() => expect(address()).toBe('/account/security'))
     })
 
     it('should read the list again when the same conditions are sent again', async () => {
@@ -472,7 +439,7 @@ describe('the bookings of a salon, against the API', () => {
           'BK-TEST-0002',
         ]),
       )
-      expect(address).toBe(`/salons/${tokyo}/bookings`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings`)
     })
 
     it('should go from day to day, and back to today', async () => {
@@ -499,7 +466,7 @@ describe('the bookings of a salon, against the API', () => {
       expect((await rowsOf(tomorrow)).map((row) => row.at(-1))).toEqual([
         'BK-TEST-0002',
       ])
-      expect(address).toBe(`/salons/${tokyo}/bookings?date=${tomorrow}`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings?date=${tomorrow}`)
 
       // Act
       await user.click(days().getByRole('link', { name: '前の日' }))
@@ -509,7 +476,7 @@ describe('the bookings of a salon, against the API', () => {
       expect(await rowsOf(yesterday)).toEqual([
         expect.arrayContaining(['無断キャンセル']),
       ])
-      expect(address).toBe(`/salons/${tokyo}/bookings?date=${yesterday}`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings?date=${yesterday}`)
 
       // Act
       await user.click(days().getByRole('link', { name: '今日' }))

@@ -1,12 +1,10 @@
 import { dayAfter, dayAt } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs } from '../__tests__/screens'
 import {
   ADMIN,
   MANAGER,
@@ -14,7 +12,6 @@ import {
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import {
@@ -45,44 +42,6 @@ import { expiryNameOf } from './stock-format'
  * in Osaka keeps no stock. Somebody did something meanwhile where a test
  * says so.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname, search } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [
-      `${pathname}${search}`,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname, search])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 const ALERTS = '在庫のアラート'
 
@@ -204,7 +163,7 @@ describe('the screen of the alerts of the stock', () => {
 
     // Assert
     await openedAlerts()
-    expect(firstSight[0]).toBe(stockAlertsHrefOf(salonId))
+    expect(firstSight()[0]).toBe(stockAlertsHrefOf(salonId))
     expect(
       screen.getByRole('heading', { level: 1, name: ALERTS }),
     ).toHaveFocus()
@@ -228,7 +187,7 @@ describe('the screen of the alerts of the stock', () => {
 
     // Assert
     await heading('在庫の行')
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       stockRowHrefOf(salonId, await rowIdOf(TOKYO, 'COLOR001')),
     )
   })
@@ -299,7 +258,7 @@ describe('the screen of the alerts of the stock', () => {
 
     // Assert
     await openedAlerts(NARROWED)
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `${stockAlertsHrefOf(salonId)}?acknowledged=false`,
     )
     expect(rowsOf(NARROWED)).toEqual(
@@ -369,7 +328,9 @@ describe('the screen of the alerts of the stock', () => {
 
     // Assert
     await openedAlerts(NARROWED)
-    expect(firstSight[0]).toBe(`${stockAlertsHrefOf(salonId)}?severity=warning`)
+    expect(firstSight()[0]).toBe(
+      `${stockAlertsHrefOf(salonId)}?severity=warning`,
+    )
     expect(rowsOf(NARROWED)).toEqual([short, expiring])
     expect(screen.getByRole('combobox', { name: '重要度' })).toHaveValue(
       'warning',
@@ -383,7 +344,7 @@ describe('the screen of the alerts of the stock', () => {
     expect(
       await screen.findByText('条件に合う在庫のアラートはありません'),
     ).toBeVisible()
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `${stockAlertsHrefOf(salonId)}?alert=overstock&severity=warning`,
     )
 
@@ -392,7 +353,7 @@ describe('the screen of the alerts of the stock', () => {
 
     // Assert
     await openedAlerts()
-    expect(firstSight[0]).toBe(stockAlertsHrefOf(salonId))
+    expect(firstSight()[0]).toBe(stockAlertsHrefOf(salonId))
     expect(rowsOf()).toHaveLength(8)
   })
 
@@ -570,8 +531,10 @@ describe('the screen of the alerts of the stock', () => {
     await user.click(screen.getByRole('link', { name: ALERTS }))
 
     // Assert: the alerts read before the count are not shown again, they are read anew
-    await waitFor(() => expect(firstSight[0]).toBe(stockAlertsHrefOf(salonId)))
-    expect(firstSight[1]).not.toContain(await rowNameOf(COLOUR))
+    await waitFor(() =>
+      expect(firstSight()[0]).toBe(stockAlertsHrefOf(salonId)),
+    )
+    expect(firstSight()[1]).not.toContain(await rowNameOf(COLOUR))
     await openedAlerts()
     expect(rowsOf()).toEqual(await withoutColour())
   })

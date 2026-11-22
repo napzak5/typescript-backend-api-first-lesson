@@ -3,18 +3,17 @@ import {
   type SavedFile,
   savedFiles,
 } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { heading, notifications } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   MANAGER,
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
@@ -36,29 +35,6 @@ import { customerQueryOf } from './customer-ledger'
  */
 
 const HIROSHI = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 /** The part of a page under a heading. */
 const part = (name: string): HTMLElement => screen.getByRole('region', { name })

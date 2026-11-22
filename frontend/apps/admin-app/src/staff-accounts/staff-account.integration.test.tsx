@@ -1,18 +1,16 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import { notifications, termsOf } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   ADMIN,
   MANAGER,
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   THERAPIST,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
@@ -41,19 +39,6 @@ import {
  * seed data. Somebody did something meanwhile where a test says so.
  */
 
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
 /** Opens the account of a member of the salon in Tokyo, signed in as an account of the seed data. */
 const openAccountOf = async (staffCode: string, as = OWNER): Promise<void> => {
   renderAt(
@@ -75,22 +60,6 @@ const expectFocusOn = async (name: string): Promise<void> => {
     expect(screen.getByRole('heading', { level: 2, name })).toHaveFocus()
   })
 }
-
-/** What the application says in its notifications, and above the cards. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
-
-/** What a card says, term by term. */
-const termsOf = (card: string): [string, string][] =>
-  within(screen.getByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
-    ])
 
 /** The roles a form offers, and whether each is chosen. */
 const rolesOffered = (): [string, boolean][] =>

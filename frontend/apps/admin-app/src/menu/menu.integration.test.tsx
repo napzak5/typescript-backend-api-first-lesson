@@ -1,11 +1,9 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs, renderAt } from '../__tests__/screens'
 import {
   ADMIN,
   MANAGER,
@@ -13,7 +11,6 @@ import {
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import {
@@ -40,25 +37,6 @@ import {
  * menu of the salon in Tokyo; a stylist reads it. Somebody did something
  * meanwhile where a test says so.
  */
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
 
 const TOP_CATEGORIES = [
   'Hair Cut',

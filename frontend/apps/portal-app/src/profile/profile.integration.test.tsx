@@ -2,21 +2,16 @@ import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import {
-  focusManager,
-  onlineManager,
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query'
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react'
+  address,
+  asTheApplicationKeeps,
+  firstSight,
+  heading,
+  queryClientOfATest,
+  statusMessages,
+} from '@beauty-salon-frontend/testing/screens'
+import { focusManager, onlineManager } from '@tanstack/react-query'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import {
   afterEach,
   beforeEach,
@@ -27,7 +22,7 @@ import {
   vi,
 } from 'vitest'
 import * as z from 'zod'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   accessTokenOf,
   ask,
@@ -53,46 +48,6 @@ import {
 const TITLE = applications.portal.name
 
 const STYLIST = 'stylist1@beautysalon.jp'
-
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/**
- * The path of the last screen, and what the page said in the commit that
- * showed it: before an answer of the API could arrive. A test that looks
- * at the page after waiting for something on it looks too late: by then,
- * a screen that showed what it had kept has read again.
- */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-/** What the application keeps of what it read: for five minutes, it does not read again. */
-const asTheApplicationKeeps = (): QueryClient =>
-  new QueryClient({
-    defaultOptions: { queries: { retry: false, staleTime: 5 * 60 * 1000 } },
-  })
-
-const renderAt = (
-  path: string,
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-) =>
-  render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
 
 // --- What the tests ask of the database
 
@@ -149,9 +104,6 @@ const salonWrites = (email: string, assignments: string) =>
 
 // --- What the tests read on the screen
 
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 const region = (name: string) => screen.findByRole('region', { name })
 
 /** The names and the values of a record, as a description list shows them. */
@@ -176,11 +128,6 @@ const askedOfTheProfile = (
     String(input).endsWith('/api/v1/customers/me') ? [init?.method] : [],
   )
 
-const statusMessages = (): (string | null)[] =>
-  within(screen.getByRole('main'))
-    .getAllByRole('status')
-    .map((status) => status.textContent)
-
 /** A day of the calendar, as the page writes it. */
 const dayOf = (date: string | null): string =>
   date === null
@@ -197,9 +144,9 @@ const saveButton = () => screen.getByRole('button', { name: '変更を保存す�
 const registerButton = () => screen.getByRole('button', { name: '登録する' })
 
 /** Opens the form of the customer of the tests, and waits for it. */
-const openForm = async (client?: QueryClient): Promise<void> => {
+const openForm = async (client = queryClientOfATest()): Promise<void> => {
   await signedInAs(CUSTOMER)
-  renderAt('/mypage/profile', client)
+  renderAt('/mypage/profile', { client })
   await screen.findByRole('button', { name: '変更を保存する' })
 }
 
@@ -384,7 +331,7 @@ describe('the page and the profile of a customer, against the API', () => {
 
       // Assert
       expect(await heading('マイページ')).toHaveFocus()
-      expect(address).toBe('/mypage')
+      expect(address()).toBe('/mypage')
 
       // Act
       await user.click(
@@ -395,7 +342,7 @@ describe('the page and the profile of a customer, against the API', () => {
 
       // Assert
       expect(await heading('お客様の情報')).toHaveFocus()
-      expect(address).toBe('/mypage/profile')
+      expect(address()).toBe('/mypage/profile')
       expect(document.title).toBe(`お客様の情報 | ${TITLE}`)
       expect(await text('姓')).toHaveValue('Tanaka')
       expect(await heading('お客様の情報')).toHaveFocus()
@@ -424,7 +371,7 @@ describe('the page and the profile of a customer, against the API', () => {
 
       // Assert
       expect(await heading('お客様の情報')).toHaveFocus()
-      expect(address).toBe('/mypage/profile')
+      expect(address()).toBe('/mypage/profile')
       expect(
         await screen.findByRole('button', { name: '登録する' }),
       ).toBeEnabled()
@@ -434,7 +381,7 @@ describe('the page and the profile of a customer, against the API', () => {
     it('should read the profile again whenever it is shown, with what the application keeps: the points a salon gave meanwhile are there', async () => {
       // Arrange
       await signedInAs(CUSTOMER)
-      renderAt('/mypage', asTheApplicationKeeps())
+      renderAt('/mypage', { client: asTheApplicationKeeps() })
       const user = userEvent.setup()
       expect(detailsIn(await region('会員の情報'))).toMatchObject({
         ポイント: '2,500 ポイント',
@@ -552,10 +499,10 @@ describe('the page and the profile of a customer, against the API', () => {
       ).toBeVisible()
       expect(statusMessages()).toContain('お客様の情報を変更しました。')
       expect(await heading('マイページ')).toHaveFocus()
-      expect(address).toBe('/mypage')
+      expect(address()).toBe('/mypage')
       // The page shows the profile as it is now in the commit that shows
       // the page, not the one it had read before
-      expect(firstSight).toEqual([
+      expect(firstSight()).toEqual([
         '/mypage',
         expect.stringContaining('お名前Sato Yuki'),
       ])
@@ -629,7 +576,7 @@ describe('the page and the profile of a customer, against the API', () => {
         await screen.findByText('変更された項目はありません。'),
       ).toBeVisible()
       expect(await heading('マイページ')).toHaveFocus()
-      expect(address).toBe('/mypage')
+      expect(address()).toBe('/mypage')
       expect(detailsIn(await region('お客様の情報'))).toEqual(SEEDED)
       expect(await storedProfile(CUSTOMER)).toMatchObject({ updatedAt })
     })
@@ -667,7 +614,7 @@ describe('the page and the profile of a customer, against the API', () => {
         '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
       )
       expect(await text('姓')).not.toHaveAttribute('aria-invalid')
-      expect(address).toBe('/mypage/profile')
+      expect(address()).toBe('/mypage/profile')
       expect(await storedProfile(CUSTOMER)).toMatchObject({
         firstName: 'Yuki',
         updatedAt,
@@ -677,7 +624,7 @@ describe('the page and the profile of a customer, against the API', () => {
     it('should open with what the salons have now, also when the application read the profile a moment ago', async () => {
       // Arrange
       await signedInAs(CUSTOMER)
-      renderAt('/mypage', asTheApplicationKeeps())
+      renderAt('/mypage', { client: asTheApplicationKeeps() })
       await region('お客様の情報')
       await salonWrites(CUSTOMER, `"phoneNumber" = '03-5550-0142'`)
 
@@ -735,7 +682,7 @@ describe('the page and the profile of a customer, against the API', () => {
       )
       expect(await text('職業')).toHaveValue('Illustrator')
       expect(saveButton()).toBeEnabled()
-      expect(address).toBe('/mypage/profile')
+      expect(address()).toBe('/mypage/profile')
 
       // Act
       await giveBack('customers')
@@ -772,7 +719,7 @@ describe('the page and the profile of a customer, against the API', () => {
       expect(await heading('お客様の情報')).toHaveFocus()
       expect(statusMessages()).toContain(GONE)
       expect(await text('姓')).toHaveValue('')
-      expect(address).toBe('/mypage/profile')
+      expect(address()).toBe('/mypage/profile')
       expect(
         await testApi().query(
           'select occupation from customers where email = $1',
@@ -870,10 +817,10 @@ describe('the page and the profile of a customer, against the API', () => {
         await screen.findByText('お客様の情報を登録しました。'),
       ).toBeVisible()
       expect(await heading('マイページ')).toHaveFocus()
-      expect(address).toBe('/mypage')
+      expect(address()).toBe('/mypage')
       // The page shows what was just made in the commit that shows the
       // page: it does not say first that nothing is registered
-      expect(firstSight).toEqual([
+      expect(firstSight()).toEqual([
         '/mypage',
         expect.stringContaining('お名前山田 花子'),
       ])
@@ -1048,7 +995,7 @@ describe('the page and the profile of a customer, against the API', () => {
         'このアカウントでは、お客様の情報を登録できませんでした。ページを読み込み直しても登録できないときは、サロンにお問い合わせください。',
       )
       expect(await text('名')).toHaveValue('華子')
-      expect(address).toBe('/mypage/profile')
+      expect(address()).toBe('/mypage/profile')
       expect(await storedProfile(NEWCOMER)).toMatchObject({ firstName: '花子' })
     })
   })

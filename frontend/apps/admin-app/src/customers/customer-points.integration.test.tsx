@@ -1,12 +1,16 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   arrange,
   dayFromToday,
@@ -16,7 +20,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
@@ -46,22 +49,6 @@ import {
 const RECORD_AGAIN =
   'ポイントを記録できませんでした。通信の状態を確かめて、もう一度お試しください。'
 
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
 /**
  * Holds the readings of the record of a customer until `release` is
  * called: a screen that opens meanwhile shows what was read of the
@@ -84,30 +71,6 @@ const holdReadingsOf = (customerId: string): (() => void) => {
 
   return () => held.resolve()
 }
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 /** The rows of a table, a list of the texts of their cells each. */
 const rowsOf = (name: string): string[][] =>
@@ -282,7 +245,7 @@ describe('the points of customers, against the API', () => {
 
       // Assert
       await heading('ポイント')
-      expect(address).toBe(`/salons/${tokyo}/customers/${yuki}/points`)
+      expect(address()).toBe(`/salons/${tokyo}/customers/${yuki}/points`)
       expect(
         await screen.findByRole('region', { name: '残高' }),
       ).toHaveTextContent('3,600 ポイント')
@@ -408,7 +371,7 @@ describe('the points of customers, against the API', () => {
 
       // Assert
       await heading('ポイント')
-      expect(address).toBe(`/salons/${tokyo}/customers/${yuki}/points`)
+      expect(address()).toBe(`/salons/${tokyo}/customers/${yuki}/points`)
       expect(notifications()).toContain(
         '500 ポイントを付与しました。残高は 3,000 ポイントです。',
       )
@@ -437,11 +400,11 @@ describe('the points of customers, against the API', () => {
 
       // Assert: the balance before the recording is not shown, although the customer is not read anew yet
       await heading('お客様の台帳')
-      expect(firstSight).toEqual([
+      expect(firstSight()).toEqual([
         `/salons/${tokyo}/customers/${yuki}`,
         expect.stringContaining('3,000 ポイント'),
       ])
-      expect(firstSight[1]).not.toContain('2,500 ポイント')
+      expect(firstSight()[1]).not.toContain('2,500 ポイント')
       release()
       expect(
         await screen.findByRole('region', { name: '来店とポイント' }),

@@ -1,4 +1,11 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import {
+  address,
+  asTheApplicationKeeps,
+  firstSight,
+  heading,
+  statusMessages,
+} from '@beauty-salon-frontend/testing/screens'
 import { focusManager, onlineManager } from '@tanstack/react-query'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -11,6 +18,7 @@ import {
   type MockInstance,
   vi,
 } from 'vitest'
+import { renderAt } from '../__tests__/screens'
 import {
   CUSTOMER,
   giveBack,
@@ -20,11 +28,9 @@ import {
 } from '../bookings/__tests__/arrangements'
 import {
   answers,
-  asTheApplicationKeeps,
   bookingToCome,
   button,
   detailsIn,
-  heading,
   KENJI,
   OSAKA,
   optionsOf,
@@ -33,14 +39,11 @@ import {
   ratingOf,
   region,
   removes,
-  renderAt,
   reviewCountOf,
   salonIsRemoved,
   select,
   selects,
-  shown,
   staffIsRemoved,
-  statusMessages,
   storedReviewOf,
   TAKESHI,
   text,
@@ -218,7 +221,7 @@ describe('the review of a visit, against the API', () => {
       await signedInAs(VIP)
       const visit = await visitReviewed(VIP)
       const client = asTheApplicationKeeps()
-      const { unmount } = renderAt(`/bookings/${visit.id}`, client)
+      const { unmount } = renderAt(`/bookings/${visit.id}`, { client })
       await within(await region('レビュー')).findByText(
         'Satisfied with the result',
       )
@@ -226,7 +229,7 @@ describe('the review of a visit, against the API', () => {
 
       // Act
       await answers(visit.reviewId, 'またのご来店をお待ちしています。')
-      renderAt(`/bookings/${visit.id}`, client)
+      renderAt(`/bookings/${visit.id}`, { client })
 
       // Assert
       expect(
@@ -299,7 +302,7 @@ describe('the review of a visit, against the API', () => {
 
       // Assert
       expect(await heading('自分のレビュー')).toHaveFocus()
-      expect(shown.address).toBe('/mypage/reviews')
+      expect(address()).toBe('/mypage/reviews')
       expect(statusMessages()).toContain('レビューを投稿しました。')
       const list = await screen.findByRole('list', { name: '自分のレビュー' })
       expect(
@@ -475,7 +478,7 @@ describe('the review of a visit, against the API', () => {
       expect(ratingOf('5（とても満足）')).toHaveFocus()
       expect(askedOfTheReviews(fetched)).toEqual([])
       expect(text('タイトル')).toHaveValue('また行きます')
-      expect(shown.address).toBe(writePathOf(visit.id))
+      expect(address()).toBe(writePathOf(visit.id))
       expect(await storedReviewOf(visit.id)).toBeNull()
       expect(await findAccessibilityViolations()).toEqual([])
     })
@@ -710,7 +713,7 @@ describe('the review of a visit, against the API', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(NOT_SENT)
       expect(text('タイトル')).toHaveValue('また行きます')
       expect(ratingOf('4（満足）')).toBeChecked()
-      expect(shown.address).toBe(writePathOf(visit.id))
+      expect(address()).toBe(writePathOf(visit.id))
 
       // Act
       await giveBack('reviews')
@@ -755,7 +758,7 @@ describe('the review of a visit, against the API', () => {
     it('should show the list of what the customer wrote as it is after the review was written, and never as it was read before', async () => {
       // Arrange: the list is read, and then the customer goes to a visit
       const visit = await visitToReview()
-      renderAt('/mypage/reviews', asTheApplicationKeeps())
+      renderAt('/mypage/reviews', { client: asTheApplicationKeeps() })
       const user = userEvent.setup()
       await within(
         await screen.findByRole('list', { name: '自分のレビュー' }),
@@ -777,11 +780,11 @@ describe('the review of a visit, against the API', () => {
 
       // Assert: the commit that shows the list again holds no list
       const list = await screen.findByRole('list', { name: '自分のレビュー' })
-      expect(shown.firstSight).toEqual([
+      expect(firstSight()).toEqual([
         '/mypage/reviews',
         expect.stringContaining('レビューを読み込んでいます'),
       ])
-      expect(shown.firstSight.at(1)).not.toContain(WRITTEN.title)
+      expect(firstSight().at(1)).not.toContain(WRITTEN.title)
       expect(
         within(list)
           .getAllByRole('paragraph')
@@ -793,7 +796,7 @@ describe('the review of a visit, against the API', () => {
     it('should show the review on the page of its booking the moment the page is shown again, without reading it', async () => {
       // Arrange: the page of the visit is read, and says that it has no review
       const visit = await visitToReview()
-      renderAt(`/bookings/${visit.id}`, asTheApplicationKeeps())
+      renderAt(`/bookings/${visit.id}`, { client: asTheApplicationKeeps() })
       const user = userEvent.setup()
       await within(await region('レビュー')).findByText(NOT_WRITTEN)
       await user.click(screen.getByRole('link', { name: 'レビューを書く' }))
@@ -812,18 +815,18 @@ describe('the review of a visit, against the API', () => {
 
       // Assert
       await region('レビュー')
-      expect(shown.firstSight).toEqual([
+      expect(firstSight()).toEqual([
         `/bookings/${visit.id}`,
         expect.stringContaining('今回も満足です'),
       ])
-      expect(shown.firstSight.at(1)).not.toContain(NOT_WRITTEN)
+      expect(firstSight().at(1)).not.toContain(NOT_WRITTEN)
     })
 
     it('should count the review on the page of the salon the moment the page is shown again', async () => {
       // Arrange: the page of the salon is read, with the reviews it has
       const visit = await visitToReview()
       const countedBefore = await reviewCountOf(OSAKA)
-      renderAt(`/salons/${visit.salonId}`, asTheApplicationKeeps())
+      renderAt(`/salons/${visit.salonId}`, { client: asTheApplicationKeeps() })
       const user = userEvent.setup()
       const before = await within(await region('レビュー')).findByRole('list', {
         name: 'レビュー',
@@ -857,11 +860,11 @@ describe('the review of a visit, against the API', () => {
         'list',
         { name: 'レビュー' },
       )
-      expect(shown.firstSight).toEqual([
+      expect(firstSight()).toEqual([
         `/salons/${visit.salonId}`,
         expect.stringContaining('サロンを読み込んでいます'),
       ])
-      expect(shown.firstSight.at(1)).not.toContain(WRITTEN.title)
+      expect(firstSight().at(1)).not.toContain(WRITTEN.title)
       // The salon is rated by one review more
       expect(await reviewCountOf(OSAKA)).toBe(countedBefore + 1)
       expect(
@@ -888,7 +891,7 @@ describe('the review of a visit, against the API', () => {
       // Arrange: the salons are looked for, and found with their ratings
       const visit = await visitToReview()
       const countedBefore = await reviewCountOf(OSAKA)
-      renderAt('/', asTheApplicationKeeps())
+      renderAt('/', { client: asTheApplicationKeeps() })
       const user = userEvent.setup()
       expect(await ratingInResultOf(OSAKA)).toHaveAccessibleName(
         expect.stringContaining(`（${countedBefore} 件）`),
@@ -912,11 +915,11 @@ describe('the review of a visit, against the API', () => {
 
       // Assert: the commit that shows the search again holds no result
       const rating = await ratingInResultOf(OSAKA)
-      expect(shown.firstSight).toEqual([
+      expect(firstSight()).toEqual([
         '/',
         expect.stringContaining('サロンを探しています'),
       ])
-      expect(shown.firstSight.at(1)).not.toContain(OSAKA)
+      expect(firstSight().at(1)).not.toContain(OSAKA)
       expect(rating).toHaveAccessibleName(
         expect.stringContaining(`（${countedBefore + 1} 件）`),
       )
@@ -926,7 +929,7 @@ describe('the review of a visit, against the API', () => {
       // Arrange: the form is opened, and left for the page of the booking
       const visit = await visitToReview()
       const client = asTheApplicationKeeps()
-      renderAt(`/bookings/${visit.id}`, client)
+      renderAt(`/bookings/${visit.id}`, { client })
       const user = userEvent.setup()
       await user.click(
         await screen.findByRole('link', { name: 'レビューを書く' }),
@@ -946,7 +949,7 @@ describe('the review of a visit, against the API', () => {
       expect(
         await screen.findByText('この来店のレビューは、投稿済みです'),
       ).toBeVisible()
-      expect(shown.firstSight).toEqual([
+      expect(firstSight()).toEqual([
         writePathOf(visit.id),
         expect.stringContaining('来店の内容を読み込んでいます'),
       ])

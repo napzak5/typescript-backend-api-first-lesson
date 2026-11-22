@@ -1,12 +1,14 @@
 import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import {
+  firstSight,
+  heading,
+  termsOf,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs } from '../__tests__/screens'
 import {
   ADMIN,
   dayFromToday,
@@ -15,7 +17,6 @@ import {
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import {
@@ -49,44 +50,6 @@ import {
  * orders and keeps no stock. Somebody did something meanwhile where a
  * test says so.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname, search } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [
-      `${pathname}${search}`,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname, search])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string | RegExp) =>
-  screen.findByRole('heading', { level: 1, name })
 
 const ORDERS = '発注'
 
@@ -128,15 +91,6 @@ const rowsOf = (caption = ORDERS): string[][] =>
     .getAllByRole('row')
     .slice(1)
     .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
-
-/** What a card says, term by term */
-const termsOf = (card: string): [string, string][] =>
-  within(screen.getByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
-    ])
 
 const choose = async (
   user: ReturnType<typeof userEvent.setup>,
@@ -208,7 +162,7 @@ describe('the screens of the purchase orders', () => {
 
     // Assert
     await openedOrders()
-    expect(firstSight[0]).toBe(purchaseOrdersHrefOf(salonId))
+    expect(firstSight()[0]).toBe(purchaseOrdersHrefOf(salonId))
     expect(
       screen.getByRole('heading', { level: 1, name: ORDERS }),
     ).toHaveFocus()
@@ -220,7 +174,7 @@ describe('the screens of the purchase orders', () => {
 
     // Assert
     await heading('発注 PO-SEED-0001')
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       purchaseOrderHrefOf(salonId, await orderIdOf('PO-SEED-0001')),
     )
     expect(
@@ -262,7 +216,7 @@ describe('the screens of the purchase orders', () => {
 
     // Assert
     await heading('在庫の行')
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       stockRowHrefOf(salonId, await rowIdOf(TOKYO, 'SHMP001')),
     )
   })
@@ -324,7 +278,7 @@ describe('the screens of the purchase orders', () => {
 
     // Assert
     await openedOrders(NARROWED)
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `${purchaseOrdersHrefOf(salonId)}?status=ordered`,
     )
     expect(rowsOf(NARROWED)).toEqual(seeded.slice(0, 1))
@@ -339,7 +293,7 @@ describe('the screens of the purchase orders', () => {
 
     // Assert
     expect(await screen.findByText('条件に合う発注はありません')).toBeVisible()
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `${purchaseOrdersHrefOf(salonId)}?supplier=Beauty+Supply`,
     )
 
@@ -351,7 +305,7 @@ describe('the screens of the purchase orders', () => {
 
     // Assert
     await openedOrders(NARROWED)
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `${purchaseOrdersHrefOf(salonId)}?supplier=Beauty+Supply+Tokyo&from=${today}&to=${today}`,
     )
     expect(rowsOf(NARROWED)).toEqual(seeded)
@@ -371,7 +325,7 @@ describe('the screens of the purchase orders', () => {
 
     // Assert
     await openedOrders()
-    expect(firstSight[0]).toBe(purchaseOrdersHrefOf(salonId))
+    expect(firstSight()[0]).toBe(purchaseOrdersHrefOf(salonId))
     expect(rowsOf()).toEqual(seeded)
   })
 
@@ -392,7 +346,7 @@ describe('the screens of the purchase orders', () => {
       '終わりの日は、始まりの日と同じか、その後にしてください。',
     )
     expect(screen.getByLabelText('発注日（まで）')).toHaveFocus()
-    expect(firstSight[0]).toBe(purchaseOrdersHrefOf(salonId))
+    expect(firstSight()[0]).toBe(purchaseOrdersHrefOf(salonId))
   })
 
   it('should read the orders as they are now when the same conditions are sent again', async () => {
@@ -439,7 +393,7 @@ describe('the screens of the purchase orders', () => {
     await openedOrders()
     await user.click(screen.getByRole('link', { name: ENTRY }))
     await openedEntry()
-    expect(firstSight[0]).toBe(purchaseOrderEntryHrefOf(salonId))
+    expect(firstSight()[0]).toBe(purchaseOrderEntryHrefOf(salonId))
     expect(ofRow(POWDER, '単価（円）')).toHaveValue('1200')
     expect(ofRow(COLOUR, '単価（円）')).toHaveValue('800')
     expect(ofRow(COLOUR, '数量')).toHaveAccessibleDescription('在庫数 20 tube')
@@ -482,10 +436,10 @@ describe('the screens of the purchase orders', () => {
       screen.getByRole('heading', { level: 1, name: `発注 ${number}` }),
     ).toHaveFocus()
     // The order was shown at once: it was not read again first
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       purchaseOrderHrefOf(salonId, await orderIdOf(number)),
     )
-    expect(firstSight[1]).toContain('Tokyo Beauty Supply')
+    expect(firstSight()[1]).toContain('Tokyo Beauty Supply')
     expect(made).toEqual({
       orderNumber: number,
       supplier: 'Tokyo Beauty Supply',
@@ -533,7 +487,7 @@ describe('the screens of the purchase orders', () => {
 
     // Assert: the list read before was dropped
     await openedOrders()
-    expect(firstSight[1]).not.toContain('PO-SEED')
+    expect(firstSight()[1]).not.toContain('PO-SEED')
     await waitFor(() => expect(rowsOf()).toHaveLength(3))
     expect(rowsOf()[0]?.slice(0, 5)).toEqual([
       number,

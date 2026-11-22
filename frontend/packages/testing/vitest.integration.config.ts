@@ -20,7 +20,7 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    include: ['src/**/*.integration.test.ts'],
+    include: ['src/**/*.integration.test.{ts,tsx}'],
     globalSetup: ['./src/api/global-setup.ts'],
     setupFiles: ['./src/setup.ts', './src/api/setup.ts'],
   },

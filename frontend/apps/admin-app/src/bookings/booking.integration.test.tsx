@@ -1,19 +1,16 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
 import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react'
+  address,
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   ADMIN,
   arrange,
@@ -26,7 +23,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   storedBooking,
   TOKYO,
   YUKI,
@@ -34,42 +30,6 @@ import {
 
 const CHANGED_ELSEWHERE =
   '予約の状態が、ほかの画面か端末で変わっていました。いまの状態を読み込み直しました。'
-
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/**
- * The path of the last screen, and what the page said in the commit that
- * showed it: before an answer of the API could arrive.
- */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 const statusPart = (): HTMLElement =>
   screen.getByRole('region', { name: '状態' })
@@ -87,13 +47,6 @@ const buttons = (): string[] =>
   within(statusPart())
     .queryAllByRole('button')
     .map((button) => button.textContent ?? '')
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((text) => text !== '')
 
 /** The terms of the record of the booking, each with what it says. */
 const recordTerms = (): [string, string][] =>
@@ -188,7 +141,8 @@ describe('a booking of a salon, against the API', () => {
       at: '10:00',
     })
     const tokyo = await salonIdOf(TOKYO)
-    renderAt(`/salons/${tokyo}/bookings?date=${await dayFromToday(2)}`)
+    const date = await dayFromToday(2)
+    renderAt(`/salons/${tokyo}/bookings?date=${date}`)
     await signInAs(STYLIST)
     await user.click(await screen.findByRole('link', { name: YUKI.name }))
     await screen.findByRole('region', { name: '状態' })
@@ -211,8 +165,8 @@ describe('a booking of a salon, against the API', () => {
     await user.click(screen.getByRole('link', { name: 'この日の予約へ' }))
 
     // Assert
-    expect(firstSight).toEqual([
-      `/salons/${tokyo}/bookings`,
+    expect(firstSight()).toEqual([
+      `/salons/${tokyo}/bookings?date=${date}`,
       expect.stringContaining('予約を読み込んでいます'),
     ])
     const table = await screen.findByRole('table')
@@ -596,7 +550,7 @@ describe('a booking of a salon, against the API', () => {
 
     // Assert
     expect(await heading('予約が見つかりません')).toHaveFocus()
-    expect(address).toBe(
+    expect(address()).toBe(
       `/salons/${tokyo}/bookings/0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01`,
     )
   })

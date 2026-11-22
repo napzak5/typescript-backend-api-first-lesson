@@ -1,16 +1,19 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  firstSight,
+  heading,
+  notifications,
+  termsOf,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   MANAGER,
   OWNER,
   salonIdOf,
-  signInAs,
   THERAPIST,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
@@ -44,42 +47,6 @@ import {
  * arranges. Another owner did something meanwhile where a test says so.
  */
 
-/** The path a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
-
 /** The rows of the ledger, cell by cell. */
 const ledgerRows = (): (string | null)[][] =>
   within(screen.getByRole('table', { name: 'スタッフ' }))
@@ -91,15 +58,6 @@ const ledgerRows = (): (string | null)[][] =>
         ...within(row).getAllByRole('cell'),
       ].map((cell) => cell.textContent),
     )
-
-/** What a card of a member says, term by term. */
-const termsOf = (card: string): [string, string][] =>
-  within(screen.getByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
-    ])
 
 const text = (name: string): HTMLElement =>
   screen.getByRole('textbox', { name })
@@ -310,7 +268,7 @@ describe('the staff ledger, against the API', () => {
       removed: false,
     })
     // The member the API answered with is shown in the commit that opened the page
-    expect(firstSight[1]).toContain('Kato Rina（カトウ リナ）')
+    expect(firstSight()[1]).toContain('Kato Rina（カトウ リナ）')
     expect(termsOf('雇用')).toEqual([
       ['雇用形態', '正社員'],
       ['入社日', '2027年4月1日（木）'],
@@ -586,11 +544,11 @@ describe('the staff ledger, against the API', () => {
       removed: true,
     })
     // The ledger read before the removal is not shown, nor the registration before the ledger is read anew
-    expect(firstSight[0]).toBe(staffLedgerHrefOf(salonId))
+    expect(firstSight()[0]).toBe(staffLedgerHrefOf(salonId))
     expect(
-      firstSight[1].replace('Crowd 01 さんを、', '').includes('Crowd 01'),
+      firstSight()[1].replace('Crowd 01 さんを、', '').includes('Crowd 01'),
     ).toBe(false)
-    expect(firstSight[1]).not.toContain('スタッフを登録する')
+    expect(firstSight()[1]).not.toContain('スタッフを登録する')
     await screen.findByRole('table', { name: 'スタッフ' })
     expect(screen.queryByRole('link', { name: 'Crowd 01' })).toBeNull()
   })

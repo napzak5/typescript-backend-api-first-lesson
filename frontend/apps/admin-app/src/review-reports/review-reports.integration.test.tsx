@@ -1,11 +1,13 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  firstSight,
+  goBack,
+  heading,
+} from '@beauty-salon-frontend/testing/screens'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs } from '../__tests__/screens'
 import {
   ADMIN,
   MANAGER,
@@ -14,7 +16,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import { reviewHrefOf, reviewReportsHrefOf, reviewsHrefOf } from '../navigation'
@@ -36,57 +37,6 @@ import { reportMomentOf } from './review-reports'
  * its screen, which the administrator dismisses, or removes the review
  * with them. The reports of the seed data are in `__tests__/arrangements.ts`.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname, search } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [
-      `${pathname}${search}`,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname, search])
-
-  return null
-}
-
-/** Goes back in the history of the router, as the button of the browser does */
-let goBack: () => void = () => undefined
-
-const History = () => {
-  const navigate = useNavigate()
-  useLayoutEffect(() => {
-    goBack = () => void navigate(-1)
-  }, [navigate])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-        <History />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string | RegExp) =>
-  screen.findByRole('heading', { level: 1, name })
 
 const GREAT = 'Great experience'
 const EXCELLENT = 'Excellent service!'
@@ -194,7 +144,7 @@ describe('the reports of reviews', () => {
 
     // Assert
     await heading('レビューへの通報')
-    expect(firstSight[0]).toBe(reviewReportsHrefOf(salonId))
+    expect(firstSight()[0]).toBe(reviewReportsHrefOf(salonId))
     await screen.findByRole('table', { name: '未処理の通報' })
     await waitFor(() =>
       expect(rowsOf('未処理の通報')).toEqual([
@@ -211,7 +161,7 @@ describe('the reports of reviews', () => {
     // Assert
     await heading(GREAT)
     // The review the row was named by is shown at once
-    expect(firstSight[1]).toContain(COMMENT)
+    expect(firstSight()[1]).toContain(COMMENT)
     await within(reportsPart()).findByRole('table', {
       name: 'このレビューへの通報',
     })
@@ -265,7 +215,7 @@ describe('the reports of reviews', () => {
 
     // Assert: the reviews that counted the report are read anew, not shown as they were
     await heading('レビュー')
-    expect(firstSight).toEqual([
+    expect(firstSight()).toEqual([
       reviewsHrefOf(salonId),
       expect.not.stringContaining(GREAT),
     ])
@@ -275,7 +225,7 @@ describe('the reports of reviews', () => {
 
     // Assert: so are the reports that wait
     await heading('レビューへの通報')
-    expect(firstSight).toEqual([
+    expect(firstSight()).toEqual([
       reviewReportsHrefOf(salonId),
       expect.not.stringContaining(DETAILS),
     ])
@@ -295,7 +245,7 @@ describe('the reports of reviews', () => {
 
     // Assert
     expect(await screen.findByText('未処理の通報はありません')).toBeVisible()
-    expect(firstSight[0]).toBe(address)
+    expect(firstSight()[0]).toBe(address)
   })
 
   it('should narrow the reports of a salon by their state, and keep the state in the address', async () => {
@@ -313,7 +263,7 @@ describe('the reports of reviews', () => {
 
     // Assert
     await screen.findByRole('table', { name: '通報' })
-    expect(firstSight[0]).toBe(`${address}?status=all`)
+    expect(firstSight()[0]).toBe(`${address}?status=all`)
     await waitFor(() =>
       expect(rowsOf('通報')).toEqual([
         [
@@ -332,7 +282,7 @@ describe('the reports of reviews', () => {
 
     // Assert
     await screen.findByRole('table', { name: '却下した通報' })
-    expect(firstSight[0]).toBe(`${address}?status=dismissed`)
+    expect(firstSight()[0]).toBe(`${address}?status=dismissed`)
     expect(rowsOf('却下した通報')).toEqual([
       [
         received,
@@ -349,7 +299,7 @@ describe('the reports of reviews', () => {
 
     // Assert
     expect(await screen.findByText('未処理の通報はありません')).toBeVisible()
-    expect(firstSight[0]).toBe(address)
+    expect(firstSight()[0]).toBe(address)
   })
 
   it('should say that another administrator dismissed the report meanwhile, and show it dismissed', async () => {
@@ -438,7 +388,7 @@ describe('the reports of reviews', () => {
       ),
     ).toBeVisible()
     await heading('レビュー')
-    expect(firstSight).toEqual([
+    expect(firstSight()).toEqual([
       reviewsHrefOf(salonId),
       expect.not.stringContaining(GREAT),
     ])
@@ -455,7 +405,7 @@ describe('the reports of reviews', () => {
     await act(() => goBack())
 
     // Assert: the review is gone at once
-    expect(firstSight[1]).toContain('レビューが見つかりません')
+    expect(firstSight()[1]).toContain('レビューが見つかりません')
 
     // Act
     await user.click(await screen.findByRole('link', { name: 'レビューへ' }))
@@ -463,7 +413,7 @@ describe('the reports of reviews', () => {
 
     // Assert: the reports of the review went with it, whatever the review is called
     await heading('レビューへの通報')
-    expect(firstSight[1]).not.toContain(DETAILS)
+    expect(firstSight()[1]).not.toContain(DETAILS)
     expect(await screen.findByText('未処理の通報はありません')).toBeVisible()
   })
 

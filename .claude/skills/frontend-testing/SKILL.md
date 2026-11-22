@@ -36,8 +36,11 @@ methods of the `dialog` element and the width of the window that jsdom
 lacks, and the saving of a file a page made), what the catalogue gives
 every story (`@beauty-salon-frontend/testing/stories`), `savedFiles`,
 `setWindowWidth`, `findAccessibilityViolations`,
-`itShouldBeAccessibleInEveryStory` and `itShouldBeSentByTheEnterKey`, and
-the real API of the integration tests (`@beauty-salon-frontend/testing/api`). The browser tests take from it
+`itShouldBeAccessibleInEveryStory` and `itShouldBeSentByTheEnterKey`, what
+the tests of screens share (`@beauty-salon-frontend/testing/screens`, under
+"A screen"), and the real API of the integration tests with the sign-in on
+the screen (`@beauty-salon-frontend/testing/api`: `testApi`, `signInAs`).
+The browser tests take from it
 what knows no test runner: how to start the test server and what to ask it
 for (`@beauty-salon-frontend/testing/api/test-server`), and the rules of the
 accessibility check (`@beauty-salon-frontend/testing/accessibility`).
@@ -373,8 +376,8 @@ describe('the session against the API', () => {
   storage and shares it (`src/share/__tests__/arrangements.ts` of the
   portal); a link that expired, was used up or is locked is a change of
   its row. What a page saved from an object URL is read with
-  `savedFiles()`. A link opened in the same tab is a `navigate` of the
-  router the test captures beside the address (`go`), in `act`. A test
+  `savedFiles()`. A link opened in the same tab is `goTo(address)` of the
+  screen tools, in `act`. A test
   of the share links of the admin application puts the links it needs
   into the database (`src/share-links/__tests__/arrangements.ts`), whose
   token nobody knows, or issues one through the screen and opens the
@@ -431,9 +434,31 @@ it('should show the screen that was asked for after signing in', async () => {
 ```
 
 - Render the screen inside what it really stands in: a `QueryClientProvider`
-  with a new `QueryClient` whose queries do not retry, `NotificationProvider`,
-  and `AppShell` when the title of the document or the focus is asserted. An
-  application is rendered whole, `App` in a `MemoryRouter`.
+  with a client whose queries do not retry (`queryClientOfATest()`),
+  `NotificationProvider`, and `AppShell` when the title of the document or
+  the focus is asserted. An application is rendered whole, `App` in a
+  `MemoryRouter`: `renderAt(path)` of its `src/__tests__/screens.tsx`.
+- **What the tests of screens share is one module**,
+  `@beauty-salon-frontend/testing/screens`. A test file does not write
+  these again:
+
+  | Tool | What it gives |
+  |------|---------------|
+  | `renderApplicationAt(application, path, options)` | The application in a `MemoryRouter` at `path`, with a client of its own that tries a read once. `options.client` is the client of a test that renders again with what the first kept, `options.before` the addresses the history has before `path`. `renderAt(path, options)` of an application is this with its `App` |
+  | `address()` | The address the application is at: path, search and fragment |
+  | `firstSight()` | The address of the last screen (path and search) and what `main` said in the commit that showed it (under "A screen that writes what it read") |
+  | `goTo(address)`, `goBack()` | Lead the application to an address, or a step back in its history, in `act` |
+  | `heading(name)` | The `h1` of a screen, awaited; the name is a text or a pattern |
+  | `notifications()` | What the `status` regions say, without the empty ones |
+  | `statusMessages()` | What the `status` regions of `main` say, the empty ones too |
+  | `termsOf(card)`, `termsOnceThere(card)` | What a card says, term by term; the second awaits the card |
+  | `queryClientOfATest()`, `asTheApplicationKeeps()` | A client that tries a read once; the same with the five minutes an application keeps what it read |
+
+  `signInAs(email)` of `@beauty-salon-frontend/testing/api` signs in on
+  the screen as an account of the seed data, and `openAs(path, email)` of
+  the admin application renders at an address and does so. The tools have
+  tests of their own (`frontend/packages/testing/src/screens.test.tsx`,
+  `src/api/sign-in.integration.test.tsx`).
 - The focus is asserted as soon as what it goes to is there, as above: a
   component moves it in the commit that shows the change, so no second wait
   is needed. A component that moves the focus has a test of just that, which
@@ -497,10 +522,10 @@ it('should show the screen that was asked for after signing in', async () => {
 `frontend/apps/portal-app/src/salons/salons.integration.test.tsx` is the
 example to read: a search and the page of a record, rendered at an address.
 
-- **Render at the address** (`MemoryRouter` with `initialEntries`), with a
-  component beside `App` that keeps what `useLocation()` says. A search is
-  asserted on what is shown and on the address it wrote
-  (`/?keyword=osaka`). An address is an arrangement, too: conditions that
+- **Render at the address** (`renderAt(path)`). The screen tools keep what
+  the router says, beside `App`: a search is asserted on what is shown and
+  on the address it wrote (`expect(address()).toBe('/?keyword=osaka')`). An
+  address is an arrangement, too: conditions that
   somebody typed by hand, an ID that names nothing.
 - **Rows in numbers are inserted.** The second page of a list needs more
   rows than the seed data has, and the API creates one a request:
@@ -610,8 +635,8 @@ the example to read: a customer books a time that the screen read.
   the one of an application (`startApplication`) keeps what it read for five
   minutes. A screen that sets `staleTime: 0` for what somebody else
   changes is rendered with a client that has the `staleTime` of the
-  application (`asTheApplicationKeeps` in
-  `own-bookings.integration.test.tsx`), the record is changed with a
+  application (`renderAt(path, { client: asTheApplicationKeeps() })`), the
+  record is changed with a
   statement, and the screen is shown again: it must say what is stored
   now.
 - **What the salon did meanwhile is a statement.** The booking begins
@@ -655,11 +680,11 @@ tested for what it must leave alone as well:
   as soon as the heading of the page is there as well: a `findBy…` and an
   event of `userEvent` each let a moment pass, and the answer to one
   request can arrive in it (with the wrong change in place, it had
-  arrived in two runs of three). So the component beside `App` that keeps
-  the address also keeps, from a layout effect, what `main` said in the
-  commit that showed that address (`firstSight`), and the test asserts on
-  it:
-  `expect(firstSight).toEqual(['/mypage', expect.stringContaining('お名前Sato Yuki')])`.
+  arrived in two runs of three). So the screen tools also keep, from a
+  layout effect beside `App`, what `main` said in the commit that showed
+  an address, which is its path and its search (`firstSight()`), and the
+  test asserts on it:
+  `expect(firstSight()).toEqual(['/mypage', expect.stringContaining('お名前Sato Yuki')])`.
 - **A reading the first sight races is held.** When a screen shows what
   it kept while it reads the record again, the answer comes before or
   after the next screen opens, as the machine is loaded. The test holds
@@ -713,9 +738,9 @@ What a customer wrote, listed with what can be done with each, changed
 and removed (`frontend/apps/portal-app/src/reviews/`) adds:
 
 - **The tests of an area may be several files with one module of
-  arrangements** (`__tests__/arrangements.tsx`: the application at an
-  address with `firstSight`, the seed data the tests name, what they ask
-  of the database and of the API, what they read on a screen). One file
+  arrangements** (`__tests__/arrangements.tsx`: the seed data the tests
+  name, what they ask of the database and of the API, what they read on a
+  screen of the reviews). One file
   per thing that is done (`review-writing…`, `own-reviews…`), and one for
   who the screens are for and where they stand (`review-screens…`:
   `describe.each` over the screens, with somebody who is not signed in,
@@ -1049,8 +1074,8 @@ adds:
   meet the real refusal of the API.
 - **The screens of the sales share how they are rendered and read**
   (`dashboard-app/src/__tests__/screens.tsx`: the application at an
-  address, what it showed at first sight, the terms of a card, the rows of
-  a table, a link of the header). A part of a trend is named by the
+  address, the rows of a table, a link of the header, the days a screen
+  counts over). A part of a trend is named by the
   database in Tokyo too (`date_trunc` of the week or the month), so that
   the first week and the last month the test expects are those of the
   clock of the API.

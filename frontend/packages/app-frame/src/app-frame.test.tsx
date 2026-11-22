@@ -1,14 +1,14 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { renderApplicationAt } from '@beauty-salon-frontend/testing/screens'
 import {
   Button,
   type EnvironmentBannerProps,
   PageHeader,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes } from 'react-router'
+import { Route, Routes } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { isAtOrBelow } from './addresses'
 import { AppFrame, type NavigationOf } from './app-frame'
@@ -47,25 +47,19 @@ const Saving = () => {
 }
 
 const renderAt = (path: string, environment: Environment = 'production') =>
-  render(
-    <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter initialEntries={[path]}>
-        <AppFrame
-          title={TITLE}
-          account={<p>アカウントの欄</p>}
-          navigationFor={navigationFor}
-          environment={environment}
-        >
-          <Routes>
-            <Route path='/' element={<Saving />} />
-            <Route
-              path='/bookings/*'
-              element={<PageHeader title='予約の一覧' />}
-            />
-          </Routes>
-        </AppFrame>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  renderApplicationAt(
+    <AppFrame
+      title={TITLE}
+      account={<p>アカウントの欄</p>}
+      navigationFor={navigationFor}
+      environment={environment}
+    >
+      <Routes>
+        <Route path='/' element={<Saving />} />
+        <Route path='/bookings/*' element={<PageHeader title='予約の一覧' />} />
+      </Routes>
+    </AppFrame>,
+    path,
   )
 
 /** The links of the header that lead to the screens, with the one that is marked as shown. */

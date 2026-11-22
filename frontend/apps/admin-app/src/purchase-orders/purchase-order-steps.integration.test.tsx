@@ -1,12 +1,10 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs } from '../__tests__/screens'
 import {
   ADMIN,
   dayFromToday,
@@ -15,7 +13,6 @@ import {
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import { displayNameOf } from '../inventory/__tests__/arrangements'
@@ -40,44 +37,6 @@ import {
  * orders; its stylist moves them on and writes on them. Somebody did
  * something meanwhile where a test says so.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname, search } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [
-      `${pathname}${search}`,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname, search])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string | RegExp) =>
-  screen.findByRole('heading', { level: 1, name })
 
 /** The address of an order of the salon in Tokyo, by its number */
 const orderAt = async (orderNumber: string): Promise<string> =>
@@ -194,8 +153,8 @@ describe('the status of a purchase order, and what is written down on it', () =>
     // Assert: the list that was read before is read anew, not shown as it was
     const row = await screen.findByRole('row', { name: /PO-SEED-0001/ })
     expect(within(row).getByText('承認済み')).toBeVisible()
-    expect(firstSight[0]).toBe(purchaseOrdersHrefOf(await salonIdOf(TOKYO)))
-    expect(firstSight[1]).toContain('発注を読み込んでいます')
+    expect(firstSight()[0]).toBe(purchaseOrdersHrefOf(await salonIdOf(TOKYO)))
+    expect(firstSight()[1]).toContain('発注を読み込んでいます')
   })
 
   it.each<
@@ -346,7 +305,7 @@ describe('the status of a purchase order, and what is written down on it', () =>
     await user.click(screen.getByRole('link', { name: CHANGE }))
     await heading('発注を直す')
     const day = await screen.findByLabelText('納品予定日')
-    expect(firstSight[0]).toBe(orderChangeHrefOf(salonId, id))
+    expect(firstSight()[0]).toBe(orderChangeHrefOf(salonId, id))
     expect(day).toHaveValue('')
     expect(screen.getByRole('textbox', { name: '納品のメモ' })).toHaveValue('')
     expect(screen.getByRole('textbox', { name: 'メモ' })).toHaveValue(
@@ -367,7 +326,7 @@ describe('the status of a purchase order, and what is written down on it', () =>
     expect(
       await screen.findByText('発注 PO-SEED-0001 を直しました。'),
     ).toBeVisible()
-    expect(firstSight[0]).toBe(purchaseOrderHrefOf(salonId, id))
+    expect(firstSight()[0]).toBe(purchaseOrderHrefOf(salonId, id))
     expect(termOf('納品予定日')).toBe(dayNameOf(delivery))
     expect(termOf('納品のメモ')).toBe('午前中に、裏口へ。')
     expect(termOf('メモ')).toBe('記録なし')

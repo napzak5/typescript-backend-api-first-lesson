@@ -4,6 +4,13 @@ import {
   type SavedFile,
   savedFiles,
 } from '@beauty-salon-frontend/testing'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  firstSight,
+  heading,
+  notifications,
+  termsOnceThere,
+} from '@beauty-salon-frontend/testing/screens'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -17,19 +24,15 @@ import {
   paySale,
   removeTokyo,
   salonIdOf,
-  signInAs,
   TOKYO,
   voidSale,
 } from '../__tests__/arrangements'
 import {
   countOver,
-  firstSight,
-  heading,
   menuLink,
   renderAt,
   rowsOf,
   TITLE,
-  termsOf,
 } from '../__tests__/screens'
 import { reportsHrefOf } from '../navigation'
 
@@ -38,13 +41,6 @@ import { reportsHrefOf } from '../navigation'
  * in Tokyo (`theDay`), whose owner and manager are seeded. Today is in the
  * period a report starts with, the month up to today.
  */
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 /** The only file the page saved, once it has saved one. */
 const theSavedFile = async (): Promise<SavedFile> => {
@@ -173,7 +169,7 @@ describe('the sales report, against the API', () => {
       expect(
         screen.getByText(`${periodNameOf({ from: first, to: today })}の売上`),
       ).toBeVisible()
-      expect(await termsOf('期間の合計')).toEqual(SUMS_OF_TODAY)
+      expect(await termsOnceThere('期間の合計')).toEqual(SUMS_OF_TODAY)
       expect(rowsOf('支払い方法別の入金')).toEqual([
         ['クレジットカード', '￥7,800', '1 件', '58.6%'],
         ['現金', '￥5,500', '1 件', '41.4%'],
@@ -226,7 +222,7 @@ describe('the sales report, against the API', () => {
     await user.click(screen.getByRole('button', { name: '集計する' }))
 
     // Assert
-    expect(await termsOf('期間の合計')).toEqual(SUMS_OF_TODAY)
+    expect(await termsOnceThere('期間の合計')).toEqual(SUMS_OF_TODAY)
   })
 
   it('should count the period of the address it was opened at, a year of 366 days', async () => {
@@ -242,7 +238,7 @@ describe('the sales report, against the API', () => {
     await signInAs(OWNER)
 
     // Assert
-    expect(await termsOf('期間の合計')).toEqual(SUMS_OF_TODAY)
+    expect(await termsOnceThere('期間の合計')).toEqual(SUMS_OF_TODAY)
     expect(screen.getByLabelText('集計する期間（から）')).toHaveValue(yearAgo)
   })
 
@@ -275,7 +271,7 @@ describe('the sales report, against the API', () => {
       const last = screen.getByLabelText('集計する期間（まで）')
       expect(last).toHaveFocus()
       expect(last).toHaveAccessibleDescription(expect.stringContaining(error))
-      expect(await termsOf('期間の合計')).toEqual(SUMS_OF_TODAY)
+      expect(await termsOnceThere('期間の合計')).toEqual(SUMS_OF_TODAY)
     },
   )
 
@@ -395,7 +391,7 @@ describe('the sales report, against the API', () => {
     await user.click(menuLink('売上レポート'))
 
     // Assert
-    expect(await termsOf('期間の合計')).toEqual(SUMS_OF_TODAY)
+    expect(await termsOnceThere('期間の合計')).toEqual(SUMS_OF_TODAY)
     expect(firstSight()[0]).toMatch(/\/reports$/)
     expect(firstSight()[1]).not.toContain('この期間の売上はありません')
   })
@@ -416,7 +412,7 @@ describe('the sales report, against the API', () => {
 
     // Assert
     expect(await heading('売上レポート')).toHaveFocus()
-    expect(await termsOf('期間の合計')).toEqual(SUMS_OF_TODAY)
+    expect(await termsOnceThere('期間の合計')).toEqual(SUMS_OF_TODAY)
     expect(menuLink('売上レポート')).toHaveAttribute('aria-current', 'page')
   })
 

@@ -1,11 +1,9 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs } from '../__tests__/screens'
 import {
   ADMIN,
   MANAGER,
@@ -13,7 +11,6 @@ import {
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import { staffIdOf } from '../customers/__tests__/arrangements'
@@ -42,44 +39,6 @@ import {
  * value; its stylist does neither. The salon in Osaka keeps no stock.
  * Somebody did something meanwhile where a test says so.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname, search } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [
-      `${pathname}${search}`,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname, search])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 /** The control of what was counted of the row of a product, named by the product and the lot the seed drew */
 const counted = (product: string): HTMLElement =>
@@ -215,7 +174,7 @@ describe('the screens of the count and the value of the stock', () => {
 
     // Assert: the stock that was read before the count is not shown
     await heading('在庫')
-    expect(firstSight[1]).not.toContain('tube')
+    expect(firstSight()[1]).not.toContain('tube')
     expect(
       within(await screen.findByRole('table', { name: '在庫' }))
         .getAllByRole('row')
@@ -227,7 +186,7 @@ describe('the screens of the count and the value of the stock', () => {
 
     // Assert: the row that was read before the count is not shown, and names who counted it
     await heading('在庫の行')
-    expect(firstSight[1]).not.toContain('棚卸ししていません')
+    expect(firstSight()[1]).not.toContain('棚卸ししていません')
     await waitFor(async () =>
       expect(await lastCount()).toMatch(new RegExp(`（${manager}）$`)),
     )
@@ -501,7 +460,7 @@ describe('the screens of the count and the value of the stock', () => {
 
     // Assert: the value read before the count is not shown
     await openedValue()
-    expect(firstSight[1]).not.toContain('￥150,000')
+    expect(firstSight()[1]).not.toContain('￥150,000')
     expect(rowsOf('カテゴリーごとの在庫評価額')).toEqual([
       ['Hair Care', '2 品目', '￥60,000'],
       ['Hair Color', '3 品目', '￥42,000'],

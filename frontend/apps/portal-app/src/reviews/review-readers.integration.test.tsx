@@ -1,10 +1,17 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient } from '@tanstack/react-query'
+import {
+  address,
+  asTheApplicationKeeps,
+  heading,
+  queryClientOfATest,
+  statusMessages,
+} from '@beauty-salon-frontend/testing/screens'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, type MockInstance, vi } from 'vitest'
 import * as z from 'zod'
+import { renderAt } from '../__tests__/screens'
 import {
   CUSTOMER,
   giveBack,
@@ -19,10 +26,8 @@ import {
 import { OWN_PROFILE } from '../profile/profile-api'
 import {
   ADMIN,
-  asTheApplicationKeeps,
   dismissesReportOf,
   findsHelpful,
-  heading,
   KENJI,
   OSAKA,
   overall,
@@ -30,10 +35,7 @@ import {
   ratingOf,
   region,
   removes,
-  renderAt,
   reports,
-  shown,
-  statusMessages,
   TAKESHI,
   VIP,
   visitToReview,
@@ -357,7 +359,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
       // Assert
       await heading(TOKYO)
-      expect(shown.address).toBe(path)
+      expect(address()).toBe(path)
       await reviewToActOn('Good but could be better')
       expect(await controls()).toEqual([
         ['参考になった', '通報する'],
@@ -376,7 +378,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
       // Assert
       await screen.findByRole('searchbox', { name: 'キーワード' })
-      expect(shown.address).toBe('/')
+      expect(address()).toBe('/')
     })
 
     it.each([
@@ -403,12 +405,10 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       // Arrange
       await registerNewcomer()
       await signedInAs(NEWCOMER, NEWCOMER_PASSWORD)
-      const client = new QueryClient({
-        defaultOptions: { queries: { retry: false } },
-      })
+      const client = queryClientOfATest()
 
       // Act
-      renderAt(await salonPathOf(TOKYO), client)
+      renderAt(await salonPathOf(TOKYO), { client })
 
       // Assert: the profile was asked for, and there is none
       await reviewList()
@@ -598,7 +598,9 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       await signedInAs(KENJI)
       const review = await untouchedBy(KENJI)
       await findsHelpful(review.id, VIP)
-      renderAt(await salonPathOf(TOKYO), asTheApplicationKeeps())
+      renderAt(await salonPathOf(TOKYO), {
+        client: asTheApplicationKeeps(),
+      })
       const user = userEvent.setup()
       await reviewToActOn(review.title)
       await user.selectOptions(await order(), '参考になった順')
@@ -1111,13 +1113,13 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       const visit = await visitToReview()
       const path = await salonPathOf(OSAKA)
       const client = asTheApplicationKeeps()
-      const salonPage = renderAt(path, client)
+      const salonPage = renderAt(path, { client })
       await within(await personNamed(TAKESHI)).findByRole('img')
       expect(await ratingShownOf(TAKESHI)).toBe('5 段階中 5.0（2 件）')
       salonPage.unmount()
 
       // Act: the customer writes about a visit to that member
-      const form = renderAt(`/bookings/${visit.id}/review`, client)
+      const form = renderAt(`/bookings/${visit.id}/review`, { client })
       await overall()
       await userEvent.click(ratingOf('2（やや不満）'))
       await userEvent.click(
@@ -1125,7 +1127,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       )
       await screen.findByText('レビューを投稿しました。')
       form.unmount()
-      renderAt(path, client)
+      renderAt(path, { client })
 
       // Assert
       expect(

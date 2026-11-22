@@ -1,8 +1,8 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { renderApplicationAt } from '@beauty-salon-frontend/testing/screens'
 import { PageHeader } from '@beauty-salon-frontend/ui'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
-import { MemoryRouter, Route } from 'react-router'
+import { screen } from '@testing-library/react'
+import { Route } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import type { NavigationOf } from './app-frame'
 import {
@@ -22,20 +22,17 @@ const renderAt = (
   path: string,
   environment: StaffApplicationProps['environment'] = 'production',
 ) =>
-  render(
-    <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter initialEntries={[path]}>
-        <StaffApplication
-          title={TITLE}
-          roles={['owner', 'manager', 'admin']}
-          navigationFor={navigationFor}
-          environment={environment}
-          portalUrl='https://portal.salon.example'
-        >
-          <Route path='/' element={<PageHeader title='はじめの画面' />} />
-        </StaffApplication>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  renderApplicationAt(
+    <StaffApplication
+      title={TITLE}
+      roles={['owner', 'manager', 'admin']}
+      navigationFor={navigationFor}
+      environment={environment}
+      portalUrl='https://portal.salon.example'
+    >
+      <Route path='/' element={<PageHeader title='はじめの画面' />} />
+    </StaffApplication>,
+    path,
   )
 
 /** Nobody is signed in: what the application shows without asking the API. */

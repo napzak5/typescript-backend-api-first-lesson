@@ -1,13 +1,16 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   arrange,
   dayFromToday,
@@ -15,7 +18,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   THERAPIST,
   TOKYO,
   YUKI,
@@ -31,46 +33,6 @@ import {
 /** The kinds of payment of the seed data that take a total between 100 and 10,000 yen at once */
 const ONE_PAYMENT =
   '現金、クレジットカード、デビットカード、電子マネー、QR コード決済、ポイント'
-
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((text) => text !== '')
 
 /** The rows of a table, a list of the texts of their cells each. */
 const rowsOf = (name: string): string[][] =>
@@ -226,7 +188,7 @@ describe('the sales of a salon, against the API', () => {
         ],
       })
       // The sale the API answered with is shown at once
-      expect(firstSight).toEqual([
+      expect(firstSight()).toEqual([
         expect.stringMatching(new RegExp(`^/salons/${tokyo}/sales/`)),
         expect.stringContaining(stored.saleNumber),
       ])
@@ -241,7 +203,7 @@ describe('the sales of a salon, against the API', () => {
       await user.click(screen.getByRole('link', { name: '予約の内容' }))
 
       // Assert: the part that was read before the sale is read anew
-      expect(firstSight[1]).not.toContain('まだ会計を入れていません。')
+      expect(firstSight()[1]).not.toContain('まだ会計を入れていません。')
       const billed = await within(
         await screen.findByRole('region', { name: '会計' }),
       ).findByRole('link', { name: stored.saleNumber })
@@ -508,7 +470,7 @@ describe('the sales of a salon, against the API', () => {
 
       // Assert
       await theSale()
-      expect(address).toBe(`/salons/${tokyo}/sales/${saleId}`)
+      expect(address()).toBe(`/salons/${tokyo}/sales/${saleId}`)
       expect(notifications()).toContain(
         'この予約には、その間に会計が入っていました。その売上を表示します。',
       )
@@ -698,7 +660,7 @@ describe('the sales of a salon, against the API', () => {
       await user.click(screen.getByRole('button', { name: '印刷する' }))
 
       // Assert
-      expect(address).toBe(`/salons/${tokyo}/sales/${saleId}/receipt`)
+      expect(address()).toBe(`/salons/${tokyo}/sales/${saleId}/receipt`)
       expect(print).toHaveBeenCalledOnce()
       expect(within(receipt).getByText('SL-TEST-0101')).toBeVisible()
       expect(
@@ -719,7 +681,7 @@ describe('the sales of a salon, against the API', () => {
 
       // Assert: the ledger that was read before the payments is read anew
       await heading('売上台帳')
-      expect(firstSight[1]).not.toContain('SL-TEST-0101')
+      expect(firstSight()[1]).not.toContain('SL-TEST-0101')
       const paid = await screen.findByRole('link', { name: 'SL-TEST-0101' })
       expect(paid.closest('tr')).toHaveTextContent('支払い済み')
     })
@@ -736,7 +698,7 @@ describe('the sales of a salon, against the API', () => {
       await user.click(screen.getByRole('link', { name: '支払いを記録する' }))
 
       // Assert: the sale that was read before is not shown
-      expect(firstSight[1]).not.toContain('未払い残額')
+      expect(firstSight()[1]).not.toContain('未払い残額')
       expect(
         await screen.findByText('この売上は、合計を受け取りました。'),
       ).toBeVisible()
@@ -922,7 +884,7 @@ describe('the sales of a salon, against the API', () => {
         ]),
       )
       const narrowed = `/salons/${tokyo}/sales?from=${today}&to=${today}&paymentStatus=pending`
-      expect(address).toBe(narrowed)
+      expect(address()).toBe(narrowed)
 
       // Act
       await user.clear(screen.getByLabelText('会計日（まで）'))
@@ -938,21 +900,21 @@ describe('the sales of a salon, against the API', () => {
         ),
       )
       expect(screen.getByLabelText('会計日（まで）')).toHaveFocus()
-      expect(address).toBe(narrowed)
+      expect(address()).toBe(narrowed)
 
       // Act
       await user.click(screen.getByRole('link', { name: 'SL-TEST-0201' }))
 
       // Assert
       await theSale()
-      expect(address).toBe(`/salons/${tokyo}/sales/${unpaid}`)
+      expect(address()).toBe(`/salons/${tokyo}/sales/${unpaid}`)
 
       // Act
       await user.click(screen.getByRole('link', { name: 'この日の売上へ' }))
 
       // Assert
       await heading('売上台帳')
-      expect(address).toBe(`/salons/${tokyo}/sales?from=${today}&to=${today}`)
+      expect(address()).toBe(`/salons/${tokyo}/sales?from=${today}&to=${today}`)
       expect(
         (await screen.findAllByRole('link', { name: /^SL-TEST-/ })).map(
           (link) => link.textContent,

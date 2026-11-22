@@ -1,13 +1,16 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import {
+  firstSight,
+  heading,
+  notifications,
+  termsOf,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
-import { App } from '../App'
+import { openAs } from '../__tests__/screens'
 import {
   ADMIN,
   MANAGER,
@@ -15,7 +18,6 @@ import {
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import { SALON_ENTRY_PATH, settingsHrefOf } from '../navigation'
@@ -28,47 +30,6 @@ import { storedSalonOf } from './__tests__/arrangements'
  * have bookings that are not finished; a test that removes one finishes
  * them first, in the database.
  */
-
-/** The address and the text of the main part of the last screen, as it was first shown */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <FirstSight />
-        <App />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const openAs = async (path: string, email: string) => {
-  const rendered = renderAt(path)
-  await signInAs(email)
-  return rendered
-}
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 /** The salons the choice lists, by their names */
 const listedSalons = async (): Promise<(string | null)[]> =>
@@ -84,15 +45,6 @@ const navigationItems = () =>
       link.textContent,
       link.getAttribute('href'),
       link.getAttribute('aria-current'),
-    ])
-
-/** What a card says, term by term. */
-const termsOf = (card: string): [string, string][] =>
-  within(screen.getByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
     ])
 
 const text = (name: string): HTMLElement =>
@@ -211,8 +163,8 @@ describe('adding a salon, against the API', () => {
 
     // Assert: the salon the API answered with is shown at once, its settings read anew
     expect(await heading('サロンの設定')).toHaveFocus()
-    expect(firstSight[1]).not.toContain('サロンを読み込んでいます')
-    expect(firstSight[1]).toContain('サロンの設定を読み込んでいます')
+    expect(firstSight()[1]).not.toContain('サロンを読み込んでいます')
+    expect(firstSight()[1]).toContain('サロンの設定を読み込んでいます')
     expect(notifications()).toContain(
       `サロン「${NEW_NAME}」を登録しました。営業時間とメニューを入れてから、オンライン予約を受け付けてください。`,
     )
@@ -245,8 +197,8 @@ describe('adding a salon, against the API', () => {
     await user.click(screen.getByRole('link', { name: 'サロンを選ぶ' }))
 
     // Assert: the choice read before the salon was added is not shown
-    expect(firstSight[0]).toBe('/')
-    expect(firstSight[1]).toContain('サロンを読み込んでいます')
+    expect(firstSight()[0]).toBe('/')
+    expect(firstSight()[1]).toContain('サロンを読み込んでいます')
     expect(await listedSalons()).toContain(NEW_NAME)
   })
 
@@ -368,7 +320,7 @@ describe('removing a salon, against the API', () => {
     expect(notifications()).toContain(`サロン「${OSAKA}」を削除しました。`)
     expect(await isRemoved(OSAKA)).toBe(true)
     // The choice read before the removal is not shown
-    expect(firstSight[1]).toContain('サロンを読み込んでいます')
+    expect(firstSight()[1]).toContain('サロンを読み込んでいます')
     expect(await listedSalons()).toEqual(expect.not.arrayContaining([OSAKA]))
     expect(await listedSalons()).toContain(TOKYO)
   })

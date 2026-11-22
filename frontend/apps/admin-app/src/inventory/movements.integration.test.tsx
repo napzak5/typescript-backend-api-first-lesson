@@ -1,18 +1,15 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs } from '../__tests__/screens'
 import {
   ADMIN,
   MANAGER,
   OSAKA,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import { staffIdOf } from '../customers/__tests__/arrangements'
@@ -41,44 +38,6 @@ import {
  * every day; its owner and its manager record the others as well.
  * Somebody did something meanwhile where a test says so.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname, search } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [
-      `${pathname}${search}`,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname, search])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 /** Waits for a row: its heading comes first, the record once the row was read. */
 const openedRow = async (): Promise<void> => {
@@ -181,7 +140,7 @@ describe('the screens of the movements of the stock', () => {
       ),
     ).toBeInTheDocument()
     await openedHistory()
-    expect(firstSight[0]).toBe(stockMovementsHrefOf(salonId, rowId))
+    expect(firstSight()[0]).toBe(stockMovementsHrefOf(salonId, rowId))
     // The heading took the focus when the history opened, and kept it while the history was read
     expect(
       screen.getByRole('heading', { level: 1, name: '在庫の移動' }),
@@ -213,7 +172,7 @@ describe('the screens of the movements of the stock', () => {
     )
 
     // Assert: the stock read before the movement is not shown again, it is read anew
-    expect(firstSight[1]).not.toContain('20 tube')
+    expect(firstSight()[1]).not.toContain('20 tube')
     await screen.findByRole('table', { name: '在庫' })
     expect(
       within(screen.getByRole('row', { name: /COLOR001/ })).getByText(
@@ -255,9 +214,9 @@ describe('the screens of the movements of the stock', () => {
     ).toBeInTheDocument()
     // The history read before the movement is not shown again, it is read anew
     await waitFor(() =>
-      expect(firstSight[0]).toBe(stockMovementsHrefOf(salonId, rowId)),
+      expect(firstSight()[0]).toBe(stockMovementsHrefOf(salonId, rowId)),
     )
-    expect(firstSight[1]).not.toContain('1 件')
+    expect(firstSight()[1]).not.toContain('1 件')
     await openedHistory()
     expect(screen.getByText('2 件')).toBeVisible()
     expect(movements()[0]).toEqual([
@@ -362,7 +321,7 @@ describe('the screens of the movements of the stock', () => {
 
     // Assert
     await openedHistory('条件に合う在庫の移動')
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `${stockMovementsHrefOf(salonId, rowId)}?type=purchase&from=2025-10-01&to=2025-10-31`,
     )
     expect(
@@ -399,7 +358,7 @@ describe('the screens of the movements of the stock', () => {
 
     // Assert
     await openedHistory()
-    expect(firstSight[0]).toBe(stockMovementsHrefOf(salonId, rowId))
+    expect(firstSight()[0]).toBe(stockMovementsHrefOf(salonId, rowId))
     expect(movements().map(([kind]) => kind)).toEqual([
       '在庫の調整',
       '仕入れ',

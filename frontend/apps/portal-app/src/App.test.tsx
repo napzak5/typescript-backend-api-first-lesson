@@ -1,24 +1,14 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router'
+import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from './App'
+import { renderAt } from './__tests__/screens'
 
 /** The screens of a customer: where a service is booked, and a booking */
 const BOOKING_PATH =
   '/salons/0b7f5c1e-3a52-4d8e-9c41-6f2e8d1a7b90/services/1a3c5e7f-9b20-4d46-8e68-0a2c4e6f8b79/booking'
 const OWN_BOOKING_PATH = '/bookings/e7092b3c-68fd-4a13-9b35-d7f902245846'
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider client={new QueryClient()}>
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
 
 /**
  * Nobody is signed in: what the application shows without asking the API.
@@ -45,6 +35,17 @@ describe('App', () => {
         name: applications.portal.name,
       }),
     ).toHaveAttribute('href', '/')
+  })
+
+  it('should read with the client a test gives it', () => {
+    // Arrange
+    const client = queryClientOfATest()
+
+    // Act
+    renderAt('/sign-in', { client })
+
+    // Assert: who is signed in is asked of that client
+    expect(client.getQueryCache().getAll()).not.toHaveLength(0)
   })
 
   it('should say that a page does not exist and lead back to the root', () => {

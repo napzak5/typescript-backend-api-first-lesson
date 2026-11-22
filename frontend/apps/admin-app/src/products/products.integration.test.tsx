@@ -1,18 +1,16 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs, renderAt } from '../__tests__/screens'
 import {
   MANAGER,
   OSAKA,
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import {
@@ -39,44 +37,6 @@ import {
  * stylist reads them. Somebody did something meanwhile where a test says
  * so.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname, search } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [
-      `${pathname}${search}`,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname, search])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 /** Waits for the ledger: its heading comes first, the table once the products were read. */
 const openedLedger = async (caption = '商品台帳'): Promise<void> => {
@@ -213,7 +173,7 @@ describe('the product ledger of a salon, against the API', () => {
 
     // Assert
     await openedLedger()
-    expect(firstSight[0]).toBe(productsHrefOf(salonId))
+    expect(firstSight()[0]).toBe(productsHrefOf(salonId))
     expect(rows()).toEqual(SEEDED)
     expect(screen.getByText('7 件')).toBeVisible()
     expect(
@@ -275,7 +235,7 @@ describe('the product ledger of a salon, against the API', () => {
       'COLOR001',
       'TREAT001',
     ])
-    expect(firstSight[0]).toBe(`${productsHrefOf(salonId)}?keyword=HAIR`)
+    expect(firstSight()[0]).toBe(`${productsHrefOf(salonId)}?keyword=HAIR`)
 
     // Act
     await user.clear(screen.getByRole('searchbox', { name: 'キーワード' }))
@@ -301,7 +261,7 @@ describe('the product ledger of a salon, against the API', () => {
       'COLOR001',
       'DEVELOPER001',
     ])
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `${productsHrefOf(salonId)}?category=Hair+Color&use=treatment`,
     )
 
@@ -401,7 +361,7 @@ describe('the product ledger of a salon, against the API', () => {
     await openedProduct()
     const added = await productIdOf(TOKYO, 'OIL001')
     // What the record alone says: the notification names the product as well
-    expect(firstSight).toEqual([
+    expect(firstSight()).toEqual([
       productHrefOf(salonId, added),
       expect.stringContaining('商品コードOIL001'),
     ])
@@ -481,7 +441,7 @@ describe('the product ledger of a salon, against the API', () => {
       ),
     ).toBeInTheDocument()
     await openedProduct()
-    expect(firstSight[1]).toContain('￥4,200')
+    expect(firstSight()[1]).toContain('￥4,200')
     expect(terms('価格')).toEqual(
       expect.arrayContaining([['販売価格', '￥4,200']]),
     )

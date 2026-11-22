@@ -1,10 +1,9 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { address, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs } from '../__tests__/screens'
 import {
   arrangeFile,
   fileRemovedMeanwhile,
@@ -17,7 +16,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import {
@@ -49,38 +47,6 @@ const CONSENT = 'カラー同意書_田中様.pdf'
 const PASSWORD = 'umi no mieru heya'
 
 const DAY = 24 * 60 * 60 * 1000
-
-/** The address the page is at */
-let address = ''
-
-const Address = () => {
-  address = useLocation().pathname
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string | RegExp) =>
-  screen.findByRole('heading', { level: 1, name })
 
 /** A form of the salon in Tokyo that the owner uploaded: its ID, and the ID of the salon */
 const consentOfTokyo = async () => {
@@ -679,7 +645,7 @@ describe('the share links of a file', () => {
         }),
       ).toBeNull()
       await heading(CONSENT)
-      expect(address).toBe(attachmentHrefOf(file.salonId, file.attachmentId))
+      expect(address()).toBe(attachmentHrefOf(file.salonId, file.attachmentId))
       expect(
         await within(linksPart()).findByText('共有リンクはありません'),
       ).toBeVisible()

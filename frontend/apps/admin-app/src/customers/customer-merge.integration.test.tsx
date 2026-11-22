@@ -1,17 +1,20 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   KENJI,
   OWNER,
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
@@ -42,40 +45,6 @@ const AGAIN = {
   firstName: 'Kenji',
   email: 'kenji.yamamoto@example.com',
 }
-
-/** The address the application is at, as the router knows it */
-let address = ''
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 /** The part of a page under a heading. */
 const part = (name: string): HTMLElement => screen.getByRole('region', { name })
@@ -187,7 +156,7 @@ describe('merging two records of one customer, against the API', () => {
     expect(
       screen.getByRole('heading', { level: 2, name: 'まとめる相手' }),
     ).toHaveFocus()
-    expect(address).toBe(
+    expect(address()).toBe(
       `/salons/${tokyo}/customers/${kenji}/merge?keyword=Yamamoto&with=${again}`,
     )
     expect(differenceOf('メールアドレス')).toEqual([
@@ -216,7 +185,7 @@ describe('merging two records of one customer, against the API', () => {
       `${KENJI.name} 様（${KENJI.email}）を残し、${KENJI.name} 様（${AGAIN.email}）を台帳から削除します。削除したお客様は、台帳に戻せません。`,
     )
     expect(await heading('お客様の台帳')).toBeVisible()
-    expect(address).toBe(`/salons/${tokyo}/customers/${kenji}`)
+    expect(address()).toBe(`/salons/${tokyo}/customers/${kenji}`)
     expect(notifications()).toContain(
       `2 人のお客様を、${KENJI.name} 様にまとめました。`,
     )
@@ -294,7 +263,7 @@ describe('merging two records of one customer, against the API', () => {
 
     // Assert
     expect(await heading('お客様の台帳')).toBeVisible()
-    expect(address).toBe(`/salons/${tokyo}/customers/${again}`)
+    expect(address()).toBe(`/salons/${tokyo}/customers/${again}`)
     expect(await storedMergeOf(again)).toEqual({
       removed: false,
       email: KENJI.email,
@@ -417,7 +386,7 @@ describe('merging two records of one customer, against the API', () => {
     expect(
       screen.getByRole('heading', { level: 2, name: 'まとめる相手' }),
     ).toHaveFocus()
-    expect(address).toBe(
+    expect(address()).toBe(
       `/salons/${tokyo}/customers/${kenji}/merge?keyword=Yamamoto`,
     )
     expect(screen.getByRole('searchbox', { name: 'キーワード' })).toHaveValue(

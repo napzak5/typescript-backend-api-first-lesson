@@ -1,10 +1,13 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import {
   afterEach,
   beforeEach,
@@ -15,7 +18,7 @@ import {
   vi,
 } from 'vitest'
 import * as z from 'zod'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   arrange,
   dayFromToday,
@@ -24,7 +27,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from './__tests__/arrangements'
@@ -32,50 +34,10 @@ import {
 const TAKEN =
   '担当の時間が、ほかの予約と重なっているため、予約を入れられませんでした。明細ごとに、担当の空きを確かめ直しました。'
 
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 const combobox = (name: string): HTMLElement =>
   screen.getByRole('combobox', { name })
 
 const field = (name: string): HTMLElement => screen.getByLabelText(name)
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((text) => text !== '')
 
 /** The terms of the record of the booking, each with what it says. */
 const recordTerms = (): [string, string][] =>
@@ -202,7 +164,7 @@ const fillLine = async (
 }
 
 /** The ID of the booking whose page the application shows. */
-const shownBookingId = (): string => address.split('/').at(-1) ?? ''
+const shownBookingId = (): string => address().split('/').at(-1) ?? ''
 
 describe('the bookings a salon puts in, changes and removes, against the API', () => {
   beforeEach(() => {
@@ -226,7 +188,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       expect(
         await screen.findByRole('link', { name: KENJI.name }),
       ).toBeVisible()
-      expect(address).toBe(
+      expect(address()).toBe(
         `/salons/${tokyo}/bookings/new?date=${date}&search=yamamoto`,
       )
       const row = screen.getByRole('link', { name: KENJI.name }).closest('tr')
@@ -241,7 +203,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
 
       // Assert
       await waitFor(() =>
-        expect(address).toBe(
+        expect(address()).toBe(
           `/salons/${tokyo}/bookings/new?date=${date}&search=98765432`,
         ),
       )
@@ -291,7 +253,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       // Assert: the link that was followed is gone with its step
       const chosen = await screen.findByRole('region', { name: 'お客様' })
       expect(await heading('予約を入れる')).toHaveFocus()
-      expect(address).toBe(
+      expect(address()).toBe(
         `/salons/${tokyo}/bookings/new?date=${date}&search=yamamoto&customerId=${customerId}`,
       )
       expect(
@@ -357,7 +319,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       expect(await heading('予約の内容')).toHaveFocus()
       expect(notifications()).toContain('予約を入れました。')
       const id = shownBookingId()
-      expect(address).toBe(`/salons/${tokyo}/bookings/${id}`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings/${id}`)
       expect(recordTerms()).toEqual(
         expect.arrayContaining([
           ['お客様', KENJI.name],
@@ -406,8 +368,8 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
       await user.click(screen.getByRole('link', { name: 'この日の予約へ' }))
 
       // Assert: nothing of what was read before is shown
-      expect(firstSight).toEqual([
-        `/salons/${tokyo}/bookings`,
+      expect(firstSight()).toEqual([
+        `/salons/${tokyo}/bookings?date=${date}`,
         expect.stringContaining('予約を読み込んでいます'),
       ])
       expect(
@@ -625,7 +587,7 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
 
       // Assert
       expect(await heading('予約の内容')).toHaveFocus()
-      expect(address).toBe(`/salons/${tokyo}/bookings/${id}`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings/${id}`)
       expect(notifications()).toContain('予約の記録を変えました。')
       expect(changesAsked(fetched)).toEqual([
         {
@@ -790,11 +752,11 @@ describe('the bookings a salon puts in, changes and removes, against the API', (
 
       // Assert: nothing of what was read before is shown
       expect(await heading('予約台帳')).toHaveFocus()
-      expect(firstSight).toEqual([
-        `/salons/${tokyo}/bookings`,
+      expect(firstSight()).toEqual([
+        `/salons/${tokyo}/bookings?date=${date}`,
         expect.stringContaining('予約を読み込んでいます'),
       ])
-      expect(address).toBe(`/salons/${tokyo}/bookings?date=${date}`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings?date=${date}`)
       expect(notifications()).toContain('予約を削除しました。')
       expect(await storedIds(id)).toEqual([])
       expect(await screen.findByText(/の予約はありません$/)).toBeVisible()

@@ -1,18 +1,20 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   KENJI,
   MANAGER,
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
@@ -63,42 +65,6 @@ const SEEDED = [
     confirmedDate: null,
   },
 ]
-
-/** The path a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 const allergies = (): HTMLElement =>
   screen.getByRole('region', { name: 'アレルギー' })
@@ -385,11 +351,11 @@ describe('the allergies of the customers, against the API', () => {
 
     // Assert: the severity before the change is not shown at first sight
     await heading('カルテ')
-    expect(firstSight).toEqual([
+    expect(firstSight()).toEqual([
       chartHrefOf(salonId, customerId),
       expect.any(String),
     ])
-    expect(firstSight[1]).not.toContain('重い')
+    expect(firstSight()[1]).not.toContain('重い')
     expect(notifications()).toContain(
       `${YUKI.name} 様のアレルギー（${PPD}）の記録を直しました。`,
     )

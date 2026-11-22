@@ -1,5 +1,6 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -11,13 +12,10 @@ import {
   removeTokyo,
   salonIdOf,
   sellToBreakDown,
-  signInAs,
   TOKYO,
 } from '../__tests__/arrangements'
 import {
   countOver,
-  firstSight,
-  heading,
   menuLink,
   renderAt,
   rowsOf,

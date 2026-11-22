@@ -2,12 +2,11 @@ import { authCrudLogin } from '@beauty-salon-frontend/api-client'
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { address, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   CUSTOMER,
   NEWCOMER,
@@ -25,33 +24,6 @@ import {
 const TITLE = applications.portal.name
 const STYLIST = 'stylist1@beautysalon.jp'
 const NEW_PASSWORD = 'aoi sora to shiroi kumo no aida'
-
-/** The address the application is at, as the router knows it */
-let address = ''
-
-const Address = () => {
-  const { pathname } = useLocation()
-  address = pathname
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 const lastPasswordChangeOf = async (email: string): Promise<unknown> => {
   const [row] = await testApi().query(
@@ -128,7 +100,7 @@ describe('the security of the account in the portal, against the API', () => {
 
     // Assert
     expect(await heading('アカウントの安全')).toHaveFocus()
-    expect(address).toBe('/mypage/security')
+    expect(address()).toBe('/mypage/security')
     expect(document.title).toBe(`アカウントの安全 | ${TITLE}`)
     await screen.findByText('1 台の端末でサインインしています')
     expect(await findAccessibilityViolations()).toEqual([])
@@ -155,7 +127,7 @@ describe('the security of the account in the portal, against the API', () => {
 
     // Assert
     expect(await heading('2 要素認証を設定する')).toHaveFocus()
-    expect(address).toBe('/mypage/security/two-factor')
+    expect(address()).toBe('/mypage/security/two-factor')
     expect(document.title).toBe(`2 要素認証を設定する | ${TITLE}`)
     expect(await screen.findByLabelText('パスワード')).toBeVisible()
     expect(await findAccessibilityViolations()).toEqual([])
@@ -165,7 +137,7 @@ describe('the security of the account in the portal, against the API', () => {
 
     // Assert
     expect(await heading('アカウントの安全')).toHaveFocus()
-    expect(address).toBe('/mypage/security')
+    expect(address()).toBe('/mypage/security')
   })
 
   it('should lead to the security of the account from the page of an account that has no profile', async () => {
@@ -218,7 +190,7 @@ describe('the security of the account in the portal, against the API', () => {
 
     // Assert
     expect(await heading('アカウントの安全')).toHaveFocus()
-    expect(address).toBe('/mypage/security')
+    expect(address()).toBe('/mypage/security')
     // What the screen had read before the change is not shown again
     expect(
       screen.queryByText('アカウントを作ってから、変更していません'),

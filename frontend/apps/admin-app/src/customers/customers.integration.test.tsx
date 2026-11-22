@@ -1,12 +1,16 @@
 import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   arrange,
   dayFromToday,
@@ -17,7 +21,6 @@ import {
   SAKURA,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
@@ -36,50 +39,10 @@ import {
 
 const HIROSHI = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 const field = (name: string): HTMLElement => screen.getByLabelText(name)
 
 const text = (name: string): HTMLElement =>
   screen.getByRole('textbox', { name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 /** The rows of a table, a list of the texts of their cells each. */
 const rowsOf = (name: string): string[][] =>
@@ -194,7 +157,7 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert
       await theLedger()
-      expect(address).toBe(`/salons/${tokyo}/customers`)
+      expect(address()).toBe(`/salons/${tokyo}/customers`)
       expect(namesIn('顧客台帳')).toEqual(EVERYONE)
       expect(rowsOf('顧客台帳')).toContainEqual([
         KENJI.name,
@@ -229,7 +192,7 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert
       await theLedger('条件に合うお客様')
-      expect(address).toBe(
+      expect(address()).toBe(
         `/salons/${tokyo}/customers?${new URLSearchParams({ search: 'ヤマモト' })}`,
       )
       expect(namesIn('条件に合うお客様')).toEqual([KENJI.name])
@@ -242,7 +205,7 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert
       await waitFor(() =>
-        expect(address).toBe(
+        expect(address()).toBe(
           `/salons/${tokyo}/customers?tags=vip&tags=platinum&membershipTier=platinum`,
         ),
       )
@@ -325,7 +288,7 @@ describe('the ledger of the customers, against the API', () => {
         '終わりの日は、始まりの日と同じか、その後にしてください。',
       )
       expect(field('登録日（まで）')).toHaveFocus()
-      expect(address).toBe(`/salons/${tokyo}/customers`)
+      expect(address()).toBe(`/salons/${tokyo}/customers`)
     })
 
     it('should open with the conditions of its address, show twenty customers at a time, and the next ones with the focus on the first of them', async () => {
@@ -383,8 +346,8 @@ describe('the ledger of the customers, against the API', () => {
       // Assert: the customer the API answered is shown at first sight
       await theCustomer()
       const id = await customerIdOf(NEW_EMAIL)
-      expect(address).toBe(`/salons/${tokyo}/customers/${id}`)
-      expect(firstSight[1]).toContain('山田 花子（ヤマダ ハナコ） 様')
+      expect(address()).toBe(`/salons/${tokyo}/customers/${id}`)
+      expect(firstSight()[1]).toContain('山田 花子（ヤマダ ハナコ） 様')
       expect(notifications()).toContain('山田 花子 様を台帳に登録しました。')
       expect(describedIn('台帳')).toMatchObject({
         メールアドレス: NEW_EMAIL,
@@ -659,7 +622,7 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert
       await waitFor(() =>
-        expect(address).toBe(
+        expect(address()).toBe(
           `/salons/${tokyo}/customers/${sakura}?from=${from}&to=${to}`,
         ),
       )
@@ -683,7 +646,7 @@ describe('the ledger of the customers, against the API', () => {
       expect(field('集計する期間（まで）')).toHaveAccessibleDescription(
         '366 日まで集計できます。 期間は 366 日までにしてください。',
       )
-      expect(address).toBe(
+      expect(address()).toBe(
         `/salons/${tokyo}/customers/${sakura}?from=${from}&to=${to}`,
       )
     })
@@ -709,14 +672,14 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert
       await theCustomer()
-      expect(address).toBe(`/salons/${tokyo}/customers/${kenji}`)
+      expect(address()).toBe(`/salons/${tokyo}/customers/${kenji}`)
 
       // Act
       await user.click(screen.getByRole('link', { name: '予約を入れる' }))
 
       // Assert: the customer is chosen, and the form asks for the rest
       await heading('予約を入れる')
-      expect(address).toBe(
+      expect(address()).toBe(
         `/salons/${tokyo}/bookings/new?date=${today}&customerId=${kenji}`,
       )
       expect(
@@ -746,7 +709,7 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert
       await waitFor(() =>
-        expect(address).toBe(`/salons/${tokyo}/customers/${yuki}`),
+        expect(address()).toBe(`/salons/${tokyo}/customers/${yuki}`),
       )
       expect(
         await screen.findByText('Tanaka Yuki（タナカ ユキ） 様'),
@@ -837,8 +800,8 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert
       await theCustomer()
-      expect(address).toBe(`/salons/${tokyo}/customers/${kenji}`)
-      expect(firstSight[1]).toContain('080-1111-2222')
+      expect(address()).toBe(`/salons/${tokyo}/customers/${kenji}`)
+      expect(firstSight()[1]).toContain('080-1111-2222')
       expect(notifications()).toContain('台帳を直しました。')
       expect(describedIn('台帳')).toMatchObject({
         電話番号: '080-1111-2222',
@@ -888,8 +851,8 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert: no control at first sight, then the note written meanwhile
       await heading('台帳を直す')
-      expect(firstSight[0]).toBe(`/salons/${tokyo}/customers/${kenji}/edit`)
-      expect(firstSight[1]).not.toContain('備考')
+      expect(firstSight()[0]).toBe(`/salons/${tokyo}/customers/${kenji}/edit`)
+      expect(firstSight()[1]).not.toContain('備考')
       expect(await screen.findByRole('textbox', { name: '備考' })).toHaveValue(
         '駐車場を使う',
       )

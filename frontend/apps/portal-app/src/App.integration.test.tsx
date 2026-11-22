@@ -1,56 +1,19 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import { heading, statusMessages } from '@beauty-salon-frontend/testing/screens'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from './App'
+import { renderAt } from './__tests__/screens'
 
 const TITLE = applications.portal.name
 /** The heading of the first screen of the portal, the search of the salons */
 const START = 'サロンを探す'
 const CUSTOMER = 'customer1@example.com'
 
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 const header = () => within(screen.getByRole('banner'))
-
-/**
- * What is said in the status messages of the content. The notification is
- * one of them; the start, which searches for salons, has others.
- */
-const statusMessages = (): (string | null)[] =>
-  within(screen.getByRole('main'))
-    .getAllByRole('status')
-    .map((status) => status.textContent)
-
-/** Signs in on the screen, as a seeded account. */
-const signInAs = async (email: string): Promise<void> => {
-  const user = userEvent.setup()
-  await user.type(
-    await screen.findByRole('textbox', { name: 'メールアドレス' }),
-    email,
-  )
-  await user.type(screen.getByLabelText('パスワード'), testApi().seedPassword)
-  await user.click(screen.getByRole('button', { name: 'サインイン' }))
-}
 
 const sessionCountOfTheApi = async (): Promise<unknown> =>
   testApi().query('select count(*)::int as count from sessions')

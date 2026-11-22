@@ -1,65 +1,17 @@
 import { applications } from '@beauty-salon-frontend/brand'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import {
-  type RenderResult,
-  render,
-  screen,
-  within,
-} from '@testing-library/react'
+import { renderApplicationAt } from '@beauty-salon-frontend/testing/screens'
+import { type RenderResult, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { App } from '../App'
 
 /*
  * What the screen tests of the dashboard share: the application at an
- * address, and how they read what a screen shows.
+ * address, and how they read what its screens show. What the tests read of
+ * any screen is in `@beauty-salon-frontend/testing/screens`.
  */
 
 /** The title of the application in the tests */
 export const TITLE = applications.dashboard.name
-
-/** The path a screen was opened at, and what the page showed in the commit that opened it */
-let opened: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname } = useLocation()
-  useLayoutEffect(() => {
-    opened = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-/** The path the last screen was opened at, and what it showed at first sight. */
-export const firstSight = (): [string, string] => opened
-
-/** The application at an address, with a client of its own that tries a read once. */
-export const renderAt = (path: string): RenderResult =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-export const heading = (name: string): Promise<HTMLElement> =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What a card says, term by term */
-export const termsOf = async (card: string): Promise<[string, string][]> =>
-  within(await screen.findByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
-    ])
 
 /** The rows of a table, cell by cell in the order they are shown */
 export const rowsOf = (table: string): (string | null)[][] =>
@@ -88,3 +40,7 @@ export const countOver = async (from: string, to: string): Promise<void> => {
   await user.type(last, to)
   await user.click(screen.getByRole('button', { name: '集計する' }))
 }
+
+/** The application at an address. */
+export const renderAt = (path: string): RenderResult =>
+  renderApplicationAt(<App />, path)

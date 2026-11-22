@@ -3,6 +3,7 @@ import {
   type ModelsUserResponse,
 } from '@beauty-salon-frontend/api-client'
 import { type StoredSession, sessionStore } from '@beauty-salon-frontend/io'
+import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
@@ -166,11 +167,8 @@ const stubApi = ({
   return sent
 }
 
-const newQueryClient = (): QueryClient =>
-  new QueryClient({ defaultOptions: { queries: { retry: false } } })
-
 /** Renders the hook and keeps every state it returned, in order. */
-const renderSession = (queryClient = newQueryClient()) => {
+const renderSession = (queryClient = queryClientOfATest()) => {
   const states: Session[] = []
   const rendered = renderHook(
     () => {
@@ -237,7 +235,7 @@ describe('the session of an application', () => {
       // Arrange
       const sent = stubApi()
       sessionStore.write(sessionOf(HANAKO, 1))
-      const queryClient = newQueryClient()
+      const queryClient = queryClientOfATest()
 
       // Act
       const first = renderSession(queryClient)
@@ -432,7 +430,7 @@ describe('the session of an application', () => {
       // Arrange
       stubApi()
       sessionStore.write(sessionOf(HANAKO, 1))
-      const queryClient = newQueryClient()
+      const queryClient = queryClientOfATest()
       const stop = keepQueriesOfOneUser(queryClient)
       queryClient.setQueryData(['/api/v1/customers/me'], { firstName: '花子' })
 
@@ -447,7 +445,7 @@ describe('the session of an application', () => {
     it('should keep what was fetched when the tokens of the same user are renewed', async () => {
       // Arrange
       sessionStore.write(sessionOf(HANAKO, 1))
-      const queryClient = newQueryClient()
+      const queryClient = queryClientOfATest()
       const stop = keepQueriesOfOneUser(queryClient)
       queryClient.setQueryData(['/api/v1/customers/me'], { firstName: '花子' })
 
@@ -464,7 +462,7 @@ describe('the session of an application', () => {
     it('should leave the queries alone after it was stopped', async () => {
       // Arrange
       sessionStore.write(sessionOf(HANAKO, 1))
-      const queryClient = newQueryClient()
+      const queryClient = queryClientOfATest()
       const stop = keepQueriesOfOneUser(queryClient)
       queryClient.setQueryData(['/api/v1/customers/me'], { firstName: '花子' })
 

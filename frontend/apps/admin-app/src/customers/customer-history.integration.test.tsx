@@ -1,9 +1,13 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import {
   afterEach,
   beforeEach,
@@ -13,7 +17,7 @@ import {
   type MockInstance,
   vi,
 } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   KENJI,
   MANAGER,
@@ -21,7 +25,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
@@ -47,46 +50,6 @@ import {
 /** What a member of the staff is told where the ledger is kept */
 const KEPT =
   '台帳からの削除と統合、変更履歴は、オーナーとマネージャーができます。'
-
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 /** The rows of a table, a list of the texts of their cells each. */
 const rowsOf = (name: string): string[][] =>
@@ -232,7 +195,7 @@ describe('removing customers, bringing them back, and their history, against the
       await heading('顧客台帳')
       // The notification of the removal stays, and names the customer
       expect(
-        firstSight[1].replace(`${KENJI.name} 様を台帳から削除しました。`, ''),
+        firstSight()[1].replace(`${KENJI.name} 様を台帳から削除しました。`, ''),
       ).not.toContain(KENJI.name)
       await screen.findByRole('table', { name: '顧客台帳' })
       expect(screen.queryByRole('link', { name: KENJI.name })).toBeNull()
@@ -335,7 +298,7 @@ describe('removing customers, bringing them back, and their history, against the
 
       // Assert
       await heading('顧客台帳')
-      expect(address).toBe(
+      expect(address()).toBe(
         `/salons/${tokyo}/customers?search=customer2%40example.com`,
       )
       expect(
@@ -422,7 +385,7 @@ describe('removing customers, bringing them back, and their history, against the
       // Assert
       await heading('変更履歴')
       await screen.findByRole('table', { name: '版の一覧' })
-      expect(address).toBe(`/salons/${tokyo}/customers/${kenji}/history`)
+      expect(address()).toBe(`/salons/${tokyo}/customers/${kenji}/history`)
       expect(versionsShown()).toEqual([
         ['版 3', '更新', 'お客様ご本人', '電話番号'],
         ['版 2', '更新', 'ほかのアカウント', '電話番号、住所'],
@@ -437,7 +400,7 @@ describe('removing customers, bringing them back, and their history, against the
       // Assert
       await heading('台帳の版')
       await screen.findByRole('table', { name: '前の版から変えた項目' })
-      expect(address).toBe(`/salons/${tokyo}/customers/${kenji}/history/2`)
+      expect(address()).toBe(`/salons/${tokyo}/customers/${kenji}/history/2`)
       expect(
         screen.getByText(/^版 2・更新・.+・ほかのアカウント$/),
       ).toBeVisible()
@@ -457,7 +420,7 @@ describe('removing customers, bringing them back, and their history, against the
 
       // Assert
       await heading('変更履歴')
-      expect(address).toBe(`/salons/${tokyo}/customers/${kenji}/history`)
+      expect(address()).toBe(`/salons/${tokyo}/customers/${kenji}/history`)
     })
 
     it('should show the history twenty versions at a time, and the next ones when asked', async () => {

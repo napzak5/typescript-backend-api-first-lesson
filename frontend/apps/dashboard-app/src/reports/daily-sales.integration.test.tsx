@@ -1,5 +1,11 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  firstSight,
+  heading,
+  termsOnceThere,
+} from '@beauty-salon-frontend/testing/screens'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -13,18 +19,10 @@ import {
   paySale,
   removeTokyo,
   salonIdOf,
-  signInAs,
   TOKYO,
   voidSale,
 } from '../__tests__/arrangements'
-import {
-  firstSight,
-  heading,
-  menuLink,
-  renderAt,
-  TITLE,
-  termsOf,
-} from '../__tests__/screens'
+import { menuLink, renderAt, TITLE } from '../__tests__/screens'
 import { dailyHrefOf } from '../navigation'
 
 /*
@@ -166,7 +164,7 @@ describe('the sales of one day, against the API', () => {
       // Assert
       expect(await heading('1 日の売上')).toHaveFocus()
       expect(screen.getByLabelText('日付')).toHaveValue(today)
-      expect(await termsOf(salesOf(today))).toEqual(SUMS_OF_TODAY)
+      expect(await termsOnceThere(salesOf(today))).toEqual(SUMS_OF_TODAY)
       expect(screen.getByRole('link', { name: '前の日' })).toBeVisible()
       // The sales of tomorrow are not entered yet
       expect(screen.queryByRole('link', { name: '次の日' })).toBeNull()
@@ -183,20 +181,20 @@ describe('the sales of one day, against the API', () => {
     const yesterday = await dayFromToday(-1)
     renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
     await signInAs(OWNER)
-    await termsOf(salesOf(today))
+    await termsOnceThere(salesOf(today))
 
     // Act
     await user.click(screen.getByRole('link', { name: '前の日' }))
 
     // Assert
-    expect(await termsOf(salesOf(yesterday))).toEqual(SUMS_OF_YESTERDAY)
+    expect(await termsOnceThere(salesOf(yesterday))).toEqual(SUMS_OF_YESTERDAY)
     expect(screen.getByLabelText('日付')).toHaveValue(yesterday)
 
     // Act
     await user.click(screen.getByRole('link', { name: '次の日' }))
 
     // Assert
-    expect(await termsOf(salesOf(today))).toEqual(SUMS_OF_TODAY)
+    expect(await termsOnceThere(salesOf(today))).toEqual(SUMS_OF_TODAY)
     expect(screen.getByLabelText('日付')).toHaveValue(today)
   })
 
@@ -205,13 +203,13 @@ describe('the sales of one day, against the API', () => {
     await sellTwoDays()
     renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
     await signInAs(OWNER)
-    await termsOf(salesOf(await dayFromToday(0)))
+    await termsOnceThere(salesOf(await dayFromToday(0)))
 
     // Act
     await showDay('2020-01-01')
 
     // Assert
-    expect(await termsOf(salesOf('2020-01-01'))).toEqual(NOTHING)
+    expect(await termsOnceThere(salesOf('2020-01-01'))).toEqual(NOTHING)
     expect(screen.getByRole('link', { name: '次の日' })).toBeVisible()
   })
 
@@ -222,13 +220,13 @@ describe('the sales of one day, against the API', () => {
     const today = await dayFromToday(0)
     renderAt(`${dailyHrefOf(await salonIdOf(TOKYO))}?date=2020-01-01`)
     await signInAs(OWNER)
-    await termsOf(salesOf('2020-01-01'))
+    await termsOnceThere(salesOf('2020-01-01'))
 
     // Act
     await user.click(screen.getByRole('link', { name: '今日' }))
 
     // Assert
-    expect(await termsOf(salesOf(today))).toEqual(SUMS_OF_TODAY)
+    expect(await termsOnceThere(salesOf(today))).toEqual(SUMS_OF_TODAY)
     expect(screen.getByLabelText('日付')).toHaveValue(today)
     expect(screen.queryByRole('link', { name: '次の日' })).toBeNull()
   })
@@ -239,7 +237,7 @@ describe('the sales of one day, against the API', () => {
     const today = await dayFromToday(0)
     renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
     await signInAs(OWNER)
-    await termsOf(salesOf(today))
+    await termsOnceThere(salesOf(today))
 
     // Act
     await showDay('')
@@ -250,7 +248,7 @@ describe('the sales of one day, against the API', () => {
     expect(field).toHaveAccessibleDescription(
       expect.stringContaining('日付を入力してください。'),
     )
-    expect(await termsOf(salesOf(today))).toEqual(SUMS_OF_TODAY)
+    expect(await termsOnceThere(salesOf(today))).toEqual(SUMS_OF_TODAY)
   })
 
   it('should say nothing more of what was wrong once another day is shown', async () => {
@@ -260,14 +258,14 @@ describe('the sales of one day, against the API', () => {
     const yesterday = await dayFromToday(-1)
     renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
     await signInAs(OWNER)
-    await termsOf(salesOf(await dayFromToday(0)))
+    await termsOnceThere(salesOf(await dayFromToday(0)))
     await showDay('')
 
     // Act
     await user.click(screen.getByRole('link', { name: '前の日' }))
 
     // Assert
-    expect(await termsOf(salesOf(yesterday))).toEqual(SUMS_OF_YESTERDAY)
+    expect(await termsOnceThere(salesOf(yesterday))).toEqual(SUMS_OF_YESTERDAY)
     const field = screen.getByLabelText('日付')
     expect(field).toHaveValue(yesterday)
     expect(field).not.toHaveAccessibleDescription(
@@ -305,7 +303,7 @@ describe('the sales of one day, against the API', () => {
 
       // Assert
       const day = await shown()
-      expect(await termsOf(salesOf(day))).toEqual(sums)
+      expect(await termsOnceThere(salesOf(day))).toEqual(sums)
       expect(screen.getByLabelText('日付')).toHaveValue(day)
     },
   )
@@ -316,7 +314,7 @@ describe('the sales of one day, against the API', () => {
     const today = await dayFromToday(0)
     renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
     await signInAs(OWNER)
-    expect(await termsOf(salesOf(today))).toEqual(NOTHING)
+    expect(await termsOnceThere(salesOf(today))).toEqual(NOTHING)
     await sellTwoDays()
 
     // Act
@@ -324,7 +322,7 @@ describe('the sales of one day, against the API', () => {
 
     // Assert
     await screen.findByText('￥14,300')
-    expect(await termsOf(salesOf(today))).toEqual(SUMS_OF_TODAY)
+    expect(await termsOnceThere(salesOf(today))).toEqual(SUMS_OF_TODAY)
   })
 
   it('should never show the sales as an earlier screen read them', async () => {
@@ -333,7 +331,7 @@ describe('the sales of one day, against the API', () => {
     const today = await dayFromToday(0)
     renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
     await signInAs(OWNER)
-    expect(await termsOf(salesOf(today))).toEqual(NOTHING)
+    expect(await termsOnceThere(salesOf(today))).toEqual(NOTHING)
     await user.click(menuLink('売上の推移'))
     await heading('売上の推移')
     await sellTwoDays()
@@ -368,7 +366,7 @@ describe('the sales of one day, against the API', () => {
     await sellTwoDays()
     renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
     await signInAs(ADMIN)
-    await termsOf(salesOf(await dayFromToday(0)))
+    await termsOnceThere(salesOf(await dayFromToday(0)))
     await removeTokyo()
 
     // Act

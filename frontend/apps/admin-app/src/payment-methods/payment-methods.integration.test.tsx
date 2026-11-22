@@ -1,18 +1,16 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs, renderAt } from '../__tests__/screens'
 import {
   MANAGER,
   OSAKA,
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import {
@@ -35,41 +33,6 @@ import {
  * in Tokyo keep its methods, its stylist reads them. Somebody did
  * something meanwhile where a test says so.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 /** Waits for the list: its heading comes first, the table once the methods were read anew. */
 const openedList = async (): Promise<void> => {
@@ -242,7 +205,7 @@ describe('the payment methods of a salon, against the API', () => {
       await screen.findByText('支払い方法「PayPay（店頭）」を足しました。'),
     ).toBeInTheDocument()
     await openedMethod()
-    expect(firstSight[1]).toContain('￥50,000まで')
+    expect(firstSight()[1]).toContain('￥50,000まで')
     expect(terms()).toEqual([
       ['表示名', 'PayPay（店頭）'],
       ['種類', 'QR コード決済'],
@@ -308,7 +271,7 @@ describe('the payment methods of a salon, against the API', () => {
       await screen.findByText('支払い方法「Credit Card」を直しました。'),
     ).toBeInTheDocument()
     await openedMethod()
-    expect(firstSight[1]).toContain('3.24%')
+    expect(firstSight()[1]).toContain('3.24%')
     expect(terms()).toEqual(
       expect.arrayContaining([
         ['手数料率', '3.24%'],

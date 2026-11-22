@@ -1,12 +1,16 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   arrange,
   dayFromToday,
@@ -14,7 +18,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import {
@@ -30,47 +33,7 @@ import {
 const UNDONE_BY_OTHERS =
   '売上の取り消しと返金は、オーナーとマネージャーができます。'
 
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 const field = (name: string): HTMLElement => screen.getByLabelText(name)
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((text) => text !== '')
 
 /** The rows of a table, a list of the texts of their cells each. */
 const rowsOf = (name: string): string[][] =>
@@ -186,8 +149,8 @@ describe('changing, voiding and giving back a sale, against the API', () => {
 
       // Assert: the sale the API answered is shown at first sight
       await heading('売上の内容')
-      expect(address).toBe(`/salons/${tokyo}/sales/${saleId}`)
-      expect(firstSight[1]).toContain('Mika Suzuki')
+      expect(address()).toBe(`/salons/${tokyo}/sales/${saleId}`)
+      expect(firstSight()[1]).toContain('Mika Suzuki')
       expect(notifications()).toContain('売上を直しました。')
       expect(describedIn('売上')).toMatchObject({
         会計日: dayNameOf(yesterday),
@@ -239,7 +202,7 @@ describe('changing, voiding and giving back a sale, against the API', () => {
 
       // Assert: the ledger of today is read anew, without the sale
       await heading('売上台帳')
-      expect(firstSight[1]).not.toContain('SL-TEST-0207')
+      expect(firstSight()[1]).not.toContain('SL-TEST-0207')
       expect(await screen.findByText(/の売上はありません$/)).toBeVisible()
     })
 
@@ -416,8 +379,8 @@ describe('changing, voiding and giving back a sale, against the API', () => {
       await user.click(screen.getByRole('link', { name: '予約の内容' }))
 
       // Assert: the part of the booking that was read before is read anew
-      expect(firstSight[1]).toContain('BK-TEST-0211')
-      expect(firstSight[1]).not.toContain('SL-TEST-0211')
+      expect(firstSight()[1]).toContain('BK-TEST-0211')
+      expect(firstSight()[1]).not.toContain('SL-TEST-0211')
       const billing = await screen.findByRole('region', { name: '会計' })
       expect(
         await within(billing).findByRole('link', { name: '会計を入れる' }),
@@ -454,8 +417,8 @@ describe('changing, voiding and giving back a sale, against the API', () => {
 
       // Assert: the sale is read anew
       await theSale()
-      expect(address).toBe(`/salons/${tokyo}/sales/${saleId}`)
-      expect(firstSight[1]).not.toContain('受け取った支払いがあるため')
+      expect(address()).toBe(`/salons/${tokyo}/sales/${saleId}`)
+      expect(firstSight()[1]).not.toContain('受け取った支払いがあるため')
       expect(notifications()).toContain(
         '返金を記録しました。すべての支払いを全額返金したので、売上を取り消せます。',
       )

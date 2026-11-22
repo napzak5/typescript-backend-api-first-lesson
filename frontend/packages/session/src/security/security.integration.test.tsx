@@ -5,8 +5,9 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
+import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
 import { AppShell, NotificationProvider } from '@beauty-salon-frontend/ui'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
@@ -35,11 +36,7 @@ const TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone
 /** An application with somebody signed in, whose one screen is `screen`. */
 const renderApplication = (shown: ReactNode) =>
   render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
+    <QueryClientProvider client={queryClientOfATest()}>
       <NotificationProvider>
         <AppShell
           title='Kushi Admin'

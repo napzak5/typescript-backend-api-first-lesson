@@ -1,10 +1,10 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { heading, termsOnceThere } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs, renderAt } from '../__tests__/screens'
 import {
   ADMIN,
   MANAGER,
@@ -12,7 +12,6 @@ import {
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import {
@@ -40,28 +39,6 @@ import {
  * Somebody did something meanwhile where a test says so.
  */
 
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 /** Waits for a form of a service: its heading comes first, the form once the menu was read. */
 const openedForm = async (title: string): Promise<void> => {
   await heading(title)
@@ -77,15 +54,6 @@ const field = (part: string, role: 'textbox' | 'combobox', name: string) =>
   within(screen.getByRole('group', { name: part })).getByRole(role, { name })
 
 const row = (name: string): HTMLElement => screen.getByRole('group', { name })
-
-/** What the record of a service says, term by term, once it was read. */
-const termsOf = async (card: string): Promise<[string, string][]> =>
-  within(await screen.findByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
-    ])
 
 describe('the services of the menu, against the API', () => {
   beforeEach(() => {
@@ -144,7 +112,7 @@ describe('the services of the menu, against the API', () => {
       ),
     ).toBeInTheDocument()
     await heading('サービスの内容')
-    expect(await termsOf('サービス')).toEqual(
+    expect(await termsOnceThere('サービス')).toEqual(
       expect.arrayContaining([
         ['名前', 'Bangs Trim'],
         ['カテゴリー', 'Hair Cut'],
@@ -259,7 +227,7 @@ describe('the services of the menu, against the API', () => {
       await screen.findByText('サービス「Highlights」を直しました。'),
     ).toBeInTheDocument()
     await heading('サービスの内容')
-    expect(await termsOf('サービス')).toEqual(
+    expect(await termsOnceThere('サービス')).toEqual(
       expect.arrayContaining([['料金', '￥13,000・税込']]),
     )
     expect(await storedServicesNamed(TOKYO, 'Highlights')).toMatchObject([
