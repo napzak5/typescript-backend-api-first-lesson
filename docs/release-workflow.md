@@ -42,8 +42,10 @@
 
 ビルドの違い:
 
-- **rslib でビルドするパッケージ**（`backend/packages/*` と `frontend/packages/*`）は、`production` の
-  ときだけ minify し、それ以外ではソースマップを出力します。
+- **パッケージ**（`backend/packages/*` と `frontend/packages/*`）は、Vite のライブラリー モードで
+  ビルドします（`vite build --mode <モード>`）。`production` のときだけ minify し、それ以外では
+  ソースマップを出力します。フロントエンドのパッケージが読む `import.meta.env` の値は、パッケージの
+  ビルドでは埋め込まず、アプリのビルドに残します。
 - **サーバーアプリ**（`backend/apps/server`）は `tsc` でビルドし、どの環境向けでも出力は同じです。
 - **フロントエンドアプリ**は Vite のモードに対応する `.env.<モード>` を読み、`VITE_*` の値をビルド時に
   埋め込みます。

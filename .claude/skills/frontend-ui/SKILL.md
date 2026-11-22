@@ -875,7 +875,7 @@ have.
   answers (the portal leaves such a member out, `staffNamed` of the
   package; the salon is told 「一覧にないスタッフ」, `staffNamesOf` in
   `customer-format.ts` of the admin application). The package is built as
-  `ui` is (rslib, the
+  `ui` is (Vite in library mode, the
   condition `@beauty-salon-frontend/source`), its stories are listed in
   the catalogue of `ui`, and `Dockerfile.frontend` copies its manifest.
 
@@ -2717,10 +2717,20 @@ A share link opens a file for somebody who has no account
 
 ## How the package is built
 
-`pnpm --filter @beauty-salon-frontend/ui run build:prod` (rslib) writes one
-file per source file into `dist/`, with the type declarations. The stylesheet
-of a component is written beside its script, which imports it, so an
-application gets the styles of the components it uses and of no other.
+`pnpm --filter @beauty-salon-frontend/ui run build:prod` (Vite, in library
+mode) writes one file per source file into `dist/`, with the type
+declarations (`tsc`, from `tsconfig.build.json`). The stylesheet of a
+component is written beside its script, which imports it, so an application
+gets the styles of the components it uses and of no other. A stylesheet that
+is built is named `*.module.built.css`: under the name of a CSS Module the
+bundler of an application would name its classes a second time.
+
+The configuration is `moduleLibrary()` of `@beauty-salon-shared/config/vite`
+(`shared-config/vite/library.ts`), which `vite.config.ts` of the package
+calls; `session`, `app-frame`, `preferences` and `salon-screens` are built in
+the same way. Every import of a package stays an import, so a package that a
+module imports is listed in `package.json`. A test, a story and what lies in
+`__tests__/` or `__stories__/` is not built.
 
 The build of an application reads `dist/`. Its dev server and the tests read
 the source, through the export condition `@beauty-salon-frontend/source`: a

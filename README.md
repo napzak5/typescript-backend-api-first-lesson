@@ -147,7 +147,7 @@ accounts and their roles are listed in
 │   ├── apps/                 # Frontend applications
 │   └── e2e/                  # Browser tests of the applications (Playwright)
 │
-├── shared-config/              # Shared TypeScript configuration
+├── shared-config/              # Shared TypeScript configuration, the build of the packages, Biome plugins
 ├── scripts/                    # Repository scripts (run with node)
 └── docs/                      # Documentation
 ```

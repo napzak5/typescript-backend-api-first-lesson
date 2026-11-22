@@ -86,7 +86,7 @@
 
 実際のブラウザーで通すテスト（`@beauty-salon-frontend/e2e`）は、`frontend/e2e` にあります。`testing` から、シードのデータの名前、テスト用のサーバーを呼ぶコード（テストの API の型 `TestApi` と、その組み立て）、アクセシビリティの検査の規則を使います。
 
-アプリのビルド（`vite build`）は、`theme` と `testing` のほかのパッケージ（`answers`、`api-client`、`app-frame`、`brand`、`config`、`fields`、`io`、`preferences`、`salon-screens`、`session`、`ui`）を、rslib でビルドした `dist/` を通して参照します。`theme` と `testing` はビルドせず、ソースのまま参照されます。`ui` のコンポーネントは自分のスタイルシートを自分で読み込むので、アプリが読み込むスタイルシートは `theme` の 1 つだけです（`src/main.tsx`）。アプリの開発サーバーとテストは、エクスポート条件 `@beauty-salon-frontend/source` を持つパッケージ（ビルドするパッケージのすべて）をソースから読みます。コンポーネントの変更は、パッケージのビルドを待たずに画面に出ます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。テストはビルドを必要としません（[テスト](#テスト)）。
+アプリのビルド（`vite build`）は、`theme` と `testing` のほかのパッケージ（`answers`、`api-client`、`app-frame`、`brand`、`config`、`fields`、`io`、`preferences`、`salon-screens`、`session`、`ui`）を、Vite のライブラリー モードでビルドした `dist/` を通して参照します。`theme` と `testing` はビルドせず、ソースのまま参照されます。`ui` のコンポーネントは自分のスタイルシートを自分で読み込むので、アプリが読み込むスタイルシートは `theme` の 1 つだけです（`src/main.tsx`）。アプリの開発サーバーとテストは、エクスポート条件 `@beauty-salon-frontend/source` を持つパッケージ（ビルドするパッケージのすべて）をソースから読みます。コンポーネントの変更は、パッケージのビルドを待たずに画面に出ます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。テストはビルドを必要としません（[テスト](#テスト)）。
 
 ## 型の流れ（TypeSpec からコンポーネントまで）
 
