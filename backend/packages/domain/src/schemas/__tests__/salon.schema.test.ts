@@ -1,3 +1,8 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  ruleMessages,
+  salonMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   brokenRules,
@@ -5,7 +10,7 @@ import {
   SALON_ID,
   salonCreateRequest,
 } from '../../__tests__/fixtures/fixtures'
-import { parseWith } from '../../shared'
+import { parseWith, type Told } from '../../shared'
 import {
   salonCreateRequestSchema,
   salonSearchRequestSchema,
@@ -490,5 +495,173 @@ describe('salonSearchRequestSchema', () => {
     ],
   ])('rejects %s', (_case, input, expected) => {
     expect(rulesBrokenBy(salonSearchRequestSchema, input)).toEqual(expected)
+  })
+})
+
+/** What a refused salon is told of a property, in the order of the issues. */
+const toldOf = (changed: Record<string, unknown>, field: string): Told[] => {
+  const result = parseWith(
+    salonCreateRequestSchema,
+    { ...salonCreateRequest(), ...changed },
+    salonMessages.invalidSalon,
+  )
+
+  return result.type === 'error' && result.error.type === 'validation'
+    ? result.error.issues
+        .filter((issue) => issue.field === field)
+        .map((issue) => issue.message)
+    : []
+}
+
+describe('what a refused salon is told', () => {
+  it.each<[string, Record<string, unknown>, string, LocalizedText[]]>([
+    ['a blank name', { name: ' ' }, 'name', [ruleMessages.notBlank]],
+    [
+      'a phone number with letters',
+      { phoneNumber: 'call the salon' },
+      'phoneNumber',
+      [ruleMessages.phoneNumber, ruleMessages.phoneDigits(10)],
+    ],
+    [
+      'a phone number of too few digits',
+      { phoneNumber: '03-1234' },
+      'phoneNumber',
+      [ruleMessages.phoneDigits(10)],
+    ],
+    [
+      'an offset for a time zone',
+      { timezone: '+09:00' },
+      'timezone',
+      [ruleMessages.timeZoneName],
+    ],
+    [
+      'a currency that is no code',
+      { currency: 'yen' },
+      'currency',
+      [salonMessages.currencyCode],
+    ],
+    [
+      'an opening time that is no time',
+      { openingHours: [{ ...openingDay(), openTime: '10am' }] },
+      'openingHours.0.openTime',
+      [ruleMessages.timeOfDay],
+    ],
+    [
+      'a closing time that is not after the opening time',
+      { openingHours: [{ ...openingDay(), closeTime: '10:00' }] },
+      'openingHours.0.closeTime',
+      [ruleMessages.laterThan('openTime')],
+    ],
+    [
+      'a day of the week that is not that of the date',
+      { openingHours: [{ ...openingDay(), dayOfWeek: 'tuesday' }] },
+      'openingHours.0.dayOfWeek',
+      [salonMessages.dayOfWeekOf('2026-11-16')],
+    ],
+    [
+      'a working day without an opening time',
+      { openingHours: [{ ...openingDay(), openTime: null }] },
+      'openingHours.0.openTime',
+      [salonMessages.timesUnlessHoliday],
+    ],
+    [
+      'a working day without a closing time',
+      { openingHours: [{ ...openingDay(), closeTime: null }] },
+      'openingHours.0.closeTime',
+      [salonMessages.timesUnlessHoliday],
+    ],
+    [
+      'a date that an earlier entry has',
+      { openingHours: [openingDay(), openingDay()] },
+      'openingHours.1.date',
+      [salonMessages.noRepeatedDate],
+    ],
+    [
+      'a date before 1900',
+      { openingHours: [{ ...openingDay(), date: '1899-12-31' }] },
+      'openingHours.0.date',
+      [ruleMessages.notEarlierThan('1900-01-01')],
+    ],
+    [
+      'a date after 2999',
+      { openingHours: [{ ...openingDay(), date: '3000-01-01' }] },
+      'openingHours.0.date',
+      [ruleMessages.notLaterThan('2999-12-31')],
+    ],
+    [
+      'a slot that ends before it begins',
+      {
+        businessHours: [
+          {
+            ...businessDay(),
+            operatingSlots: [{ startTime: '19:00', endTime: '10:00' }],
+          },
+        ],
+      },
+      'businessHours.0.operatingSlots.0.endTime',
+      [ruleMessages.laterThan('startTime')],
+    ],
+    [
+      'a period that ends before it begins',
+      {
+        businessHours: [
+          {
+            ...businessDay(),
+            effectivePeriod: {
+              startDate: '2026-12-01T00:00:00Z',
+              endDate: '2026-11-01T00:00:00Z',
+            },
+          },
+        ],
+      },
+      'businessHours.0.effectivePeriod.endDate',
+      [ruleMessages.notEarlierThan('startDate')],
+    ],
+    [
+      'a closed day with opening slots',
+      { businessHours: [{ ...businessDay(), isClosed: true }] },
+      'businessHours.0.operatingSlots',
+      [salonMessages.emptyWhenClosed],
+    ],
+    [
+      'a day of the week that an earlier entry has',
+      { businessHours: [businessDay(), businessDay()] },
+      'businessHours.1.dayOfWeek',
+      [salonMessages.noRepeatedDay],
+    ],
+  ])(
+    'should be the message of the rule, in every language, for %s',
+    (_what, changed, field, messages) => {
+      // Act
+      const told = toldOf(changed, field)
+
+      // Assert
+      expect(told).toEqual(messages)
+    },
+  )
+
+  it('should be what the rule of an update says, for a change that names no property', () => {
+    // Act
+    const result = parseWith(
+      salonUpdateRequestSchema,
+      {},
+      salonMessages.invalidSalonUpdate,
+    )
+
+    // Assert
+    expect(result).toEqual({
+      type: 'error',
+      error: {
+        type: 'validation',
+        message: salonMessages.invalidSalonUpdate,
+        issues: [
+          {
+            field: '',
+            rule: 'custom',
+            message: ruleMessages.atLeastOneProperty,
+          },
+        ],
+      },
+    })
   })
 })

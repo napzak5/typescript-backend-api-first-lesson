@@ -1,3 +1,5 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { format, isValid } from 'date-fns'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
@@ -162,7 +164,13 @@ describe('noRepeatedEntries', () => {
       error: {
         type: 'validation',
         message: 'Invalid',
-        issues: [{ field: '1', rule: 'custom', message: expect.any(String) }],
+        issues: [
+          {
+            field: '1',
+            rule: 'custom',
+            message: ruleMessages.noRepeatedEntry,
+          },
+        ],
       },
     })
   })
@@ -497,7 +505,7 @@ describe('orderedTimeSlot', () => {
           {
             field: 'endTime',
             rule: 'custom',
-            message: 'Must be later than startTime',
+            message: ruleMessages.laterThan('startTime'),
           },
         ],
       },
@@ -525,7 +533,7 @@ describe('calendarDate', () => {
       expect.objectContaining({
         code: 'too_small',
         path: [],
-        message: 'Must not be earlier than 1900-01-01',
+        message: asOneString(ruleMessages.notEarlierThan('1900-01-01')),
       }),
     ])
   })
@@ -538,7 +546,7 @@ describe('calendarDate', () => {
       expect.objectContaining({
         code: 'too_big',
         path: [],
-        message: 'Must not be later than 2999-12-31',
+        message: asOneString(ruleMessages.notLaterThan('2999-12-31')),
       }),
     ])
   })
@@ -590,7 +598,7 @@ describe('momentOfRequest', () => {
     expect(momentOfRequest.safeParse(moment).error?.issues).toEqual([
       expect.objectContaining({
         code: 'too_small',
-        message: 'Must not be earlier than 1900-01-01',
+        message: asOneString(ruleMessages.notEarlierThan('1900-01-01')),
       }),
     ])
   })
@@ -601,7 +609,7 @@ describe('momentOfRequest', () => {
     ).toEqual([
       expect.objectContaining({
         code: 'too_big',
-        message: 'Must not be later than 2999-12-31',
+        message: asOneString(ruleMessages.notLaterThan('2999-12-31')),
       }),
     ])
   })

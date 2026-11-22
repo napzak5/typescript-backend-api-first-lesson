@@ -11,7 +11,7 @@ import {
 } from '../../../__tests__/fixtures/review-fixtures'
 import type { Actor } from '../../../models/auth'
 import type { ReviewResponding } from '../../../repositories/review.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import { RespondToReviewUseCase, type ReviewUseCaseDependencies } from '..'
 
 const databaseDown = Result.error(
@@ -27,7 +27,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.message
+    ? toldIn(result.error.message, 'en')
     : null
 
 const response = { ownerResponse: OWNER_RESPONSE }

@@ -1,4 +1,9 @@
 import { DayOfWeekTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import {
+  ruleMessages,
+  salonMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { parseISO } from 'date-fns'
 import { z } from 'zod'
 import {
@@ -45,7 +50,7 @@ const openingHoursSchema = z
       context.issues.push({
         code: 'custom',
         path: ['dayOfWeek'],
-        message: `Must be the day of the week of ${date}`,
+        message: asOneString(salonMessages.dayOfWeekOf(date)),
         input: dayOfWeek,
       })
     }
@@ -56,7 +61,7 @@ const openingHoursSchema = z
       context.issues.push({
         code: 'custom',
         path: ['openTime'],
-        message: 'Required unless the day is a holiday without opening hours',
+        message: asOneString(salonMessages.timesUnlessHoliday),
         input: openTime,
       })
     }
@@ -64,7 +69,7 @@ const openingHoursSchema = z
       context.issues.push({
         code: 'custom',
         path: ['closeTime'],
-        message: 'Required unless the day is a holiday without opening hours',
+        message: asOneString(salonMessages.timesUnlessHoliday),
         input: closeTime,
       })
     }
@@ -77,7 +82,7 @@ const openingHoursSchema = z
       context.issues.push({
         code: 'custom',
         path: ['closeTime'],
-        message: 'Must be later than openTime',
+        message: asOneString(ruleMessages.laterThan('openTime')),
         input: closeTime,
       })
     }
@@ -91,7 +96,7 @@ const openingHoursListSchema = z.array(openingHoursSchema).check((context) => {
       context.issues.push({
         code: 'custom',
         path: [index, 'date'],
-        message: 'Must not repeat a date of an earlier entry',
+        message: asOneString(salonMessages.noRepeatedDate),
         input: entry.date,
       })
     }
@@ -126,14 +131,14 @@ const businessHoursSchema = storedBusinessHoursSchema
         (period) => parseISO(period.startDate) <= parseISO(period.endDate),
         {
           path: ['endDate'],
-          message: 'Must not be earlier than startDate',
+          message: asOneString(ruleMessages.notEarlierThan('startDate')),
         },
       )
       .nullable(),
   })
   .refine((hours) => !hours.isClosed || hours.operatingSlots.length === 0, {
     path: ['operatingSlots'],
-    message: 'Must be empty when the day is closed',
+    message: asOneString(salonMessages.emptyWhenClosed),
   })
 
 /** The regular week holds one entry per day of the week. */
@@ -146,7 +151,7 @@ const businessHoursListSchema = z
         context.issues.push({
           code: 'custom',
           path: [index, 'dayOfWeek'],
-          message: 'Must not repeat the day of an earlier entry',
+          message: asOneString(salonMessages.noRepeatedDay),
           input: entry.dayOfWeek,
         })
       }
@@ -177,7 +182,7 @@ export const salonCreateRequestSchema = z.strictObject({
   timezone: timeZoneName,
   currency: z
     .string()
-    .regex(/^[A-Z]{3}$/, 'Must be a three-letter ISO 4217 currency code'),
+    .regex(/^[A-Z]{3}$/, asOneString(salonMessages.currencyCode)),
   // The column keeps two decimal places.
   taxRate: z.number().min(0).max(100).multipleOf(0.01),
   isActive: z.boolean(),

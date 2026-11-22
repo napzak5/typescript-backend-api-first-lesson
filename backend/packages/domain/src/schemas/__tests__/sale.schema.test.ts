@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import { BOOKING_ID, CUT_ID } from '../../__tests__/fixtures/booking-fixtures'
@@ -10,7 +11,7 @@ import {
   TREATMENT_ID,
 } from '../../__tests__/fixtures/sale-fixtures'
 import { STAFF_MEMBER_ID } from '../../__tests__/fixtures/staff-fixtures'
-import { type DomainError, parseWith } from '../../shared'
+import { type DomainError, parseWith, toldIn } from '../../shared'
 import {
   MAX_SALE_DETAILS,
   saleCalculateRequestSchema,
@@ -61,7 +62,10 @@ const messagesOf = (input: unknown): Record<string, string> => {
     result.type === 'error' ? result.error : null
   return error?.type === 'validation'
     ? Object.fromEntries(
-        error.issues.map(({ field, message }) => [field, message]),
+        error.issues.map(({ field, message }) => [
+          field,
+          toldIn(message, 'en'),
+        ]),
       )
     : {}
 }
@@ -923,7 +927,7 @@ describe('saleUpdateRequestSchema', () => {
     expect(parseUpdate({})).toMatchObject({
       type: 'error',
       error: {
-        issues: [{ message: 'At least one property must be specified' }],
+        issues: [{ message: ruleMessages.atLeastOneProperty }],
       },
     })
   })

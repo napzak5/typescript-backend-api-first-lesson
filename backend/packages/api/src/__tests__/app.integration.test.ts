@@ -446,8 +446,8 @@ describe('the language of an error', () => {
       'Resource not found',
     ],
     [
-      'a value that breaks a rule',
-      (app) => request(app).get(`${SALONS}?limit=0`),
+      'a value that breaks a rule of a request whose headline is in English alone',
+      (app) => request(app).post(`${AUTH}/login`).send({}),
       400,
       'Validation failed',
     ],
@@ -490,6 +490,206 @@ describe('the language of an error', () => {
         ...unasked.body,
         title,
         correlationId: response.headers['x-request-id'],
+        timestamp: expect.any(String),
+      })
+    },
+  )
+
+  it.each<
+    [
+      string,
+      (app: Express, authorization: string, salonId: string) => Test,
+      [string, string],
+      [string, string, string, string][],
+    ]
+  >([
+    [
+      'a salon that breaks rules',
+      (app, authorization) =>
+        request(app)
+          .post(SALONS)
+          .set('Authorization', authorization)
+          .send({
+            ...salon,
+            name: ' ',
+            timezone: '+09:00',
+            currency: 'yen',
+            taxRate: 'ten',
+            colour: 'red',
+          }),
+      ['Invalid salon', 'サロンの内容が正しくありません'],
+      [
+        [
+          'name',
+          'invalid_format',
+          'Must not be blank',
+          '空白だけにはできません',
+        ],
+        [
+          'timezone',
+          'custom',
+          'Must be the name of a time zone, such as Asia/Tokyo',
+          'Asia/Tokyo のような、タイムゾーンの名前にしてください',
+        ],
+        [
+          'currency',
+          'invalid_format',
+          'Must be a three-letter ISO 4217 currency code',
+          'ISO 4217 の 3 文字の通貨コードにしてください',
+        ],
+        [
+          'taxRate',
+          'invalid_type',
+          'Invalid input: expected number, received string',
+          '無効な入力: 数値が期待されましたが、stringが入力されました',
+        ],
+        [
+          'colour',
+          'unrecognized_keys',
+          'Unknown property',
+          'このプロパティは指定できません',
+        ],
+      ],
+    ],
+    [
+      'opening hours that break rules',
+      (app, authorization) =>
+        request(app)
+          .post(SALONS)
+          .set('Authorization', authorization)
+          .send({
+            ...salon,
+            openingHours: [
+              {
+                dayOfWeek: 'tuesday',
+                date: '2026-11-16',
+                openTime: '19:00',
+                closeTime: '10:00',
+                isHoliday: false,
+                holidayName: null,
+                notes: null,
+              },
+            ],
+          }),
+      ['Invalid salon', 'サロンの内容が正しくありません'],
+      [
+        [
+          'openingHours.0.dayOfWeek',
+          'custom',
+          'Must be the day of the week of 2026-11-16',
+          '2026-11-16 の曜日にしてください',
+        ],
+        [
+          'openingHours.0.closeTime',
+          'custom',
+          'Must be later than openTime',
+          'openTime より後にしてください',
+        ],
+      ],
+    ],
+    [
+      'a change of a salon that names no property',
+      (app, authorization, salonId) =>
+        request(app)
+          .patch(`${SALONS}/${salonId}`)
+          .set('Authorization', authorization)
+          .send({}),
+      ['Invalid salon update', 'サロンの変更の内容が正しくありません'],
+      [
+        [
+          '',
+          'custom',
+          'At least one property must be specified',
+          'プロパティを 1 つ以上指定してください',
+        ],
+      ],
+    ],
+    [
+      'a search for salons with a limit below one',
+      (app) => request(app).get(`${SALONS}?limit=0`),
+      ['Invalid salon search', 'サロンの検索の条件が正しくありません'],
+      [
+        [
+          'limit',
+          'too_small',
+          'Too small: expected number to be >=1',
+          '小さすぎる値: numberは1以上である必要があります',
+        ],
+      ],
+    ],
+    [
+      'a search for salons whose parameters are of no type of theirs',
+      (app) => request(app).get(`${SALONS}?limit=ten&isActive=maybe`),
+      ['Invalid salon search', 'サロンの検索の条件が正しくありません'],
+      [
+        ['limit', 'invalid_format', 'Must be a number', '数にしてください'],
+        [
+          'isActive',
+          'invalid_value',
+          'Must be true or false',
+          'true か false にしてください',
+        ],
+      ],
+    ],
+    [
+      'what is no ID of a salon',
+      (app) => request(app).get(`${SALONS}/latest`),
+      ['Invalid salon ID', 'サロンの ID が正しくありません'],
+      [['id', 'invalid_format', 'Invalid UUID', '無効なUUID']],
+    ],
+    [
+      'what is no ID of a salon, in the path of what belongs to a salon',
+      (app) => request(app).get(`${SALONS}/latest/service-categories`),
+      ['Invalid salon ID', 'サロンの ID が正しくありません'],
+      [['salonId', 'invalid_format', 'Invalid UUID', '無効なUUID']],
+    ],
+  ])(
+    'should tell %s in English to who asks for no language, and in Japanese to who asks for Japanese',
+    async (_case, send, [detail, detailInJapanese], broken) => {
+      // Arrange
+      const app = createTestApp()
+      const asAdmin = await signInAsAdmin(app, getTestDb())
+      const created = await request(app)
+        .post(SALONS)
+        .set('Authorization', asAdmin)
+        .send({ ...salon, email: 'first@example.com' })
+      const salonId: string = created.body.data.id
+
+      // Act
+      const unasked = await send(app, asAdmin, salonId)
+      const asked = await send(app, asAdmin, salonId).set(
+        'Accept-Language',
+        'ja',
+      )
+
+      // Assert
+      expect(unasked.status).toBe(400)
+      expect(unasked.headers['content-language']).toBe('en')
+      expect(unasked.body).toMatchObject({
+        title: 'Validation failed',
+        detail,
+        errors: broken.map(([field, rule, message]) => ({
+          field,
+          rule,
+          message,
+          value: null,
+          constraint: null,
+        })),
+      })
+      expect(asked.status).toBe(400)
+      expect(asked.headers['content-language']).toBe('ja')
+      expect(asked.body).toEqual({
+        ...unasked.body,
+        title: '入力の内容が正しくありません',
+        detail: detailInJapanese,
+        errors: broken.map(([field, rule, _message, messageInJapanese]) => ({
+          field,
+          rule,
+          message: messageInJapanese,
+          value: null,
+          constraint: null,
+        })),
+        correlationId: asked.headers['x-request-id'],
         timestamp: expect.any(String),
       })
     },

@@ -22,7 +22,7 @@ import type {
   ReportDismissal,
   ReviewReportList,
 } from '../../../repositories/review-report.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   ReportReviewUseCase,
   type ReviewUseCaseDependencies,
@@ -54,7 +54,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.message
+    ? toldIn(result.error.message, 'en')
     : null
 
 /** A report for a reason of the list, with what it is about. */

@@ -1,4 +1,5 @@
 import type { ApiSalonSearchRequest } from '@beauty-salon-backend/domain'
+import { salonMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   booleanParameter,
@@ -17,5 +18,5 @@ export const decodeSalonSearchQuery = queryDecoder(
   }) satisfies z.ZodType<
     Pick<ApiSalonSearchRequest, 'limit' | 'minRating' | 'isActive' | 'features'>
   >,
-  'Invalid salon search',
+  salonMessages.invalidSalonSearch,
 )

@@ -5,6 +5,7 @@ import {
   type Omit,
   Result,
 } from '@beauty-salon-backend/utility'
+import { salonMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 
@@ -17,7 +18,7 @@ const salonIdParameterSchema = z.object({ id: salonIdSchema })
 
 export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
   Result.map(
-    parseWith(salonIdParameterSchema, { id }, 'Invalid salon ID'),
+    parseWith(salonIdParameterSchema, { id }, salonMessages.invalidSalonId),
     (parameters) => parameters.id,
   )
 
@@ -31,7 +32,7 @@ export const parseSalonIdOfPath = (
   salonId: unknown,
 ): Result<SalonId, DomainError> =>
   Result.map(
-    parseWith(salonIdOfPathSchema, { salonId }, 'Invalid salon ID'),
+    parseWith(salonIdOfPathSchema, { salonId }, salonMessages.invalidSalonId),
     (parameters) => parameters.salonId,
   )
 

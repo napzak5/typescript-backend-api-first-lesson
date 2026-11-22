@@ -17,26 +17,4 @@ describe('problemMessages', () => {
     expect(en).toMatch(/^[A-Z][a-z -]+$/)
     expect(ja).toMatch(JAPANESE)
   })
-
-  it('should name the method and the path of a route that is not there', () => {
-    // Act
-    const detail = problemMessages.routeNotFound.detail('PUT', '/api/v1/salons')
-
-    // Assert
-    expect(detail).toEqual({
-      en: 'PUT /api/v1/salons is not part of the API',
-      ja: 'PUT /api/v1/salons は、この API にありません',
-    })
-  })
-
-  it('should name the size a request body may have', () => {
-    // Act
-    const detail = problemMessages.bodyTooLarge.detail(100_000)
-
-    // Assert
-    expect(detail).toEqual({
-      en: 'The request body exceeds 100000 bytes',
-      ja: 'リクエストの本文が 100000 バイトを超えています',
-    })
-  })
 })

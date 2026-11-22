@@ -24,7 +24,7 @@ import type {
   PointListing,
   PointRecording,
 } from '../../../repositories/point.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   AdjustPointsUseCase,
   EarnPointsUseCase,
@@ -57,7 +57,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.message
+    ? toldIn(result.error.message, 'en')
     : null
 
 /** Those the points ledger is closed to. */

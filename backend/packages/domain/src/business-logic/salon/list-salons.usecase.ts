@@ -1,4 +1,5 @@
 import type { Result } from '@beauty-salon-backend/utility'
+import { salonMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SalonReadMapper } from '../../mappers/read/salon.mapper'
 import { SalonWriteMapper } from '../../mappers/write/salon.mapper'
 import type { ApiPage } from '../../models/page'
@@ -20,7 +21,7 @@ export class ListSalonsUseCase {
     const request = parseWith(
       salonSearchRequestSchema,
       input,
-      'Invalid salon search',
+      salonMessages.invalidSalonSearch,
     )
     if (request.type === 'error') {
       return request

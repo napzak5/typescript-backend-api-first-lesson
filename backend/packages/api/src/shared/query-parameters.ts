@@ -1,5 +1,11 @@
-import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
+import {
+  type DomainError,
+  parseWith,
+  type Told,
+} from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 
 /**
@@ -10,11 +16,11 @@ import { z } from 'zod'
 
 export const numberParameter = z
   .string()
-  .regex(/^-?\d+(?:\.\d+)?$/, 'Must be a number')
+  .regex(/^-?\d+(?:\.\d+)?$/, asOneString(ruleMessages.number))
   .transform(Number)
 
 export const booleanParameter = z
-  .enum(['true', 'false'], 'Must be true or false')
+  .enum(['true', 'false'], asOneString(ruleMessages.trueOrFalse))
   .transform((value) => value === 'true')
 
 /** `features=a` and `features=a&features=b` are both lists. */
@@ -31,6 +37,6 @@ export const listParameter = z.union([
  * answers is checked as a whole by the schema of the use case.
  */
 export const queryDecoder =
-  (schema: z.ZodType, message: string) =>
+  (schema: z.ZodType, message: Told) =>
   (query: unknown): Result<unknown, DomainError> =>
     parseWith(schema, query, message)

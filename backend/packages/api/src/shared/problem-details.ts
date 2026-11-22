@@ -1,4 +1,8 @@
-import type { DomainError } from '@beauty-salon-backend/domain'
+import {
+  type DomainError,
+  isToldInEveryLanguage,
+  toldIn,
+} from '@beauty-salon-backend/domain'
 import type { components } from '@beauty-salon-backend/generated'
 import {
   type Locale,
@@ -45,17 +49,26 @@ export type ProblemContext = Pick<
 const LANGUAGE_OF_THE_DOMAIN: Locale = 'en'
 
 /**
- * The language a problem is told in: the one that was asked for, but for
- * the errors whose detail the domain writes. The domain writes in one
- * language, and such an error is told in that language as a whole: no
- * answer is in two languages, and `Content-Language` names the one it is in.
+ * The language a problem is told in: the one that was asked for, where
+ * every text of the error is written in it. A text that the domain writes
+ * in one language alone is told in that language, and so is the error as a
+ * whole: no answer is in two languages, and `Content-Language` names the
+ * one it is in. A validation error is written in every language when its
+ * headline and what it says of each broken rule are.
  * Every kind of error is named, so a new one does not compile until it is
  * said who writes its detail.
  */
 export const languageOf = (error: ApiError, asked: Locale): Locale =>
   match(error)
+    .with({ type: 'validation' }, ({ message, issues }) =>
+      [message, ...issues.map((issue) => issue.message)].every(
+        isToldInEveryLanguage,
+      )
+        ? asked
+        : LANGUAGE_OF_THE_DOMAIN,
+    )
     .with(
-      { type: P.union('validation', 'notFound', 'alreadyExists', 'conflict') },
+      { type: P.union('notFound', 'alreadyExists', 'conflict') },
       () => LANGUAGE_OF_THE_DOMAIN,
     )
     .with(
@@ -89,12 +102,12 @@ const toProblem = (error: ApiError, language: Locale): Problem => {
         type: 'urn:beauty-salon:problem:validation',
         title: said(problemMessages.validation.title),
         status: 400,
-        detail: message,
+        detail: toldIn(message, language),
         code: '2001',
         errors: issues.map(({ field, rule, message: issueMessage }) => ({
           field,
           rule,
-          message: issueMessage,
+          message: toldIn(issueMessage, language),
           value: null,
           constraint: null,
         })),

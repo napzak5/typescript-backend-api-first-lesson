@@ -32,7 +32,7 @@ import type {
   SlotDay,
   SlotOccupancy,
 } from '../../../repositories/available-slot.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   type AvailableSlotUseCaseDependencies,
   CheckAvailableSlotUseCase,
@@ -72,7 +72,10 @@ const refusalOf = (
   result: Result<unknown, DomainError>,
 ): { message: string; rules: string[] } | string =>
   result.type === 'error' && result.error.type === 'validation'
-    ? { message: result.error.message, rules: brokenRules(result.error) }
+    ? {
+        message: toldIn(result.error.message, 'en'),
+        rules: brokenRules(result.error),
+      }
     : result.type
 
 const MILLISECONDS_OF_NINE_HOURS = 9 * 60 * 60 * 1000

@@ -19,7 +19,7 @@ import type {
   PaymentMethodRemoval,
   PaymentMethodUpdate,
 } from '../../../repositories/payment-method.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   CreatePaymentMethodUseCase,
   DeletePaymentMethodUseCase,
@@ -81,7 +81,10 @@ const messagesOf = (
 ): Record<string, string> =>
   result.type === 'error' && result.error.type === 'validation'
     ? Object.fromEntries(
-        result.error.issues.map(({ field, message }) => [field, message]),
+        result.error.issues.map(({ field, message }) => [
+          field,
+          toldIn(message, 'en'),
+        ]),
       )
     : {}
 

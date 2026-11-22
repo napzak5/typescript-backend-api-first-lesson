@@ -24,7 +24,7 @@ import type {
   CustomerPreferencesUpdate,
   ICustomerPreferencesRepository,
 } from '../../../repositories/customer-preferences.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   type CustomerPreferencesUseCaseDependencies,
   GetCustomerPreferencesUseCase,
@@ -59,7 +59,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.message
+    ? toldIn(result.error.message, 'en')
     : null
 
 const finding = (

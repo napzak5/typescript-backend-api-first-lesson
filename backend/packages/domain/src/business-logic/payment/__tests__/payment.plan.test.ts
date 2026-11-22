@@ -12,6 +12,7 @@ import {
   paymentRefundRequestSchema,
   saleProcessRequestSchema,
 } from '../../../schemas/payment.schema'
+import { toldIn } from '../../../shared'
 import {
   type MoneyOfPayment,
   type PaymentMethodOfPayment,
@@ -117,7 +118,9 @@ const rulesOf = (
 const messagesOf = (
   planned: ReturnType<typeof planPayment> | ReturnType<typeof planRefund>,
 ): string[] =>
-  planned.type === 'invalid' ? planned.issues.map(({ message }) => message) : []
+  planned.type === 'invalid'
+    ? planned.issues.map(({ message }) => toldIn(message, 'en'))
+    : []
 
 describe('paymentStatusOf', () => {
   it.each<[string, MoneyOfPayment[], string]>([

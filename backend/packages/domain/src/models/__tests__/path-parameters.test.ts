@@ -1,3 +1,4 @@
+import { salonMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
@@ -67,6 +68,17 @@ describe('parseSalonIdOfPath', () => {
       ])
     },
   )
+
+  it('should refuse what is no ID of a salon under the headline of the ID of a salon', () => {
+    // Act
+    const result = parseSalonIdOfPath('latest')
+
+    // Assert
+    expect(result).toMatchObject({
+      type: 'error',
+      error: { type: 'validation', message: salonMessages.invalidSalonId },
+    })
+  })
 
   it.each(notText)('reports %s under salonId', (_case, salonId) => {
     expect(rulesOf(parseSalonIdOfPath(salonId))).toEqual([

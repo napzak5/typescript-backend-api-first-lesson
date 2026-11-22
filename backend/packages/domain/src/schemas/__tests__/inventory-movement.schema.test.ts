@@ -1,3 +1,4 @@
+import { textOfOneString } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { z } from 'zod'
 import {
@@ -15,12 +16,17 @@ const brokenBy = (schema: z.ZodType, value: unknown): string[] =>
     .safeParse(value)
     .error?.issues.map(({ path, code }) => `${path.join('.')}:${code}`) ?? []
 
-/** What a value is told, as `path:message`. */
+/**
+ * What a value is told, as `path:message`, in English: the message of a
+ * rule that is written in every language is one string of them all.
+ */
 const messagesOf = (schema: z.ZodType, value: unknown): string[] =>
   schema
     .safeParse(value)
-    .error?.issues.map(({ path, message }) => `${path.join('.')}:${message}`) ??
-  []
+    .error?.issues.map(
+      ({ path, message }) =>
+        `${path.join('.')}:${textOfOneString(message)?.en ?? message}`,
+    ) ?? []
 
 const movement = (overrides: Record<string, unknown> = {}) => ({
   ...inventoryMovementRequest(),

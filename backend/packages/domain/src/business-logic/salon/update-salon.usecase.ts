@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { salonMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SalonReadMapper } from '../../mappers/read/salon.mapper'
 import { SalonWriteMapper } from '../../mappers/write/salon.mapper'
 import type { Actor } from '../../models/auth'
@@ -33,7 +34,7 @@ export class UpdateSalonUseCase {
     const request = parseWith(
       salonUpdateRequestSchema,
       input,
-      'Invalid salon update',
+      salonMessages.invalidSalonUpdate,
     )
     if (request.type === 'error') {
       return request

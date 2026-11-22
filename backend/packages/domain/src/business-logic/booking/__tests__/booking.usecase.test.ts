@@ -29,7 +29,7 @@ import type {
   BookingCreation,
   IBookingRepository,
 } from '../../../repositories/booking.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   type BookingUseCaseDependencies,
   CreateBookingUseCase,
@@ -55,7 +55,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.message
+    ? toldIn(result.error.message, 'en')
     : null
 
 /** A booking whose start cannot be turned into a response. */

@@ -18,6 +18,7 @@ import {
 } from '../../../__tests__/fixtures/staff-fixtures'
 import type { ApiSaleCreateRequest } from '../../../models/sale'
 import { saleCreateRequestSchema } from '../../../schemas/sale.schema'
+import { toldIn } from '../../../shared'
 import {
   planSale,
   type SaleOrigin,
@@ -119,7 +120,10 @@ const messagesOf = (
   const result = plan(request, references)
   return result.type === 'invalid'
     ? Object.fromEntries(
-        result.issues.map(({ field, message }) => [field, message]),
+        result.issues.map(({ field, message }) => [
+          field,
+          toldIn(message, 'en'),
+        ]),
       )
     : {}
 }

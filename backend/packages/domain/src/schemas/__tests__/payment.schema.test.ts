@@ -7,7 +7,7 @@ import {
 import { PAYMENT_METHOD_ID } from '../../__tests__/fixtures/payment-method-fixtures'
 import { PAYMENT_ID } from '../../__tests__/fixtures/sale-fixtures'
 import { parsePaymentId } from '../../models/payment'
-import { parseWith } from '../../shared'
+import { parseWith, toldIn } from '../../shared'
 import {
   paymentRefundRequestSchema,
   saleProcessRequestSchema,
@@ -29,7 +29,10 @@ const messagesOf = (
   const result = parseWith(schema, input, 'Invalid')
   return result.type === 'error' && result.error.type === 'validation'
     ? Object.fromEntries(
-        result.error.issues.map(({ field, message }) => [field, message]),
+        result.error.issues.map(({ field, message }) => [
+          field,
+          toldIn(message, 'en'),
+        ]),
       )
     : {}
 }

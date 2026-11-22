@@ -29,7 +29,7 @@ import type {
   CustomerBookingReschedule,
   IBookingRepository,
 } from '../../../repositories/booking.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   CancelCustomerBookingUseCase,
   CreateCustomerBookingUseCase,
@@ -57,7 +57,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.message
+    ? toldIn(result.error.message, 'en')
     : null
 
 /** The message of a conflict; null for anything else. */

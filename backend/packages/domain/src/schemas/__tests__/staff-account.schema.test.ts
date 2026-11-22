@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { brokenRules } from '../../__tests__/fixtures/fixtures'
 import { parseWith } from '../../shared'
@@ -25,9 +26,7 @@ describe('staffAccountUpdateRequestSchema', () => {
       type: 'error',
       error: {
         type: 'validation',
-        issues: [
-          { field: '', message: 'At least one property must be specified' },
-        ],
+        issues: [{ field: '', message: ruleMessages.atLeastOneProperty }],
       },
     })
   })
