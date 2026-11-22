@@ -64,7 +64,7 @@ const StatisticsPart = ({ salon, services }: StatisticsPartProps) => {
       return
     }
     setErrors(undefined)
-    const next: Period = filled.request
+    const next: Period = filled.value
     if (periodQueryOf(next).toString() === periodQueryOf(period).toString()) {
       // The same days again: whoever sends it wants what there is now
       void read.refetch()

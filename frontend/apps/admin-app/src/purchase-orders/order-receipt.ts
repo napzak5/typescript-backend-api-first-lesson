@@ -1,3 +1,7 @@
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsOrderStatusType,
   ModelsPurchaseOrderItem,
@@ -5,14 +9,16 @@ import type {
   ModelsPurchaseOrderReceiveRequest,
   ModelsPurchaseOrderResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
-import { match } from 'ts-pattern'
 import {
+  aboutTheAttempt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
 import { levelOf } from '../products/product-form'
+import { hundredthsOf } from '../products/quantity'
 import { itemQuantityNameOf, orderStatusNameOf } from './order-format'
 import type { OrderReceipt } from './purchase-orders-api'
 
@@ -56,9 +62,6 @@ const NONE_RECEIVED =
 const NOTES_KEPT =
   'いまの納品のメモは、入荷では消せません。そのまま残すか、書き換えてください。'
 
-/** A quantity in hundredths: a whole number, as the API compares quantities to two decimals */
-const hundredthsOf = (quantity: number): number => Math.round(quantity * 100)
-
 /** What an item of the form holds: nothing when it is not received */
 type ReceivedRow =
   | { type: 'received'; item: ModelsPurchaseOrderReceivedItem }
@@ -81,11 +84,6 @@ const receivedRowOf = (values: FormData, item: ReceivableItem): ReceivedRow => {
         item: { inventoryId: item.inventoryId, quantity },
       }
 }
-
-/** What the form shows of a text: blank shows as nothing */
-const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
 /**
  * The goods that came, from the form, with what the API checks of them:
  * at least one item, each more than none and no more than it ordered.
@@ -95,11 +93,11 @@ const shownText = (text: string | null): string | null =>
 export const readOrderReceipt = (
   values: FormData,
   order: Pick<ModelsPurchaseOrderResponse, 'items' | 'deliveryNotes'>,
-): Read<ModelsPurchaseOrderReceiveRequest> => {
+): FormRead<ModelsPurchaseOrderReceiveRequest> => {
   const items = receivableItemsOf(order.items)
   const read = items.map((item) => receivedRowOf(values, item))
-  const notes = nullIfBlank(textOf(values, 'deliveryNotes'))
-  const kept = shownText(order.deliveryNotes)
+  const notes = textOrNull(textOf(values, 'deliveryNotes'))
+  const kept = textOrNull(order.deliveryNotes)
   const errors = {
     ...Object.fromEntries(
       read.flatMap((row) =>
@@ -117,7 +115,7 @@ export const readOrderReceipt = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       items: read.flatMap((row) => (row.type === 'received' ? [row.item] : [])),
       deliveryNotes: notes === kept ? null : notes,
     },
@@ -156,28 +154,26 @@ export const afterOrderReceipt = (
     .returnType<FormSays>()
     // The form sends what the API takes: a value it refused says nothing a
     // person could correct
-    .with({ type: 'invalid' }, () => ({
-      message: '入力した内容を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
-    .with({ type: 'rowsChanged' }, () => ({
-      message:
+    .with({ type: 'invalid' }, () => aboutTheAttempt(CHECK_THE_VALUES_MESSAGE))
+    .with({ type: 'rowsChanged' }, () =>
+      aboutTheAttempt(
         '明細の在庫の行のどれかが、その間に削除されました。発注を読み直しました。届いた数量を確かめて、もう一度記録してください。',
-      errors: {},
-    }))
-    .with({ type: 'conflict' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'conflict' }, () =>
+      aboutTheAttempt(
         '入荷を記録できませんでした。発注がその間に変わったか、入荷すると在庫数が 99,999,999.99 を超える行があります。発注を読み直しました。',
-      errors: {},
-    }))
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、この発注の入荷を記録できません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、この発注の入荷を記録できません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '入荷を記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()

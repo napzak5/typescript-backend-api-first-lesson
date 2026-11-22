@@ -1,12 +1,19 @@
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsServiceBulkUpdateRequest,
   ModelsServiceCategoryResponse,
   ModelsServiceResponse,
   ModelsServiceUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { textOf } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  type FormSays,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import type { Option } from '../customers/customer-format'
 import { LEVELS } from '../staff/staff-format'
 import type { ServicesChange } from './menu-api'
@@ -17,7 +24,7 @@ import {
   menuSectionsOf,
   SERVICE_STATUSES,
 } from './menu-format'
-import { CATEGORY_GONE, CHECK_AGAIN, FORBIDDEN_MESSAGE } from './service-form'
+import { CATEGORY_GONE, FORBIDDEN_MESSAGE } from './service-form'
 
 /*
  * The form that gives several services of the menu the same values: which
@@ -78,7 +85,7 @@ const chosen = <Value extends string>(
 
 /** What a change of several services asks for, or what is wrong with the form. */
 export type ServicesChangeRead =
-  | { type: 'valid'; request: ModelsServiceBulkUpdateRequest }
+  | { type: 'valid'; value: ModelsServiceBulkUpdateRequest }
   | { type: 'invalid'; says: FormSays }
 
 /**
@@ -127,7 +134,7 @@ export const readServicesChange = (values: FormData): ServicesChangeRead => {
     }
   }
 
-  return { type: 'valid', request: { serviceIds, updates } }
+  return { type: 'valid', value: { serviceIds, updates } }
 }
 
 /** What a refusal of the API says: the category that was removed meanwhile at its control, anything else above the form. */
@@ -157,21 +164,17 @@ export const afterServicesChange = (
               ({ field }) => field === 'updates.categoryId',
             )
               ? undefined
-              : CHECK_AGAIN,
+              : CHECK_THE_VALUES_MESSAGE,
             errors: { categoryId: CATEGORY_GONE },
           }
-        : { message: CHECK_AGAIN, errors: {} },
+        : aboutTheAttempt(CHECK_THE_VALUES_MESSAGE),
     )
-    .with({ type: 'servicesGone' }, () => ({
-      message: SERVICES_GONE,
-      errors: {},
-    }))
-    .with({ type: 'forbidden' }, () => ({
-      message: FORBIDDEN_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({ message: FAILED, errors: {} }))
+    .with({ type: 'servicesGone' }, () => aboutTheAttempt(SERVICES_GONE))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(FAILED))
     .exhaustive()
 
 /** What is said once the services were changed. */

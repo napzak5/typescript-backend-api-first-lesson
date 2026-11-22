@@ -6,6 +6,7 @@ import {
   ButtonLink,
   Card,
   FormDialog,
+  type FormErrors,
   Note,
   TextArea,
 } from '@beauty-salon-frontend/ui'
@@ -34,7 +35,7 @@ export type OrderStatusActionsProps = {
   /** What went wrong with the cancellation in the dialog */
   message?: string | undefined
   /** What is wrong with the reason of the cancellation */
-  cancellationErrors?: Record<string, string> | undefined
+  cancellationErrors?: FormErrors | undefined
   onAct: (action: OrderMoveAction) => void
   /** The button of the cancellation was pressed: the dialog opens */
   onAsk: () => void

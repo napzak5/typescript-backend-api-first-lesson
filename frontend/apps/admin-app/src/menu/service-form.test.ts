@@ -126,7 +126,7 @@ describe('readServiceEntry', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         categoryId: null,
         name: 'ヘッドスパ',
         description:
@@ -191,7 +191,7 @@ describe('readServiceEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: {
+      value: {
         isPackage: true,
         packageServiceIds: [aDiscountedColour().id, aService().id],
       },
@@ -415,7 +415,7 @@ describe('readServiceEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: { isPackage: false, packageServiceIds: [] },
+      value: { isPackage: false, packageServiceIds: [] },
     })
   })
 })
@@ -446,7 +446,7 @@ describe('readServiceChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         categoryId: colouring().id,
         price: 6000,
         discountPrice: 5800,
@@ -474,7 +474,7 @@ describe('readServiceChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         options: [
           expect.objectContaining({
             name: '前髪カット',
@@ -503,7 +503,7 @@ describe('readServiceChange', () => {
     )
 
     // Assert
-    expect(read).toEqual({ type: 'valid', request: { options: [] } })
+    expect(read).toEqual({ type: 'valid', value: { options: [] } })
   })
 
   it('should send the box and the empty list both when a package is undone', () => {
@@ -536,7 +536,7 @@ describe('readServiceChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: { isPackage: false, packageServiceIds: [] },
+      value: { isPackage: false, packageServiceIds: [] },
     })
   })
 

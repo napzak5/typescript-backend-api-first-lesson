@@ -11,7 +11,9 @@ import {
 import {
   ButtonLink,
   EmptyState,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -20,7 +22,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import {
   everyStockRowKeyOf,
   readEveryStockRow,
@@ -49,8 +50,6 @@ import {
 
 const TITLE = '発注を作る'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 /** What a new order that does not start with suggestions reads of them */
 const NONE_SUGGESTED: EverySuggestion = { type: 'found', items: [] }
 
@@ -67,7 +66,7 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const [searchParams] = useSearchParams()
   const suggested = searchParams.get(SUGGESTED_PARAMETER)
   const rows = useQuery({
@@ -132,9 +131,9 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
       .with({ type: 'tooMuch' }, ({ message }) =>
         setSaid({ message, errors: {} }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        entry.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        entry.mutate(value)
       })
       .exhaustive()
 

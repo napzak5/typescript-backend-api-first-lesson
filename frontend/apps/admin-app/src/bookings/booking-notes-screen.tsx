@@ -5,17 +5,20 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink, Form, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  Form,
+  type FormSays,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { bookingHrefOf } from '../navigation'
-import {
-  afterNotesChange,
-  type FormSays,
-  readNotesChange,
-} from './booking-entry'
+import { afterNotesChange, readNotesChange } from './booking-entry'
 import {
   type BookingRead,
   bookingKeyOf,
@@ -26,8 +29,6 @@ import { BookingNotesFields } from './components/booking-notes-fields/booking-no
 import { WithBooking } from './with-booking'
 
 const TITLE = '要望とメモを変える'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type NotesChangeProps = {
   salon: ModelsSalonResponse
@@ -44,7 +45,7 @@ const NotesChange = ({ salon, booking }: NotesChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const key = bookingKeyOf(booking.id)
   const back = bookingHrefOf(salon.id, booking.id)
   const update = useMutation({
@@ -76,12 +77,12 @@ const NotesChange = ({ salon, booking }: NotesChangeProps) => {
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(back)
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        update.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        update.mutate(value)
       })
       .exhaustive()
 

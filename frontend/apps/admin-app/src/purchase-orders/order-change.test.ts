@@ -63,7 +63,7 @@ describe('readOrderChange', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: { expectedDelivery: '2026-11-30T15:00:00.000Z' },
+      value: { expectedDelivery: '2026-11-30T15:00:00.000Z' },
     })
   })
 
@@ -80,7 +80,7 @@ describe('readOrderChange', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         expectedDelivery: null,
         deliveryNotes: '午前中に、裏口へ。',
         notes: null,
@@ -95,7 +95,7 @@ describe('readOrderChange', () => {
         { expectedDelivery: null, deliveryNotes: null, notes: null },
         TOKYO,
       ),
-    ).toEqual({ type: 'valid', request: { notes: '至急' } })
+    ).toEqual({ type: 'valid', value: { notes: '至急' } })
   })
 
   it('should ask for a day the API takes', () => {

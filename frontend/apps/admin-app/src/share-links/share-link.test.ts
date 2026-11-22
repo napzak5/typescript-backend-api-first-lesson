@@ -66,7 +66,7 @@ describe('readShareLinkEntry', () => {
   it('should ask for a link of the period chosen, without a limit or a password, when those are empty', () => {
     expect(readShareLinkEntry(valuesOf(FILLED), NOW)).toEqual({
       type: 'valid',
-      request: {
+      value: {
         expiresAt: '2026-11-28T01:00:00.000Z',
         maxDownloads: null,
         password: null,
@@ -82,7 +82,7 @@ describe('readShareLinkEntry', () => {
   ])('should take a limit of %s', (_, typed, limit) => {
     expect(
       readShareLinkEntry(valuesOf({ ...FILLED, maxDownloads: typed }), NOW),
-    ).toMatchObject({ type: 'valid', request: { maxDownloads: limit } })
+    ).toMatchObject({ type: 'valid', value: { maxDownloads: limit } })
   })
 
   it.each<[string, string]>([
@@ -113,7 +113,7 @@ describe('readShareLinkEntry', () => {
   ])('should send a password %s as it was typed', (_, password) => {
     expect(
       readShareLinkEntry(valuesOf({ ...FILLED, password }), NOW),
-    ).toMatchObject({ type: 'valid', request: { password } })
+    ).toMatchObject({ type: 'valid', value: { password } })
   })
 
   it.each<[string, string]>([

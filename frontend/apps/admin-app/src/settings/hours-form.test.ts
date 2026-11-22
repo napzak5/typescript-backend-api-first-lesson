@@ -122,12 +122,12 @@ const rowOf = (index: number): string[] =>
 const weekOf = (
   read: ReturnType<typeof readHoursChange>,
 ): ModelsBusinessHours[] | null | undefined =>
-  read.type === 'valid' ? read.request.businessHours : undefined
+  read.type === 'valid' ? read.value.businessHours : undefined
 
 const calendarOf = (
   read: ReturnType<typeof readHoursChange>,
 ): ModelsOpeningHours[] | undefined =>
-  read.type === 'valid' ? read.request.openingHours : undefined
+  read.type === 'valid' ? read.value.openingHours : undefined
 
 const dayOf = (
   week: ModelsBusinessHours[] | null | undefined,
@@ -386,7 +386,7 @@ describe('readHoursChange', () => {
       // Assert
       expect(read).toEqual({
         type: 'valid',
-        request: {
+        value: {
           businessHours: [
             {
               dayOfWeek: 'monday',
@@ -527,7 +527,7 @@ describe('readHoursChange', () => {
       // Assert
       expect(read).toEqual({
         type: 'valid',
-        request: {
+        value: {
           openingHours: [
             PAST,
             HOLIDAY,
@@ -604,7 +604,7 @@ describe('readHoursChange', () => {
       // Assert
       expect(read).toEqual({
         type: 'valid',
-        request: { openingHours: [PAST, HOLIDAY] },
+        value: { openingHours: [PAST, HOLIDAY] },
       })
     })
 
@@ -624,7 +624,7 @@ describe('readHoursChange', () => {
       )
 
       // Assert
-      expect(Object.keys(read.type === 'valid' ? read.request : {})).toEqual([
+      expect(Object.keys(read.type === 'valid' ? read.value : {})).toEqual([
         'businessHours',
         'openingHours',
       ])

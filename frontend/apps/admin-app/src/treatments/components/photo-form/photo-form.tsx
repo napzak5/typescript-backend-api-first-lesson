@@ -5,6 +5,7 @@ import {
   Form,
   type FormErrors,
   FormRow,
+  NO_ERRORS,
   Note,
   Select,
   TextArea,
@@ -34,8 +35,6 @@ export type PhotoFormProps = {
 
 /** Where the focus goes after a row was added or taken away */
 type Focus = { type: 'row'; key: number } | { type: 'add' } | undefined
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The photos to add to a treatment record, a group of controls each: when

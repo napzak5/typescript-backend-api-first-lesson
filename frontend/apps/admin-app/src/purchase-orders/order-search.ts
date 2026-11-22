@@ -1,12 +1,11 @@
 import type { ModelsOrderStatusType } from '@beauty-salon-frontend/api-client'
 import {
   dayAfter,
+  daysErrorsOf,
   isDay,
-  type Read,
   startOfDayAt,
-  textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import { nullIfBlank } from '../bookings/booking-entry'
+import { type FormRead, textOf, textOrNull } from '@beauty-salon-frontend/ui'
 import { orderStatusIn } from './order-format'
 import type { OrderListParams } from './purchase-orders-api'
 
@@ -31,7 +30,7 @@ const LONGEST_SUPPLIER = 255
 
 /** A name of a supplier the API takes: none for a blank one or one too long. */
 const supplierIn = (text: string): string | undefined => {
-  const supplier = nullIfBlank(text)
+  const supplier = textOrNull(text)
 
   return supplier === null || [...supplier].length > LONGEST_SUPPLIER
     ? undefined
@@ -62,35 +61,27 @@ export const orderConditionsIn = (query: URLSearchParams): OrderConditions => {
 
 const SUPPLIER_ERROR = `仕入先は ${LONGEST_SUPPLIER} 文字以内で入力してください。`
 
-const DAY_ERROR = '日付を入力してください。'
-
-const RANGE_ERROR = '終わりの日は、始まりの日と同じか、その後にしてください。'
-
 /** The conditions that were filled in: each may be left empty. */
 export const readOrderConditions = (
   values: FormData,
-): Read<OrderConditions> => {
+): FormRead<OrderConditions> => {
   const status = orderStatusIn(textOf(values, 'status'))
-  const supplier = nullIfBlank(textOf(values, 'supplier'))
+  const supplier = textOrNull(textOf(values, 'supplier'))
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
   const errors = {
     ...(supplier === null || supplierIn(supplier) !== undefined
       ? {}
       : { supplier: SUPPLIER_ERROR }),
-    ...(from === '' || isDay(from) ? {} : { from: DAY_ERROR }),
-    ...(to === '' || isDay(to) ? {} : { to: DAY_ERROR }),
+    ...daysErrorsOf(from, to, 'optional'),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
   }
-  if (from !== '' && to !== '' && to < from) {
-    return { type: 'invalid', errors: { to: RANGE_ERROR } }
-  }
 
   return {
     type: 'valid',
-    request: {
+    value: {
       ...(status === undefined ? {} : { status }),
       ...(supplier === null ? {} : { supplier }),
       ...(from === '' ? {} : { from }),

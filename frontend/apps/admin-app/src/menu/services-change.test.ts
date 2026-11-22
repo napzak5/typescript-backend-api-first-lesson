@@ -82,7 +82,7 @@ describe('readServicesChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         serviceIds: ['b', 'a'],
         updates: {
           categoryId: colouring().id,
@@ -121,7 +121,7 @@ describe('readServicesChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: { serviceIds: [aCategory().id], updates },
+      value: { serviceIds: [aCategory().id], updates },
     })
   })
 
@@ -181,7 +181,7 @@ describe('readServicesChange', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: { serviceIds: ['a'], updates: { isActive: false } },
+      value: { serviceIds: ['a'], updates: { isActive: false } },
     })
   })
 })

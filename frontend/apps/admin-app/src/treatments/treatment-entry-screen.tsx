@@ -16,8 +16,10 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   ButtonLink,
+  type FormSays,
   Link,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -25,7 +27,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { bookingKeyOf } from '../bookings/bookings-api'
 import {
   Unchangeable,
@@ -54,8 +55,6 @@ import {
 } from './treatments-api'
 
 const TITLE = '施術記録を書く'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type EntryProps = {
   salon: ModelsSalonResponse
@@ -89,7 +88,7 @@ const TreatmentEntry = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const [refusal, setRefusal] = useState<Refusal>()
   const alert = useRef<HTMLDivElement>(null)
   const back = bookingHrefOf(salon.id, booking.id)
@@ -151,9 +150,9 @@ const TreatmentEntry = ({
       setSaid({ message: undefined, errors: read.errors })
       return
     }
-    setSaid(NOTHING_SAID)
+    setSaid(NOTHING_TO_SAY)
     setRefusal(undefined)
-    creation.mutate(read.request)
+    creation.mutate(read.value)
   }
 
   return (

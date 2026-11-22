@@ -6,6 +6,7 @@ import {
   Dialog,
   FormDialog,
   type FormErrors,
+  NO_ERRORS,
   RadioGroup,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -39,8 +40,6 @@ export type ChosenCustomersProps = {
   /** The removal was confirmed */
   onRemove: () => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * What can be done to the customers chosen in the ledger, all at once: a

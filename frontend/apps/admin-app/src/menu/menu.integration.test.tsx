@@ -437,7 +437,7 @@ describe('the menu, against the API', () => {
 
     // Assert
     expect(
-      await screen.findByText('変更はありませんでした。'),
+      await screen.findByText('変更された項目はありません。'),
     ).toBeInTheDocument()
     await menuHeading()
     expect(await storedCategoriesOf(TOKYO)).toEqual(before)

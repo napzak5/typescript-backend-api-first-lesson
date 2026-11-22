@@ -2,6 +2,7 @@ import { EARLIEST_DAY, LATEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   FilterForm,
   type FormErrors,
+  NO_ERRORS,
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
@@ -14,8 +15,6 @@ export type DayChoiceProps = {
   /** Called with the values of the form when it is sent */
   onSubmit: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The day whose sales are shown. Like the period of the reports, it

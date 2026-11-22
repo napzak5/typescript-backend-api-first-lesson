@@ -3,6 +3,7 @@ import {
   countNarrowing,
   FilterForm,
   type FormErrors,
+  NO_ERRORS,
   Select,
   TextField,
   useFilterValues,
@@ -29,8 +30,6 @@ const valuesOf = ({ type, from, to }: MovementConditions): Values => ({
   from: from ?? '',
   to: to ?? '',
 })
-
-const NO_ERRORS: FormErrors = {}
 
 /** The conditions of the sheet that narrow the list: its button counts them */
 const COUNTED: readonly (keyof Values)[] = ['type', 'from', 'to']

@@ -13,6 +13,7 @@ import { useSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
   ButtonLink,
+  type FormErrors,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
@@ -97,9 +98,7 @@ const OrderDetails = ({ salon, order, staff }: OrderDetailsProps) => {
     session.type === 'signedIn' && mayApproveOrders(session.user.role)
   const [asking, setAsking] = useState(false)
   const [said, setSaid] = useState<Said>()
-  const [cancellationErrors, setCancellationErrors] = useState<
-    Record<string, string>
-  >({})
+  const [cancellationErrors, setCancellationErrors] = useState<FormErrors>({})
   const statusHeading = useRef<HTMLHeadingElement>(null)
   /**
    * When the order was last changed, as the screen showed it when an
@@ -201,9 +200,9 @@ const OrderDetails = ({ salon, order, staff }: OrderDetailsProps) => {
             .with({ type: 'invalid' }, ({ errors }) =>
               setCancellationErrors(errors),
             )
-            .with({ type: 'valid' }, ({ request }) => {
+            .with({ type: 'valid' }, ({ value }) => {
               setCancellationErrors({})
-              act({ type: 'cancel', request })
+              act({ type: 'cancel', request: value })
             })
             .exhaustive()
         }

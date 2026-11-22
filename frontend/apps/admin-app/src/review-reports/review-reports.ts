@@ -6,9 +6,9 @@ import type {
 import {
   dayAt,
   dayNameOf,
-  textOf,
   timeOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
+import { textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { REASONS } from '../reviews/review-actions'
 import type { ReviewRemoval } from '../reviews/reviews-api'

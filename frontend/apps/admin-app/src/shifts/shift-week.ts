@@ -144,3 +144,25 @@ export const shiftOf = (row: ModelsStaffSchedule | undefined): Shift =>
       notes: off.notes,
       once: !off.isRecurring,
     }))
+
+/*
+ * What the forms of the days of a week share: the opening hours of a salon
+ * and the schedule of a member, both written by the day of the week and by
+ * the date.
+ */
+
+/** What is said at the end of a break that has a start only. */
+export const NO_BREAK_END =
+  '休憩の終わりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。'
+
+/** What is said at the start of a break that has an end only. */
+export const NO_BREAK_START =
+  '休憩の始まりの時刻も入力してください。休憩がないときは、始まりも終わりも空にします。'
+
+/** The rows of a form that dates are written at (`dates.0.date`, …), by their numbers. */
+export const dateRowsIn = (values: FormData): number[] =>
+  [...values.keys()].flatMap((name) => {
+    const found = /^dates\.(\d+)\.date$/.exec(name)
+
+    return found?.[1] === undefined ? [] : [Number(found[1])]
+  })

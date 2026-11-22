@@ -1,23 +1,25 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryResponse,
   ModelsPurchaseOrderCreateRequest,
   ModelsPurchaseOrderItemCreateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { isDay, startOfDayAt } from '@beauty-salon-frontend/salon-screens'
 import {
-  isDay,
-  type Read,
-  startOfDayAt,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
-import { match } from 'ts-pattern'
-import {
+  aboutTheAttempt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-  yenOf,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
+import { yenOf } from '../bookings/booking-entry'
 import { levelOf } from '../products/product-form'
+import { hundredthsOf } from '../products/quantity'
 import type { OrderEntry } from './purchase-orders-api'
 
 /*
@@ -58,20 +60,16 @@ export const quantityControlOf = (inventoryId: string): string =>
 export const unitPriceControlOf = (inventoryId: string): string =>
   `unitPrice.${inventoryId}`
 
-/** A quantity in hundredths: a whole number, as the API holds it to two decimals */
-const hundredthsOf = (quantity: number): bigint =>
-  BigInt(Math.round(quantity * 100))
-
 /**
  * What an item comes to, as the API works it out: its quantity times its
  * unit price, rounded half up to the yen, exactly.
  */
 const itemTotalOf = (quantity: number, unitPrice: number): bigint =>
-  (hundredthsOf(quantity) * BigInt(unitPrice) + 50n) / 100n
+  (BigInt(hundredthsOf(quantity)) * BigInt(unitPrice) + 50n) / 100n
 
 /** The largest unit price at which an item of the quantity still comes to no more than an amount holds. */
 const largestUnitPriceOf = (quantity: number): bigint =>
-  (BigInt(MOST_YEN + 1) * 100n - 51n) / hundredthsOf(quantity)
+  (BigInt(MOST_YEN + 1) * 100n - 51n) / BigInt(hundredthsOf(quantity))
 
 /** What a row of the form holds: nothing when it is not ordered */
 type OrderedRow =
@@ -144,7 +142,7 @@ export const taxAt = (subtotal: number, taxRate: number): number =>
 
 /** What the form gives: an order, what is wrong with its fields, or amounts too large for one order */
 export type OrderRead =
-  | Read<ModelsPurchaseOrderCreateRequest>
+  | FormRead<ModelsPurchaseOrderCreateRequest>
   | { type: 'tooMuch'; message: string }
 
 /** The name of the supplier, as the form holds it */
@@ -153,7 +151,7 @@ type Supplier =
   | { type: 'wrong'; error: string }
 
 const supplierOf = (text: string): Supplier => {
-  const name = nullIfBlank(text)
+  const name = textOrNull(text)
   if (name === null) {
     return { type: 'wrong', error: SUPPLIER_MISSING }
   }
@@ -238,20 +236,18 @@ export const readOrderEntry = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       salonId: salon.id,
       supplier: supplier.name,
       items,
       taxAmount,
       shippingCost,
       expectedDelivery,
-      paymentTerms: nullIfBlank(textOf(values, 'paymentTerms')),
-      notes: nullIfBlank(textOf(values, 'notes')),
+      paymentTerms: textOrNull(textOf(values, 'paymentTerms')),
+      notes: textOrNull(textOf(values, 'notes')),
     },
   }
 }
-
-const CHECK_THE_VALUES = '入力した内容を確かめて、もう一度お試しください。'
 
 /** The errors of the fields of the order itself, by the name of the field and of its control */
 const FIELD_ERRORS: Record<string, string> = {
@@ -299,24 +295,25 @@ export const afterOrderEntry = (
       const message = values.some(({ field }) => field === 'items')
         ? TOO_MUCH
         : said.length < values.length
-          ? CHECK_THE_VALUES
+          ? CHECK_THE_VALUES_MESSAGE
           : undefined
 
       return { message, errors: Object.fromEntries(said) }
     })
-    .with({ type: 'rowsChanged' }, () => ({
-      message:
+    .with({ type: 'rowsChanged' }, () =>
+      aboutTheAttempt(
         '発注する在庫の行のどれかが、その間に削除されました。在庫の行を読み直しました。数量を確かめて、もう一度作ってください。',
-      errors: {},
-    }))
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、このサロンの発注を作れません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、このサロンの発注を作れません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '発注を作れませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()

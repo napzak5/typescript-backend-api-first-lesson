@@ -68,7 +68,7 @@ describe('readProfileChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         certifications: [],
         yearsOfExperience: null,
         bio: '指名のお客様が多いです。',
@@ -126,7 +126,7 @@ describe('readProfileChange', () => {
 
     // Assert
     expect(imageUrl).toHaveLength(500)
-    expect(read).toEqual({ type: 'valid', request: { imageUrl } })
+    expect(read).toEqual({ type: 'valid', value: { imageUrl } })
   })
 })
 

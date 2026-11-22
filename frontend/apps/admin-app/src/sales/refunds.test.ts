@@ -60,7 +60,7 @@ describe('readRefund', () => {
     // Act, Assert
     expect(readRefund(formOf(entries), payment, salon.currency)).toEqual({
       type: 'valid',
-      request: { refundAmount, refundReason },
+      value: { refundAmount, refundReason },
     })
   })
 

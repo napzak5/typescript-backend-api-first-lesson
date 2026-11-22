@@ -735,7 +735,7 @@ describe('the treatment records, against the API', () => {
 
     // Assert
     await screen.findByRole('table', { name: '使った商材の一覧' })
-    expect(notifications()).toContain('変更はありませんでした。')
+    expect(notifications()).toContain('変更された項目はありません。')
     expect(await storedTreatmentOf(bookingId)).toEqual(before)
   })
 

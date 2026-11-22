@@ -7,14 +7,15 @@ import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { customerPointsHrefOf } from '../navigation'
 import { readSale, saleKeyOf } from '../sales/sales-api'
 import { PointEntryForm } from './components/point-entry-form/point-entry-form'
@@ -43,8 +44,6 @@ import { WithCustomer } from './with-customer'
 
 const TITLE = 'ポイントを記録する'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 type PointEntryProps = {
   salon: ModelsSalonResponse
   customer: ModelsCustomerResponse
@@ -68,7 +67,7 @@ const PointEntry = ({ salon, customer, balance, sale }: PointEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const kinds = pointKindsFor(
     session.type === 'signedIn' ? session.user.role : '',
   )
@@ -109,8 +108,8 @@ const PointEntry = ({ salon, customer, balance, sale }: PointEntryProps) => {
       setSaid({ message: undefined, errors: read.errors })
       return
     }
-    setSaid(NOTHING_SAID)
-    record.mutate(read.request)
+    setSaid(NOTHING_TO_SAY)
+    record.mutate(read.value)
   }
 
   return (

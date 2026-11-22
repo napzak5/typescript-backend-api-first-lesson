@@ -62,7 +62,7 @@ describe('readStaffEntry', () => {
   it('should read every value of a member, as the API takes them', () => {
     expect(readStaffEntry(formOf())).toEqual({
       type: 'valid',
-      request: fields,
+      value: fields,
     })
   })
 
@@ -91,7 +91,7 @@ describe('readStaffEntry', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         ...fields,
         lastNameKana: null,
         firstNameKana: null,
@@ -126,7 +126,7 @@ describe('readStaffEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: {
+      value: {
         baseSalary: 280000,
         commissionRate: 12.5,
         maxConcurrentBookings: 2,
@@ -378,7 +378,7 @@ describe('readStaffChange', () => {
     // Assert
     expect(change).toEqual({
       type: 'valid',
-      request: {
+      value: {
         displayName: 'MISAKI',
         position: null,
         specialties: ['カット', 'カラー', 'パーマ'],
@@ -399,7 +399,7 @@ describe('readStaffChange', () => {
     // Assert
     expect(change).toMatchObject({
       type: 'valid',
-      request: {
+      value: {
         lastName: '田中',
         lastNameKana: 'サトウ',
         firstNameKana: 'ケン',
@@ -421,7 +421,7 @@ describe('readStaffChange', () => {
   it('should let the account change anything else of its own member', () => {
     expect(
       readStaffChange(formOf({ position: 'オーナー' }), aStaffMember(), true),
-    ).toEqual({ type: 'valid', request: { position: 'オーナー' } })
+    ).toEqual({ type: 'valid', value: { position: 'オーナー' } })
   })
 
   it('should leave an inactive member of the account inactive without a word', () => {

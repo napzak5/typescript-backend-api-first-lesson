@@ -70,7 +70,7 @@ describe('readMovement', () => {
       readMovement(movementForm(values), colourLot, colour, EVERY_KIND),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         inventoryId: colourLot.id,
         transactionType: values.transactionType,
         quantity,
@@ -98,7 +98,7 @@ describe('readMovement', () => {
       ),
     ).toMatchObject({
       type: 'valid',
-      request: { quantity: 2, unitCost: 1200, reason: '数え直したら多かった' },
+      value: { quantity: 2, unitCost: 1200, reason: '数え直したら多かった' },
     })
   })
 
@@ -198,7 +198,7 @@ describe('readMovement', () => {
         colour,
         EVERY_KIND,
       ),
-    ).toMatchObject({ type: 'valid', request: { unitCost: 2_147_483_647 } })
+    ).toMatchObject({ type: 'valid', value: { unitCost: 2_147_483_647 } })
   })
 
   it('should take out no more than what is not reserved', () => {
@@ -220,7 +220,7 @@ describe('readMovement', () => {
         shampoo,
         EVERY_DAY,
       ),
-    ).toMatchObject({ type: 'valid', request: { quantity: -6 } })
+    ).toMatchObject({ type: 'valid', value: { quantity: -6 } })
   })
 
   it.each<ModelsInventoryTransactionType>([

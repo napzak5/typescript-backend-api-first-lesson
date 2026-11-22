@@ -1,18 +1,24 @@
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonCreateRequest,
   ModelsSalonResponse,
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { linesOf } from '@beauty-salon-frontend/preferences'
-import { textOf } from '@beauty-salon-frontend/salon-screens'
-import type { ChoiceOption } from '@beauty-salon-frontend/ui'
+import {
+  aboutTheAttempt,
+  type ChoiceOption,
+  errorAt,
+  type FormSays,
+  same,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
-import {
-  type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
 import { emailError, phoneError } from '../customers/customer-form'
 import { tagsIn } from '../customers/customer-ledger'
 import { numberOf } from '../treatments/treatment-form'
@@ -50,7 +56,6 @@ const TAX_RATE_ERROR =
   '税率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。'
 const EMAIL_TAKEN =
   'このメールアドレスは、ほかのサロンが使っています。ほかのメールアドレスを入力してください。'
-const CHECK_AGAIN = '入力した内容を確かめて、もう一度お試しください。'
 const FORBIDDEN_MESSAGE =
   'このサロンの設定は、変えられません。設定を変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。'
 const FAILED =
@@ -164,13 +169,6 @@ const optionalError = (
   message: string,
 ): string | undefined =>
   text !== null && text.length > longest ? message : undefined
-
-/** A control and what is wrong with it, or nothing. */
-const errorAt = (
-  control: string,
-  message: string | undefined,
-): [string, string][] => (message === undefined ? [] : [[control, message]])
-
 const linkError = (link: string | null): string | undefined =>
   link === null || linkSchema.safeParse(link).success ? undefined : URL_ERROR
 
@@ -189,7 +187,7 @@ type Whole =
 
 const readWhole = (values: FormData): Whole => {
   const optional = (name: string): string | null =>
-    nullIfBlank(textOf(values, name))
+    textOrNull(textOf(values, name))
   const required = (name: string): string => textOf(values, name).trim()
   const name = required('name')
   const nameKana = optional('nameKana')
@@ -284,41 +282,32 @@ const readWhole = (values: FormData): Whole => {
     },
   }
 }
-
-/** A text of the salon as the form reads it back */
-const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
 /** The information of the salon as the form reads it back, to tell what was changed. */
 const shownOf = (salon: ModelsSalonResponse): SalonValues => ({
   name: salon.name.trim(),
-  nameKana: shownText(salon.nameKana),
-  description: shownText(salon.description),
-  postalCode: shownText(salon.postalCode),
+  nameKana: textOrNull(salon.nameKana),
+  description: textOrNull(salon.description),
+  postalCode: textOrNull(salon.postalCode),
   prefecture: salon.prefecture.trim(),
   city: salon.city.trim(),
   address: salon.address.trim(),
-  building: shownText(salon.building),
+  building: textOrNull(salon.building),
   latitude: salon.latitude,
   longitude: salon.longitude,
   phoneNumber: salon.phoneNumber.trim(),
-  alternativePhone: shownText(salon.alternativePhone),
+  alternativePhone: textOrNull(salon.alternativePhone),
   email: salon.email.trim(),
-  websiteUrl: shownText(salon.websiteUrl),
-  logoUrl: shownText(salon.logoUrl),
+  websiteUrl: textOrNull(salon.websiteUrl),
+  logoUrl: textOrNull(salon.logoUrl),
   imageUrls: linesOf(salon.imageUrls.join('\n')),
   features: tagsIn(salon.features.join('、')),
   amenities: tagsIn(salon.amenities.join('、')),
   taxRate: salon.taxRate,
   isActive: salon.isActive,
 })
-
-const same = (one: unknown, other: unknown): boolean =>
-  JSON.stringify(one) === JSON.stringify(other)
-
 /** What a change of a salon asks for, nothing when nothing was changed, or what is wrong with the form. */
 export type SalonChangeRead =
-  | { type: 'valid'; request: ModelsSalonUpdateRequest }
+  | { type: 'valid'; value: ModelsSalonUpdateRequest }
   | { type: 'unchanged' }
   | { type: 'invalid'; errors: Record<string, string> }
 
@@ -389,12 +378,12 @@ export const readSalonChange = (
 
   return Object.keys(request).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request }
+    : { type: 'valid', value: request }
 }
 
 /** What a salon to be added asks for, or what is wrong with the form. */
 export type SalonEntryRead =
-  | { type: 'valid'; request: ModelsSalonCreateRequest }
+  | { type: 'valid'; value: ModelsSalonCreateRequest }
   | { type: 'invalid'; errors: Record<string, string> }
 
 /**
@@ -424,7 +413,7 @@ export const readSalonEntry = (values: FormData): SalonEntryRead => {
 
   return {
     type: 'valid',
-    request: {
+    value: {
       ...read.values,
       timezone,
       currency,
@@ -450,10 +439,14 @@ const saysAfter =
         message: undefined,
         errors: { email: EMAIL_TAKEN },
       }))
-      .with({ type: 'invalid' }, () => ({ message: CHECK_AGAIN, errors: {} }))
-      .with({ type: 'forbidden' }, () => ({ message: forbidden, errors: {} }))
-      .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-      .with({ type: 'failed' }, () => ({ message: failed, errors: {} }))
+      .with({ type: 'invalid' }, () =>
+        aboutTheAttempt(CHECK_THE_VALUES_MESSAGE),
+      )
+      .with({ type: 'forbidden' }, () => aboutTheAttempt(forbidden))
+      .with({ type: 'tooManyRequests' }, () =>
+        aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      )
+      .with({ type: 'failed' }, () => aboutTheAttempt(failed))
       .exhaustive()
 
 /** What the form says after the API did not change the salon. */

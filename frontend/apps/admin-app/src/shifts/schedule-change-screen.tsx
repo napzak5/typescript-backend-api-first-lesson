@@ -6,6 +6,9 @@ import type {
 import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -13,7 +16,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { scheduleHrefOf } from '../navigation'
 import { ScheduleForm } from './components/schedule-form/schedule-form'
 import {
@@ -29,8 +31,6 @@ import {
 import { type ScheduleOf, usePlansShifts, WithSchedule } from './with-schedule'
 
 const TITLE = '勤務スケジュールを直す'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type ScheduleChangeProps = {
   salon: ModelsSalonResponse
@@ -50,7 +50,7 @@ const ScheduleChange = ({ salon, schedule }: ScheduleChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   /** The schedule the form is sent against: the one it opened with, or the one another account wrote meanwhile */
   const [opened, setOpened] = useState<ModelsStaffSchedule[]>(schedule.rows)
   const today = dayAt(new Date(), salon.timezone)
@@ -93,12 +93,12 @@ const ScheduleChange = ({ salon, schedule }: ScheduleChangeProps) => {
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(back)
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        save.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        save.mutate(value)
       })
       .exhaustive()
 

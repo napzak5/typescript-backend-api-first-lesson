@@ -12,8 +12,10 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   EmptyState,
+  type FormSays,
   LoadingIndicator,
   moreOf,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -26,7 +28,6 @@ import {
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { attachmentHrefOf } from '../navigation'
 import { afterUploading, readChosenFile } from './attachment-file'
 import {
@@ -41,8 +42,6 @@ import { useUploaderName } from './use-uploader-name'
 
 const TITLE = 'ファイル'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 /**
  * The form of an upload. The file chosen is kept as it is chosen, and
  * checked as the API checks it when the form is sent. After an upload the
@@ -53,7 +52,7 @@ const UploadPart = ({ salonId }: { salonId: string }) => {
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [chosen, setChosen] = useState<File | undefined>(undefined)
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   /** How many files were uploaded: the form is drawn anew, empty, after each */
   const [uploads, setUploads] = useState(0)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -70,7 +69,7 @@ const UploadPart = ({ salonId }: { salonId: string }) => {
       match(outcome)
         .with({ type: 'uploaded' }, ({ attachment }) => {
           setChosen(undefined)
-          setSaid(NOTHING_SAID)
+          setSaid(NOTHING_TO_SAY)
           setUploads((count) => count + 1)
           void queryClient.invalidateQueries({
             queryKey: attachmentsKeyOf(salonId),
@@ -103,7 +102,7 @@ const UploadPart = ({ salonId }: { salonId: string }) => {
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'valid' }, ({ file, contentType }) => {
-        setSaid(NOTHING_SAID)
+        setSaid(NOTHING_TO_SAY)
         upload.mutate({ file, contentType })
       })
       .exhaustive()
@@ -118,7 +117,7 @@ const UploadPart = ({ salonId }: { salonId: string }) => {
       onSubmit={submit}
       onChoose={(file) => {
         setChosen(file)
-        setSaid(NOTHING_SAID)
+        setSaid(NOTHING_TO_SAY)
       }}
     />
   )

@@ -406,7 +406,9 @@ describe('the reviews of a salon', () => {
     await user.click(screen.getByRole('button', { name: CHANGE }))
 
     // Assert
-    expect(await screen.findByText('変更はありませんでした。')).toBeVisible()
+    expect(
+      await screen.findByText('変更された項目はありません。'),
+    ).toBeVisible()
     await heading(EXCELLENT)
     expect(await storedReviewOf(EXCELLENT)).toEqual(before)
   })

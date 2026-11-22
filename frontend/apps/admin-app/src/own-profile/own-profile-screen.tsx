@@ -6,7 +6,10 @@ import type {
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   Card,
+  type FormSays,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -14,7 +17,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { ProfileForm } from './components/profile-form/profile-form'
 import { ProfileRecord } from './components/profile-record/profile-record'
 import {
@@ -25,8 +27,6 @@ import {
   UNAVAILABLE,
 } from './profile-api'
 import { afterProfileSave, readProfileChange, SAVED } from './profile-form'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 /** What an administrator is told: no member of a salon is theirs */
 const NO_PROFILE_OF_AN_ADMINISTRATOR =
@@ -55,7 +55,7 @@ type Opened = { profile: ModelsStaffProfileResponse; saves: number }
 const Loaded = ({ profile }: LoadedProps) => {
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const [opened, setOpened] = useState<Opened>({ profile, saves: 0 })
   const heading = useRef<HTMLHeadingElement>(null)
 
@@ -93,12 +93,12 @@ const Loaded = ({ profile }: LoadedProps) => {
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        setSaid(NOTHING_SAID)
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        setSaid(NOTHING_TO_SAY)
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        save.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        save.mutate(value)
       })
       .exhaustive()
 

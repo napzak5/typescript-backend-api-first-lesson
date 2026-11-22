@@ -5,6 +5,8 @@ import type {
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
+  NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -12,7 +14,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { staffLedgerHrefOf, staffMemberHrefOf } from '../navigation'
 import { StaffForm } from './components/staff-form/staff-form'
 import {
@@ -27,8 +28,6 @@ import { StaffLedgerForbidden, useKeepsStaffLedger } from './with-staff-member'
 
 const TITLE = 'スタッフを登録する'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 type StaffEntryProps = { salon: ModelsSalonResponse }
 
 /**
@@ -40,7 +39,7 @@ const StaffEntry = ({ salon }: StaffEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsStaffCreateRequest) =>
       attemptStaffEntry(salon.id, request),
@@ -76,9 +75,9 @@ const StaffEntry = ({ salon }: StaffEntryProps) => {
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        entry.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        entry.mutate(value)
       })
       .exhaustive()
 

@@ -1,4 +1,6 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
@@ -11,17 +13,17 @@ import {
   dayAt,
   isDay,
   momentOf,
-  type Read,
-  textOf,
   timeOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
-import { match } from 'ts-pattern'
 import {
+  aboutTheAttempt,
+  type FormRead,
   type FormSays,
-  NOT_ON_THE_CLOCK,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
+import { NOT_ON_THE_CLOCK } from '../bookings/booking-entry'
 import { NO_CASHIER } from './checkout'
 
 /*
@@ -57,7 +59,9 @@ export const saleMomentOf = (
 })
 
 /** What a change of a sale asks for: nothing, when nothing was changed. */
-export type SaleChange = Read<ModelsSaleUpdateRequest> | { type: 'unchanged' }
+export type SaleChange =
+  | FormRead<ModelsSaleUpdateRequest>
+  | { type: 'unchanged' }
 
 /** The sale as the form was opened with it */
 type Changed = Pick<ModelsSaleResponse, 'staffId' | 'saleTime' | 'notes'>
@@ -80,7 +84,7 @@ export const readSaleChange = (
   const staffId = member === NO_CASHIER || member === '' ? null : member
   const date = textOf(values, 'saleDate')
   const time = textOf(values, 'saleTime')
-  const notes = nullIfBlank(textOf(values, 'notes'))
+  const notes = textOrNull(textOf(values, 'notes'))
   const shown = saleMomentOf(sale.saleTime, timezone)
   const moved = date !== shown.date || time !== shown.time
   const saleTime =
@@ -105,12 +109,12 @@ export const readSaleChange = (
   const changes: ModelsSaleUpdateRequest = {
     ...(staffId === sale.staffId ? {} : { staffId }),
     ...(saleTime === undefined ? {} : { saleTime }),
-    ...(notes === nullIfBlank(sale.notes ?? '') ? {} : { notes }),
+    ...(notes === textOrNull(sale.notes ?? '') ? {} : { notes }),
   }
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /** What came of an attempt to change a sale, after the API was asked why it refused. */
@@ -136,9 +140,7 @@ const changeMessageAt = ({ field, rule }: RefusedValue): string =>
       () =>
         'このスタッフは、その間に削除されたため、選べません。選び直してください。',
     )
-    .otherwise(
-      () => 'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /**
  * What the form that changes a sale says after the API did not change it.
@@ -159,10 +161,7 @@ export const afterSaleChange = (
       )
 
       return {
-        message:
-          atControls.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: atControls.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           atControls
             .toReversed()
@@ -170,21 +169,22 @@ export const afterSaleChange = (
         ),
       }
     })
-    .with({ type: 'undated' }, () => ({
-      message:
+    .with({ type: 'undated' }, () =>
+      aboutTheAttempt(
         'サロンのタイムゾーンが正しくないため、会計日を決められず、会計日時を直せませんでした。サロンの設定を直してください。',
-      errors: {},
-    }))
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、この売上を直せません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+      ),
+    )
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、この売上を直せません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '売上を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /**
@@ -211,15 +211,15 @@ export const whyNoVoid = ({
 }
 
 /** Why a sale is voided, from the form of the dialog: the voided sale stays in the ledger, and says why. */
-export const readVoid = (values: FormData): Read<ModelsSaleVoidRequest> => {
-  const voidReason = nullIfBlank(textOf(values, 'voidReason'))
+export const readVoid = (values: FormData): FormRead<ModelsSaleVoidRequest> => {
+  const voidReason = textOrNull(textOf(values, 'voidReason'))
 
   return voidReason === null
     ? {
         type: 'invalid',
         errors: { voidReason: '取り消しの理由を入力してください。' },
       }
-    : { type: 'valid', request: { voidReason } }
+    : { type: 'valid', value: { voidReason } }
 }
 
 /** What came of an attempt to void a sale, after the API was asked why it refused. */

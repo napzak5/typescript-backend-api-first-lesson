@@ -4,12 +4,17 @@ import type {
   ModelsTreatmentRecordUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  type FormSays,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { treatmentHrefOf } from '../navigation'
 import { TreatmentForm } from './components/treatment-form/treatment-form'
 import {
@@ -27,8 +32,6 @@ import {
 import { type TreatmentContext, WithTreatment } from './with-treatment'
 
 const TITLE = '施術記録を直す'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type TreatmentChangeProps = TreatmentContext & { salon: ModelsSalonResponse }
 
@@ -50,7 +53,7 @@ const TreatmentChange = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const back = treatmentHrefOf(salon.id, record.id)
   const context = { products, bookingDay: booking.bookingDate }
   const change = useMutation({
@@ -91,12 +94,12 @@ const TreatmentChange = ({
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(back)
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        change.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        change.mutate(value)
       })
       .exhaustive()
 

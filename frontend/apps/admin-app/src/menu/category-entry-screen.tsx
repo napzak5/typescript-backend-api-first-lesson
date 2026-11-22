@@ -7,7 +7,9 @@ import type {
 import { salonKeyOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -16,7 +18,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { menuHrefOf } from '../navigation'
 import {
   afterCategoryWrite,
@@ -35,8 +36,6 @@ import {
 import { nextDisplayOrderOf } from './menu-format'
 
 const TITLE = 'カテゴリーを足す'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type CategoryEntryProps = {
   salon: ModelsSalonResponse
@@ -58,7 +57,7 @@ const CategoryEntry = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsServiceCategoryCreateRequest) =>
       addCategory(salon.id, request),
@@ -96,9 +95,9 @@ const CategoryEntry = ({
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        entry.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        entry.mutate(value)
       })
       .exhaustive()
 

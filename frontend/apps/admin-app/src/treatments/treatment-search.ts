@@ -1,4 +1,5 @@
-import { isDay, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import { daysErrorsOf, isDay } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import * as z from 'zod'
 import type { TreatmentConditions } from './treatments-api'
 
@@ -41,10 +42,6 @@ export const treatmentConditionsIn = (
   }
 }
 
-const DAY_ERROR = '日付を入力してください。'
-
-const RANGE_ERROR = '終わりの日は、始まりの日と同じか、その後にしてください。'
-
 /**
  * The conditions that were filled in: each may be left empty. The customer
  * is not a control of the form: it is kept from the address the list was
@@ -52,25 +49,21 @@ const RANGE_ERROR = '終わりの日は、始まりの日と同じか、その�
  */
 export const readTreatmentConditions = (
   values: FormData,
-): Read<TreatmentConditions> => {
+): FormRead<TreatmentConditions> => {
   const staff = textOf(values, 'staff')
   const customer = textOf(values, 'customer')
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
   const errors = {
-    ...(from === '' || isDay(from) ? {} : { from: DAY_ERROR }),
-    ...(to === '' || isDay(to) ? {} : { to: DAY_ERROR }),
+    ...daysErrorsOf(from, to, 'optional'),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
   }
-  if (from !== '' && to !== '' && to < from) {
-    return { type: 'invalid', errors: { to: RANGE_ERROR } }
-  }
 
   return {
     type: 'valid',
-    request: {
+    value: {
       ...(staff === '' ? {} : { staff }),
       ...(customer === '' ? {} : { customer }),
       ...(from === '' ? {} : { from }),

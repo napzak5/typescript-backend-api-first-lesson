@@ -9,7 +9,9 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
@@ -23,7 +25,6 @@ import {
   attachmentsKeyOf,
   readAttachment,
 } from '../attachments/attachments-api'
-import type { FormSays } from '../bookings/booking-entry'
 import { attachmentHrefOf, shareLinkHrefOf } from '../navigation'
 import {
   type Copying,
@@ -41,8 +42,6 @@ import { SharingForbidden, ToTheFile } from './share-link-notices'
 import { issueShareLink, shareLinksKeyOf } from './share-links-api'
 
 const TITLE = '共有リンクを発行する'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 /** Puts a text on the clipboard: `false` where the browser does not let the page write there. */
 const copied = (text: string): Promise<boolean> =>
@@ -68,7 +67,7 @@ type ShareLinkEntryProps = {
  */
 const ShareLinkEntry = ({ salon, attachment }: ShareLinkEntryProps) => {
   const queryClient = useQueryClient()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const [issued, setIssued] = useState<Issued | null>(null)
   const [copying, setCopying] = useState<Copying>('notCopied')
   const heading = useRef<HTMLHeadingElement>(null)
@@ -146,9 +145,9 @@ const ShareLinkEntry = ({ salon, attachment }: ShareLinkEntryProps) => {
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        issue.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        issue.mutate(value)
       })
       .exhaustive()
 

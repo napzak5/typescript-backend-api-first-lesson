@@ -176,7 +176,7 @@ describe('readScheduleChange', () => {
         'dates.0',
       ],
     }
-    expect(change).toEqual({ type: 'valid', request })
+    expect(change).toEqual({ type: 'valid', value: request })
   })
 
   it('should leave out a day of the week the member does not work on and that has no note', () => {
@@ -188,7 +188,7 @@ describe('readScheduleChange', () => {
     )
 
     // Assert
-    expect(change.type === 'valid' && change.request.controls).toEqual([
+    expect(change.type === 'valid' && change.value.controls).toEqual([
       ...WEEKLY_CONTROLS.slice(0, 6),
       undefined,
       undefined,
@@ -214,7 +214,7 @@ describe('readScheduleChange', () => {
     )
 
     // Assert
-    expect(change.type === 'valid' && change.request.rows[0]).toEqual({
+    expect(change.type === 'valid' && change.value.rows[0]).toEqual({
       dayOfWeek: 'monday',
       date: null,
       startTime: null,
@@ -236,7 +236,7 @@ describe('readScheduleChange', () => {
     )
 
     // Assert
-    expect(change.type === 'valid' && change.request.rows.slice(7)).toEqual([
+    expect(change.type === 'valid' && change.value.rows.slice(7)).toEqual([
       aShortSaturday(),
     ])
   })
@@ -250,7 +250,7 @@ describe('readScheduleChange', () => {
     )
 
     // Assert
-    expect(change.type === 'valid' && change.request.rows[0]?.endTime).toBe(
+    expect(change.type === 'valid' && change.value.rows[0]?.endTime).toBe(
       '20:00:30',
     )
   })
@@ -391,7 +391,7 @@ describe('readScheduleChange', () => {
     )
 
     // Assert
-    expect(change.type === 'valid' && change.request.rows.at(-1)).toEqual({
+    expect(change.type === 'valid' && change.value.rows.at(-1)).toEqual({
       ...aShortSaturday(),
       startTime: null,
       endTime: null,

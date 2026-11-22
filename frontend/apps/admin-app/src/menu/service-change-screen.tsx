@@ -12,10 +12,14 @@ import type {
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
+  aboutTheAttempt,
   Button,
   ButtonLink,
   Dialog,
+  type FormSays,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -24,7 +28,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { menuHrefOf, serviceHrefOf } from '../navigation'
 import { readServices, servicesKeyOf } from '../salons/salons-api'
 import { ServiceForm } from './components/service-form/service-form'
@@ -50,8 +53,6 @@ import {
 import { ServiceNotFound } from './service-screen'
 
 const TITLE = 'サービスを直す'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type ServiceChangeProps = {
   salon: ModelsSalonResponse
@@ -80,7 +81,7 @@ const ServiceChange = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const [removing, setRemoving] = useState(false)
   /** What went wrong with a removal that can be made again: said in the dialog */
   const [message, setMessage] = useState<string>()
@@ -136,18 +137,19 @@ const ServiceChange = ({
         .with({ type: 'inUse' }, async () => {
           const now = await readMenuAgain()
           setRemoving(false)
-          setSaid({
-            message: inUseMessageOf(
-              service.name,
-              packagesOf(now ?? services, service.id),
+          setSaid(
+            aboutTheAttempt(
+              inUseMessageOf(
+                service.name,
+                packagesOf(now ?? services, service.id),
+              ),
             ),
-            errors: {},
-          })
+          )
         })
         .with({ type: 'again' }, ({ message: again }) => setMessage(again))
         .with({ type: 'refused' }, ({ message: refused }) => {
           setRemoving(false)
-          setSaid({ message: refused, errors: {} })
+          setSaid(aboutTheAttempt(refused))
         })
         .exhaustive(),
   })
@@ -158,12 +160,12 @@ const ServiceChange = ({
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(page)
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        change.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        change.mutate(value)
       })
       .exhaustive()
 

@@ -83,7 +83,7 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
       return
     }
     setErrors(undefined)
-    const next = productQueryOf(filled.request)
+    const next = productQueryOf(filled.value)
     if (next.toString() === asked) {
       // The same products again: whoever sends it wants what there is now
       void read.refetch()

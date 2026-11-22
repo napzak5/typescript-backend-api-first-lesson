@@ -9,6 +9,7 @@ import {
   FormDialog,
   type FormErrors,
   LoadingIndicator,
+  NO_ERRORS,
   TextArea,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
@@ -64,8 +65,6 @@ export type CustomerErasureProps = {
   /** The calling off was confirmed */
   onCancel: () => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * The request of the customer to have the data held of them erased: what

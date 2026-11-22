@@ -57,7 +57,7 @@ describe('readOrderReceipt', () => {
   it('should receive all that was ordered, and keep the notes left as they were', () => {
     expect(readOrderReceipt(formOf(AS_OPENED), shippedOrder)).toEqual({
       type: 'valid',
-      request: {
+      value: {
         items: [
           { inventoryId: colourLot.id, quantity: 12 },
           { inventoryId: shampooRow.id, quantity: 2.5 },
@@ -80,7 +80,7 @@ describe('readOrderReceipt', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         items: [{ inventoryId: colourLot.id, quantity: 10 }],
         deliveryNotes: '2 本は後日',
       },
@@ -98,7 +98,7 @@ describe('readOrderReceipt', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         items: [
           { inventoryId: colourLot.id, quantity: 12 },
           { inventoryId: shampooRow.id, quantity: 2.5 },

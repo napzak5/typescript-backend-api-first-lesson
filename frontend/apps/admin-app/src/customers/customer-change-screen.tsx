@@ -11,7 +11,10 @@ import type {
 import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -19,7 +22,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { customerHrefOf } from '../navigation'
 import { CustomerForm } from './components/customer-form/customer-form'
 import {
@@ -41,8 +43,6 @@ import { WithCustomer } from './with-customer'
 
 const TITLE = '台帳を直す'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 type CustomerChangeProps = {
   salon: ModelsSalonResponse
   customer: ModelsCustomerResponse
@@ -62,7 +62,7 @@ const CustomerChange = ({ salon, customer, referrer }: CustomerChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const key = customerKeyOf(customer.id)
   const back = customerHrefOf(salon.id, customer.id)
   const today = dayAt(new Date(), salon.timezone)
@@ -103,12 +103,12 @@ const CustomerChange = ({ salon, customer, referrer }: CustomerChangeProps) => {
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(back)
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        change.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        change.mutate(value)
       })
       .exhaustive()
 

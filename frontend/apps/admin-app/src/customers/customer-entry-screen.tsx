@@ -5,6 +5,8 @@ import type {
 import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
+  NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -12,7 +14,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { customerHrefOf, customersHrefOf } from '../navigation'
 import { CustomerForm } from './components/customer-form/customer-form'
 import {
@@ -31,8 +32,6 @@ import { ReferrerChoice } from './referrer-choice'
 
 const TITLE = 'お客様を登録する'
 
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
 type CustomerEntryProps = {
   salon: ModelsSalonResponse
 }
@@ -46,7 +45,7 @@ const CustomerEntry = ({ salon }: CustomerEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsCustomerCreateRequest) =>
       attemptCustomerEntry(request),
@@ -82,9 +81,9 @@ const CustomerEntry = ({ salon }: CustomerEntryProps) => {
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        entry.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        entry.mutate(value)
       })
       .exhaustive()
 

@@ -4,6 +4,7 @@ import {
   Form,
   type FormErrors,
   type FormProps,
+  NO_ERRORS,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -22,8 +23,6 @@ export type OrderChangeFormProps = Pick<
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
   errors?: FormErrors | undefined
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * What of an order is written down as it goes on, opened with what the

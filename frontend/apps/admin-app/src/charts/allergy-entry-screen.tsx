@@ -5,12 +5,16 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  type FormSays,
+  NOTHING_TO_SAY,
+  useNotifications,
+} from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { customerKeyOf, customerNameOf } from '../customers/customers-api'
 import { WithCustomer } from '../customers/with-customer'
 import { chartHrefOf } from '../navigation'
@@ -20,8 +24,6 @@ import { CHART_LISTS } from './charts-api'
 import { AllergyForm } from './components/allergy-form/allergy-form'
 
 const TITLE = 'アレルギーを記録する'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type AllergyEntryProps = {
   salon: ModelsSalonResponse
@@ -37,7 +39,7 @@ const AllergyEntry = ({ salon, customer }: AllergyEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const back = chartHrefOf(salon.id, customer.id)
   const today = dayAt(new Date(), salon.timezone)
   const entry = useMutation({
@@ -87,9 +89,9 @@ const AllergyEntry = ({ salon, customer }: AllergyEntryProps) => {
       .with({ type: 'invalid' }, ({ errors }) =>
         setSaid({ message: undefined, errors }),
       )
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        entry.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        entry.mutate(value)
       })
       .exhaustive()
 

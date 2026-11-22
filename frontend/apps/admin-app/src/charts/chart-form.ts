@@ -1,4 +1,8 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import {
   type ModelsMedicalChartCreateRequest,
   type ModelsMedicalChartResponse,
@@ -6,15 +10,18 @@ import {
   type ModelsPreviousTreatment,
   ModelsTreatmentType,
 } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY, isDay } from '@beauty-salon-frontend/salon-screens'
 import {
-  EARLIEST_DAY,
-  isDay,
-  type Read,
+  aboutTheAttempt,
+  type ChoiceOption,
+  errorAt,
+  type FormRead,
+  type FormSays,
+  same,
   textOf,
-} from '@beauty-salon-frontend/salon-screens'
-import type { ChoiceOption } from '@beauty-salon-frontend/ui'
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { tagsIn } from '../customers/customer-ledger'
 import type { ChartWrite } from './charts-api'
 
@@ -72,15 +79,6 @@ const DATE_TOO_LATE = '施術日は、今日までにしてください。'
 const SALON_NAME_TOO_LONG = `サロンの名前は、${LONGEST_SALON_NAME} 文字までで入力してください。`
 const PRODUCT_NAME_TOO_LONG = `商材の名前は、1 つ ${LONGEST_PRODUCT_NAME} 文字までで入力してください。`
 const TOO_MANY_PRODUCTS = `商材は、${MOST_PRODUCTS} 件までで入力してください。`
-const CHECK_AGAIN = '入力した内容を確かめて、もう一度お試しください。'
-
-/** A text that was filled in, without the spaces around it; nothing as `null`. */
-const textOrNull = (text: string | null): string | null => {
-  const trimmed = (text ?? '').trim()
-
-  return trimmed === '' ? null : trimmed
-}
-
 const treatmentFrom = (value: string): ModelsTreatmentType | undefined =>
   TREATMENTS.find((treatment) => treatment === value)
 
@@ -117,13 +115,6 @@ const dateErrorOf = (date: string, today: string): string | undefined => {
 
   return date > today ? DATE_TOO_LATE : undefined
 }
-
-/** What is wrong with a control, under its name; nothing when nothing is. */
-const errorAt = (
-  control: string,
-  message: string | undefined,
-): [string, string][] => (message === undefined ? [] : [[control, message]])
-
 type RowRead =
   | { type: 'valid'; row: ModelsPreviousTreatment }
   | { type: 'invalid'; errors: [string, string][] }
@@ -172,7 +163,7 @@ type ChartWhole = Omit<ModelsMedicalChartCreateRequest, 'customerId'>
  * as the API refuses it; the names of products are written as tags are,
  * each once.
  */
-const readWhole = (values: FormData, today: string): Read<ChartWhole> => {
+const readWhole = (values: FormData, today: string): FormRead<ChartWhole> => {
   const rows = rowsIn(values, 0).map((filled, index) =>
     readRow(index, filled, today),
   )
@@ -195,7 +186,7 @@ const readWhole = (values: FormData, today: string): Read<ChartWhole> => {
 
   return {
     type: 'valid',
-    request: {
+    value: {
       previousTreatments: rows.flatMap((row) =>
         row.type === 'valid' ? [row.row] : [],
       ),
@@ -212,17 +203,13 @@ export const readChartEntry = (
   values: FormData,
   customerId: string,
   today: string,
-): Read<ModelsMedicalChartCreateRequest> => {
+): FormRead<ModelsMedicalChartCreateRequest> => {
   const read = readWhole(values, today)
 
   return read.type === 'invalid'
     ? read
-    : { type: 'valid', request: { customerId, ...read.request } }
+    : { type: 'valid', value: { customerId, ...read.value } }
 }
-
-const same = (one: unknown, other: unknown): boolean =>
-  JSON.stringify(one) === JSON.stringify(other)
-
 /** The treatments of a chart as the form reads them back. */
 const shownTreatmentsOf = (
   chart: ModelsMedicalChartResponse,
@@ -236,7 +223,7 @@ const shownTreatmentsOf = (
 
 /** What a change of a chart asks for: nothing, when nothing was changed. */
 export type ChartChange =
-  | Read<ModelsMedicalChartUpdateRequest>
+  | FormRead<ModelsMedicalChartUpdateRequest>
   | { type: 'unchanged' }
 
 /**
@@ -253,7 +240,7 @@ export const readChartChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const sent = read.request
+  const sent = read.value
   const changes: ModelsMedicalChartUpdateRequest = {
     ...(same(sent.previousTreatments, shownTreatmentsOf(shown))
       ? {}
@@ -272,7 +259,7 @@ export const readChartChange = (
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 const ROW_FIELD = /^previousTreatments\.(\d+)\.(treatment|date|salonName)$/
@@ -340,20 +327,19 @@ export const afterChartWrite = (
       })
 
       return {
-        message: said.length < values.length ? CHECK_AGAIN : undefined,
+        message:
+          said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
     })
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、カルテを書けません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message: FAILED_WRITES[write],
-      errors: {},
-    }))
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、カルテを書けません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()
 
 /** What is said when the chart was made or changed: 「山田 花子 様のカルテを作りました。」. */

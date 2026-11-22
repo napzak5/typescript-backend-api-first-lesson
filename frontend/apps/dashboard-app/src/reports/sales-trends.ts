@@ -7,8 +7,8 @@ import {
   dayNameOf,
   type Period,
   periodQueryOf,
-  textOf,
 } from '@beauty-salon-frontend/salon-screens'
+import { textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 
 /*

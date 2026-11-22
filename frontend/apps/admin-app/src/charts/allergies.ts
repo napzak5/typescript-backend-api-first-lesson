@@ -1,4 +1,5 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
@@ -9,15 +10,17 @@ import {
   type ModelsCustomerAllergyResponse,
   type ModelsCustomerAllergyUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { EARLIEST_DAY, isDay } from '@beauty-salon-frontend/salon-screens'
 import {
-  EARLIEST_DAY,
-  isDay,
-  type Read,
+  aboutTheAttempt,
+  type BadgeTone,
+  type ChoiceOption,
+  type FormRead,
+  type FormSays,
   textOf,
-} from '@beauty-salon-frontend/salon-screens'
-import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { mayKeepCustomers } from '../customers/customer-history'
 import type { AllergyRemoval, AllergyWrite } from './allergies-api'
 
@@ -97,21 +100,12 @@ const SEVERITY_MISSING = '重篤度を選んでください。'
 const DATE_NOT_A_DAY = '確かめた日を、日付で入力してください。'
 const DATE_TOO_EARLY = '確かめた日は、1900年1月1日以降にしてください。'
 const DATE_TOO_LATE = '確かめた日は、今日までにしてください。'
-const CHECK_AGAIN = '入力した内容を確かめて、もう一度お試しください。'
 
 /** What the form says when the customer has an allergy of the allergen already */
 const ALLERGEN_EXISTS = 'このお客様には、同じアレルゲンの記録があります。'
 
 /** A text written as a day, whether or not it is one the API takes */
 const DAY = /^\d{4}-\d{2}-\d{2}$/
-
-/** A text that was filled in, without the spaces around it; nothing as `null`. */
-const textOrNull = (text: string | null): string | null => {
-  const trimmed = (text ?? '').trim()
-
-  return trimmed === '' ? null : trimmed
-}
-
 const typeFrom = (value: string): ModelsAllergyType | undefined =>
   TYPES.find((type) => type === value)
 
@@ -149,7 +143,7 @@ const allergenErrorOf = (allergen: string): string | undefined => {
 export const readAllergy = (
   values: FormData,
   today: string,
-): Read<ModelsCustomerAllergyCreateRequest> => {
+): FormRead<ModelsCustomerAllergyCreateRequest> => {
   const allergyType = typeFrom(textOf(values, 'allergyType'))
   const allergenName = textOf(values, 'allergenName').trim()
   const severityType = severityFrom(textOf(values, 'severityType'))
@@ -175,7 +169,7 @@ export const readAllergy = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       allergyType,
       allergenName,
       severityType,
@@ -188,7 +182,7 @@ export const readAllergy = (
 
 /** What a change of an allergy asks for: nothing, when nothing was changed. */
 export type AllergyChange =
-  | Read<ModelsCustomerAllergyUpdateRequest>
+  | FormRead<ModelsCustomerAllergyUpdateRequest>
   | { type: 'unchanged' }
 
 /**
@@ -205,7 +199,7 @@ export const readAllergyChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const sent = read.request
+  const sent = read.value
   const changes: ModelsCustomerAllergyUpdateRequest = {
     ...(sent.allergyType === shown.allergyType
       ? {}
@@ -227,7 +221,7 @@ export const readAllergyChange = (
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /** Where the form says what the API refused, and in what words; `undefined` for what it has no control of. */
@@ -278,7 +272,8 @@ export const afterAllergyWrite = (
       })
 
       return {
-        message: said.length < values.length ? CHECK_AGAIN : undefined,
+        message:
+          said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
@@ -287,15 +282,13 @@ export const afterAllergyWrite = (
       message: undefined,
       errors: { allergenName: ALLERGEN_EXISTS },
     }))
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、アレルギーを記録できません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message: FAILED_WRITES[write],
-      errors: {},
-    }))
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、アレルギーを記録できません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()
 
 /** What is said when an allergy was recorded or changed: 「山田 花子 様のアレルギー（PPD）を記録しました。」. */

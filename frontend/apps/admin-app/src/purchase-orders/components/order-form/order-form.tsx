@@ -14,6 +14,7 @@ import {
   FormPart,
   type FormProps,
   FormRow,
+  NO_ERRORS,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -52,8 +53,6 @@ type OrderStart = {
   supplier: string
   quantities: Readonly<Record<string, string>>
 }
-
-const NO_ERRORS: FormErrors = {}
 
 const EMPTY: OrderStart = { supplier: '', quantities: {} }
 

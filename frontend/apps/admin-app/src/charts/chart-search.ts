@@ -1,10 +1,12 @@
 import {
   keywordIn,
   LONGEST_KEYWORD,
-  type Read,
-  textOf,
 } from '@beauty-salon-frontend/salon-screens'
-import type { ChoiceOption } from '@beauty-salon-frontend/ui'
+import {
+  type ChoiceOption,
+  type FormRead,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import type { ChartConditions } from './charts-api'
 
 /*
@@ -42,7 +44,7 @@ const KEYWORD_ERROR = `キーワードは ${LONGEST_KEYWORD} 文字以内で入�
 /** The conditions that were filled in: each may be left empty. */
 export const readChartConditions = (
   values: FormData,
-): Read<ChartConditions> => {
+): FormRead<ChartConditions> => {
   const search = textOf(values, 'search').trim()
   if (search.length > LONGEST_KEYWORD) {
     return { type: 'invalid', errors: { search: KEYWORD_ERROR } }
@@ -51,7 +53,7 @@ export const readChartConditions = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       ...(search === '' ? {} : { search }),
       ...(allergies === undefined ? {} : { allergies }),
     },

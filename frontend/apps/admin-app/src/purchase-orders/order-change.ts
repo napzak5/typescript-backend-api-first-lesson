@@ -1,14 +1,20 @@
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsPurchaseOrderResponse,
   ModelsPurchaseOrderUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { dayAt, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
-import { match } from 'ts-pattern'
+import { dayAt } from '@beauty-salon-frontend/salon-screens'
 import {
+  aboutTheAttempt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
 import { DAY_ERROR, deliveryOf } from './order-entry'
 import type { OrderUpdate } from './purchase-orders-api'
 
@@ -16,11 +22,6 @@ import type { OrderUpdate } from './purchase-orders-api'
  * How the form that changes the day of the delivery and the notes of an
  * order is read, and what it says when the API did not take it.
  */
-
-/** What the form shows of a text: blank shows as nothing */
-const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
 /** The day an order is to be delivered on, as the control of a date holds it: empty when none is set. */
 export const deliveryDayOf = (
   expectedDelivery: string | null,
@@ -36,7 +37,7 @@ export const CLOSED_ORDERS: Record<'delivered' | 'cancelled', string> = {
 
 /** What the form gives: what was changed, nothing, or what is wrong with a field */
 export type OrderChangeRead =
-  | Read<ModelsPurchaseOrderUpdateRequest>
+  | FormRead<ModelsPurchaseOrderUpdateRequest>
   | { type: 'unchanged' }
 
 /**
@@ -56,21 +57,21 @@ export const readOrderChange = (
   if (expectedDelivery === undefined) {
     return { type: 'invalid', errors: { expectedDelivery: DAY_ERROR } }
   }
-  const deliveryNotes = nullIfBlank(textOf(values, 'deliveryNotes'))
-  const notes = nullIfBlank(textOf(values, 'notes'))
+  const deliveryNotes = textOrNull(textOf(values, 'deliveryNotes'))
+  const notes = textOrNull(textOf(values, 'notes'))
   const changes: ModelsPurchaseOrderUpdateRequest = {
     ...(day === deliveryDayOf(order.expectedDelivery, timezone)
       ? {}
       : { expectedDelivery }),
-    ...(deliveryNotes === shownText(order.deliveryNotes)
+    ...(deliveryNotes === textOrNull(order.deliveryNotes)
       ? {}
       : { deliveryNotes }),
-    ...(notes === shownText(order.notes) ? {} : { notes }),
+    ...(notes === textOrNull(order.notes) ? {} : { notes }),
   }
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /**
@@ -92,20 +93,19 @@ export const afterOrderChange = (
 
       return {
         message:
-          atDay && others.length === 0
-            ? undefined
-            : '入力した内容を確かめて、もう一度お試しください。',
+          atDay && others.length === 0 ? undefined : CHECK_THE_VALUES_MESSAGE,
         errors: atDay ? { expectedDelivery: DAY_ERROR } : {},
       }
     })
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、この発注を直せません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、この発注を直せません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '発注を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()

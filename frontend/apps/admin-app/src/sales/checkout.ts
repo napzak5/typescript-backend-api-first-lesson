@@ -1,4 +1,5 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
@@ -11,9 +12,8 @@ import type {
   ModelsSalesDetail,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import { textOf } from '@beauty-salon-frontend/salon-screens'
+import { textOf, textOrNull } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
-import { nullIfBlank } from '../bookings/booking-entry'
 import { GONE_SERVICE } from '../bookings/booking-format'
 
 /*
@@ -228,7 +228,7 @@ export const readCheckout = (values: FormData): CheckoutValues => {
 
   return {
     staffId: staffId === NO_CASHIER || staffId === '' ? null : staffId,
-    notes: nullIfBlank(textOf(values, 'notes')),
+    notes: textOrNull(textOf(values, 'notes')),
   }
 }
 
@@ -322,7 +322,7 @@ export const afterCheckout = (outcome: CheckoutAttempt): CheckoutSays =>
           }
         : {
             type: 'again',
-            message: '入力した内容を確かめて、もう一度お試しください。',
+            message: CHECK_THE_VALUES_MESSAGE,
             errors: { staffId: refusalMessageOf(atStaff) },
           }
     })

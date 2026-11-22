@@ -1,22 +1,27 @@
-import type {
-  Forbidden,
-  NotFound,
-  RefusedValue,
-  Unread,
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  type Forbidden,
+  type NotFound,
+  REFUSED_VALUE_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+  type Unread,
 } from '@beauty-salon-frontend/answers'
 import type {
   ModelsStaffCreateRequest,
   ModelsStaffResponse,
   ModelsStaffUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { isDay, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
-import { match } from 'ts-pattern'
+import { isDay } from '@beauty-salon-frontend/salon-screens'
 import {
+  aboutTheAttempt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-  yenOf,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
+import { yenOf } from '../bookings/booking-entry'
 import {
   emailError,
   isPhoneNumber,
@@ -31,7 +36,6 @@ import {
   introductionChangesOf,
   optionalNumberUpTo,
   readIntroduction,
-  shownText,
   URL_ERROR,
 } from './introduction'
 import { LEVELS } from './staff-format'
@@ -93,9 +97,9 @@ const wholeNumberIn = (
  * Everything the form holds, as the API takes a member: a control that was
  * left empty is `null` where the API allows that.
  */
-const readWhole = (values: FormData): Read<Whole> => {
+const readWhole = (values: FormData): FormRead<Whole> => {
   const text = (name: string): string => textOf(values, name).trim()
-  const optional = (name: string): string | null => nullIfBlank(text(name))
+  const optional = (name: string): string | null => textOrNull(text(name))
   const lastName = text('lastName')
   const firstName = text('firstName')
   const displayName = text('displayName')
@@ -179,7 +183,7 @@ const readWhole = (values: FormData): Read<Whole> => {
 
   return {
     type: 'valid',
-    request: {
+    value: {
       firstName,
       lastName,
       firstNameKana: optional('firstNameKana'),
@@ -191,7 +195,7 @@ const readWhole = (values: FormData): Read<Whole> => {
       staffCode: optional('staffCode'),
       level,
       position: optional('position'),
-      ...introduction.request,
+      ...introduction.value,
       hireDate,
       employmentType: optional('employmentType'),
       baseSalary,
@@ -206,7 +210,7 @@ const readWhole = (values: FormData): Read<Whole> => {
 }
 
 /** A new member, from the form. */
-export const readStaffEntry = (values: FormData): Read<Whole> =>
+export const readStaffEntry = (values: FormData): FormRead<Whole> =>
   readWhole(values)
 
 /**
@@ -225,10 +229,10 @@ const changesOf = (
   ...(sent.firstName === shown.firstName.trim()
     ? {}
     : { firstName: sent.firstName }),
-  ...(sent.lastNameKana === shownText(shown.lastNameKana)
+  ...(sent.lastNameKana === textOrNull(shown.lastNameKana)
     ? {}
     : { lastNameKana: sent.lastNameKana }),
-  ...(sent.firstNameKana === shownText(shown.firstNameKana)
+  ...(sent.firstNameKana === textOrNull(shown.firstNameKana)
     ? {}
     : { firstNameKana: sent.firstNameKana }),
   ...(sent.displayName === shown.displayName.trim()
@@ -238,19 +242,19 @@ const changesOf = (
   ...(sent.phoneNumber === shown.phoneNumber.trim()
     ? {}
     : { phoneNumber: sent.phoneNumber }),
-  ...(sent.alternativePhone === shownText(shown.alternativePhone)
+  ...(sent.alternativePhone === textOrNull(shown.alternativePhone)
     ? {}
     : { alternativePhone: sent.alternativePhone }),
-  ...(sent.staffCode === shownText(shown.staffCode)
+  ...(sent.staffCode === textOrNull(shown.staffCode)
     ? {}
     : { staffCode: sent.staffCode }),
   ...(sent.level === shown.level ? {} : { level: sent.level }),
-  ...(sent.position === shownText(shown.position)
+  ...(sent.position === textOrNull(shown.position)
     ? {}
     : { position: sent.position }),
   ...introductionChangesOf(sent, shown),
   ...(sent.hireDate === shown.hireDate ? {} : { hireDate: sent.hireDate }),
-  ...(sent.employmentType === shownText(shown.employmentType)
+  ...(sent.employmentType === textOrNull(shown.employmentType)
     ? {}
     : { employmentType: sent.employmentType }),
   ...(sent.baseSalary === shown.baseSalary
@@ -275,7 +279,9 @@ const changesOf = (
 })
 
 /** What a change of a member asks for: nothing, when nothing was changed. */
-export type StaffChange = Read<ModelsStaffUpdateRequest> | { type: 'unchanged' }
+export type StaffChange =
+  | FormRead<ModelsStaffUpdateRequest>
+  | { type: 'unchanged' }
 
 /**
  * What was changed in the form: the properties whose values are others
@@ -293,14 +299,14 @@ export const readStaffChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const changes = changesOf(read.request, shown)
+  const changes = changesOf(read.value, shown)
   if (own && changes.isActive === false) {
     return { type: 'invalid', errors: { isActive: OWN_RECORD_STAYS_ACTIVE } }
   }
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /** What came of registering a member, or of changing one, after the API was asked why it refused. */
@@ -356,9 +362,7 @@ const messageAt = (control: string): string =>
   match(control)
     .with('hireDate', () => HIRE_DATE_OUT_OF_RANGE)
     .with('imageUrl', () => URL_ERROR)
-    .otherwise(
-      () => 'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 const DUPLICATES: Record<'email' | 'staffCode', string> = {
   email:
@@ -368,10 +372,9 @@ const DUPLICATES: Record<'email' | 'staffCode', string> = {
 }
 
 /** What a form of the ledger says when the API refuses the account: it does not keep the ledger of the salon. */
-const CANNOT_KEEP_STAFF: FormSays = {
-  message: 'このアカウントでは、このサロンのスタッフ台帳を扱えません。',
-  errors: {},
-}
+const CANNOT_KEEP_STAFF: FormSays = aboutTheAttempt(
+  'このアカウントでは、このサロンのスタッフ台帳を扱えません。',
+)
 
 /** Which write a form makes: the words of its failure differ. */
 export type StaffWrite = 'entry' | 'change'
@@ -399,10 +402,7 @@ export const afterStaffWrite = (
         .filter((control) => CONTROLS.includes(control))
 
       return {
-        message:
-          said.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map((control) => [control, messageAt(control)]),
         ),
@@ -417,9 +417,8 @@ export const afterStaffWrite = (
       errors: { isActive: OWN_RECORD_STAYS_ACTIVE },
     }))
     .with({ type: 'forbidden' }, () => CANNOT_KEEP_STAFF)
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message: FAILED_WRITES[write],
-      errors: {},
-    }))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()

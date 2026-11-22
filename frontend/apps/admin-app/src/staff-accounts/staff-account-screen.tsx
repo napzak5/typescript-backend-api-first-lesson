@@ -18,7 +18,10 @@ import {
   ButtonLink,
   Card,
   Dialog,
+  type FormSays,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -31,7 +34,6 @@ import {
 import { type Ref, useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import {
   staffChangeHrefOf,
   staffMemberHrefOf,
@@ -77,8 +79,6 @@ import { InvitationRecord } from './components/invitation-record/invitation-reco
 import { RoleForm } from './components/role-form/role-form'
 
 const TITLE = 'ログインアカウント'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 /** What the parts of the screen are given: the member, and what the account that keeps them may do */
 type PartProps = {
@@ -126,7 +126,7 @@ const InvitationForm = ({
 }: InvitationFormProps) => {
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const called = staffCalled(member)
   const again = invitation !== undefined
   const invite = useMutation({
@@ -185,8 +185,8 @@ const InvitationForm = ({
             setSaid({ message: undefined, errors: read.errors })
             return
           }
-          setSaid(NOTHING_SAID)
-          invite.mutate(read.request)
+          setSaid(NOTHING_TO_SAY)
+          invite.mutate(read.value)
         }}
       >
         <p>
@@ -330,7 +330,7 @@ const RoleChangeForm = ({
 }: RoleChangeFormProps) => {
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   const called = staffCalled(member)
   const change = useMutation({
     mutationFn: (role: ModelsSalonRoleType) =>
@@ -370,12 +370,12 @@ const RoleChangeForm = ({
             setSaid({ message: undefined, errors: read.errors })
             return
           }
-          setSaid(NOTHING_SAID)
+          setSaid(NOTHING_TO_SAY)
           if (read.type === 'unchanged') {
-            notify({ tone: 'info', message: '変更はありませんでした。' })
+            notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
             return
           }
-          change.mutate(read.request)
+          change.mutate(read.value)
         }}
       >
         <p>ロールの変更は、そのアカウントの次の操作から効きます。</p>

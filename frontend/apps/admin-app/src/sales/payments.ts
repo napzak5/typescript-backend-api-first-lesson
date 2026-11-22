@@ -1,4 +1,5 @@
 import {
+  REFUSED_VALUE_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
@@ -7,13 +8,10 @@ import type {
   ModelsSaleProcessRequest,
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  amountOf,
-  type Read,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf, textOrNull } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
-import { nullIfBlank, yenOf } from '../bookings/booking-entry'
+import { yenOf } from '../bookings/booking-entry'
 import { CARD_METHODS, whyNoPayment } from './sale-format'
 
 /*
@@ -139,16 +137,16 @@ export const readPayment = (
   methods: readonly ModelsPaymentMethodResponse[],
   owed: number,
   currency: string,
-): Read<ModelsSaleProcessRequest> => {
+): FormRead<ModelsSaleProcessRequest> => {
   const method = methods.find(
     ({ id }) => id === textOf(values, 'paymentMethodId'),
   )
   const amount = yenOf(textOf(values, 'amount'))
   const card = method !== undefined && takesCard(method)
   const lastFour = card
-    ? nullIfBlank(textOf(values, 'cardLastFour').normalize('NFKC'))
+    ? textOrNull(textOf(values, 'cardLastFour').normalize('NFKC'))
     : null
-  const brand = card ? nullIfBlank(textOf(values, 'cardBrand')) : null
+  const brand = card ? textOrNull(textOf(values, 'cardBrand')) : null
   const amountError = amountErrorOf(amount, method, owed, currency)
   const errors = {
     ...(method === undefined ? { paymentMethodId: METHOD_ERROR } : {}),
@@ -171,7 +169,7 @@ export const readPayment = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       paymentMethodId: method.id,
       amount,
       cardLastFour: lastFour,
@@ -223,9 +221,7 @@ const messageAt = ({ field, rule }: RefusedValue): string =>
     )
     .with(['cardLastFour', P._], () => LAST_FOUR_ERROR)
     .with(['cardBrand', P._], () => BRAND_ERROR)
-    .otherwise(
-      () => 'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 const CONTROLS: readonly string[] = [
   'paymentMethodId',

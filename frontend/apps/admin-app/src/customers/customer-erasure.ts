@@ -1,10 +1,7 @@
 import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type { ModelsCustomerDeletionRequestCreateRequest } from '@beauty-salon-frontend/api-client'
-import {
-  momentNameAt,
-  type Read,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type {
   ErasureAsking,
@@ -31,7 +28,7 @@ const LONG_REASON = `依頼の理由は、${LONGEST_REASON.toLocaleString('ja-JP
  */
 export const readErasureAsk = (
   values: FormData,
-): Read<ModelsCustomerDeletionRequestCreateRequest> => {
+): FormRead<ModelsCustomerDeletionRequestCreateRequest> => {
   const reason = textOf(values, 'reason')
   if (reason.trim() === '') {
     return { type: 'invalid', errors: { reason: BLANK_REASON } }
@@ -40,7 +37,7 @@ export const readErasureAsk = (
     return { type: 'invalid', errors: { reason: LONG_REASON } }
   }
 
-  return { type: 'valid', request: { reason } }
+  return { type: 'valid', value: { reason } }
 }
 
 /**

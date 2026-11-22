@@ -64,7 +64,7 @@ const ChartSearch = ({ salon }: ChartSearchProps) => {
       return
     }
     setErrors(undefined)
-    const next = chartQueryOf(filled.request)
+    const next = chartQueryOf(filled.value)
     if (next.toString() === asked) {
       // The same charts again: whoever sends it wants what there is now
       void read.refetch()

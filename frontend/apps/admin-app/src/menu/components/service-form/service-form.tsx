@@ -13,6 +13,7 @@ import {
   FormPart,
   type FormProps,
   FormRow,
+  NO_ERRORS,
   Note,
   Select,
   TextArea,
@@ -72,8 +73,6 @@ type Focus =
   | { type: 'addOption' }
   | { type: 'addPackaged' }
   | undefined
-
-const NO_ERRORS: FormErrors = {}
 
 const LEVEL_CHOICES = LEVELS.map((level) => ({
   value: level,

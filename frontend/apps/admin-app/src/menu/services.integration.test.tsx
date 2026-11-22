@@ -335,7 +335,7 @@ describe('the services of the menu, against the API', () => {
 
     // Assert
     expect(
-      await screen.findByText('変更はありませんでした。'),
+      await screen.findByText('変更された項目はありません。'),
     ).toBeInTheDocument()
     await heading('サービスの内容')
     expect(await storedServicesNamed(TOKYO, 'Ladies Cut')).toEqual(before)

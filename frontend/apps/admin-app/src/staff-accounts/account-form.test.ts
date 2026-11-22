@@ -28,7 +28,7 @@ describe('readRole', () => {
     const read = readRole(formWith('manager'), ['manager', 'staff'])
 
     // Assert
-    expect(read).toEqual({ type: 'valid', request: 'manager' })
+    expect(read).toEqual({ type: 'valid', value: 'manager' })
   })
 
   it.each<[string, string | undefined]>([
@@ -69,7 +69,7 @@ describe('readRoleChange', () => {
     )
 
     // Assert
-    expect(read).toEqual({ type: 'valid', request: 'manager' })
+    expect(read).toEqual({ type: 'valid', value: 'manager' })
   })
 
   it('should ask for a role an owner may give when the account of another owner is sent as it was', () => {

@@ -9,6 +9,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   Select,
   TextArea,
   TextField,
@@ -32,8 +33,6 @@ export type StockFormProps = Pick<
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
   errors?: FormErrors | undefined
 }
-
-const NO_ERRORS: FormErrors = {}
 
 const LOT_KEPT =
   '100 文字まで。この商品のほかの在庫の行と同じロット番号は使えません。'

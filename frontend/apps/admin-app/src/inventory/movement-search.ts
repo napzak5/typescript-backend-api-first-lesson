@@ -4,11 +4,11 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   dayAfter,
+  daysErrorsOf,
   isDay,
-  type Read,
   startOfDayAt,
-  textOf,
 } from '@beauty-salon-frontend/salon-screens'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
 import { movementTypeIn } from './movement-format'
 
 /*
@@ -47,31 +47,23 @@ export const movementConditionsIn = (
   }
 }
 
-const DAY_ERROR = '日付を入力してください。'
-
-const RANGE_ERROR = '終わりの日は、始まりの日と同じか、その後にしてください。'
-
 /** The conditions that were filled in: each may be left empty. */
 export const readMovementConditions = (
   values: FormData,
-): Read<MovementConditions> => {
+): FormRead<MovementConditions> => {
   const type = movementTypeIn(textOf(values, 'type'))
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
   const errors = {
-    ...(from === '' || isDay(from) ? {} : { from: DAY_ERROR }),
-    ...(to === '' || isDay(to) ? {} : { to: DAY_ERROR }),
+    ...daysErrorsOf(from, to, 'optional'),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
   }
-  if (from !== '' && to !== '' && to < from) {
-    return { type: 'invalid', errors: { to: RANGE_ERROR } }
-  }
 
   return {
     type: 'valid',
-    request: {
+    value: {
       ...(type === undefined ? {} : { type }),
       ...(from === '' ? {} : { from }),
       ...(to === '' ? {} : { to }),

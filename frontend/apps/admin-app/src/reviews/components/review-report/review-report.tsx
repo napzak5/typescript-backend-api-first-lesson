@@ -4,6 +4,7 @@ import {
   Card,
   FormDialog,
   type FormErrors,
+  NO_ERRORS,
   RadioGroup,
   TextArea,
 } from '@beauty-salon-frontend/ui'
@@ -33,8 +34,6 @@ export type ReviewReportProps = {
   onClose: () => void
   onReport: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * Tells the platform that a review breaks its rules. A salon removes no

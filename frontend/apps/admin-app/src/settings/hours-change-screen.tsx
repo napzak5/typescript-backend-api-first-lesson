@@ -12,7 +12,10 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  type FormSays,
   LoadingIndicator,
+  NO_CHANGE_MESSAGE,
+  NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -20,7 +23,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import type { FormSays } from '../bookings/booking-entry'
 import { settingsHrefOf } from '../navigation'
 import { HoursForm } from './components/hours-form/hours-form'
 import { attemptHoursChange, type Hours, hoursOf } from './hours-api'
@@ -28,8 +30,6 @@ import { afterHoursChange, readHoursChange } from './hours-form'
 import { SettingsForbidden, useKeepsSalon } from './keeps-salon'
 
 const TITLE = '営業時間を直す'
-
-const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
 type HoursChangeProps = { salon: ModelsSalonResponse }
 
@@ -45,7 +45,7 @@ const HoursChange = ({ salon }: HoursChangeProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_SAID)
+  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
   /** The hours the form is sent against: those it opened with, or those another account wrote meanwhile */
   const [opened, setOpened] = useState<Hours>(() => hoursOf(salon))
   const today = dayAt(new Date(), salon.timezone)
@@ -90,12 +90,12 @@ const HoursChange = ({ salon }: HoursChangeProps) => {
         setSaid({ message: undefined, errors }),
       )
       .with({ type: 'unchanged' }, () => {
-        notify({ tone: 'info', message: '変更はありませんでした。' })
+        notify({ tone: 'info', message: NO_CHANGE_MESSAGE })
         void navigate(settings)
       })
-      .with({ type: 'valid' }, ({ request }) => {
-        setSaid(NOTHING_SAID)
-        save.mutate(request)
+      .with({ type: 'valid' }, ({ value }) => {
+        setSaid(NOTHING_TO_SAY)
+        save.mutate(value)
       })
       .exhaustive()
 

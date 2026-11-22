@@ -6,6 +6,7 @@ import {
   type FormErrors,
   FormPart,
   FormRow,
+  NO_ERRORS,
   Note,
   RadioGroup,
   TextField,
@@ -55,8 +56,6 @@ type DateRow = { key: number; shown: Shown; opens: boolean }
 
 /** Where the focus goes after a row was added or taken away */
 type Focus = { type: 'row'; key: number } | { type: 'add' } | undefined
-
-const NO_ERRORS: FormErrors = {}
 
 const EMPTY: Shown = {
   date: undefined,

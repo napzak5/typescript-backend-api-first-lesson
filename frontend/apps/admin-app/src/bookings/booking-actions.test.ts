@@ -60,7 +60,7 @@ describe('readCompletion', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         actualStartTime: '2026-11-20T01:05:00.000Z',
         actualEndTime: '2026-11-20T02:10:00.000Z',
       },
@@ -78,7 +78,7 @@ describe('readCompletion', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: { actualStartTime: null, actualEndTime: null },
+      value: { actualStartTime: null, actualEndTime: null },
     })
   })
 
@@ -90,7 +90,7 @@ describe('readCompletion', () => {
       }),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         actualStartTime: null,
         actualEndTime: '2026-11-20T02:00:00.000Z',
       },

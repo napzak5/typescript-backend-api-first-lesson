@@ -1,4 +1,5 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
   type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
@@ -12,14 +13,17 @@ import {
   linesOf,
   pictureAddressesError,
 } from '@beauty-salon-frontend/preferences'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  errorAt,
+  type FormRead,
+  type FormSays,
+  same,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
-import {
-  type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-} from '../bookings/booking-entry'
 import { tagsIn } from '../customers/customer-ledger'
 import { LEVELS } from '../staff/staff-format'
 import { numberOf } from '../treatments/treatment-form'
@@ -72,8 +76,6 @@ const OPTION_TYPE_ERROR = 'オプションの種類を選んでください。'
 const OPTION_TIME_ERROR = '追加の時間は、0 以上の整数（分）で入力してください。'
 const OPTION_PRICE_ERROR = '追加の料金は、0 以上の整数で入力してください。'
 const OPTION_QUANTITY_ERROR = '選べる数は、1 以上の整数で入力してください。'
-/** What is said when the API refused what the form has no control of */
-export const CHECK_AGAIN = '入力した内容を確かめて、もう一度お試しください。'
 
 /** What is said at the category when it was removed meanwhile */
 export const CATEGORY_GONE =
@@ -102,13 +104,6 @@ export const optionControlOf = (
 /** The name of the control of the service of the package of the row `index`, counted from 0. */
 export const packagedControlOf = (index: number): string =>
   `packageServiceIds.${index}`
-
-/** What is wrong with a control, under its name; nothing when nothing is. */
-const errorAt = (
-  control: string,
-  message: string | undefined,
-): [string, string][] => (message === undefined ? [] : [[control, message]])
-
 /** A whole number from `least` up to `most`, as it was typed; `undefined` for anything else. */
 const wholeNumberOf = (
   text: string,
@@ -198,7 +193,7 @@ const readOption = (values: FormData, index: number): OptionRead => {
     type: 'valid',
     option: {
       name,
-      description: nullIfBlank(text('description')),
+      description: textOrNull(text('description')),
       optionType,
       additionalTime,
       additionalPrice,
@@ -254,9 +249,9 @@ const packagedErrorsOf = (
  * values together (a discount above the price, a package of too few
  * services) is refused here first.
  */
-const readWhole = (values: FormData): Read<ModelsServiceCreateRequest> => {
+const readWhole = (values: FormData): FormRead<ModelsServiceCreateRequest> => {
   const optional = (name: string): string | null =>
-    nullIfBlank(textOf(values, name))
+    textOrNull(textOf(values, name))
   const name = textOf(values, 'name').trim()
   const shortDescription = optional('shortDescription')
   const duration = wholeNumberOf(
@@ -350,7 +345,7 @@ const readWhole = (values: FormData): Read<ModelsServiceCreateRequest> => {
 
   return {
     type: 'valid',
-    request: {
+    value: {
       categoryId: optional('categoryId'),
       name,
       description: optional('description'),
@@ -387,25 +382,19 @@ const readWhole = (values: FormData): Read<ModelsServiceCreateRequest> => {
 /** A new service, as the form holds it. */
 export const readServiceEntry = (
   values: FormData,
-): Read<ModelsServiceCreateRequest> => readWhole(values)
+): FormRead<ModelsServiceCreateRequest> => readWhole(values)
 
 /** What a change of a service asks for: nothing, when nothing was changed. */
-type ServiceChange = Read<ModelsServiceUpdateRequest> | { type: 'unchanged' }
-
-/** A text as the form reads it back: without the spaces around it, nothing as `null`. */
-const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
-const same = (one: unknown, other: unknown): boolean =>
-  JSON.stringify(one) === JSON.stringify(other)
-
+type ServiceChange =
+  | FormRead<ModelsServiceUpdateRequest>
+  | { type: 'unchanged' }
 /** The options of a service as the form reads them back: their order is that of the rows. */
 const shownOptionsOf = (
   service: ModelsServiceResponse,
 ): ModelsServiceOption[] =>
   service.options.map((option, index) => ({
     name: option.name.trim(),
-    description: shownText(option.description),
+    description: textOrNull(option.description),
     optionType: option.optionType,
     additionalTime: option.additionalTime,
     additionalPrice: option.additionalPrice,
@@ -430,16 +419,16 @@ export const readServiceChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const sent = read.request
+  const sent = read.value
   const changes: ModelsServiceUpdateRequest = {
     ...(same(sent.categoryId, shown.categoryId)
       ? {}
       : { categoryId: sent.categoryId }),
     ...(same(sent.name, shown.name.trim()) ? {} : { name: sent.name }),
-    ...(same(sent.description, shownText(shown.description))
+    ...(same(sent.description, textOrNull(shown.description))
       ? {}
       : { description: sent.description }),
-    ...(same(sent.shortDescription, shownText(shown.shortDescription))
+    ...(same(sent.shortDescription, textOrNull(shown.shortDescription))
       ? {}
       : { shortDescription: sent.shortDescription }),
     ...(same(sent.duration, shown.duration) ? {} : { duration: sent.duration }),
@@ -453,7 +442,7 @@ export const readServiceChange = (
     ...(same(sent.pricingStrategy, shown.pricingStrategy)
       ? {}
       : { pricingStrategy: sent.pricingStrategy }),
-    ...(same(sent.imageUrl, shownText(shown.imageUrl))
+    ...(same(sent.imageUrl, textOrNull(shown.imageUrl))
       ? {}
       : { imageUrl: sent.imageUrl }),
     ...(same(sent.imageUrls, shown.imageUrls)
@@ -503,7 +492,7 @@ export const readServiceChange = (
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /** The controls the form has outside its rows, by the names of the request */
@@ -607,20 +596,17 @@ export const afterServiceWrite = (
       })
 
       return {
-        message: said.length < values.length ? CHECK_AGAIN : undefined,
+        message:
+          said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
     })
-    .with({ type: 'forbidden' }, () => ({
-      message: FORBIDDEN_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message: FAILED_WRITES[write],
-      errors: {},
-    }))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()
 
 /** What is said after a service was to be removed; one in use is said with the packages it is in. */

@@ -20,6 +20,7 @@ import { useSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
   ButtonLink,
+  type FormErrors,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
@@ -166,9 +167,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
   const [said, setSaid] = useState<Said>()
   const [removing, setRemoving] = useState(false)
   const [removalSaid, setRemovalSaid] = useState<string>()
-  const [completionErrors, setCompletionErrors] = useState<
-    Record<string, string>
-  >({})
+  const [completionErrors, setCompletionErrors] = useState<FormErrors>({})
   const statusHeading = useRef<HTMLHeadingElement>(null)
   /**
    * When the booking was last changed, as the screen showed it when an
@@ -311,7 +310,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
                 return
               }
               setCompletionErrors({})
-              act({ type: 'complete', request: completion.request })
+              act({ type: 'complete', request: completion.value })
             }}
             onCancel={(values) =>
               act({ type: 'cancel', request: readCancellation(values) })

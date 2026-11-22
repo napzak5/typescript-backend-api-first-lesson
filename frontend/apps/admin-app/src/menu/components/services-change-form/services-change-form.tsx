@@ -9,6 +9,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   Select,
 } from '@beauty-salon-frontend/ui'
 import { LEVELS, levelNameOf } from '../../../staff/staff-format'
@@ -37,8 +38,6 @@ export type ServicesChangeFormProps = Pick<
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
   errors?: FormErrors | undefined
 }
-
-const NO_ERRORS: FormErrors = {}
 
 const KEEP = '変えない'
 

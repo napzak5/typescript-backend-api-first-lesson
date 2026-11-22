@@ -468,7 +468,9 @@ describe('the accounts of the staff, against the API', () => {
       )
 
       // Assert
-      expect(await screen.findByText('変更はありませんでした。')).toBeVisible()
+      expect(
+        await screen.findByText('変更された項目はありません。'),
+      ).toBeVisible()
       expect(await storedAccountOf(STYLIST)).toEqual([
         { role: 'staff', linked: true },
       ])

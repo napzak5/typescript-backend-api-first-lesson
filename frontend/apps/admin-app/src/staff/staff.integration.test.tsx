@@ -513,7 +513,7 @@ describe('the staff ledger, against the API', () => {
 
     // Assert
     expect(await heading('スタッフの内容')).toHaveFocus()
-    expect(notifications()).toContain('変更はありませんでした。')
+    expect(notifications()).toContain('変更された項目はありません。')
     expect(await storedMemberOf('stylist2@beautysalon.jp')).toEqual(before)
   })
 

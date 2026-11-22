@@ -2,6 +2,7 @@ import {
   FAILED,
   type Forbidden,
   from,
+  isUnread,
   LARGEST_PAGE,
   NOT_FOUND,
   type NotFound,
@@ -433,10 +434,6 @@ const readStoredPreferences = async (
     .with(P.union(...REFUSED_PARTS, { status: 403 }), unreadOfAnswer)
     .exhaustive(outsideTheContract)
 }
-
-const isUnread = (read: { type: string }): boolean =>
-  read.type === 'tooManyRequests' || read.type === 'failed'
-
 /**
  * The preferences of a customer (empty for one who set none), and the
  * profiles of the members of the staff they name. A member the API keeps

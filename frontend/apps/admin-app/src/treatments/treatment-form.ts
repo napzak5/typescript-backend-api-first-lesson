@@ -1,4 +1,8 @@
-import type { RefusedValue } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsProductResponse,
@@ -7,9 +11,17 @@ import type {
   ModelsTreatmentRecordResponse,
   ModelsTreatmentRecordUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { isDay, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import { isDay } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  errorAt,
+  type FormRead,
+  type FormSays,
+  same,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import { tagsIn } from '../customers/customer-ledger'
 import type { TreatmentWrite } from './treatments-api'
 
@@ -66,27 +78,12 @@ const STAFF_GONE =
   'このスタッフは、その間に削除されたか、ほかのサロンに移りました。ほかのスタッフを選んでください。'
 const SERVICE_GONE =
   'その間に削除されたサービスがあります。選び直してください。'
-const CHECK_AGAIN = '入力した内容を確かめて、もう一度お試しください。'
 const CUSTOMER_GONE =
   'このお客様は、その間に台帳から削除されました。施術記録は書けません。'
 
 /** What the day of the next visit is said to be when it is before the booking */
 const nextDateTooEarlyOf = (bookingDay: string): string =>
   `次に勧める日は、予約の日（${bookingDay}）から後の日にしてください。`
-
-/** A text that was filled in, without the spaces around it; nothing as `null`. */
-const textOrNull = (text: string | null): string | null => {
-  const trimmed = (text ?? '').trim()
-
-  return trimmed === '' ? null : trimmed
-}
-
-/** What is wrong with a control, under its name; nothing when nothing is. */
-const errorAt = (
-  control: string,
-  message: string | undefined,
-): [string, string][] => (message === undefined ? [] : [[control, message]])
-
 /**
  * A number as a person types it: digits of full width count. Nothing is no
  * number; what is not written as one is `undefined`.
@@ -277,7 +274,7 @@ const dateErrorOf = (date: string, bookingDay: string): string | undefined => {
 const readWhole = (
   values: FormData,
   { products, bookingDay }: TreatmentContext,
-): Read<TreatmentWhole> => {
+): FormRead<TreatmentWhole> => {
   const services = chosenIn(values, 'services')
   const techniques = tagsIn(textOf(values, 'techniques'))
   const processingTime = numberOf(textOf(values, 'processingTime'), 0)
@@ -335,7 +332,7 @@ const readWhole = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       services,
       techniques,
       consultationNotes: textOrNull(textOf(values, 'consultationNotes')),
@@ -362,7 +359,7 @@ export const readTreatmentEntry = (
   values: FormData,
   booking: Pick<ModelsBookingResponse, 'id' | 'customerId'>,
   context: TreatmentContext,
-): Read<ModelsTreatmentRecordCreateRequest> => {
+): FormRead<ModelsTreatmentRecordCreateRequest> => {
   const staffId = textOf(values, 'staffId').trim()
   const read = readWhole(values, context)
   const staffErrors = errorAt(
@@ -381,18 +378,14 @@ export const readTreatmentEntry = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       bookingId: booking.id,
       customerId: booking.customerId,
       staffId,
-      ...read.request,
+      ...read.value,
     },
   }
 }
-
-const same = (one: unknown, other: unknown): boolean =>
-  JSON.stringify(one) === JSON.stringify(other)
-
 /**
  * Whether two lists of services hold the same ones: the form lists them in
  * the order of the menu, which need not be the order the record keeps.
@@ -420,7 +413,7 @@ const shownMaterialsOf = (
 
 /** What a change of a record asks for: nothing, when nothing was changed. */
 export type TreatmentChange =
-  | Read<ModelsTreatmentRecordUpdateRequest>
+  | FormRead<ModelsTreatmentRecordUpdateRequest>
   | { type: 'unchanged' }
 
 /** Whether a text of the form is that of the record: what the record holds is read as the form reads it. */
@@ -442,7 +435,7 @@ export const readTreatmentChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const sent = read.request
+  const sent = read.value
   const changes: ModelsTreatmentRecordUpdateRequest = {
     ...(sameServices(sent.services, shown.services)
       ? {}
@@ -493,7 +486,7 @@ export const readTreatmentChange = (
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 const MATERIAL_FIELD = /^materials\.(\d+)\.(productId|quantity|unit|lotNumber)$/
@@ -599,21 +592,19 @@ export const afterTreatmentWrite = (
         message: values.some(({ field }) => field === 'customerId')
           ? CUSTOMER_GONE
           : said.length < values.length
-            ? CHECK_AGAIN
+            ? CHECK_THE_VALUES_MESSAGE
             : undefined,
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
     })
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、施術記録を書けません。',
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message: FAILED_WRITES[write],
-      errors: {},
-    }))
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt('このアカウントでは、施術記録を書けません。'),
+    )
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()
 
 /**

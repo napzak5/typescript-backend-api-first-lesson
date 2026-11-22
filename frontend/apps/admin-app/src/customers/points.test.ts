@@ -129,7 +129,7 @@ describe('readPointRecording', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         type: 'earn',
         request: {
           customerId,
@@ -152,7 +152,7 @@ describe('readPointRecording', () => {
       ),
     ).toMatchObject({
       type: 'valid',
-      request: { type: 'earn', request: { points: 1000, expiryDate: null } },
+      value: { type: 'earn', request: { points: 1000, expiryDate: null } },
     })
   })
 
@@ -165,7 +165,7 @@ describe('readPointRecording', () => {
       ),
     ).toEqual({
       type: 'valid',
-      request: {
+      value: {
         type: 'use',
         request: {
           customerId,
@@ -197,7 +197,7 @@ describe('readPointRecording', () => {
       }),
     ).toMatchObject({
       type: 'valid',
-      request: { request: { referenceType: null, referenceId: null } },
+      value: { request: { referenceType: null, referenceId: null } },
     })
   })
 
@@ -215,7 +215,7 @@ describe('readPointRecording', () => {
         ),
       ).toEqual({
         type: 'valid',
-        request: {
+        value: {
           type: 'adjust',
           request: {
             customerId,

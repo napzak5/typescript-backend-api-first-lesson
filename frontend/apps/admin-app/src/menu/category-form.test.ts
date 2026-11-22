@@ -68,7 +68,7 @@ describe('readCategoryEntry', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         name: 'ネイル',
         description: 'ハンドとフット',
         parentId: colouring().id,
@@ -95,7 +95,7 @@ describe('readCategoryEntry', () => {
     // Assert
     expect(read).toMatchObject({
       type: 'valid',
-      request: {
+      value: {
         description: null,
         parentId: null,
         iconUrl: null,
@@ -198,7 +198,7 @@ describe('readCategoryChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         name: 'カット・シェービング',
         parentId: colouring().id,
         displayOrder: 0,
@@ -229,7 +229,7 @@ describe('readCategoryChange', () => {
     // Assert
     expect(read).toEqual({
       type: 'valid',
-      request: {
+      value: {
         description: null,
         parentId: null,
         iconUrl: null,

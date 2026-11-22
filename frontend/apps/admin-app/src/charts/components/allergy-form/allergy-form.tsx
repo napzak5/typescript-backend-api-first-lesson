@@ -3,6 +3,7 @@ import { EARLIEST_DAY } from '@beauty-salon-frontend/salon-screens'
 import {
   Form,
   type FormErrors,
+  NO_ERRORS,
   RadioGroup,
   Select,
   TextArea,
@@ -27,8 +28,6 @@ export type AllergyFormProps = {
   actions?: ReactNode
   onSubmit: (values: FormData) => void
 }
-
-const NO_ERRORS: FormErrors = {}
 
 /**
  * An allergy of a customer: what causes it and of what kind, how heavy it

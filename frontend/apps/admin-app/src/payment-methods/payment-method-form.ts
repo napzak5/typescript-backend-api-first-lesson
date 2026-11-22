@@ -1,18 +1,24 @@
-import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsPaymentMethodCreateRequest,
   ModelsPaymentMethodResponse,
   ModelsPaymentMethodType,
   ModelsPaymentMethodUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
-import { match } from 'ts-pattern'
 import {
+  aboutTheAttempt,
+  errorAt,
+  type FormRead,
   type FormSays,
-  nullIfBlank,
-  TOO_MANY_REQUESTS,
-  yenOf,
-} from '../bookings/booking-entry'
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
+import { yenOf } from '../bookings/booking-entry'
 import { numberOf } from '../treatments/treatment-form'
 import type { TreatmentRemovalSays } from '../treatments/treatment-format'
 import { METHOD_KINDS } from './payment-method-format'
@@ -53,13 +59,6 @@ const CONTROLS: readonly string[] = [
   'sortOrder',
   'isActive',
 ]
-
-/** What is said at a control, under its name; nothing when the value may be sent. */
-const errorAt = (
-  control: string,
-  message: string | undefined,
-): [string, string][] => (message === undefined ? [] : [[control, message]])
-
 /** An amount the API takes at once: a whole number of yen from 1. */
 const amountError = (
   amount: number | null | undefined,
@@ -75,11 +74,11 @@ const amountError = (
 const readWhole = (
   values: FormData,
   kept: ModelsPaymentMethodType | undefined,
-): Read<ModelsPaymentMethodCreateRequest> => {
+): FormRead<ModelsPaymentMethodCreateRequest> => {
   const method =
     kept ?? METHOD_KINDS.find((one) => one === textOf(values, 'method'))
   const displayName = textOf(values, 'displayName').trim()
-  const processorName = nullIfBlank(textOf(values, 'processorName'))
+  const processorName = textOrNull(textOf(values, 'processorName'))
   const fee = numberOf(textOf(values, 'fee'), 2)
   const minimumAmount = yenOf(textOf(values, 'minimumAmount'))
   const maximumAmount = yenOf(textOf(values, 'maximumAmount'))
@@ -133,10 +132,10 @@ const readWhole = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       method,
       displayName,
-      description: nullIfBlank(textOf(values, 'description')),
+      description: textOrNull(textOf(values, 'description')),
       processorName,
       fee,
       minimumAmount,
@@ -152,17 +151,12 @@ const readWhole = (
 /** A new payment method, as the form holds it. */
 export const readPaymentMethodEntry = (
   values: FormData,
-): Read<ModelsPaymentMethodCreateRequest> => readWhole(values, undefined)
+): FormRead<ModelsPaymentMethodCreateRequest> => readWhole(values, undefined)
 
 /** What a change of a payment method asks for: nothing, when nothing was changed. */
 type PaymentMethodChange =
-  | Read<ModelsPaymentMethodUpdateRequest>
+  | FormRead<ModelsPaymentMethodUpdateRequest>
   | { type: 'unchanged' }
-
-/** A text as the form reads it back: without the spaces around it, nothing as `null`. */
-const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
 /**
  * What was changed in the form: the values that are others than those of
  * the payment method it was opened with, each compared as the form reads
@@ -176,15 +170,15 @@ export const readPaymentMethodChange = (
   if (read.type === 'invalid') {
     return read
   }
-  const sent = read.request
+  const sent = read.value
   const changes: ModelsPaymentMethodUpdateRequest = {
     ...(sent.displayName === shown.displayName.trim()
       ? {}
       : { displayName: sent.displayName }),
-    ...(sent.description === shownText(shown.description)
+    ...(sent.description === textOrNull(shown.description)
       ? {}
       : { description: sent.description }),
-    ...(sent.processorName === shownText(shown.processorName)
+    ...(sent.processorName === textOrNull(shown.processorName)
       ? {}
       : { processorName: sent.processorName }),
     ...(sent.fee === shown.fee ? {} : { fee: sent.fee }),
@@ -208,7 +202,7 @@ export const readPaymentMethodChange = (
 
   return Object.keys(changes).length === 0
     ? { type: 'unchanged' }
-    : { type: 'valid', request: changes }
+    : { type: 'valid', value: changes }
 }
 
 /** What is said when the account may not keep the payment methods of the salon */
@@ -232,9 +226,7 @@ const refusalAt = (field: string, rule: string): string =>
       rule === 'custom' ? RANGE_ERROR : MAXIMUM_ERROR,
     )
     .with('sortOrder', () => ORDER_ERROR)
-    .otherwise(
-      () => 'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /** What the form says after the API did not take it. */
 export const afterPaymentMethodWrite = (
@@ -249,25 +241,21 @@ export const afterPaymentMethodWrite = (
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message:
-          said.length === 0
-            ? '入力した内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
       }
     })
-    .with({ type: 'forbidden' }, () => ({
-      message: FORBIDDEN_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '支払い方法を保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /**

@@ -1,11 +1,18 @@
-import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsShareLinkCreateRequest,
   ModelsShareLinkResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
+import {
+  aboutTheAttempt,
+  type FormRead,
+  type FormSays,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type FormSays, TOO_MANY_REQUESTS } from '../bookings/booking-entry'
 import type { ShareLinkIssue, ShareLinkRevocation } from './share-links-api'
 
 /*
@@ -116,7 +123,7 @@ const EXPIRY_REFUSED =
 export const readShareLinkEntry = (
   values: FormData,
   now: Date,
-): Read<ModelsShareLinkCreateRequest> => {
+): FormRead<ModelsShareLinkCreateRequest> => {
   const chosen = textOf(values, PERIOD)
   const period = PERIODS.find(({ days }) => String(days) === chosen)
   const maxDownloads = limitOf(textOf(values, MAX_DOWNLOADS))
@@ -138,7 +145,7 @@ export const readShareLinkEntry = (
 
   return {
     type: 'valid',
-    request: {
+    value: {
       expiresAt: expiryAfter(period.days, now),
       maxDownloads,
       password: password === '' ? null : password,
@@ -177,26 +184,22 @@ export const afterIssuing = (
       const errors = Object.fromEntries(values.flatMap(refusalAt))
 
       return Object.keys(errors).length === 0
-        ? {
-            message: '入力した内容を確かめて、もう一度お試しください。',
-            errors: {},
-          }
+        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
         : { message: undefined, errors }
     })
-    .with({ type: 'notUploaded' }, () => ({
-      message: NOT_UPLOADED_NOTE,
-      errors: {},
-    }))
+    .with({ type: 'notUploaded' }, () => aboutTheAttempt(NOT_UPLOADED_NOTE))
     .with({ type: 'forbidden' }, () => ({
       message: `このアカウントでは、このファイルを共有できません。${SHARING_NOTE}`,
       errors: {},
     }))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => ({
-      message:
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(
         '共有リンクを発行できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      errors: {},
-    }))
+      ),
+    )
     .exhaustive()
 
 /** The address of the portal that a link is given as: the token in the fragment, which no server is sent. */
