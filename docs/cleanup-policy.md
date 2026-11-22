@@ -17,7 +17,7 @@
 | チケットのない `TODO` コメント | 書かない。やるべきことは issue にし、コメントに残すなら issue 番号を書く |
 | 使われていない依存関係 | `package.json` から削除する |
 
-テスト専用のヘルパーは削除の対象ではありません。`backend/packages/api/src/__tests__/_shared/` や `backend/packages/domain/src/__tests__/fixtures.ts` のように、`__tests__` ディレクトリの中に置きます。
+テスト専用のヘルパーは削除の対象ではありません。`backend/packages/api/src/__tests__/_shared/` や `backend/packages/domain/src/__tests__/fixtures/fixtures.ts` のように、`__tests__` ディレクトリの中に置きます。
 
 ### 例: 依存関係のインターフェース
 

@@ -297,7 +297,7 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 | 7 | ユースケースと権限の判定（公開でないオペレーションは `actor` を受け取り、最初に権限を判定する） | `backend/packages/domain/src/business-logic/salon/`、その中の `_shared/authorization.ts` |
 | 8 | ハンドラーとルーター、アプリへの登録（公開でないオペレーションのハンドラーは `authenticated` で包む） | `backend/packages/api/src/routes/salon/`、`backend/packages/api/src/index.ts` |
 | 9 | API と DB の整合ルールにモデルを登録する | `backend/packages/database/src/scripts/api-consistency-rules.ts` |
-| 10 | テスト（スキーマ・マッパー・ユースケースの単体テスト、エンドポイントごとの統合テスト。公開でないオペレーションは、許可されるユーザーと拒否されるユーザーの両方） | `backend/packages/domain/src/__tests__/`、`backend/packages/api/src/__tests__/salon.integration.test.ts` |
+| 10 | テスト（スキーマ・マッパー・ユースケースの単体テスト、エンドポイントごとの統合テスト。公開でないオペレーションは、許可されるユーザーと拒否されるユーザーの両方） | `backend/packages/domain/src/schemas/__tests__/salon.schema.test.ts`、`backend/packages/domain/src/mappers/__tests__/salon.mapper.test.ts`、`backend/packages/domain/src/business-logic/salon/__tests__/salon.usecase.test.ts`、`backend/packages/api/src/__tests__/salon.integration.test.ts` |
 
 データが 1 つのサロンに属するドメインは、ルートをサロンの下（`/api/v1/salons/{salonId}/…`）に置きます。
 手本はサービスカテゴリー（`backend/packages/domain/src/business-logic/service-category/`、
@@ -385,7 +385,7 @@ pnpm --filter @beauty-salon-frontend/portal-app add -D <パッケージ名>
 ## バグを修正する
 
 1. 不具合を再現するテストを、修正する層のテストに追加する。たとえばユースケースなら
-   `backend/packages/domain/src/__tests__/salon.usecase.test.ts`、HTTP の振る舞いなら
+   `backend/packages/domain/src/business-logic/salon/__tests__/salon.usecase.test.ts`、HTTP の振る舞いなら
    `backend/packages/api/src/__tests__/` の統合テスト
 2. テストが失敗することを確認する
 3. 修正し、テストが通ることを確認する

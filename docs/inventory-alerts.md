@@ -219,4 +219,4 @@
 | インフラ | `backend/packages/infrastructure/src/repositories/inventory-alert.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/inventory-alert/`（`/api/v1/inventory-alerts` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611171700_inventory_alert_acknowledgements.sql` |
-| テスト | `backend/packages/domain/src/__tests__/inventory-alert.rules.test.ts`、`inventory-alert.schema.test.ts`、`inventory-alert.mapper.test.ts`、`inventory-alert.usecase.test.ts`、`backend/packages/api/src/__tests__/inventory-alert.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| テスト | `backend/packages/domain/src/business-logic/inventory-alert/__tests__/inventory-alert.rules.test.ts`、`backend/packages/domain/src/schemas/__tests__/inventory-alert.schema.test.ts`、`backend/packages/domain/src/mappers/__tests__/inventory-alert.mapper.test.ts`、`backend/packages/domain/src/business-logic/inventory-alert/__tests__/inventory-alert.usecase.test.ts`、`backend/packages/api/src/__tests__/inventory-alert.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
