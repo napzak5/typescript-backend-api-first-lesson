@@ -13,8 +13,8 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
-import type { LineCheck } from '../../bookings-api'
-import type { Names } from '../../day-bookings'
+import type { LineCheck } from '../../api/bookings-api'
+import type { Names } from '../../utils/day-bookings'
 import { MovedLines } from '../moved-lines/moved-lines'
 import styles from './booking-move-form.module.css'
 

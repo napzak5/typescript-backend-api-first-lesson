@@ -18,7 +18,7 @@ import {
   itemQuantityNameOf,
   orderStatusNameOf,
   orderStatusToneOf,
-} from '../../order-format'
+} from '../../utils/order-format'
 import styles from './order-record.module.css'
 
 export type OrderRecordProps = {

@@ -9,14 +9,14 @@ import {
   Note,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { durationOf } from '../../../salons/salon-format'
+import { durationOf } from '../../../salons/utils/salon-format'
 import {
   statusNameOf,
   statusNoteOf,
   statusToneOf,
   totalOf,
   whenKnownOf,
-} from '../../booking-format'
+} from '../../utils/booking-format'
 import styles from './booking-summary.module.css'
 
 export type BookingSummaryProps = {

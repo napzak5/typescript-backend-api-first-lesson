@@ -19,7 +19,7 @@ import {
   SHARE_LINKS_NOTE,
   stateNameOf,
   stateOf,
-} from '../../share-link'
+} from '../../utils/share-link'
 import styles from './share-link-list.module.css'
 
 /** What the part shows of the links of a file */

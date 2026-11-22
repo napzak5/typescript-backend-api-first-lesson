@@ -21,7 +21,7 @@ import {
   LONGEST_NAME,
   LONGEST_SUPPLIER,
   LONGEST_UNIT,
-} from '../../product-form'
+} from '../../utils/product-form'
 
 export type ProductFormProps = Pick<
   FormProps,

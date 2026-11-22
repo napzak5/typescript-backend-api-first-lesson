@@ -16,7 +16,7 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { type ReactNode, useState } from 'react'
-import { REFERRER, type Referrer } from '../../customer-form'
+import { REFERRER, type Referrer } from '../../utils/customer-form'
 import {
   CATEGORY_OPTIONS,
   GENDER_OPTIONS,
@@ -25,8 +25,8 @@ import {
   SCALP_CONDITION_OPTIONS,
   STATUS_OPTIONS,
   TIER_OPTIONS,
-} from '../../customer-format'
-import { tagsTextOf } from '../../customer-ledger'
+} from '../../utils/customer-format'
+import { tagsTextOf } from '../../utils/customer-ledger'
 import { ReferrerField } from '../referrer-field/referrer-field'
 
 /** What the choice of a referrer is given by the form */

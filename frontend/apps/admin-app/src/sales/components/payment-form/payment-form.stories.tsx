@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { methodsInUse } from '../../payments'
+import { methodsInUse } from '../../utils/payments'
 import { paymentMethods } from '../examples'
 
 import { PaymentForm } from './payment-form'

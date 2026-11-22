@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aCustomer, salon } from '../../../bookings/components/examples'
-import type { FoundChart } from '../../charts-api'
+import type { FoundChart } from '../../api/charts-api'
 import { aChart } from '../examples'
 import { ChartTable } from './chart-table'
 

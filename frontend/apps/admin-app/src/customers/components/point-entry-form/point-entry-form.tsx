@@ -9,8 +9,12 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useState } from 'react'
-import { countNameOf } from '../../customer-format'
-import { kindNameOf, type OfferedSale, type PointKind } from '../../points'
+import { countNameOf } from '../../utils/customer-format'
+import {
+  kindNameOf,
+  type OfferedSale,
+  type PointKind,
+} from '../../utils/points'
 import styles from './point-entry-form.module.css'
 
 export type PointEntryFormProps = Pick<

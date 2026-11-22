@@ -18,7 +18,7 @@ import {
   LONGEST_ANGLE,
   PHOTO_TYPE_OPTIONS,
   photoControlOf,
-} from '../../treatment-photos'
+} from '../../utils/treatment-photos'
 import styles from './photo-form.module.css'
 
 export type PhotoFormProps = {

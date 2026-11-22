@@ -8,7 +8,7 @@ import {
   comingDays,
   hoursOf,
   weeklyHoursOf,
-} from '../../salon-format'
+} from '../../utils/salon-format'
 import styles from './salon-hours.module.css'
 
 export type SalonHoursProps = {

@@ -16,7 +16,7 @@ import {
   isImage,
   REMOVAL_NOTE,
   sizeNameOf,
-} from '../../attachment-file'
+} from '../../utils/attachment-file'
 import styles from './attachment-record.module.css'
 
 /** The URLs of the storage that open a file and save it, which last five minutes */

@@ -7,8 +7,12 @@ import {
   PagedList,
 } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
-import { statusNameOf, statusToneOf, whenKnownOf } from '../../booking-format'
-import type { Row } from '../../own-bookings'
+import {
+  statusNameOf,
+  statusToneOf,
+  whenKnownOf,
+} from '../../utils/booking-format'
+import type { Row } from '../../utils/own-bookings'
 import styles from './booking-list.module.css'
 
 export type BookingListProps = {

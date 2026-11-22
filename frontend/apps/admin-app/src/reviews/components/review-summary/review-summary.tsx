@@ -1,6 +1,6 @@
 import type { ModelsReviewSummaryResponse } from '@beauty-salon-frontend/api-client'
 import { Card, Rating } from '@beauty-salon-frontend/ui'
-import { RATINGS } from '../../review-search'
+import { RATINGS } from '../../utils/review-search'
 import styles from './review-summary.module.css'
 
 export type ReviewSummaryProps = {

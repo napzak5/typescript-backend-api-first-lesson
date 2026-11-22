@@ -18,12 +18,12 @@ import {
   useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { tagsTextOf } from '../../../customers/customer-ledger'
+import { tagsTextOf } from '../../../customers/utils/customer-ledger'
 import {
   MOST_TREATMENTS,
   rowControlOf,
   TREATMENT_OPTIONS,
-} from '../../chart-form'
+} from '../../utils/chart-form'
 
 export type ChartFormProps = {
   /** The chart the form opens with; none for one that is made */

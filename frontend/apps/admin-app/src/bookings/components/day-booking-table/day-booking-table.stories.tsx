@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import type { BookingRow } from '../../day-bookings'
+import type { BookingRow } from '../../utils/day-bookings'
 import { aBooking, customers, moment, salon } from '../examples'
 
 import { DayBookingTable } from './day-booking-table'

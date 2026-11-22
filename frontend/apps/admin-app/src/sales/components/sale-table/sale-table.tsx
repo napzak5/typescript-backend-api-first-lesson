@@ -5,7 +5,10 @@ import {
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
 import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
-import { paymentStatusNameOf, paymentStatusToneOf } from '../../sale-format'
+import {
+  paymentStatusNameOf,
+  paymentStatusToneOf,
+} from '../../utils/sale-format'
 
 export type SaleTableProps = {
   /** What the table lists: 「2026年11月20日（金）の売上」 */

@@ -8,7 +8,7 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import { match } from 'ts-pattern'
-import { factsOf, isImage, LOAD_NOTE } from '../../shared-file'
+import { factsOf, isImage, LOAD_NOTE } from '../../utils/shared-file'
 import styles from './shared-file-record.module.css'
 
 /** The file itself: not loaded into the page yet, or held by it at an object URL */

@@ -9,14 +9,14 @@ import {
   DescriptionList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { performerNameOf } from '../../movement-format'
+import { performerNameOf } from '../../utils/movement-format'
 import {
   countedNameOf,
   expiryNameOf,
   isExpired,
   quantityNameOf,
   REMOVED_PRODUCT,
-} from '../../stock-format'
+} from '../../utils/stock-format'
 import styles from './stock-record.module.css'
 
 export type StockRecordProps = {

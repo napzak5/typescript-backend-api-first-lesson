@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { FILE } from '../../attachment-file'
+import { FILE } from '../../utils/attachment-file'
 import { AttachmentUpload } from './attachment-upload'
 
 const meta: Meta<typeof AttachmentUpload> = {

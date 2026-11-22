@@ -1,5 +1,5 @@
 import { Table } from '@beauty-salon-frontend/ui'
-import type { ColumnGuide } from '../../customer-file'
+import type { ColumnGuide } from '../../utils/customer-file'
 import styles from './file-columns.module.css'
 
 export type FileColumnsProps = {

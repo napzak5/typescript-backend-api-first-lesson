@@ -7,8 +7,8 @@ import {
 import type { More } from '@beauty-salon-frontend/ui'
 import { countOf } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { countNameOf } from '../../customer-format'
-import { movementOf, transactionNameOf } from '../../points'
+import { countNameOf } from '../../utils/customer-format'
+import { movementOf, transactionNameOf } from '../../utils/points'
 
 export type PointHistoryProps = {
   /** The transactions that were read so far, the latest first */

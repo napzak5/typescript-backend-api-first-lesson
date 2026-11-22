@@ -7,13 +7,13 @@ import {
   Link,
   type More,
 } from '@beauty-salon-frontend/ui'
+import { customerKanaOf, customerNameOf } from '../../api/customers-api'
 import {
   countNameOf,
   customerStatusNameOf,
   customerStatusToneOf,
   tierNameOf,
-} from '../../customer-format'
-import { customerKanaOf, customerNameOf } from '../../customers-api'
+} from '../../utils/customer-format'
 
 export type CustomerTableProps = {
   /** What the table lists: 「顧客台帳」, or 「条件に合うお客様」 */

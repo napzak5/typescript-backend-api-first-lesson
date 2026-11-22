@@ -6,7 +6,7 @@ import {
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { addressOf, telephoneHrefOf } from '../../salon-format'
+import { addressOf, telephoneHrefOf } from '../../utils/salon-format'
 import styles from './salon-about.module.css'
 
 export type SalonAboutProps = {

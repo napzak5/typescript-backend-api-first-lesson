@@ -1,6 +1,6 @@
 import { Alert, Button, Card, Dialog } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import type { RunCopy } from '../../operations'
+import type { RunCopy } from '../../utils/operations'
 import styles from './operation-run.module.css'
 
 export type OperationRunProps = {

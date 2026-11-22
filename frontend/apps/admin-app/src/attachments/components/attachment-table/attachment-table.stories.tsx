@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
-import { uploaderNameOf } from '../../attachment-file'
+import { uploaderNameOf } from '../../utils/attachment-file'
 import { ACCOUNT_ID, FILES_OF_THE_SALON, LEDGER } from '../examples'
 import { AttachmentTable } from './attachment-table'
 

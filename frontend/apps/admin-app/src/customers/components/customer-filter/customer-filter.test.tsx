@@ -8,7 +8,7 @@ import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
-import type { CustomerConditions } from '../../customer-ledger'
+import type { CustomerConditions } from '../../utils/customer-ledger'
 import { CustomerFilter, type CustomerFilterProps } from './customer-filter'
 import * as customerFilterStories from './customer-filter.stories'
 

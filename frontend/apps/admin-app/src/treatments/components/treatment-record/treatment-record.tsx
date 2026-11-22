@@ -16,8 +16,11 @@ import {
   WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { UNLISTED_STAFF } from '../../../bookings/booking-format'
-import { serviceNameOf, staffNameOf } from '../../../bookings/day-bookings'
+import { UNLISTED_STAFF } from '../../../bookings/utils/booking-format'
+import {
+  serviceNameOf,
+  staffNameOf,
+} from '../../../bookings/utils/day-bookings'
 import {
   customerCalled,
   minutesNameOf,
@@ -27,7 +30,7 @@ import {
   REMOVED_PRODUCT,
   satisfactionNameOf,
   wasChanged,
-} from '../../treatment-format'
+} from '../../utils/treatment-format'
 import styles from './treatment-record.module.css'
 
 export type TreatmentRecordProps = {

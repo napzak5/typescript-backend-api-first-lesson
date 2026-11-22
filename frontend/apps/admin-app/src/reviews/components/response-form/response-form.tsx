@@ -8,8 +8,8 @@ import {
   WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { RESPONSE } from '../../review-actions'
-import { reviewDayNameOf } from '../../review-format'
+import { RESPONSE } from '../../utils/review-actions'
+import { reviewDayNameOf } from '../../utils/review-format'
 import styles from './response-form.module.css'
 
 export type ResponseFormProps = {

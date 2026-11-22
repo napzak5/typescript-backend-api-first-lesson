@@ -13,8 +13,8 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
-import type { StatusAction } from '../../booking-actions'
-import { statusNameOf, statusToneOf } from '../../booking-format'
+import type { StatusAction } from '../../utils/booking-actions'
+import { statusNameOf, statusToneOf } from '../../utils/booking-format'
 import styles from './status-actions.module.css'
 
 /** The operations that a dialog asks about first: they cannot be undone */

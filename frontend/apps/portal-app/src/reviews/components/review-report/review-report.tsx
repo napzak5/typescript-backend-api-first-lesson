@@ -7,7 +7,12 @@ import {
   RadioGroup,
   TextArea,
 } from '@beauty-salon-frontend/ui'
-import { DETAILS, MAX_DETAILS_LENGTH, REASON, REASONS } from '../../reader-flow'
+import {
+  DETAILS,
+  MAX_DETAILS_LENGTH,
+  REASON,
+  REASONS,
+} from '../../utils/reader-flow'
 
 export type ReviewReportProps = {
   /** The dialog is open */

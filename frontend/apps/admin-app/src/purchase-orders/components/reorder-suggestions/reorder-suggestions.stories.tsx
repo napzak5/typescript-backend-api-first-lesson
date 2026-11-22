@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { suggestionGroupsOf } from '../../order-suggestions'
+import { suggestionGroupsOf } from '../../utils/order-suggestions'
 import { SUGGESTIONS_OF_THE_SALON } from '../examples'
 import { ReorderSuggestions } from './reorder-suggestions'
 

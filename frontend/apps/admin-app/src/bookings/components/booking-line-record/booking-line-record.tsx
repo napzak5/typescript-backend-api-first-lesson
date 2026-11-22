@@ -6,8 +6,12 @@ import {
   momentNameAt,
 } from '@beauty-salon-frontend/salon-screens'
 import { Card, DescriptionList } from '@beauty-salon-frontend/ui'
-import { hoursOf } from '../../booking-format'
-import { memberNameOf, type Names, serviceNameOf } from '../../day-bookings'
+import { hoursOf } from '../../utils/booking-format'
+import {
+  memberNameOf,
+  type Names,
+  serviceNameOf,
+} from '../../utils/day-bookings'
 
 export type BookingLineRecordProps = {
   line: ModelsBookingServiceResponse

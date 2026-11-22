@@ -6,7 +6,7 @@ import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
-import { readStaffChange, readStaffEntry } from '../../staff-form'
+import { readStaffChange, readStaffEntry } from '../../utils/staff-form'
 import { aStaffMember } from '../examples'
 import * as staffFormStories from './staff-form.stories'
 

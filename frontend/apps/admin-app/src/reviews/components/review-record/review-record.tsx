@@ -13,7 +13,7 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { match } from 'ts-pattern'
-import { detailRatingsOf, reviewDayNameOf } from '../../review-format'
+import { detailRatingsOf, reviewDayNameOf } from '../../utils/review-format'
 import styles from './review-record.module.css'
 
 /** Who wrote a review, as the ledger of the salon holds them */

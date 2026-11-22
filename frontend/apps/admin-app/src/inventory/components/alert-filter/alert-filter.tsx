@@ -4,12 +4,12 @@ import {
   Select,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { ALERT_KIND_OPTIONS, SEVERITY_OPTIONS } from '../../alert-format'
+import { ALERT_KIND_OPTIONS, SEVERITY_OPTIONS } from '../../utils/alert-format'
 import {
   ACKNOWLEDGED_OPTIONS,
   type AlertConditions,
   alertQueryOf,
-} from '../../alert-search'
+} from '../../utils/alert-search'
 
 export type AlertFilterProps = {
   /** The conditions that are shown: those of the address */

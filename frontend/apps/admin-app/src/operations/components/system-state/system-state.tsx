@@ -8,6 +8,7 @@ import {
   Table,
   type TableColumn,
 } from '@beauty-salon-frontend/ui'
+import type { SystemState } from '../../api/operations-api'
 import {
   checkNameOf,
   dependencyNameOf,
@@ -15,8 +16,7 @@ import {
   livenessNameOf,
   readinessNameOf,
   responseTimeNameOf,
-} from '../../operations'
-import type { SystemState } from '../../operations-api'
+} from '../../utils/operations'
 import styles from './system-state.module.css'
 
 export type SystemStateRecordProps = {

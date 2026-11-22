@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
 import { colour, shampoo } from '../../../products/components/examples'
-import { recordedKindsOf } from '../../movement-format'
+import { recordedKindsOf } from '../../utils/movement-format'
 import { colourLot, shampooRow } from '../examples'
 import { MovementForm } from './movement-form'
 

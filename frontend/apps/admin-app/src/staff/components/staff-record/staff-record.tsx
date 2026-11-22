@@ -18,7 +18,7 @@ import {
   commissionNameOf,
   fullStaffNameOf,
   levelNameOf,
-} from '../../staff-format'
+} from '../../utils/staff-format'
 import styles from './staff-record.module.css'
 
 export type StaffRecordProps = {

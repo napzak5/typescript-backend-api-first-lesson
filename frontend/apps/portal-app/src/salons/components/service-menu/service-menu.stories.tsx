@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { menuOf } from '../../salon-menu'
+import { menuOf } from '../../utils/salon-menu'
 import { categories, services } from '../examples'
 import { ServiceMenu } from './service-menu'
 

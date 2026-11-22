@@ -8,7 +8,7 @@ import {
   lotsNameOf,
   priceNameOf,
   usesNameOf,
-} from '../../product-format'
+} from '../../utils/product-format'
 import styles from './product-record.module.css'
 
 export type ProductRecordProps = {

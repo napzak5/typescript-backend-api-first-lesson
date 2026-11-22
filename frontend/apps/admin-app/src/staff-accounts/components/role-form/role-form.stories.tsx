@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { roleDescriptionFor } from '../../account-format'
+import { roleDescriptionFor } from '../../utils/account-format'
 import { RoleForm } from './role-form'
 
 const meta: Meta<typeof RoleForm> = {

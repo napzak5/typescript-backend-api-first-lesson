@@ -10,7 +10,7 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { ALLERGY_TYPE_OPTIONS, SEVERITY_OPTIONS } from '../../allergies'
+import { ALLERGY_TYPE_OPTIONS, SEVERITY_OPTIONS } from '../../utils/allergies'
 
 export type AllergyFormProps = {
   /** The allergy the form opens with; none for one that is recorded */

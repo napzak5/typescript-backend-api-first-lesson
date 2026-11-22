@@ -6,7 +6,10 @@ import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
-import { readCustomerChange, readCustomerEntry } from '../../customer-form'
+import {
+  readCustomerChange,
+  readCustomerEntry,
+} from '../../utils/customer-form'
 import * as customerFormStories from './customer-form.stories'
 
 const stories = composeStories(customerFormStories)

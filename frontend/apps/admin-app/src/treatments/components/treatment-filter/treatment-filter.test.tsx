@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import { aCustomer, salon, staff } from '../../../bookings/components/examples'
-import type { TreatmentConditions } from '../../treatments-api'
+import type { TreatmentConditions } from '../../api/treatments-api'
 import { TreatmentFilter, type TreatmentFilterProps } from './treatment-filter'
 import * as treatmentFilterStories from './treatment-filter.stories'
 

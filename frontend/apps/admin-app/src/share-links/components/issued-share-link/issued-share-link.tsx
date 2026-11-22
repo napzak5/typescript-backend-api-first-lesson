@@ -16,7 +16,7 @@ import {
   limitNameOf,
   PASSWORD_APART_NOTE,
   passwordNameOf,
-} from '../../share-link'
+} from '../../utils/share-link'
 import styles from './issued-share-link.module.css'
 
 /** Whether the link was put on the clipboard */

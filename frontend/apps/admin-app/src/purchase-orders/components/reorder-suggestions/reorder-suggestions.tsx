@@ -1,7 +1,7 @@
 import { ButtonLink, Card, NONE, Table } from '@beauty-salon-frontend/ui'
-import { quantityNameOf } from '../../../inventory/stock-format'
-import { orderDayNameOf } from '../../order-format'
-import type { SuggestionGroup } from '../../order-suggestions'
+import { quantityNameOf } from '../../../inventory/utils/stock-format'
+import { orderDayNameOf } from '../../utils/order-format'
+import type { SuggestionGroup } from '../../utils/order-suggestions'
 import styles from './reorder-suggestions.module.css'
 
 export type ReorderSuggestionsProps = {

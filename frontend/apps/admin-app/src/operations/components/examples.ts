@@ -2,7 +2,7 @@ import type {
   ModelsCustomerDeletionRequestResponse,
   ModelsHealthStatus,
 } from '@beauty-salon-frontend/api-client'
-import type { SystemState } from '../operations-api'
+import type { SystemState } from '../api/operations-api'
 
 /*
  * What the stories show: the probes of an API that runs, of one that

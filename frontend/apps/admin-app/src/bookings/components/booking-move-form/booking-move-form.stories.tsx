@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { MOVE_TAKEN } from '../../booking-moves'
+import { MOVE_TAKEN } from '../../utils/booking-moves'
 import { aBooking, moment, salon, services, staff } from '../examples'
 import { BookingMoveForm } from './booking-move-form'
 

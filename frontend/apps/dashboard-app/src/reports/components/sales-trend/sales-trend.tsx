@@ -1,12 +1,12 @@
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import { Card, Note, Table } from '@beauty-salon-frontend/ui'
-import { countNameOf } from '../../sales-report'
+import { countNameOf } from '../../utils/sales-report'
 import {
   partNameOf,
   TREND_PARTS,
   type TrendPart,
   type TrendUnit,
-} from '../../sales-trends'
+} from '../../utils/sales-trends'
 import { TrendChart } from '../trend-chart/trend-chart'
 import styles from './sales-trend.module.css'
 

@@ -1,8 +1,12 @@
 import type { ModelsSalesByStaffResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import { Card, Note, Table } from '@beauty-salon-frontend/ui'
-import { percentOfMost } from '../../sales-breakdown'
-import { countNameOf, rankNameOf, STAFF_SALES_NOTE } from '../../sales-report'
+import { percentOfMost } from '../../utils/sales-breakdown'
+import {
+  countNameOf,
+  rankNameOf,
+  STAFF_SALES_NOTE,
+} from '../../utils/sales-report'
 import { ShareBar } from '../share-bar/share-bar'
 import styles from './staff-sales.module.css'
 

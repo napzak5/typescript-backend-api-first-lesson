@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
-import { loadMessageOf } from '../../shared-file'
+import { loadMessageOf } from '../../utils/shared-file'
 import { consent, PIXEL, photo } from '../examples'
 import { SharedFileRecord } from './shared-file-record'
 

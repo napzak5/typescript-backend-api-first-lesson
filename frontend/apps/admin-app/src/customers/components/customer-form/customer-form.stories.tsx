@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aCustomer, customers } from '../../../bookings/components/examples'
-import { NO_REFERRER, referrerOf } from '../../customer-form'
+import { NO_REFERRER, referrerOf } from '../../utils/customer-form'
 import { CustomerChoices } from '../customer-choices/customer-choices'
 import { ReferrerDialog } from '../referrer-dialog/referrer-dialog'
 import { CustomerForm, type ReferrerChoiceProps } from './customer-form'

@@ -11,7 +11,7 @@ import {
   narrows,
   queryOf,
   type SalonConditions,
-} from '../../salon-search'
+} from '../../utils/salon-search'
 
 export type SalonSearchFormProps = {
   /** The conditions that are searched for: those of the address */

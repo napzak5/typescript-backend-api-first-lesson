@@ -7,8 +7,8 @@ import {
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { ALLERGY_OPTIONS, chartQueryOf } from '../../chart-search'
-import type { ChartConditions } from '../../charts-api'
+import type { ChartConditions } from '../../api/charts-api'
+import { ALLERGY_OPTIONS, chartQueryOf } from '../../utils/chart-search'
 
 export type ChartFilterProps = {
   /** The conditions that are shown: those of the address */

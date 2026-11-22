@@ -8,7 +8,7 @@ import {
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { deliveryDayOf } from '../../order-change'
+import { deliveryDayOf } from '../../utils/order-change'
 
 export type OrderChangeFormProps = Pick<
   FormProps,

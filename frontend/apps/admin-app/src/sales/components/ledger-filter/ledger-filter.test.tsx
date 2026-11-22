@@ -8,7 +8,7 @@ import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
-import type { LedgerConditions } from '../../sales-ledger'
+import type { LedgerConditions } from '../../utils/sales-ledger'
 import { LedgerFilter, type LedgerFilterProps } from './ledger-filter'
 import * as ledgerFilterStories from './ledger-filter.stories'
 

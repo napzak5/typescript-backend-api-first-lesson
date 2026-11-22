@@ -1,5 +1,5 @@
 import { ButtonLink, Card } from '@beauty-salon-frontend/ui'
-import { countNameOf } from '../../customer-format'
+import { countNameOf } from '../../utils/customer-format'
 import styles from './point-balance.module.css'
 
 export type PointBalanceProps = {

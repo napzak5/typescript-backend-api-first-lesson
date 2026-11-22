@@ -4,15 +4,18 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import { countOf, Link, type More } from '@beauty-salon-frontend/ui'
-import { UNLISTED_STAFF } from '../../../bookings/booking-format'
-import { serviceNameOf, staffNameOf } from '../../../bookings/day-bookings'
+import { UNLISTED_STAFF } from '../../../bookings/utils/booking-format'
+import {
+  serviceNameOf,
+  staffNameOf,
+} from '../../../bookings/utils/day-bookings'
+import type { FoundTreatment } from '../../api/treatments-api'
 import {
   customerCalled,
   minutesNameOf,
   NOT_ANSWERED,
   satisfactionNameOf,
-} from '../../treatment-format'
-import type { FoundTreatment } from '../../treatments-api'
+} from '../../utils/treatment-format'
 
 export type TreatmentTableProps = {
   /** What the table lists: 「施術記録」, or 「条件に合う施術記録」 */

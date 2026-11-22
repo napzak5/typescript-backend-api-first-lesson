@@ -20,13 +20,13 @@ import {
   productOf,
   quantityNameOf,
   stockRowNameOf,
-} from '../../../inventory/stock-format'
+} from '../../../inventory/utils/stock-format'
 import {
   quantityControlOf,
   subtotalOf,
   taxAt,
   unitPriceControlOf,
-} from '../../order-entry'
+} from '../../utils/order-entry'
 import styles from './order-form.module.css'
 
 export type OrderFormProps = Pick<

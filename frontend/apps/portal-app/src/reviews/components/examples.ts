@@ -7,8 +7,8 @@ import {
   salon,
   staff,
 } from '../../salons/components/examples'
-import type { Entered } from '../review-flow'
-import type { OwnReview, Visit } from '../reviews-api'
+import type { OwnReview, Visit } from '../api/reviews-api'
+import type { Entered } from '../utils/review-flow'
 
 /*
  * What the stories of the components of the reviews show: the salon, the

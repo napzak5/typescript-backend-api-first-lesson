@@ -15,8 +15,8 @@ import {
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import { match } from 'ts-pattern'
-import { erasureStateOf } from '../../customer-erasure'
-import type { ErasureRequest } from '../../customer-erasure-api'
+import type { ErasureRequest } from '../../api/customer-erasure-api'
+import { erasureStateOf } from '../../utils/customer-erasure'
 import styles from './customer-erasure.module.css'
 
 /** What the part shows of the latest request below its heading */

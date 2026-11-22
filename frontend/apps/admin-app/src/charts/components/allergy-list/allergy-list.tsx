@@ -21,7 +21,7 @@ import {
   REMOVED_BY_OTHERS,
   severityNameOf,
   severityToneOf,
-} from '../../allergies'
+} from '../../utils/allergies'
 import styles from './allergy-list.module.css'
 
 /** What the card shows below its heading */

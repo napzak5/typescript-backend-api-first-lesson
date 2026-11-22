@@ -6,7 +6,7 @@ import {
   pointsOf,
   tierNameOf,
   visitsOf,
-} from '../../profile-format'
+} from '../../utils/profile-format'
 import styles from './membership-details.module.css'
 
 export type MembershipDetailsProps = {

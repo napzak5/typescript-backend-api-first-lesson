@@ -9,7 +9,7 @@ import {
   methodNameOf,
   paymentNameOf,
   refundNameOf,
-} from '../../sale-format'
+} from '../../utils/sale-format'
 
 export type PaymentTableProps = {
   /** The payments of a sale, in the order they were recorded */

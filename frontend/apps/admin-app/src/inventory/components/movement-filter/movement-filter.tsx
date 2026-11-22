@@ -8,8 +8,11 @@ import {
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { MOVEMENT_TYPE_OPTIONS } from '../../movement-format'
-import { type MovementConditions, movementQueryOf } from '../../movement-search'
+import { MOVEMENT_TYPE_OPTIONS } from '../../utils/movement-format'
+import {
+  type MovementConditions,
+  movementQueryOf,
+} from '../../utils/movement-search'
 
 export type MovementFilterProps = {
   /** The conditions that are shown: those of the address */

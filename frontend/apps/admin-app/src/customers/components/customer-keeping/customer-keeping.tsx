@@ -6,7 +6,7 @@ import {
   Card,
   Dialog,
 } from '@beauty-salon-frontend/ui'
-import { KEPT_BY_OTHERS } from '../../customer-history'
+import { KEPT_BY_OTHERS } from '../../utils/customer-history'
 import styles from './customer-keeping.module.css'
 
 export type CustomerKeepingProps = {

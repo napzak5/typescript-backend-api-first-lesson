@@ -8,7 +8,7 @@ import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
-import type { OrderConditions } from '../../order-search'
+import type { OrderConditions } from '../../utils/order-search'
 import { OrderFilter, type OrderFilterProps } from './order-filter'
 import * as orderFilterStories from './order-filter.stories'
 

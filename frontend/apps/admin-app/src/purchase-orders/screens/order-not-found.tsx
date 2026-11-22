@@ -1,0 +1,18 @@
+import { ButtonLink, PageHeader } from '@beauty-salon-frontend/ui'
+import { purchaseOrdersHrefOf } from '../../navigation'
+
+/** The way back to the orders of the salon */
+export const ToTheOrders = ({ salonId }: { salonId: string }) => (
+  <ButtonLink href={purchaseOrdersHrefOf(salonId)}>発注へ</ButtonLink>
+)
+
+/** What a screen of a purchase order says when there is none to show: none at the address, or one of another salon. */
+export const OrderNotFound = ({ salonId }: { salonId: string }) => (
+  <>
+    <PageHeader
+      title='発注が見つかりません'
+      description='アドレスが正しいか、お確かめください。'
+    />
+    <ToTheOrders salonId={salonId} />
+  </>
+)

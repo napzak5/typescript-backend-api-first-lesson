@@ -7,8 +7,8 @@ import {
   Link,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { type Referrer, referrerNameOf } from '../../customer-form'
-import { countNameOf } from '../../customer-format'
+import { type Referrer, referrerNameOf } from '../../utils/customer-form'
+import { countNameOf } from '../../utils/customer-format'
 import styles from './customer-record.module.css'
 import { ledgerItemsOf } from './ledger-items'
 

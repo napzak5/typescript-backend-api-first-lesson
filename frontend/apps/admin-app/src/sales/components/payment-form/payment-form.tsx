@@ -8,7 +8,7 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useState } from 'react'
-import { methodLabelOf, takesCard } from '../../payments'
+import { methodLabelOf, takesCard } from '../../utils/payments'
 
 export type PaymentFormProps = Pick<
   FormProps,

@@ -25,14 +25,17 @@ import {
   useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { GONE_SERVICE, UNLISTED_STAFF } from '../../../bookings/booking-format'
-import { tagsTextOf } from '../../../customers/customer-ledger'
-import { MOST_MATERIALS, materialControlOf } from '../../treatment-form'
+import {
+  GONE_SERVICE,
+  UNLISTED_STAFF,
+} from '../../../bookings/utils/booking-format'
+import { tagsTextOf } from '../../../customers/utils/customer-ledger'
+import { MOST_MATERIALS, materialControlOf } from '../../utils/treatment-form'
 import {
   productNameOf,
   REMOVED_PRODUCT,
   SATISFACTION_OPTIONS,
-} from '../../treatment-format'
+} from '../../utils/treatment-format'
 import styles from './treatment-form.module.css'
 
 export type TreatmentFormProps = {

@@ -6,8 +6,8 @@ import {
   RadioGroup,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
-import { ROLE } from '../../account-form'
-import { roleOptionsOf } from '../../account-format'
+import { ROLE } from '../../utils/account-form'
+import { roleOptionsOf } from '../../utils/account-format'
 
 export type RoleFormProps = {
   /** The roles the account may give */

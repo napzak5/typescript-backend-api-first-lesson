@@ -4,8 +4,12 @@ import type {
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
 import { Link, Table } from '@beauty-salon-frontend/ui'
-import { changeNameOf } from '../../movement-format'
-import { productOf, quantityNameOf, stockRowNameOf } from '../../stock-format'
+import { changeNameOf } from '../../utils/movement-format'
+import {
+  productOf,
+  quantityNameOf,
+  stockRowNameOf,
+} from '../../utils/stock-format'
 
 export type CountResultProps = {
   /** The rows that differed from the books, in the order they were counted */

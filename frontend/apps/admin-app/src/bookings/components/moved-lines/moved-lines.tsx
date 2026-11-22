@@ -1,7 +1,11 @@
 import type { ModelsBookingServiceResponse } from '@beauty-salon-frontend/api-client'
-import { hoursOf } from '../../booking-format'
-import type { LineCheck } from '../../bookings-api'
-import { memberNameOf, type Names, serviceNameOf } from '../../day-bookings'
+import type { LineCheck } from '../../api/bookings-api'
+import { hoursOf } from '../../utils/booking-format'
+import {
+  memberNameOf,
+  type Names,
+  serviceNameOf,
+} from '../../utils/day-bookings'
 import { LineCheckNote } from '../line-check-note/line-check-note'
 import styles from './moved-lines.module.css'
 

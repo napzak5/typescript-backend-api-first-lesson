@@ -9,13 +9,13 @@ import {
   PagedList,
 } from '@beauty-salon-frontend/ui'
 import { ReviewContent } from '../../../salons/components/review-content/review-content'
+import type { OwnReview } from '../../api/reviews-api'
 import {
   NO_SALON,
   ratedStaffOf,
   subjectOf,
   timezoneOf,
-} from '../../review-format'
-import type { OwnReview } from '../../reviews-api'
+} from '../../utils/review-format'
 import styles from './own-review-list.module.css'
 
 export type OwnReviewListProps = {

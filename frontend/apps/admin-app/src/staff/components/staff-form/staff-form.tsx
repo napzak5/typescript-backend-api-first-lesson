@@ -9,7 +9,7 @@ import {
   Select,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { LEVEL_OPTIONS } from '../../staff-format'
+import { LEVEL_OPTIONS } from '../../utils/staff-format'
 import { IntroductionFields } from '../introduction-fields/introduction-fields'
 
 export type StaffFormProps = Pick<

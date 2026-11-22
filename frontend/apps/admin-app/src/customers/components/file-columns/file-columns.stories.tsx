@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { COLUMN_GUIDES } from '../../customer-file'
+import { COLUMN_GUIDES } from '../../utils/customer-file'
 import { FileColumns } from './file-columns'
 
 const meta: Meta<typeof FileColumns> = {

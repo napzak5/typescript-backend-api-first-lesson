@@ -11,7 +11,7 @@ import {
   Select,
 } from '@beauty-salon-frontend/ui'
 import type { ChangeEvent } from 'react'
-import { postedOf } from '../../salon-format'
+import { postedOf } from '../../utils/salon-format'
 import { ReviewContent } from '../review-content/review-content'
 import styles from './review-list.module.css'
 

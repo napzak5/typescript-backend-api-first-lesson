@@ -5,8 +5,8 @@ import type {
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { NONE, Note, Table } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import { partsOf } from '../../schedule-form'
-import { type Shift, shiftOf, weekdayNameOf } from '../../shift-week'
+import { partsOf } from '../../utils/schedule-form'
+import { type Shift, shiftOf, weekdayNameOf } from '../../utils/shift-week'
 import styles from './schedule-record.module.css'
 
 export type ScheduleRecordProps = {

@@ -6,7 +6,7 @@ import type {
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import { DescriptionList, Table } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
-import { cardNameOf, methodNameOf, refundedOf } from '../../sale-format'
+import { cardNameOf, methodNameOf, refundedOf } from '../../utils/sale-format'
 import styles from './receipt.module.css'
 
 export type ReceiptProps = {

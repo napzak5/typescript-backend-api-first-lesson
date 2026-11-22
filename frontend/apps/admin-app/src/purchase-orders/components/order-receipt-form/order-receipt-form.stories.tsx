@@ -2,7 +2,7 @@ import { ButtonLink } from '@beauty-salon-frontend/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { colourLot } from '../../../inventory/components/examples'
-import { receivedControlOf } from '../../order-receipt'
+import { receivedControlOf } from '../../utils/order-receipt'
 import { shippedOrder } from '../examples'
 import { OrderReceiptForm } from './order-receipt-form'
 

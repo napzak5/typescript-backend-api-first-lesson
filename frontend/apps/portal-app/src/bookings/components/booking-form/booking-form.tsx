@@ -21,13 +21,13 @@ import {
   useRef,
 } from 'react'
 import { match } from 'ts-pattern'
-import { calendarDateOf } from '../../../salons/salon-format'
+import { calendarDateOf } from '../../../salons/utils/salon-format'
 import {
   type Choice,
   dayAfter,
   dayBefore,
   type Time,
-} from '../../booking-choice'
+} from '../../utils/booking-choice'
 import styles from './booking-form.module.css'
 
 /** The times of the chosen day: being read, read, or not read. */

@@ -3,7 +3,7 @@ import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
-import { TREND_PARTS } from '../../sales-trends'
+import { TREND_PARTS } from '../../utils/sales-trends'
 import * as salesTrendStories from './sales-trend.stories'
 
 const stories = composeStories(salesTrendStories)

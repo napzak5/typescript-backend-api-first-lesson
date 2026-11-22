@@ -14,7 +14,7 @@ import {
   PASSWORD,
   PERIOD,
   PERIODS,
-} from '../../share-link'
+} from '../../utils/share-link'
 
 export type ShareLinkFormProps = {
   /** The name of the file the link shows */

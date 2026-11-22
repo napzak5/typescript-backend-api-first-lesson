@@ -8,7 +8,7 @@ import {
   shiftOf,
   shortDayNameOf,
   weekNameOf,
-} from '../../shift-week'
+} from '../../utils/shift-week'
 import styles from './shift-table.module.css'
 
 /** A member of the staff and their schedule */

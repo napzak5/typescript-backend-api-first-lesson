@@ -3,14 +3,14 @@ import type {
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
 import { Link, Table } from '@beauty-salon-frontend/ui'
-import { minutesNameOf } from '../../../treatments/treatment-format'
+import { minutesNameOf } from '../../../treatments/utils/treatment-format'
 import {
   categoriesById,
   categoryPathOf,
   menuSectionsOf,
   priceLineOf,
   serviceStateOf,
-} from '../../menu-format'
+} from '../../utils/menu-format'
 import styles from './menu-sections.module.css'
 
 export type MenuSectionsProps = {

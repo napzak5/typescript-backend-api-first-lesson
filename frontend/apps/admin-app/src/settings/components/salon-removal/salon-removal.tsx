@@ -1,6 +1,6 @@
 import { Alert, Button, Card, Link } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { SalonRemovalRefusal } from '../../salon-removal'
+import type { SalonRemovalRefusal } from '../../utils/salon-removal'
 import styles from './salon-removal.module.css'
 
 export type SalonRemovalProps = {

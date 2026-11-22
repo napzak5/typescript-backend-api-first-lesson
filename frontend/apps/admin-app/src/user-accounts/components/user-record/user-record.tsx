@@ -6,7 +6,7 @@ import {
   statusNameOf,
   statusNoteOf,
   twoFactorNameOf,
-} from '../../../staff-accounts/account-format'
+} from '../../../staff-accounts/utils/account-format'
 import {
   failuresNameOf,
   ledgersOf,
@@ -15,7 +15,7 @@ import {
   lockOf,
   timeZoneNoteOf,
   userRoleNameOf,
-} from '../../user-accounts'
+} from '../../utils/user-accounts'
 
 export type UserRecordProps = {
   user: ModelsUserResponse

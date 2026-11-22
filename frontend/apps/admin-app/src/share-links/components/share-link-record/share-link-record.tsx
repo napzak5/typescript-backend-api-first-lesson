@@ -14,7 +14,7 @@ import {
   passwordNameOf,
   stateNameOf,
   stateOf,
-} from '../../share-link'
+} from '../../utils/share-link'
 import styles from './share-link-record.module.css'
 
 export type ShareLinkRecordProps = {

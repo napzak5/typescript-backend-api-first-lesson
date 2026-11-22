@@ -8,7 +8,7 @@ import {
   expiryResultOf,
   PURGE_COPY,
   ranAtOf,
-} from '../../operations'
+} from '../../utils/operations'
 import { aDeletionRequest, TIMEZONE } from '../examples'
 import { ExecutedRequests } from '../executed-requests/executed-requests'
 import { OperationRun } from './operation-run'

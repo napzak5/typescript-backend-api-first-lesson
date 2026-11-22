@@ -7,8 +7,11 @@ import {
   TextField,
   useFilterValues,
 } from '@beauty-salon-frontend/ui'
-import { CARRIED_OPTIONS, USE_OPTIONS } from '../../product-format'
-import { type ProductConditions, productQueryOf } from '../../product-ledger'
+import { CARRIED_OPTIONS, USE_OPTIONS } from '../../utils/product-format'
+import {
+  type ProductConditions,
+  productQueryOf,
+} from '../../utils/product-ledger'
 
 export type ProductFilterProps = {
   /** The conditions that are shown: those of the address */

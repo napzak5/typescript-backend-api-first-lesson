@@ -8,7 +8,7 @@ import {
   shampooRow,
 } from '../../../inventory/components/examples'
 import { PRODUCTS_OF_THE_SALON } from '../../../products/components/examples'
-import { quantityControlOf, unitPriceControlOf } from '../../order-entry'
+import { quantityControlOf, unitPriceControlOf } from '../../utils/order-entry'
 import { OrderForm } from './order-form'
 
 const meta: Meta<typeof OrderForm> = {

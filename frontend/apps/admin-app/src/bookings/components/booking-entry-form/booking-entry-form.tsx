@@ -12,7 +12,7 @@ import {
   Select,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import type { LineCheck } from '../../bookings-api'
+import type { LineCheck } from '../../api/bookings-api'
 import { BookingLines } from '../booking-lines/booking-lines'
 import { BookingNotesFields } from '../booking-notes-fields/booking-notes-fields'
 import styles from './booking-entry-form.module.css'

@@ -17,16 +17,16 @@ import {
   Table,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
-import { GONE_CUSTOMER } from '../../../bookings/booking-format'
-import { memberNameOf, type Names } from '../../../bookings/day-bookings'
-import { customerNameOf } from '../../../customers/customers-api'
+import { GONE_CUSTOMER } from '../../../bookings/utils/booking-format'
+import { memberNameOf, type Names } from '../../../bookings/utils/day-bookings'
+import { customerNameOf } from '../../../customers/api/customers-api'
 import {
   owedOf,
   paymentStatusNameOf,
   paymentStatusToneOf,
   receivedOf,
   refundedOf,
-} from '../../sale-format'
+} from '../../utils/sale-format'
 import styles from './sale-record.module.css'
 
 export type SaleRecordProps = {
