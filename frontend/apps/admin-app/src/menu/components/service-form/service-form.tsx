@@ -3,7 +3,7 @@ import type {
   ModelsServiceOption,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import { upTo } from '@beauty-salon-frontend/fields'
+import { upTo, WEB_ADDRESS_DESCRIPTION } from '@beauty-salon-frontend/fields'
 import {
   Button,
   Checkbox,
@@ -317,7 +317,7 @@ export const ServiceForm = ({
           name='imageUrl'
           type='url'
           autoComplete='off'
-          description='http:// か https:// で始まる、500 文字までの URL。'
+          description={WEB_ADDRESS_DESCRIPTION}
           defaultValue={service?.imageUrl ?? undefined}
           error={errors['imageUrl']}
         />

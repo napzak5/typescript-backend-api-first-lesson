@@ -141,7 +141,9 @@ test.describe('the own profile, on a screen as narrow as a phone', () => {
     // Assert
     await expect(
       page.getByRole('textbox', { name: '写真の URL' }),
-    ).toHaveAccessibleDescription(/http:\/\/ か https:\/\/ で始まる URL を/)
+    ).toHaveAccessibleDescription(
+      /ドメイン名（example\.com など）の URL を、500 文字以内で入力してください。/,
+    )
     await expectSoundPage(page)
   })
 })

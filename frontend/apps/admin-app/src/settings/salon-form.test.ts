@@ -254,19 +254,19 @@ describe('readSalonChange', () => {
       'websiteUrl',
       'hikari.example.com',
       'websiteUrl',
-      'http:// または https:// で始まる URL を、500 文字以内で入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'logoUrl',
       `https://example.com/${'a'.repeat(481)}`,
       'logoUrl',
-      'http:// または https:// で始まる URL を、500 文字以内で入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'imageUrls',
       'https://example.com/1.jpg\nexample.com/2.jpg',
       'imageUrls',
-      '2 行目を確かめてください。http:// または https:// で始まる URL を書いてください。',
+      '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
     ],
     [
       'taxRate',

@@ -655,7 +655,9 @@ describe('the product ledger of a salon, against the API', () => {
       '仕入価格は、0 以上の円の整数で入力してください。',
     )
     expect(text(/^商品画像の URL/)).toHaveAccessibleDescription(
-      expect.stringContaining('http:// または https:// で始まる URL'),
+      expect.stringContaining(
+        'ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      ),
     )
     expect(await storedProductsOf(TOKYO)).toEqual(before)
   })

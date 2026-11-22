@@ -317,7 +317,7 @@ describe('readNewReview', () => {
         type: 'invalid',
         errors: {
           imageUrls:
-            '3 行目を確かめてください。http:// または https:// で始まる URL を、500 文字以内で書いてください。',
+            '3 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
         },
       },
     )
@@ -337,7 +337,7 @@ describe('readNewReview', () => {
         overallRating: OVERALL_RATING_MISSING,
         title: TITLE_TOO_LONG,
         imageUrls:
-          '1 行目を確かめてください。http:// または https:// で始まる URL を、500 文字以内で書いてください。',
+          '1 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
       },
     })
   })

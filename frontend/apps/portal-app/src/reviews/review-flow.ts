@@ -10,11 +10,13 @@ import type {
   ModelsReviewResponse,
   ModelsReviewUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { lengthOf, tooLong } from '@beauty-salon-frontend/fields'
 import {
+  LONGEST_WEB_ADDRESS,
+  lengthOf,
   linesOf,
-  pictureAddressesError,
-} from '@beauty-salon-frontend/preferences'
+  tooLong,
+  webAddressLinesError,
+} from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormErrors,
@@ -171,7 +173,7 @@ const TOO_MANY_IMAGES = `画像は ${MAX_IMAGES} 個までです。行を減ら�
 /** What cannot be right of what the form was sent with, under the names of the controls. */
 const errorsOf = (entered: Entered): FormErrors => {
   const images =
-    pictureAddressesError(entered.imageUrls) ??
+    webAddressLinesError(entered.imageUrls, LONGEST_WEB_ADDRESS) ??
     (linesOf(entered.imageUrls).length > MAX_IMAGES
       ? TOO_MANY_IMAGES
       : undefined)

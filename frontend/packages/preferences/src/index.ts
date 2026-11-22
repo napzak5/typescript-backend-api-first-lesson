@@ -14,7 +14,6 @@ export {
   PreferencesForm,
   type PreferencesFormProps,
 } from './components/preferences-form/preferences-form'
-export { linesOf, pictureAddressesError } from './lines'
 export {
   afterPreferencesChange,
   type PreferencesChangeRead,

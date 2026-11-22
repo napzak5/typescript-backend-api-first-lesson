@@ -2,8 +2,8 @@ import type {
   ModelsStaffProfileResponse,
   ModelsStaffProfileUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
+import { webAddressError } from '@beauty-salon-frontend/fields'
 import { type FormRead, textOf, textOrNull } from '@beauty-salon-frontend/ui'
-import * as z from 'zod'
 import { tagsIn } from '../customers/customer-ledger'
 import { numberOf } from '../treatments/treatment-form'
 
@@ -23,15 +23,9 @@ export type Introduced = Pick<
   'specialties' | 'bio' | 'imageUrl' | 'yearsOfExperience' | 'certifications'
 >
 
-const LONGEST_URL = 500
 const MOST_YEARS = 100
 
 const YEARS_ERROR = `経験年数は、0 から ${MOST_YEARS} までの整数で入力してください。`
-
-/** What is said at the address of the photograph, before it is sent and when the API refused it */
-export const URL_ERROR = `http:// か https:// で始まる URL を、${LONGEST_URL} 文字までで入力してください。`
-
-const webAddressSchema = z.httpUrl().check(z.maxLength(LONGEST_URL))
 
 /** A number up to `most` that may be left empty; `undefined` for what is none. */
 export const optionalNumberUpTo = (
@@ -59,16 +53,15 @@ export const readIntroduction = (values: FormData): FormRead<Introduction> => {
     MOST_YEARS,
   )
   const imageUrl = optional('imageUrl')
-  const urlTaken =
-    imageUrl === null || webAddressSchema.safeParse(imageUrl).success
-  if (yearsOfExperience === undefined || !urlTaken) {
+  const urlError = webAddressError(imageUrl)
+  if (yearsOfExperience === undefined || urlError !== undefined) {
     return {
       type: 'invalid',
       errors: {
         ...(yearsOfExperience === undefined
           ? { yearsOfExperience: YEARS_ERROR }
           : {}),
-        ...(urlTaken ? {} : { imageUrl: URL_ERROR }),
+        ...(urlError === undefined ? {} : { imageUrl: urlError }),
       },
     }
   }

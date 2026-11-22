@@ -300,7 +300,7 @@ test.describe('the preferences of a customer, on a screen as narrow as a phone',
     ).toBeVisible()
     await expect(
       page.getByText(
-        '2 行目を確かめてください。http:// または https:// で始まる URL を、500 文字以内で書いてください。',
+        '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
       ),
     ).toBeVisible()
     await expect(page).toHaveURL(`${PORTAL.origin}/mypage/preferences`)

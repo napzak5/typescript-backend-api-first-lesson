@@ -258,6 +258,8 @@ describe('SalonForm', () => {
     ['名前', '255 文字まで。お客様がサロンを探すときに出ます。'],
     ['カナ', '255 文字まで。'],
     ['郵便番号', '10 文字まで。'],
+    ['公式サイト', 'http:// か https:// で始まる URL。500 文字まで。'],
+    ['ロゴの URL', 'http:// か https:// で始まる URL。500 文字まで。'],
   ])('should say at %s how long it may be', async (label, description) => {
     // Act
     await stories.Recorded.run()

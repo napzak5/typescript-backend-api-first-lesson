@@ -98,7 +98,7 @@ describe('readProfileChange', () => {
       { imageUrl: 'ftp://photos.example.com/misaki.jpg' },
       {
         imageUrl:
-          'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
       },
     ],
     [
@@ -106,7 +106,7 @@ describe('readProfileChange', () => {
       { imageUrl: `https://photos.example.com/${'a'.repeat(474)}` },
       {
         imageUrl:
-          'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
       },
     ],
   ])('should say at the control what is wrong with %s', (_, values, errors) => {
@@ -148,7 +148,7 @@ describe('afterProfileSave', () => {
         specialties:
           'この値は受け付けられませんでした。入力を確かめてください。',
         imageUrl:
-          'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
       },
     })
   })

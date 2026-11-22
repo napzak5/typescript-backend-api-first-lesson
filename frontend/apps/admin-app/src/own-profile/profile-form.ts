@@ -4,6 +4,7 @@ import {
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
 import type { ModelsStaffProfileUpdateRequest } from '@beauty-salon-frontend/api-client'
+import { WEB_ADDRESS_ERROR } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormRead,
@@ -16,7 +17,6 @@ import {
   type Introduced,
   introductionChangesOf,
   readIntroduction,
-  URL_ERROR,
 } from '../staff/introduction'
 import type { ProfileSave } from './profile-api'
 
@@ -70,7 +70,7 @@ export const afterProfileSave = (
         errors: Object.fromEntries(
           said.map((control) => [
             control,
-            control === 'imageUrl' ? URL_ERROR : REFUSED_VALUE_MESSAGE,
+            control === 'imageUrl' ? WEB_ADDRESS_ERROR : REFUSED_VALUE_MESSAGE,
           ]),
         ),
       }

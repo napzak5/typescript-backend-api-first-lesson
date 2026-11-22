@@ -1,5 +1,9 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
-import { upTo } from '@beauty-salon-frontend/fields'
+import {
+  LONGEST_WEB_ADDRESS,
+  upTo,
+  WEB_ADDRESS_DESCRIPTION,
+} from '@beauty-salon-frontend/fields'
 import {
   Checkbox,
   FieldRow,
@@ -268,7 +272,7 @@ export const ProductForm = ({
         type='url'
         inputMode='url'
         autoComplete='off'
-        description='http:// または https:// で始まる URL。500 文字まで。'
+        description={WEB_ADDRESS_DESCRIPTION}
         defaultValue={textOrNothing(product?.imageUrl)}
         error={errors['imageUrl']}
       />
@@ -278,7 +282,7 @@ export const ProductForm = ({
         type='url'
         inputMode='url'
         autoComplete='off'
-        description='メーカーの安全データシート（SDS）の URL。500 文字まで。'
+        description={`メーカーの安全データシート（SDS）の URL。${upTo(LONGEST_WEB_ADDRESS)}`}
         defaultValue={textOrNothing(product?.safetyDataSheet)}
         error={errors['safetyDataSheet']}
       />

@@ -241,9 +241,9 @@ describe('readProductEntry', () => {
       },
       {
         imageUrl:
-          'http:// または https:// で始まる URL を、500 文字以内で入力してください。',
+          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
         safetyDataSheet:
-          'http:// または https:// で始まる URL を、500 文字以内で入力してください。',
+          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
       },
     ],
     [
@@ -251,7 +251,7 @@ describe('readProductEntry', () => {
       { imageUrl: '/images/a.jpg' },
       {
         imageUrl:
-          'http:// または https:// で始まる URL を、500 文字以内で入力してください。',
+          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
       },
     ],
   ])(
@@ -412,7 +412,7 @@ describe('afterProductWrite', () => {
           '最大在庫数は、最低在庫数と発注点と同じか、それより大きい数にしてください。',
         salonPrice: '販売価格は、0 以上の円の整数で入力してください。',
         imageUrl:
-          'http:// または https:// で始まる URL を、500 文字以内で入力してください。',
+          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
       },
     })
   })

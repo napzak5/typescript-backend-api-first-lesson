@@ -1,4 +1,4 @@
-import { upTo } from '@beauty-salon-frontend/fields'
+import { upTo, WEB_ADDRESS_DESCRIPTION } from '@beauty-salon-frontend/fields'
 import {
   Button,
   Checkbox,
@@ -105,7 +105,7 @@ export const PhotoForm = ({
             type='url'
             autoComplete='off'
             required
-            description='http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL。500 文字まで。'
+            description={WEB_ADDRESS_DESCRIPTION}
             error={photos.errors[photoControlOf(index, 'photoUrl')]}
           />
           <TextField

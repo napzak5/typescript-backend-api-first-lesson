@@ -28,7 +28,7 @@ export const WithErrors: Story = {
       yearsOfExperience:
         '経験年数は、0 から 100 までの整数で入力してください。',
       imageUrl:
-        'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+        'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     },
   },
 }

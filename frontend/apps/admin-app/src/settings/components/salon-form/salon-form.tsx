@@ -1,5 +1,5 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
-import { upTo } from '@beauty-salon-frontend/fields'
+import { upTo, WEB_ADDRESS_DESCRIPTION } from '@beauty-salon-frontend/fields'
 import {
   Checkbox,
   FieldRow,
@@ -195,7 +195,7 @@ export const SalonForm = ({
           name='websiteUrl'
           type='url'
           autoComplete='url'
-          description='http:// か https:// で始まる URL。'
+          description={WEB_ADDRESS_DESCRIPTION}
           defaultValue={textOrEmpty(salon.websiteUrl)}
           error={errors['websiteUrl']}
         />
@@ -206,6 +206,7 @@ export const SalonForm = ({
           name='logoUrl'
           type='url'
           autoComplete='off'
+          description={WEB_ADDRESS_DESCRIPTION}
           defaultValue={textOrEmpty(salon.logoUrl)}
           error={errors['logoUrl']}
         />

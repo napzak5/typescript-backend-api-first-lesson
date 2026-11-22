@@ -64,7 +64,7 @@ export const WithErrors: Story = {
       overallRating: '総合の評価を選んでください。',
       title: '255 文字以内で入力してください。',
       imageUrls:
-        '2 行目を確かめてください。http:// または https:// で始まる URL を、500 文字以内で書いてください。',
+        '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     },
   },
 }

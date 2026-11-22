@@ -43,6 +43,9 @@ describe('IntroductionFields', () => {
     expect(text('専門')).toHaveAccessibleDescription(
       '得意なメニューや技術を、「、」か「,」で区切って書きます。',
     )
+    expect(text('写真の URL')).toHaveAccessibleDescription(
+      'http:// か https:// で始まる URL。500 文字まで。',
+    )
   })
 
   it('should say at a control what was refused', async () => {

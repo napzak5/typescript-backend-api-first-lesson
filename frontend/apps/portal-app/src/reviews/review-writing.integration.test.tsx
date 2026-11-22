@@ -495,7 +495,7 @@ describe('the review of a visit, against the API', () => {
       // Assert
       expect(text('写真の URL')).toHaveAccessibleDescription(
         expect.stringContaining(
-          '2 行目を確かめてください。http:// または https:// で始まる URL を、500 文字以内で書いてください。',
+          '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
         ),
       )
       expect(text('写真の URL')).toHaveFocus()

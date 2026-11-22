@@ -21,6 +21,7 @@ import {
   lengthErrors,
   phoneError,
   tooLong,
+  WEB_ADDRESS_ERROR,
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
@@ -37,7 +38,6 @@ import {
   introductionChangesOf,
   optionalNumberUpTo,
   readIntroduction,
-  URL_ERROR,
 } from './introduction'
 import { LEVELS } from './staff-format'
 
@@ -352,7 +352,7 @@ const CONTROLS: readonly string[] = [
 const messageAt = (control: string): string =>
   match(control)
     .with('hireDate', () => HIRE_DATE_OUT_OF_RANGE)
-    .with('imageUrl', () => URL_ERROR)
+    .with('imageUrl', () => WEB_ADDRESS_ERROR)
     .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 const DUPLICATES: Record<'email' | 'staffCode', string> = {

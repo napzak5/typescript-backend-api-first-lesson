@@ -329,6 +329,7 @@ describe('ServiceForm', () => {
   it.each<[string, string]>([
     ['名前', '255 文字まで。お客様のメニューに出ます。'],
     ['短い紹介', '500 文字まで。メニューの一覧に出ます。'],
+    ['写真の URL', 'http:// か https:// で始まる URL。500 文字まで。'],
   ])('should say at %s how long it may be', async (label, description) => {
     // Act
     await stories.New.run()

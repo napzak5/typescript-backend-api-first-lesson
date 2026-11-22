@@ -299,13 +299,13 @@ describe('readStaffEntry', () => {
       'an address of a photo that is not of the web',
       { imageUrl: 'ftp://photos.example.com/a.jpg' },
       'imageUrl',
-      'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'an address of a photo too long',
       { imageUrl: `https://photos.example.com/${'a'.repeat(474)}` },
       'imageUrl',
-      'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'no bookings at a time',
@@ -467,7 +467,7 @@ describe('afterStaffWrite', () => {
         hireDate:
           '入社日は、1900 年 1 月 1 日から 2999 年 12 月 31 日までの日付を入力してください。',
         imageUrl:
-          'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
       },
     })
   })

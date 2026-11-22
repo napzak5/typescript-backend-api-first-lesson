@@ -32,7 +32,7 @@ this one: a component is not done without its stories and its test.
 | The page of a customer in the portal, and the form of their profile | `frontend/apps/portal-app/src/profile/` |
 | What a customer wishes for in the portal: the part of their page, and the screen of the form | `frontend/apps/portal-app/src/preferences/` |
 | What a customer wishes for, which the portal and the admin application share: the form with the rows of time slots, how it is read and what a refusal says, the staff it offers, a list written a line each, and how the record is shown (`PreferencesDetails`) | `frontend/packages/preferences/src/` |
-| The rules of the values a form takes, in every application and package: a day and the days a control offers (`isDay`, `EARLIEST_DAY`, `LATEST_DAY`), a name (`lastNameError`, `firstNameError`), an address of mail (`emailError`, `EMAIL_MALFORMED`), a telephone number (`phoneError`, `alternativePhoneError`), the length of a text and what is said of one that is too long (`lengthOf`, `tooLong`, `tooLongOf`, `eachTooLongOf`, `neededWithin`, `tooLongError`, `neededError`, `lengthErrors`, `upTo`, `charactersOf`), a choice of a list (`choiceOf`, `UNLISTED_MESSAGE`), an address of the web (`webAddressOf`), and the record of a customer (`CUSTOMER_LENGTHS`, `GENDERS`, `SERVICE_CATEGORIES`, `birthDateError`, `basicPreferencesIn`, `shownBasicPreferencesOf`, `customerControlOf`, `customerRefusalOf`) | `frontend/packages/fields/src/` (`@beauty-salon-frontend/fields`) |
+| The rules of the values a form takes, in every application and package: a day and the days a control offers (`isDay`, `EARLIEST_DAY`, `LATEST_DAY`), a name (`lastNameError`, `firstNameError`), an address of mail (`emailError`, `EMAIL_MALFORMED`), a telephone number (`phoneError`, `alternativePhoneError`), the length of a text and what is said of one that is too long (`lengthOf`, `tooLong`, `tooLongOf`, `eachTooLongOf`, `neededWithin`, `tooLongError`, `neededError`, `lengthErrors`, `upTo`, `charactersOf`), a choice of a list (`choiceOf`, `UNLISTED_MESSAGE`), an address of the web (`webAddressError`, `webAddressLinesError`, `WEB_ADDRESS_ERROR`, `notWebAddress`, `LONGEST_WEB_ADDRESS`, `WEB_ADDRESS_DESCRIPTION`, and `webAddressOf` for a link), a list written a line each (`linesOf`), and the record of a customer (`CUSTOMER_LENGTHS`, `GENDERS`, `SERVICE_CATEGORIES`, `birthDateError`, `basicPreferencesIn`, `shownBasicPreferencesOf`, `customerControlOf`, `customerRefusalOf`) | `frontend/packages/fields/src/` (`@beauty-salon-frontend/fields`) |
 | The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one; what a reader of the page of a salon does with the reviews of others (`reader-flow.ts`, the dialog that reports one) | `frontend/apps/portal-app/src/reviews/` |
 | Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
@@ -494,6 +494,22 @@ shortest).
   A `maxLength` of a control is counted by the browser in units of UTF-16:
   it stops a text of characters outside the basic plane before the length
   the API takes, and lets nothing through that the API refuses.
+- **An address of the web is checked as the API checks it**, by
+  `fields`, and no form has a schema of its own for one: `http` or `https`
+  at a domain name (an address at `localhost`, at a machine by its number
+  or at a name without a dot is none), 500 characters at most
+  (`LONGEST_WEB_ADDRESS`). `webAddressError(address)` is for an address
+  that may be left empty (`null`); `webAddressLinesError(text, longest)`
+  is for a list written a line each, where `longest` is
+  `LONGEST_WEB_ADDRESS`, or `null` for a list the API takes addresses of
+  any length in (the pictures of a salon, the other pictures of a
+  service). Every form says the same sentence, `WEB_ADDRESS_ERROR`
+  (「http:// か https:// で始まる、ドメイン名（example.com など）の URL
+  を、500 文字以内で入力してください。」), before it sends and when the
+  API refused the value; `notWebAddress(null)` is the sentence of a list
+  without a length. The description of a control that takes one address is
+  `WEB_ADDRESS_DESCRIPTION`
+  (「http:// か https:// で始まる URL。500 文字まで。」).
 - **A rule that two modules of a feature need is in one of them or in a
   module of its own**, with its sentence: the keyword of a search
   (`keywordError` of `salon-screens`), the supplier of a purchase order
@@ -893,11 +909,10 @@ have.
   not the rows of the form, so what the API says of a row all the same is
   said about the attempt, not at a control.
 - **A list is written a line each** in a `TextArea` whose description says
-  so. A pure function reads it (`linesOf` of the package, which the
-  forms of the preferences and of the reviews share): without the spaces around a line, without the
-  empty lines, each value once. An error names the line as the control
-  shows it (「2 行目を確かめてください。…」, `pictureAddressesError` for
-  a list of addresses).
+  so. A pure function reads it (`linesOf` of `fields`): without the
+  spaces around a line, without the empty lines, each value once. An error
+  names the line as the control shows it (「2 行目を確かめてください。…」,
+  `webAddressLinesError` of `fields` for a list of addresses).
 - **What the form offers is read with the record, as one answer.** The
   query of the form has one function (`readOwnPreferencesToChange`): the
   record, then what its choices come from (the salons the customer has a

@@ -299,19 +299,19 @@ describe('readServiceEntry', () => {
       'a picture that is no web address',
       { imageUrl: 'photos.example.com/cut.jpg' },
       'imageUrl',
-      'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'a picture of an address of 501 letters',
       { imageUrl: addressOf(501) },
       'imageUrl',
-      'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
     ],
     [
       'another picture that is no web address',
       { imageUrls: 'https://photos.example.com/a.jpg\nb.jpg' },
       'imageUrls',
-      '2 行目を確かめてください。http:// または https:// で始まる URL を、500 文字以内で書いてください。',
+      '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
     ],
     [
       'an option without a name',
@@ -366,6 +366,23 @@ describe('readServiceEntry', () => {
 
     // Assert
     expect(read.type).toBe('valid')
+  })
+
+  it('should take a picture of the list at an address longer than the picture of the service may have: the API sets those no length', () => {
+    // Act
+    const read = readServiceEntry(
+      formWith({
+        imageUrls: `https://photos.example.com/a.jpg\n${addressOf(501)}`,
+      }),
+    )
+
+    // Assert
+    expect(read).toMatchObject({
+      type: 'valid',
+      value: {
+        imageUrls: ['https://photos.example.com/a.jpg', addressOf(501)],
+      },
+    })
   })
 
   it.each<[string, readonly string[], Record<string, string>]>([
@@ -643,10 +660,16 @@ describe('afterServiceWrite', () => {
       '選べる数は、1 以上の整数で入力してください。',
     ],
     [
+      'imageUrl',
+      'invalid_format',
+      'imageUrl',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+    ],
+    [
       'imageUrls.1',
       'invalid_format',
       'imageUrls',
-      'http:// か https:// で始まる URL を、500 文字までで入力してください。',
+      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
     ],
   ])('should say a refused %s (%s) at %s', (field, rule, control, error) => {
     // Act
