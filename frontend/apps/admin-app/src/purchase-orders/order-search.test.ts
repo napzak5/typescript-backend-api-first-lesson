@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   type OrderConditions,
@@ -8,16 +9,6 @@ import {
 } from './order-search'
 
 const SALON_ID = '3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60'
-
-/** The values of a form, under the names of its controls */
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 describe('orderConditionsIn', () => {
   it('should read the status, the supplier and the days of an address', () => {

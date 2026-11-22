@@ -2,10 +2,11 @@ import { KENJI, OSAKA, OWNER, VIP } from '@beauty-salon-frontend/testing/seed'
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { PORTAL } from './applications'
-import { HIROSHI, MIKA, part, staffId } from './bookings'
+import { HIROSHI, MIKA, staffId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { saveButton, text } from './mypage'
+import { part, pressWithTheKeyboard, typeInto } from './screen'
 import { accessTokenOf, enterCredentials, heading } from './sign-in'
 
 /*
@@ -163,8 +164,9 @@ test.describe('the reviews of a customer, in a browser', () => {
     await expectSoundPage(page)
 
     // Act: to the form, by its link and the Enter key
-    await page.getByRole('link', { name: 'レビューを書く' }).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(
+      page.getByRole('link', { name: 'レビューを書く' }),
+    )
 
     // Assert: the member of the staff the booking was with is chosen
     await expect(heading(page, 'レビューを書く')).toBeFocused()
@@ -194,16 +196,14 @@ test.describe('the reviews of a customer, in a browser', () => {
 
     // Act: the Enter key begins a line where a text is written, and sends
     // the form in a control of one line
-    await text(page, '本文').focus()
-    await page.keyboard.type('丁寧でした。')
+    await typeInto(text(page, '本文'), '丁寧でした。')
     await page.keyboard.press('Enter')
     await page.keyboard.type('待ち時間もありませんでした。')
     await expect(text(page, '本文')).toHaveValue(
       '丁寧でした。\n待ち時間もありませんでした。',
     )
     await text(page, '写真の URL').fill(PICTURE)
-    await text(page, 'タイトル').focus()
-    await page.keyboard.type('また行きます')
+    await typeInto(text(page, 'タイトル'), 'また行きます')
     await page.keyboard.press('Enter')
 
     // Assert: the review is the first of what the customer wrote
@@ -249,8 +249,7 @@ test.describe('the reviews of a customer, in a browser', () => {
     // Act: back, and to the form that changes the review, by its link and
     // the Enter key
     await page.goBack()
-    await changeLink(ownReviews(page).first()).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(changeLink(ownReviews(page).first()))
 
     // Assert: it opens with what the review holds
     await expect(heading(page, 'レビューを変更する')).toBeFocused()
@@ -296,8 +295,7 @@ test.describe('the reviews of a customer, in a browser', () => {
     ).toBeVisible()
 
     // Act: the dialog is opened with the keyboard
-    await removeButton(ownReviews(page).first()).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(removeButton(ownReviews(page).first()))
 
     // Assert: it takes the focus, at its first button
     await expect(dialog(page)).toBeVisible()

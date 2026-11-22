@@ -2,6 +2,7 @@ import type {
   ModelsPaymentStatusType,
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { aPaidSale, aPayment, aSale, salon } from './components/examples'
 import {
@@ -11,15 +12,6 @@ import {
   voidableAfter,
   whyNoRefund,
 } from './refunds'
-
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 /** A payment of 3,000 yen in cash */
 const payment = aPayment()

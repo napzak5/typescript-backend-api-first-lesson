@@ -1,5 +1,4 @@
 import { TOKYO } from '@beauty-salon-frontend/testing/seed'
-import type { Locator } from '@playwright/test'
 import type { TestApi } from './fixtures'
 
 /*
@@ -35,9 +34,3 @@ export const sellACutToday = (api: TestApi): Promise<unknown> =>
                          and payment_methods.method = 'cash'`,
     [TOKYO],
   )
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-export const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}

@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   isNarrowed,
@@ -7,15 +8,6 @@ import {
   productQueryOf,
   readProductConditions,
 } from './product-ledger'
-
-const formOf = (values: Record<string, string>): FormData => {
-  const form = new FormData()
-  for (const [name, value] of Object.entries(values)) {
-    form.append(name, value)
-  }
-
-  return form
-}
 
 describe('productConditionsIn', () => {
   it('should read every condition of the address', () => {

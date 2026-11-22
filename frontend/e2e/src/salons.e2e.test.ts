@@ -3,6 +3,7 @@ import type { Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
+import { part } from './screen'
 import { heading, PORTAL_START } from './sign-in'
 
 const search = (page: Page): Locator =>
@@ -17,15 +18,10 @@ const prefecture = (page: Page): Locator =>
 const send = (page: Page): Locator =>
   search(page).getByRole('button', { name: '探す' })
 
-const results = (page: Page): Locator =>
-  page.getByRole('region', { name: '検索結果' })
+const results = (page: Page): Locator => part(page, '検索結果')
 
 const names = (page: Page): Locator =>
   results(page).getByRole('heading', { level: 3 })
-
-/** A part of the page of a salon: the card of the name. */
-const part = (page: Page, name: string): Locator =>
-  page.getByRole('region', { name })
 
 /** Waits until every part of the page of the Tokyo salon shows what it read. */
 const expectWholePage = async (page: Page): Promise<void> => {

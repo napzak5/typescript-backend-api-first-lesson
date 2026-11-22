@@ -1,14 +1,6 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { conditionsIn, conditionsOf, narrows, queryOf } from './salon-search'
-
-const formOf = (values: Record<string, string>): FormData => {
-  const form = new FormData()
-  for (const [name, value] of Object.entries(values)) {
-    form.set(name, value)
-  }
-
-  return form
-}
 
 describe('conditionsIn', () => {
   it('should read every condition from the query of an address', () => {

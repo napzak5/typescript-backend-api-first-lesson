@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -26,12 +27,6 @@ const storedOf = async (api: TestApi) =>
        from salons where name = 'Beauty Studio Tokyo'`,
     ),
   )[0]
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
 
 /** Writes a value in place of what a control holds, as somebody does who works with the keyboard alone. */
 const rewrite = async (control: Locator, value: string): Promise<void> => {
@@ -68,7 +63,7 @@ test.describe('the settings of a salon, in a browser', () => {
     // Assert
     await expect(page.getByText('サロンの情報を直しました。')).toBeVisible()
     await expect(heading(page, 'サロンの設定')).toBeFocused()
-    await expect(page.getByRole('region', { name: '会計' })).toContainText('8%')
+    await expect(part(page, '会計')).toContainText('8%')
     expect(await storedOf(api)).toEqual({
       description: '渋谷の駅から歩いて 5 分です。',
       taxRate: '8.00',
@@ -84,9 +79,7 @@ test.describe('the settings of a salon, opened again', () => {
     // Arrange
     await page.goto(`${ADMIN.origin}/salons/${await salonId(api)}/settings`)
     await enterCredentials(page, OWNER, api.seedPassword)
-    await expect(page.getByRole('region', { name: '会計' })).toContainText(
-      '10%',
-    )
+    await expect(part(page, '会計')).toContainText('10%')
     await page.getByRole('link', { name: '予約', exact: true }).click()
     await expect(heading(page, '予約台帳')).toBeVisible()
     await api.query(
@@ -99,7 +92,7 @@ test.describe('the settings of a salon, opened again', () => {
     await page.getByRole('link', { name: '設定', exact: true }).click()
 
     // Assert
-    await expect(page.getByRole('region', { name: '会計' })).toContainText('8%')
+    await expect(part(page, '会計')).toContainText('8%')
   })
 })
 

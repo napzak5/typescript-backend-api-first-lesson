@@ -6,6 +6,7 @@ import { PORTAL } from './applications'
 import { expectSoundPage } from './checks'
 import { asTheOwner, PDF, PNG, uploadThroughApi } from './files'
 import { expect, type TestApi, test } from './fixtures'
+import { pressWithTheKeyboard, typeInto } from './screen'
 import { heading } from './sign-in'
 
 /*
@@ -75,13 +76,7 @@ const downloadsOf = async (api: TestApi, shareLinkId: string) =>
     ]),
   )[0].downloadCount
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-const part = (page: Page): Locator =>
+const filePart = (page: Page): Locator =>
   page.getByRole('region', { name: 'ファイル', exact: true })
 
 test.describe('a share link, in a browser', () => {
@@ -107,8 +102,7 @@ test.describe('a share link, in a browser', () => {
     await expect(page).toHaveURL(`${PORTAL.origin}/share`)
 
     // Act
-    await password.focus()
-    await page.keyboard.type(PASSWORD)
+    await typeInto(password, PASSWORD)
     await page.keyboard.press('Enter')
 
     // Assert
@@ -116,18 +110,18 @@ test.describe('a share link, in a browser', () => {
 
     // Act
     await pressWithTheKeyboard(
-      part(page).getByRole('button', { name: 'ファイルを読み込む' }),
+      filePart(page).getByRole('button', { name: 'ファイルを読み込む' }),
     )
 
     // Assert
     await expect(
-      part(page).getByRole('heading', { name: 'ファイル', exact: true }),
+      filePart(page).getByRole('heading', { name: 'ファイル', exact: true }),
     ).toBeFocused()
 
     // Act
     const downloading = page.waitForEvent('download')
     await pressWithTheKeyboard(
-      part(page).getByRole('link', { name: '保存する' }),
+      filePart(page).getByRole('link', { name: '保存する' }),
     )
     const download = await downloading
 
@@ -162,18 +156,19 @@ test.describe('a share link, on a screen as narrow as a phone', () => {
     await expectSoundPage(page)
 
     // Act
-    await part(page).getByRole('button', { name: 'ファイルを読み込む' }).click()
+    await filePart(page)
+      .getByRole('button', { name: 'ファイルを読み込む' })
+      .click()
 
     // Assert
-    await expect(part(page).getByRole('img', { name: PHOTO })).toHaveJSProperty(
-      'naturalWidth',
-      1,
-    )
+    await expect(
+      filePart(page).getByRole('img', { name: PHOTO }),
+    ).toHaveJSProperty('naturalWidth', 1)
     await expectSoundPage(page)
 
     // Act
     const opening = page.context().waitForEvent('page')
-    await part(page).getByRole('link', { name: '新しいタブで開く' }).click()
+    await filePart(page).getByRole('link', { name: '新しいタブで開く' }).click()
     const tab = await opening
 
     // Assert

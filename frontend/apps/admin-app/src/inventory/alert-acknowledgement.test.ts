@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   type AcknowledgementSays,
@@ -7,17 +8,13 @@ import {
 import type { AlertAcknowledgement } from './alerts-api'
 import { expiredColourAlert, outOfGlovesAlert } from './components/examples'
 
-const formOf = (notes: string): FormData => {
-  const values = new FormData()
-  values.append('notes', notes)
-
-  return values
-}
-
 describe('acknowledgementOf', () => {
   it('should name the alert as it was read, with the notes trimmed', () => {
     expect(
-      acknowledgementOf(expiredColourAlert, formOf('  返品を問い合わせた。\n')),
+      acknowledgementOf(
+        expiredColourAlert,
+        formOf({ notes: '  返品を問い合わせた。\n' }),
+      ),
     ).toEqual({
       alert: 'expired',
       productId: expiredColourAlert.productId,
@@ -27,7 +24,9 @@ describe('acknowledgementOf', () => {
   })
 
   it('should send no notes when they are blank', () => {
-    expect(acknowledgementOf(outOfGlovesAlert, formOf(' \n '))).toEqual({
+    expect(
+      acknowledgementOf(outOfGlovesAlert, formOf({ notes: ' \n ' })),
+    ).toEqual({
       alert: 'low_stock',
       productId: outOfGlovesAlert.productId,
       inventoryId: null,

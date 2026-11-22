@@ -10,6 +10,7 @@ import { HIROSHI, salonId, serviceId, staffId } from './bookings'
 import { edgesOf, expectSoundLayout } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { sellACutToday } from './sales'
+import { part } from './screen'
 import { enterCredentials, heading, PORTAL_START } from './sign-in'
 
 /*
@@ -324,9 +325,9 @@ test.describe('the screens, on a screen 320 pixels wide', () => {
     await expect(heading(page, 'サロンの設定')).toBeVisible()
 
     // Assert: the button stands at the start of what holds it, and does not take its width
-    const button = page
-      .getByRole('region', { name: 'サロンの削除' })
-      .getByRole('button', { name: 'サロンを削除する' })
+    const button = part(page, 'サロンの削除').getByRole('button', {
+      name: 'サロンを削除する',
+    })
     const [room, { left, right }] = await Promise.all([
       edgesOf(button.locator('..')),
       edgesOf(button),

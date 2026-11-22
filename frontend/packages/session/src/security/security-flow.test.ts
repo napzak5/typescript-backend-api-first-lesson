@@ -1,5 +1,6 @@
 import { FAILED, TOO_MANY_REQUESTS } from '@beauty-salon-frontend/answers'
 import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { phone, thisDevice, unrecorded } from './components/examples'
 import type { SessionPage } from './security-api'
@@ -11,15 +12,6 @@ import {
   readPasswordChange,
   withoutSession,
 } from './security-flow'
-
-const formOf = (values: Record<string, string>): FormData => {
-  const form = new FormData()
-  for (const [name, value] of Object.entries(values)) {
-    form.append(name, value)
-  }
-
-  return form
-}
 
 const CURRENT = 'kirei na kami de dekakeru'
 const NEW = 'aoi sora to shiroi kumo'

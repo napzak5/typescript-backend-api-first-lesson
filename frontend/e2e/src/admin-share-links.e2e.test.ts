@@ -1,12 +1,13 @@
 import { readFile } from 'node:fs/promises'
 import { MANAGER, OWNER } from '@beauty-salon-frontend/testing/seed'
-import type { Locator, Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN, PORTAL } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { PDF, uploadThroughApi } from './files'
 import { expect, type TestApi, test } from './fixtures'
+import { pressWithTheKeyboard, typeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -24,22 +25,6 @@ const CONSENT = 'カラー同意書_田中様.pdf'
 
 /** The password of the link: the manager tells it apart from the link */
 const PASSWORD = 'umi no mieru heya'
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Types into a control as somebody does who works with the keyboard alone. */
-const typeWithTheKeyboard = async (
-  page: Page,
-  control: Locator,
-  text: string,
-): Promise<void> => {
-  await control.focus()
-  await page.keyboard.type(text)
-}
 
 const storedSchema = z.array(
   z.object({ maxDownloads: z.number().nullable(), downloadCount: z.number() }),
@@ -104,16 +89,11 @@ test.describe('the share links of a file, in a browser', () => {
     await expect(heading(page, '共有リンクを発行する')).toBeFocused()
     await page.getByRole('combobox', { name: '有効期間' }).focus()
     await page.getByRole('combobox', { name: '有効期間' }).selectOption('3')
-    await typeWithTheKeyboard(
-      page,
+    await typeInto(
       page.getByRole('textbox', { name: 'ダウンロードの回数の上限' }),
       '1',
     )
-    await typeWithTheKeyboard(
-      page,
-      page.getByLabel('パスワード', { exact: true }),
-      PASSWORD,
-    )
+    await typeInto(page.getByLabel('パスワード', { exact: true }), PASSWORD)
     await page.keyboard.press('Enter')
 
     // Assert
@@ -144,11 +124,7 @@ test.describe('the share links of a file, in a browser', () => {
     // Act: the person the link was given to opens it in the portal
     const viewer = await page.context().newPage()
     await viewer.goto(given)
-    await typeWithTheKeyboard(
-      viewer,
-      viewer.getByLabel('パスワード', { exact: true }),
-      PASSWORD,
-    )
+    await typeInto(viewer.getByLabel('パスワード', { exact: true }), PASSWORD)
     await viewer.keyboard.press('Enter')
     await pressWithTheKeyboard(
       viewer.getByRole('button', { name: 'ファイルを読み込む' }),

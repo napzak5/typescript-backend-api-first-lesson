@@ -1,4 +1,5 @@
 import type { ModelsBookingStatusType } from '@beauty-salon-frontend/api-client'
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   actionsOf,
@@ -15,15 +16,6 @@ import { aBooking } from './components/examples'
 const START = '2026-11-20T01:00:00.000Z'
 const BEFORE = new Date('2026-11-20T00:59:59.999Z')
 const AT = new Date(START)
-
-const valuesOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-
-  return values
-}
 
 const ACTIONS: [ModelsBookingStatusType, Date, StatusAction[]][] = [
   ['draft', BEFORE, ['confirm', 'cancel']],
@@ -52,7 +44,7 @@ describe('readCompletion', () => {
   it('should read both times on the clock of the salon', () => {
     expect(
       readCompletion(
-        valuesOf([
+        formOfEntries([
           ['actualStartTime', '2026-11-20T10:05'],
           ['actualEndTime', '2026-11-20T11:10'],
         ]),
@@ -70,7 +62,7 @@ describe('readCompletion', () => {
   it('should keep what was recorded for what was left empty', () => {
     expect(
       readCompletion(
-        valuesOf([
+        formOfEntries([
           ['actualStartTime', ''],
           ['actualEndTime', ' '],
         ]),
@@ -84,7 +76,7 @@ describe('readCompletion', () => {
 
   it('should take an end after the beginning that was recorded', () => {
     expect(
-      readCompletion(valuesOf([['actualEndTime', '2026-11-20T11:00']]), {
+      readCompletion(formOfEntries([['actualEndTime', '2026-11-20T11:00']]), {
         timezone: 'Asia/Tokyo',
         recordedStart: '2026-11-20T01:05:00.000Z',
       }),
@@ -100,7 +92,7 @@ describe('readCompletion', () => {
   it('should refuse an end that is not after the beginning that was filled in', () => {
     expect(
       readCompletion(
-        valuesOf([
+        formOfEntries([
           ['actualStartTime', '2026-11-20T10:05'],
           ['actualEndTime', '2026-11-20T10:05'],
         ]),
@@ -114,7 +106,7 @@ describe('readCompletion', () => {
 
   it('should refuse an end that is not after the beginning that was recorded', () => {
     expect(
-      readCompletion(valuesOf([['actualEndTime', '2026-11-20T10:00']]), {
+      readCompletion(formOfEntries([['actualEndTime', '2026-11-20T10:00']]), {
         timezone: 'Asia/Tokyo',
         recordedStart: '2026-11-20T01:05:00.000Z',
       }),
@@ -129,7 +121,7 @@ describe('readCompletion', () => {
   it('should let a beginning that was filled in replace the one recorded', () => {
     expect(
       readCompletion(
-        valuesOf([
+        formOfEntries([
           ['actualStartTime', '2026-11-20T09:55'],
           ['actualEndTime', '2026-11-20T10:00'],
         ]),
@@ -152,7 +144,7 @@ describe('readCompletion', () => {
   ])('should refuse %s in either field', (_case, local, timezone) => {
     expect(
       readCompletion(
-        valuesOf([
+        formOfEntries([
           ['actualStartTime', local],
           ['actualEndTime', local],
         ]),
@@ -179,12 +171,14 @@ const NO_REASON: [string, [string, string][]][] = [
 describe('readCancellation', () => {
   it('should read the reason without the blanks around it', () => {
     expect(
-      readCancellation(valuesOf([['cancellationReason', ' 体調不良のため ']])),
+      readCancellation(
+        formOfEntries([['cancellationReason', ' 体調不良のため ']]),
+      ),
     ).toEqual({ cancellationReason: '体調不良のため' })
   })
 
   it.each(NO_REASON)('should record no reason for %s', (_case, entries) => {
-    expect(readCancellation(valuesOf(entries))).toEqual({
+    expect(readCancellation(formOfEntries(entries))).toEqual({
       cancellationReason: null,
     })
   })

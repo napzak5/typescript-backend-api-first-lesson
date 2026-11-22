@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { colourLot, shampooRow } from '../inventory/components/examples'
 import { shippedOrder } from './components/examples'
@@ -9,16 +10,6 @@ import {
   receivedControlOf,
   UNRECEIVABLE,
 } from './order-receipt'
-
-/** The values of a form, under the names of its controls */
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 const COLOUR = receivedControlOf(colourLot.id)
 const SHAMPOO = receivedControlOf(shampooRow.id)

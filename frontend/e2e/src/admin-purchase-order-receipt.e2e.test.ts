@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard, typeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -52,17 +53,10 @@ const colourOrdersOf = async (api: TestApi) =>
 const orderHeading = (page: Page): Locator =>
   page.getByRole('heading', { level: 1, name: /^発注 PO-/ })
 
-const status = (page: Page): Locator =>
-  page.getByRole('region', { name: '状態' })
+const status = (page: Page): Locator => part(page, '状態')
 
 const statusHeading = (page: Page): Locator =>
   page.getByRole('heading', { name: '状態' })
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
 
 /** Moves an order on by a button of its status, and waits for the status it moves to. */
 const moveOn = async (
@@ -106,8 +100,7 @@ test.describe('the goods that come for a purchase order, in a browser', () => {
     await expect(page.getByText('小計 ￥64,000')).toBeVisible()
 
     // Act
-    await page.getByRole('textbox', { name: '税額（円）' }).focus()
-    await page.keyboard.type('6400')
+    await typeInto(page.getByRole('textbox', { name: '税額（円）' }), '6400')
     await pressWithTheKeyboard(page.getByRole('button', { name: '発注を作る' }))
     await expect(orderHeading(page)).toBeFocused()
     await moveOn(page, '承認を依頼する', '承認待ち')

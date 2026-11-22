@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { HIROSHI, LADIES_CUT, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -112,15 +113,6 @@ const storedSales = async (api: TestApi, bookingId: string) =>
       [bookingId],
     ),
   )
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-const part = (page: Page, name: string): Locator =>
-  page.getByRole('region', { name })
 
 /** What the part of a sale gives for a term */
 const recorded = (page: Page, term: string): Locator =>

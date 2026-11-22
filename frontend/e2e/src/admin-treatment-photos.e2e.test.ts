@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard, typeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -53,12 +54,6 @@ const storedPhotos = async (api: TestApi, treatmentId: string) =>
     ),
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 const photosPart = (page: Page): Locator =>
   page.getByRole('region', { name: '施術写真', exact: true })
 
@@ -85,8 +80,10 @@ test.describe('the photos and the statistics of the treatment records, in a brow
     const row = page.getByRole('group', { name: '1 枚目の写真' })
     await row.getByRole('combobox', { name: '区分' }).focus()
     await row.getByRole('combobox', { name: '区分' }).selectOption('after')
-    await row.getByRole('textbox', { name: '写真の URL', exact: true }).focus()
-    await page.keyboard.type(PHOTO)
+    await typeInto(
+      row.getByRole('textbox', { name: '写真の URL', exact: true }),
+      PHOTO,
+    )
     await row
       .getByRole('checkbox', {
         name: 'お客様が、写真の撮影と利用に同意している',
@@ -153,7 +150,7 @@ test.describe('the photos and the statistics of the treatment records, in a brow
 
     // Assert
     await expect(heading(page, '施術の統計')).toBeFocused()
-    const counted = page.getByRole('region', { name: '施術記録の数' })
+    const counted = part(page, '施術記録の数')
     await expect(counted).toContainText('施術記録3 件')
     await expect(
       page

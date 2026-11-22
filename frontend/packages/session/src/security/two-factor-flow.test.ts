@@ -1,4 +1,5 @@
 import type { Unsent } from '@beauty-salon-frontend/answers'
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { account } from './components/examples'
 import {
@@ -9,15 +10,6 @@ import {
   secretGroupsOf,
   withTwoFactorStatus,
 } from './two-factor-flow'
-
-const formOf = (values: Record<string, string>): FormData => {
-  const form = new FormData()
-  for (const [name, value] of Object.entries(values)) {
-    form.append(name, value)
-  }
-
-  return form
-}
 
 const PASSWORD = 'kirei na kami de dekakeru'
 const LOCK = '5 回続けて違うと、15 分間、サインインもできなくなります。'

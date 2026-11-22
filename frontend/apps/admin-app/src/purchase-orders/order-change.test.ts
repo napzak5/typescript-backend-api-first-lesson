@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { pendingOrder } from './components/examples'
 import {
@@ -5,16 +6,6 @@ import {
   deliveryDayOf,
   readOrderChange,
 } from './order-change'
-
-/** The values of a form, under the names of its controls */
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 const TOKYO = 'Asia/Tokyo'
 

@@ -14,7 +14,8 @@
     "./accessibility": "./src/accessibility.ts",
     "./screens": "./src/screens.tsx",
     "./seed": "./src/seed.ts",
-    "./answers": "./src/answers.ts"
+    "./answers": "./src/answers.ts",
+    "./forms": "./src/forms.ts"
   },
   "scripts": {
     "clean": "rm -rf *.tsbuildinfo",

@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { HIROSHI, LADIES_CUT, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { pressWithTheKeyboard, typeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -99,12 +100,6 @@ const storedRecord = async (api: TestApi, bookingId: string) =>
     ),
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 const materials = (page: Page): Locator =>
   page.getByRole('table', { name: '使った商材の一覧' })
 
@@ -131,8 +126,7 @@ test.describe('the treatment records, in a browser', () => {
     await expect(
       page.getByRole('checkbox', { name: LADIES_CUT }).first(),
     ).toBeChecked()
-    await page.getByRole('textbox', { name: '施術時間（分）' }).focus()
-    await page.keyboard.type('55')
+    await typeInto(page.getByRole('textbox', { name: '施術時間（分）' }), '55')
     await pressWithTheKeyboard(page.getByRole('button', { name: '商材を足す' }))
     const row = page.getByRole('group', { name: '1 件目の商材' })
     const product = row.getByRole('combobox', { name: '商品' })
@@ -142,8 +136,7 @@ test.describe('the treatment records, in a browser', () => {
     await page.keyboard.press('Tab')
     await expect(row.getByRole('textbox', { name: '量' })).toBeFocused()
     await page.keyboard.type('15')
-    await row.getByRole('textbox', { name: 'ロット番号' }).focus()
-    await page.keyboard.type(lot)
+    await typeInto(row.getByRole('textbox', { name: 'ロット番号' }), lot)
     await pressWithTheKeyboard(
       page.getByRole('button', { name: '施術記録を書く' }),
     )

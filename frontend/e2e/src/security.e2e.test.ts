@@ -1,9 +1,9 @@
 import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
-import { part } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import {
   enterCredentials,
   heading,
@@ -55,12 +55,6 @@ const sessions = (api: TestApi) =>
     `select s.id from sessions s join users u on u.id = s."userId" where u.email = $1`,
     [CUSTOMER],
   )
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
 
 test.describe('the security of the account of a customer, in a browser', () => {
   test('should change the password with the keyboard, keep the customer signed in, and take the new password at the next sign-in', async ({

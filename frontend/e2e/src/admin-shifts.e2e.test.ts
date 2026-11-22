@@ -6,6 +6,11 @@ import { MIKA, salonId, staffId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
+import {
+  chooseWithTheKeyboard,
+  pressWithTheKeyboard,
+  writeInto,
+} from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -70,24 +75,6 @@ const storedScheduleOf = async (api: TestApi, staffCode: string) =>
       [staffCode],
     ),
   )
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Chooses a radio button, or ticks a checkbox, with the keyboard. */
-const chooseWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Space')
-}
-
-/** Writes into a control after moving the focus to it. */
-const writeInto = async (control: Locator, value: string): Promise<void> => {
-  await control.focus()
-  await control.fill(value)
-}
 
 /** The cells of the row of a member in the table of a week, from Monday. */
 const weekRowOf = async (week: Locator, name: string): Promise<string[]> => {

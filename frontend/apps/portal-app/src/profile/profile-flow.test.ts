@@ -3,6 +3,7 @@ import {
   PREFERENCE_NOTES,
   PREFERRED_SERVICES,
 } from '@beauty-salon-frontend/fields'
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { newProfile, profile } from './components/examples'
 import {
@@ -17,15 +18,6 @@ import {
 const PHONE_MALFORMED =
   '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。'
 
-const form = (values: Record<string, string>): FormData => {
-  const data = new FormData()
-  for (const [name, value] of Object.entries(values)) {
-    data.append(name, value)
-  }
-
-  return data
-}
-
 const FILLED = {
   lastName: '山田',
   firstName: '花子',
@@ -33,14 +25,14 @@ const FILLED = {
 }
 
 const errorsOf = (values: Record<string, string>) => {
-  const read = readProfile(form(values))
+  const read = readProfile(formOf(values))
 
   return read.type === 'invalid' ? read.errors : null
 }
 
 describe('readProfile', () => {
   it('should be the name and the phone number, and nothing said about the rest', () => {
-    expect(readProfile(form(FILLED))).toEqual({
+    expect(readProfile(formOf(FILLED))).toEqual({
       type: 'valid',
       value: {
         lastName: '山田',
@@ -68,7 +60,7 @@ describe('readProfile', () => {
   it('should drop the spaces around what was typed', () => {
     expect(
       readProfile(
-        form({
+        formOf({
           lastName: '  山田 ',
           firstName: '\t花子\n',
           phoneNumber: ' 090-5550-0199 ',
@@ -80,7 +72,7 @@ describe('readProfile', () => {
   it.each([['allowEmail'], ['allowSms'], ['allowMarketing']])(
     'should say yes to %s when its box is ticked, and to nothing else',
     (name) => {
-      expect(readProfile(form({ ...FILLED, [name]: 'on' }))).toMatchObject({
+      expect(readProfile(formOf({ ...FILLED, [name]: 'on' }))).toMatchObject({
         value: {
           allowEmail: false,
           allowSms: false,
@@ -120,7 +112,7 @@ describe('readProfile', () => {
   it('should take a name as long as the API takes', () => {
     expect(
       readProfile(
-        form({
+        formOf({
           ...FILLED,
           lastName: '山'.repeat(100),
           firstName: '花'.repeat(100),
@@ -150,7 +142,7 @@ describe('readProfile', () => {
     '+81 90-5550-0199',
     '+81-90-5550-0199-12',
   ])('should take the phone number %j', (phoneNumber) => {
-    expect(readProfile(form({ ...FILLED, phoneNumber }))).toMatchObject({
+    expect(readProfile(formOf({ ...FILLED, phoneNumber }))).toMatchObject({
       value: { phoneNumber },
     })
   })
@@ -431,7 +423,7 @@ describe('readWholeProfile', () => {
   })
 
   it('should ask for the name and the phone number, and for nothing else', () => {
-    const read = readWholeProfile(form({}), TODAY)
+    const read = readWholeProfile(formOf({}), TODAY)
 
     expect(read).toEqual({
       type: 'invalid',

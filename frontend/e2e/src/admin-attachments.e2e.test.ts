@@ -3,10 +3,11 @@ import { MANAGER, OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { part, salonId } from './bookings'
+import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { PDF, PNG } from './files'
 import { expect, type TestApi, test } from './fixtures'
+import { chooseWithTheKeyboard, part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -42,12 +43,6 @@ const stored = async (api: TestApi, salon: string) =>
     ),
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 const fileControl = (page: Page): Locator =>
   part(page, 'ファイルをアップロードする').getByLabel('ファイル', {
     exact: true,
@@ -67,8 +62,7 @@ test.describe('the files of a salon, in a browser', () => {
 
     // Act
     const choosing = page.waitForEvent('filechooser')
-    await fileControl(page).focus()
-    await page.keyboard.press('Space')
+    await chooseWithTheKeyboard(fileControl(page))
     await (await choosing).setFiles({
       name: CONSENT,
       mimeType: 'application/pdf',

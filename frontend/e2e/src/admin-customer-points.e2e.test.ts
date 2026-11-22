@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { HIROSHI, LADIES_CUT, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -98,15 +99,6 @@ const storedPoints = async (api: TestApi) =>
       [CUSTOMER],
     ),
   )
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-const part = (page: Page, name: string): Locator =>
-  page.getByRole('region', { name })
 
 /** The first row of the history of the points, below its header. */
 const latest = (page: Page): Locator =>

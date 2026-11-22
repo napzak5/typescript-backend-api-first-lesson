@@ -1,11 +1,10 @@
 import { OPERATOR, OWNER, TOKYO } from '@beauty-salon-frontend/testing/seed'
-import type { Locator } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { pressWithTheKeyboard } from './sales'
+import { part, pressWithTheKeyboard, typeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -17,12 +16,6 @@ import { enterCredentials, heading } from './sign-in'
  */
 
 const NEW_NAME = 'Salon Hikari 新宿店'
-
-/** Writes a value in an empty control, as somebody does who works with the keyboard alone. */
-const write = async (control: Locator, value: string): Promise<void> => {
-  await control.focus()
-  await control.pressSequentially(value)
-}
 
 const addedSchema = z.array(
   z.object({
@@ -77,18 +70,18 @@ test.describe('adding and removing a salon, in a browser', () => {
       page.getByRole('link', { name: 'サロンを登録する' }),
     )
     await expect(heading(page, 'サロンを登録する')).toBeFocused()
-    await write(page.getByRole('textbox', { name: '名前' }), NEW_NAME)
-    await write(page.getByRole('textbox', { name: '都道府県' }), '東京都')
-    await write(page.getByRole('textbox', { name: '市区町村' }), '新宿区')
-    await write(
+    await typeInto(page.getByRole('textbox', { name: '名前' }), NEW_NAME)
+    await typeInto(page.getByRole('textbox', { name: '都道府県' }), '東京都')
+    await typeInto(page.getByRole('textbox', { name: '市区町村' }), '新宿区')
+    await typeInto(
       page.getByRole('textbox', { name: '町名・番地' }),
       '西新宿 1-1-1',
     )
-    await write(
+    await typeInto(
       page.getByRole('textbox', { name: '電話番号', exact: true }),
       '03-1111-2222',
     )
-    await write(
+    await typeInto(
       page.getByRole('textbox', { name: 'メールアドレス' }),
       'shinjuku@example.com',
     )
@@ -101,9 +94,7 @@ test.describe('adding and removing a salon, in a browser', () => {
       page.getByText(`サロン「${NEW_NAME}」を登録しました。`),
     ).toBeVisible()
     await expect(heading(page, 'サロンの設定')).toBeFocused()
-    await expect(page.getByRole('region', { name: '会計' })).toContainText(
-      'Asia/Tokyo',
-    )
+    await expect(part(page, '会計')).toContainText('Asia/Tokyo')
     expect(await storedOf(api, NEW_NAME)).toEqual([
       { timezone: 'Asia/Tokyo', currency: 'JPY', isActive: false },
     ])
@@ -187,9 +178,9 @@ test.describe('adding and removing a salon, on a screen as narrow as a phone', (
       .click()
 
     // Assert
-    await expect(
-      page.getByRole('region', { name: 'サロンの削除' }).getByRole('alert'),
-    ).toContainText('終わっていない予約')
+    await expect(part(page, 'サロンの削除').getByRole('alert')).toContainText(
+      '終わっていない予約',
+    )
     await expectSoundPage(page)
     expect(await tokyoRemoved(api)).toBe(false)
   })

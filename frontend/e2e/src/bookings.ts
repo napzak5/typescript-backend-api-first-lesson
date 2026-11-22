@@ -3,6 +3,7 @@ import { CUSTOMER, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import type { TestApi } from './fixtures'
+import { part } from './screen'
 import { accessTokenOf } from './sign-in'
 
 /*
@@ -112,10 +113,6 @@ export const bookThroughApi = async (
 
   return bookedSchema.parse(await booked.json()).data
 }
-
-/** A part of a page: the region of its heading. */
-export const part = (page: Page, name: string | RegExp): Locator =>
-  page.getByRole('region', { name })
 
 export const staffControl = (page: Page): Locator =>
   page.getByRole('combobox', { name: 'スタッフ' })

@@ -1,4 +1,5 @@
 import type { ModelsOrderStatusType } from '@beauty-salon-frontend/api-client'
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { pendingOrder } from './components/examples'
 import {
@@ -13,16 +14,6 @@ import {
   readOrderCancellation,
 } from './order-actions'
 import type { OrderStep } from './purchase-orders-api'
-
-/** The values of a form, under the names of its controls */
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 const APPROVERS_ONLY =
   '発注を承認し、取り消せるのは、サロンのオーナーとマネージャーと、管理者です。'

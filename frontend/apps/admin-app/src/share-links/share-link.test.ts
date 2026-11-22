@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { forTheCustomer, NOW } from './components/examples'
 import {
@@ -13,16 +14,6 @@ import {
   stateNameOf,
   stateOf,
 } from './share-link'
-
-/** The values of a form, under the names of its controls */
-const valuesOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 const FILLED = { period: '7', maxDownloads: '', password: '' }
 
@@ -64,7 +55,7 @@ describe('expiryAfter', () => {
 
 describe('readShareLinkEntry', () => {
   it('should ask for a link of the period chosen, without a limit or a password, when those are empty', () => {
-    expect(readShareLinkEntry(valuesOf(FILLED), NOW)).toEqual({
+    expect(readShareLinkEntry(formOf(FILLED), NOW)).toEqual({
       type: 'valid',
       value: {
         expiresAt: '2026-11-28T01:00:00.000Z',
@@ -81,7 +72,7 @@ describe('readShareLinkEntry', () => {
     ['the largest the API takes', '2147483647', 2_147_483_647],
   ])('should take a limit of %s', (_, typed, limit) => {
     expect(
-      readShareLinkEntry(valuesOf({ ...FILLED, maxDownloads: typed }), NOW),
+      readShareLinkEntry(formOf({ ...FILLED, maxDownloads: typed }), NOW),
     ).toMatchObject({ type: 'valid', value: { maxDownloads: limit } })
   })
 
@@ -93,7 +84,7 @@ describe('readShareLinkEntry', () => {
     ['more than the API takes', '2147483648'],
   ])('should refuse a limit of %s at its control', (_, typed) => {
     expect(
-      readShareLinkEntry(valuesOf({ ...FILLED, maxDownloads: typed }), NOW),
+      readShareLinkEntry(formOf({ ...FILLED, maxDownloads: typed }), NOW),
     ).toEqual({
       type: 'invalid',
       errors: {
@@ -112,7 +103,7 @@ describe('readShareLinkEntry', () => {
     ],
   ])('should send a password %s as it was typed', (_, password) => {
     expect(
-      readShareLinkEntry(valuesOf({ ...FILLED, password }), NOW),
+      readShareLinkEntry(formOf({ ...FILLED, password }), NOW),
     ).toMatchObject({ type: 'valid', value: { password } })
   })
 
@@ -124,7 +115,7 @@ describe('readShareLinkEntry', () => {
       'カ\u3099キ\u3099ク\u3099ケ\u3099',
     ],
   ])('should refuse a password %s at its control', (_, password) => {
-    expect(readShareLinkEntry(valuesOf({ ...FILLED, password }), NOW)).toEqual({
+    expect(readShareLinkEntry(formOf({ ...FILLED, password }), NOW)).toEqual({
       type: 'invalid',
       errors: { password: expect.stringContaining('8 文字から 128 文字') },
     })
@@ -133,7 +124,7 @@ describe('readShareLinkEntry', () => {
   it('should refuse a period the form does not offer, and say every refusal at once', () => {
     expect(
       readShareLinkEntry(
-        valuesOf({ period: '31', maxDownloads: '0', password: 'short' }),
+        formOf({ period: '31', maxDownloads: '0', password: 'short' }),
         NOW,
       ),
     ).toEqual({

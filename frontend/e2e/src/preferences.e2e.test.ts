@@ -5,6 +5,7 @@ import { HIROSHI, MIKA, staffId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { box, saveButton, text, value } from './mypage'
+import { chooseWithTheKeyboard, pressWithTheKeyboard, typeInto } from './screen'
 import { accessTokenOf, enterCredentials, heading } from './sign-in'
 
 /*
@@ -115,8 +116,7 @@ test.describe('the preferences of a customer, in a browser', () => {
     await expectSoundPage(page)
 
     // Act: to the form, by its link and the Enter key
-    await changeLink(page).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(changeLink(page))
 
     // Assert
     await expect(heading(page, '好みの設定')).toBeFocused()
@@ -130,18 +130,15 @@ test.describe('the preferences of a customer, in a browser', () => {
     await wished(page).selectOption({ label: named(HIROSHI) })
     await page.keyboard.press('Tab')
     await expect(page.getByRole('checkbox').first()).toBeFocused()
-    await box(page, named(MIKA)).focus()
-    await page.keyboard.press('Space')
+    await chooseWithTheKeyboard(box(page, named(MIKA)))
 
     // Act: a row for a time slot, by the Enter key on the button. The
     // focus goes to the row that is new
-    await addButton(page).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(addButton(page))
     await expect(time(page, '時間帯 1 の開始')).toBeFocused()
     await time(page, '時間帯 1 の開始').fill('10:00')
     await time(page, '時間帯 1 の終了').fill('12:00')
-    await addButton(page).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(addButton(page))
     await expect(time(page, '時間帯 2 の開始')).toBeFocused()
     await time(page, '時間帯 2 の開始').fill('18:00')
     await time(page, '時間帯 2 の終了').fill('20:30')
@@ -153,8 +150,7 @@ test.describe('the preferences of a customer, in a browser', () => {
 
     // Act: the first row is taken away. Its button is gone with it, and
     // the focus goes to the button that adds a row
-    await removeButton(page, 1).focus()
-    await page.keyboard.press('Enter')
+    await pressWithTheKeyboard(removeButton(page, 1))
 
     // Assert: the row that stays is the first now
     await expect(addButton(page)).toBeFocused()
@@ -164,13 +160,11 @@ test.describe('the preferences of a customer, in a browser', () => {
 
     // Act: the Enter key begins a line where a list is written a line
     // each, and sends the form in a control of one line
-    await text(page, '好きな色').focus()
-    await page.keyboard.type('Ash brown')
+    await typeInto(text(page, '好きな色'), 'Ash brown')
     await page.keyboard.press('Enter')
     await page.keyboard.type('Beige')
     await expect(text(page, '好きな色')).toHaveValue('Ash brown\nBeige')
-    await text(page, '接客の好み').focus()
-    await page.keyboard.type('Quiet')
+    await typeInto(text(page, '接客の好み'), 'Quiet')
     await page.keyboard.press('Enter')
 
     // Assert

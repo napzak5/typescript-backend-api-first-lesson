@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   afterReporting,
@@ -9,16 +10,6 @@ import {
   speaksForTheSalon,
   withdrawsAnswers,
 } from './review-actions'
-
-/** The values of a form, under the names of its controls */
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 describe('speaksForTheSalon, withdrawsAnswers and reviewActionNoteOf', () => {
   it.each<[string, boolean, boolean, string | undefined]>([

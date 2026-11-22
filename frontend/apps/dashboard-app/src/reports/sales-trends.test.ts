@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   axisAmountOf,
@@ -11,14 +12,6 @@ import {
   trendUnitIn,
   twelveMonthsUntil,
 } from './sales-trends'
-
-/** The values of a form with a choice of the parts */
-const formWith = (period: string): FormData => {
-  const values = new FormData()
-  values.set('period', period)
-
-  return values
-}
 
 describe('the parts of a trend', () => {
   it.each<[string, TrendUnit]>([
@@ -35,7 +28,7 @@ describe('the parts of a trend', () => {
 
   it('should read the parts chosen in the form, months when none is', () => {
     // Act, Assert
-    expect(readTrendUnit(formWith('weekly'))).toBe('weekly')
+    expect(readTrendUnit(formOf({ period: 'weekly' }))).toBe('weekly')
     expect(readTrendUnit(new FormData())).toBe('monthly')
   })
 

@@ -6,6 +6,12 @@ import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
+import {
+  chooseWithTheKeyboard,
+  part,
+  pressWithTheKeyboard,
+  writeInto,
+} from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -66,18 +72,6 @@ const ledgerRow = (page: Page, productCode: string): Locator =>
     .getByRole('row')
     .filter({ hasText: productCode })
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-/** Writes into a control after moving the focus to it. */
-const writeInto = async (control: Locator, value: string): Promise<void> => {
-  await control.focus()
-  await control.fill(value)
-}
-
 /** The products the form of a treatment record offers for its material of a number */
 const offeredMaterials = (page: Page, number: number): Locator =>
   page
@@ -125,8 +119,7 @@ test.describe('the product ledger of a salon, in a browser', () => {
     await writeInto(page.getByRole('textbox', { name: /^販売価格/ }), '2,800')
     await writeInto(page.getByRole('textbox', { name: /^発注点/ }), '3')
     const sold = page.getByRole('checkbox', { name: '店頭で販売する' })
-    await sold.focus()
-    await sold.press('Space')
+    await chooseWithTheKeyboard(sold)
     await expectSoundPage(page)
     await pressWithTheKeyboard(page.getByRole('button', { name: '足す' }))
 
@@ -135,9 +128,7 @@ test.describe('the product ledger of a salon, in a browser', () => {
       page.getByText('商品「Hair Oil 100ml」を足しました。'),
     ).toBeVisible()
     await expect(heading(page, '商品の内容')).toBeFocused()
-    await expect(page.getByRole('region', { name: '価格' })).toContainText(
-      '￥2,800',
-    )
+    await expect(part(page, '価格')).toContainText('￥2,800')
     expect(await storedProductsCoded(api, 'OIL001')).toEqual([
       {
         productCode: 'OIL001',

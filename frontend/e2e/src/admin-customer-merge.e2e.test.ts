@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage, sidewaysScrollOf } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -60,15 +61,6 @@ const storedRecords = async (api: TestApi) =>
       [KENJI.email, AGAIN.email],
     ),
   )
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-const part = (page: Page, name: string): Locator =>
-  page.getByRole('region', { name })
 
 const dialog = (page: Page): Locator =>
   page.getByRole('dialog', { name: '2 人のお客様を 1 人にまとめますか？' })
@@ -135,9 +127,7 @@ test.describe('merging two records of one customer, in a browser', () => {
     await page.goto(`${ADMIN.origin}/salons/${salon}/customers/${again}`)
 
     // Assert
-    await expect(
-      page.getByRole('region', { name: '削除されたときの台帳' }),
-    ).toBeVisible()
+    await expect(part(page, '削除されたときの台帳')).toBeVisible()
   })
 })
 
@@ -162,9 +152,7 @@ test.describe('merging two records, on a screen as wide as a laptop', () => {
     const differences = page.getByRole('table', { name: '2 人で違う項目' })
     await expect(differences).toContainText(NOTES)
     expect(await sidewaysScrollOf(differences)).toBeLessThanOrEqual(0)
-    await expect(
-      page.getByRole('region', { name: '2 人で違う項目' }),
-    ).toHaveCount(0)
+    await expect(part(page, '2 人で違う項目')).toHaveCount(0)
     await expectSoundPage(page)
   })
 })

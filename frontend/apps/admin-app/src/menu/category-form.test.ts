@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   afterCategoryRemoval,
@@ -8,15 +9,6 @@ import {
 } from './category-form'
 import { aCategory, colouring, highlights } from './components/examples'
 import type { CategoryRemoval } from './menu-api'
-
-/** The values of a form, as a browser hands them over */
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.append(name, value)
-  }
-  return values
-}
 
 /** The form as it opens with a category: a checkbox that is not checked is not handed over */
 const formWith = (

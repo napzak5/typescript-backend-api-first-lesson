@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { chooseWithTheKeyboard, pressWithTheKeyboard, typeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -34,12 +35,6 @@ const storedAllergies = async (api: TestApi, customer: string) =>
     ),
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 const allergies = (page: Page): Locator =>
   page.getByRole('region', { name: 'アレルギー', exact: true })
 
@@ -61,15 +56,16 @@ test.describe('the allergies of the customers, in a browser', () => {
       allergies(page).getByRole('link', { name: 'アレルギーを記録する' }),
     )
     await expect(heading(page, 'アレルギーを記録する')).toBeFocused()
-    await page.getByRole('textbox', { name: 'アレルゲン' }).focus()
-    await page.keyboard.type('ニッケル')
+    await typeInto(
+      page.getByRole('textbox', { name: 'アレルゲン' }),
+      'ニッケル',
+    )
     await page.keyboard.press('Tab')
     await expect(page.getByRole('combobox', { name: '種類' })).toBeFocused()
     await page.getByRole('combobox', { name: '種類' }).selectOption({
       label: '金属',
     })
-    await page.getByRole('radio', { name: '中程度' }).focus()
-    await page.keyboard.press('Space')
+    await chooseWithTheKeyboard(page.getByRole('radio', { name: '中程度' }))
     await page.getByLabel('確かめた日').fill('2026-04-01')
     await pressWithTheKeyboard(page.getByRole('button', { name: '記録する' }))
 

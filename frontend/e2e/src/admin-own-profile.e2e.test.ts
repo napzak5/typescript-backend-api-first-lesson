@@ -6,6 +6,7 @@ import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
+import { pressWithTheKeyboard } from './screen'
 import { ADMIN_START, enterCredentials, heading } from './sign-in'
 
 /*
@@ -34,12 +35,6 @@ const storedIntroductionOf = async (api: TestApi, email: string) =>
       [email],
     ),
   )
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
 
 /** Writes a control anew with the keyboard: what it held is selected and written over. */
 const writeOver = async (control: Locator, text: string): Promise<void> => {

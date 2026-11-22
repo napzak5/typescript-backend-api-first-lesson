@@ -1,4 +1,5 @@
 import type { ModelsSaleUpdateRequest } from '@beauty-salon-frontend/api-client'
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { NOT_ON_THE_CLOCK } from '../bookings/booking-entry'
 import { aPaidSale, aPayment, aSale, salon, staff } from './components/examples'
@@ -17,15 +18,6 @@ import {
 } from './sale-changes'
 
 const [misaki, ken] = staff
-
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 /** The sale of the examples, entered at 11:02 on the clock of the salon, with a note */
 const sale = aSale({ notes: '次回はカラーの相談' })

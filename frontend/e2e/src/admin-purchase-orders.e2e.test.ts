@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { pressWithTheKeyboard, typeInto } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -55,12 +56,6 @@ const rowsOf = (page: Page, caption: string): Locator =>
     .getByRole('row')
     .filter({ has: page.getByRole('rowheader') })
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
 const ORDER_HEADING = /^発注 PO-/
 
 test.describe('the purchase orders, in a browser', () => {
@@ -86,8 +81,7 @@ test.describe('the purchase orders, in a browser', () => {
       .fill('Tokyo Beauty Supply')
     await expect(ofRow(page, SHAMPOO, '単価（円）')).toHaveValue('1500')
     const quantity = ofRow(page, SHAMPOO, '数量')
-    await quantity.focus()
-    await page.keyboard.type('6')
+    await typeInto(quantity, '6')
     await expect(page.getByText('小計 ￥9,000')).toBeVisible()
     await page.getByRole('textbox', { name: '税額（円）' }).fill('900')
     await expectSoundPage(page)

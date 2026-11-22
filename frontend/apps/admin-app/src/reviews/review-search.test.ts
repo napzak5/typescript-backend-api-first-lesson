@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   isNarrowed,
@@ -9,16 +10,6 @@ import {
 } from './review-search'
 
 const STAFF_ID = '7c4a9e2b-1f3d-4b8a-9e6c-5d2f8a1b3c70'
-
-/** The values of a form, under the names of its controls */
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 describe('reviewConditionsIn', () => {
   it('should read the ratings, the member of the staff and the order of an address', () => {

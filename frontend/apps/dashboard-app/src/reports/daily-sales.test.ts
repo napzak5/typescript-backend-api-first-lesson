@@ -1,15 +1,8 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { dayIn, dayQueryOf, neighboursOf, readDay } from './daily-sales'
 
 const TODAY = '2026-11-21'
-
-/** The values of the form with a day filled in */
-const formWith = (date: string): FormData => {
-  const values = new FormData()
-  values.set('date', date)
-
-  return values
-}
 
 describe('dayIn', () => {
   it.each<[string, string]>([
@@ -36,7 +29,7 @@ describe('dayIn', () => {
 describe('readDay', () => {
   it('should take a day of the calendar, without the spaces around it', () => {
     // Act, Assert
-    expect(readDay(formWith(' 2026-11-20 '))).toEqual({
+    expect(readDay(formOf({ date: ' 2026-11-20 ' }))).toEqual({
       type: 'valid',
       value: '2026-11-20',
     })
@@ -46,7 +39,7 @@ describe('readDay', () => {
     'should say beside the field that %j is not a day',
     (date) => {
       // Act, Assert
-      expect(readDay(formWith(date))).toEqual({
+      expect(readDay(formOf({ date: date }))).toEqual({
         type: 'invalid',
         errors: { date: '日付を入力してください。' },
       })

@@ -1,9 +1,9 @@
 import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
-import { part } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading, signOutButton } from './sign-in'
 
 /*
@@ -48,12 +48,6 @@ const twoFactorOf = async (api: TestApi) => {
   )
 
   return row
-}
-
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
 }
 
 /** Follows the link of the security of the account to the set-up, with a pointer. */

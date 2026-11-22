@@ -2,6 +2,7 @@ import type {
   ModelsPointTransactionType,
   ModelsPointUseRequest,
 } from '@beauty-salon-frontend/api-client'
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { aCustomer, salon } from '../bookings/components/examples'
 import { aSale } from '../sales/components/examples'
@@ -28,15 +29,6 @@ import {
 const { id: customerId } = aCustomer()
 
 const SALE = aSale({ customerId })
-
-const formOf = (entries: Record<string, string>): FormData => {
-  const values = new FormData()
-  for (const [name, value] of Object.entries(entries)) {
-    values.set(name, value)
-  }
-
-  return values
-}
 
 /** What an owner records, today at the salon, with no sale */
 const OWNER: PointContext = {

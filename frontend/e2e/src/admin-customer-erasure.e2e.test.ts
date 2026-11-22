@@ -5,6 +5,7 @@ import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { part, pressWithTheKeyboard } from './screen'
 import { enterCredentials, heading } from './sign-in'
 
 /*
@@ -35,14 +36,7 @@ const storedRequests = async (api: TestApi, yuki: string) =>
     ),
   )
 
-/** Presses a link or a button as somebody does who works with the keyboard alone. */
-const pressWithTheKeyboard = async (control: Locator): Promise<void> => {
-  await control.focus()
-  await control.press('Enter')
-}
-
-const erasure = (page: Page): Locator =>
-  page.getByRole('region', { name: 'データの消去' })
+const erasure = (page: Page): Locator => part(page, 'データの消去')
 
 test.describe('the request of a customer to have their data erased, in a browser', () => {
   test('should take the request with its reason, and call it off, with the keyboard', async ({

@@ -1,3 +1,4 @@
+import { formOf } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import {
   chartConditionsIn,
@@ -5,13 +6,8 @@ import {
   readChartConditions,
 } from './chart-search'
 
-const valuesOf = (search: string, allergies: string): FormData => {
-  const values = new FormData()
-  values.set('search', search)
-  values.set('allergies', allergies)
-
-  return values
-}
+const valuesOf = (search: string, allergies: string): FormData =>
+  formOf({ search, allergies })
 
 describe('chartConditionsIn', () => {
   it.each<[string, string, object]>([

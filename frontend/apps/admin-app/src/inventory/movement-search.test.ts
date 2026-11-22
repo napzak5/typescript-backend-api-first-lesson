@@ -1,3 +1,4 @@
+import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
 import { describe, expect, it } from 'vitest'
 import { salon } from '../bookings/components/examples'
 import {
@@ -8,15 +9,6 @@ import {
   movementQueryOf,
   readMovementConditions,
 } from './movement-search'
-
-const formOf = (entries: [string, string][]): FormData => {
-  const values = new FormData()
-  for (const [name, value] of entries) {
-    values.append(name, value)
-  }
-
-  return values
-}
 
 describe('movementConditionsIn', () => {
   it.each<[string, MovementConditions]>([
@@ -50,7 +42,7 @@ describe('readMovementConditions', () => {
   it('should read the conditions filled in, and none of those left empty', () => {
     expect(
       readMovementConditions(
-        formOf([
+        formOfEntries([
           ['type', 'sale'],
           ['from', ''],
           ['to', '2026-11-30'],
@@ -59,7 +51,7 @@ describe('readMovementConditions', () => {
     ).toEqual({ type: 'valid', value: { type: 'sale', to: '2026-11-30' } })
     expect(
       readMovementConditions(
-        formOf([
+        formOfEntries([
           ['type', ''],
           ['from', ''],
           ['to', ''],
@@ -71,7 +63,7 @@ describe('readMovementConditions', () => {
   it('should say a day that is none, and a last day before the first', () => {
     expect(
       readMovementConditions(
-        formOf([
+        formOfEntries([
           ['type', ''],
           ['from', '2026-02-30'],
           ['to', ''],
@@ -80,7 +72,7 @@ describe('readMovementConditions', () => {
     ).toEqual({ type: 'invalid', errors: { from: '日付を入力してください。' } })
     expect(
       readMovementConditions(
-        formOf([
+        formOfEntries([
           ['type', ''],
           ['from', '2026-11-20'],
           ['to', '2026-11-19'],
