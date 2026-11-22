@@ -18,11 +18,13 @@ import {
   FormRow,
   NO_ERRORS,
   Note,
+  type RepeatedRow,
   Select,
   TextArea,
   TextField,
+  useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
-import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { GONE_SERVICE, UNLISTED_STAFF } from '../../../bookings/booking-format'
 import { tagsTextOf } from '../../../customers/customer-ledger'
 import { MOST_MATERIALS, materialControlOf } from '../../treatment-form'
@@ -61,15 +63,11 @@ export type TreatmentFormProps = {
 }
 
 /** A row of a material: what it opened with, if anything, and the product and the unit chosen in it */
-type Row = {
-  key: number
+type Material = {
   shown: ModelsTreatmentMaterial | undefined
   productId: string
   unit: string
 }
-
-/** Where the focus goes after a row was added or taken away */
-type Focus = { type: 'row'; key: number } | { type: 'add' } | undefined
 
 /** The IDs, each once, in their order. */
 const distinct = (ids: readonly string[]): string[] => [...new Set(ids)]
@@ -139,20 +137,15 @@ export const TreatmentForm = ({
   actions,
   onSubmit,
 }: TreatmentFormProps) => {
-  const [rows, setRows] = useState<Row[]>(() =>
-    (record?.materials ?? []).map((shown, key) => ({
-      key,
-      shown,
-      productId: shown.productId,
-      unit: shown.unit,
-    })),
+  const materials = useRepeatedRows<Material>(
+    () =>
+      (record?.materials ?? []).map((shown) => ({
+        shown,
+        productId: shown.productId,
+        unit: shown.unit,
+      })),
+    errors,
   )
-  const [nextKey, setNextKey] = useState(rows.length)
-  const [focus, setFocus] = useState<Focus>()
-  const [outdated, setOutdated] = useState<FormErrors | undefined>(undefined)
-  const said = errors === outdated ? NO_ERRORS : errors
-  const groups = useRef(new Map<number, HTMLFieldSetElement>())
-  const add = useRef<HTMLButtonElement>(null)
   const chosenServices =
     record?.services ??
     distinct(booking.services.map(({ serviceId }) => serviceId))
@@ -160,50 +153,21 @@ export const TreatmentForm = ({
     ({ id }) => id === (record?.staffId ?? booking.staffId),
   )
 
-  useLayoutEffect(() => {
-    if (focus?.type === 'row') {
-      groups.current.get(focus.key)?.querySelector('select')?.focus()
-    }
-    if (focus?.type === 'add') {
-      add.current?.focus()
-    }
-  }, [focus])
-
-  const addRow = (): void => {
-    setRows([
-      ...rows,
-      { key: nextKey, shown: undefined, productId: '', unit: '' },
-    ])
-    setNextKey(nextKey + 1)
-    setFocus({ type: 'row', key: nextKey })
-  }
-
-  const removeRow = (key: number): void => {
-    setRows(rows.filter((row) => row.key !== key))
-    setOutdated(errors)
-    setFocus({ type: 'add' })
-  }
-
-  /** The product of a row was chosen: its unit is the unit of the product. */
-  const choose = (key: number, productId: string): void => {
+  const choose = (row: RepeatedRow<Material>, productId: string): void => {
     const unit = products.find(({ id }) => id === productId)?.unit
-    setRows(
-      rows.map((row) =>
-        row.key === key ? { ...row, productId, unit: unit ?? row.unit } : row,
-      ),
-    )
-  }
-
-  const write = (key: number, unit: string): void => {
-    setRows(rows.map((row) => (row.key === key ? { ...row, unit } : row)))
+    materials.change(row.key, {
+      ...row.value,
+      productId,
+      unit: unit ?? row.value.unit,
+    })
   }
 
   /** Whether a row asks for a lot number: of a product kept by lots, or of one the salon removed that had one */
-  const takesLot = (row: Row): boolean => {
-    const product = products.find(({ id }) => id === row.productId)
+  const takesLot = ({ productId, shown }: Material): boolean => {
+    const product = products.find(({ id }) => id === productId)
 
     return product === undefined
-      ? row.productId !== '' && (row.shown?.lotNumber ?? null) !== null
+      ? productId !== '' && (shown?.lotNumber ?? null) !== null
       : product.requiresLotTracking
   }
 
@@ -306,27 +270,21 @@ export const TreatmentForm = ({
         label='使った商材'
         description='記録しても在庫は減りません。在庫から出した分は、在庫の画面で記録します。'
       >
-        {rows.map((row, index) => (
+        {materials.rows.map((row, index) => (
           <FormRow
             key={row.key}
-            ref={(group) => {
-              if (group === null) {
-                groups.current.delete(row.key)
-              } else {
-                groups.current.set(row.key, group)
-              }
-            }}
+            ref={materials.rowRef(row.key)}
             label={`${index + 1} 件目の商材`}
           >
             <Select
               label='商品'
               name={materialControlOf(index, 'productId')}
-              options={productOptionsOf(products, row.shown?.productId)}
+              options={productOptionsOf(products, row.value.shown?.productId)}
               placeholder='選んでください'
               required
-              value={row.productId}
-              onChange={(event) => choose(row.key, event.target.value)}
-              error={said[materialControlOf(index, 'productId')]}
+              value={row.value.productId}
+              onChange={(event) => choose(row, event.target.value)}
+              error={materials.errors[materialControlOf(index, 'productId')]}
             />
             <FieldRow>
               <TextField
@@ -337,11 +295,11 @@ export const TreatmentForm = ({
                 required
                 description='小数第 2 位まで。'
                 defaultValue={
-                  row.shown === undefined
+                  row.value.shown === undefined
                     ? undefined
-                    : String(row.shown.quantity)
+                    : String(row.value.shown.quantity)
                 }
-                error={said[materialControlOf(index, 'quantity')]}
+                error={materials.errors[materialControlOf(index, 'quantity')]}
               />
               <TextField
                 label='単位'
@@ -349,39 +307,49 @@ export const TreatmentForm = ({
                 autoComplete='off'
                 required
                 description='商品を選ぶと、商品の単位が入ります。'
-                value={row.unit}
-                onChange={(event) => write(row.key, event.target.value)}
-                error={said[materialControlOf(index, 'unit')]}
+                value={row.value.unit}
+                onChange={(event) =>
+                  materials.change(row.key, {
+                    ...row.value,
+                    unit: event.target.value,
+                  })
+                }
+                error={materials.errors[materialControlOf(index, 'unit')]}
               />
             </FieldRow>
-            {takesLot(row) ? (
+            {takesLot(row.value) ? (
               <TextField
                 label='ロット番号'
                 name={materialControlOf(index, 'lotNumber')}
                 autoComplete='off'
                 required
                 description='ロットで管理している商品です。使った商品のロット番号を書きます。'
-                defaultValue={row.shown?.lotNumber ?? undefined}
-                error={said[materialControlOf(index, 'lotNumber')]}
+                defaultValue={row.value.shown?.lotNumber ?? undefined}
+                error={materials.errors[materialControlOf(index, 'lotNumber')]}
               />
             ) : null}
             <TextField
               label='商材のメモ'
               name={materialControlOf(index, 'notes')}
               autoComplete='off'
-              defaultValue={row.shown?.notes ?? undefined}
+              defaultValue={row.value.shown?.notes ?? undefined}
             />
             <Button
               size='small'
               aria-label={`${index + 1} 件目の商材を外す`}
-              onClick={() => removeRow(row.key)}
+              onClick={() => materials.remove(row.key)}
             >
               外す
             </Button>
           </FormRow>
         ))}
-        {rows.length < MOST_MATERIALS ? (
-          <Button ref={add} onClick={addRow}>
+        {materials.rows.length < MOST_MATERIALS ? (
+          <Button
+            ref={materials.addRef}
+            onClick={() =>
+              materials.add({ shown: undefined, productId: '', unit: '' })
+            }
+          >
             商材を足す
           </Button>
         ) : (

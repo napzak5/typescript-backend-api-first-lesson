@@ -8,6 +8,7 @@ import {
   Card,
   DescriptionList,
   Link,
+  NONE,
   Table,
   TagList,
   WrittenText,
@@ -39,15 +40,6 @@ export type ServiceRecordProps = {
 
 /** What is said of a service of a package that is not on the menu any more */
 const UNLISTED_SERVICE = 'メニューにないサービス'
-
-const writtenOrNone = (text: string | null) =>
-  text === null ? null : <WrittenText>{text}</WrittenText>
-
-const addressOrNone = (address: string | null) =>
-  address === null ? null : address
-
-const namesOrNone = (label: string, names: readonly string[]) =>
-  names.length === 0 ? 'なし' : <TagList label={label} items={names} />
 
 /**
  * Everything the menu keeps of a service: what it is and costs, how it is
@@ -94,21 +86,27 @@ export const ServiceRecord = ({
               term: '短い紹介',
               description: service.shortDescription,
             },
-            { term: '説明', description: writtenOrNone(service.description) },
-            { term: 'タグ', description: namesOrNone('タグ', service.tags) },
+            {
+              term: '説明',
+              description: <WrittenText>{service.description}</WrittenText>,
+            },
+            {
+              term: 'タグ',
+              description: <TagList label={'タグ'} items={service.tags} />,
+            },
             {
               term: '写真の URL',
-              description: addressOrNone(service.imageUrl),
+              description: service.imageUrl,
             },
             {
               term: 'ほかの写真の URL',
               description:
                 service.imageUrls.length === 0 ? (
-                  'なし'
+                  NONE
                 ) : (
                   <ul className={styles['addresses']}>
                     {service.imageUrls.map((address) => (
-                      <li key={address}>{addressOrNone(address)}</li>
+                      <li key={address}>{address}</li>
                     ))}
                   </ul>
                 ),
@@ -125,9 +123,11 @@ export const ServiceRecord = ({
             },
             {
               term: '予約の条件',
-              description: namesOrNone(
-                '予約の条件',
-                service.bookingRequirements.map(requirementNameOf),
+              description: (
+                <TagList
+                  label={'予約の条件'}
+                  items={service.bookingRequirements.map(requirementNameOf)}
+                />
               ),
             },
             {

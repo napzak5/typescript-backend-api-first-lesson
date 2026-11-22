@@ -31,12 +31,6 @@ export type StaffRecordProps = {
   actions?: ReactNode
 }
 
-const writtenOrNone = (text: string | null) =>
-  text === null ? null : <WrittenText>{text}</WrittenText>
-
-const namesOrNone = (label: string, names: readonly string[]) =>
-  names.length === 0 ? 'なし' : <TagList label={label} items={names} />
-
 /**
  * A member of the staff ledger, as the owner of the salon reads them: who
  * they are, how to reach them, how they are employed and paid, how they
@@ -117,11 +111,13 @@ export const StaffRecord = ({
         items={[
           {
             term: '専門',
-            description: namesOrNone('専門', member.specialties),
+            description: <TagList label={'専門'} items={member.specialties} />,
           },
           {
             term: '資格',
-            description: namesOrNone('資格', member.certifications),
+            description: (
+              <TagList label={'資格'} items={member.certifications} />
+            ),
           },
           {
             term: '経験年数',
@@ -130,7 +126,10 @@ export const StaffRecord = ({
                 ? null
                 : `${member.yearsOfExperience} 年`,
           },
-          { term: '紹介文', description: writtenOrNone(member.bio) },
+          {
+            term: '紹介文',
+            description: <WrittenText>{member.bio}</WrittenText>,
+          },
           {
             term: '写真の URL',
             description: member.imageUrl === null ? null : member.imageUrl,

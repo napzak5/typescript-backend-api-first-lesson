@@ -3,7 +3,7 @@ import type {
   ModelsPaymentResponse,
 } from '@beauty-salon-frontend/api-client'
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
+import { DescriptionList, Link, NONE, Table } from '@beauty-salon-frontend/ui'
 import {
   cardNameOf,
   methodNameOf,
@@ -100,7 +100,7 @@ export const PaymentTable = ({
               const refund = refundNameOf(payment, timezone, currency)
               const href = refundHrefOf(payment)
               if (refund !== null || href === undefined) {
-                return refund ?? 'なし'
+                return refund ?? NONE
               }
 
               return (

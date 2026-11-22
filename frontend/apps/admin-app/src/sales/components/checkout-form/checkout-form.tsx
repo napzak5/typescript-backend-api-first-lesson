@@ -14,6 +14,7 @@ import {
   FormPart,
   type FormProps,
   LoadingIndicator,
+  NONE,
   Note,
   Select,
   Table,
@@ -222,7 +223,7 @@ export const CheckoutForm = ({
                     term: '1 回で受け取れる支払い方法',
                     description:
                       recommendedMethods.length === 0
-                        ? 'なし'
+                        ? NONE
                         : recommendedMethods.map(methodKindNameOf).join('、'),
                   },
                 ]}

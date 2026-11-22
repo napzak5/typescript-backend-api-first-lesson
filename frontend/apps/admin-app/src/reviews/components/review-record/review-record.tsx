@@ -6,6 +6,7 @@ import {
   DescriptionList,
   type DescriptionListItem,
   Link,
+  NONE,
   Rating,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
@@ -124,7 +125,7 @@ export const ReviewRecord = ({
       term: '未処理の通報',
       description:
         review.reportCount === 0 ? (
-          'なし'
+          NONE
         ) : (
           <Badge tone='danger'>{`${review.reportCount} 件`}</Badge>
         ),

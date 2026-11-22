@@ -73,10 +73,7 @@ export const StockRecord = ({
           { term: '棚', description: row.shelf },
           {
             term: 'メモ',
-            description:
-              row.notes === null ? null : (
-                <WrittenText>{row.notes}</WrittenText>
-              ),
+            description: <WrittenText>{row.notes}</WrittenText>,
           },
         ]}
       />

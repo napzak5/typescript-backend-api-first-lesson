@@ -10,8 +10,9 @@ import {
   Note,
   RadioGroup,
   TextField,
+  useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
-import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { timeInputOf } from '../../../shifts/schedule-form'
 import { weekdayNameOf } from '../../../shifts/shift-week'
 import type { Hours } from '../../hours-api'
@@ -51,11 +52,8 @@ type Shown = {
   notes: string | undefined
 }
 
-/** A row of a date the form holds */
-type DateRow = { key: number; shown: Shown; opens: boolean }
-
-/** Where the focus goes after a row was added or taken away */
-type Focus = { type: 'row'; key: number } | { type: 'add' } | undefined
+/** A row of a date the form holds: what it opened with, and whether the salon opens on the date */
+type DateRow = { shown: Shown; opens: boolean }
 
 const EMPTY: Shown = {
   date: undefined,
@@ -126,54 +124,21 @@ export const HoursForm = ({
   const [opens, setOpens] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(week.map(({ weekday, opens }) => [weekday, opens])),
   )
-  const [rows, setRows] = useState<DateRow[]>(() =>
-    calendar.dates.map((date, key) => ({
-      key,
-      shown: {
-        date: date.date,
-        openTime: date.openTime ?? undefined,
-        closeTime: date.closeTime ?? undefined,
-        isHoliday: date.isHoliday,
-        holidayName: date.holidayName ?? undefined,
-        notes: date.notes ?? undefined,
-      },
-      opens: date.openTime !== null && date.closeTime !== null,
-    })),
+  const dates = useRepeatedRows<DateRow>(
+    () =>
+      calendar.dates.map((date) => ({
+        shown: {
+          date: date.date,
+          openTime: date.openTime ?? undefined,
+          closeTime: date.closeTime ?? undefined,
+          isHoliday: date.isHoliday,
+          holidayName: date.holidayName ?? undefined,
+          notes: date.notes ?? undefined,
+        },
+        opens: date.openTime !== null && date.closeTime !== null,
+      })),
+    errors,
   )
-  const [nextKey, setNextKey] = useState(rows.length)
-  const [focus, setFocus] = useState<Focus>()
-  const [outdated, setOutdated] = useState<FormErrors | undefined>(undefined)
-  const said = errors === outdated ? NO_ERRORS : errors
-  const groups = useRef(new Map<number, HTMLFieldSetElement>())
-  const add = useRef<HTMLButtonElement>(null)
-
-  useLayoutEffect(() => {
-    if (focus?.type === 'row') {
-      groups.current.get(focus.key)?.querySelector('input')?.focus()
-    }
-    if (focus?.type === 'add') {
-      add.current?.focus()
-    }
-  }, [focus])
-
-  const addRow = (): void => {
-    setRows([...rows, { key: nextKey, shown: EMPTY, opens: false }])
-    setNextKey(nextKey + 1)
-    setFocus({ type: 'row', key: nextKey })
-  }
-
-  const removeRow = (key: number): void => {
-    setRows(rows.filter((row) => row.key !== key))
-    setOutdated(errors)
-    setFocus({ type: 'add' })
-  }
-
-  const choose = (key: number, open: boolean): void => {
-    setRows(
-      rows.map((row) => (row.key === key ? { ...row, opens: open } : row)),
-    )
-  }
-
   return (
     <Form
       submitLabel={submitLabel}
@@ -257,20 +222,14 @@ export const HoursForm = ({
         label='日付ごと'
         description='祝日、臨時休業、短縮営業の日です。日付ごとの行がある日は、曜日の営業時間の代わりに、その行を使います。'
       >
-        {rows.map((row, index) => {
+        {dates.rows.map((row, index) => {
           const nameOf = (property: HoursProperty): string =>
             dateControlOf(index, property)
 
           return (
             <FormRow
               key={row.key}
-              ref={(group) => {
-                if (group === null) {
-                  groups.current.delete(row.key)
-                } else {
-                  groups.current.set(row.key, group)
-                }
-              }}
+              ref={dates.rowRef(row.key)}
               label={`${index + 1} 行目`}
             >
               <TextField
@@ -280,8 +239,8 @@ export const HoursForm = ({
                 name={nameOf('date')}
                 autoComplete='off'
                 required
-                defaultValue={row.shown.date}
-                error={said[nameOf('date')]}
+                defaultValue={row.value.shown.date}
+                error={dates.errors[nameOf('date')]}
               />
               <RadioGroup
                 label='営業'
@@ -290,24 +249,27 @@ export const HoursForm = ({
                   { value: OPEN, label: '営業する' },
                   { value: CLOSED, label: '終日休業' },
                 ]}
-                value={row.opens ? OPEN : CLOSED}
+                value={row.value.opens ? OPEN : CLOSED}
                 onChange={(event) =>
-                  choose(row.key, event.target.value === OPEN)
+                  dates.change(row.key, {
+                    ...row.value,
+                    opens: event.target.value === OPEN,
+                  })
                 }
               />
-              {row.opens && (
+              {row.value.opens && (
                 <>
                   <Times
                     nameOf={nameOf}
-                    openTime={row.shown.openTime}
-                    closeTime={row.shown.closeTime}
-                    errors={said}
+                    openTime={row.value.shown.openTime}
+                    closeTime={row.value.shown.closeTime}
+                    errors={dates.errors}
                   />
                   <Checkbox
                     label='祝日の営業'
                     name={nameOf('isHoliday')}
                     description='祝日や店休日に、時間を決めて営業する日に印を付けます。'
-                    defaultChecked={row.shown.isHoliday}
+                    defaultChecked={row.value.shown.isHoliday}
                   />
                 </>
               )}
@@ -316,27 +278,30 @@ export const HoursForm = ({
                 name={nameOf('holidayName')}
                 autoComplete='off'
                 description='100 文字まで。「元日」「年末年始」「設備の点検」など。'
-                defaultValue={row.shown.holidayName}
-                error={said[nameOf('holidayName')]}
+                defaultValue={row.value.shown.holidayName}
+                error={dates.errors[nameOf('holidayName')]}
               />
               <TextField
                 label='備考'
                 name={nameOf('notes')}
                 autoComplete='off'
-                defaultValue={row.shown.notes}
-                error={said[nameOf('notes')]}
+                defaultValue={row.value.shown.notes}
+                error={dates.errors[nameOf('notes')]}
               />
               <Button
                 size='small'
                 aria-label={`${index + 1} 行目を外す`}
-                onClick={() => removeRow(row.key)}
+                onClick={() => dates.remove(row.key)}
               >
                 外す
               </Button>
             </FormRow>
           )
         })}
-        <Button ref={add} onClick={addRow}>
+        <Button
+          ref={dates.addRef}
+          onClick={() => dates.add({ shown: EMPTY, opens: false })}
+        >
           日付の行を足す
         </Button>
         {calendar.past.length > 0 && (

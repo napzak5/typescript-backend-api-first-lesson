@@ -106,6 +106,23 @@ describe('ScheduleForm', () => {
     expect(second.queryByLabelText('始まり')).toBeNull()
   })
 
+  it('should ask for the hours of a row of a date once the member works on it, and no longer once they do not', async () => {
+    // Arrange
+    await stories.Whole.run()
+    await userEvent.click(
+      screen.getByRole('button', { name: '日付の行を足す' }),
+    )
+    const second = within(group('2 行目'))
+
+    // Act
+    await userEvent.click(second.getByRole('radio', { name: '勤務する' }))
+
+    // Assert
+    expect(second.getByLabelText('始まり')).toBeRequired()
+    await userEvent.click(second.getByRole('radio', { name: '休み' }))
+    expect(second.queryByLabelText('始まり')).toBeNull()
+  })
+
   it('should take a row away and give the focus to the button that adds one', async () => {
     // Arrange
     await stories.Whole.run()

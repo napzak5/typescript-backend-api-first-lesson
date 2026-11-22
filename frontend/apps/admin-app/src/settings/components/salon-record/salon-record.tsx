@@ -3,6 +3,7 @@ import {
   Card,
   DescriptionList,
   Link,
+  NONE,
   Table,
   TagList,
   WrittenText,
@@ -25,15 +26,6 @@ export type SalonRecordProps = {
   paymentMethodsHref: string
 }
 
-const writtenOrNone = (text: string | null) =>
-  text === null ? null : <WrittenText>{text}</WrittenText>
-
-const addressOrNone = (address: string | null) =>
-  address === null ? null : address
-
-const namesOrNone = (label: string, names: readonly string[]) =>
-  names.length === 0 ? 'なし' : <TagList label={label} items={names} />
-
 /**
  * Everything a salon keeps of itself: what the customers are shown of it
  * (its name, its place, how to reach it, its photos), what it charges tax
@@ -51,7 +43,10 @@ export const SalonRecord = ({
         items={[
           { term: '名前', description: salon.name },
           { term: 'カナ', description: salon.nameKana },
-          { term: '紹介', description: writtenOrNone(salon.description) },
+          {
+            term: '紹介',
+            description: <WrittenText>{salon.description}</WrittenText>,
+          },
           {
             term: 'オンライン予約',
             description: salon.isActive ? '受け付ける' : '止めている',
@@ -86,10 +81,10 @@ export const SalonRecord = ({
             term: '予備の電話番号',
             description: salon.alternativePhone,
           },
-          { term: 'メールアドレス', description: addressOrNone(salon.email) },
+          { term: 'メールアドレス', description: salon.email },
           {
             term: '公式サイト',
-            description: addressOrNone(salon.websiteUrl),
+            description: salon.websiteUrl,
           },
         ]}
       />
@@ -97,16 +92,16 @@ export const SalonRecord = ({
     <Card title='写真'>
       <DescriptionList
         items={[
-          { term: 'ロゴの URL', description: addressOrNone(salon.logoUrl) },
+          { term: 'ロゴの URL', description: salon.logoUrl },
           {
             term: '写真の URL',
             description:
               salon.imageUrls.length === 0 ? (
-                'なし'
+                NONE
               ) : (
                 <ul className={styles['addresses']}>
                   {salon.imageUrls.map((address) => (
-                    <li key={address}>{addressOrNone(address)}</li>
+                    <li key={address}>{address}</li>
                   ))}
                 </ul>
               ),
@@ -117,8 +112,14 @@ export const SalonRecord = ({
     <Card title='特徴と設備'>
       <DescriptionList
         items={[
-          { term: '特徴', description: namesOrNone('特徴', salon.features) },
-          { term: '設備', description: namesOrNone('設備', salon.amenities) },
+          {
+            term: '特徴',
+            description: <TagList label={'特徴'} items={salon.features} />,
+          },
+          {
+            term: '設備',
+            description: <TagList label={'設備'} items={salon.amenities} />,
+          },
         ]}
       />
     </Card>

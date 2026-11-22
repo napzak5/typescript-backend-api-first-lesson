@@ -15,6 +15,7 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  NONE,
   same,
   textOf,
   textOrNull,
@@ -73,7 +74,7 @@ export const referrerIdOf = (referrer: Referrer): string =>
 export const referrerNameOf = (referrer: Referrer): string =>
   match(referrer)
     .returnType<string>()
-    .with({ type: 'none' }, () => 'なし')
+    .with({ type: 'none' }, () => NONE)
     .with({ type: 'customer' }, ({ name }) => `${name} 様`)
     .with({ type: 'gone' }, () => '台帳にいないお客様')
     .exhaustive()

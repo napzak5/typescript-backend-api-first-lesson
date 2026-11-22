@@ -13,6 +13,7 @@ import {
   Card,
   DescriptionList,
   Link,
+  NONE,
   Table,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
@@ -97,7 +98,7 @@ export const SaleRecord = ({
               term: '予約',
               description:
                 bookingHref === undefined ? (
-                  'なし'
+                  NONE
                 ) : (
                   <Link href={bookingHref}>予約の内容</Link>
                 ),

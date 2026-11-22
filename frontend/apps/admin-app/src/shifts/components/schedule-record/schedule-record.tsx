@@ -3,7 +3,7 @@ import type {
   ModelsStaffSchedule,
 } from '@beauty-salon-frontend/api-client'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Note, Table } from '@beauty-salon-frontend/ui'
+import { NONE, Note, Table } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { partsOf } from '../../schedule-form'
 import { type Shift, shiftOf, weekdayNameOf } from '../../shift-week'
@@ -26,7 +26,7 @@ const workOf = (shift: Shift): string =>
 
 /** The break of the day of a row: none on a day off, or on one without a break. */
 const restOf = (shift: Shift): string =>
-  shift.type === 'works' ? (shift.rest ?? 'なし') : ''
+  shift.type === 'works' ? (shift.rest ?? NONE) : ''
 
 type Weekly = {
   weekday: ModelsDayOfWeekType

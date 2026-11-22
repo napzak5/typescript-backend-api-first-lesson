@@ -15,8 +15,9 @@ import {
   Select,
   TextArea,
   TextField,
+  useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
-import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { tagsTextOf } from '../../../customers/customer-ledger'
 import {
   MOST_TREATMENTS,
@@ -45,12 +46,6 @@ export type ChartFormProps = {
   onSubmit: (values: FormData) => void
 }
 
-/** A row of the treatments the customer had before: what it opened with, if anything */
-type Row = { key: number; shown: ModelsPreviousTreatment | undefined }
-
-/** Where the focus goes after a row was added or taken away */
-type Focus = { type: 'row'; key: number } | { type: 'add' } | undefined
-
 /**
  * The chart of a customer: what to take care of before a treatment, the
  * products they like and those to avoid, the notes, and the treatments
@@ -73,37 +68,12 @@ export const ChartForm = ({
   actions,
   onSubmit,
 }: ChartFormProps) => {
-  const [rows, setRows] = useState<Row[]>(() =>
-    (chart?.previousTreatments ?? []).map((shown, key) => ({ key, shown })),
+  // A row of the treatments the customer had before holds what it opened
+  // with, if anything
+  const treatments = useRepeatedRows<ModelsPreviousTreatment | undefined>(
+    () => chart?.previousTreatments ?? [],
+    errors,
   )
-  const [nextKey, setNextKey] = useState(rows.length)
-  const [focus, setFocus] = useState<Focus>()
-  const [outdated, setOutdated] = useState<FormErrors | undefined>(undefined)
-  const said = errors === outdated ? NO_ERRORS : errors
-  const groups = useRef(new Map<number, HTMLFieldSetElement>())
-  const add = useRef<HTMLButtonElement>(null)
-
-  useLayoutEffect(() => {
-    if (focus?.type === 'row') {
-      groups.current.get(focus.key)?.querySelector('select')?.focus()
-    }
-    if (focus?.type === 'add') {
-      add.current?.focus()
-    }
-  }, [focus])
-
-  const addRow = (): void => {
-    setRows([...rows, { key: nextKey, shown: undefined }])
-    setNextKey(nextKey + 1)
-    setFocus({ type: 'row', key: nextKey })
-  }
-
-  const removeRow = (key: number): void => {
-    setRows(rows.filter((row) => row.key !== key))
-    setOutdated(errors)
-    setFocus({ type: 'add' })
-  }
-
   return (
     <Form
       submitLabel={submitLabel}
@@ -142,16 +112,10 @@ export const ChartForm = ({
         label='過去の施術'
         description='ほかのサロンで受けた施術や、カルテを始める前の施術を書きます。'
       >
-        {rows.map((row, index) => (
+        {treatments.rows.map((row, index) => (
           <FormRow
             key={row.key}
-            ref={(group) => {
-              if (group === null) {
-                groups.current.delete(row.key)
-              } else {
-                groups.current.set(row.key, group)
-              }
-            }}
+            ref={treatments.rowRef(row.key)}
             label={`${index + 1} 件目の施術`}
           >
             <FieldRow>
@@ -161,8 +125,8 @@ export const ChartForm = ({
                 options={TREATMENT_OPTIONS}
                 placeholder='選んでください'
                 required
-                defaultValue={row.shown?.treatment ?? ''}
-                error={said[rowControlOf(index, 'treatment')]}
+                defaultValue={row.value?.treatment ?? ''}
+                error={treatments.errors[rowControlOf(index, 'treatment')]}
               />
               <TextField
                 label='施術日'
@@ -172,8 +136,8 @@ export const ChartForm = ({
                 required
                 min={EARLIEST_DAY}
                 max={today}
-                defaultValue={row.shown?.date}
-                error={said[rowControlOf(index, 'date')]}
+                defaultValue={row.value?.date}
+                error={treatments.errors[rowControlOf(index, 'date')]}
               />
             </FieldRow>
             <TextField
@@ -181,26 +145,29 @@ export const ChartForm = ({
               name={rowControlOf(index, 'salonName')}
               autoComplete='off'
               description='施術を受けたサロンの名前。分からなければ空のままにします。'
-              defaultValue={row.shown?.salonName ?? undefined}
-              error={said[rowControlOf(index, 'salonName')]}
+              defaultValue={row.value?.salonName ?? undefined}
+              error={treatments.errors[rowControlOf(index, 'salonName')]}
             />
             <TextArea
               label='施術のメモ'
               name={rowControlOf(index, 'notes')}
               rows={2}
-              defaultValue={row.shown?.notes ?? undefined}
+              defaultValue={row.value?.notes ?? undefined}
             />
             <Button
               size='small'
               aria-label={`${index + 1} 件目の施術を外す`}
-              onClick={() => removeRow(row.key)}
+              onClick={() => treatments.remove(row.key)}
             >
               外す
             </Button>
           </FormRow>
         ))}
-        {rows.length < MOST_TREATMENTS ? (
-          <Button ref={add} onClick={addRow}>
+        {treatments.rows.length < MOST_TREATMENTS ? (
+          <Button
+            ref={treatments.addRef}
+            onClick={() => treatments.add(undefined)}
+          >
             施術を足す
           </Button>
         ) : (
