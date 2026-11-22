@@ -1,7 +1,6 @@
-import type { ModelsInventoryTransactionResponse } from '@beauty-salon-frontend/api-client'
 import {
   answering,
-  json,
+  page,
   problem,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
@@ -19,25 +18,6 @@ import {
  * (`movements.integration.test.tsx`). Here are the answers a test cannot
  * bring about there, and what is asked.
  */
-
-/** A page of movements, as the API answers with it. */
-const page = (
-  items: ModelsInventoryTransactionResponse[],
-  nextCursor: string | null,
-): Response =>
-  json(200, {
-    data: items,
-    meta: {
-      total: items.length,
-      limit: 20,
-      cursor: null,
-      nextCursor,
-      prevCursor: null,
-      hasMore: nextCursor !== null,
-      correlationId: null,
-    },
-    links: { self: '/', next: null, prev: null },
-  })
 
 type Answer = () => Response | Promise<Response>
 
@@ -58,7 +38,7 @@ describe('movementsKeyOf', () => {
 describe('readMovementPage', () => {
   it('should ask for a page of the movements of a kind and of days at the salon, after the cursor', async () => {
     // Arrange
-    const fetched = answering(() => page(MOVEMENTS_OF_THE_LOT, null))
+    const fetched = answering(() => page(MOVEMENTS_OF_THE_LOT))
 
     // Act
     const read = await readMovementPage(

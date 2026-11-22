@@ -3,17 +3,18 @@ import type {
   ModelsReviewReportRequest,
   ModelsReviewUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   answering,
   asked,
+  empty,
   OUTSIDE_THE_CONTRACT,
   page,
   pageOfAGateway,
   problem,
   record,
   sent,
-} from '../__tests__/api-answers'
+} from '@beauty-salon-frontend/testing/answers'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   changeReview,
   readOwnReviews,
@@ -113,7 +114,8 @@ const API: Api = {
 const holding = (other: Partial<Api> = {}) => {
   const api = { ...API, ...other }
 
-  return answering((url) => {
+  return answering((request) => {
+    const url = new URL(request.url)
     const [, path = ''] = url.pathname.split('/api/v1')
     if (path === '/reviews') {
       return api.reviews(url.searchParams)
@@ -690,7 +692,7 @@ describe('the operations of the screens of the reviews', () => {
 
   describe('removeReview', () => {
     it('should ask for the removal of the review, and say that it is removed', async () => {
-      const fetched = answering(() => new Response(null, { status: 204 }))
+      const fetched = answering(() => empty(204))
 
       expect(await removeReview(REVIEW_ID)).toEqual({ type: 'removed' })
       expect(asked(fetched)).toEqual([`DELETE /reviews/${REVIEW_ID}`])

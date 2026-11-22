@@ -1,7 +1,7 @@
 import {
   answering,
-  json,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -29,7 +29,7 @@ afterEach(() => {
 describe('readErasureRequest', () => {
   it('should read the latest request of the customer', async () => {
     // Arrange
-    const fetched = answering(() => json(200, { data: request, meta: null }))
+    const fetched = answering(() => record(200, request))
 
     // Act
     const read = await readErasureRequest(CUSTOMER)
@@ -82,7 +82,7 @@ describe('readErasureRequest', () => {
 describe('askForErasure', () => {
   it('should send the reason, and give the request that was taken', async () => {
     // Arrange
-    const fetched = answering(() => json(202, { data: request, meta: null }))
+    const fetched = answering(() => record(202, request))
 
     // Act
     const asked = await askForErasure(CUSTOMER, { reason: ' 電話で ' })
@@ -146,7 +146,7 @@ describe('cancelErasureRequest', () => {
       cancelledBy: request.requestedBy,
       cancelledAt: '2026-11-21T06:00:00.000Z',
     })
-    const fetched = answering(() => json(200, { data: cancelled, meta: null }))
+    const fetched = answering(() => record(200, cancelled))
 
     // Act
     const outcome = await cancelErasureRequest(CUSTOMER)

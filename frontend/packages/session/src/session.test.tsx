@@ -3,6 +3,14 @@ import {
   type ModelsUserResponse,
 } from '@beauty-salon-frontend/api-client'
 import { type StoredSession, sessionStore } from '@beauty-salon-frontend/io'
+import {
+  empty,
+  OUTSIDE_THE_CONTRACT,
+  pageOfAGateway,
+  problem,
+  problemWithCode,
+  record,
+} from '@beauty-salon-frontend/testing/answers'
 import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
@@ -63,37 +71,9 @@ type Sent = {
   body: string | null
 }
 
-const json = (status: number, body: unknown): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
-  })
-
-const problem = (
-  status: number,
-  code: string,
-  errors: { field: string }[] | null = null,
-): Response =>
-  new Response(
-    JSON.stringify({
-      type: 'urn:beauty-salon:problem',
-      title: 'Problem',
-      status,
-      code,
-      errors,
-    }),
-    {
-      status,
-      headers: { 'Content-Type': 'application/problem+json; charset=utf-8' },
-    },
-  )
-
-const document = (data: unknown): Response =>
-  json(200, { data, meta: null, links: null })
-
 /** The answer of the API to a sign-in or to a refresh token it takes. */
 const issued = (user: ModelsUserResponse, issue: number): Response =>
-  document({
+  record(200, {
     ...sessionOf(user, issue),
     token: 'Bearer',
     expiresIn: 900,
@@ -139,13 +119,15 @@ const stubApi = ({
         const owner = users.find((user) =>
           request.body?.includes(sessionOf(user, 1).refreshToken),
         )
-        return owner === undefined ? problem(401, '1004') : issued(owner, 2)
+        return owner === undefined
+          ? problemWithCode(401, '1004')
+          : issued(owner, 2)
       }
       if (tokenIn(expired, request.authorization)) {
-        return problem(401, '1003')
+        return problemWithCode(401, '1003')
       }
       if (tokenIn(ended, request.authorization)) {
-        return problem(401, '1004')
+        return problemWithCode(401, '1004')
       }
       const user = users.find((candidate) =>
         [1, 2].some(
@@ -155,12 +137,13 @@ const stubApi = ({
         ),
       )
       if (user === undefined) {
-        return problem(401, request.authorization === null ? '1001' : '1004')
+        return problemWithCode(
+          401,
+          request.authorization === null ? '1001' : '1004',
+        )
       }
 
-      return request.path === LOGOUT
-        ? new Response(null, { status: 204 })
-        : document(user)
+      return request.path === LOGOUT ? empty(204) : record(200, user)
     }),
   )
 
@@ -311,7 +294,7 @@ describe('the session of an application', () => {
     })
 
     it.each([
-      ['an error of the server', () => problem(500, '5001')],
+      ['an error of the server', () => problemWithCode(500, '5001')],
       ['no answer', () => Promise.reject(new TypeError('Failed to fetch'))],
     ])(
       'should say that the session is unavailable after %s, and ask again on retry',
@@ -390,7 +373,7 @@ describe('the session of an application', () => {
       // Act: the answer takes long enough for the hook to render meanwhile
       answer.mockImplementation(async () => {
         await new Promise((resolve) => setTimeout(resolve, 50))
-        return document(renamed)
+        return record(200, renamed)
       })
       await queryClient.invalidateQueries({
         queryKey: getAuthCrudGetCurrentUserQueryKey(),
@@ -520,7 +503,7 @@ describe('the session of an application', () => {
         // Arrange
         stubApi({
           answer: (request) =>
-            request.path === LOGIN ? problem(status, code) : undefined,
+            request.path === LOGIN ? problemWithCode(status, code) : undefined,
         })
 
         // Act
@@ -537,7 +520,10 @@ describe('the session of an application', () => {
       stubApi({
         answer: (request) =>
           request.path === LOGIN
-            ? problem(400, '2001', [{ field: 'email' }, { field: 'password' }])
+            ? problem(400, [
+                { field: 'email', rule: 'required' },
+                { field: 'password', rule: 'required' },
+              ])
             : undefined,
       })
 
@@ -555,7 +541,7 @@ describe('the session of an application', () => {
       // Arrange
       stubApi({
         answer: (request) =>
-          request.path === LOGIN ? problem(400, '2001') : undefined,
+          request.path === LOGIN ? problem(400) : undefined,
       })
 
       // Act
@@ -579,21 +565,12 @@ describe('the session of an application', () => {
       expect(sessionStore.read()).toBeNull()
     })
 
-    it.each([
-      ['a gateway that does not reach the API', 502],
-      ['an API that is not there', 503],
-      ['a gateway that waited too long', 504],
-      ['a status of no meaning here', 418],
-    ])(
+    it.each(OUTSIDE_THE_CONTRACT)(
       'should say that it failed, and not reject, when the answer is %s: a status the contract does not name',
       async (_case, status) => {
         // Arrange
         stubApi({
-          answer: () =>
-            new Response('<html><body>Bad Gateway</body></html>', {
-              status,
-              headers: { 'Content-Type': 'text/html' },
-            }),
+          answer: () => pageOfAGateway(status),
         })
 
         // Act
@@ -669,7 +646,7 @@ describe('the session of an application', () => {
     })
 
     it.each([
-      ['answers with an error', () => problem(500, '5001')],
+      ['answers with an error', () => problemWithCode(500, '5001')],
       [
         'cannot be reached',
         () => Promise.reject(new TypeError('Failed to fetch')),

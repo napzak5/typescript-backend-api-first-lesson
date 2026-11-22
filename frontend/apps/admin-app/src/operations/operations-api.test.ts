@@ -2,6 +2,7 @@ import {
   answering,
   json,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -163,11 +164,7 @@ describe('expirePoints', () => {
   it('should expire the points of every customer up to the day the API takes, and tell how many and of how many customers', async () => {
     // Arrange
     const fetched = answering(() =>
-      json(200, {
-        data: { processedCount: 3, totalPoints: 1250 },
-        meta: null,
-        links: null,
-      }),
+      record(200, { processedCount: 3, totalPoints: 1250 }),
     )
 
     // Act
@@ -217,9 +214,7 @@ describe('executeDeletionRequests', () => {
       aDeletionRequest(),
       aDeletionRequest({ id: '6e7f8091-a2b3-4c4d-8e5f-6a7b8c9d0e1f' }),
     ]
-    const fetched = answering(() =>
-      json(200, { data: requests, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, requests))
 
     // Act
     const erasure = await executeDeletionRequests()
@@ -253,9 +248,7 @@ describe('executeDeletionRequests', () => {
 describe('purgeAttachments', () => {
   it('should remove the attachments that are no longer needed, and tell how many', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: { purgedCount: 4 }, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, { purgedCount: 4 }))
 
     // Act
     const purge = await purgeAttachments()

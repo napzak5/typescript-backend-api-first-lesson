@@ -1,7 +1,7 @@
 import {
   answering,
-  json,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -38,9 +38,7 @@ afterEach(() => {
 describe('countStock', () => {
   it('should send the count, and hand over the rows that differed', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: COUNT_OF_THE_SALON, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, COUNT_OF_THE_SALON))
 
     // Act
     const counted = await countStock(COUNT)
@@ -107,9 +105,7 @@ describe('valueReportKeyOf', () => {
 describe('readValueReport', () => {
   it('should ask for the value of the stock of the salon', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: VALUE_OF_THE_SALON, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, VALUE_OF_THE_SALON))
 
     // Act
     const read = await readValueReport(salon.id)

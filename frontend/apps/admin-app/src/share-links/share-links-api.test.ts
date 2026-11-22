@@ -1,7 +1,9 @@
 import {
   answering,
-  json,
+  empty,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -71,19 +73,13 @@ describe('shareLinksKeyOf and shareLinkKeyOf', () => {
 describe('readShareLinkPage', () => {
   it('should ask for a page of twenty links of the file after the cursor', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: SHARE_LINKS_OF_THE_FILE,
-        meta: { total: 23, nextCursor: 'next', prevCursor: null },
-        links: null,
-      }),
-    )
+    const fetched = answering(() => page(SHARE_LINKS_OF_THE_FILE, 'next', 23))
 
     // Act
-    const page = await readShareLinkPage(consentForm.id, 'cursor')
+    const read = await readShareLinkPage(consentForm.id, 'cursor')
 
     // Assert
-    expect(page).toEqual({
+    expect(read).toEqual({
       type: 'found',
       items: SHARE_LINKS_OF_THE_FILE,
       total: 23,
@@ -109,19 +105,17 @@ describe('readShareLinkPage', () => {
     answering(given)
 
     // Act
-    const page = await readShareLinkPage(consentForm.id, undefined)
+    const read = await readShareLinkPage(consentForm.id, undefined)
 
     // Assert
-    expect(page).toEqual({ type })
+    expect(read).toEqual({ type })
   })
 })
 
 describe('readShareLink', () => {
   it('should ask for the link by its ID', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: forTheCustomer, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, forTheCustomer))
 
     // Act
     const read = await readShareLink(forTheCustomer.id)
@@ -154,11 +148,7 @@ describe('issueShareLink', () => {
   it('should send the end, the limit and the password, and keep the token the API gives once', async () => {
     // Arrange
     const fetched = answering(() =>
-      json(201, {
-        data: { shareLink: forTheCustomer, token: TOKEN },
-        meta: null,
-        links: null,
-      }),
+      record(201, { shareLink: forTheCustomer, token: TOKEN }),
     )
 
     // Act
@@ -216,7 +206,7 @@ describe('issueShareLink', () => {
 describe('revokeShareLink', () => {
   it('should ask to delete the link', async () => {
     // Arrange
-    const fetched = answering(() => new Response(null, { status: 204 }))
+    const fetched = answering(() => empty(204))
 
     // Act
     const revoked = await revokeShareLink(forTheCustomer.id)

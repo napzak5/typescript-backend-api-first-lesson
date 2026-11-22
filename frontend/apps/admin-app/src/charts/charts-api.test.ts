@@ -1,7 +1,8 @@
 import {
   answering,
-  json,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -40,7 +41,7 @@ afterEach(() => {
 describe('readChart', () => {
   it('should read the chart of the customer', async () => {
     // Arrange
-    const fetched = answering(() => json(200, { data: chart, meta: null }))
+    const fetched = answering(() => record(200, chart))
 
     // Act
     const read = await readChart(customer.id)
@@ -119,17 +120,14 @@ describe('readChartPage', () => {
     answering((request) => {
       const { pathname } = new URL(request.url)
       if (pathname.endsWith('/medical-charts')) {
-        return json(200, {
-          data: [chart, other],
-          meta: { total: 2, nextCursor: null },
-        })
+        return page([chart, other])
       }
       if (pathname.endsWith('/customers/batch/get')) {
         return problem(404)
       }
 
       return pathname.endsWith(customer.id)
-        ? json(200, { data: customer, meta: null })
+        ? record(200, customer)
         : problem(404)
     })
 
@@ -152,7 +150,7 @@ describe('readChartPage', () => {
     // Arrange
     answering((request) =>
       new URL(request.url).pathname.endsWith('/medical-charts')
-        ? json(200, { data: [chart], meta: { total: 1, nextCursor: null } })
+        ? page([chart])
         : problem(429),
     )
 
@@ -228,7 +226,7 @@ describe('createChart', () => {
 describe('updateChart', () => {
   it('should send what was changed to the chart', async () => {
     // Arrange
-    const fetched = answering(() => json(200, { data: chart, meta: null }))
+    const fetched = answering(() => record(200, chart))
 
     // Act
     const outcome = await updateChart(chart.id, { notes: null })

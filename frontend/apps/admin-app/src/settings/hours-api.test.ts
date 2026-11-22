@@ -1,8 +1,8 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   answering,
-  json,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -21,8 +21,7 @@ afterEach(() => {
 
 const SALON = aDescribedSalon()
 
-const found = (salon: ModelsSalonResponse): Response =>
-  json(200, { data: salon, meta: null, links: { self: '/' } })
+const found = (salon: ModelsSalonResponse): Response => record(200, salon)
 
 /** The salon with a day off on the last day of the year no longer recorded */
 const withoutNewYear = (): ModelsSalonResponse => ({

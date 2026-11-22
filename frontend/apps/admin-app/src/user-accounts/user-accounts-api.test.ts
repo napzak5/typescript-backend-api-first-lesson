@@ -1,7 +1,7 @@
 import {
   answering,
-  json,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -51,9 +51,7 @@ describe('userKeyOf', () => {
 describe('readUser', () => {
   it('should read the account by its ID', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: user, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, user))
 
     // Act
     const read = await readUser(user.id)
@@ -89,9 +87,7 @@ describe('readUser', () => {
 describe('unlockAccount', () => {
   it('should lift the lock of the account by its ID, and hand over the account as it is now', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: user, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, user))
 
     // Act
     const unlocking = await unlockAccount(aLockedUser().id)
@@ -125,9 +121,7 @@ describe('resetTwoFactor', () => {
   it('should reset the second factor of the account by its ID, and hand over the account as it is now', async () => {
     // Arrange
     const changed = aUser({ twoFactorStatus: 'disabled' })
-    const fetched = answering(() =>
-      json(200, { data: changed, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, changed))
 
     // Act
     const reset = await resetTwoFactor(user.id)

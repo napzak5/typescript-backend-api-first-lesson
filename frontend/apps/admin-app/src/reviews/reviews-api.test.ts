@@ -1,7 +1,9 @@
 import {
   answering,
-  json,
+  empty,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -64,9 +66,7 @@ describe('reviewsKeyOf and reviewKeyOf', () => {
 describe('readReviewSummary', () => {
   it('should ask for the summary of the salon', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: summaryOfTheSalon, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, summaryOfTheSalon))
 
     // Act
     const read = await readReviewSummary(salon.id)
@@ -97,16 +97,10 @@ describe('readReviewSummary', () => {
 describe('readReviewPage', () => {
   it('should ask for a page of twenty reviews of the salon and the conditions after the cursor', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: REVIEWS_OF_THE_SALON,
-        meta: { total: 23, nextCursor: 'next', prevCursor: null },
-        links: null,
-      }),
-    )
+    const fetched = answering(() => page(REVIEWS_OF_THE_SALON, 'next', 23))
 
     // Act
-    const page = await readReviewPage(
+    const read = await readReviewPage(
       salon.id,
       {
         minRating: 2,
@@ -118,7 +112,7 @@ describe('readReviewPage', () => {
     )
 
     // Assert
-    expect(page).toEqual({
+    expect(read).toEqual({
       type: 'found',
       items: REVIEWS_OF_THE_SALON,
       total: 23,
@@ -150,19 +144,17 @@ describe('readReviewPage', () => {
     answering(given)
 
     // Act
-    const page = await readReviewPage(salon.id, {}, undefined)
+    const read = await readReviewPage(salon.id, {}, undefined)
 
     // Assert
-    expect(page).toEqual({ type })
+    expect(read).toEqual({ type })
   })
 })
 
 describe('readReview', () => {
   it('should ask for the review by its ID', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: answeredReview, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, answeredReview))
 
     // Act
     const read = await readReview(answeredReview.id)
@@ -196,9 +188,7 @@ describe('respondToReview', () => {
     ['the withdrawal of the answer', null],
   ])('should send %s as it is', async (_, ownerResponse) => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: answeredReview, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, answeredReview))
 
     // Act
     const responding = await respondToReview(answeredReview.id, ownerResponse)
@@ -252,9 +242,7 @@ describe('respondToReview', () => {
 describe('reportReview', () => {
   it('should send the reason and the details', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: {}, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, {}))
 
     // Act
     const reporting = await reportReview(answeredReview.id, {
@@ -316,7 +304,7 @@ describe('reportReview', () => {
 describe('removeReview', () => {
   it('should remove the review by its ID', async () => {
     // Arrange
-    const fetched = answering(() => new Response(null, { status: 204 }))
+    const fetched = answering(() => empty(204))
 
     // Act
     const removal = await removeReview(answeredReview.id)

@@ -1,7 +1,7 @@
 import {
   answering,
-  json,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -24,10 +24,6 @@ import { anAccount, anInvitation } from './components/examples'
 
 const SALON = 'salon'
 const MEMBER = 'member'
-
-/** A record as the API answers it */
-const answer = (status: number, data: unknown): Response =>
-  json(status, { data, meta: null, links: { self: '/' } })
 
 type Answer = () => Response | Promise<Response>
 
@@ -93,7 +89,7 @@ describe('attemptInvitation', () => {
     const sent: unknown[] = []
     answering(async (asked) => {
       sent.push(await asked.json())
-      return answer(201, anInvitation())
+      return record(201, anInvitation())
     })
 
     // Act
@@ -170,8 +166,8 @@ describe('attemptInvitation', () => {
   it('should take a refusal for an account first, as the API checks it first', async () => {
     // Arrange
     const fetched = refusing(
-      () => answer(200, anAccount()),
-      () => answer(200, aStaffMember({ isActive: false })),
+      () => record(200, anAccount()),
+      () => record(200, aStaffMember({ isActive: false })),
     )
 
     // Act

@@ -1,3 +1,11 @@
+import {
+  answering,
+  empty,
+  json,
+  OUTSIDE_THE_CONTRACT,
+  pageOfAGateway,
+  problem,
+} from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   acceptInvitation,
@@ -18,41 +26,6 @@ import {
  * that every operation reads its answers alike.
  */
 
-type RefusedValue = { field: string; rule: string }
-
-const problem = (status: number, errors: RefusedValue[] | null = null) =>
-  new Response(
-    JSON.stringify({
-      type: 'urn:beauty-salon:problem',
-      title: 'Problem',
-      status,
-      detail: null,
-      instance: null,
-      code: '2001',
-      errors:
-        errors?.map((error) => ({
-          ...error,
-          message: 'Invalid',
-          value: null,
-          constraint: null,
-        })) ?? null,
-      correlationId: null,
-      timestamp: '2026-11-19T00:00:00.000Z',
-    }),
-    {
-      status,
-      headers: { 'Content-Type': 'application/problem+json; charset=utf-8' },
-    },
-  )
-
-/** Lets the API answer every request with what `answer` returns. */
-const answering = (answer: () => Response | Promise<Response>) => {
-  const fetched = vi.fn<typeof fetch>(async () => answer())
-  vi.stubGlobal('fetch', fetched)
-
-  return fetched
-}
-
 const INVITATION = {
   id: '11111111-1111-4111-8111-111111111111',
   staffId: '22222222-2222-4222-8222-222222222222',
@@ -62,11 +35,9 @@ const INVITATION = {
   createdAt: '2026-11-19T05:30:00.000Z',
 }
 
-const invitation = (links: Record<string, string> | null) =>
-  new Response(JSON.stringify({ data: INVITATION, meta: null, links }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
-  })
+/** The answer to an invitation, with the links the API puts beside it. */
+const invitation = (links: Record<string, string> | null): Response =>
+  json(200, { data: INVITATION, meta: null, links })
 
 const TOKEN = 'Zm9vYmFy_-0123456789abcdefghijklmnopqrstuvw'
 const PASSWORD = 'kirei na kami de dekakeru'
@@ -127,21 +98,10 @@ describe('the operations of an account', () => {
       expect(await call()).toEqual({ type: 'failed' })
     })
 
-    it.each([
-      ['a gateway that does not reach the API', 502],
-      ['an API that is not there', 503],
-      ['a gateway that waited too long', 504],
-      ['a status of no meaning here', 418],
-    ])(
+    it.each(OUTSIDE_THE_CONTRACT)(
       'should have failed, and not reject, when the answer is %s: a status the contract does not name',
       async (_case, status) => {
-        answering(
-          () =>
-            new Response('<html><body>Bad Gateway</body></html>', {
-              status,
-              headers: { 'Content-Type': 'text/html' },
-            }),
-        )
+        answering(() => pageOfAGateway(status))
 
         expect(await call()).toEqual({ type: 'failed' })
       },
@@ -175,7 +135,7 @@ describe('the operations of an account', () => {
     '%s',
     (_name, call) => {
       it('should be accepted when the API has done it', async () => {
-        answering(() => new Response(null, { status: 204 }))
+        answering(() => empty(204))
 
         expect(await call()).toEqual({ type: 'accepted' })
       })
@@ -267,7 +227,7 @@ describe('the operations of an account', () => {
   })
 
   it('should send what a screen hands over, to the operation of the contract', async () => {
-    const fetched = answering(() => new Response(null, { status: 204 }))
+    const fetched = answering(() => empty(204))
 
     await resetPassword(TOKEN, PASSWORD)
 

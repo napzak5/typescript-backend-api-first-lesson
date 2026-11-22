@@ -3,7 +3,6 @@ import type {
   ModelsBookingRescheduleRequest,
   ModelsCustomerBookingCreateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   answering,
   asked,
@@ -13,7 +12,8 @@ import {
   problem,
   record,
   sent,
-} from '../__tests__/api-answers'
+} from '@beauty-salon-frontend/testing/answers'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   book,
   cancelOwnBooking,
@@ -253,7 +253,8 @@ describe('the operations of the booking screens', () => {
     })
 
     it('should read the times to their end, a page after the other', async () => {
-      const fetched = answering(({ searchParams }) => {
+      const fetched = answering((request) => {
+        const { searchParams } = new URL(request.url)
         const cursor = searchParams.get('cursor')
 
         return cursor === null
@@ -275,8 +276,8 @@ describe('the operations of the booking screens', () => {
     })
 
     it('should have no times, and not half of them, when a later page is not read', async () => {
-      answering(({ searchParams }) =>
-        searchParams.has('cursor')
+      answering((request) =>
+        new URL(request.url).searchParams.has('cursor')
           ? problem(500)
           : page([{ staffId: 'a' }], 'second'),
       )
@@ -434,7 +435,8 @@ describe('the operations of the screens of the bookings of a customer', () => {
     })
 
     it('should read the bookings to their end, a page after the other: a salon of two pages is there once', async () => {
-      const fetched = answering(({ searchParams }) => {
+      const fetched = answering((request) => {
+        const { searchParams } = new URL(request.url)
         const cursor = searchParams.get('cursor')
 
         return cursor === null
@@ -456,8 +458,8 @@ describe('the operations of the screens of the bookings of a customer', () => {
     })
 
     it('should have no salon, and not those of the first pages, when a later page is not read', async () => {
-      answering(({ searchParams }) =>
-        searchParams.has('cursor')
+      answering((request) =>
+        new URL(request.url).searchParams.has('cursor')
           ? problem(429)
           : page([{ salonId: 'a' }], 'second'),
       )

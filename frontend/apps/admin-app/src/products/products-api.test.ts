@@ -1,8 +1,9 @@
 import {
   answering,
-  json,
+  page,
   problem,
   UNREAD,
+  UNWRITTEN,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { salon } from '../bookings/components/examples'
@@ -24,25 +25,6 @@ import {
  * Here are the answers a test cannot bring about there.
  */
 
-/** A page of the products, as the API answers with it. */
-const page = (
-  items: ReturnType<typeof aProduct>[],
-  nextCursor: string | null,
-): Response =>
-  json(200, {
-    data: items,
-    meta: {
-      total: items.length,
-      limit: 100,
-      cursor: null,
-      nextCursor,
-      prevCursor: null,
-      hasMore: nextCursor !== null,
-      correlationId: null,
-    },
-    links: { self: '/', next: null, prev: null },
-  })
-
 afterEach(() => {
   vi.unstubAllGlobals()
 })
@@ -54,7 +36,7 @@ describe('readProducts', () => {
     const second = aProduct({ id: 'd6f8b0c2-4e5a-4b7c-9d1f-3a5b7d9f1c46' })
     const fetched = answering((request) =>
       new URL(request.url).searchParams.has('cursor')
-        ? page([second], null)
+        ? page([second])
         : page([first], first.id),
     )
 
@@ -98,12 +80,6 @@ describe('readProducts', () => {
 
 type Answer = () => Response | Promise<Response>
 
-const NOT_SENT: [string, Answer, string][] = [
-  ['a body that is too large', () => problem(413), 'failed'],
-  ['a body of another type', () => problem(415), 'failed'],
-  ...UNREAD,
-]
-
 describe('mayKeepProducts', () => {
   it.each<[string, boolean]>([
     ['owner', true],
@@ -119,7 +95,7 @@ describe('mayKeepProducts', () => {
 describe('readProductPage', () => {
   it('should ask for a page of the ledger under the conditions, after the cursor', async () => {
     // Arrange
-    const fetched = answering(() => page([shampoo], null))
+    const fetched = answering(() => page([shampoo]))
 
     // Act
     const read = await readProductPage(
@@ -187,7 +163,7 @@ describe('readProduct', () => {
 })
 
 describe('addProduct', () => {
-  it.each(NOT_SENT)(
+  it.each(UNWRITTEN)(
     'should add no product after %s',
     async (_, given, type) => {
       // Arrange
@@ -228,7 +204,7 @@ describe('addProduct', () => {
 })
 
 describe('changeProduct', () => {
-  it.each(NOT_SENT)(
+  it.each(UNWRITTEN)(
     'should change no product after %s',
     async (_, given, type) => {
       // Arrange

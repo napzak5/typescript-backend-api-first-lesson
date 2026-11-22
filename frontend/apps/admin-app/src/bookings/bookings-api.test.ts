@@ -1,7 +1,9 @@
 import {
   answering,
-  json,
+  empty,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -156,13 +158,7 @@ describe('the functions that call the API', () => {
 
   it('should ask for the bookings of one day, of the state and the member named, 50 at a time', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: [],
-        meta: { total: 0, nextCursor: null },
-        links: { self: '/api/v1/bookings' },
-      }),
-    )
+    const fetched = answering(() => page([]))
 
     // Act
     await readDayBookings(
@@ -290,13 +286,7 @@ describe('the functions that call the API', () => {
 
   it('createBooking should send the booking to the ledger, and hand over the booking the API made', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(201, {
-        data: booking,
-        meta: { correlationId: null, timestamp: '2026-11-20T00:00:00.000Z' },
-        links: { self: `/api/v1/bookings/${booking.id}` },
-      }),
-    )
+    const fetched = answering(() => record(201, booking))
 
     // Act
     const outcome = await createBooking(CREATION)
@@ -352,7 +342,7 @@ describe('the functions that call the API', () => {
   ])('deleteBooking should tell an answer of %i', async (status, removal) => {
     // Arrange
     const fetched = answering(() =>
-      status === 204 ? new Response(null, { status }) : problem(status),
+      status === 204 ? empty(status) : problem(status),
     )
 
     // Act
@@ -387,29 +377,13 @@ describe('the functions that call the API', () => {
     /** The API, that finds the member taken by a booking it has and one it removed meanwhile. */
     const theApi = (
       reading: (id: string) => Response = (id) =>
-        id === taken.id
-          ? json(200, {
-              data: taken,
-              meta: {
-                correlationId: null,
-                timestamp: '2026-11-20T00:00:00.000Z',
-              },
-              links: { self: `/api/v1/bookings/${id}` },
-            })
-          : problem(404),
+        id === taken.id ? record(200, taken) : problem(404),
       isAvailable = false,
     ) =>
       answering((request) => {
         const { pathname } = new URL(request.url)
         if (pathname.endsWith('/available-slots/check')) {
-          return json(200, {
-            data: { isAvailable, conflicts: [taken.id, GONE] },
-            meta: {
-              correlationId: null,
-              timestamp: '2026-11-20T00:00:00.000Z',
-            },
-            links: { self: pathname },
-          })
+          return record(200, { isAvailable, conflicts: [taken.id, GONE] })
         }
 
         return reading(pathname.split('/').at(-1) ?? '')
@@ -466,14 +440,7 @@ describe('the functions that call the API', () => {
           const { pathname } = new URL(request.url)
 
           return pathname.endsWith('/available-slots/check')
-            ? json(200, {
-                data: { isAvailable: false, conflicts: [taken.id] },
-                meta: {
-                  correlationId: null,
-                  timestamp: '2026-11-20T00:00:00.000Z',
-                },
-                links: { self: pathname },
-              })
+            ? record(200, { isAvailable: false, conflicts: [taken.id] })
             : answer()
         })
 
@@ -486,14 +453,6 @@ describe('the functions that call the API', () => {
     )
   })
 })
-
-/** An answer of the API with the envelope of a resource. */
-const resource = (status: number, data: unknown, self: string): Response =>
-  json(status, {
-    data,
-    meta: { correlationId: null, timestamp: '2026-11-20T00:00:00.000Z' },
-    links: { self },
-  })
 
 describe('the attempts that find out why the API refused', () => {
   afterEach(() => {
@@ -521,20 +480,14 @@ describe('the attempts that find out why the API refused', () => {
       if (request.method === 'GET') {
         const id = pathname.split('/').at(-1)
 
-        return id === now.id
-          ? resource(200, now, pathname)
-          : resource(200, other, pathname)
+        return id === now.id ? record(200, now) : record(200, other)
       }
 
       return problem(409)
     })
 
   const conflicting = (ids: string[], isAvailable: boolean) => () =>
-    resource(
-      200,
-      { isAvailable, conflicts: ids },
-      `/api/v1/salons/${salon.id}/available-slots/check`,
-    )
+    record(200, { isAvailable, conflicts: ids })
 
   it('should leave the booking itself out of what overlaps a line, and find the member free when only it does', async () => {
     // Arrange

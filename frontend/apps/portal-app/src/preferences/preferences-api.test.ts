@@ -2,7 +2,6 @@ import type {
   ModelsCustomerPreferencesResponse,
   ModelsCustomerPreferencesUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   answering,
   asked,
@@ -12,7 +11,8 @@ import {
   problem,
   record,
   sent,
-} from '../__tests__/api-answers'
+} from '@beauty-salon-frontend/testing/answers'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   readOwnPreferences,
   readOwnPreferencesToChange,
@@ -110,7 +110,8 @@ const API: Api = {
 const holding = (other: Partial<Api> = {}) => {
   const api = { ...API, ...other }
 
-  return answering((url) => {
+  return answering((request) => {
+    const url = new URL(request.url)
     const [, path = ''] = url.pathname.split('/api/v1')
     if (path === '/customers/me/preferences') {
       return api.preferences()

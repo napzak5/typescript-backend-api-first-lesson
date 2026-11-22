@@ -1,8 +1,9 @@
 import type { ModelsStaffCreateRequest } from '@beauty-salon-frontend/api-client'
 import {
   answering,
-  json,
+  page,
   problem,
+  problemWithCode,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -35,44 +36,7 @@ const {
 
 const request: ModelsStaffCreateRequest = fields
 
-/** A refusal of the API with the code it gives a conflict of the kind */
-const conflict = (code: string): Response =>
-  json(
-    409,
-    {
-      type: 'urn:beauty-salon:problem',
-      title: 'Conflict',
-      status: 409,
-      detail: null,
-      instance: null,
-      code,
-      errors: null,
-      correlationId: null,
-      timestamp: '2026-11-20T00:00:00.000Z',
-    },
-    'application/problem+json',
-  )
-
 const TAKEN = '3002'
-
-/** A page of the ledger as the API answers it */
-const page = (
-  items: ReturnType<typeof aStaffMember>[],
-  nextCursor: string | null,
-): Response =>
-  json(200, {
-    data: items,
-    meta: {
-      total: items.length,
-      limit: 100,
-      cursor: null,
-      nextCursor,
-      prevCursor: null,
-      hasMore: nextCursor !== null,
-      correlationId: null,
-    },
-    links: { self: '/', next: null, prev: null },
-  })
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -124,9 +88,9 @@ describe('attemptStaffEntry', () => {
     const first = aNewMember()
     const fetched = answering((asked) =>
       asked.method === 'POST'
-        ? conflict(TAKEN)
+        ? problemWithCode(409, TAKEN)
         : new URL(asked.url).searchParams.has('cursor')
-          ? page([member], null)
+          ? page([member])
           : page([first], first.id),
     )
 
@@ -148,7 +112,7 @@ describe('attemptStaffEntry', () => {
 
   it('should take the address of mail as taken without reading the ledger when no staff code was sent', async () => {
     // Arrange
-    const fetched = answering(() => conflict(TAKEN))
+    const fetched = answering(() => problemWithCode(409, TAKEN))
 
     // Act
     const attempt = await attemptStaffEntry(salon.id, {
@@ -170,7 +134,7 @@ describe('attemptStaffEntry', () => {
     async (_, answer, type) => {
       // Arrange
       answering((asked) =>
-        asked.method === 'POST' ? conflict(TAKEN) : answer(),
+        asked.method === 'POST' ? problemWithCode(409, TAKEN) : answer(),
       )
 
       // Act
@@ -211,7 +175,7 @@ describe('attemptStaffEntry', () => {
 describe('attemptStaffChange', () => {
   it('should take the staff code as taken without reading the ledger when no address of mail was sent', async () => {
     // Arrange
-    const fetched = answering(() => conflict(TAKEN))
+    const fetched = answering(() => problemWithCode(409, TAKEN))
 
     // Act
     const attempt = await attemptStaffChange(salon.id, member.id, {
@@ -226,7 +190,7 @@ describe('attemptStaffChange', () => {
   it('should not take the address of mail of the member being changed as taken by another', async () => {
     // Arrange
     answering((asked) =>
-      asked.method === 'PATCH' ? conflict(TAKEN) : page([member], null),
+      asked.method === 'PATCH' ? problemWithCode(409, TAKEN) : page([member]),
     )
 
     // Act

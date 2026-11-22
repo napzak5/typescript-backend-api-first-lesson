@@ -1,7 +1,8 @@
 import {
   answering,
-  json,
+  empty,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -46,7 +47,7 @@ describe('changeSalon', () => {
     const sent: unknown[] = []
     answering(async (asked) => {
       sent.push(await asked.json())
-      return json(200, { data: salon, meta: null, links: { self: '/' } })
+      return record(200, salon)
     })
 
     // Act
@@ -132,7 +133,7 @@ describe('addSalon', () => {
     const sent: unknown[] = []
     answering(async (asked) => {
       sent.push(await asked.json())
-      return json(201, { data: salon, meta: null, links: { self: '/' } })
+      return record(201, salon)
     })
 
     // Act
@@ -162,7 +163,7 @@ describe('addSalon', () => {
 
 describe('removeSalon', () => {
   it.each<[string, Answer, string]>([
-    ['the removal', () => new Response(null, { status: 204 }), 'removed'],
+    ['the removal', () => empty(204), 'removed'],
     ['an ID the API does not read', () => problem(400), 'failed'],
     ...UNREAD,
   ])('should give what came of %s', async (_, given, type) => {

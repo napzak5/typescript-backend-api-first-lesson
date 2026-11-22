@@ -1,7 +1,8 @@
 import {
   answering,
-  json,
+  page,
   problem,
+  record,
   UNREAD,
 } from '@beauty-salon-frontend/testing/answers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -57,13 +58,7 @@ describe('alertsKeyOf and alertSummaryKeyOf', () => {
 describe('readAlertPage', () => {
   it('should ask for a page of 20 alerts of the conditions, after the cursor', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: ALERTS_OF_THE_SALON,
-        meta: { total: 22, limit: 20, hasMore: true, nextCursor: 'next' },
-        links: null,
-      }),
-    )
+    const fetched = answering(() => page(ALERTS_OF_THE_SALON, 'next', 22))
 
     // Act
     const read = await readAlertPage(
@@ -96,13 +91,7 @@ describe('readAlertPage', () => {
 
   it('should ask for the first page of every alert without conditions', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, {
-        data: [],
-        meta: { total: 0, limit: 20, hasMore: false, nextCursor: null },
-        links: null,
-      }),
-    )
+    const fetched = answering(() => page([]))
 
     // Act
     await readAlertPage(salon.id, {}, undefined)
@@ -136,9 +125,7 @@ describe('readAlertPage', () => {
 describe('readAlertSummary', () => {
   it('should ask how many alerts the salon has', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: SUMMARY_OF_THE_SALON, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, SUMMARY_OF_THE_SALON))
 
     // Act
     const read = await readAlertSummary(salon.id)
@@ -176,9 +163,7 @@ describe('acknowledgeAlert', () => {
 
   it('should send the acknowledgement, and hand over the alert acknowledged', async () => {
     // Arrange
-    const fetched = answering(() =>
-      json(200, { data: outOfGlovesAlert, meta: null, links: null }),
-    )
+    const fetched = answering(() => record(200, outOfGlovesAlert))
 
     // Act
     const acknowledged = await acknowledgeAlert(ACKNOWLEDGEMENT)
