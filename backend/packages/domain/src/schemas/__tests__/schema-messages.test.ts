@@ -46,6 +46,10 @@ const NAMED = /(?<!\.)\bmessage\b/g
 /** Where a source gives Zod a message as one string of every language. */
 const AS_ONE_STRING = /(?<!\.)\bmessage:\s*asOneString\(/g
 
+/** How often a source names a message that is no such string. */
+const messagesInOneLanguageOf = (source: string): number =>
+  count(source, NAMED) - count(source, AS_ONE_STRING)
+
 /** The sources of the schemas, by the names of their files. */
 const SOURCES: [string, string][] = readdirSync(SCHEMAS)
   .filter((file) => file.endsWith('.ts'))
@@ -71,6 +75,11 @@ describe('the sentences of a source', () => {
     ],
     ['a message of one word', "message: 'Required'", ['Required']],
     [
+      'a message that begins with a small letter',
+      "message: 'at most 3 entries'",
+      ['at most 3 entries'],
+    ],
+    [
       'no name of a property, value of an enum or path of an import',
       "import { z } from 'zod'\npath: ['endDate'], code: 'custom', form: 'NFC'",
       [],
@@ -86,6 +95,31 @@ describe('the sentences of a source', () => {
 
     // Assert
     expect(found).toEqual(sentences)
+  })
+})
+
+describe('the messages a source names in one language', () => {
+  it.each<[string, string, number]>([
+    [
+      'none where every message is one string of every language',
+      'message: asOneString(ruleMessages.notBlank),\nmessage:\n  asOneString(written),',
+      0,
+    ],
+    [
+      'none where a message is read to make that string',
+      'message: asOneString(issue.message),',
+      0,
+    ],
+    ['none in a comment', '// the message of a rule\n/* message */', 0],
+    ['a message that is a value of its own', 'message: written,', 1],
+    ['a message named in short', '{ code, message, input }', 1],
+    ['a message kept in a constant', 'const message = written', 1],
+  ])('should count %s', (_case, source, expected) => {
+    // Act
+    const counted = messagesInOneLanguageOf(source)
+
+    // Assert
+    expect(counted).toBe(expected)
   })
 })
 
@@ -112,11 +146,10 @@ describe('the messages of the schemas', () => {
     'should name a message only to give Zod one string of every language in %s',
     (_file, source) => {
       // Act
-      const named = count(source, NAMED)
-      const inEveryLanguage = count(source, AS_ONE_STRING)
+      const inOneLanguage = messagesInOneLanguageOf(source)
 
       // Assert
-      expect(inEveryLanguage).toBe(named)
+      expect(inOneLanguage).toBe(0)
     },
   )
 })

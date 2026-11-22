@@ -331,4 +331,18 @@ describe('inventoryTransactionSearchRequestSchema', () => {
       rules,
     )
   })
+
+  it('should say that an end before the start is earlier than startDate', () => {
+    // Arrange
+    const query = {
+      startDate: '2026-11-01T00:00:00Z',
+      endDate: '2026-10-31T23:59:59.999Z',
+    }
+
+    // Act
+    const messages = messagesOf(inventoryTransactionSearchRequestSchema, query)
+
+    // Assert
+    expect(messages).toEqual(['endDate:Must not be earlier than startDate'])
+  })
 })

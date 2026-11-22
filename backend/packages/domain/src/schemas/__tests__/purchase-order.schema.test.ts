@@ -250,6 +250,9 @@ describe('purchaseOrderCreateRequestSchema', () => {
     expect(brokenBy(purchaseOrderCreateRequestSchema, request)).toEqual([
       'items.2.inventoryId:custom',
     ])
+    expect(messagesOf(purchaseOrderCreateRequestSchema, request)).toEqual([
+      'Must not repeat a stock row ordered earlier in the order',
+    ])
   })
 
   it('reports a stock row named again and an item that comes to more than an integer, both', () => {
