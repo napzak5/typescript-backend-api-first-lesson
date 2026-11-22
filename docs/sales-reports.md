@@ -236,7 +236,7 @@ date,sales,tax,discounts,transactions,refunds,net
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/payment.tsp`（`SalesReportGetRequest`、`DailySalesGetRequest`、`SalesTrendsGetRequest`、`SalesTrendPeriodType`、`SalesReportResponse`、`SalesByMethodResponse`、`SalesByCategoryResponse`、`SalesByStaffResponse`、`DailySalesResponse`、`SalesTrendsResponse`）、`specs/operations/payment-operations.tsp`（`SalesReportCrud`） |
-| ドメイン | `backend/packages/domain/src/models/sales-report.ts`、`schemas/sales-report.schema.ts`、`repositories/sales-report.repository.ts`、`business-logic/sales-report/`（誰が読むかは `_shared/authorization.ts`、リポジトリが読んだ値からレポートを作るのは `_shared/report.ts`、日付の計算は `_shared/calendar.ts`、CSV を作るのは `_shared/export.ts`、権限とサロンの確かめ方は `_shared/figures.ts`） |
+| ドメイン | `backend/packages/domain/src/models/sales-report.ts`、`schemas/sales-report.schema.ts`、`mappers/write/sales-report.mapper.ts`（クエリから、数える期間を作る）、`mappers/read/sales-report.mapper.ts`（リポジトリが読んだ値から、レポートを作る）、`repositories/sales-report.repository.ts`、`business-logic/sales-report/`（誰が読むかは `_shared/authorization.ts`、平均と割合の計算は `_shared/report.ts`、日付の計算は `_shared/calendar.ts`、CSV を作るのは `_shared/export.ts`、権限とサロンの確かめ方は `_shared/figures.ts`） |
 | インフラ | `backend/packages/infrastructure/src/repositories/sales-report.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/sales-report/`（`/api/v1/sales-reports` に取り付ける） |
-| テスト | `backend/packages/domain/src/__tests__/sales-report.schema.test.ts`、`sales-report.report.test.ts`、`sales-report.export.test.ts`、`sales-report.usecase.test.ts`、`backend/packages/api/src/__tests__/sales-report.integration.test.ts` |
+| テスト | `backend/packages/domain/src/__tests__/sales-report.schema.test.ts`、`sales-report.mapper.test.ts`、`sales-report.report.test.ts`、`sales-report.export.test.ts`、`sales-report.usecase.test.ts`、`backend/packages/api/src/__tests__/sales-report.integration.test.ts` |

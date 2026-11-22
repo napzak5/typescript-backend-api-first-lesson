@@ -369,7 +369,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/payment.tsp`（`SaleProcessRequest`、`PaymentRefundRequest`、`PaymentResponse`、`PaymentStatusType`）、`specs/operations/payment-operations.tsp`（`SaleCrud` の `process`、`PaymentCrud` の `refund`） |
-| ドメイン | `backend/packages/domain/src/models/payment.ts`、`schemas/payment.schema.ts`、`mappers/read/payment.mapper.ts`、`repositories/payment.repository.ts`、`services/payment-number-issuer.ts`、`business-logic/payment/`（売上の支払い状態、支払いと返金が書く値、断る理由を決めるのは `_shared/plan.ts`、取引番号は `_shared/payment-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）。誰が記録し、誰が返金するかは、売上台帳の `business-logic/sale/_shared/authorization.ts` |
+| ドメイン | `backend/packages/domain/src/models/payment.ts`、`schemas/payment.schema.ts`、`mappers/write/payment.mapper.ts`（行は作らない。支払いと返金が書く値は `_shared/plan.ts` が決める）、`mappers/read/payment.mapper.ts`、`repositories/payment.repository.ts`、`services/payment-number-issuer.ts`、`business-logic/payment/`（売上の支払い状態、支払いと返金が書く値、断る理由を決めるのは `_shared/plan.ts`、取引番号は `_shared/payment-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）。誰が記録し、誰が返金するかは、売上台帳の `business-logic/sale/_shared/authorization.ts` |
 | インフラ | `backend/packages/infrastructure/src/repositories/payment.repository.impl.ts`、`repositories/held-sale.ts`（売上の行のロック。売上の更新、取り消しと共有する）、`security/random-payment-number-issuer.ts` |
 | API | `backend/packages/api/src/routes/sale/process-sale.handler.ts`（支払いの記録）、`backend/packages/api/src/routes/payment/`（返金。`/api/v1/payments` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611160900_payment_transaction_rules.sql` |
