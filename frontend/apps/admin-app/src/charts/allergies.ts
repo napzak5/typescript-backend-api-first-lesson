@@ -1,4 +1,8 @@
 import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
+import {
   ModelsAllergySeverityType,
   ModelsAllergyType,
   type ModelsCustomerAllergyCreateRequest,
@@ -9,7 +13,6 @@ import {
   EARLIEST_DAY,
   isDay,
   type Read,
-  type RefusedValue,
   textOf,
 } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'
@@ -345,8 +348,7 @@ export const afterAllergyRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

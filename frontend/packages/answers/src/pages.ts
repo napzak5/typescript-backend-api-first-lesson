@@ -1,8 +1,7 @@
-import type { More } from '@beauty-salon-frontend/ui'
-import type { NotFound, Page, Unread } from './salons-api'
+import { FAILED, type Page, type Unread } from './reading'
 
 /** What the pages of a list that were read so far amount to. */
-type Listing<Item> =
+export type Listing<Item> =
   /** Nothing is there to show: the first page was not read */
   | { type: 'unread'; reason: Unread }
   | {
@@ -16,8 +15,6 @@ type Listing<Item> =
        */
       rest: 'none' | 'more' | 'unread'
     }
-
-const FAILED: Unread = { type: 'failed' }
 
 /**
  * Puts the pages that were read together. A page that was not read ends the
@@ -58,35 +55,3 @@ export const cursorAfter = <Item>(
 
 /** The cursor of the first page of a list: there is none. */
 export const firstCursor = (): string | undefined => undefined
-
-/**
- * What comes after the items of a list, for the component that shows them.
- * A page that was not read is asked for again by reading the list again,
- * so it is on its way while the list is.
- */
-export const moreOf = (
-  rest: 'none' | 'more' | 'unread',
-  fetching: { nextPage: boolean; again: boolean },
-): More => {
-  if (rest === 'none') {
-    return 'none'
-  }
-  if (fetching.nextPage || (rest === 'unread' && fetching.again)) {
-    return 'loading'
-  }
-
-  return rest === 'unread' ? 'failed' : 'available'
-}
-
-/**
- * Why something could not be read, in words. A part of a salon that the API
- * does not find (the salon was removed a moment ago) could not be read
- * either.
- */
-export const unreadMessageOf = (
-  what: string,
-  reason: Unread | NotFound,
-): string =>
-  reason.type === 'tooManyRequests'
-    ? 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-    : `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`

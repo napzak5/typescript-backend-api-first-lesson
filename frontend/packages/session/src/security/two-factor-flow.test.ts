@@ -1,6 +1,6 @@
+import type { Unsent } from '@beauty-salon-frontend/answers'
 import { describe, expect, it } from 'vitest'
 import { account } from './components/examples'
-import type { Unsent } from './security-api'
 import {
   afterRefusal,
   readCode,

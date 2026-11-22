@@ -10,7 +10,6 @@ import {
 } from './components/examples'
 import {
   afterReviewChange,
-  afterReviewRemoval,
   afterReviewWriting,
   COMMENT,
   type Entered,
@@ -643,17 +642,5 @@ describe('afterReviewChange', () => {
       message: NOT_SENT,
       errors: {},
     })
-  })
-})
-
-describe('afterReviewRemoval', () => {
-  it('should say that there were too many requests', () => {
-    expect(afterReviewRemoval({ type: 'tooManyRequests' })).toBe(
-      TOO_MANY_REQUESTS,
-    )
-  })
-
-  it('should say that nothing was sent when there was no answer', () => {
-    expect(afterReviewRemoval({ type: 'failed' })).toBe(NOT_SENT)
   })
 })

@@ -1,7 +1,7 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -47,7 +47,7 @@ const SuggestionsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         .with({ type: 'forbidden' }, () => (
           <OtherSalonNotice what='発注の提案' />
         ))
-        .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('発注の提案', reason)}
             onRetry={() => void read.refetch()}

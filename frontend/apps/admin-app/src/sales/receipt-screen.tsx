@@ -1,7 +1,7 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -23,8 +23,6 @@ import { attemptReceipt, saleKeyOf } from './sales-api'
 import { WithPaymentMethods } from './with-sale'
 
 const TITLE = 'レシート'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 /**
  * What is on the screen and not on paper: the heading and the ways on. The
@@ -123,7 +121,7 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
           <OtherSalonNotice what='売上' />
         </>
       ))
-      .with({ type: UNREAD }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <OnScreen>
             <PageHeader title={TITLE} description={salon.name} />

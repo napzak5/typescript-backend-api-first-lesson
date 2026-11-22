@@ -1,8 +1,6 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsBookingResponse } from '@beauty-salon-frontend/api-client'
-import {
-  momentNameAt,
-  unreadMessageOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   Card,
@@ -53,7 +51,7 @@ export const BookingTreatment = ({
           .with(undefined, () => (
             <LoadingIndicator label='施術記録を読み込んでいます' />
           ))
-          .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+          .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
             <UnreadNotice
               message={unreadMessageOf('施術記録', reason)}
               onRetry={onRetry}

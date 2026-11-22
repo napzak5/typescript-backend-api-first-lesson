@@ -4,7 +4,6 @@ import { phone, unrecorded } from './components/examples'
 import {
   addressOf,
   browserOf,
-  countOf,
   momentOf,
   passwordChangedOf,
   sessionNameOf,
@@ -78,15 +77,4 @@ describe('the words of a session', () => {
     expect(browserOf(unrecorded)).toBe('記録されていません')
     expect(addressOf(unrecorded)).toBe('記録されていません')
   })
-
-  it.each([
-    [3, 3, '3 台の端末でサインインしています'],
-    [24, 20, '24 台の端末でサインインしています（20 台を表示しています）'],
-    [null, 20, '20 台を表示しています'],
-  ])(
-    'should say how many devices there are (%s) and how many are shown (%s)',
-    (total, shown, count) => {
-      expect(countOf(total, shown)).toBe(count)
-    },
-  )
 })

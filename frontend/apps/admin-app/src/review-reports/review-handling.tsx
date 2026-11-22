@@ -1,20 +1,20 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  NOT_FOUND,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewReportResponse,
   ModelsReviewResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  cursorAfter,
-  firstCursor,
-  listingOf,
-  moreOf,
-  NOT_FOUND,
-  unreadMessageOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   EmptyState,
   LoadingIndicator,
+  moreOf,
   UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'

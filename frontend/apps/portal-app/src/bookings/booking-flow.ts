@@ -1,3 +1,7 @@
+import {
+  NOT_SENT_MESSAGE,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingCancelRequest,
   ModelsBookingRescheduleRequest,
@@ -82,22 +86,14 @@ export const afterBooking = (
       errors: {},
     }))
     .with({ type: 'tooManyRequests' }, () => ({
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({
-      message:
-        '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: NOT_SENT_MESSAGE,
       errors: {},
     }))
     .exhaustive()
-
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-
-const UNSENT =
-  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
 
 /**
  * What the dialog that cancels a booking was sent with. The reason is the
@@ -141,9 +137,12 @@ export const afterCancellation = (
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
-    .with({ type: 'failed' }, () => ({ type: 'again', message: UNSENT }))
+    .with({ type: 'failed' }, () => ({
+      type: 'again',
+      message: NOT_SENT_MESSAGE,
+    }))
     .exhaustive()
 
 /** Where a booking is moved to, as the screen and its choices say it. */
@@ -206,8 +205,8 @@ export const afterMove = (
       errors: {},
     }))
     .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
-    .with({ type: 'failed' }, () => ({ message: UNSENT, errors: {} }))
+    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
     .exhaustive()

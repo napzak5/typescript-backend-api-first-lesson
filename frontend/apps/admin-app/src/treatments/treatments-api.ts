@@ -1,4 +1,21 @@
 import {
+  FAILED,
+  type Forbidden,
+  from,
+  LARGEST_PAGE,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  type RefusedValue,
+  refusedValuesOf,
+  toTheEnd,
+  UNANSWERED_PARTS,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsCustomerResponse,
   type ModelsTreatmentPhotoBulkCreateRequest,
   type ModelsTreatmentPhotoResponse,
@@ -18,22 +35,8 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import {
   dayAfter,
-  FAILED,
-  type Forbidden,
-  from,
-  LARGEST_PAGE,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type Page,
   type Period,
-  pageOf,
-  type RefusedValue,
-  refusedValuesOf,
   startOfDayAt,
-  toTheEnd,
-  type Unread,
-  unreadOf,
 } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod'
@@ -44,14 +47,6 @@ import { readCustomers } from '../customers/customers-api'
  * the member of the staff who did it. A booking has one record at most;
  * the salon of a record is that of its booking.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -137,7 +132,7 @@ export const readTreatmentPage = async (
         .returnType<Unread>()
         // The screens of a salon are behind the same permission as its records
         .with({ status: 403 }, () => FAILED)
-        .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+        .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
         .exhaustive(outsideTheContract)
     )
   }
@@ -189,7 +184,7 @@ export const findTreatmentOfBooking = async ({
       .returnType<Page<ModelsTreatmentRecordResponse> | Unread>()
       .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
       .with({ status: 403 }, () => FAILED)
-      .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+      .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
       .exhaustive(outsideTheContract)
   })
   if (read.type !== 'found') {
@@ -220,7 +215,7 @@ export const readTreatment = async (id: string): Promise<TreatmentRead> => {
     .with({ status: 200 }, ({ data }) => ({ type: 'found', record: data.data }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FAILED)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -280,7 +275,7 @@ export const createTreatment = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The body is the form, far from the limits of size and of type
       .with({ status: P.union(413, 415) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -305,7 +300,7 @@ export const updateTreatment = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -327,7 +322,7 @@ export const removeTreatment = async (
     .with({ status: 204 }, () => ({ type: 'removed' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -376,7 +371,7 @@ export const addTreatmentPhotos = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -402,7 +397,7 @@ export const removeTreatmentPhoto = async (
     .with({ status: 204 }, () => ({ type: 'removed' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -446,7 +441,7 @@ export const readTreatmentStatistics = async (
       }))
       // The screens of a salon are behind the same permission as its records
       .with({ status: 403 }, () => FAILED)
-      .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+      .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }

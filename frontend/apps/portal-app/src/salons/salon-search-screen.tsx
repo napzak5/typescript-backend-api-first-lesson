@@ -1,6 +1,13 @@
 import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
+import {
   EmptyState,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
@@ -9,13 +16,6 @@ import { useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { SalonResults } from './components/salon-results/salon-results'
 import { SalonSearchForm } from './components/salon-search-form/salon-search-form'
-import {
-  cursorAfter,
-  firstCursor,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
-} from './pages'
 import { conditionsIn, conditionsOf, narrows, queryOf } from './salon-search'
 import { findSalons } from './salons-api'
 

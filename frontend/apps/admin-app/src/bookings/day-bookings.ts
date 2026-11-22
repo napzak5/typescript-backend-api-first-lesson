@@ -1,11 +1,10 @@
+import type { Unread } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsCustomerResponse,
   ModelsServiceResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { Unread } from '@beauty-salon-frontend/salon-screens'
-import type { More } from '@beauty-salon-frontend/ui'
 import type { CustomersRead } from '../customers/customers-api'
 import { GONE_SERVICE, NO_MEMBER, UNLISTED_STAFF } from './booking-format'
 
@@ -101,27 +100,6 @@ export const rowsOf = (
   }
 
   return { rows, rest: { type: 'none' } }
-}
-
-/**
- * What stands below the rows. Customers that are on their way are rows
- * that are on their way; customers that could not be read are rows that
- * did not come, and are asked for again. Past the rows, it is what the
- * pages of the list say.
- */
-export const moreOfRows = (
-  rest: Rows['rest'],
-  pages: More,
-  readingNamesAgain: boolean,
-): More => {
-  if (rest.type === 'reading') {
-    return 'loading'
-  }
-  if (rest.type === 'unread') {
-    return readingNamesAgain ? 'loading' : 'failed'
-  }
-
-  return pages
 }
 
 /** The customers of a page of bookings: each one once, in their order. */

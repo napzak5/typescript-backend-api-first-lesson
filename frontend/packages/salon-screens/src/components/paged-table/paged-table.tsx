@@ -64,18 +64,3 @@ export const PagedTable = <Row,>({
     </div>
   )
 }
-
-/** How many there are, and how many of them are shown. */
-export const countOf = (
-  total: number | null,
-  shown: number,
-  unit: string,
-): string => {
-  if (total === null) {
-    return `${shown} ${unit}を表示しています`
-  }
-
-  return shown < total
-    ? `${total} ${unit}（${shown} ${unit}を表示しています）`
-    : `${total} ${unit}`
-}

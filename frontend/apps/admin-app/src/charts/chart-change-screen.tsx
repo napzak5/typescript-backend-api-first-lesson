@@ -1,14 +1,11 @@
+import { NOT_FOUND } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerResponse,
   ModelsMedicalChartResponse,
   ModelsMedicalChartUpdateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  dayAt,
-  NOT_FOUND,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,

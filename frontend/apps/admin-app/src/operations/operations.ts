@@ -1,3 +1,4 @@
+import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerDeletionRequestResponse,
   ModelsHealthCheck,
@@ -131,9 +132,6 @@ export type RunSays<Result> =
   /** Another attempt changes nothing: the dialog closes, and the part says why */
   | { type: 'refused'; message: string }
 
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-
 const REFUSED: { type: 'refused'; message: string } = {
   type: 'refused',
   message: ADMINISTRATORS_ONLY,
@@ -153,7 +151,7 @@ export const afterExpiry = (outcome: Expiry): RunSays<ExpiryResult> =>
     .with({ type: 'forbidden' }, () => REFUSED)
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -184,7 +182,7 @@ export const afterErasure = (
     .with({ type: 'forbidden' }, () => REFUSED)
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -212,7 +210,7 @@ export const afterPurge = (outcome: Purge): RunSays<number> =>
     .with({ type: 'forbidden' }, () => REFUSED)
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

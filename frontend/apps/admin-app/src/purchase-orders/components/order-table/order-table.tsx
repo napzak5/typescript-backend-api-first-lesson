@@ -1,10 +1,6 @@
 import type { ModelsPurchaseOrderResponse } from '@beauty-salon-frontend/api-client'
-import {
-  amountOf,
-  countOf,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
-import { Badge, Link, type More } from '@beauty-salon-frontend/ui'
+import { amountOf, PagedTable } from '@beauty-salon-frontend/salon-screens'
+import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
 import {
   deliveryDayNameOf,
   orderDayNameOf,

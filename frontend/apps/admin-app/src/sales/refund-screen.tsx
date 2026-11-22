@@ -1,3 +1,4 @@
+import { NOT_FOUND } from '@beauty-salon-frontend/answers'
 import type {
   ModelsPaymentMethodResponse,
   ModelsPaymentRefundRequest,
@@ -5,7 +6,7 @@ import type {
   ModelsSaleResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import { NOT_FOUND, WithSalon } from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import { ButtonLink, useNotifications } from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'

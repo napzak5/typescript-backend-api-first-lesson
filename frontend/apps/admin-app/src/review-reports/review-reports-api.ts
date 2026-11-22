@@ -1,10 +1,4 @@
 import {
-  type ModelsReviewReportResponse,
-  type ReviewReportCrudListParams,
-  reviewReportCrudDismiss,
-  reviewReportCrudList,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -13,9 +7,16 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsReviewReportResponse,
+  type ReviewReportCrudListParams,
+  reviewReportCrudDismiss,
+  reviewReportCrudList,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -24,14 +25,6 @@ import { match, P } from 'ts-pattern'
  * salon and of one of its reviews, and dismisses those that find nothing
  * wrong; a review that breaks the rules is removed, and its reports with it.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -77,7 +70,7 @@ export const readReportPage = async (
     .returnType<ReportPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: P.union(400, 403) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -107,6 +100,6 @@ export const dismissReport = async (reportId: string): Promise<Dismissal> => {
     .with({ status: 409 }, () => ({ type: 'dismissedAlready' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(P.union({ status: 400 }, UNANSWERED), unreadOf)
+    .with(P.union({ status: 400 }, P.union(...UNANSWERED_PARTS)), unreadOf)
     .exhaustive(outsideTheContract)
 }

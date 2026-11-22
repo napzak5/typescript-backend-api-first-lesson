@@ -1,16 +1,17 @@
+import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsProductResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
-  cursorAfter,
   dayAt,
-  FAILED,
-  firstCursor,
-  listingOf,
-  moreOf,
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -18,6 +19,7 @@ import {
   EmptyState,
   type FormErrors,
   LoadingIndicator,
+  moreOf,
   Navigation,
   PageHeader,
   UnreadNotice,

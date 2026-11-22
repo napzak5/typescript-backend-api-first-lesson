@@ -1,12 +1,9 @@
+import { NOT_FOUND } from '@beauty-salon-frontend/answers'
 import type {
   ModelsProductCreateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  NOT_FOUND,
-  salonKeyOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { salonKeyOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   PageHeader,

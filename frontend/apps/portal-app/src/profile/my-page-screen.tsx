@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
@@ -11,7 +12,6 @@ import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
 import { OwnPreferences } from '../preferences/own-preferences'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { SECURITY_PATH } from '../security/security-screens'
 import { SignInHelp } from '../sign-in-help'
 import { MembershipDetails } from './components/membership-details/membership-details'
@@ -19,8 +19,6 @@ import { ProfileDetails } from './components/profile-details/profile-details'
 import { OWN_PROFILE, readOwnProfile } from './profile-api'
 
 const TITLE = 'マイページ'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const OwnPage = () => {
   const read = useQuery({
@@ -71,7 +69,7 @@ const OwnPage = () => {
             }
           />
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('お客様の情報', reason)}
             onRetry={() => void read.refetch()}

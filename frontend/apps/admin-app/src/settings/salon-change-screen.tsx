@@ -1,9 +1,9 @@
+import { NOT_FOUND } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsSalonUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import {
-  NOT_FOUND,
   readSalon,
   type SalonRead,
   salonKeyOf,

@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsPaymentMethodResponse,
   ModelsSaleResponse,
@@ -6,7 +7,6 @@ import type {
 import {
   momentNameAt,
   OtherSalonNotice,
-  unreadMessageOf,
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
@@ -25,8 +25,6 @@ import {
   readSale,
   saleKeyOf,
 } from './sales-api'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 export type WithSaleProps = {
   salon: ModelsSalonResponse
@@ -95,7 +93,7 @@ export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
           <OtherSalonNotice what='売上' />
         </>
       ))
-      .with({ type: UNREAD }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <PageHeader title={title} description={salon.name} />
           <UnreadNotice
@@ -136,7 +134,7 @@ export const WithPaymentMethods = ({
     ))
     .with({ type: 'found' }, ({ items }) => children(items))
     .with({ type: 'forbidden' }, () => <OtherSalonNotice what='売上' />)
-    .with({ type: P.union(UNREAD, 'notFound') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES, 'notFound') }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('支払い方法', reason)}
         onRetry={() => void methods.refetch()}

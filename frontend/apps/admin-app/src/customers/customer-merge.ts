@@ -1,9 +1,13 @@
+import {
+  type Forbidden,
+  TOO_MANY_REQUESTS_MESSAGE,
+  type Unread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerMergeConflictResolutionType,
   ModelsCustomerResponse,
   ModelsMedicalChartResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { Forbidden, Unread } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import type { LedgerValues } from './components/customer-record/ledger-items'
 import { countNameOf } from './customer-format'
@@ -291,9 +295,6 @@ export type MergeSays =
   /** Nothing was done, and the two are read again: the dialog closes, and the page says why */
   | { type: 'refused'; message: string }
 
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-
 export const afterMerge = (
   outcome: MergeAttempt,
   pair: MergePair,
@@ -327,7 +328,7 @@ export const afterMerge = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

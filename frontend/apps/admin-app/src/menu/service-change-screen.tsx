@@ -1,14 +1,15 @@
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsServiceCategoryResponse,
   ModelsServiceResponse,
   ModelsServiceUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import {
-  NOT_FOUND,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   Button,
@@ -272,7 +273,7 @@ const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
 
   return match(shown)
     .with({ type: 'notFound' }, () => <ServiceNotFound salon={salon} />)
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice

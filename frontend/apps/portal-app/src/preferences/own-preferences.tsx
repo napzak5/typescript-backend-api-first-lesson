@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import {
   ButtonLink,
   Card,
@@ -6,11 +7,8 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
-import { unreadMessageOf } from '../salons/pages'
 import { PreferencesDetails } from './components/preferences-details/preferences-details'
 import { OWN_PREFERENCES, readOwnPreferences } from './preferences-api'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 /**
  * The part of the page of a customer that shows what they want the salons
@@ -46,7 +44,7 @@ export const OwnPreferences = () => {
         .with({ type: 'none' }, () => (
           <p>好みの設定は、お客様の情報を登録すると使えます。</p>
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('好みの設定', reason)}
             onRetry={() => void read.refetch()}

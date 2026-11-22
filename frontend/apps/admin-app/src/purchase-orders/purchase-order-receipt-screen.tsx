@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsPurchaseOrderReceiveRequest,
   ModelsPurchaseOrderResponse,
@@ -5,7 +6,6 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -190,7 +190,7 @@ const ReceiptPart = ({ salon, purchaseOrderId }: ReceiptPartProps) => {
         <OtherSalonNotice what='発注' />
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice

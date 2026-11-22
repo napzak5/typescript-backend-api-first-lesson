@@ -1,12 +1,15 @@
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsProductResponse,
   ModelsProductUpdateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
-  NOT_FOUND,
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -230,7 +233,7 @@ const ChangePart = ({ salon, productId }: ChangePartProps) => {
         <OtherSalonNotice what='商品' />
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice

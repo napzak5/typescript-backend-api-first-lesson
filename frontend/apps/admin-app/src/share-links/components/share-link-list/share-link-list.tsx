@@ -1,13 +1,10 @@
 import type { ModelsShareLinkResponse } from '@beauty-salon-frontend/api-client'
-import {
-  countOf,
-  momentNameAt,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
+import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   ButtonLink,
   Card,
+  countOf,
   EmptyState,
   Link,
   LoadingIndicator,

@@ -2,6 +2,7 @@ import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
+import { type More, moreOf, moreOfRows } from './load-more'
 import * as loadMoreStories from './load-more.stories'
 
 const stories = composeStories(loadMoreStories)
@@ -53,4 +54,89 @@ describe('LoadMore', () => {
     expect(screen.queryByRole('button')).toBeNull()
     expect(screen.queryByRole('alert')).toBeNull()
   })
+})
+
+describe('moreOf', () => {
+  const IDLE = { nextPage: false, again: false }
+
+  const CASES: [
+    Parameters<typeof moreOf>[0],
+    Parameters<typeof moreOf>[1],
+    More,
+  ][] = [
+    ['none', IDLE, 'none'],
+    ['none', { nextPage: true, again: true }, 'none'],
+    ['more', IDLE, 'available'],
+    ['more', { nextPage: true, again: false }, 'loading'],
+    // The list is read again for another reason: its button stays as it is
+    ['more', { nextPage: false, again: true }, 'available'],
+    ['unread', IDLE, 'failed'],
+    ['unread', { nextPage: false, again: true }, 'loading'],
+    ['unread', { nextPage: true, again: false }, 'loading'],
+  ]
+
+  it.each(CASES)(
+    'should say of a list with the rest %s, fetching %j: %s',
+    (rest, fetching, more) => {
+      expect(moreOf(rest, fetching)).toBe(more)
+    },
+  )
+})
+
+describe('moreOfRows', () => {
+  const CASES: [
+    string,
+    Parameters<typeof moreOfRows>[0],
+    More,
+    boolean,
+    More,
+  ][] = [
+    ['names on their way', { type: 'reading' }, 'none', false, 'loading'],
+    [
+      'names on their way again',
+      { type: 'reading' },
+      'failed',
+      true,
+      'loading',
+    ],
+    ['names not read', { type: 'unread' }, 'available', false, 'failed'],
+    ['names read again', { type: 'unread' }, 'available', true, 'loading'],
+    [
+      'every row, and more pages',
+      { type: 'none' },
+      'available',
+      false,
+      'available',
+    ],
+    [
+      'every row, and a page on its way',
+      { type: 'none' },
+      'loading',
+      false,
+      'loading',
+    ],
+    [
+      'every row, and a page not read',
+      { type: 'none' },
+      'failed',
+      false,
+      'failed',
+    ],
+    // Names that are read again for another reason leave the rows as they are
+    [
+      'every row, while names are read again',
+      { type: 'none' },
+      'available',
+      true,
+      'available',
+    ],
+    ['every row of every page', { type: 'none' }, 'none', false, 'none'],
+  ]
+
+  it.each(CASES)(
+    'should say what comes after the rows with %s',
+    (_case, rest, pages, readingAgain, more) => {
+      expect(moreOfRows(rest, pages, readingAgain)).toBe(more)
+    },
+  )
 })

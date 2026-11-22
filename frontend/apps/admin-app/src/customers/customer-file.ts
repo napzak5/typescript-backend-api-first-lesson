@@ -1,10 +1,10 @@
+import type { RefusedValue } from '@beauty-salon-frontend/answers'
 import {
   type ModelsCustomerBasicPreferences,
   type ModelsCustomerCreateRequest,
   type ModelsCustomerResponse,
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
-import type { RefusedValue } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import { TOO_MANY_REQUESTS } from '../bookings/booking-entry'

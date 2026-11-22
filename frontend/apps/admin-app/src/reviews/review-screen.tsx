@@ -1,13 +1,11 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsReviewReportRequest,
   ModelsReviewResponse,
   ModelsSalonResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   type FormErrors,
@@ -79,7 +77,7 @@ const useAuthor = (salonId: string, customerId: string): ReviewAuthor => {
       href: customerHrefOf(salonId, customer.id),
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
-    .with({ type: P.union('tooManyRequests', 'failed') }, () => ({
+    .with({ type: P.union(...UNREAD_TYPES) }, () => ({
       type: 'unread',
     }))
     .exhaustive()
@@ -308,7 +306,7 @@ const ReviewPart = ({ salon, reviewId }: ReviewPartProps) => {
         },
         () => <ReviewNotFound salonId={salon.id} />,
       )
-      .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <PageHeader title={TITLE} description={salon.name} />
           <UnreadNotice

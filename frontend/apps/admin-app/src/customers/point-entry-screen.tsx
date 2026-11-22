@@ -1,12 +1,9 @@
+import { NOT_FOUND } from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  dayAt,
-  NOT_FOUND,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,

@@ -1,17 +1,18 @@
 import {
+  FAILED,
+  outsideTheContract,
+  type RefusedValue,
+  refusedValuesOf,
+  UNANSWERED_PARTS,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsStaffProfileResponse,
   type ModelsStaffProfileUpdateRequest,
   staffOwnProfileGet,
   staffOwnProfileUpdate,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  outsideTheContract,
-  type RefusedValue,
-  refusedValuesOf,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -19,14 +20,6 @@ import { match, P } from 'ts-pattern'
  * to: what the customers are shown of them, read and changed by the member
  * themselves. The API knows the member from the account.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 /** The key the profile of the account is read under */
 export const OWN_PROFILE: string[] = ['own-profile']
@@ -56,7 +49,7 @@ export const readOwnProfile = async (): Promise<ProfileRead> => {
       profile: data.data,
     }))
     .with({ status: P.union(403, 404) }, () => UNAVAILABLE)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -85,6 +78,6 @@ export const saveOwnProfile = async (
     }))
     .with({ status: P.union(403, 404) }, () => UNAVAILABLE)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

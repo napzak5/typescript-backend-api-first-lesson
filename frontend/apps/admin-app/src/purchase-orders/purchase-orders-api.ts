@@ -1,4 +1,21 @@
 import {
+  FAILED,
+  type Forbidden,
+  from,
+  LARGEST_PAGE,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  type Page,
+  pageOf,
+  type RefusedValue,
+  refusedValuesOf,
+  toTheEnd,
+  UNANSWERED_PARTS,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsOrderStatusType,
   type ModelsPurchaseOrderCancelRequest,
   type ModelsPurchaseOrderCreateRequest,
@@ -16,22 +33,6 @@ import {
   purchaseOrderCrudReceive,
   purchaseOrderCrudUpdate,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  type Forbidden,
-  from,
-  LARGEST_PAGE,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type Page,
-  pageOf,
-  type RefusedValue,
-  refusedValuesOf,
-  toTheEnd,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -41,14 +42,6 @@ import { match, P } from 'ts-pattern'
  * the salon is a condition of the list, and an order names its salon
  * itself.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -100,7 +93,7 @@ export const readOrderPage = async (
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -122,7 +115,7 @@ export const readOrder = async (
     .with({ status: 200 }, ({ data }) => ({ type: 'found', order: data.data }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -159,7 +152,7 @@ export const makeOrder = async (
     })
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -194,7 +187,7 @@ const orderStepOf = (answer: StepAnswer | null): OrderStep =>
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(400, 413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 
 /** Moves an order one status on: a draft to approval, an approved order to ordered, an ordered one to shipped. */
@@ -255,7 +248,7 @@ export const changeOrder = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -299,7 +292,7 @@ export const receiveOrder = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -341,6 +334,6 @@ export const readEverySuggestion = (
       .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
       .with({ status: 403 }, () => FORBIDDEN)
       .with({ status: 400 }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   })

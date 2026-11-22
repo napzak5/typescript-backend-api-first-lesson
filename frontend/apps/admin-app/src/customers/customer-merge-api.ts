@@ -1,18 +1,20 @@
 import {
-  customerCrudMerge,
-  type ModelsCustomerResponse,
-  type ModelsMedicalChartResponse,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   type NotFound,
   outsideTheContract,
   refusedValuesOf,
+  UNANSWERED_PARTS,
+  UNREAD_TYPES,
   type Unread,
   unreadOf,
   whyUnread,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  customerCrudMerge,
+  type ModelsCustomerResponse,
+  type ModelsMedicalChartResponse,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import { readChart } from '../charts/charts-api'
 import { readErasureRequest } from './customer-erasure-api'
@@ -29,14 +31,6 @@ import { customerKeyOf, readCustomer } from './customers-api'
  * What two customers are merged by: the one chosen to merge with, what
  * else of both the API looks at before it merges them, and the merge.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -70,7 +64,7 @@ const readErasureAsked = async (
       }))
       // The screen offers the merge only to who may read the requests
       .with({ type: 'forbidden' }, () => FAILED)
-      .with({ type: P.union('tooManyRequests', 'failed') }, (unread) => unread)
+      .with({ type: P.union(...UNREAD_TYPES) }, (unread) => unread)
       .exhaustive()
   )
 }
@@ -188,6 +182,6 @@ export const mergeCustomers = async (
     .with({ status: 409 }, () => ({ type: 'refused' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

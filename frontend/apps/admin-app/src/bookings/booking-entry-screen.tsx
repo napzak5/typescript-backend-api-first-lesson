@@ -1,3 +1,11 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerResponse,
   ModelsSalonResponse,
@@ -5,22 +13,17 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
-  cursorAfter,
   dayAt,
-  firstCursor,
   KeywordSearch,
   keywordOf,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
   WithSalon,
-  whyUnread,
 } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   ButtonLink,
   EmptyState,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -75,8 +78,6 @@ import { BookingEntryForm } from './components/booking-entry-form/booking-entry-
 import { ChosenCustomer } from './components/chosen-customer/chosen-customer'
 
 const TITLE = '予約を入れる'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
@@ -356,9 +357,9 @@ const EntryStep = ({
         ),
     )
     .with(
-      [{ type: UNREAD }, P._, P._],
-      [P._, { type: UNREAD }, P._],
-      [P._, P._, { type: P.union(UNREAD, 'notFound') }],
+      [{ type: P.union(...UNREAD_TYPES) }, P._, P._],
+      [P._, { type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
           message={unreadMessageOf('お客様とメニュー', whyUnread(reads))}

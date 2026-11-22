@@ -1,15 +1,14 @@
+import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryCreateRequest,
   ModelsInventoryResponse,
   ModelsInventoryUpdateRequest,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  isDay,
-  type Read,
-  type RefusedValue,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import {
   type FormSays,
@@ -328,8 +327,7 @@ export const afterStockRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

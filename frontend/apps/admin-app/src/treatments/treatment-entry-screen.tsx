@@ -1,3 +1,8 @@
+import {
+  UNREAD_TYPES,
+  unreadMessageOf,
+  whyUnread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsCustomerResponse,
@@ -7,11 +12,7 @@ import type {
   ModelsStaffProfileResponse,
   ModelsTreatmentRecordCreateRequest,
 } from '@beauty-salon-frontend/api-client'
-import {
-  unreadMessageOf,
-  WithSalon,
-  whyUnread,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   ButtonLink,
@@ -55,8 +56,6 @@ import {
 const TITLE = '施術記録を書く'
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 type EntryProps = {
   salon: ModelsSalonResponse
@@ -286,9 +285,9 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
       ),
     )
     .with(
-      [{ type: UNREAD }, P._, P._],
-      [P._, { type: UNREAD }, P._],
-      [P._, P._, { type: P.union(UNREAD, 'notFound') }],
+      [{ type: P.union(...UNREAD_TYPES) }, P._, P._],
+      [P._, { type: P.union(...UNREAD_TYPES) }, P._],
+      [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
           message={unreadMessageOf('お客様と商品', whyUnread(reads))}

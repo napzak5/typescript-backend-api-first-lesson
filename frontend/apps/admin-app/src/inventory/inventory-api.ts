@@ -1,16 +1,4 @@
 import {
-  inventoryCrudCreate,
-  inventoryCrudDelete,
-  inventoryCrudGet,
-  inventoryCrudList,
-  inventoryCrudListExpiring,
-  inventoryCrudListLowStock,
-  inventoryCrudUpdate,
-  type ModelsInventoryCreateRequest,
-  type ModelsInventoryResponse,
-  type ModelsInventoryUpdateRequest,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -23,9 +11,22 @@ import {
   type RefusedValue,
   refusedValuesOf,
   toTheEnd,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  inventoryCrudCreate,
+  inventoryCrudDelete,
+  inventoryCrudGet,
+  inventoryCrudList,
+  inventoryCrudListExpiring,
+  inventoryCrudListLowStock,
+  inventoryCrudUpdate,
+  type ModelsInventoryCreateRequest,
+  type ModelsInventoryResponse,
+  type ModelsInventoryUpdateRequest,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import type { StockView } from './stock-view'
 
@@ -35,14 +36,6 @@ import type { StockView } from './stock-view'
  * administrator keep the rows. The routes are not below the salon: the
  * salon is a condition of a list, and a row names its salon itself.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -82,7 +75,7 @@ const pageFrom = (answer: StockListAnswer): StockPage =>
     .with({ status: 403 }, () => FORBIDDEN)
     // The salon was removed after it was read, or the row of the cursor meanwhile
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 
 /**
@@ -166,7 +159,7 @@ export const readStockRow = async (
     .with({ status: 200 }, ({ data }) => ({ type: 'found', row: data.data }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -200,7 +193,7 @@ export const addStockRow = async (
     .with({ status: 409 }, () => ({ type: 'lotTaken' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -224,7 +217,7 @@ export const changeStockRow = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -248,6 +241,6 @@ export const removeStockRow = async (
     .with({ status: 409 }, () => ({ type: 'inStock' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

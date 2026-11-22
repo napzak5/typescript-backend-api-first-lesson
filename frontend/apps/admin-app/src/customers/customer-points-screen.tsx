@@ -1,21 +1,21 @@
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerResponse,
   ModelsPointTransactionResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  cursorAfter,
-  dayAt,
-  firstCursor,
-  listingOf,
-  moreOf,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   Link,
   LoadingIndicator,
+  moreOf,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
@@ -45,8 +45,6 @@ import { WithCustomer } from './with-customer'
 
 const TITLE = 'ポイント'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
-
 /**
  * The sale a transaction was made for, by its number, leading to its page
  * at its own salon. A sale of a salon the account does not belong to is
@@ -69,7 +67,7 @@ const SaleName = ({ saleId }: { saleId: string }) => {
       { type: P.union('notFound', 'forbidden') },
       () => 'ほかのサロンの売上',
     )
-    .with(P.union(undefined, { type: UNREAD }), () => '売上')
+    .with(P.union(undefined, { type: P.union(...UNREAD_TYPES) }), () => '売上')
     .exhaustive()
 }
 
@@ -90,7 +88,7 @@ const BookingName = ({ bookingId }: { bookingId: string }) => {
       { type: P.union('notFound', 'forbidden') },
       () => 'ほかのサロンの予約',
     )
-    .with(P.union(undefined, { type: UNREAD }), () => '予約')
+    .with(P.union(undefined, { type: P.union(...UNREAD_TYPES) }), () => '予約')
     .exhaustive()
 }
 
@@ -151,7 +149,7 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
             entryHref={pointEntryHrefOf(salon.id, customer.id)}
           />
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('残高', reason)}
             onRetry={() => void balance.refetch()}
@@ -171,7 +169,7 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
             timezone={salon.timezone}
           />
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('期限が近いポイント', reason)}
             onRetry={() => void expiring.refetch()}

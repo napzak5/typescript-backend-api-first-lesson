@@ -1,3 +1,12 @@
+import {
+  cursorAfter,
+  FAILED,
+  firstCursor,
+  listingOf,
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsInventoryResponse,
   ModelsProductResponse,
@@ -5,14 +14,7 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
-  cursorAfter,
-  FAILED,
-  firstCursor,
-  listingOf,
-  moreOf,
-  NOT_FOUND,
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -20,6 +22,7 @@ import {
   EmptyState,
   type FormErrors,
   LoadingIndicator,
+  moreOf,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import {
@@ -233,7 +236,7 @@ const MovementsPart = ({ salon, inventoryId }: MovementsPartProps) => {
           .with(undefined, () => (
             <LoadingIndicator label='在庫の移動を読み込んでいます' />
           ))
-          .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+          .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
             <UnreadNotice
               message={unreadMessageOf('スタッフ', reason)}
               onRetry={() => void staff.refetch()}

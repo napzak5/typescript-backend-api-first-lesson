@@ -1,11 +1,4 @@
 import {
-  type ModelsStaffProfileResponse,
-  type ModelsStaffSchedule,
-  staffProfileGet,
-  staffSchedulesList,
-  staffSchedulesUpdate,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   NOT_FOUND,
@@ -13,9 +6,17 @@ import {
   outsideTheContract,
   type RefusedValue,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  type ModelsStaffProfileResponse,
+  type ModelsStaffSchedule,
+  staffProfileGet,
+  staffSchedulesList,
+  staffSchedulesUpdate,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -23,13 +24,6 @@ import { match, P } from 'ts-pattern'
  * the owner, a manager and an administrator plan it. A member of the staff
  * reads their own.
  */
-
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -69,7 +63,7 @@ export const readSchedule = async (
       // An ID that is no ID names no member either
       .with({ status: P.union(400, 404) }, () => NOT_FOUND)
       .with({ status: 403 }, () => FORBIDDEN)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -129,7 +123,7 @@ const saveSchedule = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 

@@ -1,9 +1,10 @@
+import { NOT_FOUND, UNREAD_TYPES } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsBookingUpdateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import { NOT_FOUND, WithSalon } from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { ButtonLink, Form, useNotifications } from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -25,8 +26,6 @@ import { BookingNotesFields } from './components/booking-notes-fields/booking-no
 import { WithBooking } from './with-booking'
 
 const TITLE = '要望とメモを変える'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
 
@@ -64,8 +63,9 @@ const NotesChange = ({ salon, booking }: NotesChangeProps) => {
         .with({ type: 'notFound' }, () => {
           queryClient.setQueryData(key, NOT_FOUND)
         })
-        .with({ type: P.union('invalid', 'forbidden', UNREAD) }, (refused) =>
-          setSaid(afterNotesChange(refused)),
+        .with(
+          { type: P.union('invalid', 'forbidden', P.union(...UNREAD_TYPES)) },
+          (refused) => setSaid(afterNotesChange(refused)),
         )
         .exhaustive(),
   })

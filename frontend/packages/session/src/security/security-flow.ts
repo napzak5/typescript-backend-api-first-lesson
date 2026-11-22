@@ -1,16 +1,18 @@
+import {
+  FAILED,
+  NOT_SENT_MESSAGE,
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+  type Unsent,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsAuthPasswordChangeRequest,
   ModelsSessionResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { FormErrors, More } from '@beauty-salon-frontend/ui'
+import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { newPasswordError, refusedPasswordMessage } from './password-rule'
-import type {
-  PasswordChange,
-  RefusedValue,
-  SessionPage,
-  Unsent,
-} from './security-api'
+import type { PasswordChange, SessionPage } from './security-api'
 
 /*
  * What the screens of the security of an account make of what a person
@@ -39,11 +41,6 @@ const CURRENT_PASSWORD_WRONG =
   '現在のパスワードが違います。5 回続けて違うと、15 分間、サインインもできなくなります。'
 const UNCHANGED =
   '現在のパスワードと同じです。別のパスワードを入力してください。'
-const TOO_MANY_REQUESTS =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-const NOT_SENT =
-  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
-
 const textOf = (values: FormData, name: string): string => {
   const value = values.get(name)
 
@@ -110,24 +107,11 @@ export const afterPasswordChange = (
         : { message: undefined, errors: Object.fromEntries(said) }
     })
     .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       errors: {},
     }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT, errors: {} }))
+    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
     .exhaustive()
-
-/** What the screen says when a request that changes nothing a person typed got nowhere. */
-export const afterUnsent = (outcome: Unsent): string =>
-  match(outcome)
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => NOT_SENT)
-    .exhaustive()
-
-/** What the screen says when it could not read something. */
-export const unreadMessageOf = (what: string, reason: Unsent): string =>
-  reason.type === 'tooManyRequests'
-    ? TOO_MANY_REQUESTS
-    : `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`
 
 /** What the pages of the sessions that were read so far amount to. */
 export type SessionListing =
@@ -146,8 +130,6 @@ export type SessionListing =
        */
       rest: 'none' | 'more' | 'unread'
     }
-
-const FAILED: Unsent = { type: 'failed' }
 
 /**
  * Puts the pages that were read together. A page that was not read ends the
@@ -185,31 +167,9 @@ export const listingOf = (pages: readonly SessionPage[]): SessionListing => {
 export const cursorAfter = (page: SessionPage): string | undefined =>
   page.type === 'found' ? (page.nextCursor ?? undefined) : undefined
 
-/** The cursor of the first page: there is none. */
-export const firstCursor = (): string | undefined => undefined
-
 /** Whether the page that was read last could not be read because its cursor had gone. */
 export const endsWithGoneCursor = (pages: readonly SessionPage[]): boolean =>
   pages.at(-1)?.type === 'cursorGone'
-
-/**
- * What the button below the list does, and whether there is one. A page
- * that was not read is asked for again by reading the list again, so it is
- * on its way while the list is.
- */
-export const moreOf = (
-  rest: 'none' | 'more' | 'unread',
-  fetching: { nextPage: boolean; again: boolean },
-): More => {
-  if (rest === 'none') {
-    return 'none'
-  }
-  if (fetching.nextPage || (rest === 'unread' && fetching.again)) {
-    return 'loading'
-  }
-
-  return rest === 'unread' ? 'failed' : 'available'
-}
 
 /**
  * The pages without a session that was ended: it leaves the list at once,

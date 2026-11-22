@@ -1,4 +1,15 @@
 import {
+  FAILED,
+  type Forbidden,
+  NOT_FOUND,
+  type NotFound,
+  outsideTheContract,
+  UNANSWERED_PARTS,
+  UNREAD_TYPES,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsSalonRoleType,
   type ModelsStaffAccountResponse,
   type ModelsStaffInvitationResponse,
@@ -10,15 +21,6 @@ import {
   staffInvitationsDelete,
   staffInvitationsGet,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  type Forbidden,
-  NOT_FOUND,
-  type NotFound,
-  outsideTheContract,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import { readStaffMember } from '../staff/staff-api'
 
@@ -27,13 +29,6 @@ import { readStaffMember } from '../staff/staff-api'
  * salon and an administrator keep it: the invitation that makes it, and
  * the account once the member has taken the invitation.
  */
-
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -73,7 +68,7 @@ export const readAccount = async (
       // No account is linked to the member, nor to an ID that is no ID
       .with({ status: P.union(400, 404) }, () => NOT_FOUND)
       .with({ status: 403 }, () => FORBIDDEN)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -100,7 +95,7 @@ export const readInvitation = async (
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -148,7 +143,7 @@ const createInvitation = async (
       .with({ status: 403 }, () => FORBIDDEN)
       // The screen sends only the roles the account may give
       .with({ status: P.union(400, 413, 415) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -181,7 +176,7 @@ const whyRefused = async (
     .with({ type: 'found' }, () => RECENT)
     .with({ type: 'notFound' }, () => NOT_FOUND)
     .with({ type: 'forbidden' }, () => FORBIDDEN)
-    .with({ type: P.union('tooManyRequests', 'failed') }, (unread) => unread)
+    .with({ type: P.union(...UNREAD_TYPES) }, (unread) => unread)
     .exhaustive()
 }
 
@@ -226,7 +221,7 @@ export const revokeInvitation = async (
     .with({ status: 204 }, () => ({ type: 'revoked' }))
     .with({ status: P.union(400, 404) }, () => GONE)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -263,7 +258,7 @@ export const changeRole = async (
     .with({ status: 409 }, () => OWN)
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(400, 413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -292,6 +287,6 @@ export const unlinkAccount = async (
     .with({ status: P.union(400, 404) }, () => GONE)
     .with({ status: 409 }, () => OWN)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

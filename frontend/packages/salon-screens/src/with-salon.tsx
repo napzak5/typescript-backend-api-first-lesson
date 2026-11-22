@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
@@ -8,7 +9,6 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
-import { unreadMessageOf } from './reading'
 import { readSalon, salonKeyOf } from './salons-api'
 
 export type WithSalonProps = {
@@ -49,7 +49,7 @@ export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
         <ButtonLink href='/'>トップへ戻る</ButtonLink>
       </>
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={title} />
         <UnreadNotice

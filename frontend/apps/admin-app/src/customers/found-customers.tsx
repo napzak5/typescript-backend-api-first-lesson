@@ -2,12 +2,12 @@ import {
   cursorAfter,
   firstCursor,
   listingOf,
-  moreOf,
   unreadMessageOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
 import {
   EmptyState,
   LoadingIndicator,
+  moreOf,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'

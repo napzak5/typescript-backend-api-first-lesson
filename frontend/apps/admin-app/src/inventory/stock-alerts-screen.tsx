@@ -1,15 +1,17 @@
-import type {
-  ModelsInventoryAlertResponse,
-  ModelsSalonResponse,
-} from '@beauty-salon-frontend/api-client'
 import {
   cursorAfter,
   FAILED,
   firstCursor,
   listingOf,
-  moreOf,
-  OtherSalonNotice,
+  UNREAD_TYPES,
   unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
+import type {
+  ModelsInventoryAlertResponse,
+  ModelsSalonResponse,
+} from '@beauty-salon-frontend/api-client'
+import {
+  OtherSalonNotice,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -17,6 +19,7 @@ import {
   ButtonLink,
   EmptyState,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -172,7 +175,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         ))
         // The list says that the account reads no alerts of the salon
         .with({ type: 'forbidden' }, () => null)
-        .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('アラートの件数', reason)}
             onRetry={() => void summary.refetch()}

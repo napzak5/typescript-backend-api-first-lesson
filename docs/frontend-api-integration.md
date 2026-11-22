@@ -62,23 +62,25 @@
 | admin-app | `frontend/apps/admin-app` | 3002 |
 | dashboard-app | `frontend/apps/dashboard-app` | 3003 |
 
-いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは `@beauty-salon-frontend/ui`、`@beauty-salon-frontend/theme`、`@beauty-salon-frontend/session`、それにテストのための `@beauty-salon-frontend/testing` です。portal-app と admin-app は、`@beauty-salon-frontend/api-client` と `@beauty-salon-frontend/preferences` にも依存しています（画面が、生成された関数を呼び、好み設定のフォームを共有します）。admin-app は、ファイルを保存するために `@beauty-salon-frontend/io` に、サロンの画面が共有するもの（API の応答の読み方、続きのある一覧とその表、キーワードの検索、サロンの時刻、サロンを探して読むこと、サロンを選ぶ画面、アドレスのサロンの `WithSalon`、集計する期間とそのフォーム、フォームの値の読み方、金額と支払い方法とメニューの区分の言葉）のために `@beauty-salon-frontend/salon-screens` にも依存しています。dashboard-app は、売上レポートの画面のために、`@beauty-salon-frontend/api-client`、`@beauty-salon-frontend/io`（CSV を保存する）と `@beauty-salon-frontend/salon-screens` に依存しています。
+いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは、どのアプリも `@beauty-salon-frontend/ui`、`@beauty-salon-frontend/theme`、`@beauty-salon-frontend/session`、`@beauty-salon-frontend/api-client`、`@beauty-salon-frontend/answers`、`@beauty-salon-frontend/brand`、それにテストのための `@beauty-salon-frontend/testing` です（画面が、生成された関数を呼び、その応答を同じ読み方で読みます）。portal-app と admin-app は、`@beauty-salon-frontend/preferences` にも依存しています（好み設定のフォームを共有します）。admin-app と dashboard-app は、ファイルを保存するために `@beauty-salon-frontend/io` に、サロンの画面が共有するもの（続きのある表、キーワードの検索、サロンの時刻、サロンを探して読むこと、サロンを選ぶ画面、アドレスのサロンの `WithSalon`、集計する期間とそのフォーム、フォームの値の読み方、金額と支払い方法とメニューの区分の言葉）のために `@beauty-salon-frontend/salon-screens` にも依存しています。
 
 ### 共有パッケージ（`frontend/packages/`）
 
 | パッケージ | 役割 | 使っているもの |
 |------------|------|----------------|
-| `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート。生成コードが呼ぶ fetch ラッパー `customInstance` と、期限の切れたセッションの再発行（`src/fetcher/`）。API の応答を読むのは、ここだけで、生成された型で確かめる | `session`、portal-app、admin-app |
+| `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート。生成コードが呼ぶ fetch ラッパー `customInstance` と、期限の切れたセッションの再発行（`src/fetcher/`）。API の応答を読むのは、ここだけで、生成された型で確かめる | `answers`、`session`、`preferences`、`salon-screens`、3つのアプリ、`frontend/e2e`（テスト） |
+| `answers` | API の応答の読み方。読めなかったわけ（`Unread`）と書けなかったわけ（`Unsent`）、応答をそれにする `unreadOf` と、いくつかを読む部分のわけを 1 つにする `whyUnread`、断られた値（`refusedValuesOf`）、API 定義にない状態（`outsideTheContract`）、応答のパターンの部品（`UNANSWERED_PARTS`・`REFUSED_PARTS`、セッションの要らない操作の `PUBLIC_UNANSWERED_PARTS`・`PUBLIC_REFUSED_PARTS`、`UNREAD_TYPES`。マッチが、その場所で `P.union` に組む）、一覧のページ（`pageOf`、`from`）と、一覧を最後まで読むこと（`toTheEnd`）、続く一覧（`listingOf`、`cursorAfter`、`firstCursor`）、要求が多すぎるときと、読めなかったとき、送れなかったときの文（`TOO_MANY_REQUESTS_MESSAGE`、`unreadMessageOf`、`unsentMessageOf`）。画面の部品は持たない | `session`、`preferences`、`salon-screens`、3つのアプリ |
 | `io` | ブラウザーに保存するセッション `sessionStore`、API が返したファイルの名前を読む `fileNameOf` と、画面が持つファイルをブラウザーに保存させる `saveFile`。API を知らない | `api-client`、`session`、admin-app、dashboard-app |
-| `session` | アプリのセッション: 状態を返すフック `useSession`、`signIn`、`signOut`、ユーザーが替わったときに取得済みのデータを消す `keepQueriesOfOneUser`、サインインが要る画面を囲む `RequireSession`（サインインの画面を含む）、ヘッダーのアカウント欄 `SessionAccount`、アカウントの安全の画面（`AccountSecurityScreen`、`PasswordChangeScreen`、`TwoFactorSetupScreen`）と、選ぶパスワードの規則（`PASSWORD_RULE` など）、サインインしている人の所属するサロン（`useOwnSalon`）と、どのサロンにも属していないアカウントへの知らせ（`NoSalonNotice`） | 3つのアプリ（`src/main.tsx`、`src/App.tsx`、portal-app の `src/account/` と `src/security/`） |
+| `session` | アプリのセッション: 状態を返すフック `useSession`、`signIn`、`signOut`、ユーザーが替わったときに取得済みのデータを消す `keepQueriesOfOneUser`、サインインが要る画面を囲む `RequireSession`（サインインの画面を含む）、ヘッダーのアカウント欄 `SessionAccount`、アカウントの安全の画面（`AccountSecurityScreen`、`PasswordChangeScreen`、`TwoFactorSetupScreen`）と、選ぶパスワードの規則（`PASSWORD_RULE` など）、サインインしている人の所属するサロン（`useOwnSalon`）と、どのサロンにも属していないアカウントへの知らせ（`NoSalonNotice`） | `salon-screens`、3つのアプリ（`src/main.tsx`、`src/App.tsx`、portal-app の `src/account/` と `src/security/`） |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `api-client`、`ui`（型のみ） |
 | `theme` | デザイントークン（`src/tokens.css`）、フォント（Inter と Noto Sans JP、`src/styles.css` が読み込む）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
-| `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、フォームの区切りの `FormPart`・`FormRow`・`FieldRow`、フォームを持つダイアログの `FormDialog`、検索の条件の `FilterForm`、メッセージの `Alert`、並んだボタンの `Actions`、控えめな文の `Note`、改行を保つ文の `WrittenText`、箇条書きの `BulletList`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、記録のない値の `NotRecorded`、カードの一覧の `CardList`、続きを読む一覧の `PagedList`・`LoadMore`、日と週を送る `PeriodSwitch`、読めなかったことの知らせの `UnreadNotice`、QR コードの `QrCode`、評価の星の `Rating`、言葉の一覧の `TagList`、リンクの `LinkProvider`・`Link`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` と、アプリのストーリーも表示する） | 3つのアプリ、`session` |
-| `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）と `ResizeObserver`、画面が保存したファイル（`savedFiles`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`io`、`session`、3つのアプリのテスト、`frontend/e2e` |
+| `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、フォームの区切りの `FormPart`・`FormRow`・`FieldRow`、フォームを持つダイアログの `FormDialog`、検索の条件の `FilterForm`、メッセージの `Alert`、並んだボタンの `Actions`、控えめな文の `Note`、改行を保つ文の `WrittenText`、箇条書きの `BulletList`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、記録のない値の `NotRecorded`、カードの一覧の `CardList`、続きを読む一覧の `PagedList`・`LoadMore` と、その続きの状態（`moreOf`、名前を後から読む行の `moreOfRows`）と件数の文（`countOf`）、日と週を送る `PeriodSwitch`、読めなかったことの知らせの `UnreadNotice`、QR コードの `QrCode`、評価の星の `Rating`、言葉の一覧の `TagList`、リンクの `LinkProvider`・`Link`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` と、アプリのストーリーも表示する） | 3つのアプリ、`session`、`preferences`、`salon-screens` |
+| `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）と `ResizeObserver`、画面が保存したファイル（`savedFiles`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`io`、`answers`、`session`、`preferences`、`salon-screens`、3つのアプリのテスト、`frontend/e2e` |
 | `preferences` | 好み設定のフォーム（`PreferencesForm`、時間帯の行の `TimeSlotFields`）、フォームの読み取り（`readPreferencesChange`）と断られたときの言葉（`afterPreferencesChange`）、選べるスタッフの並びと名前（`staffChoicesOf`、`staffLabelOf`）、1 行に 1 つずつ書く一覧の読み取り（`linesOf`）。お客様がポータルで書くものと、サロンが台帳で書くものは、同じ好み設定 | portal-app（`src/preferences/`、`src/reviews/`）、admin-app（`src/customers/`） |
-| `assets` | 画像アセット | なし |
+| `salon-screens` | 管理画面とダッシュボードのサロンの画面が共有するもの: 続きのある表（`PagedTable`）、キーワードの検索（`KeywordSearch`、`keywordOf`）、サロンの時刻（`dayAt`、`timeOfDayAt` など）、サロンを探して読むこと（`findSalons`、`readSalon`）、アプリの始まりとサロンを選ぶ画面（`StartScreen`、`SalonChoiceScreen`、`SalonChoices`）、アドレスのサロン（`WithSalon`）と、ほかのサロンのアドレスへの知らせ（`OtherSalonNotice`）、集計する期間とそのフォーム（`readPeriod`、`StatisticsPeriod`）、フォームの値の読み方（`Read`、`textOf`）、金額と支払い方法とメニューの区分の言葉（`amountOf`、`methodKindNameOf`、`categoryNameOf`） | admin-app、dashboard-app |
+| `brand` | アプリの名前（`PRODUCT_NAME`、`applications`）、アイコンと共有リンクの画像、それを配り、ページの head に名前を書く Vite のプラグイン | 3つのアプリ、`frontend/e2e`（テスト） |
 
-アプリが直接使っているのは `ui`、`theme`、`session` と、3 つのアプリの `api-client`、portal-app と admin-app の `preferences`、admin-app と dashboard-app の `io` と `salon-screens` です（`ui` は `config` から型を1つ借りています）。portal-app は、`io` を `api-client` と `session` を通して使っています。
+アプリが直接使っているのは、3 つのアプリの `ui`、`theme`、`session`、`api-client`、`answers`、`brand` と、portal-app と admin-app の `preferences`、admin-app と dashboard-app の `io` と `salon-screens` です（`ui` は `config` から型を1つ借りています）。portal-app は、`io` を `api-client` と `session` を通して使っています。
 
 実際のブラウザーで通すテスト（`@beauty-salon-frontend/e2e`）は、`frontend/e2e` にあります。`testing` から、テスト用のサーバーを呼ぶコードと、アクセシビリティの検査の規則を使います。
 
@@ -466,7 +468,7 @@ portal-app の `src/reviews/` に、顧客が、来店したサロンのレビ�
 - **その間にレビューが消えていたとき**（「参考になった」と通報の 404。書いた人か `admin` が消した）は、「このレビューは、削除されていました。レビューを読み込み直します。」と知らせ、読んであった一覧から、そのレビューを除き、レビューの一覧、評価のまとめ、サロン、スタッフごとの評価を、出したまま読み直す（`afterReviewGone`）。ダイアログは、閉じるのではなく、取り除く（閉じたダイアログは、開いたボタンへフォーカスを戻すが、そのボタンは、レビューとともになくなる）。フォーカスは、「レビュー」の見出しへ移る（`ui` の `Card` の `headingRef`）
 - **やり直せる失敗**（応答がない、リクエストが多すぎる、サーバーの誤り）: 「参考になった」は、通知で伝え、ボタンは、押されていないまま残る。通報は、ダイアログの中で伝え、書いた内容は残る
 - **レビューを書いた、変えた、消したあと**（`afterReviewWrite`）に捨てるものには、スタッフごとの評価も入る。スタッフを評価したレビューは、その人の集計に入る
-- **API を呼ぶ関数**は、`reviews-api.ts` の `sayHelpful` と `reportReview`、`salons-api.ts` の `readStaffRatings`。応答からフォームの表示を決めるのは、`reader-flow.ts` の `afterReport` と `afterHelpful`
+- **API を呼ぶ関数**は、`reviews-api.ts` の `sayHelpful` と `reportReview`、`salons-api.ts` の `readStaffRatings`。応答からフォームの表示を決めるのは、`reader-flow.ts` の `afterReport`。数えられなかった「役に立った」に言うことは、`answers` の `unsentMessageOf`
 - ここにないもの: 写真のアップロード、「参考になった」の取り消し（API にない）、サロンからの通報と、通報の扱い（admin-app と dashboard-app の単位）
 
 ### 共有リンクの画面
@@ -1225,14 +1227,12 @@ API を読む画面の例は、portal-app の[サロンの画面](#サロンの�
 
 準備:
 
-- 使うアプリの `package.json` に `@beauty-salon-frontend/api-client` と `ts-pattern` を追加する（portal-app にはある）
+- 使うアプリの `package.json` に `@beauty-salon-frontend/api-client`、`@beauty-salon-frontend/answers` と `ts-pattern` があることを確かめる（3 つのアプリにはある）
 - API サーバーの `CORS_ORIGIN` にそのアプリのオリジンが含まれていることを確認する。リポジトリ直下の `.env.localhost` と `.env.development` は、3つのアプリのオリジン（`http://localhost:3001`〜`3003`）を許可している
 
 画面は、生成された関数と型だけを使います。API を呼ぶ関数は、応答を `status` で分岐し、`.exhaustive()` で網羅を保証して、画面が区別する結果の直和型にして返します。通信の失敗（reject）も、API 定義にないステータスの応答も、その関数の中で結果の 1 つにします（`frontend/apps/portal-app/src/salons/salons-api.ts` より）。
 
 ```ts
-const REFUSED = P.union(null, { status: 400 }, { status: 429 }, { status: 500 })
-
 export const findSalons = async (
   conditions: SalonConditions,
   cursor: string | undefined,
@@ -1247,10 +1247,12 @@ export const findSalons = async (
   return match(answer)
     .returnType<SalonPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
-    .with(REFUSED, unreadOf)
+    .with(P.union(...PUBLIC_REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 ```
+
+何も伝えない応答のパターンは、`answers` の部品（`PUBLIC_REFUSED_PARTS` は、セッションの要らない操作の、応答なし、400、429、500）から、マッチの場所で組みます。パターンを定数にすると、型の検査が、その操作が返さないステータスを見なくなるためです。マッチの場所で組めば、操作が返さない部品は型エラーになり、どの部品にも合わない応答は `.exhaustive()` が見つけます。
 
 画面は、その関数をクエリの関数にして、結果の種類ごとに表示を決めます（`salon-search-screen.tsx` より）。
 
@@ -1265,7 +1267,7 @@ const found = useInfiniteQuery({
 
 この分岐（200 と、400・429・500、応答なし）は、現在の生成クライアントの型に対して網羅になっています。API 定義に新しいステータスが増えると、`.exhaustive()` が型エラーになって気づけます。
 
-`.exhaustive()` に渡している `outsideTheContract`（`frontend/apps/portal-app/src/outside-the-contract.ts`）は、API 定義にないステータスの応答を `{ type: 'failed' }` にする関数です。API の前に置いたゲートウェイやロードバランサーは、API に届かないときに 502、503、504 を返します。`customInstance` はどのステータスも値として返すので、この応答は分岐まで届きます。関数を渡さない `.exhaustive()` は、どのパターンにも合わない値で例外を投げます。そうなると、API を呼ぶ関数が reject し、読む画面は「読み込み中」のまま止まり、フォームは何も表示しません。関数を渡しても、型の上の網羅の検査は変わりません。
+`.exhaustive()` に渡している `outsideTheContract`（`answers`）は、API 定義にないステータスの応答を `{ type: 'failed' }` にする関数です。API の前に置いたゲートウェイやロードバランサーは、API に届かないときに 502、503、504 を返します。`customInstance` はどのステータスも値として返すので、この応答は分岐まで届きます。関数を渡さない `.exhaustive()` は、どのパターンにも合わない値で例外を投げます。そうなると、API を呼ぶ関数が reject し、読む画面は「読み込み中」のまま止まり、フォームは何も表示しません。関数を渡しても、型の上の網羅の検査は変わりません。
 
 - 型は生成されたものをそのまま使う。`ModelsSalonResponse` と同じ形の型を手書きしない。`any` と型アサーションも使わない
 - 登録・更新・削除は `useSalonCrudCreate` などのミューテーションフックを使い、結果も同じく `status` で分岐する。成功したら `getSalonCrudListQueryKey()` を使って一覧のキャッシュを無効化する。ただし、この 3 つはアクセストークンが必要である。トークンは、サインインしていれば `customInstance` が付ける（[セッション](#セッション)）。サインインしていなければ 401 が返る
@@ -1311,11 +1313,12 @@ const found = useInfiniteQuery({
 - `config` と `testing` の各パッケージ: モジュールの隣に `*.test.ts`
 - `api-client` の `src/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）。`fetcher.session.test.ts`: セッションがあるときの動作（トークンを付けること、期限切れのあとの再発行と送り直しが 1 回ずつであること、同時のリクエストで再発行が 1 回であること、ほかのタブが先に替えたセッションを通信せずに使うこと、断られた再発行と失敗した再発行の違い）。`src/fetcher/renew-session.test.ts`: 再発行のパスが、生成されたものと同じであること
 - `io` の `src/libs/session/stored-session.test.ts`: 保存、購読、ほかのタブからの変更。`src/libs/file/save-file.test.ts`: ファイルの名前と保存
+- `answers` の `src/reading.test.ts`: 応答を読めなかったわけにすること、いくつかを読む部分のわけ、パターンの部品（セッションの要らない操作のものも）、断られた値、ページ、一覧を最後まで読むこと（つなぐこと、止まること、10 ページまで）、読めなかったときと送れなかったときの文。`src/pages.test.ts`: 続く一覧の組み立てと、次のページの起点。`src/outside-the-contract.test.ts`: 契約にない状態
 - `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）
 - `session` の `src/session.test.tsx`: `useSession` を `renderHook` で描画し、`signIn`、`signOut`、`keepQueriesOfOneUser` と一緒に、実際の生成クライアントと `customInstance` を通して、スタブにした `fetch` に対して検証する。`src/components/` の部品（`SignInForm`、`SessionGate`、`AccountMenu`）は、`ui` と同じく、ストーリーから検証する。`sign-in-screen/sign-in-flow.test.ts`: フォームの値の確かめと、API の応答ごとのフォームの状態
 - `session` の `src/security/`: 純粋な関数のテスト（`password-rule.test.ts`: 選ぶパスワードの規則。`security-flow.test.ts`: 変更のフォームの値の確かめ、API の応答ごとの表示、一覧のページの組み立て、サインアウトさせた端末を除くこと。`security-format.test.ts`: 日時と端末の言葉）、`security-api.test.ts`（実際の API では起こせない応答、送るパラメーター、続きの起点が断られたとき、すべての端末でのサインアウトでブラウザーのセッションを消すこと）。`components/` の部品は、ストーリーから検証する
 - portal-app の `src/account/`: `account-flow.test.ts`（フォームの値の確かめと、API が断った値ごとの表示）、`mailed-token.test.tsx`（フラグメントのトークンと、同じタブで開いた後のリンクのトークン）、`account-api.test.ts`（実際の API では起こせない応答（429、500、応答なし）と、どのオペレーションも応答を同じように読むことを、スタブにした `fetch` に対して検証する）
-- portal-app の `src/salons/`: 純粋な関数のテスト（`salon-search.test.ts`: 検索条件とアドレス。`salon-format.test.ts`: 日付、時刻、金額、営業時間の表示。`salon-menu.test.ts`: メニューの組み立てと料金。`pages.test.ts`: 一覧のページ）、`salons-api.test.ts`（実際の API では起こせない応答、送るパラメーター、一覧を最後まで読むことを、スタブにした `fetch` に対して検証する）。`components/` の部品は、`ui` と同じく、ストーリーから検証する。スタッフごとの評価をひとまとまりで読むこと（1 人ぶんでも読めなければ、どれも渡さないこと、見つからない人には評価がないこと）と、いくつかを読む部分が、読めなかったわけを 1 つにする `whyUnread` のテストも、`salons-api.test.ts` にある。レビューを名前で示す `postedOf` のテストは、`salon-format.test.ts` にある
+- portal-app の `src/salons/`: 純粋な関数のテスト（`salon-search.test.ts`: 検索条件とアドレス。`salon-format.test.ts`: 日付、時刻、金額、営業時間の表示。`salon-menu.test.ts`: メニューの組み立てと料金）、`salons-api.test.ts`（実際の API では起こせない応答、送るパラメーター、一覧を最後まで読むことを、スタブにした `fetch` に対して検証する）。`components/` の部品は、`ui` と同じく、ストーリーから検証する。スタッフごとの評価をひとまとまりで読むこと（1 人ぶんでも読めなければ、どれも渡さないこと、見つからない人には評価がないこと）のテストも、`salons-api.test.ts` にある。レビューを名前で示す `postedOf` のテストは、`salon-format.test.ts` にある
 - portal-app の `src/bookings/`: 純粋な関数のテスト（`booking-choice.test.ts`: アドレスにあるスタッフと日付、選べるスタッフ、時刻の表示。`booking-flow.test.ts`: フォームの値の確かめと、API の応答ごとの表示。`booking-format.test.ts`: 状態、日時、料金の表示）、`own-bookings.test.ts`（一覧のアドレス、API に渡す日付の範囲、キャンセルと日時の変更ができる予約、名前のそろった行と、その続き）、`bookings-api.test.ts`（実際の API では起こせない応答、送るパラメーター、空き枠を最後まで読むこと）。`components/` の部品（`BookingForm`、`BookingSummary`、`BookingList`、`BookingChanges`）は、ストーリーから検証する。`src/navigation.test.ts` は、ヘッダーのリンク（ロールごとに出るもの、どの画面でどれが現在の画面か）
 - portal-app の `src/profile/`: 純粋な関数のテスト（`profile-flow.test.ts`: フォームの値の確かめ、開いたときと違う項目だけのリクエスト、API の応答ごとの表示。`profile-format.test.ts`: 会員ランク、日付、ポイント、住所の行、値のない項目の言葉）、`profile-api.test.ts`（実際の API では起こせない応答、断られた値、送るもの）。`components/` の部品（`MembershipDetails`、`ProfileDetails`、`ProfileForm`）は、ストーリーから検証する。API の関数のテストが使う、作った応答は、`src/__tests__/api-answers.ts` にある
 - portal-app の `src/preferences/`: 純粋な関数のテスト（`preferences-flow.test.ts`: フォームの値の確かめ、時間帯の行の読み方、開いたときと違う項目だけのリクエスト、API の応答ごとの表示。`staff-choices.test.ts`: 選べるスタッフの並びと表示。`preferences-format.test.ts`: 時間帯とスタッフの言葉）、`preferences-api.test.ts`（読むものの順、どれかが読めなかったとき、実際の API では起こせない応答、断られた値、送るもの）。予約のあるサロンを求める `readBookedSalonIds` のテストは、`src/bookings/bookings-api.test.ts` にある。`components/` の部品（`PreferencesDetails`、`PreferencesForm`、`TimeSlotFields`）は、ストーリーから検証する。行を足したとき、消したときのフォーカスと、消したあとに誤りを出さないことは、`time-slot-fields.test.tsx` にある。1 行に 1 つずつ書く欄の読み方と、画像の URL の確かめ（`src/lines.ts`。レビューのフォームも使う）のテストは、`src/lines.test.ts` にある

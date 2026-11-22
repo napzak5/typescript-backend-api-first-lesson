@@ -1,13 +1,4 @@
 import {
-  customerCrudDelete,
-  customerCrudGetHistory,
-  customerCrudGetVersion,
-  customerCrudRestore,
-  type ModelsCustomerHistoryEntryResponse,
-  type ModelsCustomerResponse,
-  type ModelsCustomerVersionResponse,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -16,9 +7,19 @@ import {
   outsideTheContract,
   type Page,
   pageOf,
+  REFUSED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  customerCrudDelete,
+  customerCrudGetHistory,
+  customerCrudGetVersion,
+  customerCrudRestore,
+  type ModelsCustomerHistoryEntryResponse,
+  type ModelsCustomerResponse,
+  type ModelsCustomerVersionResponse,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import { customerKeyOf } from './customers-api'
@@ -33,15 +34,6 @@ const numberOfVersion = (version: string): number | undefined =>
   /^[1-9]\d{0,9}$/.test(version) && Number(version) <= LAST_VERSION
     ? Number(version)
     : undefined
-
-/** The answers that say nothing of the customer, as a pattern */
-const REFUSED = P.union(
-  null,
-  { status: 400 },
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -85,7 +77,7 @@ export const readHistoryPage = async (
     .returnType<Page<ModelsCustomerHistoryEntryResponse> | Unread>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: P.union(403, 404) }, () => FAILED)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -120,7 +112,7 @@ export const readVersion = async (
     }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -165,7 +157,7 @@ export const readRemoved = async (customerId: string): Promise<RemovedRead> => {
     // Every customer has a version: none is a customer that is not there
     .with({ status: 200 }, { status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
   if (latest.type !== 'latest') {
     return latest
@@ -210,7 +202,7 @@ export const removeCustomer = async (
     .with({ status: 409 }, () => ({ type: 'unfinished' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -250,6 +242,6 @@ export const restoreCustomer = async (
     .with({ status: 409 }, () => ({ type: 'unrestorable' }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(REFUSED, unreadOf)
+    .with(P.union(...REFUSED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

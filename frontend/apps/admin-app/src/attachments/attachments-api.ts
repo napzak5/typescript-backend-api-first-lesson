@@ -1,14 +1,4 @@
 import {
-  attachmentCrudComplete,
-  attachmentCrudDelete,
-  attachmentCrudGet,
-  attachmentCrudGetDownloadUrl,
-  attachmentCrudGetUploadUrl,
-  attachmentCrudList,
-  type ModelsAttachmentContentType,
-  type ModelsAttachmentResponse,
-} from '@beauty-salon-frontend/api-client'
-import {
   FAILED,
   type Forbidden,
   from,
@@ -19,9 +9,20 @@ import {
   pageOf,
   type RefusedValue,
   refusedValuesOf,
+  UNANSWERED_PARTS,
   type Unread,
   unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import {
+  attachmentCrudComplete,
+  attachmentCrudDelete,
+  attachmentCrudGet,
+  attachmentCrudGetDownloadUrl,
+  attachmentCrudGetUploadUrl,
+  attachmentCrudList,
+  type ModelsAttachmentContentType,
+  type ModelsAttachmentResponse,
+} from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -30,14 +31,6 @@ import { match, P } from 'ts-pattern'
  * goes to the object storage and comes from it, at URLs the API signs for a
  * few minutes, which the browser calls without the API.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -80,7 +73,7 @@ export const readAttachmentPage = async (
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: 400 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -105,7 +98,7 @@ export const readAttachment = async (
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -137,7 +130,7 @@ export const readDownloadUrl = async (
     }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: P.union(403, 409) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -201,7 +194,7 @@ const issueUpload = async (
     }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(413, 415) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -239,7 +232,7 @@ const completeUpload = async (attachmentId: string): Promise<Uploading> => {
     .with({ status: 409 }, () => ({ type: 'notAsDeclared' }))
     .with({ status: 403 }, () => FORBIDDEN)
     .with({ status: P.union(400, 404) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -288,6 +281,6 @@ export const removeAttachment = async (
     .with({ status: 204 }, () => ({ type: 'removed' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

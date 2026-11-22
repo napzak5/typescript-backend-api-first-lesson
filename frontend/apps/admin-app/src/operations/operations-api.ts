@@ -1,4 +1,12 @@
 import {
+  FAILED,
+  type Forbidden,
+  outsideTheContract,
+  UNANSWERED_PARTS,
+  type Unread,
+  unreadOf,
+} from '@beauty-salon-frontend/answers'
+import {
   attachmentCrudPurge,
   customerCrudExecuteDeletionRequests,
   type ModelsCustomerDeletionRequestResponse,
@@ -8,13 +16,6 @@ import {
   systemOperationsHealth,
   systemOperationsReady,
 } from '@beauty-salon-frontend/api-client'
-import {
-  FAILED,
-  type Forbidden,
-  outsideTheContract,
-  type Unread,
-  unreadOf,
-} from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -24,14 +25,6 @@ import { match, P } from 'ts-pattern'
  * here by hand. Each of the three handles everything that is due, and
  * never the same thing twice.
  */
-
-/** No answer, or one that says nothing a person could act on */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 429 },
-  { status: 500 },
-)
 
 const FORBIDDEN: Forbidden = { type: 'forbidden' }
 
@@ -146,7 +139,7 @@ export const expirePoints = async (): Promise<Expiry> => {
       .with({ status: 403 }, () => FORBIDDEN)
       // The screen sends both keys as null: a body the API refuses or does not read is no answer
       .with({ status: P.union(400, 413, 415) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
+      .with(P.union(...UNANSWERED_PARTS), unreadOf)
       .exhaustive(outsideTheContract)
   )
 }
@@ -169,7 +162,7 @@ export const executeDeletionRequests = async (): Promise<Erasure> => {
       requests: data.data,
     }))
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }
 
@@ -191,6 +184,6 @@ export const purgeAttachments = async (): Promise<Purge> => {
       purgedCount: data.data.purgedCount,
     }))
     .with({ status: 403 }, () => FORBIDDEN)
-    .with(UNANSWERED, unreadOf)
+    .with(P.union(...UNANSWERED_PARTS), unreadOf)
     .exhaustive(outsideTheContract)
 }

@@ -2,6 +2,7 @@ import {
   Actions,
   Button,
   ButtonLink,
+  countOf,
   Link,
   type More,
   Note,
@@ -9,7 +10,6 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { ReviewContent } from '../../../salons/components/review-content/review-content'
 import {
-  countOf,
   NO_SALON,
   ratedStaffOf,
   subjectOf,
@@ -62,7 +62,12 @@ export const OwnReviewList = ({
     items={reviews}
     itemKey={({ review }) => review.id}
     label='自分のレビュー'
-    count={countOf(total, reviews.length)}
+    count={countOf(
+      total,
+      reviews.length,
+      '件',
+      (count) => `${count} 件のレビューがあります`,
+    )}
     more={more}
     onMore={onMore}
   >

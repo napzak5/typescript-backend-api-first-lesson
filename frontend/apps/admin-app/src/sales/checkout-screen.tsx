@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsBookingResponse,
   ModelsSaleCreateRequest,
@@ -7,7 +8,6 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   OtherSalonNotice,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -55,8 +55,6 @@ import {
 const TITLE = '会計を入れる'
 
 const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 /** What is said of a calculation whose prices are not those of the menu the screen read */
 const OTHER_PRICES =
@@ -113,7 +111,7 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
       type: 'uncalculated',
       message: 'このサロンの会計は、入れられません。',
     }))
-    .with({ type: UNREAD }, (reason) => ({
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
       type: 'unread',
       message: unreadMessageOf('金額', reason),
     }))
@@ -233,7 +231,7 @@ const CheckoutOfBooking = ({ salon, booking }: CheckoutOfBookingProps) => {
 
   return match(shown)
     .with(undefined, () => <LoadingIndicator label='会計を読み込んでいます' />)
-    .with({ type: UNREAD }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('会計', reason)}
         onRetry={() => void sales.refetch()}

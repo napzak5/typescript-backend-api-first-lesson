@@ -1,7 +1,14 @@
+import {
+  firstCursor,
+  UNREAD_TYPES,
+  unreadMessageOf,
+  unsentMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
 import {
   Card,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
@@ -33,15 +40,11 @@ import {
   stopTwoFactor,
 } from './security-api'
 import {
-  afterUnsent,
   cursorAfter,
   endsWithGoneCursor,
   type FormSays,
-  firstCursor,
   listingOf,
-  moreOf,
   NOTHING_TO_SAY,
-  unreadMessageOf,
   withoutSession,
 } from './security-flow'
 import {
@@ -51,8 +54,6 @@ import {
   readStop,
   withTwoFactorStatus,
 } from './two-factor-flow'
-
-const UNSENT = P.union('tooManyRequests', 'failed')
 
 type SessionPages = InfiniteData<SessionPage, string | undefined>
 
@@ -248,7 +249,7 @@ const Account = ({ passwordHref, twoFactorHref, timeZone }: AccountProps) => {
         )}
       </>
     ))
-    .with({ type: UNSENT }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('アカウント', reason)}
         onRetry={() => void read.refetch()}
@@ -314,8 +315,8 @@ const Sessions = ({ timeZone }: PartProps) => {
               '端末をサインアウトさせました。その端末で使うには、もう一度サインインが必要です。',
           })
         })
-        .with({ type: UNSENT }, (reason) =>
-          notify({ tone: 'danger', message: afterUnsent(reason) }),
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) =>
+          notify({ tone: 'danger', message: unsentMessageOf(reason) }),
         )
         .exhaustive(),
   })
@@ -332,7 +333,9 @@ const Sessions = ({ timeZone }: PartProps) => {
             message: 'すべての端末でサインアウトしました。',
           }),
         )
-        .with({ type: UNSENT }, (reason) => setUnsent(afterUnsent(reason)))
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) =>
+          setUnsent(unsentMessageOf(reason)),
+        )
         .exhaustive(),
   })
 

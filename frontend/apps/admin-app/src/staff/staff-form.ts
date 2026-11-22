@@ -1,17 +1,15 @@
 import type {
+  Forbidden,
+  NotFound,
+  RefusedValue,
+  Unread,
+} from '@beauty-salon-frontend/answers'
+import type {
   ModelsStaffCreateRequest,
   ModelsStaffResponse,
   ModelsStaffUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import {
-  type Forbidden,
-  isDay,
-  type NotFound,
-  type Read,
-  type RefusedValue,
-  textOf,
-  type Unread,
-} from '@beauty-salon-frontend/salon-screens'
+import { isDay, type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import { match } from 'ts-pattern'
 import {
   type FormSays,

@@ -3,12 +3,9 @@ import type {
   ModelsProductResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  countOf,
-  momentNameAt,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
+import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import type { More } from '@beauty-salon-frontend/ui'
+import { countOf } from '@beauty-salon-frontend/ui'
 import { priceNameOf } from '../../../products/product-format'
 import {
   changeNameOf,

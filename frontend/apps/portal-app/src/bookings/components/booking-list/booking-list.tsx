@@ -1,5 +1,11 @@
 import type { ModelsCustomerBookingResponse } from '@beauty-salon-frontend/api-client'
-import { Badge, Link, type More, PagedList } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  countOf,
+  Link,
+  type More,
+  PagedList,
+} from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
 import { statusNameOf, statusToneOf, whenKnownOf } from '../../booking-format'
 import type { Row } from '../../own-bookings'
@@ -28,16 +34,6 @@ export type BookingListProps = {
 const NO_SALON = 'サロン（掲載を終えています）'
 const NO_SERVICE = 'メニュー（掲載を終えています）'
 
-const countOf = (total: number | null, shown: number): string => {
-  if (total === null) {
-    return `${shown} 件を表示しています`
-  }
-
-  return shown < total
-    ? `${total} 件の予約があります（${shown} 件を表示しています）`
-    : `${total} 件の予約があります`
-}
-
 /**
  * The bookings of a customer: when each is, where, what, and where it
  * stands. The time of a booking is the link to its page, and takes the
@@ -61,7 +57,12 @@ export const BookingList = ({
       <PagedList
         items={rows}
         itemKey={({ booking }) => booking.id}
-        count={countOf(total, rows.length)}
+        count={countOf(
+          total,
+          rows.length,
+          '件',
+          (count) => `${count} 件の予約があります`,
+        )}
         more={more}
         onMore={onMore}
       >

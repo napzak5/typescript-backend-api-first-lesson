@@ -1,3 +1,8 @@
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerPreferencesResponse,
   ModelsCustomerPreferencesUpdateRequest,
@@ -10,11 +15,7 @@ import {
   readPreferencesChange,
   type StaffChoice,
 } from '@beauty-salon-frontend/preferences'
-import {
-  NOT_FOUND,
-  unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   LoadingIndicator,
@@ -168,7 +169,7 @@ const PreferencesToChange = ({ salon, customer }: PreferencesToChangeProps) => {
           <ButtonLink href={customersHrefOf(salon.id)}>顧客台帳へ</ButtonLink>
         </>
       ))
-      .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <UnreadNotice
           message={unreadMessageOf('好み設定', reason)}
           onRetry={() => void read.refetch()}

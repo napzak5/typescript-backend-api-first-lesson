@@ -2,8 +2,14 @@ import type {
   ModelsReviewResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import { countOf, PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { Badge, Link, type More, Rating } from '@beauty-salon-frontend/ui'
+import { PagedTable } from '@beauty-salon-frontend/salon-screens'
+import {
+  Badge,
+  countOf,
+  Link,
+  type More,
+  Rating,
+} from '@beauty-salon-frontend/ui'
 import { reviewDayNameOf, reviewNameOf } from '../../review-format'
 
 export type ReviewTableProps = {

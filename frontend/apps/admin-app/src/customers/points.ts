@@ -1,3 +1,9 @@
+import {
+  type Forbidden,
+  type RefusedValue,
+  UNREAD_TYPES,
+  type Unread,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsPointAdjustRequest,
   ModelsPointEarnRequest,
@@ -9,14 +15,11 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   amountOf,
-  type Forbidden,
   isDay,
   LATEST_DAY,
   momentNameAt,
   type Read,
-  type RefusedValue,
   textOf,
-  type Unread,
 } from '@beauty-salon-frontend/salon-screens'
 import { match, P } from 'ts-pattern'
 import {
@@ -302,7 +305,7 @@ export const offeredSaleOf = (
       type: 'unusable',
       why: 'アドレスの売上が見つかりません。売上に結びつけずに記録します。',
     }))
-    .with({ type: P.union('tooManyRequests', 'failed') }, () => ({
+    .with({ type: P.union(...UNREAD_TYPES) }, () => ({
       type: 'unusable',
       why: 'アドレスの売上を読み込めませんでした。売上に結びつけるときは、読み込み直してください。',
     }))

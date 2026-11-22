@@ -1,3 +1,8 @@
+import {
+  NOT_FOUND,
+  UNREAD_TYPES,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
 import type {
   ModelsCustomerDeletionRequestCreateRequest,
   ModelsCustomerResponse,
@@ -8,7 +13,6 @@ import { saveFile } from '@beauty-salon-frontend/io'
 import {
   dayAt,
   lastYearUntil,
-  NOT_FOUND,
   OtherSalonNotice,
   type Period,
   periodIn,
@@ -16,7 +20,6 @@ import {
   periodQueryOf,
   readPeriod,
   StatisticsPeriod,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
@@ -113,8 +116,6 @@ import { WithCustomer } from './with-customer'
 
 const TITLE = 'お客様の台帳'
 
-const UNREAD = P.union('tooManyRequests', 'failed')
-
 /** What a part says of a customer who was removed while the page was open */
 const GONE = 'このお客様は、台帳から削除されました。'
 
@@ -146,7 +147,7 @@ const RecordPart = ({
     .with({ type: 'notFound' }, () =>
       referredBy === null ? undefined : { type: 'gone', id: referredBy },
     )
-    .with(undefined, { type: UNREAD }, () => undefined)
+    .with(undefined, { type: P.union(...UNREAD_TYPES) }, () => undefined)
     .exhaustive()
 
   return <CustomerRecord {...record} customer={customer} referrer={referrer} />
@@ -181,7 +182,7 @@ const PreferencesPart = ({ salon, customer }: PartProps) => {
           <CustomerPreferences preferences={preferences} staff={staff} />
         ))
         .with({ type: 'notFound' }, () => <p>{GONE}</p>)
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('好み設定', reason)}
             onRetry={() => void read.refetch()}
@@ -281,7 +282,7 @@ const UsePart = ({ salon, customer }: PartProps) => {
         .with({ type: 'forbidden' }, () => (
           <OtherSalonNotice what='利用の集計' />
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('利用の集計', reason)}
             onRetry={() => void read.refetch()}
@@ -518,7 +519,7 @@ const ErasurePart = ({
       message: `このアカウントでは、消去の依頼を読み込めません。${ANSWERED_BY_OTHERS}`,
       retrying: read.isFetching,
     }))
-    .with({ type: UNREAD }, (reason) => ({
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
       type: 'unread',
       message: unreadMessageOf('消去の依頼', reason),
       retrying: read.isFetching,

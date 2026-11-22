@@ -1,20 +1,21 @@
-import type {
-  ModelsSalonResponse,
-  ModelsStaffProfileResponse,
-} from '@beauty-salon-frontend/api-client'
 import {
   cursorAfter,
   firstCursor,
   listingOf,
-  moreOf,
+  UNREAD_TYPES,
   unreadMessageOf,
-  WithSalon,
-} from '@beauty-salon-frontend/salon-screens'
+} from '@beauty-salon-frontend/answers'
+import type {
+  ModelsSalonResponse,
+  ModelsStaffProfileResponse,
+} from '@beauty-salon-frontend/api-client'
+import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
   type FormErrors,
   LoadingIndicator,
+  moreOf,
   PageHeader,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
@@ -54,7 +55,7 @@ const SummaryPart = ({ salonId }: { salonId: string }) => {
     .with({ type: 'found' }, ({ summary }) => (
       <ReviewSummary summary={summary} />
     ))
-    .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
+    .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
         message={unreadMessageOf('評価のまとめ', reason)}
         onRetry={() => void read.refetch()}

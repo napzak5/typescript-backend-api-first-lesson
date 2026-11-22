@@ -1,15 +1,15 @@
 import {
+  type RefusedValue,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from '@beauty-salon-frontend/answers'
+import {
   type ModelsTreatmentPhotoBulkCreateRequest,
   type ModelsTreatmentPhotoCreateRequest,
   type ModelsTreatmentPhotoResponse,
   ModelsTreatmentPhotoType,
   type ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  type Read,
-  type RefusedValue,
-  textOf,
-} from '@beauty-salon-frontend/salon-screens'
+import { type Read, textOf } from '@beauty-salon-frontend/salon-screens'
 import type { ChoiceOption } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
@@ -354,8 +354,7 @@ export const afterPhotoRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

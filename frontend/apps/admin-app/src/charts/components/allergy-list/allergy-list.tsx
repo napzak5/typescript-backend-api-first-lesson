@@ -1,15 +1,12 @@
 import type { ModelsCustomerAllergyResponse } from '@beauty-salon-frontend/api-client'
-import {
-  countOf,
-  dayNameOf,
-  PagedTable,
-} from '@beauty-salon-frontend/salon-screens'
+import { dayNameOf, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   Alert,
   Badge,
   Button,
   ButtonLink,
   Card,
+  countOf,
   Dialog,
   Link,
   LoadingIndicator,

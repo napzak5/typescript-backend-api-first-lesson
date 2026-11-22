@@ -35,7 +35,8 @@ this one: a component is not done without its stories and its test.
 | Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
 | The salon of who is signed in (`useOwnSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/salon/`, `src/components/no-salon-notice/` |
-| What the screens of a salon share, in the admin and the dashboard applications: how an answer of the API is read (`reading.ts`, `outside-the-contract.ts`), a list that goes on (`pages.ts`, `PagedTable`), the search by a keyword (`keyword.ts`, `KeywordSearch`), the clock of a salon (`salon-time.ts`), the salons searched for and read (`salons-api.ts`), the start of an application, which leads a member to the first screen of their salon and lets `admin` choose a salon (`StartScreen`, `SalonChoiceScreen`, `SalonChoices`), the salon of an address around the screens below it (`WithSalon`), the period of a count with its form (`period.ts`, `StatisticsPeriod`), what a form gives (`form.ts`: `Read`, `textOf`), an amount and the names of the kinds of payment and of service (`format.ts`) | `frontend/packages/salon-screens/src/` (`@beauty-salon-frontend/salon-screens`) |
+| How an answer of the API is read, in every application and package: why nothing came of a request (`Unread`, `Unsent`, `unreadOf`, `whyUnread`), the values it refused (`refusedValuesOf`), the parts of the patterns of the answers (`UNANSWERED_PARTS`, `REFUSED_PARTS`, their `PUBLIC_` forms for an operation that needs no session, `UNREAD_TYPES`), an answer the contract does not name (`outsideTheContract`), a page and a list read to its end (`pageOf`, `from`, `toTheEnd`), a list that goes on (`listingOf`, `cursorAfter`, `firstCursor`), the sentences of too many requests and of what was not read or not sent (`unreadMessageOf`, `unsentMessageOf`) | `frontend/packages/answers/src/` (`@beauty-salon-frontend/answers`) |
+| What the screens of a salon share, in the admin and the dashboard applications: a table that goes on (`PagedTable`), the search by a keyword (`keyword.ts`, `KeywordSearch`), the clock of a salon (`salon-time.ts`), the salons searched for and read (`salons-api.ts`), the start of an application, which leads a member to the first screen of their salon and lets `admin` choose a salon (`StartScreen`, `SalonChoiceScreen`, `SalonChoices`), the salon of an address around the screens below it (`WithSalon`), the period of a count with its form (`period.ts`, `StatisticsPeriod`), what a form gives (`form.ts`: `Read`, `textOf`), an amount and the names of the kinds of payment and of service (`format.ts`) | `frontend/packages/salon-screens/src/` (`@beauty-salon-frontend/salon-screens`) |
 | The staff and the services of a salon that a booking names, in the admin application | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
@@ -410,10 +411,22 @@ shortest).
   patterns takes, so the function would reject, the form would say nothing
   and a screen that reads would wait for ever. Every match on the answer of
   an operation therefore ends with `.exhaustive(outsideTheContract)`
-  (`frontend/apps/portal-app/src/outside-the-contract.ts`): the check of
-  the types stays, and such an answer is `failed`. A match on a value of
-  the application's own (an outcome, a variant) keeps the bare
-  `.exhaustive()`: the code makes those values.
+  (`answers`): the check of the types stays, and such an answer is
+  `failed`. A match on a value of the application's own (an outcome, a
+  variant) keeps the bare `.exhaustive()`: the code makes those values.
+- **A pattern of the answers is put together where it matches**, from the
+  parts of `answers`: `.with(P.union(...UNANSWERED_PARTS), unreadOf)`, and
+  `P.union(...UNANSWERED_PARTS, { status: 403 })` for one more. The type of
+  a pattern cannot be named outside `ts-pattern`, so no module exports one;
+  and one kept in a constant is not checked against the answer it meets.
+  Written at the match, a part that the operation cannot answer is a type
+  error, and an answer that no part takes is one for `.exhaustive()`. An
+  operation that needs no session answers no 401: its parts are
+  `PUBLIC_UNANSWERED_PARTS` and `PUBLIC_REFUSED_PARTS`. A 400 that a form
+  reads as the values it refused is matched before the parts, which then
+  hold none. A module whose operations answer more (a body the API did not
+  read: 413, 415) keeps parts of its own, typed as a tuple, and spreads
+  them the same way.
 - **A control is named as the property of the request is.** What the API
   says about a value (`errors[].field` of the problem details) is then said
   at its control without a table of names.
@@ -512,8 +525,9 @@ list, `salon-screen.tsx` for a record with its parts).
     form sends them as `FormData` (`noValidate`: a control says its own
     error).
 - **A list goes on with 「さらに表示」** (`useInfiniteQuery`, with the
-  cursor of the API as the parameter of a page; the pure functions are in
-  `pages.ts`). A list of cards is a `PagedList` of `ui`, a table a
+  cursor of the API as the parameter of a page; the pages are put together
+  by `listingOf` and `cursorAfter` of `answers`, and what the button does
+  and how many are shown by `moreOf` and `countOf` of `ui`). A list of cards is a `PagedList` of `ui`, a table a
   `PagedTable` of `salon-screens`; both are built on `LoadMore` and
   `useFocusOnMore`, so a screen writes none of what follows. The next
   items are added below those that are there, and the focus moves to the
@@ -657,7 +671,7 @@ page of a booking the ways to move it and to cancel it.
   them once, `useQueries` reads them under the keys the page of a record
   reads them with, and `rowsOf` makes the rows: a booking is shown whole
   or not yet, so the rows end at the first whose names are not there.
-  Names on their way are rows on their way (`moreOfRows`: the button is
+  Names on their way are rows on their way (`moreOfRows` of `ui`: the button is
   busy); names that could not be read are rows that did not come (the
   `Alert` below the rows, and the button reads the names again). What is
   no longer there is read, has no name, and is said in words (「サロン

@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
@@ -20,7 +21,6 @@ import { whenLineOf } from '../bookings/booking-format'
 import { listHrefOf } from '../bookings/own-bookings'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
-import { unreadMessageOf } from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import { ReviewForm } from './components/review-form/review-form'
 import { afterReviewWrite } from './review-cache'
@@ -41,8 +41,6 @@ const TITLE = 'レビューを書く'
 
 /** Where what the customer wrote is listed, and where the form leads */
 const OWN_REVIEWS = '/mypage/reviews'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 const TO_THE_VISITS = (
   <ButtonLink href={listHrefOf('past')}>これまでの予約を見る</ButtonLink>
@@ -213,7 +211,7 @@ const VisitToReview = () => {
             actions={TO_THE_VISITS}
           />
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('来店の内容', reason)}
             onRetry={() => void read.refetch()}

@@ -1,4 +1,14 @@
 import {
+  FAILED,
+  outsideTheContract,
+  type RefusedValue,
+  refusedValuesOf,
+  TOO_MANY_REQUESTS,
+  UNANSWERED_PARTS,
+  type Unread,
+  type Unsent,
+} from '@beauty-salon-frontend/answers'
+import {
   customerProfileCreate,
   customerProfileGet,
   customerProfileUpdate,
@@ -7,16 +17,7 @@ import {
   type ModelsCustomerProfileUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
-import {
-  FAILED,
-  type RefusedValue,
-  refusedValuesOf,
-  TOO_MANY_REQUESTS,
-  type Unsent,
-  unansweredOf,
-} from '../behind-the-session'
-import { outsideTheContract } from '../outside-the-contract'
-import type { Unread } from '../salons/salons-api'
+import { unansweredOf } from '../behind-the-session'
 
 /**
  * The key under which the profile of the account is kept. Every screen
@@ -24,18 +25,6 @@ import type { Unread } from '../salons/salons-api'
  * what the API answered there.
  */
 export const OWN_PROFILE = ['own', 'profile']
-
-/**
- * The answers `unansweredOf` reads. (A pattern is a constant of its module:
- * the type of one cannot be written out, so it is not exported.)
- */
-const UNANSWERED = P.union(
-  null,
-  { status: 401 },
-  { status: 403 },
-  { status: 429 },
-  { status: 500 },
-)
 
 export type ProfileRead =
   | { type: 'found'; profile: ModelsCustomerProfileResponse }
@@ -71,7 +60,7 @@ export const readOwnProfile = async (): Promise<ProfileRead> => {
       profile: data.data,
     }))
     .with({ status: 404 }, () => ({ type: 'none' }))
-    .with(UNANSWERED, unansweredOf)
+    .with(P.union(...UNANSWERED_PARTS, { status: 403 }), unansweredOf)
     .exhaustive(outsideTheContract)
 }
 

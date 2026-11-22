@@ -1,3 +1,4 @@
+import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type {
   ModelsSalonResponse,
   ModelsServiceResponse,
@@ -9,7 +10,6 @@ import {
   periodQueryOf,
   readDays,
   StatisticsPeriod,
-  unreadMessageOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
@@ -34,8 +34,6 @@ import {
 } from './treatments-api'
 
 const TITLE = '施術の統計'
-
-const UNREAD = P.union('tooManyRequests', 'failed')
 
 type StatisticsPartProps = {
   salon: ModelsSalonResponse
@@ -97,7 +95,7 @@ const StatisticsPart = ({ salon, services }: StatisticsPartProps) => {
         .with({ type: 'found' }, ({ statistics }) => (
           <TreatmentStatistics statistics={statistics} services={services} />
         ))
-        .with({ type: UNREAD }, (reason) => (
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
             message={unreadMessageOf('施術の統計', reason)}
             onRetry={() => void read.refetch()}

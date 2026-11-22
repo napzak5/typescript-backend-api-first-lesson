@@ -1,3 +1,4 @@
+import { type Unread, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsStaffProfileResponse } from '@beauty-salon-frontend/api-client'
 import {
   Actions,
@@ -19,9 +20,7 @@ import {
   useRef,
 } from 'react'
 import { match } from 'ts-pattern'
-import { unreadMessageOf } from '../../../salons/pages'
 import { calendarDateOf } from '../../../salons/salon-format'
-import type { Unread } from '../../../salons/salons-api'
 import {
   type Choice,
   dayAfter,

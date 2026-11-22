@@ -1,5 +1,6 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  countOf,
   Link,
   type More,
   Note,
@@ -28,16 +29,6 @@ export type SalonResultsProps = {
   salonHref: (salon: ModelsSalonResponse) => string
 }
 
-const countOf = (total: number | null, shown: number): string => {
-  if (total === null) {
-    return `${shown} 件を表示しています`
-  }
-
-  return shown < total
-    ? `${total} 件のサロンが見つかりました（${shown} 件を表示しています）`
-    : `${total} 件のサロンが見つかりました`
-}
-
 /**
  * The salons a search found. The name of a salon is the link to its page,
  * and takes the focus when 「さらに表示」 added the salon.
@@ -59,7 +50,12 @@ export const SalonResults = ({
       <PagedList
         items={salons}
         itemKey={({ id }) => id}
-        count={countOf(total, salons.length)}
+        count={countOf(
+          total,
+          salons.length,
+          '件',
+          (count) => `${count} 件のサロンが見つかりました`,
+        )}
         more={more}
         onMore={onMore}
       >
