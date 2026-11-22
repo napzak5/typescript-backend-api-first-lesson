@@ -832,42 +832,42 @@ describe('afterPreferencesChange', () => {
       'communicationStyle',
       'invalid_format',
       'communicationStyle',
-      'この内容は登録できません。入力し直してください。',
+      'この値は受け付けられませんでした。入力を確かめてください。',
     ],
     [
       'a request',
       'specialRequests',
       'invalid_format',
       'specialRequests',
-      'この内容は登録できません。入力し直してください。',
+      'この値は受け付けられませんでした。入力を確かめてください。',
     ],
     [
       'a length',
       'stylePreferences.preferredLength',
       'invalid_format',
       'stylePreferences.preferredLength',
-      'この内容は登録できません。入力し直してください。',
+      'この値は受け付けられませんでした。入力を確かめてください。',
     ],
     [
       'one of the colours',
       'stylePreferences.preferredColors.0',
       'custom',
       'stylePreferences.preferredColors',
-      'この内容は登録できません。入力し直してください。',
+      'この値は受け付けられませんでした。入力を確かめてください。',
     ],
     [
       'one of the styles to avoid',
       'stylePreferences.avoidStyles.2',
       'custom',
       'stylePreferences.avoidStyles',
-      'この内容は登録できません。入力し直してください。',
+      'この値は受け付けられませんでした。入力を確かめてください。',
     ],
     [
       'one of the pictures',
       'stylePreferences.inspirationImages.1',
       'invalid_format',
       'stylePreferences.inspirationImages',
-      'この内容は登録できません。入力し直してください。',
+      'この値は受け付けられませんでした。入力を確かめてください。',
     ],
   ])(
     'should say at its control what the API does not take: %s',
@@ -902,7 +902,8 @@ describe('afterPreferencesChange', () => {
     ).toEqual({
       message: '希望する時間帯を確かめて、もう一度お試しください。',
       errors: {
-        specialRequests: 'この内容は登録できません。入力し直してください。',
+        specialRequests:
+          'この値は受け付けられませんでした。入力を確かめてください。',
       },
     })
   })

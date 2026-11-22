@@ -15,10 +15,6 @@ export {
   type StatisticsPeriodProps,
 } from './components/statistics-period/statistics-period'
 export {
-  type Read,
-  textOf,
-} from './form'
-export {
   amountOf,
   categoryNameOf,
   methodKindNameOf,
@@ -29,6 +25,7 @@ export {
   LONGEST_KEYWORD,
 } from './keyword'
 export {
+  daysErrorsOf,
   lastYearUntil,
   monthUntil,
   type Period,

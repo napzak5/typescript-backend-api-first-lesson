@@ -1,5 +1,8 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
   NOT_SENT_MESSAGE,
+  REFUSED_VALUE_MESSAGE,
+  type RefusedValue,
   TOO_MANY_REQUESTS_MESSAGE,
 } from '@beauty-salon-frontend/answers'
 import type {
@@ -8,9 +11,16 @@ import type {
   ModelsStylePreference,
   ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
-import type { FormErrors } from '@beauty-salon-frontend/ui'
+import {
+  aboutTheAttempt,
+  type FormErrors,
+  type FormRead,
+  type FormSays,
+  same,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import type { FormSays, Read, RefusedValue } from './forms'
 import { linesOf, pictureAddressesError } from './lines'
 import type { StaffChoice } from './staff-choices'
 
@@ -92,13 +102,6 @@ export const enteredOf = (
     specialRequests: preferences.specialRequests ?? '',
   }
 }
-
-const textOf = (values: FormData, name: string): string => {
-  const value = values.get(name)
-
-  return typeof value === 'string' ? value : ''
-}
-
 /** The rows of time slots the form was sent with, from the row of the number `index` on. */
 const timeSlotsIn = (values: FormData, index: number): ModelsTimeSlot[] =>
   values.has(startOf(TIME_SLOTS, index))
@@ -132,14 +135,6 @@ const enteredIn = (values: FormData): Entered => ({
   communicationStyle: textOf(values, COMMUNICATION_STYLE),
   specialRequests: textOf(values, SPECIAL_REQUESTS),
 })
-
-/** What a control that may be left empty holds: `null` for nothing. */
-const textOrNull = (text: string): string | null => {
-  const trimmed = text.trim()
-
-  return trimmed === '' ? null : trimmed
-}
-
 /** What a customer likes of a style; `null` when nothing of it was entered. */
 const styleOf = (entered: Entered): ModelsStylePreference | null => {
   const style: ModelsStylePreference = {
@@ -201,7 +196,6 @@ const END_NOT_LATER = '終了は、開始より後の時刻にしてください
 const OVERLAPPING =
   'ほかの時間帯と重なっています。重ならない時刻にしてください。'
 const COMMUNICATION_STYLE_TOO_LONG = `${MAX_COMMUNICATION_STYLE_LENGTH} 文字以内で入力してください。`
-const UNACCEPTABLE = 'この内容は登録できません。入力し直してください。'
 
 /** A time of day as the API takes it: `09:30`. Two of them compare as text. */
 const TIME_OF_DAY = /^(?:[01]\d|2[0-3]):[0-5]\d$/
@@ -279,10 +273,6 @@ const errorsOf = (entered: Entered): FormErrors => {
       : []),
   ])
 }
-
-const differs = (one: unknown, other: unknown): boolean =>
-  JSON.stringify(one) !== JSON.stringify(other)
-
 /**
  * The preferences the form was sent with other values for than it was
  * opened with. What the form has no control for is no change.
@@ -296,13 +286,13 @@ const changesOf = (
     ? {}
     : { preferredStaffId: sent.preferredStaffId }),
   ...(sent.avoidStaffIds === undefined ||
-  !differs(sent.avoidStaffIds, shown.avoidStaffIds)
+  same(sent.avoidStaffIds, shown.avoidStaffIds)
     ? {}
     : { avoidStaffIds: [...sent.avoidStaffIds] }),
-  ...(differs(sent.preferredTimeSlots, shown.preferredTimeSlots)
+  ...(!same(sent.preferredTimeSlots, shown.preferredTimeSlots)
     ? { preferredTimeSlots: sent.preferredTimeSlots }
     : {}),
-  ...(differs(sent.stylePreferences, shown.stylePreferences)
+  ...(!same(sent.stylePreferences, shown.stylePreferences)
     ? { stylePreferences: sent.stylePreferences }
     : {}),
   ...(sent.communicationStyle === shown.communicationStyle
@@ -315,7 +305,7 @@ const changesOf = (
 
 /** What the form was sent with: what to change, nothing to change, or what is wrong. */
 export type PreferencesChangeRead =
-  | Read<ModelsCustomerPreferencesUpdateRequest>
+  | FormRead<ModelsCustomerPreferencesUpdateRequest>
   /** The form was sent as it was opened: there is nothing to ask the API for */
   | { type: 'unchanged' }
 
@@ -385,9 +375,9 @@ const messageOf = (control: string, rule: string): string =>
     )
     .with(AVOIDED_STAFF, () => AVOIDED_STAFF_GONE)
     .with(COMMUNICATION_STYLE, () =>
-      rule === 'too_big' ? COMMUNICATION_STYLE_TOO_LONG : UNACCEPTABLE,
+      rule === 'too_big' ? COMMUNICATION_STYLE_TOO_LONG : REFUSED_VALUE_MESSAGE,
     )
-    .otherwise(() => UNACCEPTABLE)
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /**
  * What the form says about the values the API did not take: at the
@@ -409,10 +399,7 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
   )
 
   return said.length === 0 && !ofTimeSlots
-    ? {
-        message: '入力した内容を確かめて、もう一度お試しください。',
-        errors: {},
-      }
+    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
     : {
         message: ofTimeSlots ? TIME_SLOTS_REFUSED : undefined,
         // The first thing the API says about a value is the one to act on
@@ -421,17 +408,6 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
         ),
       }
 }
-
-const TOO_MANY_REQUESTS: FormSays = {
-  message: TOO_MANY_REQUESTS_MESSAGE,
-  errors: {},
-}
-
-const NOT_SENT: FormSays = {
-  message: NOT_SENT_MESSAGE,
-  errors: {},
-}
-
 /**
  * Why the API did not change the preferences, as the form can say it: the
  * values it did not take, too many requests, or no answer. A customer who
@@ -447,6 +423,8 @@ export const afterPreferencesChange = (outcome: PreferencesRefusal): FormSays =>
   match(outcome)
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
-    .with({ type: 'failed' }, () => NOT_SENT)
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()

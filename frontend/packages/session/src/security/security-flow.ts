@@ -1,4 +1,5 @@
 import {
+  CHECK_THE_VALUES_MESSAGE,
   FAILED,
   NOT_SENT_MESSAGE,
   type RefusedValue,
@@ -9,7 +10,13 @@ import type {
   ModelsAuthPasswordChangeRequest,
   ModelsSessionResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { FormErrors } from '@beauty-salon-frontend/ui'
+import {
+  aboutTheAttempt,
+  type FormErrors,
+  type FormRead,
+  type FormSays,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { newPasswordError, refusedPasswordMessage } from './password-rule'
 import type { PasswordChange, SessionPage } from './security-api'
@@ -18,20 +25,6 @@ import type { PasswordChange, SessionPage } from './security-api'
  * What the screens of the security of an account make of what a person
  * entered, and of the answers of the API.
  */
-
-/** What a form was sent with: a value to send on, or what is wrong with it. */
-export type Read<Value> =
-  | { type: 'valid'; value: Value }
-  | { type: 'invalid'; errors: FormErrors }
-
-/** What a form says about the last attempt: about the whole of it, and at its controls. */
-export type FormSays = {
-  message: string | undefined
-  errors: FormErrors
-}
-
-export const NOTHING_TO_SAY: FormSays = { message: undefined, errors: {} }
-
 /** The names of the controls of the form: those of the properties of the request. */
 export const CURRENT_PASSWORD = 'currentPassword'
 export const NEW_PASSWORD = 'newPassword'
@@ -41,12 +34,6 @@ const CURRENT_PASSWORD_WRONG =
   '現在のパスワードが違います。5 回続けて違うと、15 分間、サインインもできなくなります。'
 const UNCHANGED =
   '現在のパスワードと同じです。別のパスワードを入力してください。'
-const textOf = (values: FormData, name: string): string => {
-  const value = values.get(name)
-
-  return typeof value === 'string' ? value : ''
-}
-
 /**
  * Reads the form that changes the password. Both passwords are taken as
  * they were typed: a space is a character of a password. The new one is
@@ -55,7 +42,7 @@ const textOf = (values: FormData, name: string): string => {
  */
 export const readPasswordChange = (
   values: FormData,
-): Read<ModelsAuthPasswordChangeRequest> => {
+): FormRead<ModelsAuthPasswordChangeRequest> => {
   const currentPassword = textOf(values, CURRENT_PASSWORD)
   const newPassword = textOf(values, NEW_PASSWORD)
   const errors: FormErrors = {
@@ -100,17 +87,13 @@ export const afterPasswordChange = (
       })
 
       return said.length === 0
-        ? {
-            message: '入力した内容を確かめて、もう一度お試しください。',
-            errors: {},
-          }
+        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
         : { message: undefined, errors: Object.fromEntries(said) }
     })
-    .with({ type: 'tooManyRequests' }, () => ({
-      message: TOO_MANY_REQUESTS_MESSAGE,
-      errors: {},
-    }))
-    .with({ type: 'failed' }, () => ({ message: NOT_SENT_MESSAGE, errors: {} }))
+    .with({ type: 'tooManyRequests' }, () =>
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /** What the pages of the sessions that were read so far amount to. */
