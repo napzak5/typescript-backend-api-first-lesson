@@ -60,7 +60,7 @@ describe('readChartConditions', () => {
     // Assert
     expect(read).toEqual({
       type: 'invalid',
-      errors: { search: 'キーワードは 100 文字以内で入力してください。' },
+      errors: { search: 'キーワードは、100 文字以内で入力してください。' },
     })
   })
 })

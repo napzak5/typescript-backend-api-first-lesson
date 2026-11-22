@@ -3,6 +3,7 @@ import type {
   ModelsServiceOption,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
+import { upTo } from '@beauty-salon-frontend/fields'
 import {
   Button,
   Checkbox,
@@ -36,6 +37,8 @@ import {
 } from '../../menu-format'
 import {
   FEWEST_PACKAGED,
+  LONGEST_NAME,
+  LONGEST_SHORT_DESCRIPTION,
   MOST_PACKAGED,
   optionControlOf,
   packagedControlOf,
@@ -131,7 +134,7 @@ export const ServiceForm = ({
           name='name'
           autoComplete='off'
           required
-          description='255 文字まで。お客様のメニューに出ます。'
+          description={`${upTo(LONGEST_NAME)}お客様のメニューに出ます。`}
           defaultValue={service?.name}
           error={errors['name']}
         />
@@ -150,7 +153,7 @@ export const ServiceForm = ({
           label='短い紹介'
           name='shortDescription'
           rows={2}
-          description='500 文字まで。メニューの一覧に出ます。'
+          description={`${upTo(LONGEST_SHORT_DESCRIPTION)}メニューの一覧に出ます。`}
           defaultValue={service?.shortDescription ?? undefined}
           error={errors['shortDescription']}
         />

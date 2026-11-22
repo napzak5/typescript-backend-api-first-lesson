@@ -1,4 +1,5 @@
 import type { ModelsServiceCategoryResponse } from '@beauty-salon-frontend/api-client'
+import { upTo } from '@beauty-salon-frontend/fields'
 import {
   Checkbox,
   FieldRow,
@@ -9,6 +10,7 @@ import {
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { CATEGORY_OPTIONS } from '../../../customers/customer-format'
+import { LONGEST_NAME } from '../../category-form'
 import { categoriesById, categoryPathOf } from '../../menu-format'
 
 export type CategoryFormProps = Pick<
@@ -52,7 +54,7 @@ export const CategoryForm = ({
         name='name'
         autoComplete='off'
         required
-        description='100 文字まで。お客様のメニューの見出しになります。'
+        description={`${upTo(LONGEST_NAME)}お客様のメニューの見出しになります。`}
         defaultValue={category?.name}
         error={errors['name']}
       />

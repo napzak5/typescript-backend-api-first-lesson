@@ -77,7 +77,7 @@ describe('readAllergy', () => {
     [
       'an allergen longer than 255 characters',
       { allergenName: 'あ'.repeat(256) },
-      { allergenName: 'アレルゲンは、255 文字までで入力してください。' },
+      { allergenName: 'アレルゲンは、255 文字以内で入力してください。' },
     ],
     ['no kind', { allergyType: '' }, { allergyType: '種類を選んでください。' }],
     [
@@ -113,10 +113,10 @@ describe('readAllergy', () => {
     expect(read).toEqual({ type: 'invalid', errors })
   })
 
-  it('should take an allergen of 255 characters, and today', () => {
+  it('should take an allergen of 255 characters, counted as the API counts them, and today', () => {
     // Act
     const read = readAllergy(
-      valuesOf({ allergenName: 'あ'.repeat(255), confirmedDate: TODAY }),
+      valuesOf({ allergenName: '𠮷'.repeat(255), confirmedDate: TODAY }),
       TODAY,
     )
 
@@ -215,7 +215,7 @@ describe('afterAllergyWrite', () => {
     [
       'allergenName',
       'too_big',
-      'アレルゲンは、255 文字までで入力してください。',
+      'アレルゲンは、255 文字以内で入力してください。',
     ],
     ['allergenName', 'custom', 'アレルゲンを入力してください。'],
     ['severityType', 'invalid_value', '重篤度を選んでください。'],
@@ -259,7 +259,7 @@ describe('afterAllergyWrite', () => {
     expect(says).toEqual({
       message: '入力した内容を確かめて、もう一度お試しください。',
       errors: {
-        allergenName: 'アレルゲンは、255 文字までで入力してください。',
+        allergenName: 'アレルゲンは、255 文字以内で入力してください。',
       },
     })
   })

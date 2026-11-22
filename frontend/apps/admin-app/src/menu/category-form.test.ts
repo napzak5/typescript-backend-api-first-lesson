@@ -105,10 +105,10 @@ describe('readCategoryEntry', () => {
     })
   })
 
-  it('should take a name of 100 letters and an address of 500', () => {
+  it('should take a name of 100 letters, counted as the API counts them, and an address of 500', () => {
     // Act
     const read = readCategoryEntry(
-      formWith({ name: 'あ'.repeat(100), iconUrl: addressOf(500) }),
+      formWith({ name: '𠮷'.repeat(100), iconUrl: addressOf(500) }),
     )
 
     // Assert
@@ -158,7 +158,7 @@ describe('readCategoryEntry', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        name: 'カテゴリーの名前を、100 文字までで入力してください。',
+        name: 'カテゴリーの名前を、100 文字以内で入力してください。',
         category: '種類を選んでください。',
         displayOrder: '表示順は、0 以上の整数で入力してください。',
         color: '色は、#C8A2C8 のように、# と 16 進数 6 桁で入力してください。',

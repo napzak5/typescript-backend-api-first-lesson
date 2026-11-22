@@ -1,4 +1,5 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import { upTo } from '@beauty-salon-frontend/fields'
 import {
   Checkbox,
   FieldRow,
@@ -17,6 +18,8 @@ import { tagsTextOf } from '../../../customers/customer-ledger'
 import {
   CURRENCY_CHOICES,
   coordinateTextOf,
+  LONGEST_NAME,
+  LONGEST_POSTAL_CODE,
   NEW_SALON,
   type SalonShown,
   TIME_ZONE_CHOICES,
@@ -63,7 +66,7 @@ export const SalonForm = ({
           name='name'
           autoComplete='organization'
           required
-          description='255 文字まで。お客様がサロンを探すときに出ます。'
+          description={`${upTo(LONGEST_NAME)}お客様がサロンを探すときに出ます。`}
           defaultValue={salon.name}
           error={errors['name']}
         />
@@ -71,7 +74,7 @@ export const SalonForm = ({
           label='カナ'
           name='nameKana'
           autoComplete='off'
-          description='255 文字まで。'
+          description={upTo(LONGEST_NAME)}
           defaultValue={textOrEmpty(salon.nameKana)}
           error={errors['nameKana']}
         />
@@ -96,7 +99,7 @@ export const SalonForm = ({
             label='郵便番号'
             name='postalCode'
             autoComplete='postal-code'
-            description='10 文字まで。'
+            description={upTo(LONGEST_POSTAL_CODE)}
             defaultValue={textOrEmpty(salon.postalCode)}
             error={errors['postalCode']}
           />

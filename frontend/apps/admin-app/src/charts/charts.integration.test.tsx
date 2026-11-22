@@ -244,7 +244,7 @@ describe('the charts of the customers, against the API', () => {
         await user.paste('あ'.repeat(101))
       },
       '避ける商材',
-      '商材の名前は、1 つ 100 文字までで入力してください。',
+      '商材の名前は、1 つ 100 文字以内で入力してください。',
     ],
   ])(
     'should make no chart with %s, and say why at the control',

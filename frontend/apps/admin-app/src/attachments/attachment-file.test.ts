@@ -111,6 +111,10 @@ describe('readChosenFile', () => {
     ['a file of one byte', fileOf('scan.pdf', 1)],
     ['a name of 255 characters', fileOf(`${'a'.repeat(251)}.pdf`)],
     [
+      'a name of 255 characters outside the basic plane',
+      fileOf(`${'𠮷'.repeat(251)}.pdf`),
+    ],
+    [
       'a name with the first character after the controls',
       fileOf('before\u00a0.jpg'),
     ],

@@ -74,7 +74,7 @@ describe('ChartFilter', () => {
     // Assert
     const keyword = screen.getByRole('searchbox', { name: 'キーワード' })
     expect(keyword).toHaveAccessibleDescription(
-      expect.stringContaining('キーワードは 100 文字以内で入力してください。'),
+      expect.stringContaining('キーワードは、100 文字以内で入力してください。'),
     )
     expect(keyword).toHaveFocus()
   })

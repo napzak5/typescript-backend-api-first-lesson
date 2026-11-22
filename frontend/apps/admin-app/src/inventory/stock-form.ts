@@ -10,7 +10,13 @@ import type {
   ModelsInventoryUpdateRequest,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import { isDay } from '@beauty-salon-frontend/fields'
+import {
+  isDay,
+  lengthOf,
+  neededWithin,
+  tooLongError,
+  tooLongOf,
+} from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   errorAt,
@@ -22,6 +28,7 @@ import {
 import { match } from 'ts-pattern'
 import type { TreatmentRemovalSays } from '../treatments/treatment-format'
 import type { StockRowRemoval, StockRowWrite } from './inventory-api'
+import { LONGEST_LOT, LOT_TOO_LONG } from './lot-number'
 import { productOf } from './stock-format'
 
 /*
@@ -30,20 +37,19 @@ import { productOf } from './stock-format'
  * characters, as the API counts it.
  */
 
-const LONGEST_LOT = 100
-const LONGEST_LOCATION = 100
-const LONGEST_SHELF = 50
+/** The longest place of storage */
+export const LONGEST_LOCATION = 100
+/** The longest shelf */
+export const LONGEST_SHELF = 50
 
 const PRODUCT_ERROR = '商品を選んでください。'
-const LOT_ERROR =
-  'ロット番号を、100 文字までで入力してください。この商品は、在庫をロット番号で分けます。'
-const LOT_LENGTH_ERROR = 'ロット番号は、100 文字までで入力してください。'
+const LOT_ERROR = `${neededWithin('ロット番号', LONGEST_LOT)}この商品は、在庫をロット番号で分けます。`
 const LOT_NOT_KEPT =
   'この商品は、在庫をロット番号で分けません。ロット番号は、消すことだけができます。'
 const EXPIRY_ERROR =
   '使用期限は、1900年1月1日から2999年12月31日までの日付で入力してください。'
-const LOCATION_ERROR = '保管場所は、100 文字までで入力してください。'
-const SHELF_ERROR = '棚は、50 文字までで入力してください。'
+const LOCATION_ERROR = tooLongOf('保管場所', LONGEST_LOCATION)
+const SHELF_ERROR = tooLongOf('棚', LONGEST_SHELF)
 const LOT_TAKEN =
   'このロット番号の在庫の行は、この商品にすでにあります。同じロットの在庫は、その行で記録してください。'
 const ROW_TAKEN =
@@ -63,7 +69,6 @@ const CONTROLS: readonly string[] = [
   'notes',
 ]
 
-const lengthOf = (text: string): number => [...text].length
 /** Whether the form of a row shows its lot: the product is kept by lots, or the row has one to clear. */
 export const showsLot = (
   row: Pick<ModelsInventoryResponse, 'lotNumber'> | null,
@@ -100,16 +105,9 @@ const readPlace = (
       ),
       ...errorAt(
         'location',
-        location !== null && lengthOf(location) > LONGEST_LOCATION
-          ? LOCATION_ERROR
-          : undefined,
+        tooLongError(location, LONGEST_LOCATION, LOCATION_ERROR),
       ),
-      ...errorAt(
-        'shelf',
-        shelf !== null && lengthOf(shelf) > LONGEST_SHELF
-          ? SHELF_ERROR
-          : undefined,
-      ),
+      ...errorAt('shelf', tooLongError(shelf, LONGEST_SHELF, SHELF_ERROR)),
     ],
   }
 }
@@ -172,7 +170,7 @@ const readLot = (
     required && (lot === null || lengthOf(lot) > LONGEST_LOT)
       ? LOT_ERROR
       : lot !== null && lengthOf(lot) > LONGEST_LOT
-        ? LOT_LENGTH_ERROR
+        ? LOT_TOO_LONG
         : !required && lot !== null && lot !== textOrNull(row.lotNumber)
           ? LOT_NOT_KEPT
           : undefined
@@ -239,7 +237,7 @@ const refusalAt = (field: string, rule: string): string =>
         ? 'この商品は、削除されました。ほかの商品を選んでください。'
         : PRODUCT_ERROR,
     )
-    .with('lotNumber', () => LOT_LENGTH_ERROR)
+    .with('lotNumber', () => LOT_TOO_LONG)
     .with('expiryDate', () => EXPIRY_ERROR)
     .with('location', () => LOCATION_ERROR)
     .with('shelf', () => SHELF_ERROR)

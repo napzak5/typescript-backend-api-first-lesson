@@ -37,7 +37,7 @@ export const Narrowed: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      keyword: 'キーワードは 100 文字以内で入力してください。',
+      keyword: 'キーワードは、100 文字以内で入力してください。',
     },
   },
 }

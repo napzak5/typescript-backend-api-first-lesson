@@ -590,12 +590,12 @@ describe('the stock screens', () => {
     // Assert
     expect(lot()).toHaveAccessibleDescription(
       expect.stringContaining(
-        'ロット番号を、100 文字までで入力してください。この商品は、在庫をロット番号で分けます。',
+        'ロット番号を、100 文字以内で入力してください。この商品は、在庫をロット番号で分けます。',
       ),
     )
     expect(lot()).toHaveFocus()
     expect(text('棚')).toHaveAccessibleDescription(
-      expect.stringContaining('棚は、50 文字までで入力してください。'),
+      expect.stringContaining('棚は、50 文字以内で入力してください。'),
     )
     expect(await storedRowsOf(TOKYO)).toEqual(before)
   })

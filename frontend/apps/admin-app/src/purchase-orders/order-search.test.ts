@@ -35,6 +35,12 @@ describe('orderConditionsIn', () => {
     })
   })
 
+  it('should keep a supplier of 255 characters, counted as the API counts them', () => {
+    expect(
+      orderConditionsIn(new URLSearchParams({ supplier: '𠮷'.repeat(255) })),
+    ).toEqual({ supplier: '𠮷'.repeat(255) })
+  })
+
   it.each<[string, string]>([
     ['a status that is none', 'status=lost'],
     ['a blank supplier', 'supplier=%20%20'],
@@ -86,7 +92,7 @@ describe('readOrderConditions', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        supplier: '仕入先は 255 文字以内で入力してください。',
+        supplier: '仕入先は、255 文字以内で入力してください。',
         from: '日付を入力してください。',
       },
     })

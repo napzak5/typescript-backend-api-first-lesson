@@ -154,7 +154,16 @@ describe('readProductEntry', () => {
   it('should count the characters as the API does: one outside the basic plane is one', () => {
     // Act
     const read = readProductEntry(
-      formOf({ productCode: '𠮷'.repeat(100), unit: '𠮷'.repeat(20) }),
+      formOf({
+        productCode: '𠮷'.repeat(100),
+        name: '𠮷'.repeat(255),
+        category: '𠮷'.repeat(100),
+        brand: '𠮷'.repeat(100),
+        unit: '𠮷'.repeat(20),
+        supplier: '𠮷'.repeat(255),
+        supplierProductCode: '𠮷'.repeat(100),
+        barcode: '𠮷'.repeat(100),
+      }),
     )
 
     // Assert
@@ -166,9 +175,9 @@ describe('readProductEntry', () => {
       'no code, no name and no unit',
       { productCode: ' ', name: '', unit: '　' },
       {
-        productCode: '商品コードを、100 文字までで入力してください。',
-        name: '商品名を、255 文字までで入力してください。',
-        unit: '単位を、20 文字までで入力してください。',
+        productCode: '商品コードを、100 文字以内で入力してください。',
+        name: '商品名を、255 文字以内で入力してください。',
+        unit: '単位を、20 文字以内で入力してください。',
       },
     ],
     [
@@ -184,15 +193,15 @@ describe('readProductEntry', () => {
         barcode: '1'.repeat(101),
       },
       {
-        productCode: '商品コードを、100 文字までで入力してください。',
-        name: '商品名を、255 文字までで入力してください。',
-        category: 'カテゴリーは、100 文字までで入力してください。',
-        brand: 'ブランドは、100 文字までで入力してください。',
-        unit: '単位を、20 文字までで入力してください。',
-        supplier: '仕入先は、255 文字までで入力してください。',
+        productCode: '商品コードを、100 文字以内で入力してください。',
+        name: '商品名を、255 文字以内で入力してください。',
+        category: 'カテゴリーは、100 文字以内で入力してください。',
+        brand: 'ブランドは、100 文字以内で入力してください。',
+        unit: '単位を、20 文字以内で入力してください。',
+        supplier: '仕入先は、255 文字以内で入力してください。',
         supplierProductCode:
-          '仕入先の商品コードは、100 文字までで入力してください。',
-        barcode: 'バーコードは、100 文字までで入力してください。',
+          '仕入先の商品コードは、100 文字以内で入力してください。',
+        barcode: 'バーコードは、100 文字以内で入力してください。',
       },
     ],
     [
@@ -394,7 +403,7 @@ describe('afterProductWrite', () => {
     expect(said).toEqual({
       message: undefined,
       errors: {
-        productCode: '商品コードを、100 文字までで入力してください。',
+        productCode: '商品コードを、100 文字以内で入力してください。',
         minimumStock:
           '最低在庫数は、発注点と最大在庫数と同じか、それより小さい数にしてください。',
         reorderPoint:

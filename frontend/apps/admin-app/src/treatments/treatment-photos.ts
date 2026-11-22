@@ -10,6 +10,7 @@ import {
   ModelsTreatmentPhotoType,
   type ModelsTreatmentRecordResponse,
 } from '@beauty-salon-frontend/api-client'
+import { tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type ChoiceOption,
@@ -34,7 +35,8 @@ import type { PhotoRemoval, PhotosAdding } from './treatments-api'
 /** The most photos a record holds */
 export const MOST_PHOTOS = 20
 const LONGEST_URL = 500
-const LONGEST_ANGLE = 50
+/** The longest direction a photo was taken from, as the API takes it */
+export const LONGEST_ANGLE = 50
 
 const PHOTO_TYPE_NAMES: Record<ModelsTreatmentPhotoType, string> = {
   before: '施術前',
@@ -87,7 +89,7 @@ export const photoControlOf = (
 const TYPE_MISSING = '写真の区分を選んでください。'
 const URL_MISSING = '写真の URL を入力してください。'
 const URL_ERROR = `http:// か https:// で始まる、ドメイン名（photos.example.com など）の URL を、${LONGEST_URL} 文字までで入力してください。`
-const ANGLE_TOO_LONG = `撮った向きは、${LONGEST_ANGLE} 文字までで入力してください。`
+const ANGLE_TOO_LONG = tooLongOf('撮った向き', LONGEST_ANGLE)
 const NO_CONSENT =
   'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。'
 const URL_HELD =
@@ -181,9 +183,7 @@ const photoErrorsOf = (
     ),
     ...errorAt(
       photoControlOf(index, 'angle'),
-      angle !== null && angle.length > LONGEST_ANGLE
-        ? ANGLE_TOO_LONG
-        : undefined,
+      tooLongError(angle, LONGEST_ANGLE, ANGLE_TOO_LONG),
     ),
     ...errorAt(
       photoControlOf(index, 'isPublic'),

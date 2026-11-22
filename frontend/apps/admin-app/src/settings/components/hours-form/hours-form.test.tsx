@@ -254,4 +254,16 @@ describe('HoursForm', () => {
       'ほかのアカウントがこのサロンの営業時間を変えていました',
     )
   })
+
+  it('should say at the name of a holiday how long it may be', async () => {
+    // Act
+    await stories.Whole.run()
+
+    // Assert
+    expect(
+      within(group('1 行目')).getByLabelText('祝日・休業日の名前'),
+    ).toHaveAccessibleDescription(
+      '100 文字まで。「元日」「年末年始」「設備の点検」など。',
+    )
+  })
 })

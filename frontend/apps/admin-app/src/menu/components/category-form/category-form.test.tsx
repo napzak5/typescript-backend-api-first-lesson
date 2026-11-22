@@ -114,4 +114,16 @@ describe('CategoryForm', () => {
       'カテゴリーを保存できませんでした。',
     )
   })
+
+  it('should say at the name how long it may be', async () => {
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: '名前' }),
+    ).toHaveAccessibleDescription(
+      '100 文字まで。お客様のメニューの見出しになります。',
+    )
+  })
 })

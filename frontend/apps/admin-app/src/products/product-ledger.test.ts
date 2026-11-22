@@ -48,6 +48,19 @@ describe('productConditionsIn', () => {
     expect(productConditionsIn(new URLSearchParams(query))).toEqual({})
   })
 
+  it.each<[string, string]>([
+    ['keyword', '𠮷'.repeat(100)],
+    ['barcode', '𠮷'.repeat(100)],
+    ['category', '𠮷'.repeat(100)],
+  ])(
+    'should keep a %s of 100 characters, counted as the API counts them',
+    (name, text) => {
+      expect(
+        productConditionsIn(new URLSearchParams({ [name]: text })),
+      ).toEqual({ [name]: text })
+    },
+  )
+
   it('should keep a category as it is written, and a barcode without the spaces around it', () => {
     expect(
       productConditionsIn(
@@ -81,6 +94,19 @@ describe('readProductConditions', () => {
     })
   })
 
+  it('should take a keyword and a barcode of 100 characters, counted as the API counts them', () => {
+    // Act
+    const read = readProductConditions(
+      formOf({ keyword: '𠮷'.repeat(100), barcode: '𠮷'.repeat(100) }),
+    )
+
+    // Assert
+    expect(read).toEqual({
+      type: 'valid',
+      value: { keyword: '𠮷'.repeat(100), barcode: '𠮷'.repeat(100) },
+    })
+  })
+
   it('should say that a keyword and a barcode are too long, at their controls', () => {
     // Act
     const read = readProductConditions(
@@ -91,8 +117,8 @@ describe('readProductConditions', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        keyword: 'キーワードは 100 文字以内で入力してください。',
-        barcode: 'バーコードは 100 文字以内で入力してください。',
+        keyword: 'キーワードは、100 文字以内で入力してください。',
+        barcode: 'バーコードは、100 文字以内で入力してください。',
       },
     })
   })

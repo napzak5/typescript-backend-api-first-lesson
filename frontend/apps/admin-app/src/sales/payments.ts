@@ -8,8 +8,14 @@ import type {
   ModelsSaleProcessRequest,
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
+import { tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, textOf, textOrNull } from '@beauty-salon-frontend/ui'
+import {
+  errorAt,
+  type FormRead,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import { yenOf } from '../bookings/booking-entry'
 import { CARD_METHODS, whyNoPayment } from './sale-format'
@@ -95,10 +101,10 @@ const AMOUNT_ERROR = '金額は、1 以上の円の整数で入力してくだ�
 
 const LAST_FOUR_ERROR = 'カードの下 4 桁は、4 桁の数字で入力してください。'
 
-const BRAND_ERROR = 'カードのブランドは、50 文字までで入力してください。'
-
 /** The longest brand of a card the API takes */
 const LONGEST_BRAND = 50
+
+const BRAND_ERROR = tooLongOf('カードのブランド', LONGEST_BRAND)
 
 /**
  * What is wrong with an amount: none, more than is left to pay, or what
@@ -154,9 +160,9 @@ export const readPayment = (
     ...(lastFour === null || /^\d{4}$/.test(lastFour)
       ? {}
       : { cardLastFour: LAST_FOUR_ERROR }),
-    ...(brand === null || [...brand].length <= LONGEST_BRAND
-      ? {}
-      : { cardBrand: BRAND_ERROR }),
+    ...Object.fromEntries(
+      errorAt('cardBrand', tooLongError(brand, LONGEST_BRAND, BRAND_ERROR)),
+    ),
   }
   if (
     method === undefined ||

@@ -38,7 +38,7 @@ export const WithErrors: Story = {
     submitLabel: '変更を保存する',
     errors: {
       'previousTreatments.1.date': '施術日は、今日までにしてください。',
-      avoidProducts: '商材の名前は、1 つ 100 文字までで入力してください。',
+      avoidProducts: '商材の名前は、1 つ 100 文字以内で入力してください。',
     },
   },
 }

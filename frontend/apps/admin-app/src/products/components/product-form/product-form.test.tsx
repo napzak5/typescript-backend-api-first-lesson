@@ -163,7 +163,7 @@ describe('ProductForm', () => {
 
     // Assert
     expect(text(/^商品コード/)).toHaveAccessibleDescription(
-      expect.stringContaining('商品コードを、100 文字までで入力してください。'),
+      expect.stringContaining('商品コードを、100 文字以内で入力してください。'),
     )
     expect(text('仕入価格')).toHaveAccessibleDescription(
       '仕入価格は、0 以上の円の整数で入力してください。',
@@ -184,5 +184,28 @@ describe('ProductForm', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'このサロンの商品は、変えられません。',
     )
+  })
+
+  it.each<[string, string]>([
+    [
+      '商品コード',
+      '100 文字まで。このサロンの、削除していないほかの商品と同じコードは使えません。取り扱いをやめた商品のコードも使えません。',
+    ],
+    ['単位', '本、個、ml など。20 文字まで。在庫の数を数える単位です。'],
+    ['商品名', '255 文字まで。'],
+    [
+      'カテゴリー',
+      '100 文字まで。商品台帳で、カテゴリーで探せます。在庫の評価額をカテゴリーごとに集計します。',
+    ],
+    ['ブランド', '100 文字まで。'],
+    ['仕入先', '255 文字まで。'],
+    ['仕入先の商品コード', '100 文字まで。発注するときに使います。'],
+    ['バーコード', '100 文字まで。商品台帳で、バーコードで探せます。'],
+  ])('should say at %s how long it may be', async (label, description) => {
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(text(label)).toHaveAccessibleDescription(description)
   })
 })

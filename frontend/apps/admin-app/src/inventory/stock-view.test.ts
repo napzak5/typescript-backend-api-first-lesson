@@ -111,7 +111,7 @@ describe('readStockConditions', () => {
       readStockConditions(formOf([['lotNumber', 'L'.repeat(101)]])),
     ).toEqual({
       type: 'invalid',
-      errors: { lotNumber: 'ロット番号は 100 文字以内で入力してください。' },
+      errors: { lotNumber: 'ロット番号は、100 文字以内で入力してください。' },
     })
   })
 })

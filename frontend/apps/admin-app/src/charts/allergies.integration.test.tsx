@@ -331,7 +331,7 @@ describe('the allergies of the customers, against the API', () => {
       'an allergen of more than 255 characters',
       'アレルゲン',
       'あ'.repeat(256),
-      'アレルゲンは、255 文字までで入力してください。',
+      'アレルゲンは、255 文字以内で入力してください。',
     ],
   ])(
     'should record nothing with %s, and say why at the control',

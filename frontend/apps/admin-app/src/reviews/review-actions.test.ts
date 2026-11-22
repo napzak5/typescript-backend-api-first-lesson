@@ -95,12 +95,12 @@ describe('readReport', () => {
     })
   })
 
-  it('should take details of exactly 2,000 characters', () => {
+  it('should take details of exactly 2,000 characters, counted as the API counts them', () => {
     expect(
-      readReport(formOf({ reason: 'other', details: '詳'.repeat(2000) })),
+      readReport(formOf({ reason: 'other', details: '𠮷'.repeat(2000) })),
     ).toEqual({
       type: 'valid',
-      value: { reason: 'other', details: '詳'.repeat(2000) },
+      value: { reason: 'other', details: '𠮷'.repeat(2000) },
     })
   })
 
@@ -119,7 +119,7 @@ describe('readReport', () => {
     [
       'details longer than 2,000 characters',
       { reason: 'spam', details: '詳'.repeat(2001) },
-      { details: '2000 文字以内で入力してください。' },
+      { details: '2,000 文字以内で入力してください。' },
     ],
   ])('should say what is wrong with %s', (_, entries, errors) => {
     expect(readReport(formOf(entries))).toEqual({ type: 'invalid', errors })
@@ -207,7 +207,7 @@ describe('afterReporting', () => {
       message: undefined,
       errors: {
         reason: '通報の理由を選んでください。',
-        details: '2000 文字以内で入力してください。',
+        details: '2,000 文字以内で入力してください。',
       },
     })
     expect(

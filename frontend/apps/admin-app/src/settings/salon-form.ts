@@ -10,7 +10,11 @@ import type {
 import {
   alternativePhoneError,
   emailError,
+  neededError,
+  neededWithin,
   phoneError,
+  tooLongError,
+  tooLongOf,
 } from '@beauty-salon-frontend/fields'
 import { linesOf } from '@beauty-salon-frontend/preferences'
 import {
@@ -36,21 +40,23 @@ import type { SalonChange } from './settings-api'
  * read at them. Its hours are not in it: they have a form of their own.
  */
 
-const LONGEST_NAME = 255
-const LONGEST_POSTAL_CODE = 10
+/** The longest name, and the longest name in kana, the API takes */
+export const LONGEST_NAME = 255
+/** The longest postal code the API takes */
+export const LONGEST_POSTAL_CODE = 10
 const LONGEST_PREFECTURE = 50
 const LONGEST_CITY = 100
 const LONGEST_ADDRESS = 255
 const LONGEST_URL = 500
 const LONGEST_TAX_RATE = 100
 
-const NAME_ERROR = `サロンの名前を、${LONGEST_NAME} 文字までで入力してください。`
-const KANA_ERROR = `カナは、${LONGEST_NAME} 文字までで入力してください。`
-const POSTAL_CODE_ERROR = `郵便番号は、${LONGEST_POSTAL_CODE} 文字までで入力してください。`
-const PREFECTURE_ERROR = `都道府県を、${LONGEST_PREFECTURE} 文字までで入力してください。`
-const CITY_ERROR = `市区町村を、${LONGEST_CITY} 文字までで入力してください。`
-const ADDRESS_ERROR = `町名・番地を、${LONGEST_ADDRESS} 文字までで入力してください。`
-const BUILDING_ERROR = `建物は、${LONGEST_ADDRESS} 文字までで入力してください。`
+const NAME_ERROR = neededWithin('サロンの名前', LONGEST_NAME)
+const KANA_ERROR = tooLongOf('カナ', LONGEST_NAME)
+const POSTAL_CODE_ERROR = tooLongOf('郵便番号', LONGEST_POSTAL_CODE)
+const PREFECTURE_ERROR = neededWithin('都道府県', LONGEST_PREFECTURE)
+const CITY_ERROR = neededWithin('市区町村', LONGEST_CITY)
+const ADDRESS_ERROR = neededWithin('町名・番地', LONGEST_ADDRESS)
+const BUILDING_ERROR = tooLongOf('建物', LONGEST_ADDRESS)
 const LATITUDE_ERROR =
   '緯度は、-90 から 90 までの数（小数は 8 桁まで）で入力してください。'
 const LONGITUDE_ERROR =
@@ -158,21 +164,6 @@ const photosError = (text: string): string | undefined => {
     : `${wrong + 1} 行目を確かめてください。http:// または https:// で始まる URL を書いてください。`
 }
 
-/** A text that has to be written, of at most so many characters: the message when it is not. */
-const requiredError = (
-  text: string,
-  longest: number,
-  message: string,
-): string | undefined =>
-  text === '' || text.length > longest ? message : undefined
-
-/** A text that may be left out, of at most so many characters: the message when it is longer. */
-const optionalError = (
-  text: string | null,
-  longest: number,
-  message: string,
-): string | undefined =>
-  text !== null && text.length > longest ? message : undefined
 const linkError = (link: string | null): string | undefined =>
   link === null || linkSchema.safeParse(link).success ? undefined : URL_ERROR
 
@@ -210,24 +201,21 @@ const readWhole = (values: FormData): Whole => {
   const photos = textOf(values, 'imageUrls')
   const taxRate = numberOf(textOf(values, 'taxRate'), 2)
   const errors: Record<string, string> = Object.fromEntries([
-    ...errorAt('name', requiredError(name, LONGEST_NAME, NAME_ERROR)),
-    ...errorAt('nameKana', optionalError(nameKana, LONGEST_NAME, KANA_ERROR)),
+    ...errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
+    ...errorAt('nameKana', tooLongError(nameKana, LONGEST_NAME, KANA_ERROR)),
     ...errorAt(
       'postalCode',
-      optionalError(postalCode, LONGEST_POSTAL_CODE, POSTAL_CODE_ERROR),
+      tooLongError(postalCode, LONGEST_POSTAL_CODE, POSTAL_CODE_ERROR),
     ),
     ...errorAt(
       'prefecture',
-      requiredError(prefecture, LONGEST_PREFECTURE, PREFECTURE_ERROR),
+      neededError(prefecture, LONGEST_PREFECTURE, PREFECTURE_ERROR),
     ),
-    ...errorAt('city', requiredError(city, LONGEST_CITY, CITY_ERROR)),
-    ...errorAt(
-      'address',
-      requiredError(address, LONGEST_ADDRESS, ADDRESS_ERROR),
-    ),
+    ...errorAt('city', neededError(city, LONGEST_CITY, CITY_ERROR)),
+    ...errorAt('address', neededError(address, LONGEST_ADDRESS, ADDRESS_ERROR)),
     ...errorAt(
       'building',
-      optionalError(building, LONGEST_ADDRESS, BUILDING_ERROR),
+      tooLongError(building, LONGEST_ADDRESS, BUILDING_ERROR),
     ),
     ...errorAt('latitude', latitude === undefined ? LATITUDE_ERROR : undefined),
     ...errorAt(

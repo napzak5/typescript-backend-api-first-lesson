@@ -111,4 +111,16 @@ describe('ReviewReport', () => {
     ).toEqual(['閉じる'])
     expect(within(dialog).getByRole('status').parentElement).toHaveFocus()
   })
+
+  it('should say at the details how long they may be', async () => {
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: '詳しい内容' }),
+    ).toHaveAccessibleDescription(
+      'どこが規則に反するかを、2,000 文字以内で書いてください。理由が「その他」のときは、必ず書いてください。',
+    )
+  })
 })

@@ -56,8 +56,8 @@ const changeWith = (changes: Values = {}): FormData =>
   })
 
 const KIND_ERROR = '種類を選んでください。'
-const NAME_ERROR = '表示名を、100 文字までで入力してください。'
-const PROCESSOR_ERROR = '決済代行会社の名前は、100 文字までで入力してください。'
+const NAME_ERROR = '表示名を、100 文字以内で入力してください。'
+const PROCESSOR_ERROR = '決済代行会社の名前は、100 文字以内で入力してください。'
 const FEE_ERROR =
   '手数料率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。'
 const MINIMUM_ERROR = '下限は、1 以上の円の整数で入力してください。'
@@ -207,6 +207,14 @@ describe('readPaymentMethodEntry', () => {
   it.each<[string, Values]>([
     ['a name of 100 characters', { displayName: 'あ'.repeat(100) }],
     ['a company of 100 characters', { processorName: 'あ'.repeat(100) }],
+    [
+      'a name of 100 characters outside the basic plane',
+      { displayName: '𠮷'.repeat(100) },
+    ],
+    [
+      'a company of 100 characters outside the basic plane',
+      { processorName: '𠮷'.repeat(100) },
+    ],
     ['a fee of 100', { fee: '100' }],
     ['a fee of 0', { fee: '0' }],
     ['a smallest amount of 1', { minimumAmount: '1' }],

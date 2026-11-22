@@ -147,7 +147,7 @@ describe('readCustomerConditions', () => {
     [
       'a keyword too long',
       { search: 'a'.repeat(101) },
-      { search: 'キーワードは 100 文字以内で入力してください。' },
+      { search: 'キーワードは、100 文字以内で入力してください。' },
     ],
   ])('should say what is wrong with %s', (_case, values, errors) => {
     // Act, Assert

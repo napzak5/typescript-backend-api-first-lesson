@@ -41,7 +41,7 @@ export const WithErrors: Story = {
   args: {
     errors: {
       method: '種類を選んでください。',
-      displayName: '表示名を、100 文字までで入力してください。',
+      displayName: '表示名を、100 文字以内で入力してください。',
       fee: '手数料率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。',
       maximumAmount: '上限は、下限と同じか、下限より大きい金額にしてください。',
     },

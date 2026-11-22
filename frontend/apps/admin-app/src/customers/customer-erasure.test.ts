@@ -43,9 +43,9 @@ describe('readErasureAsk', () => {
     })
   })
 
-  it('should take a reason of 1,000 characters, and none longer', () => {
+  it('should take a reason of 1,000 characters, counted as the API counts them, and none longer', () => {
     // Act
-    const longest = readErasureAsk(form('あ'.repeat(1_000)))
+    const longest = readErasureAsk(form('𠮷'.repeat(1_000)))
     const longer = readErasureAsk(form('あ'.repeat(1_001)))
 
     // Assert
@@ -53,7 +53,7 @@ describe('readErasureAsk', () => {
     expect(longer).toEqual({
       type: 'invalid',
       errors: {
-        reason: '依頼の理由は、1,000 文字までで入力してください。',
+        reason: '依頼の理由は、1,000 文字以内で入力してください。',
       },
     })
   })
@@ -154,7 +154,7 @@ describe('afterErasureAsk', () => {
   })
 
   it.each<[string, string, string]>([
-    ['too long', 'too_big', '依頼の理由は、1,000 文字までで入力してください。'],
+    ['too long', 'too_big', '依頼の理由は、1,000 文字以内で入力してください。'],
     ['blank', 'custom', '依頼の理由を入力してください。'],
   ])('should say under the reason that it is %s', (_, rule, error) => {
     // Act

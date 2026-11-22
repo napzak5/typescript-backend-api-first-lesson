@@ -149,7 +149,7 @@ describe('SalonForm', () => {
     // Assert
     expect(text('名前')).toHaveAccessibleDescription(
       expect.stringContaining(
-        'サロンの名前を、255 文字までで入力してください。',
+        'サロンの名前を、255 文字以内で入力してください。',
       ),
     )
     expect(text('緯度')).toHaveAccessibleDescription(
@@ -253,4 +253,16 @@ describe('SalonForm', () => {
   itShouldBeSentByTheEnterKey(stories.Recorded, () =>
     screen.getByRole('textbox', { name: '名前' }),
   )
+
+  it.each<[string, string]>([
+    ['名前', '255 文字まで。お客様がサロンを探すときに出ます。'],
+    ['カナ', '255 文字まで。'],
+    ['郵便番号', '10 文字まで。'],
+  ])('should say at %s how long it may be', async (label, description) => {
+    // Act
+    await stories.Recorded.run()
+
+    // Assert
+    expect(text(label)).toHaveAccessibleDescription(description)
+  })
 })

@@ -148,16 +148,16 @@ describe('readChartEntry', () => {
         'previousTreatments.2.date':
           '施術日は、1900年1月1日以降にしてください。',
         'previousTreatments.2.salonName':
-          'サロンの名前は、255 文字までで入力してください。',
+          'サロンの名前は、255 文字以内で入力してください。',
         'previousTreatments.3.date': '施術日は、今日までにしてください。',
       },
     })
   })
 
-  it('should take a name of a salon of 255 characters', () => {
+  it('should take a name of a salon of 255 characters, counted as the API counts them', () => {
     // Arrange
     const values = valuesOf({
-      rows: [{ treatment: 'cut', date: TODAY, salonName: 'あ'.repeat(255) }],
+      rows: [{ treatment: 'cut', date: TODAY, salonName: '𠮷'.repeat(255) }],
     })
 
     // Act
@@ -171,7 +171,7 @@ describe('readChartEntry', () => {
     [
       'a name of more than 100 characters',
       'あ'.repeat(101),
-      '商材の名前は、1 つ 100 文字までで入力してください。',
+      '商材の名前は、1 つ 100 文字以内で入力してください。',
     ],
     [
       'more than 50 names',
@@ -195,11 +195,12 @@ describe('readChartEntry', () => {
     })
   })
 
-  it('should take 50 names of 100 characters', () => {
+  it('should take 50 names of 100 characters, counted as the API counts them', () => {
     // Arrange
     const values = valuesOf({
-      avoidProducts: Array.from({ length: 50 }, (_, index) =>
-        `${index}`.padEnd(100, 'あ'),
+      avoidProducts: Array.from(
+        { length: 50 },
+        (_, index) => `${index}${'𠮷'.repeat(100 - `${index}`.length)}`,
       ).join('、'),
     })
 
@@ -342,10 +343,10 @@ describe('afterChartWrite', () => {
         'previousTreatments.0.date':
           '施術日は、1900年1月1日以降にしてください。',
         'previousTreatments.1.salonName':
-          'サロンの名前は、255 文字までで入力してください。',
+          'サロンの名前は、255 文字以内で入力してください。',
         'previousTreatments.1.treatment': '施術を選んでください。',
         preferredProducts:
-          '商材の名前は、1 つ 100 文字までで入力してください。',
+          '商材の名前は、1 つ 100 文字以内で入力してください。',
         avoidProducts: '商材は、50 件までで入力してください。',
       },
     })

@@ -136,7 +136,7 @@ describe('ProductFilter', () => {
 
     // Assert
     expect(keyword()).toHaveAccessibleDescription(
-      '商品名、商品コード、ブランドの一部。 キーワードは 100 文字以内で入力してください。',
+      '商品名、商品コード、ブランドの一部。 キーワードは、100 文字以内で入力してください。',
     )
     expect(keyword()).toHaveAttribute('aria-invalid', 'true')
     expect(keyword()).toHaveFocus()

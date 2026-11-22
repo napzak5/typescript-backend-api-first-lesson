@@ -10,7 +10,12 @@ import {
   type ModelsCustomerAllergyResponse,
   type ModelsCustomerAllergyUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
-import { EARLIEST_DAY, isDay } from '@beauty-salon-frontend/fields'
+import {
+  EARLIEST_DAY,
+  isDay,
+  lengthOf,
+  tooLongOf,
+} from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type BadgeTone,
@@ -95,7 +100,7 @@ const LONGEST_ALLERGEN = 255
 
 const TYPE_MISSING = '種類を選んでください。'
 const ALLERGEN_MISSING = 'アレルゲンを入力してください。'
-const ALLERGEN_TOO_LONG = `アレルゲンは、${LONGEST_ALLERGEN} 文字までで入力してください。`
+const ALLERGEN_TOO_LONG = tooLongOf('アレルゲン', LONGEST_ALLERGEN)
 const SEVERITY_MISSING = '重篤度を選んでください。'
 const DATE_NOT_A_DAY = '確かめた日を、日付で入力してください。'
 const DATE_TOO_EARLY = '確かめた日は、1900年1月1日以降にしてください。'
@@ -133,7 +138,7 @@ const allergenErrorOf = (allergen: string): string | undefined => {
     return ALLERGEN_MISSING
   }
 
-  return allergen.length > LONGEST_ALLERGEN ? ALLERGEN_TOO_LONG : undefined
+  return lengthOf(allergen) > LONGEST_ALLERGEN ? ALLERGEN_TOO_LONG : undefined
 }
 
 /**

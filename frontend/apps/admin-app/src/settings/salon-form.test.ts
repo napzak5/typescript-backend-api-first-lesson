@@ -159,54 +159,54 @@ describe('readSalonChange', () => {
   })
 
   it.each<[string, string, string, string]>([
-    ['name', '', 'name', 'サロンの名前を、255 文字までで入力してください。'],
+    ['name', '', 'name', 'サロンの名前を、255 文字以内で入力してください。'],
     [
       'name',
       'あ'.repeat(256),
       'name',
-      'サロンの名前を、255 文字までで入力してください。',
+      'サロンの名前を、255 文字以内で入力してください。',
     ],
     [
       'nameKana',
       'ア'.repeat(256),
       'nameKana',
-      'カナは、255 文字までで入力してください。',
+      'カナは、255 文字以内で入力してください。',
     ],
     [
       'postalCode',
       '150-0001-01',
       'postalCode',
-      '郵便番号は、10 文字までで入力してください。',
+      '郵便番号は、10 文字以内で入力してください。',
     ],
     [
       'prefecture',
       ' ',
       'prefecture',
-      '都道府県を、50 文字までで入力してください。',
+      '都道府県を、50 文字以内で入力してください。',
     ],
     [
       'prefecture',
       'あ'.repeat(51),
       'prefecture',
-      '都道府県を、50 文字までで入力してください。',
+      '都道府県を、50 文字以内で入力してください。',
     ],
     [
       'city',
       'あ'.repeat(101),
       'city',
-      '市区町村を、100 文字までで入力してください。',
+      '市区町村を、100 文字以内で入力してください。',
     ],
     [
       'address',
       '',
       'address',
-      '町名・番地を、255 文字までで入力してください。',
+      '町名・番地を、255 文字以内で入力してください。',
     ],
     [
       'building',
       'あ'.repeat(256),
       'building',
-      '建物は、255 文字までで入力してください。',
+      '建物は、255 文字以内で入力してください。',
     ],
     [
       'latitude',
@@ -304,6 +304,13 @@ describe('readSalonChange', () => {
     ['longitude', '180'],
     ['taxRate', '100'],
     ['taxRate', '0'],
+    ['name', '𠮷'.repeat(255)],
+    ['nameKana', '𠮷'.repeat(255)],
+    ['postalCode', '𠮷'.repeat(10)],
+    ['prefecture', '𠮷'.repeat(50)],
+    ['city', '𠮷'.repeat(100)],
+    ['address', '𠮷'.repeat(255)],
+    ['building', '𠮷'.repeat(255)],
     ['logoUrl', `https://example.com/${'a'.repeat(480)}`],
     ['imageUrls', `https://example.com/${'a'.repeat(600)}`],
   ])('should take %s written as %j', (control, text) => {
@@ -448,7 +455,7 @@ describe('readSalonEntry', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        name: 'サロンの名前を、255 文字までで入力してください。',
+        name: 'サロンの名前を、255 文字以内で入力してください。',
         email: 'メールアドレスを入力してください。',
         timezone: 'タイムゾーンを選んでください。',
         currency: '通貨を選んでください。',
