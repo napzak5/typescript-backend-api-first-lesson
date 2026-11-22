@@ -1,6 +1,10 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
-import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  firstSight,
+  heading,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -59,13 +63,6 @@ const openedValue = async (): Promise<void> => {
   await heading('在庫評価額')
   await screen.findByRole('table', { name: 'カテゴリーごとの在庫評価額' })
 }
-
-/** The rows of a table, each as the texts of its cells. */
-const rowsOf = (caption: string): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
 
 const DIFFERED = '帳簿の在庫数と差のあった行'
 
@@ -176,9 +173,9 @@ describe('the screens of the count and the value of the stock', () => {
     await heading('在庫')
     expect(firstSight()[1]).not.toContain('tube')
     expect(
-      within(await screen.findByRole('table', { name: '在庫' }))
-        .getAllByRole('row')
-        .find((row) => row.textContent?.includes('COLOR001'))?.textContent,
+      rowsOf(await screen.findByRole('table', { name: '在庫' })).find(
+        ([code]) => code === 'COLOR001',
+      ),
     ).toContain('18 tube')
 
     // Act

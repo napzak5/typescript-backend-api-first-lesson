@@ -1,6 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import * as customerChoicesStories from './customer-choices.stories'
 
@@ -14,17 +15,7 @@ describe('CustomerChoices', () => {
     await stories.Customers.run()
 
     // Assert
-    const rows = within(screen.getByRole('table', { name: '見つかったお客様' }))
-      .getAllByRole('row')
-      .slice(1)
-    expect(
-      rows.map((row) =>
-        [
-          ...within(row).getAllByRole('rowheader'),
-          ...within(row).getAllByRole('cell'),
-        ].map((cell) => cell.textContent),
-      ),
-    ).toEqual([
+    expect(rowsOf('見つかったお客様')).toEqual([
       ['山田 花子', 'ヤマダ ハナコ', '090-1234-5678', 'hanako@example.com'],
       ['鈴木 一郎', 'スズキ イチロウ', '090-1234-5678', 'ichiro@example.com'],
       ['山田 花子', '', '080-2222-3333', 'hanako.yamada@example.com'],

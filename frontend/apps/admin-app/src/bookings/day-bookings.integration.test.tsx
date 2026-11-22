@@ -10,6 +10,7 @@ import {
   address,
   goBack,
   heading,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
@@ -38,22 +39,9 @@ const navigationItems = () =>
       link.getAttribute('aria-current'),
     ])
 
-/** The rows of the table of a day, as their cells read. */
-const rowsOf = async (day: string): Promise<string[][]> => {
-  const table = await screen.findByRole('table', {
-    name: `${dayNameOf(day)}の予約`,
-  })
-
-  return within(table)
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).getAllByRole('rowheader'),
-        ...within(row).getAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
-}
+/** The rows of the table of a day, once the table is there. */
+const rowsOfDay = async (day: string): Promise<string[][]> =>
+  rowsOf(await screen.findByRole('table', { name: `${dayNameOf(day)}の予約` }))
 
 describe('the bookings of a salon, against the API', () => {
   beforeEach(() => {
@@ -259,7 +247,7 @@ describe('the bookings of a salon, against the API', () => {
       await signInAs(OWNER)
 
       // Assert
-      expect(await rowsOf(today)).toEqual([
+      expect(await rowsOfDay(today)).toEqual([
         [
           '10:00〜11:00',
           KENJI.name,
@@ -311,7 +299,7 @@ describe('the bookings of a salon, against the API', () => {
       await signInAs(MANAGER)
 
       // Act
-      const rows = await rowsOf(today)
+      const rows = await rowsOfDay(today)
       await user.click(screen.getByRole('link', { name: '削除された顧客' }))
 
       // Assert
@@ -348,7 +336,7 @@ describe('the bookings of a salon, against the API', () => {
       const today = await dayFromToday(0)
       renderAt(`/salons/${tokyo}/bookings`)
       await signInAs(STYLIST)
-      await rowsOf(today)
+      await rowsOfDay(today)
 
       // Act
       await user.selectOptions(
@@ -359,7 +347,7 @@ describe('the bookings of a salon, against the API', () => {
 
       // Assert
       await waitFor(async () =>
-        expect((await rowsOf(today)).map((row) => row.at(-1))).toEqual([
+        expect((await rowsOfDay(today)).map((row) => row.at(-1))).toEqual([
           'BK-TEST-0002',
           'BK-TEST-0003',
         ]),
@@ -377,7 +365,7 @@ describe('the bookings of a salon, against the API', () => {
 
       // Assert
       await waitFor(async () =>
-        expect((await rowsOf(today)).map((row) => row.at(-1))).toEqual([
+        expect((await rowsOfDay(today)).map((row) => row.at(-1))).toEqual([
           'BK-TEST-0003',
         ]),
       )
@@ -387,7 +375,7 @@ describe('the bookings of a salon, against the API', () => {
       await user.click(screen.getByRole('link', { name: '条件を外す' }))
 
       // Assert
-      await waitFor(async () => expect(await rowsOf(today)).toHaveLength(3))
+      await waitFor(async () => expect(await rowsOfDay(today)).toHaveLength(3))
       expect(address()).toBe(`/salons/${tokyo}/bookings?date=${today}`)
     })
 
@@ -401,7 +389,7 @@ describe('the bookings of a salon, against the API', () => {
         before: ['/account/security'],
       })
       await signInAs(OWNER)
-      await rowsOf(today)
+      await rowsOfDay(today)
       await user.selectOptions(
         screen.getByRole('combobox', { name: '状態' }),
         '確定',
@@ -428,7 +416,7 @@ describe('the bookings of a salon, against the API', () => {
       const today = await dayFromToday(0)
       renderAt(`/salons/${tokyo}/bookings`)
       await signInAs(OWNER)
-      await rowsOf(today)
+      await rowsOfDay(today)
       await arrange({ bookingNumber: 'BK-TEST-0002', day: 0, at: '11:00' })
 
       // Act
@@ -436,7 +424,7 @@ describe('the bookings of a salon, against the API', () => {
 
       // Assert
       await waitFor(async () =>
-        expect((await rowsOf(today)).map((row) => row.at(-1))).toEqual([
+        expect((await rowsOfDay(today)).map((row) => row.at(-1))).toEqual([
           'BK-TEST-0001',
           'BK-TEST-0002',
         ]),
@@ -457,7 +445,7 @@ describe('the bookings of a salon, against the API', () => {
       ])
       renderAt(`/salons/${tokyo}/bookings`)
       await signInAs(OWNER)
-      await rowsOf(today)
+      await rowsOfDay(today)
       const days = () =>
         within(screen.getByRole('navigation', { name: '予約の日' }))
 
@@ -465,7 +453,7 @@ describe('the bookings of a salon, against the API', () => {
       await user.click(days().getByRole('link', { name: '次の日' }))
 
       // Assert
-      expect((await rowsOf(tomorrow)).map((row) => row.at(-1))).toEqual([
+      expect((await rowsOfDay(tomorrow)).map((row) => row.at(-1))).toEqual([
         'BK-TEST-0002',
       ])
       expect(address()).toBe(`/salons/${tokyo}/bookings?date=${tomorrow}`)
@@ -475,7 +463,7 @@ describe('the bookings of a salon, against the API', () => {
       await user.click(days().getByRole('link', { name: '前の日' }))
 
       // Assert: the seed data has a booking yesterday that nobody came to
-      expect(await rowsOf(yesterday)).toEqual([
+      expect(await rowsOfDay(yesterday)).toEqual([
         expect.arrayContaining(['無断キャンセル']),
       ])
       expect(address()).toBe(`/salons/${tokyo}/bookings?date=${yesterday}`)
@@ -484,7 +472,7 @@ describe('the bookings of a salon, against the API', () => {
       await user.click(days().getByRole('link', { name: '今日' }))
 
       // Assert
-      expect((await rowsOf(today)).map((row) => row.at(-1))).toEqual([
+      expect((await rowsOfDay(today)).map((row) => row.at(-1))).toEqual([
         'BK-TEST-0001',
       ])
     })
@@ -540,12 +528,12 @@ describe('the bookings of a salon, against the API', () => {
       await signInAs(OWNER)
 
       // Act, Assert
-      expect((await rowsOf(later)).map((row) => row.at(-1))).toEqual([
+      expect((await rowsOfDay(later)).map((row) => row.at(-1))).toEqual([
         'BK-TEST-0001',
       ])
       unmount()
       renderAt(`/salons/${tokyo}/bookings?date=2026-02-30`)
-      expect((await rowsOf(today)).map((row) => row.at(-1))).toEqual([
+      expect((await rowsOfDay(today)).map((row) => row.at(-1))).toEqual([
         'BK-TEST-0002',
       ])
     })
@@ -558,15 +546,15 @@ describe('the bookings of a salon, against the API', () => {
       const day = await dayFromToday(20)
       renderAt(`/salons/${tokyo}/bookings?date=${day}`)
       await signInAs(OWNER)
-      expect(await rowsOf(day)).toHaveLength(50)
+      expect(await rowsOfDay(day)).toHaveLength(50)
       expect(screen.getByText('55 件（50 件を表示しています）')).toBeVisible()
 
       // Act
       await user.click(screen.getByRole('button', { name: 'さらに表示' }))
 
       // Assert
-      await waitFor(async () => expect(await rowsOf(day)).toHaveLength(55))
-      expect((await rowsOf(day)).map((row) => row.at(-1))).toEqual(
+      await waitFor(async () => expect(await rowsOfDay(day)).toHaveLength(55))
+      expect((await rowsOfDay(day)).map((row) => row.at(-1))).toEqual(
         Array.from(
           { length: 55 },
           (_, index) => `BK-MANY-${String(index + 1).padStart(4, '0')}`,
@@ -599,7 +587,7 @@ describe('the bookings of a salon, against the API', () => {
       await signInAs(OPERATOR)
 
       // Assert
-      expect(await rowsOf(today)).toEqual([
+      expect(await rowsOfDay(today)).toEqual([
         [
           '11:00〜12:15',
           YUKI.name,

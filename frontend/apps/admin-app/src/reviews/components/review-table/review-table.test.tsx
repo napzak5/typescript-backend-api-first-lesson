@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -7,13 +8,6 @@ import { answeredReview } from '../examples'
 import * as reviewTableStories from './review-table.stories'
 
 const stories = composeStories(reviewTableStories)
-
-/** The cells of the rows of the table, by their text */
-const rows = (): string[][] =>
-  within(screen.getByRole('table'))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
 
 describe('ReviewTable', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -36,7 +30,7 @@ describe('ReviewTable', () => {
       '返信',
       '通報',
     ])
-    expect(rows()).toEqual([
+    expect(rowsOf(screen.getByRole('table'))).toEqual([
       [
         '評価 3 のレビュー',
         '2026年11月20日（金）',
@@ -91,7 +85,11 @@ describe('ReviewTable', () => {
     await stories.StaffUnread.run()
 
     // Assert
-    expect(rows().map((cells) => cells[4])).toEqual(['指名なし', '', ''])
+    expect(rowsOf(screen.getByRole('table')).map((cells) => cells[4])).toEqual([
+      '指名なし',
+      '',
+      '',
+    ])
   })
 
   it('should ask for the reviews that come next', async () => {

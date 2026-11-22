@@ -3,9 +3,10 @@ import {
   itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import { colour, gloves } from '../../../products/components/examples'
 import { StockFilter, type StockFilterProps } from './stock-filter'
@@ -19,11 +20,6 @@ const lot = (): HTMLElement =>
   screen.getByRole('textbox', { name: 'ロット番号' })
 const expiry = (): HTMLElement =>
   screen.getByRole('combobox', { name: '使用期限' })
-
-const optionsOf = (select: HTMLElement): (string | null)[] =>
-  within(select)
-    .getAllByRole('option')
-    .map((option) => option.textContent)
 
 type UnderAnAddressProps = StockFilterProps & {
   other: StockFilterProps['view']

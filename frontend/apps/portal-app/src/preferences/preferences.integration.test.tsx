@@ -7,6 +7,7 @@ import {
   asTheApplicationKeeps,
   firstSight,
   heading,
+  optionsOf,
   queryClientOfATest,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
@@ -622,11 +623,7 @@ describe('the preferences of a customer, against the API', () => {
 
       // Assert
       expect(await heading('好みの設定')).toBeVisible()
-      expect(
-        within(wished())
-          .getAllByRole('option')
-          .map((option) => option.textContent),
-      ).toEqual(['指名しない', ...offered])
+      expect(optionsOf(wished())).toEqual(['指名しない', ...offered])
       expect(offered).toHaveLength(6)
       expect(offered.at(-1)).toBe(named(TAKESHI, OSAKA))
       expect(wished()).toHaveValue(await staffId(HIROSHI))
@@ -1158,11 +1155,7 @@ describe('the preferences of a customer, against the API', () => {
       await openForm(NEWCOMER, NEWCOMER_PASSWORD)
 
       // Assert
-      expect(
-        within(wished())
-          .getAllByRole('option')
-          .map((option) => option.textContent),
-      ).toEqual(['指名しない', named(HIROSHI)])
+      expect(optionsOf(wished())).toEqual(['指名しない', named(HIROSHI)])
       expect(wished()).toHaveValue(await staffId(HIROSHI))
       expect(
         screen

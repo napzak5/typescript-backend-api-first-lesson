@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -9,13 +10,6 @@ const stories = composeStories(movementTableStories)
 const table = (): HTMLElement =>
   screen.getByRole('table', { name: '在庫の移動' })
 
-/** The rows of the table, each as the texts of its cells */
-const rows = (): (string | null)[][] =>
-  within(table())
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent))
-
 describe('MovementTable', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
@@ -24,7 +18,7 @@ describe('MovementTable', () => {
     await stories.Movements.run()
 
     // Assert
-    expect(rows()).toEqual([
+    expect(rowsOf(table())).toEqual([
       [
         '2026年11月19日（木） 18:00',
         '廃棄',
@@ -97,7 +91,7 @@ describe('MovementTable', () => {
     await stories.OfARemovedProduct.run()
 
     // Assert
-    expect(rows()[0]?.slice(2, 4)).toEqual(['−1.5', '12'])
+    expect(rowsOf(table())[0]?.slice(2, 4)).toEqual(['−1.5', '12'])
   })
 
   it('should ask for the movements that come next', async () => {

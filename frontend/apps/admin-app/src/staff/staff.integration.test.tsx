@@ -4,6 +4,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
   termsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -46,18 +47,6 @@ import {
  * members of the seed data, the owner among them, and the members a test
  * arranges. Another owner did something meanwhile where a test says so.
  */
-
-/** The rows of the ledger, cell by cell. */
-const ledgerRows = (): (string | null)[][] =>
-  within(screen.getByRole('table', { name: 'スタッフ' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).getAllByRole('rowheader'),
-        ...within(row).getAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 const text = (name: string): HTMLElement =>
   screen.getByRole('textbox', { name })
@@ -118,7 +107,7 @@ describe('the staff ledger, against the API', () => {
     // Assert
     expect(await heading('スタッフ')).toHaveFocus()
     await screen.findByRole('table', { name: 'スタッフ' })
-    expect(ledgerRows()).toEqual([
+    expect(rowsOf('スタッフ')).toEqual([
       [
         'Akiko Mori',
         'Mori Akiko（モリ アキコ）',
@@ -193,7 +182,7 @@ describe('the staff ledger, against the API', () => {
 
     // Assert
     expect(await screen.findByText('23 人')).toBeInTheDocument()
-    expect(ledgerRows()).toHaveLength(23)
+    expect(rowsOf('スタッフ')).toHaveLength(23)
     expect(screen.getByRole('link', { name: 'Crowd 16' })).toHaveFocus()
     expect(screen.queryByRole('button', { name: 'さらに表示' })).toBeNull()
   })

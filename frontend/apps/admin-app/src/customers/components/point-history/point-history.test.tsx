@@ -1,22 +1,11 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as pointHistoryStories from './point-history.stories'
 
 const stories = composeStories(pointHistoryStories)
-
-/** The rows of the table, as text: the header of each, and its cells */
-const rowsOf = (table: HTMLElement): string[][] =>
-  within(table)
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).getAllByRole('rowheader'),
-        ...within(row).getAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
 
 describe('PointHistory', () => {
   itShouldBeAccessibleInEveryStory(stories)

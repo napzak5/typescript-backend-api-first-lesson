@@ -1,24 +1,13 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
+import { screen } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { aDiscountedColour, aPackage, aService } from '../examples'
 import * as menuSectionsStories from './menu-sections.stories'
 
 const stories = composeStories(menuSectionsStories)
-
-/** The rows of a table, each as the texts of its cells. */
-const rowsOf = (table: HTMLElement): (string | null)[][] =>
-  within(table)
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 describe('MenuSections', () => {
   itShouldBeAccessibleInEveryStory(stories)

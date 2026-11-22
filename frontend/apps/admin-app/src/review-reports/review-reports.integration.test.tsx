@@ -4,6 +4,7 @@ import {
   firstSight,
   goBack,
   heading,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
@@ -60,13 +61,6 @@ const reportOf = async (title: string) => {
         : `却下${reportMomentOf(report.resolvedAt, report.timezone)}に却下`,
   }
 }
-
-/** The cells of the rows of a table, row by row */
-const rowsOf = (name: string): string[][] =>
-  within(screen.getByRole('table', { name }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
 
 /** Opens a review of the salon in Osaka, and waits for its reports. */
 const openReviewAs = async (email: string, title = GREAT): Promise<void> => {

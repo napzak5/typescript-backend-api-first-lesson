@@ -1,6 +1,10 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
-import { heading, termsOnceThere } from '@beauty-salon-frontend/testing/screens'
+import {
+  heading,
+  optionsOf,
+  termsOnceThere,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -407,13 +411,7 @@ describe('the services of the menu, against the API', () => {
         /このカテゴリーは、その間に削除されていました。/,
       ),
     )
-    await waitFor(() =>
-      expect(
-        within(category)
-          .getAllByRole('option')
-          .map((option) => option.textContent),
-      ).not.toContain('Styling'),
-    )
+    await waitFor(() => expect(optionsOf(category)).not.toContain('Styling'))
     expect(text('名前')).toHaveValue('Updo')
     expect(await storedServicesNamed(TOKYO, 'Updo')).toEqual([])
   })
@@ -450,11 +448,7 @@ describe('the services of the menu, against the API', () => {
       ),
     )
     await waitFor(() =>
-      expect(
-        within(row('構成サービス 2'))
-          .getAllByRole('option')
-          .map((option) => option.textContent),
-      ).not.toContain('Straight Perm'),
+      expect(optionsOf(row('構成サービス 2'))).not.toContain('Straight Perm'),
     )
     expect(await storedServicesNamed(TOKYO, 'Cut & Perm')).toEqual([])
   })

@@ -1,5 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { termsOf } from '@beauty-salon-frontend/testing/screens'
+import { rowsOf, termsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -56,17 +56,7 @@ describe('ServiceRecord', () => {
 
     // Assert
     const table = screen.getByRole('table', { name: 'オプション' })
-    expect(
-      within(table)
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) =>
-          [
-            ...within(row).getAllByRole('rowheader'),
-            ...within(row).getAllByRole('cell'),
-          ].map((cell) => cell.textContent),
-        ),
-    ).toEqual([
+    expect(rowsOf(table)).toEqual([
       ['前髪カット', 'アドオン', '10 分', '￥1,100', '1 まで', '任意', '有効'],
     ])
   })

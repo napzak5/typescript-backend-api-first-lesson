@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -18,17 +19,7 @@ describe('VersionRecord', () => {
     expect(
       screen.getByText('版 4・更新・2026年11月18日（水） 14:30・あなた'),
     ).toBeVisible()
-    expect(
-      within(changed)
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) =>
-          [
-            ...within(row).getAllByRole('rowheader'),
-            ...within(row).getAllByRole('cell'),
-          ].map((cell) => cell.textContent),
-        ),
-    ).toEqual([
+    expect(rowsOf(changed)).toEqual([
       ['電話番号', '090-1234-5678', '080-3333-4444'],
       ['住所', '記録なし', '〒150-0001 東京都渋谷区神宮前 4-1-1'],
       ['紹介元', 'なし', '紹介したお客様'],

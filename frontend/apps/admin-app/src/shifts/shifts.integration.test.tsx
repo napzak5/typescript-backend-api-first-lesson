@@ -9,6 +9,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
@@ -56,18 +57,6 @@ import { mondayOf, weekNameOf } from './shift-week'
 
 /** The name of the table of the shifts of a week */
 const weekTableOf = (monday: string): string => `${weekNameOf(monday)}のシフト`
-
-/** The rows of a table, cell by cell, the header of the row first. */
-const rowsOf = (caption: string): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
 
 /** A day of the week, or a row of a date, of the form */
 const group = (name: string): HTMLElement => screen.getByRole('group', { name })

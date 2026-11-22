@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -47,15 +48,7 @@ describe('ChartRecord', () => {
     await stories.Written.run()
 
     // Assert
-    const rows = within(part('過去の施術')).getAllByRole('row').slice(1)
-    expect(
-      rows.map((row) =>
-        [
-          ...within(row).getAllByRole('rowheader'),
-          ...within(row).getAllByRole('cell'),
-        ].map((cell) => cell.textContent),
-      ),
-    ).toEqual([
+    expect(rowsOf(part('過去の施術'))).toEqual([
       [
         '2026年3月14日（土）',
         'カラー',

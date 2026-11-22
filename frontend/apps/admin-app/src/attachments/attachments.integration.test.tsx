@@ -4,7 +4,11 @@ import {
   PNG_BYTES,
 } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
-import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  firstSight,
+  heading,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -61,18 +65,6 @@ const fileControl = (): HTMLElement =>
 
 const UPLOAD = 'アップロードする'
 
-/** The cells of each row of the list of files, its name first */
-const listed = (): string[][] =>
-  within(screen.getByRole('table', { name: 'ファイル' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [
-      within(row).getByRole('rowheader').textContent ?? '',
-      ...within(row)
-        .getAllByRole('cell')
-        .map(({ textContent }) => textContent ?? ''),
-    ])
-
 /** Each term of the record of the file with its description */
 const detailsOf = (): string[][] => {
   const record = screen.getByRole('region', { name: 'ファイル' })
@@ -124,7 +116,7 @@ describe('the files of a salon', () => {
       await screen.findByText('「施術前.png」をアップロードしました。'),
     ).toBeVisible()
     await screen.findByRole('table', { name: 'ファイル' })
-    expect(listed()).toEqual([
+    expect(rowsOf('ファイル')).toEqual([
       [
         '施術前.png',
         'PNG 画像',
@@ -330,7 +322,9 @@ describe('the files of a salon', () => {
 
     // Assert
     await waitFor(() =>
-      expect(listed().map(([name, , , uploader]) => [name, uploader])).toEqual([
+      expect(
+        rowsOf('ファイル').map(([name, , , uploader]) => [name, uploader]),
+      ).toEqual([
         ['logo.pdf', 'ほかのアカウント'],
         ['後.pdf', 'Kenji Sato'],
         ['前.pdf', 'Hiroshi Tanaka'],
@@ -359,7 +353,9 @@ describe('the files of a salon', () => {
     await openFilesAs(STYLIST)
 
     // Assert
-    expect(listed().map(([name, , , uploader]) => [name, uploader])).toEqual([
+    expect(
+      rowsOf('ファイル').map(([name, , , uploader]) => [name, uploader]),
+    ).toEqual([
       ['後.pdf', 'ほかのアカウント'],
       ['前.pdf', 'あなた'],
     ])
@@ -400,7 +396,7 @@ describe('the files of a salon', () => {
     expect(firstSight()[1]).toContain('ファイルを読み込んでいます')
     expect(firstSight()[1]).not.toContain('前.pdfPDF')
     await waitFor(() =>
-      expect(listed().map(([name]) => name)).toEqual(['後.pdf']),
+      expect(rowsOf('ファイル').map(([name]) => name)).toEqual(['後.pdf']),
     )
     expect(await storedFilesOf(salonId)).toMatchObject([
       { filename: '後.pdf', removed: false },

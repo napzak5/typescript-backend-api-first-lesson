@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -15,18 +16,6 @@ const part = (): HTMLElement =>
   screen.getByRole('region', { name: 'アレルギー' })
 
 const dialog = (): HTMLElement => screen.getByRole('dialog', { name: TITLE })
-
-/** The cells of the rows of the table, the header of each row first */
-const rowsOf = (element: HTMLElement): (string | null)[][] =>
-  within(element)
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 describe('AllergyList', () => {
   itShouldBeAccessibleInEveryStory(stories)

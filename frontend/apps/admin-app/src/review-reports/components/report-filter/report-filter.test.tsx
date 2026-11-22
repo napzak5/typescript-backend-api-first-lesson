@@ -1,6 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import * as reportFilterStories from './report-filter.stories'
 
@@ -20,11 +21,7 @@ describe('ReportFilter', () => {
       'aria-label',
       '通報を絞り込む',
     )
-    expect(
-      within(box())
-        .getAllByRole('option')
-        .map(({ textContent }) => textContent),
-    ).toEqual(['未処理', '却下', 'すべて'])
+    expect(optionsOf(box())).toEqual(['未処理', '却下', 'すべて'])
     expect(box()).toHaveValue('pending')
   })
 

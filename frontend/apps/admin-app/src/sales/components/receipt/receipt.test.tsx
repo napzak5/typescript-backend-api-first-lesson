@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -40,17 +41,9 @@ describe('Receipt', () => {
       ['お支払い（現金）', '￥3,000'],
       ['お支払い（クレジットカード VISA 下 4 桁 4242）', '￥2,500'],
     ])
-    expect(
-      within(screen.getByRole('table', { name: 'お買い上げの明細' }))
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) =>
-          [
-            ...within(row).getAllByRole('rowheader'),
-            ...within(row).getAllByRole('cell'),
-          ].map((cell) => cell.textContent),
-        ),
-    ).toEqual([['カット', '1', '￥5,500', '￥0', '￥5,500']])
+    expect(rowsOf('お買い上げの明細')).toEqual([
+      ['カット', '1', '￥5,500', '￥0', '￥5,500'],
+    ])
   })
 
   it('should say what was given back, and the building of the salon', async () => {

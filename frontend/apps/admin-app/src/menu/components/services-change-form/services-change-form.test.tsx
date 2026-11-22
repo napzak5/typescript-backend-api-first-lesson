@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -14,11 +15,6 @@ const valueIn = (control: HTMLElement): string | undefined =>
   'value' in control && typeof control.value === 'string'
     ? control.value
     : undefined
-
-const optionsOf = (control: HTMLElement): (string | null)[] =>
-  within(control)
-    .getAllByRole('option')
-    .map((option) => option.textContent)
 
 describe('ServicesChangeForm', () => {
   it('should offer the services of the menu in its order, each with its category, none chosen', async () => {

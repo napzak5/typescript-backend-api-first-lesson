@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -27,17 +28,7 @@ describe('ExpiringPoints', () => {
         '期限を過ぎたポイントも、失効させるまでは使えます。',
       ),
     ).toBeVisible()
-    expect(
-      within(part())
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) =>
-          [
-            ...within(row).getAllByRole('rowheader'),
-            ...within(row).getAllByRole('cell'),
-          ].map((cell) => cell.textContent),
-        ),
-    ).toEqual([
+    expect(rowsOf(part())).toEqual([
       [
         '2026年11月19日（木）（期限切れ）',
         '付与',

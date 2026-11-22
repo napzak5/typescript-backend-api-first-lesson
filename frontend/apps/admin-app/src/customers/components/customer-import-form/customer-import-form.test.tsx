@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -60,29 +61,19 @@ describe('CustomerImportForm', () => {
 
     // Assert
     const table = screen.getByRole('table', { name: '登録するお客様' })
-    expect(
-      within(table)
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) =>
-          [
-            ...within(row).getAllByRole('rowheader'),
-            ...within(row).getAllByRole('cell'),
-          ].map((cell) => cell.textContent),
-        ),
-    ).toEqual([
+    expect(rowsOf(table)).toEqual([
       [
-        '山田 花子',
         '2',
+        '山田 花子',
         'ヤマダ ハナコ',
         'hanako@example.com',
         '090-1234-5678',
         'レギュラー',
       ],
-      ['鈴木 一郎', '3', '', 'ichiro@example.com', '090-1234-5678', 'ゴールド'],
+      ['3', '鈴木 一郎', '', 'ichiro@example.com', '090-1234-5678', 'ゴールド'],
       [
-        '佐藤 健',
         '5',
+        '佐藤 健',
         'サトウ ケン',
         'ken@example.com',
         '+81-80-2345-6789',

@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -113,12 +114,20 @@ describe('OperationRun', () => {
     )
     expect(
       within(erasure)
-        .getAllByRole('row')
-        .map((row) => row.textContent),
-    ).toEqual([
-      '受け付けた日時消去の予定日時依頼の理由',
-      '2026年11月5日（木） 10:302026年11月19日（木） 10:30本人から、来店の記録も含めて消してほしいと電話で依頼があった',
-      '2026年11月6日（金） 14:102026年11月20日（金） 14:10アカウントを削除したので、台帳からも消してほしいとメールで依頼があった',
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['受け付けた日時', '消去の予定日時', '依頼の理由'])
+    expect(rowsOf(erasure)).toEqual([
+      [
+        '2026年11月5日（木） 10:30',
+        '2026年11月19日（木） 10:30',
+        '本人から、来店の記録も含めて消してほしいと電話で依頼があった',
+      ],
+      [
+        '2026年11月6日（金） 14:10',
+        '2026年11月20日（金） 14:10',
+        'アカウントを削除したので、台帳からも消してほしいとメールで依頼があった',
+      ],
     ])
   })
 })

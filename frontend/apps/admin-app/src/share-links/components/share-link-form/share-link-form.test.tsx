@@ -2,8 +2,9 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import * as shareLinkFormStories from './share-link-form.stories'
 
@@ -31,11 +32,13 @@ describe('ShareLinkForm', () => {
     const period = screen.getByRole('combobox', { name: '有効期間' })
     expect(period).toHaveValue('7')
     expect(period).toBeRequired()
-    expect(
-      within(period)
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['1 日', '3 日', '7 日', '14 日', '30 日'])
+    expect(optionsOf(period)).toEqual([
+      '1 日',
+      '3 日',
+      '7 日',
+      '14 日',
+      '30 日',
+    ])
     const limit = screen.getByRole('textbox', {
       name: 'ダウンロードの回数の上限',
     })

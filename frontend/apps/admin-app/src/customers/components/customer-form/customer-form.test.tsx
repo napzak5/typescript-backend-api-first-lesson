@@ -2,6 +2,7 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -22,11 +23,6 @@ const box = (name: string): HTMLElement =>
   screen.getByRole('checkbox', { name })
 
 const part = (name: string): HTMLElement => screen.getByRole('group', { name })
-
-const optionsOf = (select: HTMLElement): (string | null)[] =>
-  within(select)
-    .getAllByRole('option')
-    .map((option) => option.textContent)
 
 /** Sends the form of a story and gives what it handed over */
 const sent = async (

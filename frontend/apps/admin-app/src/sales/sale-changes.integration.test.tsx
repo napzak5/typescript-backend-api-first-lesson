@@ -10,6 +10,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
@@ -31,18 +32,6 @@ const UNDONE_BY_OTHERS =
   '売上の取り消しと返金は、オーナーとマネージャーができます。'
 
 const field = (name: string): HTMLElement => screen.getByLabelText(name)
-
-/** The rows of a table, a list of the texts of their cells each. */
-const rowsOf = (name: string): string[][] =>
-  within(screen.getByRole('table', { name }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
 
 /** What a part of a page describes, term by term. */
 const describedIn = (part: string): Record<string, string> => {

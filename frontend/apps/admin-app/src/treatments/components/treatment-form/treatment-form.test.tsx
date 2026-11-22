@@ -2,6 +2,7 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -100,11 +101,7 @@ describe('TreatmentForm', () => {
     const product = within(material(3)).getByRole('combobox', { name: '商品' })
     expect(product).toHaveFocus()
     expect(product).toBeRequired()
-    expect(
-      within(product)
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf(product)).toEqual([
       '選んでください',
       'カラー剤 6N（COLOR-6N）',
       'オキシ 6%（OX-6）',

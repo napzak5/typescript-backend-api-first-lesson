@@ -2,6 +2,7 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
@@ -34,11 +35,13 @@ describe('PhotoForm', () => {
     expect(
       within(photo(1)).getByRole('combobox', { name: '区分' }),
     ).toBeRequired()
-    expect(
-      within(photo(1))
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['選んでください', '施術前', '施術中', '施術後', 'そのほか'])
+    expect(optionsOf(photo(1))).toEqual([
+      '選んでください',
+      '施術前',
+      '施術中',
+      '施術後',
+      'そのほか',
+    ])
     expect(within(photo(1)).getByLabelText('写真の URL')).toBeRequired()
     expect(
       within(photo(1)).getByLabelText('縮小した写真の URL'),

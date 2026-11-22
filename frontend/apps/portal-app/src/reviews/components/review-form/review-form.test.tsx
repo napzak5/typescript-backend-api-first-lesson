@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
@@ -118,11 +119,7 @@ describe('ReviewForm', () => {
     ])
     for (const name of ['サービス', 'スタッフ', '雰囲気', '清潔さ', '価格']) {
       expect(select(name)).toHaveValue('')
-      expect(
-        within(select(name))
-          .getAllByRole('option')
-          .map((option) => option.textContent),
-      ).toEqual([
+      expect(optionsOf(select(name))).toEqual([
         '評価しない',
         '5（とても満足）',
         '4（満足）',
@@ -173,11 +170,10 @@ describe('ReviewForm', () => {
 
     // Assert
     expect(select('評価するスタッフ')).toHaveValue('')
-    expect(
-      within(select('評価するスタッフ'))
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['スタッフを評価しない', SOMEBODY_ELSE.label])
+    expect(optionsOf(select('評価するスタッフ'))).toEqual([
+      'スタッフを評価しない',
+      SOMEBODY_ELSE.label,
+    ])
     expect(selects()).toEqual([
       'staffId',
       'serviceRating',

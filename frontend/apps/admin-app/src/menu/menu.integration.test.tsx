@@ -4,6 +4,7 @@ import {
   signInAs,
   testApi,
 } from '@beauty-salon-frontend/testing/api'
+import { optionsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -52,18 +53,6 @@ const TOP_CATEGORIES = [
   'Other Services',
 ]
 
-/** The rows of a table, each as the texts of its cells. */
-const rowsOf = (table: HTMLElement): (string | null)[][] =>
-  within(table)
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
-
 const menuHeading = () =>
   screen.findByRole('heading', { level: 1, name: 'メニュー' })
 
@@ -79,11 +68,6 @@ const captionsOf = (tables: HTMLElement[]): (string | null | undefined)[] =>
 
 const categoryTable = (): HTMLElement =>
   screen.getByRole('table', { name: 'カテゴリー' })
-
-const parentChoices = (): (string | null)[] =>
-  within(screen.getByRole('combobox', { name: '親カテゴリー' }))
-    .getAllByRole('option')
-    .map((option) => option.textContent)
 
 const formHeading = (name: string) =>
   screen.findByRole('heading', { level: 1, name })
@@ -396,7 +380,7 @@ describe('the menu, against the API', () => {
     expect(screen.getByRole('textbox', { name: /名前/ })).toHaveValue(
       'Hair Color',
     )
-    expect(parentChoices()).toEqual([
+    expect(optionsOf('親カテゴリー')).toEqual([
       'なし（最上位のカテゴリー）',
       ...TOP_CATEGORIES.filter((name) => name !== 'Hair Color'),
     ])
@@ -502,7 +486,9 @@ describe('the menu, against the API', () => {
         /この親カテゴリーは、その間に削除されていました。親を選び直してください。/,
       ),
     )
-    await waitFor(() => expect(parentChoices()).not.toContain('Styling'))
+    await waitFor(() =>
+      expect(optionsOf('親カテゴリー')).not.toContain('Styling'),
+    )
     expect(screen.getByRole('textbox', { name: /名前/ })).toHaveValue('Updo')
     expect(
       (await storedCategoriesOf(TOKYO)).map(({ name }) => name),
@@ -533,7 +519,9 @@ describe('the menu, against the API', () => {
         /このカテゴリーの下にあるカテゴリーは、親にできません。/,
       ),
     )
-    await waitFor(() => expect(parentChoices()).not.toContain('Hair Treatment'))
+    await waitFor(() =>
+      expect(optionsOf('親カテゴリー')).not.toContain('Hair Treatment'),
+    )
     expect(
       (await storedCategoriesOf(TOKYO)).find(({ name }) => name === 'Perm')
         ?.parent,

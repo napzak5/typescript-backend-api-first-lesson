@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -7,15 +8,6 @@ import * as categorySalesStories from './category-sales.stories'
 const stories = composeStories(categorySalesStories)
 
 const TABLE = '区分別の売上'
-
-/** The rows of the table, cell by cell */
-const rowsOf = (): (string | null)[][] =>
-  within(screen.getByRole('table', { name: TABLE }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      Array.from(row.querySelectorAll('th, td'), (cell) => cell.textContent),
-    )
 
 /** The bar under the share of a kind of service */
 const barOf = (kind: string, share: string): Element | null | undefined =>
@@ -30,7 +22,7 @@ describe('CategorySales', () => {
     await stories.Counted.run()
 
     // Assert
-    expect(rowsOf()).toEqual([
+    expect(rowsOf(TABLE)).toEqual([
       ['カラー', '￥17,600', '2 件', '￥8,800', '50.0%'],
       ['カット', '￥12,100', '2 件', '￥6,050', '34.4%'],
       ['トリートメント', '￥5,500', '1 件', '￥5,500', '15.6%'],

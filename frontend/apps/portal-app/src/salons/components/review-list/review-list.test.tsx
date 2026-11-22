@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useLayoutEffect, useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
@@ -159,11 +160,11 @@ describe('ReviewList', () => {
 
       // Assert
       expect(order()).toHaveValue(chosen)
-      expect(
-        within(order())
-          .getAllByRole('option')
-          .map((option) => option.textContent),
-      ).toEqual(['新しい順', '評価の高い順', '参考になった順'])
+      expect(optionsOf(order())).toEqual([
+        '新しい順',
+        '評価の高い順',
+        '参考になった順',
+      ])
     },
   )
 

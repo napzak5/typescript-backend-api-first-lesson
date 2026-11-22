@@ -6,6 +6,7 @@ import {
   asTheApplicationKeeps,
   firstSight,
   heading,
+  optionsOf,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -1515,11 +1516,11 @@ describe('the bookings of a customer, against the API', () => {
       expect(await staffControl()).toHaveValue('')
       // Whom the form offers: those who take bookings and have the level
       // of the service, as on the screen that books
-      expect(
-        within(await staffControl())
-          .getAllByRole('option')
-          .map((option) => option.textContent),
-      ).toEqual(['指名しない', HIROSHI, MIKA])
+      expect(optionsOf(await staffControl())).toEqual([
+        '指名しない',
+        HIROSHI,
+        MIKA,
+      ])
     })
 
     it('should read the booking again when the screen that moves it opens, with what the application keeps: a booking the salon confirmed meanwhile is said to be confirmed', async () => {

@@ -13,6 +13,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
   termsOnceThere,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -31,13 +32,7 @@ import {
   removeTokyo,
   voidSale,
 } from '../__tests__/arrangements'
-import {
-  countOver,
-  menuLink,
-  renderAt,
-  rowsOf,
-  TITLE,
-} from '../__tests__/screens'
+import { countOver, menuLink, renderAt, TITLE } from '../__tests__/screens'
 import { reportsHrefOf } from '../navigation'
 
 /*

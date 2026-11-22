@@ -2,8 +2,9 @@ import {
   itShouldBeAccessibleInEveryStory,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import { staff } from '../../../bookings/components/examples'
 import * as reviewFilterStories from './review-filter.stories'
@@ -12,12 +13,6 @@ const stories = composeStories(reviewFilterStories)
 
 const box = (name: string): HTMLElement =>
   screen.getByRole('combobox', { name })
-
-/** The choices of a control, in their order */
-const choicesOf = (name: string): string[] =>
-  within(box(name))
-    .getAllByRole('option')
-    .map(({ textContent }) => textContent ?? '')
 
 describe('ReviewFilter', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -31,7 +26,7 @@ describe('ReviewFilter', () => {
       'aria-label',
       'レビューを絞り込む',
     )
-    expect(choicesOf('評価の下限')).toEqual([
+    expect(optionsOf(box('評価の下限'))).toEqual([
       '指定しない',
       '5',
       '4',
@@ -39,12 +34,12 @@ describe('ReviewFilter', () => {
       '2',
       '1',
     ])
-    expect(choicesOf('担当スタッフ')).toEqual([
+    expect(optionsOf(box('担当スタッフ'))).toEqual([
       'すべて',
       '田中 美咲',
       '佐藤 健',
     ])
-    expect(choicesOf('並び順')).toEqual([
+    expect(optionsOf(box('並び順'))).toEqual([
       '新しい順',
       '評価の高い順',
       '参考になった順',

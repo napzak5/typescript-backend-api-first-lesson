@@ -1,7 +1,11 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
-import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  firstSight,
+  heading,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -85,18 +89,11 @@ const quantityOf = (productName: string): HTMLElement =>
     screen.getByRole('group', { name: new RegExp(`^${productName}`) }),
   ).getByRole('textbox', { name: '数量' })
 
-/** The cells of the rows of a table of suggestions, without the name of each product */
+/** The rows of the table of suggestions of a supplier */
 const suggestedIn = (supplier: string): string[][] =>
-  within(
+  rowsOf(
     within(screen.getByRole('region', { name: supplier })).getByRole('table'),
   )
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      within(row)
-        .getAllByRole('cell')
-        .map((cell) => cell.textContent ?? ''),
-    )
 
 describe('the goods that come for a purchase order, and what to order', () => {
   beforeEach(() => {
@@ -429,9 +426,19 @@ describe('the goods that come for a purchase order, and what to order', () => {
       'Tokyo Beauty Supply への発注を作る',
     ])
     expect(suggestedIn('ColorTech Japan')).toEqual([
-      ['BLEACH001', '20 box', '0 box', '25 box', '30 box', '10 box', 'なし'],
+      [
+        'BLEACH001',
+        'Lightening Powder 500g',
+        '20 box',
+        '0 box',
+        '25 box',
+        '30 box',
+        '10 box',
+        'なし',
+      ],
       [
         'COLOR001',
+        'Hair Color - Natural Brown',
         '20 tube',
         '0 tube',
         '20 tube',
@@ -443,6 +450,7 @@ describe('the goods that come for a purchase order, and what to order', () => {
     expect(suggestedIn('Tokyo Beauty Supply')).toEqual([
       [
         'COND001',
+        'Professional Conditioner 500ml',
         '20 bottle',
         '5 bottle',
         '30 bottle',

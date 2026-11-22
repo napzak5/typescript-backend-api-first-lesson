@@ -1,6 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as bookingLinesStories from './booking-lines.stories'
 
@@ -8,11 +9,6 @@ const stories = composeStories(bookingLinesStories)
 
 const combobox = (name: string): HTMLElement =>
   screen.getByRole('combobox', { name })
-
-const optionsOf = (name: string): (string | null)[] =>
-  within(combobox(name))
-    .getAllByRole('option')
-    .map((option) => option.textContent)
 
 const addButton = (): HTMLElement =>
   screen.getByRole('button', { name: '明細を追加する' })
@@ -25,13 +21,13 @@ describe('BookingLines', () => {
     await stories.OneLine.run()
 
     // Assert
-    expect(optionsOf('明細 1 のメニュー')).toEqual([
+    expect(optionsOf(combobox('明細 1 のメニュー'))).toEqual([
       '選んでください',
       'カット（60 分）',
       'カラー（60 分）',
       '縮毛矯正（180 分）（受付停止中）',
     ])
-    expect(optionsOf('明細 1 の担当')).toEqual([
+    expect(optionsOf(combobox('明細 1 の担当'))).toEqual([
       '予約の担当と同じ',
       '田中 美咲',
       '佐藤 健',

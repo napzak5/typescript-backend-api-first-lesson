@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -26,15 +27,7 @@ describe('AttachmentTable', () => {
       'アップロードした人',
       'アップロード日時',
     ])
-    const rows = within(table).getAllByRole('row').slice(1)
-    expect(
-      rows.map((row) => [
-        within(row).getByRole('rowheader').textContent,
-        ...within(row)
-          .getAllByRole('cell')
-          .map((cell) => cell.textContent),
-      ]),
-    ).toEqual([
+    expect(rowsOf(table)).toEqual([
       [
         'カラー同意書_田中様.pdf',
         'PDF',
@@ -58,9 +51,7 @@ describe('AttachmentTable', () => {
       ],
     ])
     expect(
-      within(rows[0] ?? table).getByRole('link', {
-        name: 'カラー同意書_田中様.pdf',
-      }),
+      within(table).getByRole('link', { name: 'カラー同意書_田中様.pdf' }),
     ).toHaveAttribute(
       'href',
       '/salons/3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60/files/3c7f4d0e-6a8b-4e1c-8b5f-9c4a6d8e0f23',

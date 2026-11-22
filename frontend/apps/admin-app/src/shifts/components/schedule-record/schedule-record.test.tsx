@@ -1,22 +1,11 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as scheduleRecordStories from './schedule-record.stories'
 
 const stories = composeStories(scheduleRecordStories)
-
-/** The words of the rows of a table: its header, then its cells */
-const rowsOf = (caption: string): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 describe('ScheduleRecord', () => {
   itShouldBeAccessibleInEveryStory(stories)

@@ -3,9 +3,10 @@ import {
   itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import type { LedgerConditions } from '../../sales-ledger'
 import { LedgerFilter, type LedgerFilterProps } from './ledger-filter'
@@ -59,11 +60,7 @@ describe('LedgerFilter', () => {
       expect(day).toHaveAttribute('max', '2999-12-31')
     }
     expect(status()).toHaveValue('')
-    expect(
-      within(status())
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf(status())).toEqual([
       'すべて',
       '未払い',
       '一部受け取り',

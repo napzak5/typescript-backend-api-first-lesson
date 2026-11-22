@@ -13,15 +13,6 @@ import { App } from '../App'
 /** The title of the application in the tests */
 export const TITLE = applications.dashboard.name
 
-/** The rows of a table, cell by cell in the order they are shown */
-export const rowsOf = (table: string): (string | null)[][] =>
-  within(screen.getByRole('table', { name: table }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      Array.from(row.querySelectorAll('th, td'), (cell) => cell.textContent),
-    )
-
 /** A link of the header */
 export const menuLink = (name: string): HTMLElement =>
   within(screen.getByRole('navigation', { name: 'メインメニュー' })).getByRole(

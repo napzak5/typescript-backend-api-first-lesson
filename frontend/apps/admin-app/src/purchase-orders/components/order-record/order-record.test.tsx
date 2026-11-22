@@ -1,6 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
+import { screen } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { colourLot } from '../../../inventory/components/examples'
@@ -17,13 +18,6 @@ const termsOf = (title: string): string[][] => {
     term.nextElementSibling?.textContent ?? '',
   ])
 }
-
-/** The cells of the items, by their text */
-const items = (): string[][] =>
-  within(screen.getByRole('table', { name: '明細' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
 
 describe('OrderRecord', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -50,7 +44,7 @@ describe('OrderRecord', () => {
     await stories.Pending.run()
 
     // Assert
-    expect(items()).toEqual([
+    expect(rowsOf('明細')).toEqual([
       [
         'COLOR001',
         'ヘアカラー ナチュラルブラウン',
@@ -101,7 +95,7 @@ describe('OrderRecord', () => {
       ['取り消し', '2026年11月3日（火） 09:15'],
       ['取り消した理由', '仕入先の在庫切れ。別の仕入先に頼み直す。'],
     ])
-    expect(items()[0]?.[1]).toBe('スタイリングワックス 80g')
+    expect(rowsOf('明細')[0]?.[1]).toBe('スタイリングワックス 80g')
     expect(screen.queryByRole('link')).toBeNull()
   })
 

@@ -5,7 +5,11 @@ import {
   salonIdOf,
   signInAs,
 } from '@beauty-salon-frontend/testing/api'
-import { heading, termsOf } from '@beauty-salon-frontend/testing/screens'
+import {
+  heading,
+  rowsOf,
+  termsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OSAKA,
@@ -13,7 +17,7 @@ import {
   STYLIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
-import { screen, within } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../__tests__/screens'
@@ -48,18 +52,6 @@ const openedForm = async (): Promise<void> => {
   await heading('サロンの情報を直す')
   await screen.findByRole('group', { name: '会計' })
 }
-
-/** The rows of a table, each as the texts of its cells. */
-const rowsOf = (caption: string): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
 
 const text = (name: string): HTMLElement =>
   screen.getByRole('textbox', { name })

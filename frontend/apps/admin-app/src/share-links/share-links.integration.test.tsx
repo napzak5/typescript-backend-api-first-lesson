@@ -1,6 +1,10 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
-import { address, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  address,
+  heading,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -76,18 +80,6 @@ const openFileAs = async (
     ).toBeNull(),
   )
 }
-
-/** The cells of each row of the links of the file, when it was issued first */
-const listed = (): string[][] =>
-  within(screen.getByRole('table', { name: '発行した共有リンク' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [
-      within(row).getByRole('rowheader').textContent ?? '',
-      ...within(row)
-        .getAllByRole('cell')
-        .map(({ textContent }) => textContent ?? ''),
-    ])
 
 /** Each term of a part of the screen with its description */
 const detailsOf = (region: string): string[][] => {
@@ -174,7 +166,7 @@ describe('the share links of a file', () => {
       await openFileAs(file, OWNER)
 
       // Assert
-      const rows = listed()
+      const rows = rowsOf('発行した共有リンク')
       expect(rows.map(([issued, ends]) => [issued, ends])).toEqual([
         [expect.stringMatching(MOMENT), expect.stringMatching(MOMENT)],
         [expect.stringMatching(MOMENT), expect.stringMatching(MOMENT)],
@@ -206,13 +198,13 @@ describe('the share links of a file', () => {
         })
       }
       await openFileAs(file, OWNER)
-      expect(listed()).toHaveLength(20)
+      expect(rowsOf('発行した共有リンク')).toHaveLength(20)
 
       // Act
       await user.click(screen.getByRole('button', { name: 'さらに表示' }))
 
       // Assert
-      await waitFor(() => expect(listed()).toHaveLength(21))
+      await waitFor(() => expect(rowsOf('発行した共有リンク')).toHaveLength(21))
       expect(within(linksPart()).getByText('21 件')).toBeVisible()
     })
 
@@ -249,7 +241,7 @@ describe('the share links of a file', () => {
 
       // Assert
       await heading(CONSENT)
-      await waitFor(() => expect(listed()).toHaveLength(1))
+      await waitFor(() => expect(rowsOf('発行した共有リンク')).toHaveLength(1))
     })
 
     it('should tell a stylist who shares a file, and read no link for them', async () => {
@@ -338,8 +330,8 @@ describe('the share links of a file', () => {
       expect(
         within(linksPart()).queryByText('共有リンクはありません'),
       ).toBeNull()
-      await waitFor(() => expect(listed()).toHaveLength(1))
-      expect(listed()[0]?.slice(2)).toEqual([
+      await waitFor(() => expect(rowsOf('発行した共有リンク')).toHaveLength(1))
+      expect(rowsOf('発行した共有リンク')[0]?.slice(2)).toEqual([
         '0 回（上限なし）',
         'なし',
         '使える',
@@ -611,7 +603,7 @@ describe('the share links of a file', () => {
       await user.click(screen.getByRole('button', { name: ISSUE }))
       const token = tokenOf(await issuedAddress())
       await user.click(screen.getByRole('link', { name: 'ファイルへ戻る' }))
-      await waitFor(() => expect(listed()).toHaveLength(1))
+      await waitFor(() => expect(rowsOf('発行した共有リンク')).toHaveLength(1))
       await user.click(within(linksPart()).getByRole('link', { name: MOMENT }))
       await screen.findByRole('button', { name: '共有リンクを取り消す' })
       expect(screen.getByText(`${CONSENT}（${TOKYO}）`)).toBeVisible()
@@ -770,7 +762,7 @@ describe('the share links of a file', () => {
       )
       await screen.findByRole('button', { name: '共有リンクを取り消す' })
       await user.click(screen.getByRole('link', { name: 'ファイルへ戻る' }))
-      await waitFor(() => expect(listed()).toHaveLength(1))
+      await waitFor(() => expect(rowsOf('発行した共有リンク')).toHaveLength(1))
       await revokedMeanwhile(shareLinkId)
 
       // Act

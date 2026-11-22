@@ -2,8 +2,9 @@ import {
   itShouldBeAccessibleInEveryStory,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import * as filterStories from './alert-filter.stories'
 
@@ -11,11 +12,6 @@ const stories = composeStories(filterStories)
 
 const choice = (name: string): HTMLElement =>
   screen.getByRole('combobox', { name })
-
-const optionsOf = (name: string): (string | null)[] =>
-  within(choice(name))
-    .getAllByRole('option')
-    .map((option) => option.textContent)
 
 describe('AlertFilter', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -30,15 +26,20 @@ describe('AlertFilter', () => {
       'aria-label',
       '在庫のアラートを絞り込む',
     )
-    expect(optionsOf('種類')).toEqual([
+    expect(optionsOf(choice('種類'))).toEqual([
       'すべて',
       '在庫僅少',
       '在庫過剰',
       '期限切れ間近',
       '期限切れ',
     ])
-    expect(optionsOf('重要度')).toEqual(['すべて', '緊急', '注意', '情報'])
-    expect(optionsOf('確認')).toEqual(['すべて', '未確認', '確認済み'])
+    expect(optionsOf(choice('重要度'))).toEqual([
+      'すべて',
+      '緊急',
+      '注意',
+      '情報',
+    ])
+    expect(optionsOf(choice('確認'))).toEqual(['すべて', '未確認', '確認済み'])
     expect(choice('種類')).toHaveValue('')
     expect(choice('重要度')).toHaveValue('')
     expect(choice('確認')).toHaveValue('')

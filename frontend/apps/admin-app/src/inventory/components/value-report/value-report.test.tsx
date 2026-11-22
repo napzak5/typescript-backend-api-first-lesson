@@ -1,17 +1,11 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
+import { screen } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as reportStories from './value-report.stories'
 
 const stories = composeStories(reportStories)
-
-/** The rows of the table, each as the texts of its cells */
-const rows = (): (string | null)[][] =>
-  within(screen.getByRole('table', { name: 'カテゴリーごとの在庫評価額' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent))
 
 describe('ValueReport', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -26,7 +20,7 @@ describe('ValueReport', () => {
         '在庫評価額の合計は ￥23,600（2 品目）です。在庫数に商品の仕入価格を掛けた額で、仕入価格のない商品は 0 円として数えます。',
       ),
     ).toBeVisible()
-    expect(rows()).toEqual([
+    expect(rowsOf('カテゴリーごとの在庫評価額')).toEqual([
       ['ヘアケア', '1 品目', '￥12,000'],
       ['ヘアカラー', '1 品目', '￥11,600'],
     ])
@@ -37,7 +31,11 @@ describe('ValueReport', () => {
     await stories.WithoutACategory.run()
 
     // Assert
-    expect(rows()[2]).toEqual(['カテゴリーなし', '1 品目', '￥0'])
+    expect(rowsOf('カテゴリーごとの在庫評価額')[2]).toEqual([
+      'カテゴリーなし',
+      '1 品目',
+      '￥0',
+    ])
   })
 
   it('should say that there is no stock, without a table', async () => {

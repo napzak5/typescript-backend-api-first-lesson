@@ -6,7 +6,11 @@ import {
   signInAs,
   testApi,
 } from '@beauty-salon-frontend/testing/api'
-import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  firstSight,
+  heading,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   OPERATOR,
   OSAKA,
@@ -23,13 +27,7 @@ import {
   removeTokyo,
   voidSale,
 } from '../__tests__/arrangements'
-import {
-  countOver,
-  menuLink,
-  renderAt,
-  rowsOf,
-  TITLE,
-} from '../__tests__/screens'
+import { countOver, menuLink, renderAt, TITLE } from '../__tests__/screens'
 import { trendsHrefOf } from '../navigation'
 import { TREND_PARTS, TREND_UNIT_HELP } from './sales-trends'
 

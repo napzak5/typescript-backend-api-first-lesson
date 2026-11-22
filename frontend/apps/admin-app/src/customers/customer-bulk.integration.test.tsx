@@ -4,6 +4,7 @@ import {
   address,
   heading,
   notifications,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
@@ -39,22 +40,13 @@ import {
  * tags, an owner removes.
  */
 
-/** The rows of a table, a list of the texts of their cells each. */
-const rowsOf = (name: string): string[][] =>
-  within(screen.getByRole('table', { name }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
-
-/** The names in the ledger, in alphabetical order. */
+/**
+ * The names in the ledger, in alphabetical order. The name of a customer
+ * is the second cell of a row, after the cell that chooses them.
+ */
 const namesInLedger = (): string[] =>
   rowsOf('顧客台帳')
-    .map(([customer]) => customer ?? '')
+    .map(([, customer]) => customer ?? '')
     .toSorted()
 
 /** The part of a page under a heading. */
@@ -168,16 +160,16 @@ describe('writing customers at once, against the API', () => {
       // Assert
       expect(read).toEqual([
         [
-          '山田 花子',
           '2',
+          '山田 花子',
           'ヤマダ ハナコ',
           'Hanako.Yamada@example.com',
           '090-1234-5678',
           'ゴールド',
         ],
         [
-          '鈴木 一郎',
           '3',
+          '鈴木 一郎',
           '',
           'ichiro.suzuki@example.com',
           '03-1234-5678',
@@ -201,7 +193,7 @@ describe('writing customers at once, against the API', () => {
       expect(
         rowsOf('顧客台帳')
           .slice(0, 2)
-          .map(([name]) => name)
+          .map(([, name]) => name)
           .toSorted(),
       ).toEqual(['山田 花子', '鈴木 一郎'].toSorted())
     })

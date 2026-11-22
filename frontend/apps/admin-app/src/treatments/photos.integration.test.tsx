@@ -9,6 +9,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   OWNER,
@@ -482,27 +483,26 @@ describe('the photos and the statistics of the treatment records, against the AP
       ['施術記録', '3 件'],
       ['施術時間の平均', '80 分'],
     ])
-    expect(
-      within(
-        screen.getByRole('table', { name: 'メニューの区分ごとの施術記録' }),
-      )
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) => row.textContent),
-    ).toEqual(['カット3 件', 'カラー1 件', 'トリートメント1 件'])
-    const services = within(
-      screen.getByRole('table', { name: '施術記録の多いサービス' }),
-    )
-      .getAllByRole('row')
-      .slice(1)
-      .map((row) => row.textContent)
+    expect(rowsOf('メニューの区分ごとの施術記録')).toEqual([
+      ['カット', '3 件'],
+      ['カラー', '1 件'],
+      ['トリートメント', '1 件'],
+    ])
+    const services = rowsOf('施術記録の多いサービス')
     expect(services).toHaveLength(4)
-    expect(services[0]).toBe('1 位Ladies Cut2 件')
+    expect(services[0]).toEqual(['1 位', 'Ladies Cut', '2 件'])
     // Services of as many records are in the order of their IDs
+    expect(
+      services.slice(1).map(([rank, , records]) => [rank, records]),
+    ).toEqual([
+      ['2 位', '1 件'],
+      ['3 位', '1 件'],
+      ['4 位', '1 件'],
+    ])
     expect(
       services
         .slice(1)
-        .map((row) => row?.replace(/^\d 位(.+)1 件$/, '$1'))
+        .map(([, service]) => service)
         .toSorted(),
     ).toEqual(['Deep Conditioning Treatment', 'Full Color', 'Mens Cut'])
   })

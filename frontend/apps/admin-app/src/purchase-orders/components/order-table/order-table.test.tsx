@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -7,13 +8,6 @@ import { pendingOrder } from '../examples'
 import * as orderTableStories from './order-table.stories'
 
 const stories = composeStories(orderTableStories)
-
-/** The cells of the rows of the table, by their text */
-const rows = (): string[][] =>
-  within(screen.getByRole('table'))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
 
 describe('OrderTable', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -35,7 +29,7 @@ describe('OrderTable', () => {
       '合計',
       '納品予定日',
     ])
-    expect(rows()).toEqual([
+    expect(rowsOf(screen.getByRole('table'))).toEqual([
       [
         'PO-7K3M-Q9TX',
         '2026年11月20日（金）',

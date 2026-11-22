@@ -1,7 +1,11 @@
 import { dayAfter, dayAt } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
-import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  firstSight,
+  heading,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   MANAGER,
   OPERATOR,
@@ -57,13 +61,6 @@ const openedAlerts = async (caption = ALERTS): Promise<void> => {
 /** What the statuses of the screen say: how many alerts the table shows among them */
 const statuses = (): (string | null)[] =>
   screen.getAllByRole('status').map((status) => status.textContent)
-
-/** The rows of a table, each as the texts of its cells. */
-const rowsOf = (caption = ALERTS): string[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) => [...row.children].map((cell) => cell.textContent ?? ''))
 
 /** The severities and how many alerts there are of each */
 const severities = (): [string, string][] =>
@@ -177,7 +174,7 @@ describe('the screen of the alerts of the stock', () => {
       ['注意', '0 件'],
       ['情報', '0 件'],
     ])
-    expect(rowsOf()).toEqual(await seededAlerts())
+    expect(rowsOf(ALERTS)).toEqual(await seededAlerts())
     expect(statuses()).toContain('6 件')
 
     // Act
@@ -232,7 +229,7 @@ describe('the screen of the alerts of the stock', () => {
         '今出ているアラートは 6 件で、そのうち 5 件が未確認です。',
       ),
     ).toBeVisible()
-    expect(rowsOf()[1]?.[3]).toMatch(
+    expect(rowsOf(ALERTS)[1]?.[3]).toMatch(
       new RegExp(`^${MOMENT}（${stylist}）廃棄する。メーカーには連絡済み。$`),
     )
     expect(
@@ -306,7 +303,7 @@ describe('the screen of the alerts of the stock', () => {
       '20 jar',
       '未確認確認済みにする',
     ]
-    expect(rowsOf()).toEqual([
+    expect(rowsOf(ALERTS)).toEqual([
       powder,
       short,
       colour,
@@ -354,7 +351,7 @@ describe('the screen of the alerts of the stock', () => {
     // Assert
     await openedAlerts()
     expect(firstSight()[0]).toBe(stockAlertsHrefOf(salonId))
-    expect(rowsOf()).toHaveLength(8)
+    expect(rowsOf(ALERTS)).toHaveLength(8)
   })
 
   it('should read the alerts as they are now when the same conditions are sent again', async () => {
@@ -373,8 +370,8 @@ describe('the screen of the alerts of the stock', () => {
         '今出ているアラートは 7 件で、そのうち 7 件が未確認です。',
       ),
     ).toBeVisible()
-    await waitFor(() => expect(rowsOf()).toHaveLength(7))
-    expect(rowsOf()[1]?.[0]).toBe('注意在庫僅少')
+    await waitFor(() => expect(rowsOf(ALERTS)).toHaveLength(7))
+    expect(rowsOf(ALERTS)[1]?.[0]).toBe('注意在庫僅少')
   })
 
   it('should read the alerts that come after a page, and take the focus to the first of them', async () => {
@@ -384,15 +381,15 @@ describe('the screen of the alerts of the stock', () => {
     await padAlertsOf(TOKYO, 15)
     await openAs(stockAlertsHrefOf(await salonIdOf(TOKYO)), OWNER)
     await openedAlerts()
-    expect(rowsOf()).toHaveLength(20)
+    expect(rowsOf(ALERTS)).toHaveLength(20)
     expect(statuses()).toContain('21 件（20 件を表示しています）')
 
     // Act
     await user.click(screen.getByRole('button', { name: 'さらに表示' }))
 
     // Assert
-    await waitFor(() => expect(rowsOf()).toHaveLength(21))
-    expect(rowsOf()[20]?.[1]).toBe(`${mask}使用期限 2025年12月31日`)
+    await waitFor(() => expect(rowsOf(ALERTS)).toHaveLength(21))
+    expect(rowsOf(ALERTS)[20]?.[1]).toBe(`${mask}使用期限 2025年12月31日`)
     expect(screen.getByRole('link', { name: mask })).toHaveFocus()
     expect(screen.queryByRole('button', { name: 'さらに表示' })).toBeNull()
   })
@@ -427,7 +424,7 @@ describe('the screen of the alerts of the stock', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: ALERTS }),
     ).toHaveFocus()
-    expect(rowsOf()).toEqual(await withoutColour())
+    expect(rowsOf(ALERTS)).toEqual(await withoutColour())
     expect(await acknowledgementsOf(TOKYO)).toEqual([])
   })
 
@@ -463,7 +460,7 @@ describe('the screen of the alerts of the stock', () => {
       ),
     ).toBeVisible()
     expect(screen.queryByRole('dialog')).toBeNull()
-    expect(rowsOf()[1]?.[3]).toMatch(
+    expect(rowsOf(ALERTS)[1]?.[3]).toMatch(
       new RegExp(`^${MOMENT}（${owner}）返品の手続きをする。$`),
     )
     expect(
@@ -496,7 +493,7 @@ describe('the screen of the alerts of the stock', () => {
     expect(
       await screen.findByText(`${powder}の期限切れを確認済みにしました。`),
     ).toBeVisible()
-    expect(rowsOf()[0]?.[3]).toMatch(new RegExp(`^${MOMENT}$`))
+    expect(rowsOf(ALERTS)[0]?.[3]).toMatch(new RegExp(`^${MOMENT}$`))
     expect(await acknowledgementsOf(TOKYO)).toEqual([
       expect.objectContaining({
         productCode: 'BLEACH001',
@@ -536,7 +533,7 @@ describe('the screen of the alerts of the stock', () => {
     )
     expect(firstSight()[1]).not.toContain(await rowNameOf(COLOUR))
     await openedAlerts()
-    expect(rowsOf()).toEqual(await withoutColour())
+    expect(rowsOf(ALERTS)).toEqual(await withoutColour())
   })
 
   it('should say to the stylist of another salon that its alerts are not theirs', async () => {

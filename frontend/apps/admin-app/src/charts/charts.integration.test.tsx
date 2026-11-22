@@ -1,6 +1,10 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
-import { heading, notifications } from '@beauty-salon-frontend/testing/screens'
+import {
+  heading,
+  notifications,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
   MANAGER,
@@ -58,18 +62,6 @@ const described = (): Record<string, string> =>
         term.nextElementSibling?.textContent ?? '',
       ]),
   )
-
-/** The rows of a table, each as the texts of its cells. */
-const rowsOf = (table: HTMLElement): (string | null)[][] =>
-  within(table)
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).getAllByRole('rowheader'),
-        ...within(row).getAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 /** The customers the table of the search lists, in the order of their names. */
 const customersListed = (name: string): (string | null)[] =>

@@ -10,6 +10,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
@@ -44,22 +45,14 @@ const field = (name: string): HTMLElement => screen.getByLabelText(name)
 const text = (name: string): HTMLElement =>
   screen.getByRole('textbox', { name })
 
-/** The rows of a table, a list of the texts of their cells each. */
-const rowsOf = (name: string): string[][] =>
-  within(screen.getByRole('table', { name }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent ?? ''),
-    )
-
-/** The names in a table of customers, in alphabetical order: customers registered at once come in no order of their own. */
+/**
+ * The names in a table of customers, in alphabetical order: customers
+ * registered at once come in no order of their own. The name of a customer
+ * is the second cell of a row, after the cell that chooses them.
+ */
 const namesIn = (name: string): string[] =>
   rowsOf(name)
-    .map(([customer]) => customer ?? '')
+    .map(([, customer]) => customer ?? '')
     .toSorted()
 
 /** The part of a page under a heading. */
@@ -160,9 +153,9 @@ describe('the ledger of the customers, against the API', () => {
       expect(address()).toBe(`/salons/${tokyo}/customers`)
       expect(namesIn('顧客台帳')).toEqual(EVERYONE)
       expect(rowsOf('顧客台帳')).toContainEqual([
-        KENJI.name,
         // The cell that chooses the customer: the label of its checkbox, read by a screen reader
         `${KENJI.name} 様を選ぶ`,
+        KENJI.name,
         'ヤマモト ケンジ',
         '+81-80-9876-5432',
         'シルバー',
@@ -240,7 +233,7 @@ describe('the ledger of the customers, against the API', () => {
       // Assert
       await theLedger('条件に合うお客様')
       // The latest registered first
-      expect(rowsOf('条件に合うお客様').map(([name]) => name)).toEqual([
+      expect(rowsOf('条件に合うお客様').map(([, name]) => name)).toEqual([
         KENJI.name,
         YUKI.name,
       ])
@@ -298,7 +291,7 @@ describe('the ledger of the customers, against the API', () => {
       await openAt((salon) => `/salons/${salon}/customers?tags=walk-in`)
       await theLedger('条件に合うお客様')
       expect(text('タグ')).toHaveValue('walk-in')
-      expect(rowsOf('条件に合うお客様').map(([name]) => name)).toEqual(
+      expect(rowsOf('条件に合うお客様').map(([, name]) => name)).toEqual(
         Array.from(
           { length: 20 },
           (_, index) => `Walk In ${String(index + 1).padStart(2, '0')}`,
@@ -311,7 +304,7 @@ describe('the ledger of the customers, against the API', () => {
 
       // Assert
       await waitFor(() => expect(rowsOf('条件に合うお客様')).toHaveLength(21))
-      expect(rowsOf('条件に合うお客様').at(-1)?.[0]).toBe('Walk In 21')
+      expect(rowsOf('条件に合うお客様').at(-1)?.[1]).toBe('Walk In 21')
       expect(
         within(screen.getByRole('table', { name: '条件に合うお客様' }))
           .getAllByRole('link')
@@ -824,9 +817,9 @@ describe('the ledger of the customers, against the API', () => {
       // Assert: the ledger that was read before shows the customer as they are
       await theLedger()
       expect(rowsOf('顧客台帳')).toContainEqual([
-        KENJI.name,
         // The cell that chooses the customer: the label of its checkbox, read by a screen reader
         `${KENJI.name} 様を選ぶ`,
+        KENJI.name,
         'ヤマモト ケンジ',
         '080-1111-2222',
         'シルバー',

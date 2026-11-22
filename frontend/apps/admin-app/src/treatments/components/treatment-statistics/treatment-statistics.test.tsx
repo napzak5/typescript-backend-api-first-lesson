@@ -1,20 +1,11 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { termsOf } from '@beauty-salon-frontend/testing/screens'
+import { rowsOf, termsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as treatmentStatisticsStories from './treatment-statistics.stories'
 
 const stories = composeStories(treatmentStatisticsStories)
-
-/** The rows of a table, cell by cell in the order they are shown */
-const rowsOf = (table: string): (string | null)[][] =>
-  within(screen.getByRole('table', { name: table }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      Array.from(row.querySelectorAll('th, td'), (cell) => cell.textContent),
-    )
 
 describe('TreatmentStatistics', () => {
   itShouldBeAccessibleInEveryStory(stories)

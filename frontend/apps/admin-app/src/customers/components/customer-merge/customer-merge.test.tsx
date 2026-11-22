@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -11,18 +12,6 @@ const TITLE = '2 人のお客様を 1 人にまとめますか？'
 
 /** The page of the customer who referred the one registered again */
 const REFERRER_HREF = `/salons/${salon.id}/customers/d2a0e5b8-7f9d-4b1e-a3c5-1e8f4a7b9cd6`
-
-/** The rows of the items the two differ in: the item, the kept one, the merged one, and the merge */
-const differences = (): (string | null)[][] =>
-  within(screen.getByRole('table', { name: '2 人で違う項目' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).getAllByRole('rowheader'),
-        ...within(row).getAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 describe('CustomerMerge', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -48,7 +37,7 @@ describe('CustomerMerge', () => {
       'まとめる 山田 花子 様',
       'まとめたあと',
     ])
-    expect(differences()).toEqual([
+    expect(rowsOf('2 人で違う項目')).toEqual([
       ['フリガナ', 'ヤマダ ハナコ', '記録なし', 'ヤマダ ハナコ'],
       [
         'メールアドレス',
@@ -105,7 +94,7 @@ describe('CustomerMerge', () => {
     await stories.KeepingTheOther.run()
 
     // Assert
-    expect(differences()).toEqual([
+    expect(rowsOf('2 人で違う項目')).toEqual([
       ['フリガナ', '記録なし', 'ヤマダ ハナコ', 'ヤマダ ハナコ'],
       [
         'メールアドレス',

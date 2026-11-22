@@ -11,6 +11,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
   KENJI,
@@ -117,17 +118,7 @@ describe('a booking of a salon, against the API', () => {
       ['受付の経路', 'オンライン'],
       ['予約金', '￥3,000'],
     ])
-    expect(
-      within(screen.getByRole('table', { name: '施術明細' }))
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) =>
-          [
-            ...within(row).getAllByRole('rowheader'),
-            ...within(row).getAllByRole('cell'),
-          ].map((cell) => cell.textContent),
-        ),
-    ).toEqual([
+    expect(rowsOf('施術明細')).toEqual([
       ['Full Color', 'Mika Suzuki', '14:30〜16:30', '￥8,000（税込）', '未'],
     ])
     expect(buttons()).toEqual(['予約を確定する', '予約をキャンセルする'])

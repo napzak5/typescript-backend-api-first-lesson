@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -19,17 +20,7 @@ describe('CategoryTable', () => {
     await stories.ToKeep.run()
 
     // Assert
-    expect(
-      within(table())
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) =>
-          [
-            ...within(row).getAllByRole('rowheader'),
-            ...within(row).getAllByRole('cell'),
-          ].map((cell) => cell.textContent),
-        ),
-    ).toEqual([
+    expect(rowsOf(table())).toEqual([
       ['カット', 'なし', 'カット', '1', '#C8A2C8', '有効'],
       ['カラー', 'なし', 'カラー', '2', '記録なし', '有効'],
       ['ハイライト', 'カラー', 'カラー', '3', '#FFD93D', '無効'],

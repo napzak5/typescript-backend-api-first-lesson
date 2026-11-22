@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -18,18 +19,6 @@ const termsOf = (card: string): [string | null, string | null][] => {
       term.nextElementSibling?.textContent ?? null,
     ])
 }
-
-/** The rows of a table, each as the texts of its cells */
-const rowsOf = (caption: string): (string | null)[][] =>
-  within(screen.getByRole('table', { name: caption }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
 
 describe('SalonRecord', () => {
   it('should show what the salon is, where it is and how it is reached', async () => {

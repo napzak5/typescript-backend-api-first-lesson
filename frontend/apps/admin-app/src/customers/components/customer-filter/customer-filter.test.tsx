@@ -3,9 +3,10 @@ import {
   itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import type { CustomerConditions } from '../../customer-ledger'
 import { CustomerFilter, type CustomerFilterProps } from './customer-filter'
@@ -22,11 +23,6 @@ const status = (): HTMLElement =>
   screen.getByRole('combobox', { name: 'ステータス' })
 const tier = (): HTMLElement =>
   screen.getByRole('combobox', { name: '会員ランク' })
-
-const optionsOf = (select: HTMLElement): (string | null)[] =>
-  within(select)
-    .getAllByRole('option')
-    .map((option) => option.textContent)
 
 type UnderAnAddressProps = CustomerFilterProps & { other: CustomerConditions }
 

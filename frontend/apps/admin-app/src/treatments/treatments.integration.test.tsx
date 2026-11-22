@@ -8,6 +8,7 @@ import {
   firstSight,
   heading,
   notifications,
+  rowsOf,
   termsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -65,28 +66,12 @@ import {
 const MASK = 'Intensive Hair Mask 250ml（TREAT001）'
 const SHAMPOO = 'Professional Shampoo 500ml（SHMP001）'
 
-/** The rows of a table, each as the texts of its cells, but for when a record was written. */
-const rowsOf = (table: HTMLElement): (string | null)[][] =>
-  within(table)
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      within(row)
-        .queryAllByRole('cell')
-        .map((cell) => cell.textContent),
-    )
-
-/** The rows of the materials of a record, cell by cell. */
-const materialsOf = (): (string | null)[][] =>
-  within(screen.getByRole('table', { name: '使った商材の一覧' }))
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      [
-        ...within(row).queryAllByRole('rowheader'),
-        ...within(row).queryAllByRole('cell'),
-      ].map((cell) => cell.textContent),
-    )
+/**
+ * The rows of a table of records, without the moment each was written: the
+ * records of the seed data were written when it was sown.
+ */
+const recordsOf = (table: HTMLElement): string[][] =>
+  rowsOf(table).map((row) => row.slice(1))
 
 /** Waits until the form of a record is shown. */
 const theForm = (): Promise<HTMLElement> =>
@@ -170,7 +155,7 @@ describe('the treatment records, against the API', () => {
     // Assert
     await heading('施術記録')
     const table = await screen.findByRole('table', { name: '施術記録' })
-    expect(rowsOf(table)).toEqual([
+    expect(recordsOf(table)).toEqual([
       [
         `${VIP.name} 様`,
         'Mika Suzuki',
@@ -211,7 +196,7 @@ describe('the treatment records, against the API', () => {
     const table = await screen.findByRole('table', {
       name: '条件に合う施術記録',
     })
-    expect(rowsOf(table)).toEqual([
+    expect(recordsOf(table)).toEqual([
       [`${SAKURA.name} 様`, 'Yui Watanabe', 'Mens Cut', '45 分', '未回答'],
     ])
     expect(screen.getByRole('link', { name: '条件を外す' })).toBeVisible()
@@ -267,7 +252,9 @@ describe('the treatment records, against the API', () => {
       await screen.findByText(`お客様：${YUKI.name} 様`),
     ).toBeInTheDocument()
     expect(
-      rowsOf(await screen.findByRole('table', { name: '条件に合う施術記録' })),
+      recordsOf(
+        await screen.findByRole('table', { name: '条件に合う施術記録' }),
+      ),
     ).toEqual([
       [
         `${YUKI.name} 様`,
@@ -347,7 +334,7 @@ describe('the treatment records, against the API', () => {
       ['毛髪の状態', '中間から毛先に前回のカラーの退色'],
       ['カラー剤の配合', 'ブラウン 7 レベル 1:1、6% オキシ、放置 25 分'],
     ])
-    expect(materialsOf()).toEqual([
+    expect(rowsOf('使った商材の一覧')).toEqual([
       [
         'Hair Color - Natural Brown（COLOR001）',
         '1 tube',
@@ -433,7 +420,9 @@ describe('the treatment records, against the API', () => {
     expect(notifications()).toContain(
       `${KENJI.name} 様の施術記録を書きました。`,
     )
-    expect(materialsOf()).toEqual([[MASK, '15 jar', lot, '記録なし']])
+    expect(rowsOf('使った商材の一覧')).toEqual([
+      [MASK, '15 jar', lot, '記録なし'],
+    ])
     const { updatedAt: _updatedAt, ...stored } =
       (await storedTreatmentOf(bookingId)) ?? {}
     expect(stored).toEqual({

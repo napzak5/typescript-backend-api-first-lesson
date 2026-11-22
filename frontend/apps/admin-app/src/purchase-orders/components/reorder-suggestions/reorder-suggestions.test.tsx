@@ -1,21 +1,11 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as reorderSuggestionsStories from './reorder-suggestions.stories'
 
 const stories = composeStories(reorderSuggestionsStories)
-
-/** The cells of the rows of a table, row by row, without the header of each row */
-const rowsOf = (table: HTMLElement): string[][] =>
-  within(table)
-    .getAllByRole('row')
-    .slice(1)
-    .map((row) =>
-      within(row)
-        .getAllByRole('cell')
-        .map((cell) => cell.textContent ?? ''),
-    )
 
 describe('ReorderSuggestions', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -64,6 +54,7 @@ describe('ReorderSuggestions', () => {
     expect(rowsOf(table)).toEqual([
       [
         'SHMP001',
+        'プロフェッショナル シャンプー 500ml',
         '4.5 本',
         '2.5 本',
         '10 本',
@@ -88,7 +79,16 @@ describe('ReorderSuggestions', () => {
       screen.getByRole('region', { name: '仕入先の決まっていない商品' }),
     ).getByRole('table')
     expect(rowsOf(table)).toEqual([
-      ['SUP-GLOVE', '0.5 箱', '0 箱', '2 箱', '設定なし', '1.5 箱', 'なし'],
+      [
+        'SUP-GLOVE',
+        'ニトリル手袋 M',
+        '0.5 箱',
+        '0 箱',
+        '2 箱',
+        '設定なし',
+        '1.5 箱',
+        'なし',
+      ],
     ])
   })
 

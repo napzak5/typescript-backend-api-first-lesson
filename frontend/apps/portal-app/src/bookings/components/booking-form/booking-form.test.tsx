@@ -2,6 +2,7 @@ import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { type ReactNode, useLayoutEffect } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
@@ -61,11 +62,11 @@ describe('BookingForm', () => {
       await stories.WithTimes.run()
 
       // Assert
-      expect(
-        within(staffControl())
-          .getAllByRole('option')
-          .map((option) => option.textContent),
-      ).toEqual(['指名しない', '田中 ひろし', '鈴木 みか'])
+      expect(optionsOf(staffControl())).toEqual([
+        '指名しない',
+        '田中 ひろし',
+        '鈴木 みか',
+      ])
       expect(staffControl()).toHaveValue('')
     })
 

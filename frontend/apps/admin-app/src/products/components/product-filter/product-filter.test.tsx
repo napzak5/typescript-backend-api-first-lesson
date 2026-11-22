@@ -3,9 +3,10 @@ import {
   itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import type { ProductConditions } from '../../product-ledger'
 import { ProductFilter, type ProductFilterProps } from './product-filter'
@@ -22,11 +23,6 @@ const category = (): HTMLElement =>
 const carried = (): HTMLElement =>
   screen.getByRole('combobox', { name: '取り扱い' })
 const use = (): HTMLElement => screen.getByRole('combobox', { name: '用途' })
-
-const optionsOf = (select: HTMLElement): (string | null)[] =>
-  within(select)
-    .getAllByRole('option')
-    .map((option) => option.textContent)
 
 type UnderAnAddressProps = ProductFilterProps & { other: ProductConditions }
 

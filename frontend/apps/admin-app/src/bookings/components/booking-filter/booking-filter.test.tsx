@@ -3,9 +3,10 @@ import {
   itShouldBeSentByTheEnterKey,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
-import { screen, userEvent, within } from 'storybook/test'
+import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import type { DayConditions } from '../../booking-day'
 import { DAY, staff } from '../examples'
@@ -57,11 +58,7 @@ describe('BookingFilter', () => {
     expect(date()).toHaveAttribute('min', '1900-01-01')
     expect(date()).toHaveAttribute('max', '2999-12-31')
     expect(status()).toHaveValue('')
-    expect(
-      within(status())
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(optionsOf(status())).toEqual([
       'すべて',
       '確定待ち',
       '確定',
@@ -71,11 +68,7 @@ describe('BookingFilter', () => {
       '無断キャンセル',
       '下書き',
     ])
-    expect(
-      within(member())
-        .getAllByRole('option')
-        .map((option) => option.textContent),
-    ).toEqual(['すべて', '田中 美咲', '佐藤 健'])
+    expect(optionsOf(member())).toEqual(['すべて', '田中 美咲', '佐藤 健'])
     expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
   })
 
