@@ -22,7 +22,7 @@ import type {
   InventoryRemoval,
   InventoryUpdate,
 } from '../../../repositories/inventory.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   CreateInventoryUseCase,
   DeleteInventoryUseCase,
@@ -64,7 +64,10 @@ const messagesOf = (
 ): Record<string, string> =>
   result.type === 'error' && result.error.type === 'validation'
     ? Object.fromEntries(
-        result.error.issues.map(({ field, message }) => [field, message]),
+        result.error.issues.map(({ field, message }) => [
+          field,
+          toldIn(message, 'en'),
+        ]),
       )
     : {}
 

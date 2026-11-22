@@ -8,7 +8,7 @@ import {
   pointEarnRequest,
   pointUseRequest,
 } from '../../__tests__/fixtures/point-fixtures'
-import { parseWith } from '../../shared'
+import { parseWith, toldIn } from '../../shared'
 import {
   pointAdjustRequestSchema,
   pointEarnRequestSchema,
@@ -34,7 +34,10 @@ const messagesOf = (
   const result = parseWith(schema, input, 'Invalid')
   return result.type === 'error' && result.error.type === 'validation'
     ? Object.fromEntries(
-        result.error.issues.map(({ field, message }) => [field, message]),
+        result.error.issues.map(({ field, message }) => [
+          field,
+          toldIn(message, 'en'),
+        ]),
       )
     : {}
 }

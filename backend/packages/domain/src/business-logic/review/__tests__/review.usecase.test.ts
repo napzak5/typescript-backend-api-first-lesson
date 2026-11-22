@@ -31,7 +31,7 @@ import type {
   ReviewMark,
   ReviewRemoval,
 } from '../../../repositories/review.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   CreateReviewUseCase,
   DeleteReviewUseCase,
@@ -69,7 +69,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.message
+    ? toldIn(result.error.message, 'en')
     : null
 
 const repositoryWasNotCalled = (dependencies: ReviewUseCaseDependencies) => {

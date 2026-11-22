@@ -432,6 +432,9 @@ importers:
       '@beauty-salon-backend/utility':
         specifier: workspace:*
         version: link:../utility
+      '@beauty-salon-shared/i18n':
+        specifier: workspace:*
+        version: link:../../../shared-i18n
       '@date-fns/tz':
         specifier: ^1.5.0
         version: 1.5.0

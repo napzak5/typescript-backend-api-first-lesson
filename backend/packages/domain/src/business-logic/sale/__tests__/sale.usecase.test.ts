@@ -24,7 +24,7 @@ import type {
   SaleUpdate,
   SaleVoiding,
 } from '../../../repositories/sale.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   CreateSaleUseCase,
   GetSaleUseCase,
@@ -52,7 +52,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.message
+    ? toldIn(result.error.message, 'en')
     : null
 
 /** A sale whose time cannot be turned into a response. */

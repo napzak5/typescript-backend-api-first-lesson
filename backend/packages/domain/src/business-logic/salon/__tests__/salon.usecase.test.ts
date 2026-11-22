@@ -1,4 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { salonMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -12,7 +14,7 @@ import {
 } from '../../../__tests__/fixtures/fixtures'
 import type { Actor } from '../../../models/auth'
 import type { SalonDeletion } from '../../../repositories/salon.repository'
-import { DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   CreateSalonUseCase,
   DeleteSalonUseCase,
@@ -682,6 +684,58 @@ describe('who may change a salon', () => {
 
       expect(result).toEqual(forbidden)
       expect(salonRepository.delete).not.toHaveBeenCalled()
+    },
+  )
+})
+
+describe('the headline of a refused salon request', () => {
+  const dependencies = { salonRepository: repositoryWith() }
+
+  it.each<[string, () => Promise<Result<unknown, DomainError>>, LocalizedText]>(
+    [
+      [
+        'a salon',
+        () => new CreateSalonUseCase(dependencies).execute(actors.admin, {}),
+        salonMessages.invalidSalon,
+      ],
+      [
+        'a change of a salon',
+        () =>
+          new UpdateSalonUseCase(dependencies).execute(
+            actors.admin,
+            SALON_ID,
+            {},
+          ),
+        salonMessages.invalidSalonUpdate,
+      ],
+      [
+        'a search for salons',
+        () => new ListSalonsUseCase(dependencies).execute({ limit: 0 }),
+        salonMessages.invalidSalonSearch,
+      ],
+      [
+        'the ID of a salon to read',
+        () => new GetSalonUseCase(dependencies).execute('latest'),
+        salonMessages.invalidSalonId,
+      ],
+      [
+        'the ID of a salon to delete',
+        () =>
+          new DeleteSalonUseCase(dependencies).execute(actors.admin, 'latest'),
+        salonMessages.invalidSalonId,
+      ],
+    ],
+  )(
+    'should be that of %s, in every language',
+    async (_what, refused, headline) => {
+      // Act
+      const result = await refused()
+
+      // Assert
+      expect(result).toMatchObject({
+        type: 'error',
+        error: { type: 'validation', message: headline },
+      })
     },
   )
 })

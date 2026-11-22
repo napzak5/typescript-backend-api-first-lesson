@@ -1,13 +1,21 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { TZDate } from '@date-fns/tz'
 import { format, isValid, parseISO } from 'date-fns'
 import { z } from 'zod'
 
 /**
  * Rules that the request schemas of more than one domain share.
+ *
+ * The message of a rule is a message of the language package, written in
+ * every language and given to Zod as one string (`asOneString`); `parseWith`
+ * reads it back.
  */
 
 /** A nullable text is either null or says something: '' is not "unset". */
-export const nonBlankText = z.string().regex(/\S/, 'Must not be blank')
+export const nonBlankText = z
+  .string()
+  .regex(/\S/, asOneString(ruleMessages.notBlank))
 
 /** An address that is stored and compared in lower case. */
 export const lowerCaseEmail = z
@@ -22,7 +30,8 @@ const MAX_PASSWORD_LENGTH = 128
  * hashed and compared in. The same text can be typed as different
  * sequences of code points; NFC makes them one. Length counts code points,
  * not UTF-16 units, so that a character outside the basic plane counts
- * once (NIST SP 800-63B-4, 3.1.1.2).
+ * once (NIST SP 800-63B-4, 3.1.1.2). The two issues are those of a text
+ * that is too short or too long, and Zod says them as it says its own.
  */
 export const passwordOf = (minimum: number) =>
   z
@@ -38,7 +47,6 @@ export const passwordOf = (minimum: number) =>
           minimum,
           inclusive: true,
           input: context.value,
-          message: `Too small: expected string to have >=${minimum} characters`,
         })
       }
       if (length > MAX_PASSWORD_LENGTH) {
@@ -48,7 +56,6 @@ export const passwordOf = (minimum: number) =>
           maximum: MAX_PASSWORD_LENGTH,
           inclusive: true,
           input: context.value,
-          message: `Too big: expected string to have <=${MAX_PASSWORD_LENGTH} characters`,
         })
       }
     })
@@ -59,10 +66,10 @@ const MIN_PHONE_DIGITS = 10
 export const phoneNumber = z
   .string()
   .max(20)
-  .regex(/^[\d\s\-+()]+$/, 'Must be a phone number')
+  .regex(/^[\d\s\-+()]+$/, asOneString(ruleMessages.phoneNumber))
   .refine(
     (value) => value.replace(/\D/g, '').length >= MIN_PHONE_DIGITS,
-    `Must contain at least ${MIN_PHONE_DIGITS} digits`,
+    asOneString(ruleMessages.phoneDigits(MIN_PHONE_DIGITS)),
   )
 
 const TIME_OF_DAY = /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/
@@ -70,7 +77,7 @@ const TIME_OF_DAY = /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/
 /** Time of a `time` column; the database returns it as HH:mm:ss. */
 export const timeOfDay = z
   .string()
-  .regex(TIME_OF_DAY, 'Must be a time in HH:mm or HH:mm:ss format')
+  .regex(TIME_OF_DAY, asOneString(ruleMessages.timeOfDay))
 
 /** A time of day in the form in which two of them compare as text. */
 export const withSeconds = (time: string): string => time.padEnd(8, ':00')
@@ -87,7 +94,10 @@ export const timeSlot = z.strictObject({
 /** A time slot as a request states it: it ends after it begins. */
 export const orderedTimeSlot = timeSlot.refine(
   (slot) => slot.startTime < slot.endTime,
-  { path: ['endTime'], message: 'Must be later than startTime' },
+  {
+    path: ['endTime'],
+    message: asOneString(ruleMessages.laterThan('startTime')),
+  },
 )
 
 /**
@@ -117,7 +127,7 @@ export const timeZoneName = z
   .max(50)
   .refine(
     (zone) => /^[A-Za-z]/.test(zone) && isValid(inTimeZone(new Date(0), zone)),
-    'Must be the name of a time zone, such as Asia/Tokyo',
+    asOneString(ruleMessages.timeZoneName),
   )
 
 /** The first day that a date or a moment of a request may be on. */
@@ -146,7 +156,7 @@ const dayWithinRange = (context: z.core.ParsePayload<string>): void => {
       origin: 'date',
       minimum: parseISO(EARLIEST_DATE).getTime(),
       inclusive: true,
-      message: `Must not be earlier than ${EARLIEST_DATE}`,
+      message: asOneString(ruleMessages.notEarlierThan(EARLIEST_DATE)),
       input: context.value,
       continue: true,
     })
@@ -156,7 +166,7 @@ const dayWithinRange = (context: z.core.ParsePayload<string>): void => {
       origin: 'date',
       maximum: parseISO(LATEST_DATE).getTime(),
       inclusive: true,
-      message: `Must not be later than ${LATEST_DATE}`,
+      message: asOneString(ruleMessages.notLaterThan(LATEST_DATE)),
       input: context.value,
       continue: true,
     })
@@ -202,7 +212,7 @@ export const referenceInPairs = (
   context.issues.push({
     code: 'custom',
     path: [field],
-    message: `Must not be null when ${other} is given`,
+    message: asOneString(ruleMessages.notNullWhenGiven(other)),
     input: null,
     continue: true,
   })
@@ -221,7 +231,7 @@ export const noRepeatedEntries = (
       context.issues.push({
         code: 'custom',
         path: [index],
-        message: 'Must not repeat an earlier entry',
+        message: asOneString(ruleMessages.noRepeatedEntry),
         input: entry,
       })
     }
@@ -241,7 +251,7 @@ export const atLeastOneProperty = (
     context.issues.push({
       code: 'custom',
       path: [],
-      message: 'At least one property must be specified',
+      message: asOneString(ruleMessages.atLeastOneProperty),
       input: context.value,
     })
   }

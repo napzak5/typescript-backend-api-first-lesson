@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
 import { periodQuery } from '../../__tests__/fixtures/sales-report-fixtures'
-import { parseWith } from '../../shared'
+import { parseWith, toldIn } from '../../shared'
 import {
   dailySalesGetRequestSchema,
   MAX_REPORT_DAYS,
@@ -34,7 +34,10 @@ const messagesOf = (input: unknown): Record<string, string> => {
   const result = parseReport(input)
   return result.type === 'error' && result.error.type === 'validation'
     ? Object.fromEntries(
-        result.error.issues.map(({ field, message }) => [field, message]),
+        result.error.issues.map(({ field, message }) => [
+          field,
+          toldIn(message, 'en'),
+        ]),
       )
     : {}
 }

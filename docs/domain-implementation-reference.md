@@ -298,7 +298,9 @@ export const salonUpdateRequestSchema = salonCreateRequestSchema
 
 ```typescript
 /** A nullable text is either null or says something: '' is not "unset". */
-export const nonBlankText = z.string().regex(/\S/, 'Must not be blank')
+export const nonBlankText = z
+  .string()
+  .regex(/\S/, asOneString(ruleMessages.notBlank))
 
 // ...
 
@@ -314,7 +316,7 @@ export const atLeastOneProperty = (
     context.issues.push({
       code: 'custom',
       path: [],
-      message: 'At least one property must be specified',
+      message: asOneString(ruleMessages.atLeastOneProperty),
       input: context.value,
     })
   }
@@ -325,11 +327,12 @@ export const atLeastOneProperty = (
 - **`z.strictObject`** rejects a property the model does not have. A client that sends `rating` gets a validation error naming `rating`; the property is not silently dropped.
 - **Three sources of rules.** The shape comes from the API type, the length limits from the columns (`varchar(255)` → `.max(255)`), and the rest are business rules: text must not be blank, a calendar entry must fall on the day of the week it names, closing must be later than opening.
 - **Cross-field rules use `.check()`** and push an issue with the `path` of the offending property, so the client learns which field to fix.
+- **The message of a rule is written in every language.** It is a message of `@beauty-salon-shared/i18n/messages/api`: `ruleMessages` for the rules that domains share, `salonMessages` for those of the salons. Zod carries a message as a string and as nothing else, so a schema gives it the languages as one string (`asOneString`), and `parseWith` reads them back. A rule that Zod says by itself (a length, a type, a format of its own) has no message in the schema.
 - **The update schema is derived** from the create schema with `exactPartial()`: every key may be absent, and a key that is present is checked by the same rule as on create. Its one rule of its own, `atLeastOneProperty`, rejects an empty request.
 - **`salonSearchRequestSchema`** validates the list parameters, including `cursor: salonIdSchema.exactOptional()`.
 - **`storedBusinessHoursSchema`** is the shape of the `businessHours` JSON column without the business rules. The request schema extends it with the rules; the read mapper uses it as it is, because stored data is checked for shape only. A day of the weekly hours has no time zone of its own: its slots are times in the `timezone` of the salon, as the times of a calendar row (`openingHours`) are, so the hours and the salon cannot disagree. The entries once had the key, and the migration `202611160500_business_hours_without_time_zone.sql` takes it out of the values that are stored: a stored value with a key the model does not have is a salon that cannot be read.
 
-Schemas are run through `parseWith(schema, input, message)` in `backend/packages/domain/src/shared/validation.ts`. It takes `unknown`, returns `Result<T, DomainError>`, and reports every broken rule at once, each as `{ field, rule, message }`.
+Schemas are run through `parseWith(schema, input, message)` in `backend/packages/domain/src/shared/validation.ts`. It takes `unknown`, returns `Result<T, DomainError>`, and reports every broken rule at once, each as `{ field, rule, message }`. `message`, the headline of the error, is a message of the file of the domain in the language package (`salonMessages.invalidSalon`). An input that breaks a rule is checked a second time with the Japanese locale of Zod, and what the two checks say of an issue is its message in both languages ([i18n](./i18n.md)).
 
 ## 6. Mappers
 
@@ -637,7 +640,7 @@ export class UpdateSalonUseCase {
     const request = parseWith(
       salonUpdateRequestSchema,
       input,
-      'Invalid salon update',
+      salonMessages.invalidSalonUpdate,
     )
     if (request.type === 'error') {
       return request
@@ -1418,11 +1421,11 @@ The points of a customer are a balance (`customers.loyaltyPoints`) and the ledge
 
 ## Error Handling
 
-A use case fails in one of eight ways (`backend/packages/domain/src/shared/errors.ts`):
+A use case fails in one of nine ways (`backend/packages/domain/src/shared/errors.ts`):
 
 ```typescript
 export type DomainError =
-  | { type: 'validation'; message: string; issues: ValidationIssue[] }
+  | { type: 'validation'; message: Told; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
@@ -1432,6 +1435,8 @@ export type DomainError =
   | { type: 'database'; message: string; cause: unknown }
   | { type: 'storage'; message: string; cause: unknown }
 ```
+
+`Told` (`backend/packages/domain/src/shared/told.ts`) is a text of an error: one that is written in every language (`LocalizedText`), or, until every text the domain writes is one, a string in English alone. The headline of a validation error and the `message` of each of its issues are of this type.
 
 Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.passwordRequired`, `.notFound`, `.alreadyExists`, `.conflict`, `.database` and `.storage`. Where each kind comes from:
 

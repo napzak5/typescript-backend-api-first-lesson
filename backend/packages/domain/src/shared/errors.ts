@@ -1,10 +1,12 @@
+import type { Told } from './told'
+
 /** One rule that an input value broke. */
 export type ValidationIssue = {
   /** Path of the offending value in dot notation; empty for the input as a whole. */
   field: string
   /** Identifier of the rule that was broken, e.g. `too_big`. */
   rule: string
-  message: string
+  message: Told
 }
 
 /**
@@ -37,7 +39,7 @@ export type AuthenticationFailure =
  * password is locked.
  */
 export type DomainError =
-  | { type: 'validation'; message: string; issues: ValidationIssue[] }
+  | { type: 'validation'; message: Told; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
@@ -48,7 +50,7 @@ export type DomainError =
   | { type: 'storage'; message: string; cause: unknown }
 
 export const DomainErrors = {
-  validation(message: string, issues: ValidationIssue[]): DomainError {
+  validation(message: Told, issues: ValidationIssue[]): DomainError {
     return { type: 'validation', message, issues }
   },
 

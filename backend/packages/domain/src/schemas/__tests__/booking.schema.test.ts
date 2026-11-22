@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import {
@@ -460,7 +461,7 @@ describe('bookingUpdateRequestSchema', () => {
     expect(parseUpdate({})).toMatchObject({
       type: 'error',
       error: {
-        issues: [{ message: 'At least one property must be specified' }],
+        issues: [{ message: ruleMessages.atLeastOneProperty }],
       },
     })
   })

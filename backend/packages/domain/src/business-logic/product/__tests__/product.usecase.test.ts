@@ -19,7 +19,7 @@ import type {
   ProductRemoval,
   ProductUpdate,
 } from '../../../repositories/product.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   CreateProductUseCase,
   DeleteProductUseCase,
@@ -100,7 +100,10 @@ const messagesOf = (
 ): Record<string, string> =>
   result.type === 'error' && result.error.type === 'validation'
     ? Object.fromEntries(
-        result.error.issues.map(({ field, message }) => [field, message]),
+        result.error.issues.map(({ field, message }) => [
+          field,
+          toldIn(message, 'en'),
+        ]),
       )
     : {}
 

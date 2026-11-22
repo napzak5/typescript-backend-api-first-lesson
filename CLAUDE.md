@@ -72,8 +72,9 @@ export type Result<T, E> =
   | { type: 'error'; error: E }
 
 // Domain error types (backend/packages/domain/src/shared/errors.ts)
+// Told: a text in every language, or, until every text of the domain is one, in English alone
 export type DomainError =
-  | { type: 'validation'; message: string; issues: ValidationIssue[] }
+  | { type: 'validation'; message: Told; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
@@ -234,7 +235,12 @@ shared-i18n/              # @beauty-salon-shared/i18n: the languages (en, ja), h
 A text that is told in more than one language is a message of
 `shared-i18n/src/messages/<who says it>/` (`api/`, for what the API says),
 written in every language with `text({ en, ja })`: one that lacks a language
-does not compile. Read [docs/i18n.md](docs/i18n.md) before adding one.
+does not compile. The headline of a validation error and the message of a
+rule of a schema are such messages, in the file of their domain
+(`messages/api/salon.ts`; `rules.ts` for the rules that domains share), and a
+schema gives one to Zod as one string (`asOneString`). Read
+[docs/i18n.md](docs/i18n.md) before adding one: it also says which domains
+still write in English alone.
 
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`
@@ -415,6 +421,8 @@ export type DbNewSalon = DeepRequired<Omit<typeof salons.$inferInsert, SalonMana
 export const salonCreateRequestSchema = z.strictObject({
   name: nonBlankText.max(255),          // limits are those of the columns
   nameKana: nonBlankText.max(255).nullable(),
+  // The message of a rule is written in every language and given to Zod as one string
+  currency: z.string().regex(/^[A-Z]{3}$/, asOneString(salonMessages.currencyCode)),
   // ...
 }) satisfies z.ZodType<ApiSalonCreateRequest>
 
@@ -454,7 +462,7 @@ export class CreateSalonUseCase {
     if (!mayCreateSalon(actor)) {
       return Result.error(DomainErrors.forbidden())
     }
-    const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+    const request = parseWith(salonCreateRequestSchema, input, salonMessages.invalidSalon)
     if (request.type === 'error') {
       return request
     }
@@ -549,10 +557,10 @@ export const startServer = (config: AppConfig, logger: Logger, shutdownGraceMs?:
 ```
 
 ### Conventions the reference follows
-- **Validation** happens once, in the use case, with the Zod schema of the request. Cross-field rules use `.check()`; a rule that ties two properties of which a partial update may name only one cannot be checked on the request and is a pure function of the domain instead (the services, below)
+- **Validation** happens once, in the use case, with the Zod schema of the request. The headline of a refusal (`salonMessages.invalidSalon`) and the message of a rule (`asOneString(ruleMessages.notBlank)`) are messages of the language package, and `parseWith` lets Zod say its own sentences in every language (see [docs/i18n.md](docs/i18n.md)). Cross-field rules use `.check()`; a rule that ties two properties of which a partial update may name only one cannot be checked on the request and is a pure function of the domain instead (the services, below)
 - **Mappers** stand on both sides of every domain: `mappers/write/` (API request → what the repository takes: a row, the changes of one, the criteria of a list) and `mappers/read/` (rows → API response, the page of a list too). A use case gives a request it has checked (`request.data`) to its write mapper and to nothing else, and what it answers with comes from a read mapper, also where nothing is converted: there the mapper is where the compiler checks that the request and the row agree. `use-case-flow.test.ts` of the domain package reads the sources of every domain and fails when a use case leaves this flow
 - **Authentication** is the wrapper `authenticated`: it turns `Authorization: Bearer <access token>` into an `Actor` (`backend/packages/domain/src/models/auth.ts`) or answers 401. **Authorization** is decided in the use case, first, from the actor; the rules are pure functions in `business-logic/<domain>/_shared/authorization.ts`, and a refusal is `DomainErrors.forbidden()` (403). In TypeSpec a public operation has `@useAuth(NoAuth)` and `PublicErrors`, one that any signed-in user may call has `SessionErrors`, and one with a permission check has `CommonErrors`. See [docs/authentication.md](docs/authentication.md)
-- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. `sendProblem` tells a problem in the language of `Accept-Language` (English without it) and names it in `Content-Language`; an error whose detail the domain writes is in English as a whole (see [docs/i18n.md](docs/i18n.md)). What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response of the API is problem details (a system probe that fails answers 503 with its own body)
+- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. `sendProblem` tells a problem in the language of `Accept-Language` (English without it) and names it in `Content-Language`; an error of which the domain writes a text in English alone is in English as a whole (see [docs/i18n.md](docs/i18n.md)). What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response of the API is problem details (a system probe that fails answers 503 with its own body)
 - **Logging** is structured (pino): `req.log` inside a request, the injected `Logger` elsewhere, never `console`. `sendProblem` logs a `database` error with its cause; headers, bodies and bound SQL values are never logged
 - **Request ID**: `req.id` (the caller's `X-Request-Id` or a new UUID) is on every log line of the request, in the response header and in `meta.correlationId` / `correlationId`
 - **Configuration** is read once, by `parseAppConfig`, and passed down as values; application code does not read `process.env`. A new variable is added to the schema, to every `.env.*` file and to the README table

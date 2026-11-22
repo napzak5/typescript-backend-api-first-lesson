@@ -26,7 +26,7 @@ import type {
   BookingServiceRemoval,
   IBookingRepository,
 } from '../../../repositories/booking.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   type BookingUseCaseDependencies,
   CreateBookingServiceUseCase,
@@ -59,7 +59,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.message
+    ? toldIn(result.error.message, 'en')
     : null
 
 type Reach = { type: string; salonId?: string }

@@ -20,7 +20,7 @@ import type {
   BookingStatusChange,
   IBookingRepository,
 } from '../../../repositories/booking.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, toldIn } from '../../../shared'
 import {
   type BookingAction,
   type BookingUseCaseDependencies,
@@ -49,7 +49,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? result.error.message
+    ? toldIn(result.error.message, 'en')
     : null
 
 /** Those who keep the ledger of the salon of the fixtures. */

@@ -1,9 +1,13 @@
+import type { Told } from '@beauty-salon-backend/domain'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
-import type { z } from 'zod'
+import { z } from 'zod'
 import {
   booleanParameter,
   listParameter,
   numberParameter,
+  queryDecoder,
 } from '../query-parameters'
 
 /** The codes of the rules a value breaks; empty when it is accepted. */
@@ -78,4 +82,64 @@ describe('listParameter', () => {
   it('rejects a value that is neither text nor a list of text', () => {
     expect(rulesBrokenBy(listParameter, { color: 'red' })).not.toEqual([])
   })
+})
+
+describe('queryDecoder', () => {
+  const HEADLINE: LocalizedText = {
+    en: 'Invalid visit search',
+    ja: '来店の検索の条件が正しくありません',
+  }
+  const schema = z.looseObject({
+    limit: numberParameter.exactOptional(),
+    isOpen: booleanParameter.exactOptional(),
+  })
+
+  it('should give the parameters their types and leave the others as they are', () => {
+    // Act
+    const decoded = queryDecoder(
+      schema,
+      HEADLINE,
+    )({ limit: '20', isOpen: 'true', keyword: 'cut' })
+
+    // Assert
+    expect(decoded).toEqual({
+      type: 'success',
+      data: { limit: 20, isOpen: true, keyword: 'cut' },
+    })
+  })
+
+  it.each<[string, Told]>([
+    ['a headline in every language', HEADLINE],
+    ['a headline in English alone', 'Invalid visit search'],
+  ])(
+    'should say of a parameter that is of no type of its own what its rule says in every language, under %s',
+    (_what, headline) => {
+      // Act
+      const decoded = queryDecoder(
+        schema,
+        headline,
+      )({ limit: 'ten', isOpen: 'yes' })
+
+      // Assert
+      expect(decoded).toEqual({
+        type: 'error',
+        error: {
+          type: 'validation',
+          message: headline,
+          issues: [
+            {
+              field: 'limit',
+              rule: 'invalid_format',
+              message: ruleMessages.number,
+            },
+            {
+              field: 'isOpen',
+              rule: 'invalid_value',
+              message: ruleMessages.trueOrFalse,
+            },
+          ],
+        },
+      })
+    },
+  )
 })

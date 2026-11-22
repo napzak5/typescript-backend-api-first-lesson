@@ -126,7 +126,11 @@ enum の値を手書きで並べ直しません。
       return Result.error(DomainErrors.forbidden())
     }
 
-    const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+    const request = parseWith(
+      salonCreateRequestSchema,
+      input,
+      salonMessages.invalidSalon,
+    )
     if (request.type === 'error') {
       return request
     }

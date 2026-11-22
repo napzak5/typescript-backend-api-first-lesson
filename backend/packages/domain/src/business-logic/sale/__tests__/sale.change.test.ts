@@ -11,6 +11,7 @@ import {
 } from '../../../__tests__/fixtures/staff-fixtures'
 import type { DbPaymentTransaction, DbSale } from '../../../models/sale'
 import { saleUpdateRequestSchema } from '../../../schemas/sale.schema'
+import { toldIn } from '../../../shared'
 import {
   bookingToHold,
   planSaleChange,
@@ -137,7 +138,10 @@ const messagesOf = (
   const result = plan(input, found, sale)
   return result.type === 'invalid'
     ? Object.fromEntries(
-        result.issues.map(({ field, message }) => [field, message]),
+        result.issues.map(({ field, message }) => [
+          field,
+          toldIn(message, 'en'),
+        ]),
       )
     : {}
 }

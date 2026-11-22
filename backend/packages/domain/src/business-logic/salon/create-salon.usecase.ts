@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { salonMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SalonReadMapper } from '../../mappers/read/salon.mapper'
 import { SalonWriteMapper } from '../../mappers/write/salon.mapper'
 import type { Actor } from '../../models/auth'
@@ -25,7 +26,11 @@ export class CreateSalonUseCase {
       return Result.error(DomainErrors.forbidden())
     }
 
-    const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+    const request = parseWith(
+      salonCreateRequestSchema,
+      input,
+      salonMessages.invalidSalon,
+    )
     if (request.type === 'error') {
       return request
     }
