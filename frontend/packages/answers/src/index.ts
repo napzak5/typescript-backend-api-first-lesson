@@ -6,9 +6,11 @@ export {
   listingOf,
 } from './pages'
 export {
+  CHECK_THE_VALUES_MESSAGE,
   FAILED,
   type Forbidden,
   from,
+  isUnread,
   LARGEST_PAGE,
   NOT_FOUND,
   NOT_SENT_MESSAGE,
@@ -19,6 +21,7 @@ export {
   PUBLIC_UNANSWERED_PARTS,
   pageOf,
   REFUSED_PARTS,
+  REFUSED_VALUE_MESSAGE,
   type Refused,
   type RefusedValue,
   refusedValuesOf,

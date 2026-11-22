@@ -148,6 +148,10 @@ export const whyUnread = (
     ? TOO_MANY_REQUESTS
     : FAILED
 
+/** Whether a read came to nothing: too many requests, or a failure. */
+export const isUnread = ({ type }: { type: string }): boolean =>
+  UNREAD_TYPES.some((unread) => unread === type)
+
 type ListMeta = { total: number | null; nextCursor: string | null }
 
 export const pageOf = <Item>(items: Item[], meta: ListMeta): Page<Item> => ({
@@ -199,6 +203,17 @@ export const TOO_MANY_REQUESTS_MESSAGE =
 /** What a screen says when a request to write got no answer to act on. */
 export const NOT_SENT_MESSAGE =
   '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
+
+/**
+ * What a form says when the API refused values it has no control for, or
+ * did not say which: the attempt as a whole is to be looked at again.
+ */
+export const CHECK_THE_VALUES_MESSAGE =
+  '入力した内容を確かめて、もう一度お試しください。'
+
+/** What is said at a control whose value the API refused by a rule the form does not tell of. */
+export const REFUSED_VALUE_MESSAGE =
+  'この値は受け付けられませんでした。入力を確かめてください。'
 
 /** What a screen says when a request that changes nothing a person typed got nowhere. */
 export const unsentMessageOf = (reason: Unsent): string =>
