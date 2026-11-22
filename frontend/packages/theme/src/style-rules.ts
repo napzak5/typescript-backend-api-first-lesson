@@ -336,16 +336,33 @@ const SKIPPED_DIRECTORIES = new Set([
   'coverage',
 ])
 
+/**
+ * The files below `directory`, with paths relative to it. A directory that
+ * holds no source is not entered: what the packages install and build is
+ * a thousand times what they are written in.
+ */
+const filesBelow = (directory: string, relative = ''): string[] =>
+  fs
+    .readdirSync(path.join(directory, relative), { withFileTypes: true })
+    .flatMap((entry) => {
+      const below = path.join(relative, entry.name)
+      if (!entry.isDirectory()) {
+        return [below]
+      }
+
+      return SKIPPED_DIRECTORIES.has(entry.name)
+        ? []
+        : filesBelow(directory, below)
+    })
+
 /** The stylesheets, the components and the other modules below `directory` but their tests (which write rules down as text), with paths relative to it. */
 export const readSourceFiles = (directory: string): SourceFile[] =>
-  fs
-    .readdirSync(directory, { recursive: true, encoding: 'utf8' })
+  filesBelow(directory)
     .filter(
       (relative) =>
-        (relative.endsWith('.css') ||
-          relative.endsWith('.tsx') ||
-          (relative.endsWith('.ts') && !relative.endsWith('.test.ts'))) &&
-        !relative.split(path.sep).some((part) => SKIPPED_DIRECTORIES.has(part)),
+        relative.endsWith('.css') ||
+        relative.endsWith('.tsx') ||
+        (relative.endsWith('.ts') && !relative.endsWith('.test.ts')),
     )
     .map((relative) => ({
       path: relative,
