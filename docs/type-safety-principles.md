@@ -107,7 +107,11 @@ async execute(
     return Result.error(DomainErrors.forbidden())
   }
 
-  const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+  const request = parseWith(
+    salonCreateRequestSchema,
+    input,
+    salonMessages.invalidSalon,
+  )
   if (request.type === 'error') {
     return request
   }
@@ -163,7 +167,7 @@ const salonIdParameterSchema = z.object({ id: salonIdSchema })
 
 export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
   Result.map(
-    parseWith(salonIdParameterSchema, { id }, 'Invalid salon ID'),
+    parseWith(salonIdParameterSchema, { id }, salonMessages.invalidSalonId),
     (parameters) => parameters.id,
   )
 ```

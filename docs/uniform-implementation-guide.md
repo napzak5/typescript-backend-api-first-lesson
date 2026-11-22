@@ -87,7 +87,11 @@ async execute(
     return Result.error(DomainErrors.forbidden())
   }
 
-  const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+  const request = parseWith(
+    salonCreateRequestSchema,
+    input,
+    salonMessages.invalidSalon,
+  )
   if (request.type === 'error') {
     return request
   }
@@ -113,7 +117,7 @@ const salonIdParameterSchema = z.object({ id: salonIdSchema })
 
 export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
   Result.map(
-    parseWith(salonIdParameterSchema, { id }, 'Invalid salon ID'),
+    parseWith(salonIdParameterSchema, { id }, salonMessages.invalidSalonId),
     (parameters) => parameters.id,
   )
 ```
@@ -157,7 +161,7 @@ export const parseSalonIdOfPath = (
   salonId: unknown,
 ): Result<SalonId, DomainError> =>
   Result.map(
-    parseWith(salonIdOfPathSchema, { salonId }, 'Invalid salon ID'),
+    parseWith(salonIdOfPathSchema, { salonId }, salonMessages.invalidSalonId),
     (parameters) => parameters.salonId,
   )
 ```
@@ -190,7 +194,7 @@ A query string carries text only, so a list request is read in two steps.
      }) satisfies z.ZodType<
        Pick<ApiSalonSearchRequest, 'limit' | 'minRating' | 'isActive' | 'features'>
      >,
-     'Invalid salon search',
+     salonMessages.invalidSalonSearch,
    )
    ```
 
@@ -489,10 +493,15 @@ The `title` and the `detail` are told in the language the request asks for
 the header is absent or names no language of the API). Their texts are
 `problemMessages` of `@beauty-salon-shared/i18n/messages/api`, each written in
 English and in Japanese, and `said` reads one in the language of the answer.
-An error whose detail the domain writes (`validation`, `notFound`,
-`alreadyExists`, `conflict`) is told in English as a whole, title included,
-whatever was asked for: the domain writes in English alone, and no answer is
-in two languages. `sendProblem` names the language of the answer in
+A `validation` error is told in the language asked for when its headline and
+the message of every broken rule are written in every language: the headline
+is a message of the domain (`salonMessages.invalidSalon`), a schema writes the
+messages of its rules in both languages (`asOneString(ruleMessages.notBlank)`),
+and `parseWith` has Zod say its own sentences in both. An error of which the
+domain writes a text in English alone (`notFound`, `alreadyExists`,
+`conflict`, and the `validation` errors of the domains that are not moved
+yet) is told in English as a whole, title included, whatever was asked for:
+no answer is in two languages. `sendProblem` names the language of the answer in
 `Content-Language` and adds `Accept-Language` to `Vary`. Nothing else of a
 problem depends on the language, and a successful response does not depend
 on it at all. See [i18n](./i18n.md).

@@ -156,7 +156,7 @@ export type AuthenticationFailure =
   | 'twoFactorRequired'
 
 export type DomainError =
-  | { type: 'validation'; message: string; issues: ValidationIssue[] }
+  | { type: 'validation'; message: Told; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
@@ -168,6 +168,8 @@ export type DomainError =
 ```
 
 値は同じファイルの `DomainErrors.validation(...)`、`DomainErrors.notFound(...)` などで作ります。
+
+`Told`（`backend/packages/domain/src/shared/told.ts`）は、エラーの文の型です。すべての言語で書いた文（`LocalizedText`）か、英語だけの文字列です。ドメインが書く文をすべての言語で書き終えるまでの間だけ、文字列も受け付けます。検証のエラーの見出しと、決まりごとの `message` が、この型です（[多言語](./i18n.md)）。
 
 | ケース | 作られる場所 | HTTP ステータス |
 |--------|--------------|-----------------|
