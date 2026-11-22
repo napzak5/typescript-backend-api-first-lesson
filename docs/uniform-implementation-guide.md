@@ -499,8 +499,9 @@ is a message of the domain (`salonMessages.invalidSalon`), a schema writes the
 messages of its rules in both languages (`asOneString(ruleMessages.notBlank)`),
 and `parseWith` has Zod say its own sentences in both. An error of which the
 domain writes a text in English alone (`notFound`, `alreadyExists`,
-`conflict`, and the `validation` errors of the domains that are not moved
-yet) is told in English as a whole, title included, whatever was asked for:
+`conflict`, and a `validation` error with a rule that a use case checks and
+a schema cannot) is told in English as a whole, title included, whatever was
+asked for:
 no answer is in two languages. `sendProblem` names the language of the answer in
 `Content-Language` and adds `Accept-Language` to `Vary`. Nothing else of a
 problem depends on the language, and a successful response does not depend

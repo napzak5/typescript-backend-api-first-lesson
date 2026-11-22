@@ -238,9 +238,9 @@ written in every language with `text({ en, ja })`: one that lacks a language
 does not compile. The headline of a validation error and the message of a
 rule of a schema are such messages, in the file of their domain
 (`messages/api/salon.ts`; `rules.ts` for the rules that domains share), and a
-schema gives one to Zod as one string (`asOneString`). Read
-[docs/i18n.md](docs/i18n.md) before adding one: it also says which domains
-still write in English alone.
+schema gives one to Zod as one string (`asOneString`): a sentence written as
+a string in a schema fails a test. Read [docs/i18n.md](docs/i18n.md) before
+adding one: it also says which texts are still written in English alone.
 
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`
