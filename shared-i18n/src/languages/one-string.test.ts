@@ -40,9 +40,9 @@ describe('asOneString', () => {
     expect(read).toEqual(written)
   })
 
-  it('should tell the separator that a value brought into a sentence as a space', () => {
+  it('should tell every separator that a value brought into a sentence as a space', () => {
     // Arrange
-    const value = 'Mon\u001fday'
+    const value = 'Mon\u001fday\u001f'
     const written = text({
       en: `Must be ${value}`,
       ja: `${value} にしてください`,
@@ -53,8 +53,8 @@ describe('asOneString', () => {
 
     // Assert
     expect(read).toEqual({
-      en: 'Must be Mon day',
-      ja: 'Mon day にしてください',
+      en: 'Must be Mon day ',
+      ja: 'Mon day  にしてください',
     })
   })
 })

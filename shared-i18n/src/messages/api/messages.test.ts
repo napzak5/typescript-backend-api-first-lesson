@@ -59,10 +59,10 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
   ],
   [
     'ruleMessages.phoneDigits',
-    ruleMessages.phoneDigits(10),
+    ruleMessages.phoneDigits(8),
     {
-      en: 'Must contain at least 10 digits',
-      ja: '数字を 10 桁以上含めてください',
+      en: 'Must contain at least 8 digits',
+      ja: '数字を 8 桁以上含めてください',
     },
   ],
   [
@@ -83,18 +83,18 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
   ],
   [
     'ruleMessages.notLaterThan',
-    ruleMessages.notLaterThan('2999-12-31'),
+    ruleMessages.notLaterThan('endDate'),
     {
-      en: 'Must not be later than 2999-12-31',
-      ja: '2999-12-31 より後にはできません',
+      en: 'Must not be later than endDate',
+      ja: 'endDate より後にはできません',
     },
   ],
   [
     'ruleMessages.notNullWhenGiven',
-    ruleMessages.notNullWhenGiven('referenceId'),
+    ruleMessages.notNullWhenGiven('referenceType'),
     {
-      en: 'Must not be null when referenceId is given',
-      ja: 'referenceId を指定するときは、null にできません',
+      en: 'Must not be null when referenceType is given',
+      ja: 'referenceType を指定するときは、null にできません',
     },
   ],
   [
