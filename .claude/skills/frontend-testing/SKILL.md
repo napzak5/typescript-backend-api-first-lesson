@@ -344,6 +344,18 @@ What a function asked for is read from that stand-in with two readers:
   the requests in its answer. The exception is what the two readers do
   not read, the headers of a request: the tests of `customInstance` and
   of the session (the token), and the headers of an upload to a storage.
+- **A test against the real API** (`*.integration.test.tsx`) watches
+  `fetch` from the moment it wants to know about
+  (`const fetched = vi.spyOn(globalThis, 'fetch')`) and reads it with the
+  same two. A screen asks for more than a test is about (the session, a
+  list read anew), and a test reads its mails from the test server with
+  `fetch` too, so the test keeps the lines it is about with the methods
+  of an array and of a string:
+  `asked(fetched).filter((line) => line.startsWith('POST '))`,
+  `line.endsWith('/reschedule')`, `line.includes(' /share/')`. A file
+  that keeps the same lines more than once names what it keeps
+  (`const ofTheReviews = (line: string): boolean => line.includes(' /reviews')`,
+  and `ofTheApi`, a line without `://`). The two readers take no filter.
 
 A test file builds an answer itself only where the answer is what the file
 is about: a file or a CSV, a body the storage sends, the links of a record.
@@ -751,8 +763,9 @@ tested for what it must leave alone as well:
   happen. So the table is taken away, `fetch` is watched, and the form is
   sent: when its failure is said, a read behind the form would have been
   asked for long before. The requests about the record are then the one
-  of the form (`askedOfTheProfile(fetched)` is `['PATCH']`), and what was
-  typed is still there. `afterEach` puts the managers back
+  of the form (the lines of `asked(fetched)` that end with
+  ` /customers/me` are `['PATCH /customers/me']`), and what was typed is
+  still there. `afterEach` puts the managers back
   (`focusManager.setFocused(undefined)`, `onlineManager.setOnline(true)`).
 - **What a write made is asserted in the commit that shows the next
   screen.** A page that showed first what it had kept (nothing, or the
@@ -809,8 +822,8 @@ adds:
   stored: a salon stores a member as one to avoid after the form opened,
   the customer wishes for that member, and the answer names the control.
 - **The requests of a form that reads several things** are asserted with
-  their method and path (`askedOfTheApi(fetched)`): nothing behind the
-  form is `['PATCH /customers/me/preferences']`.
+  their lines (`asked(fetched).filter(ofThePreferences)`): nothing behind
+  the form is `['PATCH /customers/me/preferences']`.
 - **A state of a part that a page cannot be opened in** (the part of an
   account that lost its profile after the page read it) is tested on the
   part alone, rendered inside the providers it stands in.
@@ -849,7 +862,8 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
   (`item.parentElement === list`). A browser test finds them by what a
   row alone has (`filter({ has: page.getByRole('heading', { level: 2 }) })`).
 - **What a change was sent with is asserted on the request**
-  (`sentWith(fetched)`, the bodies `fetch` was called with): the
+  (`await sent(fetched)`, the bodies the watched `fetch` was called
+  with): the
   properties that were changed and nothing else, with `toEqual`. The row
   says what is stored; only the request says what was left out.
 - **Every screen a write shows differently is asserted at first sight**:
@@ -893,8 +907,8 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
   as they were read before.
 - **A press that the API counts is asserted in three places**: what the
   row says, the row of the table (who, and the count of the record), and
-  the requests (`askedOfTheReviews`: the one that wrote, and no read
-  after it).
+  the requests (`asked(fetched).filter(ofTheReviews)`: the one that
+  wrote, and no read after it).
 - **A screen of a package that every application uses is tested in the
   package** (`frontend/packages/session/src/security/security.integration.test.tsx`):
   in `AppShell` and `RequireSession` as an application has them, without a
@@ -1005,9 +1019,9 @@ changes and removes) add:
   A browser test that reads the bookings of a seeded customer leaves out
   those that were there before it began (the seed data has bookings of
   every customer).
-- **That only what was changed is sent is asked of `fetch`**: the bodies of
-  the `PATCH` requests, parsed (`changesAsked`); nothing changed is no
-  request at all.
+- **That only what was changed is sent is asked of `fetch`**: the bodies
+  that were sent since it is watched (`await sent(fetched)`); nothing
+  changed is no body at all.
 
 The sales of a salon (`frontend/apps/admin-app/src/sales/sales.integration.test.tsx`:
 the checkout of a booking, the payments and the receipt of a sale, the
