@@ -1,5 +1,14 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import { address, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -8,16 +17,7 @@ import {
   arrangeFile,
   fileRemovedMeanwhile,
 } from '../attachments/__tests__/arrangements'
-import {
-  ADMIN,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  refuse,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
+import { refuse } from '../bookings/__tests__/arrangements'
 import {
   attachmentHrefOf,
   shareLinkEntryHrefOf,
@@ -512,7 +512,7 @@ describe('the share links of a file', () => {
       // Arrange
       const user = userEvent.setup()
       const file = await consentOfTokyo()
-      await openFormAs(file, ADMIN)
+      await openFormAs(file, OPERATOR)
 
       // Act
       await user.click(screen.getByRole('button', { name: ISSUE }))
@@ -520,7 +520,7 @@ describe('the share links of a file', () => {
       // Assert
       expect(await issuedAddress()).toContain(`${PORTAL}/share#token=`)
       expect(await storedShareLinksOf(file.attachmentId)).toMatchObject([
-        { issuedBy: ADMIN },
+        { issuedBy: OPERATOR },
       ])
     })
 
@@ -576,7 +576,7 @@ describe('the share links of a file', () => {
         // Act
         await openAs(
           shareLinkEntryHrefOf(file.salonId, file.attachmentId),
-          ADMIN,
+          OPERATOR,
         )
 
         // Assert
@@ -794,7 +794,7 @@ describe('the share links of a file', () => {
       // Act
       await openAs(
         shareLinkHrefOf(await salonIdOf(OSAKA), file.attachmentId, shareLinkId),
-        ADMIN,
+        OPERATOR,
       )
 
       // Assert

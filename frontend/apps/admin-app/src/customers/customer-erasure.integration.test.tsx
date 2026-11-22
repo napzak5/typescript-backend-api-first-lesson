@@ -1,18 +1,18 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import { heading, notifications } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OWNER,
+  STYLIST,
+  TOKYO,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
-import {
-  MANAGER,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-  YUKI,
-} from '../bookings/__tests__/arrangements'
 import { customerHrefOf } from '../navigation'
 import {
   askedForErasure,
@@ -28,8 +28,6 @@ import {
  * Yuki of the seed data, who never asked. An owner answers; a manager, or
  * the operator of the platform, did something meanwhile.
  */
-
-const OPERATOR = 'admin@beautysalon.jp'
 
 const ASK = '消去の依頼を受け付けますか？'
 

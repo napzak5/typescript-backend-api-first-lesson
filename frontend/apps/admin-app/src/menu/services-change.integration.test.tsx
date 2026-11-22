@@ -1,18 +1,17 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import { heading } from '@beauty-salon-frontend/testing/screens'
-import { screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { openAs, renderAt } from '../__tests__/screens'
 import {
   MANAGER,
   OSAKA,
   OWNER,
   STYLIST,
-  salonIdOf,
   TOKYO,
-} from '../bookings/__tests__/arrangements'
+} from '@beauty-salon-frontend/testing/seed'
+import { screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { openAs, renderAt } from '../__tests__/screens'
 import { menuHrefOf, servicesChangeHrefOf } from '../navigation'
 import {
   categoryIdOf,

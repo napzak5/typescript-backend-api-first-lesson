@@ -1,25 +1,29 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+} from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
   termsOnceThere,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  ADMIN,
   arrangeSale,
-  dayFromToday,
-  MANAGER,
-  OSAKA,
-  OWNER,
   paySale,
   removeTokyo,
-  salonIdOf,
-  TOKYO,
   voidSale,
 } from '../__tests__/arrangements'
 import { menuLink, renderAt, TITLE } from '../__tests__/screens'
@@ -365,7 +369,7 @@ describe('the sales of one day, against the API', () => {
     // Arrange
     await sellTwoDays()
     renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
-    await signInAs(ADMIN)
+    await signInAs(OPERATOR)
     await termsOnceThere(salesOf(await dayFromToday(0)))
     await removeTokyo()
 

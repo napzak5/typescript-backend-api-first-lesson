@@ -1,3 +1,4 @@
+import { STYLIST } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN, PORTAL } from './applications'
@@ -5,7 +6,7 @@ import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
-import { ADMIN_START, enterCredentials, heading, STAFF } from './sign-in'
+import { ADMIN_START, enterCredentials, heading } from './sign-in'
 
 /*
  * The profile of a member of the staff, as the member keeps it with the
@@ -58,7 +59,7 @@ test.describe('the own profile, in a browser', () => {
     // Arrange
     const salon = await salonId(api)
     await page.goto(ADMIN.origin)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await expect(heading(page, ADMIN_START)).toBeFocused()
 
     // Act: from the navigation to the profile
@@ -92,7 +93,7 @@ test.describe('the own profile, in a browser', () => {
         .getByRole('list', { name: '専門' })
         .getByRole('listitem'),
     ).toHaveText(SPECIALTIES)
-    expect(await storedIntroductionOf(api, STAFF)).toEqual([
+    expect(await storedIntroductionOf(api, STYLIST)).toEqual([
       { specialties: SPECIALTIES, bio: BIO },
     ])
 
@@ -123,7 +124,7 @@ test.describe('the own profile, on a screen as narrow as a phone', () => {
   }) => {
     // Arrange
     await page.goto(`${ADMIN.origin}/account/profile`)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
 
     // Act
     await expect(recordHeading(page)).toBeVisible()

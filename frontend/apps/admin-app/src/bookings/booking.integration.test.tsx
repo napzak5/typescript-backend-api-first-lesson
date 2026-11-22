@@ -1,31 +1,36 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   firstSight,
   heading,
   notifications,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  KENJI,
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
 import {
-  ADMIN,
   arrange,
   clockOf,
-  dayFromToday,
-  KENJI,
-  MANAGER,
-  OSAKA,
-  OWNER,
   refuse,
-  STYLIST,
-  salonIdOf,
   storedBooking,
-  TOKYO,
-  YUKI,
 } from './__tests__/arrangements'
 
 const CHANGED_ELSEWHERE =
@@ -501,7 +506,7 @@ describe('a booking of a salon, against the API', () => {
       minutes: 75,
     })
     renderAt(`/salons/${osaka}/bookings/${id}`)
-    await signInAs(ADMIN)
+    await signInAs(OPERATOR)
     await screen.findByRole('region', { name: '状態' })
 
     // Act
@@ -514,7 +519,7 @@ describe('a booking of a salon, against the API', () => {
 
   it.each([
     ['a booking of another salon, under the address of this one', OWNER],
-    ['a booking of another salon, for an administrator', ADMIN],
+    ['a booking of another salon, for an administrator', OPERATOR],
   ])('should say that %s is not found', async (_case, email) => {
     // Arrange
     const tokyo = await salonIdOf(TOKYO)

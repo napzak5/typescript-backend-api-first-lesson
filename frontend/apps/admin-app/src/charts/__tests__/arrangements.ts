@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -98,27 +98,17 @@ export const storedAllergiesOf = async (email: string) =>
     ),
   )
 
-const idSchema = z.array(z.object({ id: z.string() }))
-
 /** The ID of the allergy of a customer with the allergen. */
-export const allergyIdOf = async (
+export const allergyIdOf = (
   email: string,
   allergenName: string,
-): Promise<string> => {
-  const [allergy] = idSchema.parse(
-    await testApi().query(
-      `select allergies.id from customer_allergies allergies
-       join customers on customers.id = allergies."customerId"
-       where customers.email = $1 and allergies."allergenName" = $2`,
-      [email, allergenName],
-    ),
+): Promise<string> =>
+  idOf(
+    `select allergies.id::text from customer_allergies allergies
+     join customers on customers.id = allergies."customerId"
+     where customers.email = $1 and allergies."allergenName" = $2`,
+    [email, allergenName],
   )
-  if (allergy === undefined) {
-    throw new Error(`${email} has no allergy of ${allergenName}`)
-  }
-
-  return allergy.id
-}
 
 /** Lets another account have written the symptoms of an allergy meanwhile. */
 export const symptomsWrittenMeanwhile = (

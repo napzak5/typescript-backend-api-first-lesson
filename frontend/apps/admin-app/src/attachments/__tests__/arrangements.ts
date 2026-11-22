@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -7,19 +7,6 @@ import * as z from 'zod'
  * the screen, to the storage of the test server, or puts one into the
  * database, which the storage then does not have.
  */
-
-/** The bytes of a PNG image: its signature, and the start of its header */
-export const PNG_BYTES = new Uint8Array([
-  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49,
-  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-])
-
-/** The bytes of a PDF: its header, and an end */
-export const PDF_BYTES = new TextEncoder().encode(
-  '%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n',
-)
-
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
 
 /**
  * Puts a file whose upload was finished so many minutes ago into the
@@ -41,9 +28,8 @@ export const arrangeFile = async ({
   uploadedBy: string
   minutesAgo?: number
 }): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `insert into attachments
+  idOf(
+    `insert into attachments
          ("salonId", filename, "contentType", size, status, "uploadedBy",
           "uploadExpiresAt", "uploadedAt", "createdAt", "updatedAt")
        select $1, $2, $3::attachment_content_type, $4, 'uploaded', u.id,
@@ -53,9 +39,8 @@ export const arrangeFile = async ({
          now() - $6 * interval '1 minute'
        from users u where u.email = $5
        returning id::text`,
-      [salonId, filename, contentType, size, uploadedBy, minutesAgo],
-    ),
-  )[0].id
+    [salonId, filename, contentType, size, uploadedBy, minutesAgo],
+  )
 
 const storedSchema = z.array(
   z.object({

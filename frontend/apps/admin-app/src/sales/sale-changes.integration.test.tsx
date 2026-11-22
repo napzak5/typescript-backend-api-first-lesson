@@ -1,25 +1,22 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   firstSight,
   heading,
   notifications,
 } from '@beauty-salon-frontend/testing/screens'
+import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
-import {
-  arrange,
-  dayFromToday,
-  OWNER,
-  refuse,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
+import { arrange, refuse } from '../bookings/__tests__/arrangements'
 import {
   arrangeSale,
   paySale,

@@ -1,6 +1,5 @@
+import { TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator } from '@playwright/test'
-import * as z from 'zod'
-import { TOKYO } from './bookings'
 import type { TestApi } from './fixtures'
 
 /*
@@ -8,20 +7,6 @@ import type { TestApi } from './fixtures'
  * sales, so a test enters a cut of today in the salon in Tokyo, paid in
  * cash, as the checkout of the admin application would have.
  */
-
-const daySchema = z.tuple([z.object({ day: z.iso.date() })])
-
-/** The day so many days from today in Tokyo (`2026-11-21`). */
-export const dayFromToday = async (
-  api: TestApi,
-  days: number,
-): Promise<string> =>
-  daySchema.parse(
-    await api.query(
-      `select to_char((now() at time zone 'Asia/Tokyo')::date + $1::int, 'YYYY-MM-DD') as day`,
-      [days],
-    ),
-  )[0].day
 
 /** Enters a ladies' cut of today by Hiroshi Tanaka, ￥5,500 with its tax, paid in cash. */
 export const sellACutToday = (api: TestApi): Promise<unknown> =>

@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -36,24 +36,20 @@ export const storedRowsOf = async (salon: string) =>
     ),
   )
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** The ID of the only stock row of a product of a salon, or of the row of its lot. */
 export const rowIdOf = async (
   salon: string,
   productCode: string,
   lotNumber?: string,
 ): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `select i.id::text from inventory i
+  idOf(
+    `select i.id::text from inventory i
          join products p on p.id = i."productId"
          join salons s on s.id = i."salonId"
        where s.name = $1 and p."productCode" = $2
          and ($3::text is null or i."lotNumber" = $3)`,
-      [salon, productCode, lotNumber ?? null],
-    ),
-  )[0].id
+    [salon, productCode, lotNumber ?? null],
+  )
 
 const drawnSchema = z.array(
   z.object({ lotNumber: z.string().nullable(), shelf: z.string().nullable() }),
@@ -93,16 +89,14 @@ export const anotherRow = async ({
   stock?: number
   expiryDate?: string | null
 }): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `insert into inventory ("salonId", "productId", "currentStock", "availableStock", "lotNumber", "expiryDate")
+  idOf(
+    `insert into inventory ("salonId", "productId", "currentStock", "availableStock", "lotNumber", "expiryDate")
        select s.id, p.id, $4, $4, $3, $5::date
        from products p join salons s on s.id = p."salonId"
        where s.name = $1 and p."productCode" = $2
        returning id::text`,
-      [salon, productCode, lotNumber, stock, expiryDate],
-    ),
-  )[0].id
+    [salon, productCode, lotNumber, stock, expiryDate],
+  )
 
 /** Lets the rows of a product of a salon expire on a day; `null` for none. */
 export const expiringOn = async (

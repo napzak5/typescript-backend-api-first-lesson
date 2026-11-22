@@ -1,6 +1,15 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
 import { heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  KENJI,
+  MANAGER,
+  OPERATOR,
+  OWNER,
+  STYLIST,
+  TOKYO,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
@@ -13,17 +22,7 @@ import {
   vi,
 } from 'vitest'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  KENJI,
-  MANAGER,
-  OWNER,
-  refuse,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-  YUKI,
-} from '../bookings/__tests__/arrangements'
+import { refuse } from '../bookings/__tests__/arrangements'
 import {
   arrangePoints,
   askedForErasure,
@@ -50,7 +49,7 @@ import { ADMINISTRATORS_ONLY } from './operations'
 
 /** Opens the operations as the administrator, and waits for the state of the system. */
 const openOperations = async (): Promise<void> => {
-  await openAs(OPERATIONS_PATH, ADMIN)
+  await openAs(OPERATIONS_PATH, OPERATOR)
   await screen.findByRole('region', { name: 'システムの状態' })
 }
 
@@ -133,7 +132,7 @@ describe('the operations of the platform, against the API', () => {
     it('should lead an administrator from the header to the operations, and say that the API runs, takes requests and reaches its database', async () => {
       // Arrange
       const user = userEvent.setup()
-      await openAs('/', ADMIN)
+      await openAs('/', OPERATOR)
 
       // Act
       await user.click(await screen.findByRole('link', { name: '運用' }))

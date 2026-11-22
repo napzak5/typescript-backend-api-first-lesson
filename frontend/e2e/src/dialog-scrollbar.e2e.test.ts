@@ -1,8 +1,9 @@
+import { OPERATOR } from '@beauty-salon-frontend/testing/seed'
 import type { Page } from '@playwright/test'
 import { ADMIN } from './applications'
 import { cornersUnderTheDialog, edgesOf } from './checks'
 import { expect, test } from './fixtures'
-import { enterCredentials, heading, OPERATOR } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * A dialog over a page whose scrollbar takes room of the window, as on a

@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -7,16 +7,11 @@ import * as z from 'zod'
  * of the seed; none of them is locked or has two factors.
  */
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** The ID of the account of an address of mail. */
 export const userIdOf = async (email: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      'select id::text from users where email = $1 and "deletedAt" is null',
-      [email],
-    ),
-  )[0].id
+  idOf('select id::text from users where email = $1 and "deletedAt" is null', [
+    email,
+  ])
 
 /** Lets wrong passwords have locked the account of the address ten minutes ago, for five minutes more. */
 export const arrangeLock = (email: string): Promise<unknown> =>

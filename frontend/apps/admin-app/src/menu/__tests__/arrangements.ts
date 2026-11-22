@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -8,28 +8,20 @@ import * as z from 'zod'
  * the first four, the salon in Osaka five, one of them a package of three.
  */
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** A category of a salon of the seed data, by the names of both. */
 export const categoryIdOf = async (
   salon: string,
   name: string,
 ): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `select c.id::text from service_categories c join salons s on s.id = c."salonId"
+  idOf(
+    `select c.id::text from service_categories c join salons s on s.id = c."salonId"
        where s.name = $1 and c.name = $2`,
-      [salon, name],
-    ),
-  )[0].id
+    [salon, name],
+  )
 
 /** A service of the seed data, by its name. */
 export const serviceIdOf = async (name: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query('select id::text from services where name = $1', [
-      name,
-    ]),
-  )[0].id
+  idOf('select id::text from services where name = $1', [name])
 
 /** Lets a category have been put below another, by their IDs. */
 export const putBelow = (id: string, parentId: string): Promise<unknown> =>
@@ -46,16 +38,14 @@ export const arrangeChild = async (
   parent: string,
   name: string,
 ): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `insert into service_categories ("salonId", name, "parentId", category, "displayOrder", "isActive")
+  idOf(
+    `insert into service_categories ("salonId", name, "parentId", category, "displayOrder", "isActive")
        select p."salonId", $3, p.id, p.category, 20, true
        from service_categories p join salons s on s.id = p."salonId"
        where s.name = $1 and p.name = $2
        returning id::text`,
-      [salon, parent, name],
-    ),
-  )[0].id
+    [salon, parent, name],
+  )
 
 /** Lets somebody else have removed a category meanwhile: its children go to the top, its services to none. */
 export const removedMeanwhile = (id: string): Promise<unknown> =>

@@ -2,10 +2,11 @@ import type {
   AttachmentCrudGetUploadUrl201,
   ShareLinkCrudCreate201,
 } from '@beauty-salon-frontend/api-client'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
+import { OWNER, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { expect } from 'vitest'
 import * as z from 'zod'
-import { accessTokenOf, TOKYO } from '../../bookings/__tests__/arrangements'
+import { accessTokenOf } from '../../bookings/__tests__/arrangements'
 
 /*
  * What the screen tests of the share links arrange, as the salon in Tokyo
@@ -15,29 +16,11 @@ import { accessTokenOf, TOKYO } from '../../bookings/__tests__/arrangements'
  * have, and shares it.
  */
 
-const OWNER = 'owner@beautysalon.jp'
-
-/** The bytes of a PNG image: its signature, and the start of its header */
-export const PNG_BYTES = new Uint8Array([
-  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49,
-  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-])
-
-/** The bytes of a PDF: its header, and an end */
-export const PDF_TEXT =
-  '%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n'
-
 /** A password a share link takes */
 export const PASSWORD = 'umi no mieru heya'
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 const tokyoId = async (): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query('select id::text from salons where name = $1', [
-      TOKYO,
-    ]),
-  )[0].id
+  idOf('select id::text from salons where name = $1', [TOKYO])
 
 /** Asks the API as the owner of the salon in Tokyo, as a client that is no screen does. */
 const asOwner = async (
@@ -110,18 +93,16 @@ export const uploadFile = async ({
 
 /** A file of the salon in Tokyo that the database has and the storage does not */
 export const fileNotStored = async (filename: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `insert into attachments
+  idOf(
+    `insert into attachments
          ("salonId", filename, "contentType", size, status, "uploadedBy",
           "uploadExpiresAt", "uploadedAt")
        select $1, $2, 'image/png', 24, 'uploaded', u.id,
          now() + interval '15 minutes', now()
        from users u where u.email = $3
        returning id::text`,
-      [await tokyoId(), filename, OWNER],
-    ),
-  )[0].id
+    [await tokyoId(), filename, OWNER],
+  )
 
 type Shared = ShareLinkCrudCreate201['data']
 

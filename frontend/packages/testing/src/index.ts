@@ -7,6 +7,7 @@ export {
   findAccessibilityViolations,
 } from './accessibility'
 export { itShouldBeSentByTheEnterKey } from './enter-key'
+export { PDF_BYTES, PDF_TEXT, PNG_BYTES } from './file-bytes'
 export { type SavedFile, savedFiles } from './saved-files'
 export { itShouldBeAccessibleInEveryStory } from './story-accessibility'
 export { atTheWidthOfTheStory } from './story-width'

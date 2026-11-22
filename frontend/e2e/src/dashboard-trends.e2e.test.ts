@@ -1,15 +1,10 @@
+import { MANAGER, OWNER } from '@beauty-salon-frontend/testing/seed'
 import { DASHBOARD } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import { mainMenuLink, pressInTheMenu } from './main-menu'
-import { dayFromToday, pressWithTheKeyboard, sellACutToday } from './sales'
-import {
-  DASHBOARD_START,
-  enterCredentials,
-  heading,
-  MANAGER,
-  OWNER,
-} from './sign-in'
+import { pressWithTheKeyboard, sellACutToday } from './sales'
+import { DASHBOARD_START, enterCredentials, heading } from './sign-in'
 
 /*
  * The trends and the sales of one day, read from the API at another
@@ -29,7 +24,7 @@ test.describe('the trends and the sales of a day, in a browser', () => {
   }) => {
     // Arrange
     await sellACutToday(api)
-    const yesterday = await dayFromToday(api, -1)
+    const yesterday = await api.dayFromToday(-1)
     await page.goto(DASHBOARD.origin)
     await enterCredentials(page, MANAGER, api.seedPassword)
     await expect(heading(page, DASHBOARD_START)).toBeFocused()
@@ -73,7 +68,7 @@ test.describe('the trends and the sales of a day, in a browser', () => {
   }) => {
     // Arrange
     await sellACutToday(api)
-    const today = await dayFromToday(api, 0)
+    const today = await api.dayFromToday(0)
     await page.goto(DASHBOARD.origin)
     await enterCredentials(page, OWNER, api.seedPassword)
     await expect(heading(page, DASHBOARD_START)).toBeFocused()

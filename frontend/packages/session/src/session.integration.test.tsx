@@ -2,13 +2,13 @@ import { authCrudGetCurrentUser } from '@beauty-salon-frontend/api-client'
 import { sessionStore } from '@beauty-salon-frontend/io'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
+import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { signIn, signOut, useSession } from '.'
 
-const CUSTOMER = 'customer1@example.com'
 const RENEWAL = '/api/v1/auth/refresh'
 
 const signInAs = (email: string, password = testApi().seedPassword) =>

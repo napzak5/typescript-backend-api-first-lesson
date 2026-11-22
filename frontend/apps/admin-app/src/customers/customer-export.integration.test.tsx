@@ -3,20 +3,20 @@ import {
   type SavedFile,
   savedFiles,
 } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import { heading, notifications } from '@beauty-salon-frontend/testing/screens'
-import { screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../__tests__/screens'
 import {
   MANAGER,
   OWNER,
   STYLIST,
-  salonIdOf,
   TOKYO,
+  VIP,
   YUKI,
-} from '../bookings/__tests__/arrangements'
+} from '@beauty-salon-frontend/testing/seed'
+import { screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderAt } from '../__tests__/screens'
 import { customerHrefOf, customersHrefOf } from '../navigation'
 import {
   arrangeCrowd,
@@ -33,8 +33,6 @@ import { customerQueryOf } from './customer-ledger'
  * Sakura are not. An owner exports; a member of the staff is offered no
  * export.
  */
-
-const HIROSHI = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 
 /** The part of a page under a heading. */
 const part = (name: string): HTMLElement => screen.getByRole('region', { name })
@@ -121,7 +119,7 @@ describe('exporting customers, against the API', () => {
       expect(file.text.startsWith('﻿id,')).toBe(true)
       expect(file.text.endsWith('\r\n')).toBe(true)
       expect(columnIn(file, 'email').toSorted()).toEqual(
-        [YUKI.email, HIROSHI.email].toSorted(),
+        [YUKI.email, VIP.email].toSorted(),
       )
       expect(columnIn(file, 'lastName').toSorted()).toEqual([
         'Nakamura',

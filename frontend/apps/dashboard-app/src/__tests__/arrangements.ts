@@ -1,40 +1,12 @@
 import type { ModelsPaymentMethodType } from '@beauty-salon-frontend/api-client'
-import { testApi } from '@beauty-salon-frontend/testing/api'
-import * as z from 'zod'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
+import { TOKYO } from '@beauty-salon-frontend/testing/seed'
 
 /*
  * What the screen tests of the dashboard arrange in the database: the seed
  * data has no sales, so a test enters those its report counts, as the
  * checkout of the admin application would have entered them.
  */
-
-export const TOKYO = 'Beauty Studio Tokyo'
-export const OSAKA = 'Hair & Spa Osaka'
-
-/** The accounts of the seed data: the owner and the manager are of the salon in Tokyo */
-export const OWNER = 'owner@beautysalon.jp'
-export const MANAGER = 'manager@beautysalon.jp'
-export const ADMIN = 'admin@beautysalon.jp'
-
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
-export const salonIdOf = async (name: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query('select id::text from salons where name = $1', [
-      name,
-    ]),
-  )[0].id
-
-const daySchema = z.tuple([z.object({ day: z.iso.date() })])
-
-/** The day so many days from today in Tokyo (`2026-11-21`). */
-export const dayFromToday = async (days: number): Promise<string> =>
-  daySchema.parse(
-    await testApi().query(
-      `select to_char((now() at time zone 'Asia/Tokyo')::date + $1::int, 'YYYY-MM-DD') as day`,
-      [days],
-    ),
-  )[0].day
 
 /** A line of a sale: a service of the menu of the salon by its name, or a product */
 export type Line = {
@@ -82,9 +54,8 @@ export const arrangeSale = async ({
   const discount = rows.reduce((sum, row) => sum + row.discount, 0)
   const tax = rows.reduce((sum, row) => sum + row.tax, 0)
 
-  return idsSchema.parse(
-    await testApi().query(
-      `with salon as (
+  return idOf(
+    `with salon as (
          select id from salons where name = $1
        ), made as (
          insert into sales ("saleNumber", "salonId", "staffId", "saleDate", "saleTime",
@@ -113,18 +84,17 @@ export const arrangeSale = async ({
          left join staff on staff."staffCode" = line."staffCode"
        )
        select id::text from made`,
-      [
-        TOKYO,
-        saleNumber,
-        staffCode,
-        day,
-        subtotal,
-        discount,
-        tax,
-        JSON.stringify(rows),
-      ],
-    ),
-  )[0].id
+    [
+      TOKYO,
+      saleNumber,
+      staffCode,
+      day,
+      subtotal,
+      discount,
+      tax,
+      JSON.stringify(rows),
+    ],
+  )
 }
 
 /**

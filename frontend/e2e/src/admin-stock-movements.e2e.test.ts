@@ -1,11 +1,12 @@
+import { STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { salonId, TOKYO } from './bookings'
+import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
-import { enterCredentials, heading, STAFF } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The movements of the row of the colour of the salon in Tokyo: a purchase
@@ -94,7 +95,7 @@ test.describe('the movements of the stock, in a browser', () => {
   }) => {
     // Arrange
     await page.goto(`${ADMIN.origin}/salons/${await salonId(api)}/inventory`)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await expect(heading(page, '在庫')).toBeVisible()
     await pressWithTheKeyboard(page.getByRole('link', { name: COLOUR }))
     await expect(heading(page, '在庫の行')).toBeFocused()
@@ -148,7 +149,7 @@ test.describe('the movements of the stock, in a browser', () => {
     // Arrange: the history once, as the screen reads it
     const salon = await salonId(api)
     await page.goto(`${ADMIN.origin}/salons/${salon}/inventory`)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await page.getByRole('link', { name: COLOUR }).click()
     await page.getByRole('link', { name: '在庫の移動の履歴' }).click()
     await expect(movementRows(page)).toHaveCount(1)
@@ -191,7 +192,7 @@ test.describe('the movements of the stock, on a screen as narrow as a phone', ()
   }) => {
     // Arrange
     await page.goto(`${ADMIN.origin}/salons/${await salonId(api)}/inventory`)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await page.getByRole('link', { name: COLOUR }).click()
     await page.getByRole('link', { name: '在庫の移動を記録する' }).click()
     await expect(heading(page, '在庫の移動を記録する')).toBeFocused()

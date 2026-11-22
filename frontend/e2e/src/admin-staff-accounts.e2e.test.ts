@@ -1,3 +1,4 @@
+import { OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN, PORTAL } from './applications'
@@ -8,7 +9,6 @@ import {
   ADMIN_START,
   enterCredentials,
   heading,
-  OWNER,
   passwordField,
   signOutButton,
 } from './sign-in'
@@ -25,18 +25,9 @@ import {
 const WATANABE = 'yui.watanabe@beautysalon.jp'
 const PASSWORD = 'a passphrase that only this test knows'
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** A member of the seed data, by their staff code. */
-const staffIdOf = async (api: TestApi, staffCode: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query('select id::text from staff where "staffCode" = $1', [
-      staffCode,
-    ]),
-  )
-
-  return id
-}
+const staffIdOf = (api: TestApi, staffCode: string): Promise<string> =>
+  api.idOf('select id::text from staff where "staffCode" = $1', [staffCode])
 
 const accountSchema = z.array(
   z.object({ role: z.string(), linked: z.boolean() }),

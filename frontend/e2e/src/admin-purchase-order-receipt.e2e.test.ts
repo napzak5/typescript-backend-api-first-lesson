@@ -1,10 +1,11 @@
+import { OWNER, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { salonId, TOKYO } from './bookings'
+import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * What the salon in Tokyo orders and receives: its owner, with the

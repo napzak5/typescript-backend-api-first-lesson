@@ -1,3 +1,4 @@
+import { OWNER } from '@beauty-salon-frontend/testing/seed'
 import * as z from 'zod'
 import { ADMIN, PORTAL } from './applications'
 import { expectSoundPage } from './checks'
@@ -8,7 +9,6 @@ import {
   emailField,
   enterCredentials,
   heading,
-  OWNER,
   passwordField,
 } from './sign-in'
 

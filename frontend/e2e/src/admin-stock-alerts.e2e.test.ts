@@ -1,10 +1,11 @@
+import { MANAGER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { salonId, TOKYO } from './bookings'
+import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, MANAGER, STAFF } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The alerts of the stock of the salon in Tokyo: the expiry of the colour
@@ -56,7 +57,7 @@ test.describe('the alerts of the stock, in a browser', () => {
   }) => {
     // Arrange
     await page.goto(`${ADMIN.origin}/salons/${await salonId(api)}/inventory`)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await expect(heading(page, '在庫')).toBeVisible()
     await pressWithTheKeyboard(
       page.getByRole('link', { name: '在庫のアラート' }),
@@ -99,7 +100,7 @@ test.describe('the alerts of the stock, in a browser', () => {
       {
         productCode: 'COLOR001',
         notes: '廃棄する。メーカーには連絡済み。',
-        member: STAFF,
+        member: STYLIST,
       },
     ])
   })

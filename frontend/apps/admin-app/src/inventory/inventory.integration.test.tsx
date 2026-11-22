@@ -1,20 +1,22 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+} from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs, renderAt } from '../__tests__/screens'
-import {
-  ADMIN,
-  dayFromToday,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import {
   bookingsHrefOf,
   inventoryHrefOf,
@@ -844,7 +846,7 @@ describe('the stock screens', () => {
 
   it.each<[string, string, (osaka: string, tokyo: string) => string]>([
     ['the manager of another salon', MANAGER, (osaka) => osaka],
-    ['an administrator, below another salon', ADMIN, (_, tokyo) => tokyo],
+    ['an administrator, below another salon', OPERATOR, (_, tokyo) => tokyo],
   ])(
     'should not show %s a row of the salon in Osaka',
     async (_case, email, salonOf) => {

@@ -1,10 +1,11 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { heading } from '@beauty-salon-frontend/testing/screens'
+import { KENJI, STYLIST } from '@beauty-salon-frontend/testing/seed'
 import { screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
 import { NOTHING, signedInAs } from '../bookings/__tests__/arrangements'
-import { KENJI, visitReviewed, visitToReview } from './__tests__/arrangements'
+import { visitReviewed, visitToReview } from './__tests__/arrangements'
 
 /*
  * Who the screens of the reviews are for, and where each of them stands
@@ -14,8 +15,6 @@ import { KENJI, visitReviewed, visitToReview } from './__tests__/arrangements'
  */
 
 const TITLE = applications.portal.name
-
-const STYLIST = 'stylist1@beautysalon.jp'
 
 type Place = {
   /** The address of the screen, for a visit that nobody wrote about and its review that somebody did */
@@ -95,7 +94,7 @@ describe.each(PLACES)('%s, against the API', (_screen, place) => {
 
   it('should show a customer the screen, mark its place in the header, and name it in the title of the document', async () => {
     // Arrange
-    await signedInAs(KENJI)
+    await signedInAs(KENJI.email)
     const { id: toReview } = await visitToReview()
     const { reviewId } = await visitReviewed()
 

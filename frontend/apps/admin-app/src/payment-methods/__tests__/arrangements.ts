@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -39,20 +39,16 @@ export const storedMethodsOf = async (name: string) =>
     ),
   )
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** The ID of a payment method of a salon, by its name. */
 export const methodIdOf = async (
   salon: string,
   displayName: string,
 ): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `select p.id::text from payment_methods p join salons s on s.id = p."salonId"
+  idOf(
+    `select p.id::text from payment_methods p join salons s on s.id = p."salonId"
        where s.name = $1 and p."displayName" = $2`,
-      [salon, displayName],
-    ),
-  )[0].id
+    [salon, displayName],
+  )
 
 /**
  * Lets the counter have received a payment by a method of a salon
@@ -62,9 +58,8 @@ export const paidMeanwhileBy = async (
   salon: string,
   displayName: string,
 ): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `with method as (
+  idOf(
+    `with method as (
          select p.id, p."salonId" from payment_methods p join salons s on s.id = p."salonId"
          where s.name = $1 and p."displayName" = $2
        ), sold as (
@@ -80,6 +75,5 @@ export const paidMeanwhileBy = async (
        select sold.id, method.id, 'PT-TEST-0901', 5000, 'completed', now()
        from sold cross join method
        returning id::text`,
-      [salon, displayName],
-    ),
-  )[0].id
+    [salon, displayName],
+  )

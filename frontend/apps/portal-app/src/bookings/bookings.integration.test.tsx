@@ -1,12 +1,13 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   asTheApplicationKeeps,
   heading,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
+import { CUSTOMER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -18,7 +19,6 @@ import {
   ask,
   bookingPathOf,
   bookThroughApi,
-  CUSTOMER,
   closeDay,
   DAYS_AHEAD,
   dayAhead,
@@ -32,11 +32,9 @@ import {
   NOTHING,
   openDay,
   registerNewcomer,
-  salonId,
   serviceId,
   signedInAs,
   staffId,
-  TOKYO,
   takeAway,
 } from './__tests__/arrangements'
 
@@ -82,7 +80,7 @@ describe('the screens of a booking, against the API', () => {
     it('should lead from a service of the menu to the screen where it is booked', async () => {
       // Arrange
       await signedInAs(CUSTOMER)
-      renderAt(`/salons/${await salonId()}`)
+      renderAt(`/salons/${await salonIdOf(TOKYO)}`)
       const menu = await screen.findByRole('region', { name: 'メニュー' })
 
       // Act
@@ -99,7 +97,7 @@ describe('the screens of a booking, against the API', () => {
 
     it('should offer no booking of a service that cannot be booked online, and none at a salon that takes no bookings', async () => {
       // Arrange
-      const path = `/salons/${await salonId()}`
+      const path = `/salons/${await salonIdOf(TOKYO)}`
       const first = renderAt(path)
       const menu = await screen.findByRole('region', { name: 'メニュー' })
       await within(menu).findByRole('link', {
@@ -167,7 +165,7 @@ describe('the screens of a booking, against the API', () => {
 
     it('should tell an account of the staff of a salon that the screen is not for it', async () => {
       // Arrange
-      await signedInAs('stylist1@beautysalon.jp')
+      await signedInAs(STYLIST)
 
       // Act
       renderAt(await bookingPathOf())
@@ -199,7 +197,7 @@ describe('the screens of a booking, against the API', () => {
       })
       expect(
         screen.getByRole('link', { name: 'サロンのページへ戻る' }),
-      ).toHaveAttribute('href', `/salons/${await salonId()}`)
+      ).toHaveAttribute('href', `/salons/${await salonIdOf(TOKYO)}`)
       // The screen was opened by its address, by a customer who has a
       // profile: the focus is where the browser put it
       await staffControl()
@@ -825,7 +823,7 @@ describe('the screens of a booking, against the API', () => {
       {
         of: 'a service the salon does not have',
         path: async () =>
-          `/salons/${await salonId()}/services/${NOTHING}/booking`,
+          `/salons/${await salonIdOf(TOKYO)}/services/${NOTHING}/booking`,
       },
       {
         of: 'a salon that does not exist',
@@ -1017,7 +1015,7 @@ describe('the screens of a booking, against the API', () => {
       })
       expect(
         within(details).getByRole('link', { name: TOKYO }),
-      ).toHaveAttribute('href', `/salons/${await salonId()}`)
+      ).toHaveAttribute('href', `/salons/${await salonIdOf(TOKYO)}`)
     })
 
     it('should show a booking the salon confirmed as confirmed, and one that was cancelled as cancelled, without a word on what comes next', async () => {

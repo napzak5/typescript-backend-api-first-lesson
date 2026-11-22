@@ -1,21 +1,26 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import {
-  ADMIN,
   arrangeSale,
-  dayFromToday,
-  OSAKA,
-  OWNER,
   paySale,
   removeTokyo,
-  salonIdOf,
-  TOKYO,
   voidSale,
 } from '../__tests__/arrangements'
 import {
@@ -383,7 +388,7 @@ describe('the trends of the sales, against the API', () => {
     // Arrange
     await sellOverTime()
     renderAt(trendsHrefOf(await salonIdOf(TOKYO)))
-    await signInAs(ADMIN)
+    await signInAs(OPERATOR)
     await screen.findByRole('table', { name: TABLE })
     await removeTokyo()
 

@@ -1,10 +1,11 @@
+import { KENJI, OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage, sidewaysScrollOf } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The second customer of the seed data, Yamamoto Kenji, was registered
@@ -12,7 +13,6 @@ import { enterCredentials, heading, OWNER } from './sign-in'
  * merges the second record into the first from the page of the first.
  */
 
-const KENJI = { email: 'customer2@example.com', name: 'Yamamoto Kenji' }
 const AGAIN = { email: 'kenji.yamamoto@example.com' }
 
 const idsSchema = z.tuple([z.object({ kenji: z.uuid(), again: z.uuid() })])

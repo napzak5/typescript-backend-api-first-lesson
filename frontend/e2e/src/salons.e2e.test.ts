@@ -1,15 +1,9 @@
+import { OSAKA, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
-import * as z from 'zod'
 import { PORTAL } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import { heading, PORTAL_START } from './sign-in'
-
-/** The two salons of the seed data */
-const TOKYO = 'Beauty Studio Tokyo'
-const OSAKA = 'Hair & Spa Osaka'
-
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
 
 const search = (page: Page): Locator =>
   page.getByRole('search', { name: 'サロンを探す' })
@@ -189,9 +183,9 @@ test.describe('the salons, in a browser', () => {
     await api.query(
       `update reviews set "createdAt" = now() - "overallRating" * interval '1 day'`,
     )
-    const [{ id }] = idSchema.parse(
-      await api.query('select id::text from salons where name = $1', [TOKYO]),
-    )
+    const id = await api.idOf('select id::text from salons where name = $1', [
+      TOKYO,
+    ])
     await page.goto(`${PORTAL.origin}/salons/${id}`)
     const reviews = part(page, 'レビュー')
     const order = reviews.getByRole('combobox', { name: '並び順' })

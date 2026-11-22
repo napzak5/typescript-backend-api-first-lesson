@@ -1,10 +1,11 @@
+import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { salonId, TOKYO } from './bookings'
+import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER, STAFF } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The purchase orders of the salon in Tokyo: an order made by a member of
@@ -69,7 +70,7 @@ test.describe('the purchase orders, in a browser', () => {
   }) => {
     // Arrange
     await page.goto(`${ADMIN.origin}/salons/${await salonId(api)}/inventory`)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await expect(heading(page, '在庫')).toBeVisible()
     await pressWithTheKeyboard(
       page.getByRole('link', { name: '発注', exact: true }),

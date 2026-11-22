@@ -1,10 +1,16 @@
+import {
+  CUSTOMER,
+  KENJI,
+  OPERATOR,
+  OWNER,
+} from '@beauty-salon-frontend/testing/seed'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { part } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { pressWithTheKeyboard } from './sales'
-import { CUSTOMER, enterCredentials, heading, OPERATOR } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The operations of the platform, from the side of its operator, with the
@@ -16,13 +22,11 @@ import { CUSTOMER, enterCredentials, heading, OPERATOR } from './sign-in'
  * well.
  */
 
-const OWNER = 'owner@beautysalon.jp'
-
 /**
  * The customer whose data is erased: another than the one whose points
  * expire, since the erasure expires what is left of the balance as well
  */
-const ERASED = 'customer2@example.com'
+const ERASED = KENJI.email
 
 /** Lets the customer of the seed data have earned 300 points that expired three days ago. */
 const arrangeExpiredPoints = (api: TestApi): Promise<unknown> =>

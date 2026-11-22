@@ -1,10 +1,11 @@
+import { MANAGER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, MANAGER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * Several services of the menu changed at once by the manager of the salon

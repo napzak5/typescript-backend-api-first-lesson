@@ -1,3 +1,4 @@
+import { OPERATOR, OSAKA } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN, PORTAL } from './applications'
@@ -5,7 +6,7 @@ import { part } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { pressWithTheKeyboard } from './sales'
-import { enterCredentials, heading, OPERATOR } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The reports of reviews, from the side of the platform: its operator,
@@ -16,24 +17,18 @@ import { enterCredentials, heading, OPERATOR } from './sign-in'
  * dialogs are shown on a screen as narrow as a phone as well.
  */
 
-const OSAKA = 'Hair & Spa Osaka'
 const GREAT = 'Great experience'
-
-const idSchema = z.tuple([z.object({ id: z.string() })])
 
 /** The ID of the salon in Osaka */
 const osakaId = async (api: TestApi): Promise<string> =>
-  idSchema.parse(
-    await api.query('select id::text from salons where name = $1', [OSAKA]),
-  )[0].id
+  api.idOf('select id::text from salons where name = $1', [OSAKA])
 
 /** The address of «Great experience» on the screens of the salon */
 const reviewPathOf = async (api: TestApi): Promise<string> =>
-  `/salons/${await osakaId(api)}/reviews/${
-    idSchema.parse(
-      await api.query('select id::text from reviews where title = $1', [GREAT]),
-    )[0].id
-  }`
+  `/salons/${await osakaId(api)}/reviews/${await api.idOf(
+    'select id::text from reviews where title = $1',
+    [GREAT],
+  )}`
 
 const storedSchema = z.array(
   z.object({

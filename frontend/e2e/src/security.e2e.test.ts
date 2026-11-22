@@ -1,10 +1,10 @@
+import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
 import { part } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import {
-  CUSTOMER,
   enterCredentials,
   heading,
   passwordField,

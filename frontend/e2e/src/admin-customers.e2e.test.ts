@@ -1,10 +1,17 @@
+import {
+  KENJI,
+  OWNER,
+  SAKURA,
+  STYLIST,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage, sidewaysScrollOf } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { ADMIN_START, enterCredentials, heading, OWNER, STAFF } from './sign-in'
+import { ADMIN_START, enterCredentials, heading } from './sign-in'
 
 /*
  * A customer the ledger does not have yet, who calls for a booking: the
@@ -16,10 +23,6 @@ import { ADMIN_START, enterCredentials, heading, OWNER, STAFF } from './sign-in'
 const EMAIL = 'hanako.yamada@example.com'
 
 const NAME = '山田 花子'
-
-/** Customers of the seed data */
-const SAKURA = 'customer3@example.com'
-const YUKI = { email: 'customer1@example.com', name: 'Tanaka Yuki' }
 
 const storedSchema = z.array(
   z.object({
@@ -65,7 +68,7 @@ test.describe('the ledger of the customers, in a browser', () => {
     // Arrange
     const tokyo = await salonId(api)
     await page.goto(ADMIN.origin)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await expect(heading(page, ADMIN_START)).toBeFocused()
 
     // Act: the booking search finds nobody
@@ -162,13 +165,9 @@ test.describe('the ledger of the customers, in a browser', () => {
   })
 })
 
-const customerIdSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** The ID of a customer of the seed data, by their address of mail. */
 const customerIdOf = async (api: TestApi, email: string): Promise<string> =>
-  customerIdSchema.parse(
-    await api.query('select id::text from customers where email = $1', [email]),
-  )[0].id
+  api.idOf('select id::text from customers where email = $1', [email])
 
 const referrerSchema = z.array(
   z.object({
@@ -200,11 +199,11 @@ test.describe('the referrer and the preferences of a customer, in a browser', ()
     // Arrange
     const tokyo = await salonId(api)
     const [sakura, yuki] = await Promise.all([
-      customerIdOf(api, SAKURA),
+      customerIdOf(api, SAKURA.email),
       customerIdOf(api, YUKI.email),
     ])
     await page.goto(`${ADMIN.origin}/salons/${tokyo}/customers/${sakura}`)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
     await expect(heading(page, 'お客様の台帳')).toBeFocused()
     await pressWithTheKeyboard(page.getByRole('link', { name: '台帳を直す' }))
     await expect(heading(page, '台帳を直す')).toBeFocused()
@@ -282,7 +281,7 @@ test.describe('the referrer and the preferences of a customer, in a browser', ()
         .getByRole('region', { name: '好み設定' })
         .getByText('静かに過ごしたい'),
     ).toBeVisible()
-    expect(await storedReferrerAndWishes(api, SAKURA)).toEqual([
+    expect(await storedReferrerAndWishes(api, SAKURA.email)).toEqual([
       {
         referredBy: yuki,
         preferredStaff: 'Mika Suzuki',
@@ -291,9 +290,6 @@ test.describe('the referrer and the preferences of a customer, in a browser', ()
     ])
   })
 })
-
-/** The customer of the seed data the removal takes out of the ledger, and brings back */
-const KENJI = { email: 'customer2@example.com', name: 'Yamamoto Kenji' }
 
 /** Lets the bookings of a customer that are not finished have been cancelled: the customer may be removed. */
 const finishBookingsOf = (api: TestApi, email: string): Promise<unknown> =>
@@ -425,21 +421,17 @@ test.describe('the removal and the history of a customer, in a browser', () => {
 /** A text that has nowhere to break: an address, as somebody pastes it */
 const UNBROKEN = `https://example.com/${'a'.repeat(120)}`
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /**
  * Lets a customer of the seed data have long values that do not break:
  * a tag, a note and a picture they want to look like.
  */
 const arrangeLongValues = async (api: TestApi): Promise<string> => {
-  const [{ id }] = idsSchema.parse(
-    await api.query(
-      `update customers
+  const id = await api.idOf(
+    `update customers
        set tags = array['treatment-focus', $2::text], notes = $2::text, "internalNotes" = $2::text
        where email = $1
        returning id::text`,
-      [SAKURA, UNBROKEN],
-    ),
+    [SAKURA.email, UNBROKEN],
   )
   await api.query(
     `insert into customer_preferences ("customerId", "preferredTimeSlots", "avoidStaffIds",
@@ -464,7 +456,7 @@ test.describe('the ledger of the customers, on a screen as narrow as a phone', (
     const tokyo = await salonId(api)
     const sakura = await arrangeLongValues(api)
     await page.goto(`${ADMIN.origin}/salons/${tokyo}/customers`)
-    await enterCredentials(page, STAFF, api.seedPassword)
+    await enterCredentials(page, STYLIST, api.seedPassword)
 
     // Act, Assert: the ledger
     await expect(heading(page, '顧客台帳')).toBeFocused()

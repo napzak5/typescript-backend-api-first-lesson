@@ -6,6 +6,7 @@ import {
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
+import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import { AppShell, NotificationProvider } from '@beauty-salon-frontend/ui'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor, within } from '@testing-library/react'
@@ -21,7 +22,6 @@ import {
 } from '..'
 import { momentOf } from './security-format'
 
-const CUSTOMER = 'customer1@example.com'
 const NEW_PASSWORD = 'aoi sora to shiroi kumo no aida'
 const GUESSABLE = 'password1234567890'
 const WRONG_CURRENT =

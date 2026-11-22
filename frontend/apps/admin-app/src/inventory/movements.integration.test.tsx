@@ -1,17 +1,17 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OSAKA,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import { staffIdOf } from '../customers/__tests__/arrangements'
 import {
   inventoryHrefOf,
@@ -443,7 +443,7 @@ describe('the screens of the movements of the stock', () => {
       const rowId = await rowIdOf(TOKYO, 'COLOR001')
 
       // Act
-      await openAs(hrefOf(await salonIdOf(OSAKA), rowId), ADMIN)
+      await openAs(hrefOf(await salonIdOf(OSAKA), rowId), OPERATOR)
 
       // Assert
       expect(await heading('在庫の行が見つかりません')).toBeVisible()

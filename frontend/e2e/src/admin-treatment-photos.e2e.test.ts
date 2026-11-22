@@ -1,10 +1,11 @@
+import { OWNER, SAKURA, VIP } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The photos of a treatment record and the statistics of the records, as a
@@ -18,30 +19,20 @@ import { enterCredentials, heading, OWNER } from './sign-in'
  * photos, which are shown on a screen as narrow as a phone.
  */
 
-const SAKURA = 'customer3@example.com'
-
 /** The photo of the test, and the image the browser shows for it */
 const PHOTO = 'https://photos.example.com/sakura/after.svg'
 const IMAGE =
   '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30"/></svg>'
-const VIP = 'vip.customer@example.com'
-
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
 
 /** The treatment record of a customer of the seed data. */
-const treatmentOf = async (api: TestApi, email: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query(
-      `select records.id::text
+const treatmentOf = (api: TestApi, email: string): Promise<string> =>
+  api.idOf(
+    `select records.id::text
        from treatment_records records
        join customers on customers.id = records."customerId"
        where customers.email = $1`,
-      [email],
-    ),
+    [email],
   )
-
-  return id
-}
 
 const photosSchema = z.array(
   z.object({
@@ -78,7 +69,7 @@ test.describe('the photos and the statistics of the treatment records, in a brow
   }) => {
     // Arrange
     const salon = await salonId(api)
-    const treatmentId = await treatmentOf(api, SAKURA)
+    const treatmentId = await treatmentOf(api, SAKURA.email)
     await page.route(PHOTO, (route) =>
       route.fulfill({ contentType: 'image/svg+xml', body: IMAGE }),
     )
@@ -195,7 +186,7 @@ test.describe('the photos and the statistics, on a screen as narrow as a phone',
   }) => {
     // Arrange
     const salon = await salonId(api)
-    const treatmentId = await treatmentOf(api, VIP)
+    const treatmentId = await treatmentOf(api, VIP.email)
     await page.goto(`${ADMIN.origin}/salons/${salon}/treatments/${treatmentId}`)
     await enterCredentials(page, OWNER, api.seedPassword)
 

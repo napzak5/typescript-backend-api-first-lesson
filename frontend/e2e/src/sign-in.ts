@@ -11,14 +11,6 @@ import {
 import * as z from 'zod'
 import type { TestApi } from './fixtures'
 
-/** Accounts of the seed data, by what they may use. */
-export const OWNER = 'owner@beautysalon.jp'
-export const MANAGER = 'manager@beautysalon.jp'
-export const STAFF = 'stylist1@beautysalon.jp'
-export const CUSTOMER = 'customer1@example.com'
-/** The operator of the platform: a member of no salon */
-export const OPERATOR = 'admin@beautysalon.jp'
-
 /** Somebody who registers in a test: an account without a profile */
 export const NEWCOMER = 'newcomer@example.com'
 export const NEWCOMER_PASSWORD = 'a passphrase that only this test knows'

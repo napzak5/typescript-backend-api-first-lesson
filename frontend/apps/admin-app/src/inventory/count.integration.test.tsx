@@ -1,18 +1,18 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import { staffIdOf } from '../customers/__tests__/arrangements'
 import {
   inventoryHrefOf,
@@ -243,7 +243,7 @@ describe('the screens of the count and the value of the stock', () => {
   it('should record the count of an administrator under no member of the staff', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openAs(stockCountHrefOf(await salonIdOf(TOKYO)), ADMIN)
+    await openAs(stockCountHrefOf(await salonIdOf(TOKYO)), OPERATOR)
     await openedCount()
 
     // Act
@@ -475,7 +475,7 @@ describe('the screens of the count and the value of the stock', () => {
     'should say that a salon keeps no stock at %s',
     async (_, hrefOf, title, empty) => {
       // Act
-      await openAs(hrefOf(await salonIdOf(OSAKA)), ADMIN)
+      await openAs(hrefOf(await salonIdOf(OSAKA)), OPERATOR)
 
       // Assert
       await heading(title)

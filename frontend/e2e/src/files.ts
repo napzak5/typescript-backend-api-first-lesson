@@ -1,9 +1,10 @@
 import type { AttachmentCrudGetUploadUrl201 } from '@beauty-salon-frontend/api-client'
+import { OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { APIRequestContext } from '@playwright/test'
 import * as z from 'zod'
 import { salonId } from './bookings'
 import { expect, type TestApi } from './fixtures'
-import { accessTokenOf, OWNER } from './sign-in'
+import { accessTokenOf } from './sign-in'
 
 /*
  * The files of the browser tests, and a file the tests of the share links

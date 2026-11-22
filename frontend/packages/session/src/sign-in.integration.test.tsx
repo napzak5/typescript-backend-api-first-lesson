@@ -8,6 +8,7 @@ import {
   heading,
   queryClientOfATest,
 } from '@beauty-salon-frontend/testing/screens'
+import { CUSTOMER, STYLIST } from '@beauty-salon-frontend/testing/seed'
 import {
   AppShell,
   NotificationProvider,
@@ -25,8 +26,6 @@ import {
   signOut,
 } from '.'
 
-const CUSTOMER = 'customer1@example.com'
-const STYLIST = 'stylist1@beautysalon.jp'
 const LOGIN = '/api/v1/auth/login'
 
 /** An application whose one screen is for the roles it is given. */

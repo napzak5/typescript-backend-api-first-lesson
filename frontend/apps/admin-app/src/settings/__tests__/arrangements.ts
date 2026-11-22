@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -42,22 +42,19 @@ export const phoneChangedMeanwhile = (
     [name, phoneNumber],
   )
 
-const changedSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** Lets a date of the calendar of a salon be a day off with a name and a note. */
 export const dayOffArranged = async (
   name: string,
   date: string,
 ): Promise<void> => {
-  changedSchema.parse(
-    await testApi().query(
-      `update opening_hours o set "isHoliday" = true, "holidayName" = '臨時休業',
-         notes = '設備の点検', "openTime" = null, "closeTime" = null
-       from salons s
-       where s.id = o."salonId" and s.name = $1 and o.date = $2::date
-       returning o.id::text`,
-      [name, date],
-    ),
+  // The date is in the calendar of the salon, once
+  await idOf(
+    `update opening_hours o set "isHoliday" = true, "holidayName" = '臨時休業',
+       notes = '設備の点検', "openTime" = null, "closeTime" = null
+     from salons s
+     where s.id = o."salonId" and s.name = $1 and o.date = $2::date
+     returning o.id::text`,
+    [name, date],
   )
 }
 

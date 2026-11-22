@@ -3,6 +3,13 @@ import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
 import { heading, statusMessages } from '@beauty-salon-frontend/testing/screens'
+import {
+  CUSTOMER,
+  MANAGER,
+  OPERATOR,
+  OWNER,
+  STYLIST,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -11,7 +18,6 @@ import { renderAt } from './__tests__/screens'
 const TITLE = applications.portal.name
 /** The heading of the first screen of the portal, the search of the salons */
 const START = 'サロンを探す'
-const CUSTOMER = 'customer1@example.com'
 
 const header = () => within(screen.getByRole('banner'))
 
@@ -51,10 +57,10 @@ describe('App, against the API', () => {
   })
 
   it.each([
-    ['a member of the staff', 'stylist1@beautysalon.jp'],
-    ['a manager', 'manager@beautysalon.jp'],
-    ['the owner of a salon', 'owner@beautysalon.jp'],
-    ['the operator of the platform', 'admin@beautysalon.jp'],
+    ['a member of the staff', STYLIST],
+    ['a manager', MANAGER],
+    ['the owner of a salon', OWNER],
+    ['the operator of the platform', OPERATOR],
   ])('should let %s sign in as well: %s', async (_, email) => {
     // Arrange
     renderAt('/sign-in')

@@ -1,3 +1,4 @@
+import { CUSTOMER, YUKI } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
 import { expectSoundPage } from './checks'
@@ -5,7 +6,6 @@ import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
 import { box, saveButton, text, value } from './mypage'
 import {
-  CUSTOMER,
   enterCredentials,
   heading,
   NEWCOMER,
@@ -57,9 +57,7 @@ test.describe('the page and the profile of a customer, in a browser', () => {
     await expect(value(page, '会員の情報', 'ポイント')).toHaveText(
       '2,500 ポイント',
     )
-    await expect(value(page, 'お客様の情報', 'お名前')).toHaveText(
-      'Tanaka Yuki',
-    )
+    await expect(value(page, 'お客様の情報', 'お名前')).toHaveText(YUKI.name)
     await expect(mainMenuLink(page, 'マイページ')).toHaveAttribute(
       'aria-current',
       'page',

@@ -1,18 +1,16 @@
+import {
+  CUSTOMER,
+  OPERATOR,
+  OWNER,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
-import * as z from 'zod'
 import { ADMIN, type Application, DASHBOARD, PORTAL } from './applications'
 import { HIROSHI, salonId, serviceId, staffId } from './bookings'
 import { edgesOf, expectSoundLayout } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { sellACutToday } from './sales'
-import {
-  CUSTOMER,
-  enterCredentials,
-  heading,
-  OPERATOR,
-  OWNER,
-  PORTAL_START,
-} from './sign-in'
+import { enterCredentials, heading, PORTAL_START } from './sign-in'
 
 /*
  * The screens on the narrowest screen they are made for, 320 CSS pixels
@@ -38,14 +36,12 @@ const UNBROKEN = `Salon${'a'.repeat(90)}`
 /** The address of a screen below where its application or its salon is, and its heading */
 type Screen = [path: string, heading: string]
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** The ID of the one row of the seed data that a statement finds. */
 const idOf = async (
   api: TestApi,
   statement: string,
   value: string,
-): Promise<string> => idSchema.parse(await api.query(statement, [value]))[0].id
+): Promise<string> => api.idOf(statement, [value])
 
 /**
  * Opens each screen and measures it once it has read what it shows. The
@@ -106,7 +102,7 @@ test.describe('the screens, on a screen 320 pixels wide', () => {
     // Act and assert: what everybody sees
     await measureScreens(page, PORTAL, '', [
       ['/', PORTAL_START],
-      [`/salons/${salon}`, 'Beauty Studio Tokyo'],
+      [`/salons/${salon}`, TOKYO],
       ['/register', 'アカウントの登録'],
       ['/forgot-password', 'パスワードの再設定'],
       ['/sign-in', 'サインイン'],

@@ -1,20 +1,19 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { dayFromToday, salonIdOf } from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  dayFromToday,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import { displayNameOf } from '../inventory/__tests__/arrangements'
 import {
   orderChangeHrefOf,
@@ -255,7 +254,7 @@ describe('the status of a purchase order, and what is written down on it', () =>
   it('should let an administrator approve an order, naming nobody', async () => {
     // Arrange
     const user = userEvent.setup()
-    await openOrderAs('PO-SEED-0001', ADMIN)
+    await openOrderAs('PO-SEED-0001', OPERATOR)
 
     // Act
     await user.click(screen.getByRole('button', { name: '承認する' }))
@@ -426,7 +425,7 @@ describe('the status of a purchase order, and what is written down on it', () =>
           await salonIdOf(OSAKA),
           await orderIdOf('PO-SEED-0001'),
         ),
-      ADMIN,
+      OPERATOR,
       'アドレスが正しいか、お確かめください。',
     ],
     [

@@ -1,29 +1,31 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+} from '@beauty-salon-frontend/testing/api'
 import {
   firstSight,
   heading,
   notifications,
   termsOf,
 } from '@beauty-salon-frontend/testing/screens'
-import { screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../__tests__/screens'
 import {
-  ADMIN,
-  arrange,
-  arrangeMany,
-  dayFromToday,
   KENJI,
+  OPERATOR,
   OSAKA,
   OWNER,
   SAKURA,
   STYLIST,
-  salonIdOf,
   TOKYO,
+  VIP,
   YUKI,
-} from '../bookings/__tests__/arrangements'
+} from '@beauty-salon-frontend/testing/seed'
+import { screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderAt } from '../__tests__/screens'
+import { arrange, arrangeMany } from '../bookings/__tests__/arrangements'
 import {
   customerIdOf,
   removeMeanwhile,
@@ -59,8 +61,6 @@ import {
  * by Hiroshi Tanaka, of a ladies' cut. An owner works, unless a test says
  * otherwise; another account did something meanwhile.
  */
-
-const VIP = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 
 const MASK = 'Intensive Hair Mask 250ml（TREAT001）'
 const SHAMPOO = 'Professional Shampoo 500ml（SHMP001）'
@@ -627,7 +627,7 @@ describe('the treatment records, against the API', () => {
 
     // Act
     renderAt(treatmentHrefOf(await salonIdOf(OSAKA), treatmentId))
-    await signInAs(ADMIN)
+    await signInAs(OPERATOR)
 
     // Assert
     expect(await heading('施術記録が見つかりません')).toHaveFocus()

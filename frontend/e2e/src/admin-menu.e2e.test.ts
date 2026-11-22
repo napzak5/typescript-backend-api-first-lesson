@@ -1,3 +1,4 @@
+import { MANAGER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
@@ -5,7 +6,7 @@ import { salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
-import { ADMIN_START, enterCredentials, heading, MANAGER } from './sign-in'
+import { ADMIN_START, enterCredentials, heading } from './sign-in'
 
 /*
  * The menu of a salon as its manager keeps it, with the keyboard alone: a

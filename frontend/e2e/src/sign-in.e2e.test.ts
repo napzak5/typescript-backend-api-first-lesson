@@ -1,3 +1,4 @@
+import { OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import { ADMIN } from './applications'
 import { findAccessibilityViolations } from './checks'
@@ -7,7 +8,6 @@ import {
   emailField,
   enterCredentials,
   heading,
-  OWNER,
   passwordField,
   setUpTwoFactor,
   signInButton,

@@ -8,6 +8,12 @@ import {
   heading,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  CUSTOMER,
+  OSAKA,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -16,7 +22,6 @@ import { renderAt } from '../__tests__/screens'
 import {
   ANOTHER_CUSTOMER,
   bookThroughApi,
-  CUSTOMER,
   giveBack,
   HIROSHI,
   LADIES_CUT,
@@ -29,7 +34,6 @@ import {
   registerNewcomer,
   signedInAs,
   staffId,
-  TOKYO,
   takeAway,
 } from './__tests__/arrangements'
 
@@ -44,8 +48,6 @@ import {
  */
 
 const TITLE = applications.portal.name
-
-const OSAKA = 'Hair & Spa Osaka'
 
 const STATUS_NAMES: Record<string, string> = {
   pending: '確定待ち',
@@ -351,7 +353,7 @@ describe('the bookings of a customer, against the API', () => {
 
     it('should have no navigation for an account of the staff of a salon', async () => {
       // Arrange
-      await signedInAs('stylist1@beautysalon.jp')
+      await signedInAs(STYLIST)
 
       // Act
       renderAt('/')
@@ -380,7 +382,7 @@ describe('the bookings of a customer, against the API', () => {
 
     it('should tell an account of the staff of a salon that the screen is not for it', async () => {
       // Arrange
-      await signedInAs('stylist1@beautysalon.jp')
+      await signedInAs(STYLIST)
 
       // Act
       renderAt('/bookings')

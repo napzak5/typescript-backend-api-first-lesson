@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -12,15 +12,9 @@ import * as z from 'zod'
  * them («Great experience») with a report that waits.
  */
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** The ID of a review, by its title */
 export const reviewIdOf = async (title: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query('select id::text from reviews where title = $1', [
-      title,
-    ]),
-  )[0].id
+  idOf('select id::text from reviews where title = $1', [title])
 
 const storedSchema = z.tuple([
   z.object({

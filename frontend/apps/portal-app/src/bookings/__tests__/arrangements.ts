@@ -3,7 +3,8 @@ import type {
   CustomerBookingsCreate201,
 } from '@beauty-salon-frontend/api-client'
 import { signIn } from '@beauty-salon-frontend/session'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
+import { KENJI, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import { expect } from 'vitest'
 import * as z from 'zod'
 
@@ -15,15 +16,13 @@ import * as z from 'zod'
  * was just registered).
  */
 
-/** The salon the tests book at, and what of it they book */
-export const TOKYO = 'Beauty Studio Tokyo'
+/** What the tests book at the salon in Tokyo, and with whom */
 export const LADIES_CUT = 'Ladies Cut'
 export const HIROSHI = 'Hiroshi Tanaka'
 export const MIKA = 'Mika Suzuki'
 
-/** Customers of the seed data: each has an account and a profile */
-export const CUSTOMER = 'customer1@example.com'
-export const ANOTHER_CUSTOMER = 'customer2@example.com'
+/** A customer of the seed data other than the one who signs in */
+export const ANOTHER_CUSTOMER = KENJI.email
 
 /** Somebody who registers in a test: an account without a profile */
 export const NEWCOMER = 'newcomer@example.com'
@@ -48,43 +47,18 @@ export const signedInAs = async (
 
 // --- What the tests ask of the database
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
-export const salonId = async (): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await testApi().query('select id::text from salons where name = $1', [
-      TOKYO,
-    ]),
-  )
-
-  return id
-}
-
-export const serviceId = async (name: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await testApi().query(
-      `select services.id::text from services join salons on salons.id = services."salonId"
+export const serviceId = (name: string): Promise<string> =>
+  idOf(
+    `select services.id::text from services join salons on salons.id = services."salonId"
        where salons.name = $1 and services.name = $2`,
-      [TOKYO, name],
-    ),
+    [TOKYO, name],
   )
 
-  return id
-}
-
-export const staffId = async (displayName: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await testApi().query(
-      'select id::text from staff where "displayName" = $1',
-      [displayName],
-    ),
-  )
-
-  return id
-}
+export const staffId = (displayName: string): Promise<string> =>
+  idOf('select id::text from staff where "displayName" = $1', [displayName])
 
 export const bookingPathOf = async (service = LADIES_CUT): Promise<string> =>
-  `/salons/${await salonId()}/services/${await serviceId(service)}/booking`
+  `/salons/${await salonIdOf(TOKYO)}/services/${await serviceId(service)}/booking`
 
 const dateSchema = z.tuple([z.object({ date: z.iso.date() })])
 
@@ -223,7 +197,7 @@ export const bookThroughApi = async (
   const answer = await ask(
     '/customers/me/bookings',
     {
-      salonId: await salonId(),
+      salonId: await salonIdOf(TOKYO),
       serviceId: await serviceId(LADIES_CUT),
       staffId: await staffId(booking.staff),
       startTime: booking.startTime,

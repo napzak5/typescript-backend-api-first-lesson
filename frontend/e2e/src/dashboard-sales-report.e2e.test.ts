@@ -1,19 +1,17 @@
 import { readFile } from 'node:fs/promises'
-import type { Download, Locator, Page } from '@playwright/test'
-import { DASHBOARD } from './applications'
-import { TOKYO } from './bookings'
-import { expectSoundPage } from './checks'
-import { expect, test } from './fixtures'
-import { mainMenuLink } from './main-menu'
-import { dayFromToday, pressWithTheKeyboard, sellACutToday } from './sales'
 import {
-  DASHBOARD_START,
-  enterCredentials,
-  heading,
   MANAGER,
   OPERATOR,
   OWNER,
-} from './sign-in'
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
+import type { Download, Locator, Page } from '@playwright/test'
+import { DASHBOARD } from './applications'
+import { expectSoundPage } from './checks'
+import { expect, test } from './fixtures'
+import { mainMenuLink } from './main-menu'
+import { pressWithTheKeyboard, sellACutToday } from './sales'
+import { DASHBOARD_START, enterCredentials, heading } from './sign-in'
 
 /*
  * The seed data has no sales: a test enters a cut of today in the salon in
@@ -65,8 +63,8 @@ test.describe('the sales report, in a browser', () => {
   }) => {
     // Arrange
     await sellACutToday(api)
-    const today = await dayFromToday(api, 0)
-    const yesterday = await dayFromToday(api, -1)
+    const today = await api.dayFromToday(0)
+    const yesterday = await api.dayFromToday(-1)
     await page.goto(DASHBOARD.origin)
     await enterCredentials(page, MANAGER, api.seedPassword)
     await expect(heading(page, DASHBOARD_START)).toBeFocused()

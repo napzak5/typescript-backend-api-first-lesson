@@ -4,6 +4,13 @@ import {
   heading,
   renderApplicationAt,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  CUSTOMER,
+  MANAGER,
+  OPERATOR,
+  OWNER,
+  STYLIST,
+} from '@beauty-salon-frontend/testing/seed'
 import { PageHeader } from '@beauty-salon-frontend/ui'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -17,7 +24,6 @@ import {
 } from './staff-application'
 
 const TITLE = 'Kushi Staff'
-const OWNER = 'owner@beautysalon.jp'
 
 /** The first screen of the application */
 const START = 'はじめの画面'
@@ -70,8 +76,8 @@ const linksOfTheHeader = (): [string | null, string | null, string | null][] =>
 describe('StaffApplication, against the API', () => {
   it.each<[string, string, string]>([
     ['the owner of a salon', OWNER, 'owner'],
-    ['a manager', 'manager@beautysalon.jp', 'manager'],
-    ['the operator of the platform', 'admin@beautysalon.jp', 'admin'],
+    ['a manager', MANAGER, 'manager'],
+    ['the operator of the platform', OPERATOR, 'admin'],
   ])(
     'should let %s in (%s), and give the header the links of the role %s',
     async (_case, email, role) => {
@@ -93,8 +99,8 @@ describe('StaffApplication, against the API', () => {
   )
 
   it.each<[string, string]>([
-    ['a member of the staff', 'stylist1@beautysalon.jp'],
-    ['a customer', 'customer1@example.com'],
+    ['a member of the staff', STYLIST],
+    ['a customer', CUSTOMER],
   ])(
     'should tell %s that the application is not for them: %s',
     async (_case, email) => {

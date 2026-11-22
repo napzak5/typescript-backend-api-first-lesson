@@ -1,5 +1,5 @@
 import type { SharedFileCrudGet200 } from '@beauty-salon-frontend/api-client'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -8,8 +8,6 @@ import * as z from 'zod'
  * puts its file into the database (`arrangeFile` of the files), and the
  * links it needs. A link put there has a token nobody knows.
  */
-
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
 
 /**
  * Puts a share link of a file into the database, as an account issued it
@@ -34,9 +32,8 @@ export const arrangeShareLink = async ({
   downloadCount?: number
   withPassword?: boolean
 }): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `insert into share_links
+  idOf(
+    `insert into share_links
          ("attachmentId", "tokenHash", "passwordHash", "expiresAt",
           "maxDownloads", "downloadCount", "createdBy", "createdAt", "updatedAt")
        select $1, gen_random_uuid()::text,
@@ -47,35 +44,32 @@ export const arrangeShareLink = async ({
          now() - $2::float8 * interval '1 hour'
        from users u where u.email = $6
        returning id::text`,
-      [
-        attachmentId,
-        hoursAgo,
-        hoursLeft,
-        maxDownloads,
-        downloadCount,
-        issuedBy,
-        withPassword,
-      ],
-    ),
-  )[0].id
+    [
+      attachmentId,
+      hoursAgo,
+      hoursLeft,
+      maxDownloads,
+      downloadCount,
+      issuedBy,
+      withPassword,
+    ],
+  )
 
 /** Puts a file whose upload was not finished into the database, as the owner of a salon began it. */
 export const arrangeUnfinishedFile = async (
   salonId: string,
   filename: string,
 ): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `insert into attachments
+  idOf(
+    `insert into attachments
          ("salonId", filename, "contentType", size, status, "uploadedBy",
           "uploadExpiresAt")
        select $1, $2, 'application/pdf', 512, 'pending', u.id,
          now() + interval '15 minutes'
        from users u where u.email = 'owner@beautysalon.jp'
        returning id::text`,
-      [salonId, filename],
-    ),
-  )[0].id
+    [salonId, filename],
+  )
 
 const storedSchema = z.array(
   z.object({

@@ -3,12 +3,12 @@ import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { address, heading } from '@beauty-salon-frontend/testing/screens'
+import { CUSTOMER, STYLIST } from '@beauty-salon-frontend/testing/seed'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
 import {
-  CUSTOMER,
   NEWCOMER,
   NEWCOMER_PASSWORD,
   registerNewcomer,
@@ -22,7 +22,6 @@ import {
  */
 
 const TITLE = applications.portal.name
-const STYLIST = 'stylist1@beautysalon.jp'
 const NEW_PASSWORD = 'aoi sora to shiroi kumo no aida'
 
 const lastPasswordChangeOf = async (email: string): Promise<unknown> => {

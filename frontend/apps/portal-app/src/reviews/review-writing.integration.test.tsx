@@ -6,6 +6,12 @@ import {
   heading,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  CUSTOMER,
+  KENJI,
+  OSAKA,
+  VIP,
+} from '@beauty-salon-frontend/testing/seed'
 import { focusManager, onlineManager } from '@tanstack/react-query'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -20,7 +26,6 @@ import {
 } from 'vitest'
 import { renderAt } from '../__tests__/screens'
 import {
-  CUSTOMER,
   giveBack,
   NOTHING,
   signedInAs,
@@ -31,8 +36,6 @@ import {
   bookingToCome,
   button,
   detailsIn,
-  KENJI,
-  OSAKA,
   optionsOf,
   overall,
   paragraphsIn,
@@ -47,7 +50,6 @@ import {
   storedReviewOf,
   TAKESHI,
   text,
-  VIP,
   visitReviewed,
   visitToReview,
   WRITTEN,
@@ -103,7 +105,7 @@ const askedOfTheReviews = (fetched: MockInstance<typeof fetch>): string[] =>
 
 describe('the review of a visit, against the API', () => {
   beforeEach(async () => {
-    await signedInAs(KENJI)
+    await signedInAs(KENJI.email)
   })
 
   afterEach(() => {
@@ -154,7 +156,7 @@ describe('the review of a visit, against the API', () => {
 
     it('should say nothing of a review on the page of a booking that is no visit that took place', async () => {
       // Arrange
-      const id = await bookingToCome(KENJI)
+      const id = await bookingToCome(KENJI.email)
 
       // Act
       renderAt(`/bookings/${id}`)
@@ -218,8 +220,8 @@ describe('the review of a visit, against the API', () => {
 
     it('should show the review as it is now whenever the page is shown: with what the salon answered meanwhile', async () => {
       // Arrange: the application keeps what it read; the page is read, and left
-      await signedInAs(VIP)
-      const visit = await visitReviewed(VIP)
+      await signedInAs(VIP.email)
+      const visit = await visitReviewed(VIP.email)
       const client = asTheApplicationKeeps()
       const { unmount } = renderAt(`/bookings/${visit.id}`, { client })
       await within(await region('レビュー')).findByText(
@@ -312,7 +314,7 @@ describe('the review of a visit, against the API', () => {
       ).toEqual([OSAKA, OSAKA])
       expect(within(list).getByText('また行きます')).toBeVisible()
       expect(await storedReviewOf(visit.id)).toMatchObject({
-        customer: KENJI,
+        customer: KENJI.email,
         salon: OSAKA,
         staff: TAKESHI,
         overallRating: 4,
@@ -430,9 +432,9 @@ describe('the review of a visit, against the API', () => {
 
     it('should offer everybody who took the booking, the member it was with first, and write the review of the one who is chosen', async () => {
       // Arrange: a visit that two members of the staff took, written about again
-      await signedInAs(VIP)
-      const visit = await visitReviewed(VIP)
-      await removes(visit.reviewId, VIP)
+      await signedInAs(VIP.email)
+      const visit = await visitReviewed(VIP.email)
+      await removes(visit.reviewId, VIP.email)
       renderAt(writePathOf(visit.id))
       const user = userEvent.setup()
       await overall()
@@ -454,7 +456,7 @@ describe('the review of a visit, against the API', () => {
       // Assert
       await screen.findByText('レビューを投稿しました。')
       expect(await storedReviewOf(visit.id)).toMatchObject({
-        customer: VIP,
+        customer: VIP.email,
         staff: 'Hiroshi Tanaka',
         overallRating: 4,
         staffRating: 5,
@@ -530,7 +532,7 @@ describe('the review of a visit, against the API', () => {
 
     it('should say that a booking whose day has not come is no visit to write about, and lead to the booking', async () => {
       // Arrange
-      const id = await bookingToCome(KENJI)
+      const id = await bookingToCome(KENJI.email)
 
       // Act
       renderAt(writePathOf(id))

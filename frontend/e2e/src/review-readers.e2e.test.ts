@@ -1,7 +1,13 @@
+import {
+  KENJI,
+  OPERATOR,
+  OSAKA,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { PORTAL } from './applications'
-import { HIROSHI, part, salonId, TOKYO } from './bookings'
+import { HIROSHI, part, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { accessTokenOf, enterCredentials, heading } from './sign-in'
@@ -12,11 +18,6 @@ import { accessTokenOf, enterCredentials, heading } from './sign-in'
  * two of Hair & Spa Osaka. Nobody found the review 'Good but could be
  * better' helpful, and nobody reported it.
  */
-
-const KENJI = 'customer2@example.com'
-const ADMIN = 'admin@beautysalon.jp'
-
-const OSAKA = 'Hair & Spa Osaka'
 
 const GOOD = 'Good but could be better'
 const SATISFIED = 'Satisfied with the result'
@@ -78,12 +79,10 @@ const stored = async (api: TestApi, title: string) => {
   return review
 }
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
 const salonPath = async (api: TestApi, name: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query('select id::text from salons where name = $1', [name]),
-  )
+  const id = await api.idOf('select id::text from salons where name = $1', [
+    name,
+  ])
 
   return `/salons/${id}`
 }
@@ -98,7 +97,7 @@ const remove = async (
     `${api.origin}/api/v1/reviews/${reviewId}`,
     {
       headers: {
-        Authorization: `Bearer ${await accessTokenOf(request, api, ADMIN)}`,
+        Authorization: `Bearer ${await accessTokenOf(request, api, OPERATOR)}`,
       },
     },
   )
@@ -180,7 +179,7 @@ test.describe('the reviews of a salon and who reads them, in a browser', () => {
     // Act: to the sign-in by the link of the reviews, and the Enter key
     await reviews(page).getByRole('link', { name: 'サインイン' }).focus()
     await page.keyboard.press('Enter')
-    await enterCredentials(page, KENJI, api.seedPassword)
+    await enterCredentials(page, KENJI.email, api.seedPassword)
 
     // Assert: back on the page of the salon, with the buttons of a customer
     await expect(heading(page, TOKYO)).toBeFocused()
@@ -210,7 +209,7 @@ test.describe('the reviews of a salon and who reads them, in a browser', () => {
     ).toBeVisible()
     expect(await stored(api, GOOD)).toMatchObject({
       helpfulCount: 1,
-      voters: [KENJI],
+      voters: [KENJI.email],
     })
     await expectSoundPage(page)
 
@@ -269,7 +268,7 @@ test.describe('the reviews of a salon and who reads them, in a browser', () => {
       reportCount: 1,
       reports: [
         {
-          by: KENJI,
+          by: KENJI.email,
           reason: 'other',
           details: WHAT_IS_WRONG,
           status: 'pending',
@@ -365,7 +364,7 @@ test.describe('the reviews of a salon and who reads them, on a screen as narrow 
     ])
     const path = `/salons/${await salonId(api)}`
     await page.goto(`${PORTAL.origin}/sign-in?from=${encodeURIComponent(path)}`)
-    await enterCredentials(page, KENJI, api.seedPassword)
+    await enterCredentials(page, KENJI.email, api.seedPassword)
 
     // Assert: how each member of the staff was rated, and the buttons
     await expect(heading(page, TOKYO)).toBeFocused()

@@ -1,42 +1,9 @@
 import { assert } from 'vitest'
 import {
-  type TestMail,
+  type TestApi,
   type TestServer,
   testServerClient,
 } from './test-server-client'
-
-export type TestApi = {
-  /** Where the API listens: `VITE_BACKEND_BASE_URL` of the code under test */
-  origin: string
-  /** The password of every account of the seed data */
-  seedPassword: string
-  /**
-   * Runs a statement on the database of the API and returns its rows: for
-   * what a test cannot bring about through the screen or the API, such as
-   * time having passed.
-   */
-  query: (
-    text: string,
-    values?: (string | number | boolean | null)[],
-  ) => Promise<Record<string, unknown>[]>
-  /**
-   * The code that an authenticator app shows for `secret`, the one the API
-   * returned when two-factor authentication was set up. The API takes a code
-   * once and after it only later ones: `stepsAhead: 1` is the code of the
-   * next 30 seconds, which the API takes as well.
-   */
-  authenticatorCode: (secret: string, stepsAhead?: 0 | 1) => Promise<string>
-  /**
-   * The mails the API handed to its mailer in this test, oldest first.
-   * Nothing is sent anywhere: this is the mailbox of everybody.
-   */
-  mails: () => Promise<TestMail[]>
-  /**
-   * The link in the last mail to `to`. The page it names is rendered at
-   * its path and fragment: `new URL(link)` gives `pathname` and `hash`.
-   */
-  mailedLink: (to: string) => Promise<string>
-}
 
 /** The API of a test file with what only the setup does to it */
 type OpenedTestApi = TestApi & {
@@ -55,22 +22,17 @@ export const openTestApi = async (
   const client = testServerClient(server, (message) => assert.fail(message))
   // The code under test calls it with the `fetch` of Node.js, from any port,
   // and no test follows a link of a mail to an application
-  const { id, origin, seedPassword } = await client.start({
+  const started = await client.start({
     port: null,
     corsOrigins: [],
     publicAppUrl: null,
   })
 
   const api: OpenedTestApi = {
-    origin,
-    seedPassword,
-    query: (text, values) => client.query(id, text, values),
-    authenticatorCode: client.authenticatorCode,
-    mails: () => client.mails(id),
-    mailedLink: (to) => client.mailedLink(id, to),
-    reset: () => client.reset(id),
+    ...client.apiOf(started),
+    reset: () => client.reset(started.id),
     remove: async () => {
-      await client.remove(id)
+      await client.remove(started.id)
       current = null
     },
   }
@@ -92,3 +54,28 @@ export const testApi = (): TestApi => {
 
   return current
 }
+
+/*
+ * What the arrangements of a test read from the database of that API: the
+ * same as `testApi().idOf(...)` and so on, named as a test calls them.
+ */
+
+/** The `id` of the row a statement returns. */
+export const idOf: TestApi['idOf'] = (text, values) =>
+  testApi().idOf(text, values)
+
+/** The `id` of every row a statement returns, in the order of the rows. */
+export const idsOf: TestApi['idsOf'] = (text, values) =>
+  testApi().idsOf(text, values)
+
+/** The `count` of the row a statement returns, as a number. */
+export const countOf: TestApi['countOf'] = (text, values) =>
+  testApi().countOf(text, values)
+
+/** The day so many days from today in Tokyo (`2026-11-22`). */
+export const dayFromToday: TestApi['dayFromToday'] = (days) =>
+  testApi().dayFromToday(days)
+
+/** The ID of a salon, by its name. */
+export const salonIdOf: TestApi['salonIdOf'] = (name) =>
+  testApi().salonIdOf(name)

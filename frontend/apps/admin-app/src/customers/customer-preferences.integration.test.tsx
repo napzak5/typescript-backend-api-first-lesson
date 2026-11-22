@@ -1,25 +1,25 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   firstSight,
   heading,
   notifications,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  KENJI,
+  OSAKA,
+  OWNER,
+  SAKURA,
+  STYLIST,
+  TOKYO,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
-import {
-  KENJI,
-  OWNER,
-  refuse,
-  SAKURA,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-  YUKI,
-} from '../bookings/__tests__/arrangements'
+import { refuse } from '../bookings/__tests__/arrangements'
 import {
   arrangePreferences,
   arrangeWishes,
@@ -38,8 +38,6 @@ import {
  * the staff of the salon in Osaka, and not one of Tokyo. The screen is
  * opened at the salon in Tokyo, whose five members of the staff it offers.
  */
-
-const OSAKA = 'Hair & Spa Osaka'
 
 /** How the form names a member of the staff: with their salon. */
 const named = (displayName: string, salon = TOKYO): string =>

@@ -2,13 +2,19 @@ import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { signInAs } from '@beauty-salon-frontend/testing/api'
 import { heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  CUSTOMER,
+  MANAGER,
+  OPERATOR,
+  OWNER,
+  STYLIST,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from './__tests__/screens'
 
 const TITLE = applications.dashboard.name
-const OWNER = 'owner@beautysalon.jp'
 
 describe('App, against the API', () => {
   beforeEach(() => {
@@ -20,9 +26,9 @@ describe('App, against the API', () => {
   })
 
   it.each([
-    ['the owner of a salon', 'owner@beautysalon.jp', '売上レポート'],
-    ['a manager', 'manager@beautysalon.jp', '売上レポート'],
-    ['the operator of the platform', 'admin@beautysalon.jp', 'サロンを選ぶ'],
+    ['the owner of a salon', OWNER, '売上レポート'],
+    ['a manager', MANAGER, '売上レポート'],
+    ['the operator of the platform', OPERATOR, 'サロンを選ぶ'],
   ])('should let %s in: %s, at %s', async (_, email, start) => {
     // Arrange
     renderAt('/')
@@ -43,8 +49,8 @@ describe('App, against the API', () => {
   })
 
   it.each([
-    ['a member of the staff', 'stylist1@beautysalon.jp'],
-    ['a customer', 'customer1@example.com'],
+    ['a member of the staff', STYLIST],
+    ['a customer', CUSTOMER],
   ])(
     'should tell %s that the application is not for them: %s',
     async (_, email) => {

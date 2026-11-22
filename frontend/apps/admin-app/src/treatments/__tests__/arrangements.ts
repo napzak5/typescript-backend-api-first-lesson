@@ -1,6 +1,6 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { countOf, idOf, testApi } from '@beauty-salon-frontend/testing/api'
+import { TOKYO } from '@beauty-salon-frontend/testing/seed'
 import * as z from 'zod'
-import { TOKYO } from '../../bookings/__tests__/arrangements'
 
 /*
  * What the screen tests of the treatment records arrange in the database,
@@ -12,31 +12,25 @@ import { TOKYO } from '../../bookings/__tests__/arrangements'
  * numbered at random when the data is seeded.
  */
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** The record of a customer of the seed data, by their address of mail. */
 export const treatmentIdOf = async (email: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `select records.id::text
+  idOf(
+    `select records.id::text
        from treatment_records records
        join customers on customers.id = records."customerId"
        where customers.email = $1`,
-      [email],
-    ),
-  )[0].id
+    [email],
+  )
 
 /** The booking of a record of the seed data, by the address of mail of its customer. */
 export const treatedBookingOf = async (email: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `select records."bookingId"::text as id
+  idOf(
+    `select records."bookingId"::text as id
        from treatment_records records
        join customers on customers.id = records."customerId"
        where customers.email = $1`,
-      [email],
-    ),
-  )[0].id
+    [email],
+  )
 
 const lotsSchema = z.tuple([z.object({ lotNumber: z.string() })])
 
@@ -118,17 +112,15 @@ export const storedTreatmentOf = async (bookingId: string) =>
 
 /** Lets another account have written the record of a booking meanwhile, by the member of the booking. */
 export const writtenMeanwhile = async (bookingId: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `insert into treatment_records ("bookingId", "customerId", "staffId", services, "resultNotes")
+  idOf(
+    `insert into treatment_records ("bookingId", "customerId", "staffId", services, "resultNotes")
        select bookings.id, bookings."customerId", bookings."staffId",
               (select jsonb_agg(lines."serviceId") from booking_services lines where lines."bookingId" = bookings.id),
               'ほかのアカウントが書いた'
        from bookings where bookings.id = $1
        returning id::text`,
-      [bookingId],
-    ),
-  )[0].id
+    [bookingId],
+  )
 
 /** Lets another account have changed what a record says to hand over meanwhile. */
 export const evaluationWrittenMeanwhile = (
@@ -186,13 +178,9 @@ export const recordMany = (): Promise<unknown> =>
      from bookings where bookings."bookingNumber" like 'BK-MANY-%'`,
   )
 
-const countSchema = z.tuple([z.object({ count: z.coerce.number() })])
-
 /** How many records the salons have. */
 export const storedTreatmentCount = async (): Promise<number> =>
-  countSchema.parse(
-    await testApi().query('select count(*) as count from treatment_records'),
-  )[0].count
+  countOf('select count(*) as count from treatment_records')
 
 const photosSchema = z.array(
   z.object({

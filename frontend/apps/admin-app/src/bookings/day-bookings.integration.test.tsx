@@ -1,31 +1,33 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import {
   address,
   goBack,
   heading,
 } from '@beauty-salon-frontend/testing/screens'
-import { act, screen, waitFor, within } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../__tests__/screens'
 import {
-  ADMIN,
-  arrange,
-  arrangeMany,
-  dayFromToday,
   KENJI,
   MANAGER,
+  OPERATOR,
   OSAKA,
   OWNER,
   SAKURA,
   STYLIST,
-  salonIdOf,
   THERAPIST,
   TOKYO,
   YUKI,
-} from './__tests__/arrangements'
+} from '@beauty-salon-frontend/testing/seed'
+import { act, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderAt } from '../__tests__/screens'
+import { arrange, arrangeMany } from './__tests__/arrangements'
 
 const navigationItems = () =>
   within(screen.getByRole('navigation', { name: 'メインメニュー' }))
@@ -109,7 +111,7 @@ describe('the bookings of a salon, against the API', () => {
       const user = userEvent.setup()
       const osaka = await salonIdOf(OSAKA)
       const { container } = renderAt('/')
-      await signInAs(ADMIN)
+      await signInAs(OPERATOR)
       expect(await heading('サロンを選ぶ')).toHaveFocus()
       const all = await screen.findByRole('table', { name: 'サロン' })
       expect(
@@ -594,7 +596,7 @@ describe('the bookings of a salon, against the API', () => {
       renderAt(`/salons/${osaka}/bookings`)
 
       // Act
-      await signInAs(ADMIN)
+      await signInAs(OPERATOR)
 
       // Assert
       expect(await rowsOf(today)).toEqual([

@@ -1,16 +1,15 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  OPERATOR,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderAt } from '../__tests__/screens'
-import {
-  ADMIN,
-  OWNER,
-  STYLIST,
-  salonIdOf,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
 import { OWN_PROFILE_PATH } from '../navigation'
 import {
   arrangeInactive,
@@ -359,7 +358,7 @@ describe('the own profile, against the API', () => {
 
   it('should tell an administrator that the account has no profile, and lead nowhere to it', async () => {
     // Act
-    await openProfileAs(ADMIN)
+    await openProfileAs(OPERATOR)
 
     // Assert
     expect(

@@ -1,10 +1,16 @@
+import {
+  CUSTOMER,
+  OWNER,
+  STYLIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { HIROSHI, LADIES_CUT, salonId, TOKYO } from './bookings'
+import { HIROSHI, LADIES_CUT, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { CUSTOMER, enterCredentials, heading, OWNER, STAFF } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The checkout of a visit, as the counter of a salon does it: the sale of a
@@ -14,13 +20,10 @@ import { CUSTOMER, enterCredentials, heading, OWNER, STAFF } from './sign-in'
  * with Hiroshi, today, begun at 10:00. The seed data has no sales.
  */
 
-const bookingSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** Puts the booking of the tests into the database, its treatment begun. */
-const arrangeVisit = async (api: TestApi): Promise<string> => {
-  const [{ id }] = bookingSchema.parse(
-    await api.query(
-      `with picked as (
+const arrangeVisit = (api: TestApi): Promise<string> =>
+  api.idOf(
+    `with picked as (
          select salons.id as "salonId", customers.id as "customerId", staff.id as "staffId",
                 services.id as "serviceId", services.price, services.duration,
                 (now() at time zone 'Asia/Tokyo')::date as day
@@ -48,12 +51,8 @@ const arrangeVisit = async (api: TestApi): Promise<string> => {
          from made cross join picked
        )
        select id::text from made`,
-      [TOKYO, HIROSHI, LADIES_CUT, CUSTOMER],
-    ),
+    [TOKYO, HIROSHI, LADIES_CUT, CUSTOMER],
   )
-
-  return id
-}
 
 const storedSchema = z.tuple([
   z.object({
@@ -127,7 +126,7 @@ test.describe('the checkout of a visit, in a browser', () => {
   }) => {
     // Arrange
     const id = await arrangeVisit(api)
-    await opened(page, api, id, STAFF)
+    await opened(page, api, id, STYLIST)
     await expect(part(page, '会計')).toContainText('まだ会計を入れていません。')
 
     // Act: the checkout, with the colour that was done besides

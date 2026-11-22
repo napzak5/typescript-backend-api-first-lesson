@@ -1,3 +1,4 @@
+import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
 import {
@@ -18,7 +19,7 @@ import {
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
 import { mainMenuLink } from './main-menu'
-import { CUSTOMER, enterCredentials, heading, PORTAL_START } from './sign-in'
+import { enterCredentials, heading, PORTAL_START } from './sign-in'
 
 /*
  * The seed data gives the customer two bookings to come and three visits

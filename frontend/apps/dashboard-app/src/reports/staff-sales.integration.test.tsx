@@ -1,20 +1,22 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  dayFromToday,
+  salonIdOf,
+  signInAs,
+  testApi,
+} from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  ADMIN,
-  dayFromToday,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  removeTokyo,
-  salonIdOf,
-  sellToBreakDown,
-  TOKYO,
-} from '../__tests__/arrangements'
+import { removeTokyo, sellToBreakDown } from '../__tests__/arrangements'
 import {
   countOver,
   menuLink,
@@ -227,7 +229,7 @@ describe('the sales of the staff, against the API', () => {
     // Arrange
     await sellToBreakDown()
     renderAt(staffSalesHrefOf(await salonIdOf(TOKYO)))
-    await signInAs(ADMIN)
+    await signInAs(OPERATOR)
     await screen.findByRole('table', { name: TABLE })
     await removeTokyo()
 

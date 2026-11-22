@@ -1,8 +1,9 @@
 import type { CustomerBookingsCreate201 } from '@beauty-salon-frontend/api-client'
+import { CUSTOMER, TOKYO } from '@beauty-salon-frontend/testing/seed'
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import type { TestApi } from './fixtures'
-import { accessTokenOf, CUSTOMER } from './sign-in'
+import { accessTokenOf } from './sign-in'
 
 /*
  * What the tests of the booking screens share: the seed data they name,
@@ -10,8 +11,7 @@ import { accessTokenOf, CUSTOMER } from './sign-in'
  * and the locators of what the screens show.
  */
 
-/** The salon the tests book at, what they book and with whom */
-export const TOKYO = 'Beauty Studio Tokyo'
+/** What the tests book at the salon in Tokyo, and with whom */
 export const LADIES_CUT = 'Ladies Cut'
 export const HIROSHI = 'Hiroshi Tanaka'
 export const MIKA = 'Mika Suzuki'
@@ -19,41 +19,20 @@ export const MIKA = 'Mika Suzuki'
 /** Two weeks from today: the seed data has no booking that far ahead. */
 const DAYS_AHEAD = 14
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
 const dateSchema = z.tuple([z.object({ date: z.iso.date() })])
 
-export const salonId = async (api: TestApi): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query('select id::text from salons where name = $1', [TOKYO]),
-  )
+/** The ID of the salon the tests work at: the one in Tokyo. */
+export const salonId = (api: TestApi): Promise<string> => api.salonIdOf(TOKYO)
 
-  return id
-}
-
-export const serviceId = async (api: TestApi): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query(
-      `select services.id::text from services join salons on salons.id = services."salonId"
+export const serviceId = (api: TestApi): Promise<string> =>
+  api.idOf(
+    `select services.id::text from services join salons on salons.id = services."salonId"
        where salons.name = $1 and services.name = $2`,
-      [TOKYO, LADIES_CUT],
-    ),
+    [TOKYO, LADIES_CUT],
   )
 
-  return id
-}
-
-export const staffId = async (
-  api: TestApi,
-  displayName: string,
-): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await api.query('select id::text from staff where "displayName" = $1', [
-      displayName,
-    ]),
-  )
-
-  return id
-}
+export const staffId = (api: TestApi, displayName: string): Promise<string> =>
+  api.idOf('select id::text from staff where "displayName" = $1', [displayName])
 
 /**
  * Opens the salon on the day the tests book on, from 10:00 until `until`

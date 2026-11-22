@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -73,16 +73,11 @@ export const storedItemsOf = async (orderNumber: string) =>
     ),
   )
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** The ID of an order, by its number. */
 export const orderIdOf = async (orderNumber: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      'select id::text from purchase_orders where "orderNumber" = $1',
-      [orderNumber],
-    ),
-  )[0].id
+  idOf('select id::text from purchase_orders where "orderNumber" = $1', [
+    orderNumber,
+  ])
 
 /**
  * Lets a salon have more orders than a page holds: drafts of no items of

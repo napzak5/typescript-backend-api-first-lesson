@@ -1,9 +1,10 @@
+import { OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Page } from '@playwright/test'
 import { ADMIN } from './applications'
 import { salonId } from './bookings'
 import { cornersUnderTheDialog, edgesOf, expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { enterCredentials, heading, OWNER } from './sign-in'
+import { enterCredentials, heading } from './sign-in'
 
 /*
  * The conditions of a list (`FilterForm` of ui), on the ledger of the

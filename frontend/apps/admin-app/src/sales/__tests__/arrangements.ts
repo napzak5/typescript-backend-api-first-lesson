@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -6,8 +6,6 @@ import * as z from 'zod'
  * back from it. The bookings they bill are arranged as the tests of the
  * bookings arrange them; the seed data has no sales.
  */
-
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
 
 /**
  * Puts the sale of a booking into the database, as the ledger would have
@@ -25,9 +23,8 @@ export const arrangeSale = async ({
   /** The time of day in Tokyo: `10:00` */
   at: string
 }): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `with booking as (
+  idOf(
+    `with booking as (
          select * from bookings where id = $1
        ), made as (
          insert into sales ("saleNumber", "salonId", "customerId", "staffId", "bookingId",
@@ -50,9 +47,8 @@ export const arrangeSale = async ({
          where booking_services."bookingId" = $1
        )
        select id::text from made`,
-      [bookingId, saleNumber, at],
-    ),
-  )[0].id
+    [bookingId, saleNumber, at],
+  )
 
 /** Lets a sale have been entered for nobody of the ledger, as for a guest who came in. */
 export const sellToNobody = (id: string): Promise<unknown> =>
@@ -71,9 +67,8 @@ export const voidSale = (id: string): Promise<unknown> =>
  * meanwhile, and answers the ID of the payment.
  */
 export const paySale = async (id: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query(
-      `with paid as (
+  idOf(
+    `with paid as (
          insert into payment_transactions ("saleId", "paymentMethodId", "transactionNumber",
                                            amount, status, "processedAt")
          select sales.id, payment_methods.id, 'PT-TEST-' || left(sales.id::text, 8),
@@ -88,9 +83,8 @@ export const paySale = async (id: string): Promise<string> =>
          from paid where sales.id = paid."saleId"
        )
        select id::text from paid`,
-      [id],
-    ),
-  )[0].id
+    [id],
+  )
 
 const storedSaleSchema = z.tuple([
   z.object({

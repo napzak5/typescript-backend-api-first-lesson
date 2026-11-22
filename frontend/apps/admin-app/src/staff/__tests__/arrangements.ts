@@ -1,4 +1,4 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { countOf, idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import * as z from 'zod'
 
 /*
@@ -31,15 +31,9 @@ export const arrangeLedgerOrder = (): Promise<unknown> =>
     [JSON.stringify(LEDGER_ORDER)],
   )
 
-const idsSchema = z.tuple([z.object({ id: z.uuid() })])
-
 /** A member of the staff ledger, by their staff code. */
 export const staffIdOf = async (staffCode: string): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query('select id::text from staff where "staffCode" = $1', [
-      staffCode,
-    ]),
-  )[0].id
+  idOf('select id::text from staff where "staffCode" = $1', [staffCode])
 
 /**
  * Lets members be registered at the salon in Tokyo after those of the seed
@@ -60,11 +54,9 @@ export const arrangeMembers = (count: number): Promise<unknown> =>
 
 /** The member `arrangeMembers` registered of a number, from 1. */
 export const crowdIdOf = async (number: number): Promise<string> =>
-  idsSchema.parse(
-    await testApi().query('select id::text from staff where email = $1', [
-      `crowd-${number}@beautysalon.jp`,
-    ]),
-  )[0].id
+  idOf('select id::text from staff where email = $1', [
+    `crowd-${number}@beautysalon.jp`,
+  ])
 
 /** Lets a member who left have been removed from the ledger of the salon in Tokyo, keeping their staff code. */
 export const arrangeRemovedMember = (staffCode: string): Promise<unknown> =>
@@ -155,15 +147,11 @@ export const storedMemberOf = async (email: string) =>
     ),
   )[0]
 
-const countSchema = z.tuple([z.object({ count: z.number() })])
-
 /** How many members the ledger of the salon in Tokyo has, those removed left out. */
 export const ledgerSize = async (): Promise<number> =>
-  countSchema.parse(
-    await testApi().query(
-      `select count(*)::int as count from staff
+  countOf(
+    `select count(*)::int as count from staff
        join salons on salons.id = staff."salonId"
        where salons.name = 'Beauty Studio Tokyo' and staff."deletedAt" is null`,
-      [],
-    ),
-  )[0].count
+    [],
+  )

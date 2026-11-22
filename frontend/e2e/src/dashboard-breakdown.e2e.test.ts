@@ -1,16 +1,11 @@
+import { MANAGER, OWNER } from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import { DASHBOARD } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import { mainMenuLink, pressInTheMenu } from './main-menu'
 import { pressWithTheKeyboard, sellACutToday } from './sales'
-import {
-  DASHBOARD_START,
-  enterCredentials,
-  heading,
-  MANAGER,
-  OWNER,
-} from './sign-in'
+import { DASHBOARD_START, enterCredentials, heading } from './sign-in'
 
 /*
  * The sales of the staff and of the kinds of service, read from the API at

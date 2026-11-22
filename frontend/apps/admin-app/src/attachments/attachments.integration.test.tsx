@@ -1,20 +1,24 @@
-import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import {
+  findAccessibilityViolations,
+  PDF_BYTES,
+  PNG_BYTES,
+} from '@beauty-salon-frontend/testing'
+import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import {
+  MANAGER,
+  OPERATOR,
+  OSAKA,
+  OWNER,
+  STYLIST,
+  THERAPIST,
+  TOKYO,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openAs } from '../__tests__/screens'
-import {
-  ADMIN,
-  MANAGER,
-  OSAKA,
-  OWNER,
-  refuse,
-  STYLIST,
-  salonIdOf,
-  THERAPIST,
-  TOKYO,
-} from '../bookings/__tests__/arrangements'
+import { refuse } from '../bookings/__tests__/arrangements'
 import {
   attachmentHrefOf,
   attachmentsHrefOf,
@@ -23,8 +27,6 @@ import {
 import {
   arrangeFile,
   fileRemovedMeanwhile,
-  PDF_BYTES,
-  PNG_BYTES,
   storedFilesOf,
 } from './__tests__/arrangements'
 
@@ -314,7 +316,7 @@ describe('the files of a salon', () => {
     await arrangeFile({
       salonId,
       filename: 'logo.pdf',
-      uploadedBy: ADMIN,
+      uploadedBy: OPERATOR,
       minutesAgo: 10,
     })
     await arrangeFile({
@@ -431,7 +433,7 @@ describe('the files of a salon', () => {
   it.each<[string, string]>([
     ['the owner', OWNER],
     ['a manager', MANAGER],
-    ['an administrator', ADMIN],
+    ['an administrator', OPERATOR],
   ])('should let %s remove a file a stylist uploaded', async (_, email) => {
     // Arrange
     const user = userEvent.setup()
@@ -526,7 +528,7 @@ describe('the files of a salon', () => {
           await salonIdOf(TOKYO),
           '00000000-0000-4000-8000-000000000000',
         ),
-      ADMIN,
+      OPERATOR,
     ],
     [
       'a file of the salon at the address of another, to an administrator',
@@ -539,7 +541,7 @@ describe('the files of a salon', () => {
             uploadedBy: OWNER,
           }),
         ),
-      ADMIN,
+      OPERATOR,
     ],
     [
       'a file of another salon, to a member of it',

@@ -1,17 +1,18 @@
+import {
+  CUSTOMER,
+  OPERATOR,
+  OWNER,
+  STYLIST,
+  TOKYO,
+  YUKI,
+} from '@beauty-salon-frontend/testing/seed'
 import type { Locator, Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from './applications'
-import { HIROSHI, LADIES_CUT, salonId, TOKYO } from './bookings'
+import { HIROSHI, LADIES_CUT, salonId } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import {
-  ADMIN_START,
-  CUSTOMER,
-  enterCredentials,
-  heading,
-  OWNER,
-  STAFF,
-} from './sign-in'
+import { ADMIN_START, enterCredentials, heading } from './sign-in'
 
 /*
  * The bookings of a salon, as the people who work there see them: the
@@ -20,13 +21,11 @@ import {
  * on the day the tests run), a cut of the first customer with Hiroshi.
  */
 
-const CUSTOMER_NAME = 'Tanaka Yuki'
+const CUSTOMER_NAME = YUKI.name
 
 /** What a salon writes down that no line can be broken in */
 const LONG_NOTE =
   '前回の写真: https://photos.example.com/salons/beauty-studio-tokyo/customers/tanaka-yuki/2026-10-02_before_and_after.jpg'
-
-const bookingSchema = z.tuple([z.object({ id: z.uuid() })])
 
 const storedSchema = z.tuple([
   z.object({
@@ -42,14 +41,13 @@ const storedSchema = z.tuple([
  * Puts a booking of today in Tokyo into the database: a cut from `at` until
  * an hour later, in the state `status` (one that needs nothing more written).
  */
-const arrangeToday = async (
+const arrangeToday = (
   api: TestApi,
   at: string,
   status: 'pending' | 'confirmed' = 'pending',
-): Promise<string> => {
-  const [{ id }] = bookingSchema.parse(
-    await api.query(
-      `with picked as (
+): Promise<string> =>
+  api.idOf(
+    `with picked as (
          select salons.id as "salonId", customers.id as "customerId", staff.id as "staffId",
                 services.id as "serviceId", services.price, services.duration,
                 (now() at time zone 'Asia/Tokyo')::date as day
@@ -76,12 +74,8 @@ const arrangeToday = async (
          from made cross join picked
        )
        select id::text from made`,
-      [TOKYO, HIROSHI, LADIES_CUT, CUSTOMER, at, status, LONG_NOTE],
-    ),
+    [TOKYO, HIROSHI, LADIES_CUT, CUSTOMER, at, status, LONG_NOTE],
   )
-
-  return id
-}
 
 /** A booking as the database of the API has it. */
 const stored = async (api: TestApi, id: string) =>
@@ -136,7 +130,7 @@ test.describe('the bookings of a salon, in a browser', () => {
     const tokyo = await salonId(api)
     await page.goto(ADMIN.origin)
     await page.getByRole('textbox', { name: 'メールアドレス' }).focus()
-    await page.keyboard.type(STAFF)
+    await page.keyboard.type(STYLIST)
     await page.keyboard.press('Tab')
     await page.keyboard.type(api.seedPassword)
     await page.keyboard.press('Enter')
@@ -382,7 +376,7 @@ test.describe('the bookings of a salon, on a screen as narrow as a phone', () =>
     await page.goto(ADMIN.origin)
 
     // Act
-    await enterCredentials(page, 'admin@beautysalon.jp', api.seedPassword)
+    await enterCredentials(page, OPERATOR, api.seedPassword)
 
     // Assert
     await expect(heading(page, 'サロンを選ぶ')).toBeFocused()

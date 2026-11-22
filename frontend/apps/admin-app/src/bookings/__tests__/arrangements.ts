@@ -1,4 +1,5 @@
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
+import { KENJI, TOKYO, YUKI } from '@beauty-salon-frontend/testing/seed'
 import * as z from 'zod'
 
 /*
@@ -7,48 +8,6 @@ import * as z from 'zod'
  * owner, the manager and two stylists work at the first, a therapist at
  * the second.
  */
-
-export const TOKYO = 'Beauty Studio Tokyo'
-export const OSAKA = 'Hair & Spa Osaka'
-
-export const OWNER = 'owner@beautysalon.jp'
-export const MANAGER = 'manager@beautysalon.jp'
-export const STYLIST = 'stylist1@beautysalon.jp'
-export const THERAPIST = 'therapist@beautysalon.jp'
-export const ADMIN = 'admin@beautysalon.jp'
-
-/** The customers of the seed data, by their e-mail address and name */
-export const YUKI = { email: 'customer1@example.com', name: 'Tanaka Yuki' }
-export const KENJI = { email: 'customer2@example.com', name: 'Yamamoto Kenji' }
-export const SAKURA = { email: 'customer3@example.com', name: 'Sato Sakura' }
-
-const idsSchema = z.array(z.object({ id: z.uuid() }))
-
-const oneId = async (
-  text: string,
-  values: (string | number | null)[],
-): Promise<string> => {
-  const [row] = idsSchema.parse(await testApi().query(text, values))
-  if (row === undefined) {
-    throw new Error(`Nothing was found: ${values.join(', ')}`)
-  }
-
-  return row.id
-}
-
-export const salonIdOf = (name: string): Promise<string> =>
-  oneId('select id::text from salons where name = $1', [name])
-
-const daySchema = z.tuple([z.object({ day: z.iso.date() })])
-
-/** The day so many days from today in Tokyo (`2026-11-20`). */
-export const dayFromToday = async (days: number): Promise<string> =>
-  daySchema.parse(
-    await testApi().query(
-      `select to_char((now() at time zone 'Asia/Tokyo')::date + $1::int, 'YYYY-MM-DD') as day`,
-      [days],
-    ),
-  )[0].day
 
 export type Arranged = {
   bookingNumber: string
@@ -78,7 +37,7 @@ export const arrange = ({
   service = 'Ladies Cut',
   actualStartTime = null,
 }: Arranged): Promise<string> =>
-  oneId(
+  idOf(
     `with picked as (
        select salons.id as "salonId", customers.id as "customerId", staff.id as "staffId",
               services.id as "serviceId", services.price,

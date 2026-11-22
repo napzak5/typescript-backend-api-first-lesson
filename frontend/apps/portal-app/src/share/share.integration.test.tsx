@@ -1,10 +1,14 @@
 import { signIn } from '@beauty-salon-frontend/session'
 import {
   findAccessibilityViolations,
+  PDF_BYTES,
+  PDF_TEXT,
+  PNG_BYTES,
   savedFiles,
 } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { address, goTo, heading } from '@beauty-salon-frontend/testing/screens'
+import { CUSTOMER } from '@beauty-salon-frontend/testing/seed'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
@@ -23,8 +27,6 @@ import {
   fileNotStored,
   lock,
   PASSWORD,
-  PDF_TEXT,
-  PNG_BYTES,
   revoke,
   share,
   uploadFile,
@@ -94,7 +96,7 @@ const shareConsent = async (
   const file = await uploadFile({
     filename: CONSENT,
     contentType: 'application/pdf',
-    bytes: new TextEncoder().encode(PDF_TEXT),
+    bytes: PDF_BYTES,
   })
 
   return { file, ...(await share(file, options)) }
@@ -214,7 +216,7 @@ describe('the screen of a share link, against the API', () => {
       // Arrange
       const link = await sharePhoto()
       await signIn({
-        email: 'customer1@example.com',
+        email: CUSTOMER,
         password: testApi().seedPassword,
         rememberMe: false,
         twoFactorCode: null,

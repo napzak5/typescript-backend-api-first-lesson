@@ -1,5 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
 import {
   address,
   asTheApplicationKeeps,
@@ -7,29 +7,33 @@ import {
   queryClientOfATest,
   statusMessages,
 } from '@beauty-salon-frontend/testing/screens'
+import {
+  CUSTOMER,
+  KENJI,
+  OPERATOR,
+  OSAKA,
+  STYLIST,
+  TOKYO,
+  VIP,
+} from '@beauty-salon-frontend/testing/seed'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, type MockInstance, vi } from 'vitest'
 import * as z from 'zod'
 import { renderAt } from '../__tests__/screens'
 import {
-  CUSTOMER,
   giveBack,
   HIROSHI,
   NEWCOMER,
   NEWCOMER_PASSWORD,
   registerNewcomer,
   signedInAs,
-  TOKYO,
   takeAway,
 } from '../bookings/__tests__/arrangements'
 import { OWN_PROFILE } from '../profile/profile-api'
 import {
-  ADMIN,
   dismissesReportOf,
   findsHelpful,
-  KENJI,
-  OSAKA,
   overall,
   paragraphsIn,
   ratingOf,
@@ -37,7 +41,6 @@ import {
   removes,
   reports,
   TAKESHI,
-  VIP,
   visitToReview,
 } from './__tests__/arrangements'
 
@@ -55,8 +58,6 @@ import {
  * They are in `reader-flow.test.ts` and `reviews-api.test.ts`.
  */
 
-const STYLIST = 'stylist1@beautysalon.jp'
-
 const REPORT_TITLE = 'レビューを通報する'
 const SAID = '「参考になった」と伝えました。'
 const REPORTED =
@@ -72,14 +73,8 @@ const NOT_RATED = 'レビューは、まだありません'
 
 // --- What the tests ask of the database
 
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
 const salonPathOf = async (name: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await testApi().query('select id::text from salons where name = $1', [
-      name,
-    ]),
-  )
+  const id = await idOf('select id::text from salons where name = $1', [name])
 
   return `/salons/${id}`
 }
@@ -355,7 +350,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       await userEvent.click(
         within(await reviewsPart()).getByRole('link', { name: 'サインイン' }),
       )
-      await signInOnTheScreenAs(KENJI)
+      await signInOnTheScreenAs(KENJI.email)
 
       // Assert
       await heading(TOKYO)
@@ -374,7 +369,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       renderAt('/sign-in?from=https%3A%2F%2Fexample.com%2F')
 
       // Act
-      await signInOnTheScreenAs(KENJI)
+      await signInOnTheScreenAs(KENJI.email)
 
       // Assert
       await screen.findByRole('searchbox', { name: 'キーワード' })
@@ -383,7 +378,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
     it.each([
       ['a member of a staff', STYLIST],
-      ['an administrator', ADMIN],
+      ['an administrator', OPERATOR],
     ])(
       'should let %s read the reviews, and offer neither the buttons nor the way to sign in',
       async (_who, email) => {
@@ -451,7 +446,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
     it('should open the form that changes the review from its link', async () => {
       // Arrange
-      await signedInAs(KENJI)
+      await signedInAs(KENJI.email)
       renderAt(await salonPathOf(OSAKA))
       const own = await reviewToActOn('Great experience')
 
@@ -467,8 +462,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
     it('should name the buttons of a review by its title and the day it was posted', async () => {
       // Arrange
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
 
       // Act
       renderAt(await salonPathOf(TOKYO))
@@ -488,8 +483,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
   describe('saying that a review was helpful', () => {
     it('should count the customer among those who found the review helpful, say so, and show the button as pressed', async () => {
       // Arrange
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       const listed = await reviewToActOn(review.title)
       expect(helpfulIn(listed)).toBeNull()
@@ -507,7 +502,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       expect(helpfulButtonIn(listed)).toHaveFocus()
       expect(await storedOf(review.id)).toMatchObject({
         helpfulCount: 1,
-        voters: [KENJI],
+        voters: [KENJI.email],
       })
       // The reviews are not read again: the answer says how many there are
       expect(askedOfTheReviews(fetched)).toEqual([
@@ -518,7 +513,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
     it('should leave the buttons of the other reviews as they were, and keep a button pressed when another review is found helpful', async () => {
       // Arrange
       await inTheOrderOfTheirRatings()
-      await signedInAs(KENJI)
+      await signedInAs(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       const listed = await reviewToActOn('Good but could be better')
       const pressed = async (): Promise<(string | null)[]> =>
@@ -548,8 +543,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
     it('should send nothing when the button that is pressed is pressed again', async () => {
       // Arrange
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       const listed = await reviewToActOn(review.title)
       const fetched = vi.spyOn(globalThis, 'fetch')
@@ -566,17 +561,17 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       ])
       expect(await storedOf(review.id)).toMatchObject({
         helpfulCount: 1,
-        voters: [KENJI],
+        voters: [KENJI.email],
       })
     })
 
     it('should not know on a page that is opened anew that the customer said so before, and count them once when they say it again', async () => {
       // Arrange: the API does not say who found a review helpful
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
-      await findsHelpful(review.id, KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
+      await findsHelpful(review.id, KENJI.email)
       const before = await storedOf(review.id)
-      expect(before).toMatchObject({ helpfulCount: 1, voters: [KENJI] })
+      expect(before).toMatchObject({ helpfulCount: 1, voters: [KENJI.email] })
       renderAt(await salonPathOf(TOKYO))
       const listed = await reviewToActOn(review.title)
       expect(helpfulButtonIn(listed)).toHaveAttribute('aria-pressed', 'false')
@@ -595,9 +590,9 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       // Arrange: two reviews that one customer each found helpful, behind
       // one that three did; the application keeps what it read
       await inTheOrderOfTheirRatings()
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
-      await findsHelpful(review.id, VIP)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
+      await findsHelpful(review.id, VIP.email)
       renderAt(await salonPathOf(TOKYO), {
         client: asTheApplicationKeeps(),
       })
@@ -653,14 +648,14 @@ describe('what a reader does with the reviews of a salon, against the API', () =
     it('should say that the review is gone when somebody removed it meanwhile, take it off the page and move the focus to the heading of the part', async () => {
       // Arrange
       await inTheOrderOfTheirRatings()
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       const listed = await reviewToActOn(review.title)
       await within(await reviewsPart()).findByRole('img', {
         name: '5 段階中 4.0（3 件）',
       })
-      await removes(review.id, ADMIN)
+      await removes(review.id, OPERATOR)
 
       // Act
       await userEvent.click(helpfulButtonIn(listed))
@@ -681,8 +676,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
     it('should say that nothing was sent when the API fails, leave the review as it was, and count the customer when they press again', async () => {
       // Arrange
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       const listed = await reviewToActOn(review.title)
       await takeAway('review_helpful_votes')
@@ -703,15 +698,15 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       // Assert
       await screen.findByText(SAID)
       expect(helpfulButtonIn(listed)).toHaveAttribute('aria-pressed', 'true')
-      expect(await storedOf(review.id)).toMatchObject({ voters: [KENJI] })
+      expect(await storedOf(review.id)).toMatchObject({ voters: [KENJI.email] })
     })
   })
 
   describe('reporting a review', () => {
     it('should ask in a dialog why, naming the review, with no reason chosen, and send nothing yet', async () => {
       // Arrange
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       const listed = await reviewToActOn(review.title)
       const fetched = vi.spyOn(globalThis, 'fetch')
@@ -741,8 +736,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       'should report the review for the reason 「%s」, close the dialog, say so, and leave the review on the page',
       async (label, value) => {
         // Arrange
-        await signedInAs(KENJI)
-        const review = await untouchedBy(KENJI)
+        await signedInAs(KENJI.email)
+        const review = await untouchedBy(KENJI.email)
         renderAt(await salonPathOf(TOKYO))
         await askToReport(review.title)
         const fetched = vi.spyOn(globalThis, 'fetch')
@@ -758,7 +753,12 @@ describe('what a reader does with the reviews of a salon, against the API', () =
         expect(await storedOf(review.id)).toMatchObject({
           reportCount: 1,
           reports: [
-            { by: KENJI, reason: value, details: null, status: 'pending' },
+            {
+              by: KENJI.email,
+              reason: value,
+              details: null,
+              status: 'pending',
+            },
           ],
         })
         expect(await titles()).toContain(review.title)
@@ -770,8 +770,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
     it('should report a review for a reason of its own with what the customer says about it, without the spaces around it', async () => {
       // Arrange
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       await askToReport(review.title)
       const fetched = vi.spyOn(globalThis, 'fetch')
@@ -789,7 +789,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       expect(await storedOf(review.id)).toMatchObject({
         reports: [
           {
-            by: KENJI,
+            by: KENJI.email,
             reason: 'other',
             details: 'ほかのサロンのことが書かれています',
             status: 'pending',
@@ -800,8 +800,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
     it('should send nothing without a reason, or for a reason of its own without a word about it, and say at the control what is missing', async () => {
       // Arrange
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       await askToReport(review.title)
       const fetched = vi.spyOn(globalThis, 'fetch')
@@ -839,7 +839,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       [
         'somewhere else, a moment ago',
         async () => {
-          const review = await untouchedBy(KENJI)
+          const review = await untouchedBy(KENJI.email)
           await reports(review.id, { reason: 'spam', details: null })
 
           return review
@@ -848,7 +848,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       [
         'with a report that an administrator has dismissed since',
         async () => {
-          const review = await untouchedBy(KENJI)
+          const review = await untouchedBy(KENJI.email)
           await reports(review.id, { reason: 'spam', details: null })
           await dismissesReportOf(review.id)
 
@@ -859,7 +859,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       'should say in the dialog that the account reported the review before (%s), write nothing, leave the way out alone, and offer the form again for another review',
       async (_when, arrange) => {
         // Arrange
-        await signedInAs(KENJI)
+        await signedInAs(KENJI.email)
         const review = await arrange()
         const before = await storedOf(review.id)
         renderAt(await salonPathOf(TOKYO))
@@ -910,12 +910,12 @@ describe('what a reader does with the reviews of a salon, against the API', () =
     it('should take the dialog away when somebody removed the review meanwhile, say so, take the review off the page and move the focus to the heading of the part', async () => {
       // Arrange
       await inTheOrderOfTheirRatings()
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       await askToReport(review.title)
       await userEvent.click(reason('事実と違う内容'))
-      await removes(review.id, ADMIN)
+      await removes(review.id, OPERATOR)
 
       // Act
       await userEvent.click(sendButton())
@@ -931,8 +931,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
     it('should say in the dialog that nothing was sent when the API fails, keep what was entered, and report the review when it is sent again', async () => {
       // Arrange
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       await askToReport(review.title)
       await userEvent.click(reason('その他'))
@@ -960,7 +960,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       expect(await storedOf(review.id)).toMatchObject({
         reports: [
           {
-            by: KENJI,
+            by: KENJI.email,
             reason: 'other',
             details: '同じ文章が何度も投稿されています',
           },
@@ -970,8 +970,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
     it('should send nothing when the dialog is left by its button, and open with an empty form the next time', async () => {
       // Arrange
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       await askToReport(review.title)
       const fetched = vi.spyOn(globalThis, 'fetch')
@@ -1109,7 +1109,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
     it('should show the rating of a member as it is after a customer wrote a review that rates them, and not as it was read before', async () => {
       // Arrange: the application keeps what it read; the page of the salon is read, and left
-      await signedInAs(KENJI)
+      await signedInAs(KENJI.email)
       const visit = await visitToReview()
       const path = await salonPathOf(OSAKA)
       const client = asTheApplicationKeeps()
@@ -1141,8 +1141,8 @@ describe('what a reader does with the reviews of a salon, against the API', () =
   describe('accessibility', () => {
     it('should have no accessibility violations with the buttons of a customer, and with the dialog open', async () => {
       // Arrange
-      await signedInAs(KENJI)
-      const review = await untouchedBy(KENJI)
+      await signedInAs(KENJI.email)
+      const review = await untouchedBy(KENJI.email)
       renderAt(await salonPathOf(TOKYO))
       await within(await personNamed(HIROSHI)).findByRole('img')
       const listed = await reviewToActOn(review.title)
