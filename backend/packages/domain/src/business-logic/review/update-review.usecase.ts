@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { ReviewReadMapper } from '../../mappers/read/review.mapper'
+import { ReviewWriteMapper } from '../../mappers/write/review.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiReviewResponse, parseReviewId } from '../../models/review'
 import { reviewUpdateRequestSchema } from '../../schemas/review.schema'
@@ -40,7 +41,7 @@ export class UpdateReviewUseCase {
     const changed = await this.dependencies.reviewRepository.update(
       reviewId.data,
       reviewer.data,
-      request.data,
+      ReviewWriteMapper.fromUpdateRequest(request.data),
     )
     if (changed.type === 'error') {
       return changed

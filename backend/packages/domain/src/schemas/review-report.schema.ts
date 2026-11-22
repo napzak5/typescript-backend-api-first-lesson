@@ -49,9 +49,6 @@ export const reviewReportRequestSchema = z
   })
   .check(otherNeedsDetails) satisfies z.ZodType<ApiReviewReportRequest>
 
-/** A report that passed the rules of its own. */
-export type ReviewReportRequest = z.infer<typeof reviewReportRequestSchema>
-
 export const reviewReportSearchRequestSchema = z.strictObject({
   limit: z.number().int().min(1).max(100).exactOptional(),
   cursor: reviewReportIdSchema.exactOptional(),
@@ -59,3 +56,8 @@ export const reviewReportSearchRequestSchema = z.strictObject({
   reviewId: reviewIdSchema.exactOptional(),
   salonId: salonIdSchema.exactOptional(),
 }) satisfies z.ZodType<ApiReviewReportSearchRequest>
+
+/** A search of review reports that passed the rules of its own. */
+export type ReviewReportSearchRequest = z.infer<
+  typeof reviewReportSearchRequestSchema
+>

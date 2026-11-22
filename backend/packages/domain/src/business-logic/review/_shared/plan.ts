@@ -1,7 +1,6 @@
 import type { DbBooking } from '../../../models/booking'
 import type { CustomerId } from '../../../models/customer'
-import type { ReviewWrite } from '../../../models/review'
-import type { ReviewCreateRequest } from '../../../schemas/review.schema'
+import type { RequestedReview, ReviewWrite } from '../../../models/review'
 import type { ValidationIssue } from '../../../shared'
 import { notFound } from '../../booking/_shared/plan'
 
@@ -58,7 +57,7 @@ export type ReviewPlan =
 
 /** The issues of what a review names of its booking, in the order of the request. */
 const issuesOf = (
-  request: ReviewCreateRequest,
+  request: RequestedReview,
   booking: ReviewedBooking,
 ): ValidationIssue[] => [
   ...(request.salonId !== booking.salonId || booking.salonDeleted
@@ -75,7 +74,7 @@ const issuesOf = (
  */
 export const planReview = (
   customerId: CustomerId,
-  request: ReviewCreateRequest,
+  request: RequestedReview,
   { reviewerDeleted, booking }: ReviewPlanContext,
 ): ReviewPlan => {
   if (reviewerDeleted) {

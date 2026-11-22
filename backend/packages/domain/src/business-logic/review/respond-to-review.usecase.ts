@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { ReviewReadMapper } from '../../mappers/read/review.mapper'
+import { ReviewWriteMapper } from '../../mappers/write/review.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiReviewResponse, parseReviewId } from '../../models/review'
 import { reviewRespondRequestSchema } from '../../schemas/review.schema'
@@ -39,14 +40,15 @@ export class RespondToReviewUseCase {
     if (request.type === 'error') {
       return request
     }
-    if (!mayRespondWith(responder.data, request.data.ownerResponse)) {
+    const requested = ReviewWriteMapper.fromRespondRequest(request.data)
+    if (!mayRespondWith(responder.data, requested.ownerResponse)) {
       return Result.error(DomainErrors.forbidden())
     }
 
     const responded = await this.dependencies.reviewRepository.respond(
       reviewId.data,
       responder.data,
-      request.data,
+      requested,
     )
     if (responded.type === 'error') {
       return responded

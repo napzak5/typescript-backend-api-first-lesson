@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { PointWriteMapper } from '../../mappers/write/point.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiPointTransactionResponse } from '../../models/point'
 import { pointUseRequestSchema } from '../../schemas/point.schema'
@@ -35,7 +36,7 @@ export class UsePointsUseCase {
     return recordMovement(
       this.dependencies,
       reach,
-      { type: 'used', request: request.data },
+      PointWriteMapper.fromUseRequest(request.data),
       MESSAGE,
     )
   }

@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { PointReadMapper } from '../../mappers/read/point.mapper'
+import { PointWriteMapper } from '../../mappers/write/point.mapper'
 import type { Actor } from '../../models/auth'
 import { parseCustomerId } from '../../models/customer'
 import type { ApiPointExpiringResponse } from '../../models/point'
@@ -10,7 +11,6 @@ import type { PointUseCaseDependencies } from './_shared/dependencies'
 import { expiringOf } from './_shared/lots'
 import { expiringUntilOf } from './_shared/plan'
 
-const DEFAULT_DAYS = 30
 const MESSAGE = 'Invalid expiring points search'
 
 export class GetExpiringPointsUseCase {
@@ -49,10 +49,8 @@ export class GetExpiringPointsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const until = expiringUntilOf(
-      this.dependencies.clock(),
-      request.data.days ?? DEFAULT_DAYS,
-    )
+    const { days } = PointWriteMapper.fromExpiringSearchRequest(request.data)
+    const until = expiringUntilOf(this.dependencies.clock(), days)
 
     const found = await this.dependencies.pointRepository.transactionsOf(
       id.data,
@@ -64,15 +62,9 @@ export class GetExpiringPointsUseCase {
       return Result.error(DomainErrors.notFound('Customer', id.data))
     }
 
-    const expiring = expiringOf(found.data, until)
-    return Result.map(
-      PointReadMapper.toApiPointTransactions(expiring.transactions),
-      (transactions) => ({
-        customerId: id.data,
-        expiringPoints: expiring.expiringPoints,
-        expirationDate: expiring.expirationDate,
-        transactions,
-      }),
+    return PointReadMapper.toApiExpiringPoints(
+      id.data,
+      expiringOf(found.data, until),
     )
   }
 }

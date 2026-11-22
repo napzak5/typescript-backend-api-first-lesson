@@ -1,7 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { ReviewReportReadMapper } from '../../mappers/read/review-report.mapper'
+import { ReviewReportWriteMapper } from '../../mappers/write/review-report.mapper'
 import type { Actor } from '../../models/auth'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import type { ApiReviewReportResponse } from '../../models/review-report'
 import { reviewReportSearchRequestSchema } from '../../schemas/review-report.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -9,13 +10,7 @@ import { notFound } from '../booking/_shared/plan'
 import { mayHandleReviewReports } from './_shared/authorization'
 import type { ReviewReportUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid review report search'
-
-export type ReviewReportPage = {
-  data: ApiReviewReportResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListReviewReportsUseCase {
   constructor(private readonly dependencies: ReviewReportUseCaseDependencies) {}
@@ -31,7 +26,7 @@ export class ListReviewReportsUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<ReviewReportPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiReviewReportResponse>, DomainError>> {
     if (!mayHandleReviewReports(actor)) {
       return Result.error(DomainErrors.forbidden())
     }
@@ -46,16 +41,9 @@ export class ListReviewReportsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = ReviewReportWriteMapper.fromSearchRequest(request.data)
 
-    const listed = await this.dependencies.reviewReportRepository.list({
-      limit,
-      after: cursor ?? null,
-      status: request.data.status ?? null,
-      reviewId: request.data.reviewId ?? null,
-      salonId: request.data.salonId ?? null,
-    })
+    const listed = await this.dependencies.reviewReportRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -67,21 +55,6 @@ export class ListReviewReportsUseCase {
       )
     }
 
-    const { reports, total, hasMore } = listed.data
-    return Result.map(
-      ReviewReportReadMapper.toApiReviewReports(reports),
-      (data) => ({
-        data,
-        meta: {
-          total,
-          limit,
-          hasMore,
-          cursor: cursor ?? null,
-          nextCursor: hasMore ? (reports.at(-1)?.id ?? null) : null,
-          // Pages are only walked forwards.
-          prevCursor: null,
-        },
-      }),
-    )
+    return ReviewReportReadMapper.toApiReviewReportPage(listed.data, criteria)
   }
 }

@@ -1,13 +1,18 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import type { ApiPage, Paging } from '../../models/page'
 import type {
+  ApiReviewHelpfulResponse,
   ApiReviewResponse,
   ApiReviewSummaryResponse,
   DbReview,
+  ReviewId,
   ReviewTally,
 } from '../../models/review'
+import type { ReviewList } from '../../repositories/review.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * Database row → API response. Property names are the column names; what
@@ -58,6 +63,21 @@ export const ReviewReadMapper = {
       apiReviews.push(mapped.data)
     }
     return Result.success(apiReviews)
+  },
+
+  /** The reviews a list found as a page of it. */
+  toApiReviewPage(
+    { reviews, total, hasMore }: ReviewList,
+    paging: Paging<ReviewId>,
+  ): Result<ApiPage<ApiReviewResponse>, DomainError> {
+    return Result.map(ReviewReadMapper.toApiReviews(reviews), (data) =>
+      toApiPage(data, { total, hasMore }, paging),
+    )
+  },
+
+  /** How many customers found a review helpful, the mark that was just made among them. */
+  toApiReviewHelpful(helpfulCount: number): ApiReviewHelpfulResponse {
+    return { helpfulCount }
   },
 
   /** The distribution has every rating from 1 to 5, those of no review at 0. */

@@ -1,8 +1,13 @@
 import type { customerPoints } from '@beauty-salon-backend/database'
-import type { components, operations } from '@beauty-salon-backend/generated'
+import type {
+  components,
+  operations,
+  PointMovementReferenceType,
+} from '@beauty-salon-backend/generated'
 import type { DeepRequired } from '@beauty-salon-backend/utility'
 import type { z } from 'zod'
 import { uuidSchema } from '../shared'
+import type { CustomerId } from './customer'
 
 // ID: a UUID that has been checked.
 export const pointTransactionIdSchema = uuidSchema.brand<'PointTransactionId'>()
@@ -52,3 +57,30 @@ export type PointWrite = Pick<
   | 'referenceId'
   | 'expiryDate'
 >
+
+/**
+ * The points a request moves: whose, how many, and the record they come
+ * from, if any. An adjustment may take points away; no movement is of 0.
+ */
+export type RequestedPoints = {
+  customerId: CustomerId
+  points: number
+  description: string | null
+  referenceType: PointMovementReferenceType | null
+  referenceId: string | null
+}
+
+/** The points a request gives a customer, with the day they lapse, if any. */
+export type RequestedPointEarning = RequestedPoints & {
+  expiryDate: string | null
+}
+
+/**
+ * The expiry a request asks for: of one customer or of every customer
+ * (null), for the points that lapsed before a day or before the latest
+ * day there is (null).
+ */
+export type RequestedPointExpiry = {
+  customerId: CustomerId | null
+  processBefore: string | null
+}

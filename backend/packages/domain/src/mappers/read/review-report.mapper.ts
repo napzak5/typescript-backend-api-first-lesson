@@ -1,11 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import type { ApiPage, Paging } from '../../models/page'
 import type {
   ApiReviewReportResponse,
   DbReviewReport,
+  ReviewReportId,
 } from '../../models/review-report'
+import type { ReviewReportList } from '../../repositories/review-report.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * Database row → API response. Property names are the column names; what
@@ -52,5 +56,16 @@ export const ReviewReportReadMapper = {
       apiReports.push(mapped.data)
     }
     return Result.success(apiReports)
+  },
+
+  /** The reports a list found as a page of it. */
+  toApiReviewReportPage(
+    { reports, total, hasMore }: ReviewReportList,
+    paging: Paging<ReviewReportId>,
+  ): Result<ApiPage<ApiReviewReportResponse>, DomainError> {
+    return Result.map(
+      ReviewReportReadMapper.toApiReviewReports(reports),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

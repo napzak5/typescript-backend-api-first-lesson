@@ -17,16 +17,20 @@ import type {
 } from '../business-logic/review/_shared/response'
 import type { BookingId } from '../models/booking'
 import type { CustomerId } from '../models/customer'
-import type { DbReview, ReviewId, ReviewTally } from '../models/review'
-import type { DbReviewReport } from '../models/review-report'
+import type {
+  DbReview,
+  RequestedReview,
+  RequestedReviewChange,
+  RequestedReviewResponse,
+  ReviewId,
+  ReviewTally,
+} from '../models/review'
+import type {
+  DbReviewReport,
+  RequestedReviewReport,
+} from '../models/review-report'
 import type { SalonId } from '../models/salon'
 import type { StaffId } from '../models/staff'
-import type {
-  ReviewCreateRequest,
-  ReviewRespondRequest,
-  ReviewUpdateRequest,
-} from '../schemas/review.schema'
-import type { ReviewReportRequest } from '../schemas/review-report.schema'
 import type { DomainError } from '../shared'
 
 /**
@@ -132,14 +136,14 @@ export interface IReviewRepository {
   /** Writes the review of the customer, as `planReview` plans it. */
   create(
     customerId: CustomerId,
-    request: ReviewCreateRequest,
+    request: RequestedReview,
   ): Promise<Result<ReviewCreation, DomainError>>
 
   /** Changes a review of the customer, as `planReviewChange` plans it. */
   update(
     id: ReviewId,
     customerId: CustomerId,
-    request: ReviewUpdateRequest,
+    request: RequestedReviewChange,
   ): Promise<Result<ReviewChange, DomainError>>
 
   /** Removes a review, as `planReviewRemoval` plans it. */
@@ -166,7 +170,7 @@ export interface IReviewRepository {
   report(
     id: ReviewId,
     reporter: ReviewReporter,
-    request: ReviewReportRequest,
+    request: RequestedReviewReport,
   ): Promise<Result<ReviewReporting, DomainError>>
 
   /**
@@ -178,7 +182,7 @@ export interface IReviewRepository {
   respond(
     id: ReviewId,
     responder: ReviewResponder,
-    request: ReviewRespondRequest,
+    request: RequestedReviewResponse,
   ): Promise<Result<ReviewResponding, DomainError>>
 
   /** What the reviews of a salon come to; null for no salon or a deleted one. */
