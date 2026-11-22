@@ -14,8 +14,9 @@ import {
   Note,
   RadioGroup,
   TextField,
+  useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
-import { type ReactNode, useLayoutEffect, useRef, useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import {
   DROP_PAST,
   dateControlOf,
@@ -42,15 +43,11 @@ export type ScheduleFormProps = {
   onSubmit: (values: FormData) => void
 }
 
-/** A row of a date the form holds */
+/** A row of a date the form holds: what it opened with, if anything, and whether the member works on the date */
 type DateRow = {
-  key: number
   shown: ModelsStaffSchedule | undefined
   works: boolean
 }
-
-/** Where the focus goes after a row was added or taken away */
-type Focus = { type: 'row'; key: number } | { type: 'add' } | undefined
 
 type HoursProps = {
   nameOf: (property: ScheduleProperty) => string
@@ -138,45 +135,10 @@ export const ScheduleForm = ({
       ]),
     ),
   )
-  const [rows, setRows] = useState<DateRow[]>(() =>
-    parts.dates.map((shown, key) => ({
-      key,
-      shown,
-      works: shown.isAvailable,
-    })),
+  const dates = useRepeatedRows<DateRow>(
+    () => parts.dates.map((shown) => ({ shown, works: shown.isAvailable })),
+    errors,
   )
-  const [nextKey, setNextKey] = useState(rows.length)
-  const [focus, setFocus] = useState<Focus>()
-  const [outdated, setOutdated] = useState<FormErrors | undefined>(undefined)
-  const said = errors === outdated ? NO_ERRORS : errors
-  const groups = useRef(new Map<number, HTMLFieldSetElement>())
-  const add = useRef<HTMLButtonElement>(null)
-
-  useLayoutEffect(() => {
-    if (focus?.type === 'row') {
-      groups.current.get(focus.key)?.querySelector('input')?.focus()
-    }
-    if (focus?.type === 'add') {
-      add.current?.focus()
-    }
-  }, [focus])
-
-  const addRow = (): void => {
-    setRows([...rows, { key: nextKey, shown: undefined, works: false }])
-    setNextKey(nextKey + 1)
-    setFocus({ type: 'row', key: nextKey })
-  }
-
-  const removeRow = (key: number): void => {
-    setRows(rows.filter((row) => row.key !== key))
-    setOutdated(errors)
-    setFocus({ type: 'add' })
-  }
-
-  const choose = (key: number, works: boolean): void => {
-    setRows(rows.map((row) => (row.key === key ? { ...row, works } : row)))
-  }
-
   return (
     <Form
       submitLabel={submitLabel}
@@ -228,20 +190,14 @@ export const ScheduleForm = ({
         label='日付ごと'
         description='その日だけ勤務時間を変える日や、休みの日です。日付ごとの行がある日は、曜日の勤務時間の代わりに、その行を使います。'
       >
-        {rows.map((row, index) => {
+        {dates.rows.map((row, index) => {
           const nameOf = (property: ScheduleProperty): string =>
             dateControlOf(index, property)
 
           return (
             <FormRow
               key={row.key}
-              ref={(group) => {
-                if (group === null) {
-                  groups.current.delete(row.key)
-                } else {
-                  groups.current.set(row.key, group)
-                }
-              }}
+              ref={dates.rowRef(row.key)}
               label={`${index + 1} 行目`}
             >
               <TextField
@@ -251,8 +207,8 @@ export const ScheduleForm = ({
                 name={nameOf('date')}
                 autoComplete='off'
                 required
-                defaultValue={row.shown?.date ?? undefined}
-                error={said[nameOf('date')]}
+                defaultValue={row.value.shown?.date ?? undefined}
+                error={dates.errors[nameOf('date')]}
               />
               <RadioGroup
                 label='勤務'
@@ -261,34 +217,44 @@ export const ScheduleForm = ({
                   { value: WORKS, label: '勤務する' },
                   { value: OFF, label: '休み' },
                 ]}
-                value={row.works ? WORKS : OFF}
+                value={row.value.works ? WORKS : OFF}
                 onChange={(event) =>
-                  choose(row.key, event.target.value === WORKS)
+                  dates.change(row.key, {
+                    ...row.value,
+                    works: event.target.value === WORKS,
+                  })
                 }
               />
-              {row.works && (
-                <Hours nameOf={nameOf} shown={row.shown} errors={said} />
+              {row.value.works && (
+                <Hours
+                  nameOf={nameOf}
+                  shown={row.value.shown}
+                  errors={dates.errors}
+                />
               )}
               <TextField
                 label='備考'
                 name={nameOf('notes')}
                 autoComplete='off'
                 description='休みの理由（有給休暇、研修など）や、勤務時間を変える理由です。'
-                defaultValue={row.shown?.notes ?? undefined}
-                error={said[nameOf('notes')]}
+                defaultValue={row.value.shown?.notes ?? undefined}
+                error={dates.errors[nameOf('notes')]}
               />
               <Button
                 size='small'
                 aria-label={`${index + 1} 行目を外す`}
-                onClick={() => removeRow(row.key)}
+                onClick={() => dates.remove(row.key)}
               >
                 外す
               </Button>
             </FormRow>
           )
         })}
-        {rows.length + parts.past.length < MOST_DATES ? (
-          <Button ref={add} onClick={addRow}>
+        {dates.rows.length + parts.past.length < MOST_DATES ? (
+          <Button
+            ref={dates.addRef}
+            onClick={() => dates.add({ shown: undefined, works: false })}
+          >
             日付の行を足す
           </Button>
         ) : (

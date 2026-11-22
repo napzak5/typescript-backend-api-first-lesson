@@ -1,5 +1,5 @@
 import type { ModelsCustomerProfileResponse } from '@beauty-salon-frontend/api-client'
-import { DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
+import { DescriptionList, NONE, WrittenText } from '@beauty-salon-frontend/ui'
 import {
   addressLinesOf,
   calendarDayOf,
@@ -63,16 +63,15 @@ export const ProfileDetails = ({ profile }: ProfileDetailsProps) => {
         { term: '職業', description: profile.occupation },
         {
           term: '好みのメニュー',
-          description: liked.length === 0 ? 'なし' : liked.join('、'),
+          description: liked.length === 0 ? NONE : liked.join('、'),
         },
         {
           term: 'サロンに伝えておきたいこと',
-          description:
-            notes === null ? null : <WrittenText>{notes}</WrittenText>,
+          description: <WrittenText>{notes}</WrittenText>,
         },
         {
           term: '受け取る連絡',
-          description: contacts.length === 0 ? 'なし' : contacts.join('、'),
+          description: contacts.length === 0 ? NONE : contacts.join('、'),
         },
       ]}
     />

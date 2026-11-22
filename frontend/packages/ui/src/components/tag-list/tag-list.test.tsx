@@ -26,6 +26,15 @@ describe('TagList', () => {
     ])
   })
 
+  it('should say there are none, without a list, when there are no words', async () => {
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(screen.getByText('なし')).toBeVisible()
+    expect(screen.queryByRole('list')).toBeNull()
+  })
+
   it('should show a word that is repeated once, where it came first', async () => {
     // Act
     await stories.Repeated.run()

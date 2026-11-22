@@ -273,7 +273,7 @@ nobody reads is removed.
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
 | `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it and what else can be done (`actions`): one below the other and as wide as the form below 40rem, in a row from there (an `Actions` of the layout `row`) |
 | `FormPart` | A part of a long form under its name (`label`: a `fieldset` and its `legend`), with what it says of all its controls (`description`, which the `fieldset` is described by) before them, in the look of a description. What else a `fieldset` takes (`disabled`, `onChange`) is handed to it |
-| `FormRow` | One of the rows a form repeats (a past treatment of a chart, an option of a service, a line of an order, a day of the opening hours, a photo, a product of a treatment): a frame with its name on its upper edge (`label`: a `fieldset` and its `legend`), and its controls one below the other. `ref` reaches the `fieldset`, for the form that moves the focus into a row it added |
+| `FormRow` | One of the rows a form repeats (a past treatment of a chart, an option of a service, a line of an order, a day of the opening hours, a photo, a product of a treatment): a frame with its name on its upper edge (`label`: a `fieldset` and its `legend`), and its controls one below the other. `ref` reaches the `fieldset`, for the form that moves the focus into a row it added. The rows that are added and taken away are kept by `useRepeatedRows` |
 | `FieldRow` | Two controls that are read together (a name and its kana, the start and the end), or three (`columns={3}`: the prices of a product), side by side from 40rem and one below the other below it. Each keeps its height, so their upper edges stay in line when one has a description |
 | `FormDialog` | A question answered with a form (a cancellation and its reason, a tag for the chosen customers): a `Dialog` whose content is the form, with 「戻る」 and the button that sends it (`submitLabel`, `submitVariant='danger'` for what cannot be undone) among its actions. Enter in a control sends it, nothing is sent again while `pending`, and the focus goes to the first control with an error. `answer` is what the form brought when it is to be read before the dialog closes (the codes issued, the report made before): it takes the place of the form, with 「閉じる」 alone, and takes the focus |
 
@@ -776,9 +776,10 @@ none).
   a `DescriptionList` and a `Table` say 「記録なし」 for it, quietly
   (`NotRecorded`), and a sentence that needs the words takes
   `NOT_RECORDED` of `ui`. A function that names a value returns `null`
-  when there is none, and the screen writes no words of its own. 「なし」
-  is for what is none as a fact: an empty list, zero, no booking, no
-  refund, no visit. A `null` the contract names as a state is said as that
+  when there is none, and the screen writes no words of its own: a text of
+  several lines is given to `WrittenText` as it is, `null` and all. 「なし」
+  (`NONE` of `ui`) is for what is none as a fact: an empty list, which a
+  `TagList` says itself, zero, no booking, no refund, no visit. A `null` the contract names as a state is said as that
   state: the referral code that is 「未発行」, and 「なし」 for the referrer
   of a customer who came without a referral. A name without a value looks
   like a fault.
@@ -809,11 +810,17 @@ have.
   condition `@beauty-salon-frontend/source`), its stories are listed in
   the catalogue of `ui`, and `Dockerfile.frontend` copies its manifest.
 
-- **Rows that are added and taken away** are a component that keeps which
-  rows there are (`components/time-slot-fields/` of the package, and the
-  treatments of `ChartForm` in the admin application, whose rows are
-  groups of four controls). A row that is a group of controls under its
-  name is a `FormRow`; the times of the package and the lines of a booking
+- **Rows that are added and taken away** are kept by `useRepeatedRows`
+  of `ui` (`components/form-row/repeated-rows.ts`), in every form that has
+  them: `components/time-slot-fields/` of the package, and in the admin
+  application the treatments of `ChartForm`, whose rows are groups of four
+  controls, the options and the services of a package, the dates of the
+  opening hours and of a schedule, the photos and the products of a
+  treatment, and the lines of a booking. A row holds what the form opened
+  it with and what changes the controls it shows (a day the salon opens
+  shows its times: `change`); rows that a choice brings along (the box
+  that makes a package) are `addAlong`, and keep the focus where it is. A
+  row that is a group of controls under its name is a `FormRow`; the times of the package and the lines of a booking
   are numbered rows of two columns, whose labels carry the number, and
   draw their own rows. The browser keeps what
   was typed, as in every control. A row has a `key` that stays with it (a
@@ -823,11 +830,15 @@ have.
   labelled by it as it is read (「時間帯 2 の開始」): no two controls of
   the form have one name. The buttons are `type='button'`.
 - **The focus follows the press**, in a layout effect: to the first control
-  of the row that was added; to the button that adds a row after one was
-  taken away, for its own button went with it.
+  of the row that was added (`rowRef` gives the hook the element of a row);
+  to the button that adds a row after one was taken away (`addRef`), for
+  its own button went with it.
 - **An error names a row by its number**, and taking a row away renumbers
   the rows after it. The errors of an attempt are shown until a row is
-  taken away, and again after the next attempt (a new `errors` object).
+  taken away, and again after the next attempt (a new `errors` object):
+  the controls of the rows take the `errors` of the hook. A form with two
+  lists has a hook for each, and taking a row away hides the errors of its
+  own list.
 - **A row that was left empty is not sent, and one that is half filled is
   an error** at the time that is missing. The rows of the request are then
   not the rows of the form, so what the API says of a row all the same is
@@ -2427,16 +2438,16 @@ A share link opens a file for somebody who has no account
 | `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` (an `Actions`) stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are; below it they follow each other like words, and go on in the next line where the card ends: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
 | `Actions` | Buttons and links that stand together in the body of a part, in the order they are read. `flow` (the default) lets them follow each other like words and go on in the next line where the part ends: what can be done with a part, each on its own (「変更履歴」, 「ほかのお客様とまとめる」 and 「台帳から削除する」 of a customer); `row` puts them one below the other and as wide as the part below 40rem, and in a row from there, as a `Form` does: the button that sends what was entered and the way back from it, where they stand outside a `Form` (「登録する」 and 「やめる」 of a file of customers); `stack` puts them one below the other, each as wide as its label. A lone button needs none: it is as wide as its label wherever it stands |
 | `Note` | A sentence said more quietly than the text around it: what a part, a list or a screen leaves out or adds (`size='medium'`, the default), or what goes with a control or a part of a form, as close to it as its description (`size='small'`). The descriptions of `Field`, `FormPart`, `Dialog`, `PageHeader` and `EmptyState` are `Note`s |
-| `WrittenText` | What somebody wrote in several lines (a note, a request, a review), shown with its line breaks and its spaces: it is a paragraph, and a cell of a `Table` keeps its lines with `wrap: 'lines'` |
+| `WrittenText` | What somebody wrote in several lines (a note, a request, a review), shown with its line breaks and its spaces: it is a paragraph, and a cell of a `Table` keeps its lines with `wrap: 'lines'`. Nothing written (`null`) is said as 「記録なし」, as a `DescriptionList` says it |
 | `BulletList` | A short list of sentences with their bullets: what stands in the way of a merge, the rows of a file that were refused. A list of records is a `Table`, a list of cards a `CardList` |
 | `CardList` | Records that are read one by one (bookings, reviews, salons, devices), each in the frame of a card: `--space-frame` inside the frame, `--space-content` between what an item holds, `--space-parts` between the items. `layout='tiles'` sets as many side by side as the width holds (the people of a salon) |
 | `PagedList` | A `CardList` that is read a page at a time: how many there are (`count`, a status), the items, and `LoadMore`. The focus moves into the first item that 「さらに表示」 added: its first link, or the item (`focus='item'`) |
 | `LoadMore`, `useFocusOnMore`, `More` | Below a list that is read a page at a time: 「さらに表示」, 「もう一度読み込む」 and why the page did not come (`More`: `none`, `available`, `loading`, `failed`); and the hook that moves the focus into the first item the button added, for a list that is no `PagedList` (`PagedTable`) |
 | `PeriodSwitch` | The links from the period that is shown to the one before, to the one that holds today and to the one after, by the day or the week (`unit`): the words are its own. A link that `beforeHref` or `afterHref` does not give is left out |
-| `NotRecorded`, `NOT_RECORDED` | 「記録なし」, quietly: what a `DescriptionList` and a `Table` show for a `null`, and the words for a sentence |
+| `NotRecorded`, `NOT_RECORDED`, `NONE` | 「記録なし」, quietly: what a `DescriptionList` and a `Table` show for a `null`, and the words for a sentence. 「なし」 (`NONE`) is what is none as a fact |
 | `DescriptionList` | The names and values of one record, side by side on every screen, one line for a value. The names share a column as wide as the longest of them, and never more than two fifths of the list: a longer name goes on in a second line. A description that is `null` says 「記録なし」 |
 | `Badge` | The state of a record, in a word, in the colours of a `Tone`, or `neutral` (`BadgeTone`) |
-| `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends |
+| `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends. No words are said as 「なし」 |
 | `Rating` | A rating out of five: the stars, the number, and how many gave it |
 | `QrCode` | A QR code drawn from its text, as an image with a name: what an authenticator app reads. The text stays in the browser |
 | `Table` | A list of records. Its first column heads each row, or the one `rowHeader` names: the name of a customer, when a column of checkboxes comes first. A cell that is `null` says 「記録なし」 |

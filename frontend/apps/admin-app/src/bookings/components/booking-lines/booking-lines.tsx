@@ -7,8 +7,8 @@ import {
   type FormErrors,
   Select,
   TextField,
+  useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
-import { useLayoutEffect, useRef, useState } from 'react'
 import {
   lineControlOf,
   MOST_LINES,
@@ -36,9 +36,6 @@ export type BookingLinesProps = {
   /** A row was added or taken away: what was found out about the rows is out of date */
   onRowsChange: () => void
 }
-
-/** What a press did to the rows, until the focus has followed it */
-type Change = 'added' | 'removed' | undefined
 
 /** The services a line is for, by name and length; one the salon takes no bookings for says so. */
 export const serviceOptionsOf = (services: readonly ModelsServiceResponse[]) =>
@@ -76,51 +73,30 @@ export const BookingLines = ({
   timezone,
   onRowsChange,
 }: BookingLinesProps) => {
-  const [rows, setRows] = useState<number[]>([0])
-  const [outdated, setOutdated] = useState<FormErrors | undefined>(undefined)
-  const nextKey = useRef(1)
-  const change = useRef<Change>(undefined)
-  const list = useRef<HTMLOListElement>(null)
-  const adding = useRef<HTMLButtonElement>(null)
-  const said = errors === outdated ? {} : errors
+  // A line holds nothing but its controls
+  const lines = useRepeatedRows<null>(() => [null], errors)
   const serviceOptions = serviceOptionsOf(services)
   const staffOptions = staffOptionsOf(staff)
 
-  // The focus follows in the commit that shows what the press did. Every
-  // other commit finds no change to follow
-  useLayoutEffect(() => {
-    if (change.current === 'added') {
-      list.current?.querySelector<HTMLElement>('li:last-child select')?.focus()
-    }
-    if (change.current === 'removed') {
-      adding.current?.focus()
-    }
-    change.current = undefined
-  })
-
   const add = (): void => {
-    change.current = 'added'
-    setRows([...rows, nextKey.current])
-    nextKey.current += 1
+    lines.add(null)
     onRowsChange()
   }
 
   const remove = (key: number): void => {
-    change.current = 'removed'
-    setRows(rows.filter((row) => row !== key))
-    setOutdated(errors)
+    lines.remove(key)
     onRowsChange()
   }
 
   return (
     <div className={styles['lines']}>
-      <ol className={styles['rows']} ref={list}>
-        {rows.map((key, index) => {
+      <ol className={styles['rows']}>
+        {lines.rows.map(({ key }, index) => {
           const name = `明細 ${index + 1}`
           const check = checks?.[index]
 
           return (
-            <li key={key} className={styles['row']}>
+            <li key={key} ref={lines.rowRef(key)} className={styles['row']}>
               <Select
                 className={styles['wide']}
                 label={`${name} のメニュー`}
@@ -129,14 +105,14 @@ export const BookingLines = ({
                 placeholder='選んでください'
                 required
                 defaultValue=''
-                error={said[lineControlOf(index, 'serviceId')]}
+                error={lines.errors[lineControlOf(index, 'serviceId')]}
               />
               <Select
                 label={`${name} の担当`}
                 name={lineControlOf(index, 'staffId')}
                 options={staffOptions}
                 defaultValue={SAME_STAFF}
-                error={said[lineControlOf(index, 'staffId')]}
+                error={lines.errors[lineControlOf(index, 'staffId')]}
               />
               <TextField
                 label={`${name} の開始`}
@@ -144,14 +120,14 @@ export const BookingLines = ({
                 autoComplete='off'
                 type='time'
                 required
-                error={said[lineControlOf(index, 'startTime')]}
+                error={lines.errors[lineControlOf(index, 'startTime')]}
               />
               <TextField
                 className={styles['wide']}
                 label={`${name} のメモ`}
                 name={lineControlOf(index, 'notes')}
                 autoComplete='off'
-                error={said[lineControlOf(index, 'notes')]}
+                error={lines.errors[lineControlOf(index, 'notes')]}
               />
               {check !== undefined && (
                 <LineCheckNote
@@ -160,7 +136,7 @@ export const BookingLines = ({
                   className={styles['check']}
                 />
               )}
-              {rows.length > 1 && (
+              {lines.rows.length > 1 && (
                 <Button
                   size='small'
                   className={styles['remove']}
@@ -173,8 +149,8 @@ export const BookingLines = ({
           )
         })}
       </ol>
-      {rows.length < MOST_LINES ? (
-        <Button ref={adding} onClick={add}>
+      {lines.rows.length < MOST_LINES ? (
+        <Button ref={lines.addRef} onClick={add}>
           明細を追加する
         </Button>
       ) : (

@@ -3,6 +3,7 @@ import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   type DescriptionListItem,
+  NONE,
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
@@ -68,10 +69,6 @@ type LedgerItemOf = {
   describe: (values: LedgerValues, referrer: ReactNode) => ReactNode
 }
 
-/** A text that was written in several lines, with its line breaks. */
-const written = (text: string | null) =>
-  text === null ? null : <WrittenText>{text}</WrittenText>
-
 /** The items of the ledger, in the order the page of a customer shows them. */
 const ITEMS: readonly LedgerItemOf[] = [
   {
@@ -136,7 +133,9 @@ const ITEMS: readonly LedgerItemOf[] = [
     term: '好みについてのメモ',
     fields: ['preferences'],
     shows: ({ preferences }) => preferences?.notes ?? null,
-    describe: ({ preferences }) => written(preferences?.notes ?? null),
+    describe: ({ preferences }) => (
+      <WrittenText>{preferences?.notes ?? null}</WrittenText>
+    ),
   },
   {
     term: '会員ランク',
@@ -161,8 +160,7 @@ const ITEMS: readonly LedgerItemOf[] = [
   {
     term: 'タグ',
     fields: ['tags'],
-    describe: ({ tags }) =>
-      tags.length === 0 ? 'なし' : <TagList label='タグ' items={tags} />,
+    describe: ({ tags }) => <TagList label='タグ' items={tags} />,
   },
   {
     term: '紹介コード',
@@ -174,18 +172,22 @@ const ITEMS: readonly LedgerItemOf[] = [
     fields: ['referredBy'],
     // The contract says what `null` is: the customer came without a referral
     describe: ({ referredBy }, referrer) =>
-      referredBy === null ? 'なし' : referrer,
+      referredBy === null ? NONE : referrer,
   },
   {
     term: '送ってよい連絡',
     fields: ['allowEmail', 'allowSms', 'allowMarketing'],
     describe: contactsNameOf,
   },
-  { term: '備考', fields: ['notes'], describe: ({ notes }) => written(notes) },
+  {
+    term: '備考',
+    fields: ['notes'],
+    describe: ({ notes }) => <WrittenText>{notes}</WrittenText>,
+  },
   {
     term: 'スタッフ間の申し送り',
     fields: ['internalNotes'],
-    describe: ({ internalNotes }) => written(internalNotes),
+    describe: ({ internalNotes }) => <WrittenText>{internalNotes}</WrittenText>,
   },
 ]
 

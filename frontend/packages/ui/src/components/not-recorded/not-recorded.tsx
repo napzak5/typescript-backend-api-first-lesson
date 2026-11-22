@@ -3,9 +3,16 @@ import styles from './not-recorded.module.css'
 /**
  * What a value that was not recorded (a column that holds `null`) is said
  * as. A sentence that needs the word reads it from here. An empty list, a
- * zero and the no of a yes or no are 「なし」, which says something else.
+ * zero and the no of a yes or no are 「なし」 (`NONE`), which says something
+ * else.
  */
 export const NOT_RECORDED = '記録なし'
+
+/**
+ * What an empty list, a zero and the no of a yes or no are said as: there
+ * is none, and that is what was recorded.
+ */
+export const NONE = 'なし'
 
 /**
  * A value that was not recorded, said in words and more quietly than the

@@ -1,6 +1,6 @@
 import type { ModelsCustomerHistoryEntryResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import { countOf, Link, type More, NONE } from '@beauty-salon-frontend/ui'
 import { operationNameOf } from '../../customer-history'
 import { changedTermsOf } from '../customer-record/ledger-items'
 
@@ -33,7 +33,7 @@ const changedNameOf = ({
   }
   const terms = changedTermsOf(changes.map(({ field }) => field))
 
-  return terms.length === 0 ? 'なし' : terms.join('、')
+  return terms.length === 0 ? NONE : terms.join('、')
 }
 
 /**

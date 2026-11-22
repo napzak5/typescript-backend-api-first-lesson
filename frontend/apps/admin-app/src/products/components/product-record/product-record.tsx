@@ -16,12 +16,6 @@ export type ProductRecordProps = {
   currency: string
 }
 
-const writtenOrNone = (text: string | null) =>
-  text === null ? null : <WrittenText>{text}</WrittenText>
-
-const addressOrNone = (address: string | null) =>
-  address === null ? null : address
-
 /**
  * Everything the ledger keeps of a product: what it is and what it is
  * for, its prices, the levels its stock is kept at, where it comes from,
@@ -35,7 +29,10 @@ export const ProductRecord = ({ product, currency }: ProductRecordProps) => (
         items={[
           { term: '商品コード', description: product.productCode },
           { term: '商品名', description: product.name },
-          { term: '説明', description: writtenOrNone(product.description) },
+          {
+            term: '説明',
+            description: <WrittenText>{product.description}</WrittenText>,
+          },
           {
             term: 'カテゴリー',
             description: product.category,
@@ -112,15 +109,15 @@ export const ProductRecord = ({ product, currency }: ProductRecordProps) => (
           },
           {
             term: '保管条件',
-            description: writtenOrNone(product.storageConditions),
+            description: <WrittenText>{product.storageConditions}</WrittenText>,
           },
           {
             term: '商品画像の URL',
-            description: addressOrNone(product.imageUrl),
+            description: product.imageUrl,
           },
           {
             term: '安全データシートの URL',
-            description: addressOrNone(product.safetyDataSheet),
+            description: product.safetyDataSheet,
           },
         ]}
       />

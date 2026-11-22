@@ -12,7 +12,6 @@ import {
   Table,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import type { ReactNode } from 'react'
 import {
   deliveryDayNameOf,
   doneNameOf,
@@ -35,10 +34,6 @@ export type OrderRecordProps = {
   /** The screen of a stock row an item orders */
   rowHref: (inventoryId: string) => string
 }
-
-/** What was written, in the lines it was written in; 「記録なし」 when nothing was. */
-const writtenOf = (text: string | null): ReactNode =>
-  text === null ? null : <WrittenText>{text}</WrittenText>
 
 /** What happened to the order after it was made: its approval, its delivery, its cancellation, each once it happened */
 const eventsOf = (
@@ -76,7 +71,7 @@ const eventsOf = (
         },
         {
           term: '取り消した理由',
-          description: writtenOf(order.cancellationReason),
+          description: <WrittenText>{order.cancellationReason}</WrittenText>,
         },
       ]),
 ]
@@ -126,8 +121,14 @@ export const OrderRecord = ({
             term: '支払条件',
             description: order.paymentTerms,
           },
-          { term: 'メモ', description: writtenOf(order.notes) },
-          { term: '納品のメモ', description: writtenOf(order.deliveryNotes) },
+          {
+            term: 'メモ',
+            description: <WrittenText>{order.notes}</WrittenText>,
+          },
+          {
+            term: '納品のメモ',
+            description: <WrittenText>{order.deliveryNotes}</WrittenText>,
+          },
         ]}
       />
     </Card>

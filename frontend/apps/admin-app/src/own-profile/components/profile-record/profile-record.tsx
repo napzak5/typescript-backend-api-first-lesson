@@ -17,9 +17,6 @@ export type ProfileRecordProps = {
   headingRef?: Ref<HTMLHeadingElement> | undefined
 }
 
-const namesOrNone = (label: string, names: readonly string[]) =>
-  names.length === 0 ? 'なし' : <TagList label={label} items={names} />
-
 /**
  * The profile of a member as the customers are shown it, read by the member
  * themselves: what the salon decides of it, and what they write. Where the
@@ -39,11 +36,13 @@ export const ProfileRecord = ({
         { term: '予約', description: bookingsNameOf(profile) },
         {
           term: '専門',
-          description: namesOrNone('専門', profile.specialties),
+          description: <TagList label={'専門'} items={profile.specialties} />,
         },
         {
           term: '資格',
-          description: namesOrNone('資格', profile.certifications),
+          description: (
+            <TagList label={'資格'} items={profile.certifications} />
+          ),
         },
         {
           term: '経験年数',
@@ -54,10 +53,7 @@ export const ProfileRecord = ({
         },
         {
           term: '紹介文',
-          description:
-            profile.bio === null ? null : (
-              <WrittenText>{profile.bio}</WrittenText>
-            ),
+          description: <WrittenText>{profile.bio}</WrittenText>,
         },
         {
           term: '写真の URL',

@@ -97,10 +97,7 @@ export const BookingSummary = ({
           : [{ term: '料金', description: totalOf(booking, salon.currency) }]),
         {
           term: 'ご要望',
-          description:
-            booking.customerRequest === null ? null : (
-              <WrittenText>{booking.customerRequest}</WrittenText>
-            ),
+          description: <WrittenText>{booking.customerRequest}</WrittenText>,
         },
       ]}
     />

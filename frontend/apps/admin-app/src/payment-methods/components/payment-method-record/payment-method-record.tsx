@@ -29,10 +29,7 @@ export const PaymentMethodRecord = ({
         { term: '種類', description: methodKindNameOf(method.method) },
         {
           term: '説明',
-          description:
-            method.description === null ? null : (
-              <WrittenText>{method.description}</WrittenText>
-            ),
+          description: <WrittenText>{method.description}</WrittenText>,
         },
         { term: '1 回の金額', description: amountsNameOf(method, currency) },
         { term: '手数料率', description: feeNameOf(method.fee) },

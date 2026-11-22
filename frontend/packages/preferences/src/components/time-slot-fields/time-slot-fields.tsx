@@ -1,6 +1,10 @@
 import type { ModelsTimeSlot } from '@beauty-salon-frontend/api-client'
-import { Button, type FormErrors, TextField } from '@beauty-salon-frontend/ui'
-import { useLayoutEffect, useRef, useState } from 'react'
+import {
+  Button,
+  type FormErrors,
+  TextField,
+  useRepeatedRows,
+} from '@beauty-salon-frontend/ui'
 import { endOf, startOf } from '../../preferences-flow'
 import styles from './time-slot-fields.module.css'
 
@@ -18,16 +22,6 @@ export type TimeSlotFieldsProps = {
    */
   errors: FormErrors
 }
-
-type Row = {
-  /** Stays with the row while others come and go: the browser keeps what was typed into it */
-  key: number
-  /** What the row opened with; a row that was added opened empty */
-  slot: ModelsTimeSlot | undefined
-}
-
-/** What a press did to the rows, until the focus has followed it */
-type Change = 'added' | 'removed' | undefined
 
 /**
  * The time slots of a form, a row each, with the buttons that add a row
@@ -47,66 +41,42 @@ export const TimeSlotFields = ({
   defaultValue,
   errors,
 }: TimeSlotFieldsProps) => {
-  const [rows, setRows] = useState<Row[]>(() =>
-    defaultValue.map((slot, key) => ({ key, slot })),
+  // A row holds the time slot it opened with; a row that was added opened empty
+  const slots = useRepeatedRows<ModelsTimeSlot | undefined>(
+    () => defaultValue,
+    errors,
   )
-  const [outdated, setOutdated] = useState<FormErrors | undefined>(undefined)
-  const nextKey = useRef(defaultValue.length)
-  const change = useRef<Change>(undefined)
-  const list = useRef<HTMLOListElement>(null)
-  const adding = useRef<HTMLButtonElement>(null)
-  const said = errors === outdated ? {} : errors
-
-  // The focus follows in the commit that shows what the press did. Every
-  // other commit finds no change to follow
-  useLayoutEffect(() => {
-    if (change.current === 'added') {
-      list.current?.querySelector<HTMLElement>('li:last-child input')?.focus()
-    }
-    if (change.current === 'removed') {
-      adding.current?.focus()
-    }
-    change.current = undefined
-  })
-
-  const add = (): void => {
-    change.current = 'added'
-    setRows([...rows, { key: nextKey.current, slot: undefined }])
-    nextKey.current += 1
-  }
-
-  const remove = (key: number): void => {
-    change.current = 'removed'
-    setRows(rows.filter((row) => row.key !== key))
-    setOutdated(errors)
-  }
 
   return (
     <div className={styles['slots']}>
-      {rows.length > 0 && (
-        <ol className={styles['rows']} ref={list}>
-          {rows.map((row, index) => (
-            <li key={row.key} className={styles['row']}>
+      {slots.rows.length > 0 && (
+        <ol className={styles['rows']}>
+          {slots.rows.map((row, index) => (
+            <li
+              key={row.key}
+              ref={slots.rowRef(row.key)}
+              className={styles['row']}
+            >
               <TextField
                 label={`時間帯 ${index + 1} の開始`}
                 name={startOf(name, index)}
                 autoComplete='off'
                 type='time'
-                defaultValue={row.slot?.startTime}
-                error={said[startOf(name, index)]}
+                defaultValue={row.value?.startTime}
+                error={slots.errors[startOf(name, index)]}
               />
               <TextField
                 label={`時間帯 ${index + 1} の終了`}
                 name={endOf(name, index)}
                 autoComplete='off'
                 type='time'
-                defaultValue={row.slot?.endTime}
-                error={said[endOf(name, index)]}
+                defaultValue={row.value?.endTime}
+                error={slots.errors[endOf(name, index)]}
               />
               <Button
                 size='small'
                 className={styles['remove']}
-                onClick={() => remove(row.key)}
+                onClick={() => slots.remove(row.key)}
               >
                 {`時間帯 ${index + 1} を削除する`}
               </Button>
@@ -114,7 +84,7 @@ export const TimeSlotFields = ({
           ))}
         </ol>
       )}
-      <Button ref={adding} onClick={add}>
+      <Button ref={slots.addRef} onClick={() => slots.add(undefined)}>
         時間帯を追加する
       </Button>
     </div>

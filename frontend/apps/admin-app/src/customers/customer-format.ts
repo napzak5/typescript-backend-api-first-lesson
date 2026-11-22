@@ -10,6 +10,7 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeTone } from '@beauty-salon-frontend/ui'
+import { NONE } from '@beauty-salon-frontend/ui'
 
 /*
  * How the screens of the ledger of the customers name what it holds: the
@@ -154,7 +155,7 @@ export const categoriesNameOf = (
   categories: readonly ModelsServiceCategoryType[],
 ): string =>
   categories.length === 0
-    ? 'なし'
+    ? NONE
     : CATEGORIES.filter((category) => categories.includes(category))
         .map((category) => categoryNameOf(category))
         .join('、')

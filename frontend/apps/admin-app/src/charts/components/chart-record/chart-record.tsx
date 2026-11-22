@@ -28,12 +28,6 @@ export type ChartRecordProps = {
 /** A treatment of the chart, at its place in the list */
 type Row = { place: number; treatment: ModelsPreviousTreatment }
 
-const writtenOrNone = (text: string | null) =>
-  text === null ? null : <WrittenText>{text}</WrittenText>
-
-const productsOrNone = (label: string, names: readonly string[]) =>
-  names.length === 0 ? 'なし' : <TagList label={label} items={names} />
-
 /**
  * The chart of a customer, as a member of the staff reads it before a
  * treatment: what to take care of, the products the customer likes and
@@ -71,20 +65,24 @@ export const ChartRecord = ({
           items={[
             {
               term: '持病や体調',
-              description: writtenOrNone(chart.medicalConditions),
+              description: <WrittenText>{chart.medicalConditions}</WrittenText>,
             },
             {
               term: '好みの商材',
-              description: productsOrNone(
-                '好みの商材',
-                chart.preferredProducts,
+              description: (
+                <TagList label={'好みの商材'} items={chart.preferredProducts} />
               ),
             },
             {
               term: '避ける商材',
-              description: productsOrNone('避ける商材', chart.avoidProducts),
+              description: (
+                <TagList label={'避ける商材'} items={chart.avoidProducts} />
+              ),
             },
-            { term: 'メモ', description: writtenOrNone(chart.notes) },
+            {
+              term: 'メモ',
+              description: <WrittenText>{chart.notes}</WrittenText>,
+            },
             {
               term: '最後に書いた日時',
               description: momentNameAt(chart.updatedAt, timezone),

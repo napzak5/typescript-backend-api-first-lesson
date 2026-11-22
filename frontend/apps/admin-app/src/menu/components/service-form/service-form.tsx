@@ -18,8 +18,9 @@ import {
   Select,
   TextArea,
   TextField,
+  useRepeatedRows,
 } from '@beauty-salon-frontend/ui'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { tagsTextOf } from '../../../customers/customer-ledger'
 import { LEVELS, levelNameOf } from '../../../staff/staff-format'
 import {
@@ -64,23 +65,10 @@ export type ServiceFormProps = Pick<
   errors?: FormErrors | undefined
 }
 
-/** A row of the form: what it opened with, if anything */
-type Row<Shown> = { key: number; shown: Shown | undefined }
-
-/** Where the focus goes after a row was added or taken away */
-type Focus =
-  | { type: 'row'; key: number }
-  | { type: 'addOption' }
-  | { type: 'addPackaged' }
-  | undefined
-
 const LEVEL_CHOICES = LEVELS.map((level) => ({
   value: level,
   label: `${levelNameOf(level)}以上`,
 }))
-
-const rowsOf = <Shown,>(shown: readonly Shown[], from = 0): Row<Shown>[] =>
-  shown.map((one, index) => ({ key: from + index, shown: one }))
 
 /**
  * Everything the menu keeps of a service, in parts: the service, its time
@@ -95,8 +83,8 @@ const rowsOf = <Shown,>(shown: readonly Shown[], from = 0): Row<Shown>[] =>
  * checked, with two rows to choose in; a service that is one of the
  * services of a package is offered no box, for the API makes no package of
  * it. An error names a row by its number, and taking a row away renumbers
- * the rows after it: the errors of the rows are shown until a row is taken
- * away, and again after the next attempt.
+ * the rows after it: the errors of the rows of a list are shown until a row
+ * of it is taken away, and again after the next attempt.
  */
 export const ServiceForm = ({
   service,
@@ -114,73 +102,24 @@ export const ServiceForm = ({
     service === null || service.isPackage
       ? []
       : packagesOf(services, service.id)
-  const [options, setOptions] = useState<Row<ModelsServiceOption>[]>(() =>
-    rowsOf(service?.options ?? []),
+  // A row of an option and of a service of the package holds what it
+  // opened with, if anything
+  const options = useRepeatedRows<ModelsServiceOption | undefined>(
+    () => service?.options ?? [],
+    errors,
   )
-  const [packaged, setPackaged] = useState<Row<string>[]>(() =>
-    rowsOf(service?.packageServiceIds ?? [], options.length),
+  const packaged = useRepeatedRows<string | undefined>(
+    () => service?.packageServiceIds ?? [],
+    errors,
   )
   const [isPackage, setIsPackage] = useState(service?.isPackage ?? false)
-  const [nextKey, setNextKey] = useState(options.length + packaged.length)
-  const [focus, setFocus] = useState<Focus>()
-  const [outdated, setOutdated] = useState<FormErrors | undefined>(undefined)
-  const said = errors === outdated ? NO_ERRORS : errors
-  const groups = useRef(new Map<number, HTMLFieldSetElement>())
-  const addOption = useRef<HTMLButtonElement>(null)
-  const addPackaged = useRef<HTMLButtonElement>(null)
-
-  useLayoutEffect(() => {
-    if (focus?.type === 'row') {
-      groups.current
-        .get(focus.key)
-        ?.querySelector<HTMLElement>('input, select')
-        ?.focus()
-    }
-    if (focus?.type === 'addOption') {
-      addOption.current?.focus()
-    }
-    if (focus?.type === 'addPackaged') {
-      addPackaged.current?.focus()
-    }
-  }, [focus])
-
-  const groupRef =
-    (key: number) =>
-    (group: HTMLFieldSetElement | null): void => {
-      if (group === null) {
-        groups.current.delete(key)
-      } else {
-        groups.current.set(key, group)
-      }
-    }
-
-  const takeAway = (key: number, next: Focus): void => {
-    setOptions(options.filter((row) => row.key !== key))
-    setPackaged(packaged.filter((row) => row.key !== key))
-    setOutdated(errors)
-    setFocus(next)
-  }
-
-  const add = (to: 'options' | 'packaged'): void => {
-    if (to === 'options') {
-      setOptions([...options, { key: nextKey, shown: undefined }])
-    } else {
-      setPackaged([...packaged, { key: nextKey, shown: undefined }])
-    }
-    setNextKey(nextKey + 1)
-    setFocus({ type: 'row', key: nextKey })
-  }
 
   const makePackage = (checked: boolean): void => {
     setIsPackage(checked)
-    if (checked && packaged.length === 0) {
-      setPackaged(
-        Array.from({ length: FEWEST_PACKAGED }, (_, index) => ({
-          key: nextKey + index,
-          shown: undefined,
-        })),
+    if (checked && packaged.rows.length === 0) {
+      packaged.addAlong(
+        Array.from({ length: FEWEST_PACKAGED }, () => undefined),
       )
-      setNextKey(nextKey + FEWEST_PACKAGED)
     }
   }
 
@@ -403,10 +342,10 @@ export const ServiceForm = ({
           />
         )}
         {isPackage &&
-          packaged.map((row, index) => (
+          packaged.rows.map((row, index) => (
             <FormRow
               key={row.key}
-              ref={groupRef(row.key)}
+              ref={packaged.rowRef(row.key)}
               label={`構成サービス ${index + 1}`}
             >
               <Select
@@ -415,20 +354,20 @@ export const ServiceForm = ({
                 placeholder='選んでください'
                 required
                 options={choices}
-                defaultValue={row.shown ?? ''}
-                error={said[packagedControlOf(index)]}
+                defaultValue={row.value ?? ''}
+                error={packaged.errors[packagedControlOf(index)]}
               />
               <Button
                 size='small'
                 aria-label={`構成サービス ${index + 1} を外す`}
-                onClick={() => takeAway(row.key, { type: 'addPackaged' })}
+                onClick={() => packaged.remove(row.key)}
               >
                 外す
               </Button>
             </FormRow>
           ))}
-        {isPackage && packaged.length < MOST_PACKAGED && (
-          <Button ref={addPackaged} onClick={() => add('packaged')}>
+        {isPackage && packaged.rows.length < MOST_PACKAGED && (
+          <Button ref={packaged.addRef} onClick={() => packaged.add(undefined)}>
             構成サービスを足す
           </Button>
         )}
@@ -437,10 +376,10 @@ export const ServiceForm = ({
         label='オプション'
         description='お客様が予約のときに足せるものです。並びの順に、お客様に出ます。'
       >
-        {options.map((row, index) => (
+        {options.rows.map((row, index) => (
           <FormRow
             key={row.key}
-            ref={groupRef(row.key)}
+            ref={options.rowRef(row.key)}
             label={`オプション ${index + 1}`}
           >
             <TextField
@@ -448,8 +387,8 @@ export const ServiceForm = ({
               name={optionControlOf(index, 'name')}
               autoComplete='off'
               required
-              defaultValue={row.shown?.name}
-              error={said[optionControlOf(index, 'name')]}
+              defaultValue={row.value?.name}
+              error={options.errors[optionControlOf(index, 'name')]}
             />
             <FieldRow>
               <Select
@@ -457,8 +396,8 @@ export const ServiceForm = ({
                 name={optionControlOf(index, 'optionType')}
                 required
                 options={OPTION_TYPE_OPTIONS}
-                defaultValue={row.shown?.optionType ?? 'addon'}
-                error={said[optionControlOf(index, 'optionType')]}
+                defaultValue={row.value?.optionType ?? 'addon'}
+                error={options.errors[optionControlOf(index, 'optionType')]}
               />
               <TextField
                 label='選べる数'
@@ -466,8 +405,8 @@ export const ServiceForm = ({
                 inputMode='numeric'
                 autoComplete='off'
                 required
-                defaultValue={String(row.shown?.maxQuantity ?? 1)}
-                error={said[optionControlOf(index, 'maxQuantity')]}
+                defaultValue={String(row.value?.maxQuantity ?? 1)}
+                error={options.errors[optionControlOf(index, 'maxQuantity')]}
               />
             </FieldRow>
             <FieldRow>
@@ -477,8 +416,8 @@ export const ServiceForm = ({
                 inputMode='numeric'
                 autoComplete='off'
                 required
-                defaultValue={String(row.shown?.additionalTime ?? 0)}
-                error={said[optionControlOf(index, 'additionalTime')]}
+                defaultValue={String(row.value?.additionalTime ?? 0)}
+                error={options.errors[optionControlOf(index, 'additionalTime')]}
               />
               <TextField
                 label='追加の料金'
@@ -486,37 +425,39 @@ export const ServiceForm = ({
                 inputMode='numeric'
                 autoComplete='off'
                 required
-                defaultValue={String(row.shown?.additionalPrice ?? 0)}
-                error={said[optionControlOf(index, 'additionalPrice')]}
+                defaultValue={String(row.value?.additionalPrice ?? 0)}
+                error={
+                  options.errors[optionControlOf(index, 'additionalPrice')]
+                }
               />
             </FieldRow>
             <TextArea
               label='説明'
               name={optionControlOf(index, 'description')}
               rows={2}
-              defaultValue={row.shown?.description ?? undefined}
+              defaultValue={row.value?.description ?? undefined}
             />
             <Checkbox
               label='必須'
               name={optionControlOf(index, 'isRequired')}
               description='予約のときに、かならず付きます。'
-              defaultChecked={row.shown?.isRequired ?? false}
+              defaultChecked={row.value?.isRequired ?? false}
             />
             <Checkbox
               label='有効'
               name={optionControlOf(index, 'isActive')}
-              defaultChecked={row.shown?.isActive ?? true}
+              defaultChecked={row.value?.isActive ?? true}
             />
             <Button
               size='small'
               aria-label={`オプション ${index + 1} を外す`}
-              onClick={() => takeAway(row.key, { type: 'addOption' })}
+              onClick={() => options.remove(row.key)}
             >
               外す
             </Button>
           </FormRow>
         ))}
-        <Button ref={addOption} onClick={() => add('options')}>
+        <Button ref={options.addRef} onClick={() => options.add(undefined)}>
           オプションを足す
         </Button>
       </FormPart>

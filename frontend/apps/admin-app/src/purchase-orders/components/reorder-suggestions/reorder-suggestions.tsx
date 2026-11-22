@@ -1,4 +1,4 @@
-import { ButtonLink, Card, Table } from '@beauty-salon-frontend/ui'
+import { ButtonLink, Card, NONE, Table } from '@beauty-salon-frontend/ui'
 import { quantityNameOf } from '../../../inventory/stock-format'
 import { orderDayNameOf } from '../../order-format'
 import type { SuggestionGroup } from '../../order-suggestions'
@@ -98,7 +98,7 @@ export const ReorderSuggestions = ({
               header: '最後の発注日',
               cell: ({ lastOrderDate }) =>
                 lastOrderDate === null
-                  ? 'なし'
+                  ? NONE
                   : orderDayNameOf(lastOrderDate, timezone),
             },
           ]}

@@ -8,6 +8,7 @@ import {
   countOf,
   Link,
   type More,
+  NONE,
   Rating,
 } from '@beauty-salon-frontend/ui'
 import { reviewDayNameOf, reviewNameOf } from '../../review-format'
@@ -111,7 +112,7 @@ export const ReviewTable = ({
         header: '通報',
         cell: ({ reportCount }) =>
           reportCount === 0 ? (
-            'なし'
+            NONE
           ) : (
             <Badge tone='danger'>{`未処理 ${reportCount} 件`}</Badge>
           ),

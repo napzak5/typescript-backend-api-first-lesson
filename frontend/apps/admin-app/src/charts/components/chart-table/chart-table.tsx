@@ -1,5 +1,5 @@
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import { countOf, Link, type More, NONE } from '@beauty-salon-frontend/ui'
 import { tagsTextOf } from '../../../customers/customer-ledger'
 import { customerNameOf } from '../../../customers/customers-api'
 import type { FoundChart } from '../../charts-api'
@@ -22,7 +22,7 @@ export type ChartTableProps = {
 
 /** The names of products, as the form takes them */
 const productsOrNone = (names: readonly string[]) =>
-  names.length === 0 ? 'なし' : tagsTextOf(names)
+  names.length === 0 ? NONE : tagsTextOf(names)
 
 /**
  * The charts that were found: each by the name of its customer, which

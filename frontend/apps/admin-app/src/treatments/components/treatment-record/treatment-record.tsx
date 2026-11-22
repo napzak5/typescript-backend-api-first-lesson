@@ -56,12 +56,6 @@ export type TreatmentRecordProps = {
 /** A material of the record, at its place in the list */
 type Row = { place: number; material: ModelsTreatmentMaterial }
 
-const writtenOrNone = (text: string | null) =>
-  text === null ? null : <WrittenText>{text}</WrittenText>
-
-const namesOrNone = (label: string, names: readonly string[]) =>
-  names.length === 0 ? 'なし' : <TagList label={label} items={names} />
-
 /**
  * A treatment record, as a member of the staff reads it before the next
  * treatment: what was done and by whom, the counselling and the state of
@@ -117,7 +111,7 @@ export const TreatmentRecord = ({
             },
             {
               term: '技法',
-              description: namesOrNone('技法', record.techniques),
+              description: <TagList label={'技法'} items={record.techniques} />,
             },
             {
               term: '施術時間',
@@ -146,19 +140,21 @@ export const TreatmentRecord = ({
           items={[
             {
               term: 'カウンセリングのメモ',
-              description: writtenOrNone(record.consultationNotes),
+              description: (
+                <WrittenText>{record.consultationNotes}</WrittenText>
+              ),
             },
             {
               term: '頭皮の状態',
-              description: writtenOrNone(record.scalpCondition),
+              description: <WrittenText>{record.scalpCondition}</WrittenText>,
             },
             {
               term: '毛髪の状態',
-              description: writtenOrNone(record.hairCondition),
+              description: <WrittenText>{record.hairCondition}</WrittenText>,
             },
             {
               term: 'カラー剤の配合',
-              description: writtenOrNone(record.colorFormula),
+              description: <WrittenText>{record.colorFormula}</WrittenText>,
             },
           ]}
         />
@@ -210,7 +206,7 @@ export const TreatmentRecord = ({
           items={[
             {
               term: '結果のメモ',
-              description: writtenOrNone(record.resultNotes),
+              description: <WrittenText>{record.resultNotes}</WrittenText>,
             },
             {
               term: 'お客様の満足度',
@@ -228,18 +224,22 @@ export const TreatmentRecord = ({
             },
             {
               term: '次に勧めるサービス',
-              description: namesOrNone(
-                '次に勧めるサービス',
-                servicesOf(record.nextRecommendedServices),
+              description: (
+                <TagList
+                  label={'次に勧めるサービス'}
+                  items={servicesOf(record.nextRecommendedServices)}
+                />
               ),
             },
             {
               term: 'ホームケアの提案',
-              description: writtenOrNone(record.homeCareSuggestions),
+              description: (
+                <WrittenText>{record.homeCareSuggestions}</WrittenText>
+              ),
             },
             {
               term: '申し送り',
-              description: writtenOrNone(record.staffEvaluation),
+              description: <WrittenText>{record.staffEvaluation}</WrittenText>,
             },
           ]}
         />
