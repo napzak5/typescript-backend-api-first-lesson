@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { CustomerPreferencesReadMapper } from '../mappers/read/customer-preferences.mapper'
+import { CustomerPreferencesWriteMapper } from '../mappers/write/customer-preferences.mapper'
 import { customerIdSchema } from '../models/customer'
 import type { DbCustomerPreferencesChanges } from '../models/customer-preferences'
 import { CUSTOMER_ID } from './auth-fixtures'
 import {
   apiCustomerPreferences,
+  customerPreferencesUpdateRequest,
   dbCustomerPreferences,
   emptyCustomerPreferences,
 } from './customer-preferences-fixtures'
@@ -147,5 +149,24 @@ describe('CustomerPreferencesReadMapper.toApiPreferences', () => {
     ],
   ])('answers with a database error for %s', (_case, stored) => {
     expect(toApi(stored)).toEqual(storedRowIsCorrupt)
+  })
+})
+
+describe('CustomerPreferencesWriteMapper.fromUpdateRequest', () => {
+  it('changes every column the request names, as it is', () => {
+    expect(
+      CustomerPreferencesWriteMapper.fromUpdateRequest(
+        customerPreferencesUpdateRequest(),
+      ),
+    ).toStrictEqual(customerPreferencesUpdateRequest())
+  })
+
+  it('changes only the properties that are present, and clears with null or an empty list', () => {
+    expect(
+      CustomerPreferencesWriteMapper.fromUpdateRequest({
+        preferredStaffId: null,
+        avoidStaffIds: [],
+      }),
+    ).toStrictEqual({ preferredStaffId: null, avoidStaffIds: [] })
   })
 })

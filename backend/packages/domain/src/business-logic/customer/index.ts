@@ -1,4 +1,3 @@
-export type { CustomerMergeRequest } from '../../schemas/customer-merge.schema'
 export type { CustomerUseCaseDependencies } from './_shared/dependencies'
 export { type CustomerFile, MOST_EXPORTED } from './_shared/export'
 export {
@@ -26,10 +25,7 @@ export { ExportCustomerDataUseCase } from './export-customer-data.usecase'
 export { ExportCustomersUseCase } from './export-customers.usecase'
 export { GetCustomerUseCase } from './get-customer.usecase'
 export { GetCustomerProfileUseCase } from './get-customer-profile.usecase'
-export {
-  type CustomerPage,
-  ListCustomersUseCase,
-} from './list-customers.usecase'
+export { ListCustomersUseCase } from './list-customers.usecase'
 export { MergeCustomersUseCase } from './merge-customers.usecase'
 export { RestoreCustomerUseCase } from './restore-customer.usecase'
 export { UpdateCustomerUseCase } from './update-customer.usecase'

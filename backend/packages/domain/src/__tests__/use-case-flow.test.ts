@@ -6,8 +6,10 @@ import { describe, expect, it } from 'vitest'
  * The flow of a use case, read from the sources: authorize, validate, write
  * mapper, repository, read mapper. A request that was checked goes to the
  * write mapper of its domain and nowhere else, and what the API answers
- * with comes from a read mapper, a page of a list too. The mappers stand
- * side by side: a file of one side has a file of the same name on the other.
+ * with comes from a read mapper, a page of a list too: one the use case
+ * calls, or a shared source of its domain that it imports. The mappers
+ * stand side by side: a file of one side has a file of the same name on
+ * the other.
  */
 
 const SOURCES = join(import.meta.dirname, '..')
@@ -19,20 +21,12 @@ const LOGIC = join(SOURCES, 'business-logic')
  * still listed fails below.
  */
 const NOT_YET = [
-  'attachment',
   'auth',
   'available-slot',
   'booking',
-  'customer',
-  'customer-allergy',
   'customer-booking',
-  'customer-deletion-request',
-  'customer-preferences',
-  'customer-statistics',
-  'customer-version',
   'inventory',
   'inventory-alert',
-  'medical-chart',
   'payment',
   'point',
   'product',
@@ -41,19 +35,13 @@ const NOT_YET = [
   'review-report',
   'sale',
   'sales-report',
-  'share-link',
-  'treatment-record',
 ]
 
 /** The read mappers that have no write mapper of their name yet. */
 const WITHOUT_WRITE_MAPPER = [
-  'attachment',
   'available-slot',
   'booking',
   'customer-booking',
-  'customer-deletion-request',
-  'customer-preferences',
-  'customer-version',
   'inventory-alert',
   'inventory-report',
   'payment',
@@ -62,7 +50,6 @@ const WITHOUT_WRITE_MAPPER = [
   'review-report',
   'sale',
   'session',
-  'share-link',
   'user',
 ]
 
@@ -88,8 +75,29 @@ const answerOf = (source: string): string =>
     source,
   )?.[1] ?? ''
 
+const callsAReadMapper = (source: string): boolean =>
+  /\b\w+ReadMapper\.to\w+/.test(source)
+
+/**
+ * The shared sources of its domain (`./_shared/…`) that a source imports:
+ * a use case may leave its answer to one of them.
+ */
+const sharedSourcesOf = (
+  source: string,
+  sources: [string, string][],
+): string[] =>
+  [...source.matchAll(/from '\.\/_shared\/([\w-]+)'/g)].flatMap(([, name]) =>
+    sources.flatMap(([file, shared]) =>
+      file === `_shared/${name}.ts` ? [shared] : [],
+    ),
+  )
+
 /** Where a source leaves the flow; nothing when it follows it. */
-const departuresOf = (file: string, source: string): string[] => [
+const departuresOf = (
+  file: string,
+  source: string,
+  shared: string[],
+): string[] => [
   ...(count(source, /parseWith\(\s*\w+RequestSchema\b/g) >
   count(source, /const request = parseWith\(\s*\w+RequestSchema\b/g)
     ? [`${file}: a request that was checked is not named \`request\``]
@@ -103,13 +111,18 @@ const departuresOf = (file: string, source: string): string[] => [
     : []),
   ...(file.endsWith('.usecase.ts') &&
   /\bApi[A-Z]/.test(answerOf(source)) &&
-  !/\b\w+ReadMapper\.to\w+/.test(source)
+  ![source, ...shared].some(callsAReadMapper)
     ? [`${file}: an answer of the API is made without a read mapper`]
     : []),
 ]
 
-const departuresIn = (domain: string): string[] =>
-  sourcesOf(domain).flatMap(([file, source]) => departuresOf(file, source))
+const departuresIn = (domain: string): string[] => {
+  const sources = sourcesOf(domain)
+
+  return sources.flatMap(([file, source]) =>
+    departuresOf(file, source, sharedSourcesOf(source, sources)),
+  )
+}
 
 /** The names of the mappers of one side: `salon` for `salon.mapper.ts`. */
 const mappersOf = (side: 'read' | 'write'): string[] =>

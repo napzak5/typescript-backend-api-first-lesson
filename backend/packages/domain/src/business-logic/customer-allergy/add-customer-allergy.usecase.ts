@@ -45,17 +45,15 @@ export class AddCustomerAllergyUseCase {
     if (request.type === 'error') {
       return request
     }
-    const issues = customerAllergyRuleIssues(
-      request.data,
-      this.dependencies.clock(),
-    )
+    const allergy = CustomerAllergyWriteMapper.fromCreateRequest(request.data)
+    const issues = customerAllergyRuleIssues(allergy, this.dependencies.clock())
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
 
     const added = await this.dependencies.customerAllergyRepository.add(
       id.data,
-      CustomerAllergyWriteMapper.fromCreateRequest(request.data),
+      allergy,
     )
     if (added.type === 'error') {
       return added
@@ -63,8 +61,8 @@ export class AddCustomerAllergyUseCase {
 
     return match(added.data)
       .returnType<Result<ApiCustomerAllergyResponse, DomainError>>()
-      .with({ type: 'added' }, ({ allergy }) =>
-        CustomerAllergyReadMapper.toApiCustomerAllergy(allergy),
+      .with({ type: 'added' }, ({ allergy: recorded }) =>
+        CustomerAllergyReadMapper.toApiCustomerAllergy(recorded),
       )
       .with({ type: 'customerNotFound' }, () =>
         Result.error(DomainErrors.notFound('Customer', id.data)),

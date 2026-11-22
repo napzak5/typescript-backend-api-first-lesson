@@ -1,13 +1,18 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import type { DbAttachment } from '../../models/attachment'
+import type { ApiPage, Paging } from '../../models/page'
 import type {
   ApiSharedFileResponse,
+  ApiShareLinkCreateResponse,
   ApiShareLinkResponse,
   DbShareLink,
+  ShareLinkId,
 } from '../../models/share-link'
+import type { ShareLinkList } from '../../repositories/share-link.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * A row of `share_links` → API response. Property names are the column
@@ -80,5 +85,26 @@ export const ShareLinkReadMapper = {
       contentType: attachment.contentType,
       size: attachment.size,
     }
+  },
+
+  /** The links of a list as a page of it. */
+  toApiShareLinkPage(
+    { shareLinks, total, hasMore }: ShareLinkList,
+    paging: Paging<ShareLinkId>,
+  ): Result<ApiPage<ApiShareLinkResponse>, DomainError> {
+    return Result.map(ShareLinkReadMapper.toApiShareLinks(shareLinks), (data) =>
+      toApiPage(data, { total, hasMore }, paging),
+    )
+  },
+
+  /** A new link with its token, which is answered this once. */
+  toApiShareLinkCreate(
+    shareLink: DbShareLink,
+    token: string,
+  ): Result<ApiShareLinkCreateResponse, DomainError> {
+    return Result.map(toApiShareLink(shareLink), (created) => ({
+      shareLink: created,
+      token,
+    }))
   },
 }

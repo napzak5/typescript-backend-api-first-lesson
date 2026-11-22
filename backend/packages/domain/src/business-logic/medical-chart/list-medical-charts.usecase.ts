@@ -1,22 +1,16 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { MedicalChartReadMapper } from '../../mappers/read/medical-chart.mapper'
+import { MedicalChartWriteMapper } from '../../mappers/write/medical-chart.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiMedicalChartResponse } from '../../models/medical-chart'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import { medicalChartSearchRequestSchema } from '../../schemas/medical-chart.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayHandleCustomers } from '../customer/_shared/authorization'
 import type { MedicalChartUseCaseDependencies } from './_shared/dependencies'
 
 const MESSAGE = 'Invalid medical chart search'
-
-const DEFAULT_LIMIT = 20
-
-export type MedicalChartPage = {
-  data: ApiMedicalChartResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListMedicalChartsUseCase {
   constructor(private readonly dependencies: MedicalChartUseCaseDependencies) {}
@@ -32,7 +26,7 @@ export class ListMedicalChartsUseCase {
   async execute(
     actor: Actor,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<MedicalChartPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiMedicalChartResponse>, DomainError>> {
     if (!mayHandleCustomers(actor)) {
       return Result.error(DomainErrors.forbidden())
     }
@@ -47,21 +41,15 @@ export class ListMedicalChartsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor, search, hasAllergies } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = MedicalChartWriteMapper.fromSearchRequest(request.data)
 
-    const listed = await this.dependencies.medicalChartRepository.list({
-      limit,
-      after: cursor ?? null,
-      search: search ?? null,
-      hasAllergies: hasAllergies ?? null,
-    })
+    const listed = await this.dependencies.medicalChartRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
 
     return match(listed.data)
-      .returnType<Result<MedicalChartPage, DomainError>>()
+      .returnType<Result<ApiPage<ApiMedicalChartResponse>, DomainError>>()
       .with({ type: 'cursorNotFound' }, () =>
         Result.error(
           DomainErrors.validation(MESSAGE, [
@@ -73,22 +61,8 @@ export class ListMedicalChartsUseCase {
           ]),
         ),
       )
-      .with({ type: 'listed' }, ({ charts, total, hasMore }) =>
-        Result.map(
-          MedicalChartReadMapper.toApiMedicalCharts(charts),
-          (data) => ({
-            data,
-            meta: {
-              total,
-              limit,
-              hasMore,
-              cursor: cursor ?? null,
-              nextCursor: hasMore ? (charts.at(-1)?.id ?? null) : null,
-              // Pages are only walked forwards.
-              prevCursor: null,
-            },
-          }),
-        ),
+      .with({ type: 'listed' }, (list) =>
+        MedicalChartReadMapper.toApiMedicalChartPage(list, criteria),
       )
       .exhaustive()
   }

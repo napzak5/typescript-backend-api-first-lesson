@@ -1,21 +1,16 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { ShareLinkReadMapper } from '../../mappers/read/share-link.mapper'
+import { ShareLinkWriteMapper } from '../../mappers/write/share-link.mapper'
 import { parseAttachmentId } from '../../models/attachment'
 import type { Actor } from '../../models/auth'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import type { ApiShareLinkResponse } from '../../models/share-link'
 import { shareLinkSearchRequestSchema } from '../../schemas/share-link.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { shareLinkReachOf } from './_shared/authorization'
 import type { ShareLinkUseCaseDependencies } from './_shared/dependencies'
 
-const DEFAULT_LIMIT = 20
 const MESSAGE = 'Invalid share link search'
-
-export type ShareLinkPage = {
-  data: ApiShareLinkResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class ListShareLinksUseCase {
   constructor(private readonly dependencies: ShareLinkUseCaseDependencies) {}
@@ -33,7 +28,7 @@ export class ListShareLinksUseCase {
     actor: Actor,
     attachmentId: unknown,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<ShareLinkPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiShareLinkResponse>, DomainError>> {
     const reach = shareLinkReachOf(actor)
     if (reach === null) {
       return Result.error(DomainErrors.forbidden())
@@ -49,8 +44,10 @@ export class ListShareLinksUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = ShareLinkWriteMapper.fromSearchRequest(
+      request.data,
+      id.data,
+    )
 
     const { shareLinkRepository, attachmentRepository } = this.dependencies
     const found = await attachmentRepository.findById(reach, id.data)
@@ -61,11 +58,7 @@ export class ListShareLinksUseCase {
       return Result.error(DomainErrors.notFound('Attachment', id.data))
     }
 
-    const listed = await shareLinkRepository.list({
-      attachmentId: id.data,
-      limit,
-      after: cursor ?? null,
-    })
+    const listed = await shareLinkRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
@@ -81,23 +74,6 @@ export class ListShareLinksUseCase {
       )
     }
 
-    const { shareLinks, total, hasMore } = listed.data
-    const lastShareLinkId = shareLinks.at(-1)?.id ?? null
-
-    return Result.map(
-      ShareLinkReadMapper.toApiShareLinks(shareLinks),
-      (data) => ({
-        data,
-        meta: {
-          total,
-          limit,
-          hasMore,
-          cursor: cursor ?? null,
-          nextCursor: hasMore ? lastShareLinkId : null,
-          // Pages are only walked forwards.
-          prevCursor: null,
-        },
-      }),
-    )
+    return ShareLinkReadMapper.toApiShareLinkPage(listed.data, criteria)
   }
 }

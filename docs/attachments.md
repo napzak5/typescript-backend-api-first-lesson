@@ -599,12 +599,14 @@ MinIO は使いません。MinIO は、2026 年 4 月にリポジトリがアー
 | テスト | 確かめること |
 |---|---|
 | `backend/packages/domain/src/__tests__/attachment.rules.test.ts` | ファイルの規則、形式の判定、`Content-Disposition`、権限、スキーマ、マッパー |
+| `backend/packages/domain/src/__tests__/attachment.mapper.test.ts` | Write マッパー（保留の行、一覧の条件、ブラウザーで表示するか）と、Read マッパーの一覧のページ、アップロードとダウンロードの URL の答え、掃除の件数 |
 | `backend/packages/domain/src/__tests__/attachment.usecase.test.ts` | 7 つのユースケース（確認の順序、呼び出しの順序、失敗の伝え方） |
 | `backend/packages/api/src/__tests__/attachment.integration.test.ts` | ルートとデータベース。ストレージは、メモリーの中の代役（`InMemoryFileStorage`）です |
 | `backend/packages/infrastructure/src/storage/__tests__/s3-file-storage.integration.test.ts` | `S3FileStorage` と、本物の S3 互換のストレージ。署名付き URL で実際に送り、取得します |
 | `backend/apps/server/src/__tests__/server.integration.test.ts` | 設定からストレージまでの配線。URL が設定のエンドポイントとバケットを指すこと、ストレージに届かないときの 500 とログ |
 | `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` | マイグレーションと制約（`attachments`、`share_links`） |
 | `backend/packages/domain/src/__tests__/share-link.usecase.test.ts` | 共有リンクの 6 つのユースケース（確認の順序、有効期限の境界、パスワードの規則、ロック、署名してから数えること） |
+| `backend/packages/domain/src/__tests__/share-link.mapper.test.ts` | 共有リンクの Write マッパー（作成の内容、一覧の条件、閲覧者が示すもの）と、Read マッパーの一覧のページ、作成の答え |
 | `backend/packages/domain/src/__tests__/password-blocklist.test.ts` | 推測しやすいパスワードの判定 |
 | `backend/packages/api/src/__tests__/share-link.integration.test.ts` | 共有リンクのルートとデータベース。同時のダウンロードと違うパスワード、開けないトークンの応答が同じであること、ログにトークンとパスワードが出ないこと、添付ファイルの削除と掃除 |
 
@@ -631,7 +633,7 @@ pnpm exec vitest run --config vitest.integration.config.ts src/storage
 | コントラクト | `specs/models/attachment.tsp`、`specs/operations/attachment-operations.tsp` |
 | DB | `backend/packages/database/sql/migrations/202611182100_attachments.sql`、`202611182200_share_links.sql`、`src/schema.ts` の `attachments`・`shareLinks` |
 | API と DB の整合 | `backend/packages/database/src/scripts/api-consistency-rules.ts` の `attachmentRules`、`shareLinkRules` |
-| モデル、スキーマ、マッパー | `backend/packages/domain/src/models/attachment.ts`、`schemas/attachment.schema.ts`、`mappers/read/attachment.mapper.ts`。共有リンクは `models/share-link.ts`、`schemas/share-link.schema.ts`、`mappers/read/share-link.mapper.ts` |
+| モデル、スキーマ、マッパー | `backend/packages/domain/src/models/attachment.ts`、`schemas/attachment.schema.ts`、`mappers/write/attachment.mapper.ts`、`mappers/read/attachment.mapper.ts`。共有リンクは `models/share-link.ts`、`schemas/share-link.schema.ts`、`mappers/write/share-link.mapper.ts`、`mappers/read/share-link.mapper.ts` |
 | 規則と権限 | `backend/packages/domain/src/business-logic/attachment/_shared/`（`file-rules.ts`、`authorization.ts`）。共有リンクは `business-logic/share-link/_shared/`（`authorization.ts`、`link-rules.ts`、`password-check.ts`、`open-shared-file.ts`） |
 | ユースケース | `backend/packages/domain/src/business-logic/attachment/`、`business-logic/share-link/` |
 | ストレージのインターフェース | `backend/packages/domain/src/services/file-storage.ts` |

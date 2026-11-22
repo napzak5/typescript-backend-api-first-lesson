@@ -1,14 +1,11 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
 import type { Actor } from '../../models/auth'
 import { parseCustomerId } from '../../models/customer'
 import { type DomainError, DomainErrors } from '../../shared'
 import { mayDeleteCustomers } from './_shared/authorization'
 import type { CustomerUseCaseDependencies } from './_shared/dependencies'
-import {
-  type CustomerFile,
-  customerDataExportOf,
-  customerDataFileOf,
-} from './_shared/export'
+import { type CustomerFile, customerDataFileOf } from './_shared/export'
 
 export class ExportCustomerDataUseCase {
   constructor(private readonly dependencies: CustomerUseCaseDependencies) {}
@@ -43,7 +40,7 @@ export class ExportCustomerDataUseCase {
     }
 
     return Result.map(
-      customerDataExportOf(
+      CustomerReadMapper.toApiDataExport(
         customerId.data,
         found.data,
         this.dependencies.clock().toISOString(),

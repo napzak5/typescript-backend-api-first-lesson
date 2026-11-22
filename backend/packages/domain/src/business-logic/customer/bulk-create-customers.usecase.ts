@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
+import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
 import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiCustomerBulkCreateResponse } from '../../models/customer'
@@ -34,32 +35,29 @@ export class BulkCreateCustomersUseCase {
     }
     const { customerRepository, clock } = this.dependencies
     const now = clock()
-    const { items } = request.data
-    const issues = items.flatMap((item, index) =>
-      atPlace(`items.${index}`, customerRuleIssues(item, now)),
+    const customers = CustomerWriteMapper.fromBulkCreateRequest(request.data)
+    const issues = customers.flatMap((customer, index) =>
+      atPlace(`items.${index}`, customerRuleIssues(customer, now)),
     )
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
 
-    const created = await customerRepository.createMany(
-      items.map(CustomerWriteMapper.fromCreateRequest),
-      actor.userId,
-    )
+    const created = await customerRepository.createMany(customers, actor.userId)
     if (created.type === 'error') {
       return created
     }
 
     return match(created.data)
       .returnType<Result<ApiCustomerBulkCreateResponse, DomainError>>()
-      .with({ type: 'created' }, ({ customers }) =>
-        Result.success({ created: customers.map(({ id }) => id) }),
+      .with({ type: 'created' }, ({ customers: added }) =>
+        Result.success(CustomerReadMapper.toApiBulkCreate(added)),
       )
       .with({ type: 'referrersNotFound' }, ({ missing }) =>
         Result.error(
           referrersNotFound(
             MESSAGE,
-            items.map(({ referredBy }) => referredBy),
+            customers.map(({ referredBy }) => referredBy),
             missing,
             (index) => `items.${index}`,
           ),

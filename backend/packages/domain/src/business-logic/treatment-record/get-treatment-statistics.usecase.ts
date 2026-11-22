@@ -1,4 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { TreatmentRecordReadMapper } from '../../mappers/read/treatment-record.mapper'
+import { TreatmentRecordWriteMapper } from '../../mappers/write/treatment-record.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiTreatmentStatisticsResponse } from '../../models/treatment-record'
 import { treatmentStatisticsGetRequestSchema } from '../../schemas/treatment-record.schema'
@@ -7,7 +9,6 @@ import { isWithin } from '../booking/_shared/authorization'
 import { notFound } from '../booking/_shared/plan'
 import { treatmentRecordReachOf } from './_shared/authorization'
 import type { TreatmentRecordUseCaseDependencies } from './_shared/dependencies'
-import { statisticsOf } from './_shared/statistics'
 
 const MESSAGE = 'Invalid treatment statistics'
 
@@ -18,7 +19,7 @@ export class GetTreatmentStatisticsUseCase {
 
   /**
    * The statistics of the records of a salon in a period
-   * (`statisticsOf`), for those who read the records of the salon. Whether
+   * (`toApiStatistics`), for those who read the records of the salon. Whether
    * the actor reads records at all is decided before the query is read; a
    * salon the actor does not reach is refused before it is looked up, so
    * whether it is there is told only to the administrators.
@@ -39,17 +40,15 @@ export class GetTreatmentStatisticsUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { salonId, startDate, endDate } = request.data
-    if (!isWithin(reach, salonId)) {
+    const criteria = TreatmentRecordWriteMapper.fromStatisticsGetRequest(
+      request.data,
+    )
+    if (!isWithin(reach, criteria.salonId)) {
       return Result.error(DomainErrors.forbidden())
     }
 
     const figures =
-      await this.dependencies.treatmentRecordRepository.findFigures({
-        salonId,
-        startDate: startDate ?? null,
-        endDate: endDate ?? null,
-      })
+      await this.dependencies.treatmentRecordRepository.findFigures(criteria)
     if (figures.type === 'error') {
       return figures
     }
@@ -58,6 +57,6 @@ export class GetTreatmentStatisticsUseCase {
       ? Result.error(
           DomainErrors.validation(MESSAGE, [notFound('salonId', 'a salon')]),
         )
-      : Result.success(statisticsOf(figures.data))
+      : Result.success(TreatmentRecordReadMapper.toApiStatistics(figures.data))
   }
 }

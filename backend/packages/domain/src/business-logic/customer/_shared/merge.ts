@@ -3,7 +3,7 @@ import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { MedicalChartReadMapper } from '../../../mappers/read/medical-chart.mapper'
 import type {
-  ApiCustomerMergeRequest,
+  CustomerMergeConflictResolution,
   DbCustomer,
   DbNewCustomer,
 } from '../../../models/customer'
@@ -33,7 +33,7 @@ export type MergeSide = 'primary' | 'secondary'
  * was written last: the primary when both were written at the same moment.
  */
 export const sideOf = (
-  resolution: ApiCustomerMergeRequest['conflictResolution'],
+  resolution: CustomerMergeConflictResolution,
   newer: MergeSide,
 ): MergeSide =>
   match(resolution)

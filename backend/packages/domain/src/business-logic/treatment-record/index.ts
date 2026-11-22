@@ -13,9 +13,6 @@ export { CreateTreatmentRecordUseCase } from './create-treatment-record.usecase'
 export { DeleteTreatmentRecordUseCase } from './delete-treatment-record.usecase'
 export { GetTreatmentRecordUseCase } from './get-treatment-record.usecase'
 export { GetTreatmentStatisticsUseCase } from './get-treatment-statistics.usecase'
-export {
-  ListTreatmentRecordsUseCase,
-  type TreatmentRecordPage,
-} from './list-treatment-records.usecase'
+export { ListTreatmentRecordsUseCase } from './list-treatment-records.usecase'
 export { RemoveTreatmentPhotoUseCase } from './remove-treatment-photo.usecase'
 export { UpdateTreatmentRecordUseCase } from './update-treatment-record.usecase'

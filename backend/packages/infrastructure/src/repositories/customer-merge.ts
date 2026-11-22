@@ -15,7 +15,7 @@ import {
 import {
   allergyMergeOf,
   type CustomerMerge,
-  type CustomerMergeRequest,
+  type CustomerMergeInstruction,
   chartMergeOf,
   type DomainError,
   type MergedCustomerField,
@@ -132,7 +132,7 @@ export const mergeCustomers = async (
     primaryCustomerId,
     secondaryCustomerId,
     conflictResolution,
-  }: CustomerMergeRequest,
+  }: CustomerMergeInstruction,
   changedBy: UserId,
 ): Promise<Result<CustomerMerge, DomainError>> => {
   const both = [primaryCustomerId, secondaryCustomerId]

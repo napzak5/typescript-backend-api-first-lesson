@@ -1,23 +1,17 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { CustomerVersionReadMapper } from '../../mappers/read/customer-version.mapper'
+import { CustomerVersionWriteMapper } from '../../mappers/write/customer-version.mapper'
 import type { Actor } from '../../models/auth'
 import { parseCustomerId } from '../../models/customer'
 import type { ApiCustomerHistoryEntryResponse } from '../../models/customer-version'
-import type { ApiPaginationMeta } from '../../models/page'
+import type { ApiPage } from '../../models/page'
 import { customerVersionSearchRequestSchema } from '../../schemas/customer-version.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayDeleteCustomers } from '../customer/_shared/authorization'
 import type { CustomerVersionUseCaseDependencies } from './_shared/dependencies'
 
 const MESSAGE = 'Invalid customer history search'
-
-const DEFAULT_LIMIT = 20
-
-export type CustomerHistoryPage = {
-  data: ApiCustomerHistoryEntryResponse[]
-  meta: ApiPaginationMeta
-}
 
 export class GetCustomerHistoryUseCase {
   constructor(
@@ -38,7 +32,7 @@ export class GetCustomerHistoryUseCase {
     actor: Actor,
     customerId: unknown,
     query: Result<unknown, DomainError>,
-  ): Promise<Result<CustomerHistoryPage, DomainError>> {
+  ): Promise<Result<ApiPage<ApiCustomerHistoryEntryResponse>, DomainError>> {
     if (!mayDeleteCustomers(actor)) {
       return Result.error(DomainErrors.forbidden())
     }
@@ -57,20 +51,21 @@ export class GetCustomerHistoryUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { cursor } = request.data
-    const limit = request.data.limit ?? DEFAULT_LIMIT
+    const criteria = CustomerVersionWriteMapper.fromSearchRequest(
+      request.data,
+      id.data,
+    )
 
-    const listed = await this.dependencies.customerVersionRepository.list({
-      customerId: id.data,
-      limit,
-      after: cursor ?? null,
-    })
+    const listed =
+      await this.dependencies.customerVersionRepository.list(criteria)
     if (listed.type === 'error') {
       return listed
     }
 
     return match(listed.data)
-      .returnType<Result<CustomerHistoryPage, DomainError>>()
+      .returnType<
+        Result<ApiPage<ApiCustomerHistoryEntryResponse>, DomainError>
+      >()
       .with({ type: 'customerNotFound' }, () =>
         Result.error(DomainErrors.notFound('Customer', id.data)),
       )
@@ -85,22 +80,8 @@ export class GetCustomerHistoryUseCase {
           ]),
         ),
       )
-      .with({ type: 'listed' }, ({ versions, total, hasMore }) =>
-        Result.map(
-          CustomerVersionReadMapper.toApiHistory(versions),
-          (data) => ({
-            data,
-            meta: {
-              total,
-              limit,
-              hasMore,
-              cursor: cursor ?? null,
-              nextCursor: hasMore ? (data.at(-1)?.id ?? null) : null,
-              // Pages are only walked forwards.
-              prevCursor: null,
-            },
-          }),
-        ),
+      .with({ type: 'listed' }, (list) =>
+        CustomerVersionReadMapper.toApiHistoryPage(list, criteria),
       )
       .exhaustive()
   }

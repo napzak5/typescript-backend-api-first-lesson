@@ -5,12 +5,18 @@ import type {
   ApiCustomerHistoryEntryResponse,
   ApiCustomerVersionChangeResponse,
   ApiCustomerVersionResponse,
+  CustomerVersionId,
   DbCustomerVersion,
 } from '../../models/customer-version'
-import type { CustomerVersionWithPrevious } from '../../repositories/customer-version.repository'
+import type { ApiPage, Paging } from '../../models/page'
+import type {
+  CustomerVersionListing,
+  CustomerVersionWithPrevious,
+} from '../../repositories/customer-version.repository'
 import { storedCustomerPreferencesSchema } from '../../schemas/customer.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * Database row → API response, as for a customer: property names are the
@@ -125,5 +131,20 @@ export const CustomerVersionReadMapper = {
       entries.push(mapped.data)
     }
     return Result.success(entries)
+  },
+
+  /** The versions a list found as a page of the history. */
+  toApiHistoryPage(
+    {
+      versions,
+      total,
+      hasMore,
+    }: Extract<CustomerVersionListing, { type: 'listed' }>,
+    paging: Paging<CustomerVersionId>,
+  ): Result<ApiPage<ApiCustomerHistoryEntryResponse>, DomainError> {
+    return Result.map(
+      CustomerVersionReadMapper.toApiHistory(versions),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

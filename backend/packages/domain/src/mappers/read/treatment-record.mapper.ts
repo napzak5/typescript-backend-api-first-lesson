@@ -1,15 +1,22 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import type { ApiPage, Paging } from '../../models/page'
 import type {
   ApiTreatmentMaterial,
+  ApiTreatmentPhotoBulkCreateResponse,
   ApiTreatmentPhotoResponse,
   ApiTreatmentRecordResponse,
+  ApiTreatmentStatisticsResponse,
   DbTreatmentMaterial,
   DbTreatmentPhoto,
+  TreatmentFigures,
+  TreatmentRecordId,
   TreatmentRecordWithDetails,
 } from '../../models/treatment-record'
+import type { TreatmentRecordListing } from '../../repositories/treatment-record.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * A row of `treatment_records` with its rows of `treatment_materials` and
@@ -138,9 +145,11 @@ const toApiTreatmentRecord = ({
 export const TreatmentRecordReadMapper = {
   toApiTreatmentRecord,
 
-  /** The photos of an addition, in the order they are given. */
-  toApiPhotos(photos: DbTreatmentPhoto[]): ApiTreatmentPhotoResponse[] {
-    return photos.map(toApiPhoto)
+  /** What an addition of photos is answered with: the photos, in the order they are given. */
+  toApiPhotoBulkCreate(
+    photos: DbTreatmentPhoto[],
+  ): ApiTreatmentPhotoBulkCreateResponse {
+    return { created: photos.map(toApiPhoto) }
   },
 
   toApiTreatmentRecords(
@@ -155,5 +164,43 @@ export const TreatmentRecordReadMapper = {
       apiRecords.push(mapped.data)
     }
     return Result.success(apiRecords)
+  },
+
+  /** The records a list found as a page of it. */
+  toApiTreatmentRecordPage(
+    {
+      records,
+      total,
+      hasMore,
+    }: Extract<TreatmentRecordListing, { type: 'listed' }>,
+    paging: Paging<TreatmentRecordId>,
+  ): Result<ApiPage<ApiTreatmentRecordResponse>, DomainError> {
+    return Result.map(
+      TreatmentRecordReadMapper.toApiTreatmentRecords(records),
+      (data) => toApiPage(data, { total, hasMore }, paging),
+    )
+  },
+
+  /**
+   * The statistics of the records of a period, from what was counted. The
+   * average processing time is that of the records that state one, in
+   * minutes rounded half up to one decimal, and null when none does.
+   */
+  toApiStatistics({
+    total,
+    processingTimeSum,
+    processingTimeCount,
+    byCategory,
+    topServices,
+  }: TreatmentFigures): ApiTreatmentStatisticsResponse {
+    return {
+      totalTreatments: total,
+      treatmentsByCategory: byCategory,
+      averageProcessingTime:
+        processingTimeCount === 0
+          ? null
+          : Math.round((processingTimeSum * 10) / processingTimeCount) / 10,
+      topServices,
+    }
   },
 }

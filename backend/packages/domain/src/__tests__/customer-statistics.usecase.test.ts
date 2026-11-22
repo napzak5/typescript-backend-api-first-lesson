@@ -14,6 +14,7 @@ import type {
 } from '../repositories/customer-statistics.repository'
 import { type DomainError, DomainErrors } from '../shared'
 import { actors, dataOf } from './auth-fixtures'
+import { customerStatisticsFigures } from './customer-statistics-fixtures'
 import { brokenRules, OTHER_SALON_ID, SALON_ID } from './fixtures'
 
 const CUSTOMER = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f7a01'
@@ -36,24 +37,6 @@ const query = (
   salonId: SALON_ID,
   startDate: '2026-11-01',
   endDate: '2026-11-30',
-  ...overrides,
-})
-
-/** A customer without a booking or a sale in the period. */
-const figures = (
-  overrides: Partial<CustomerStatisticsFigures> = {},
-): CustomerStatisticsFigures => ({
-  bookings: 0,
-  cancelled: 0,
-  noShows: 0,
-  spent: 0,
-  bookingSpent: 0,
-  bookingSales: 0,
-  lastVisit: null,
-  services: [],
-  staff: [],
-  loyaltyPoints: 120,
-  customerSince: '2025-04-01 09:30:00.123456+09',
   ...overrides,
 })
 
@@ -84,7 +67,10 @@ const found = (
   overrides: Partial<CustomerStatisticsFigures> = {},
 ): CustomerStatisticsUseCaseDependencies =>
   dependenciesFinding(
-    Result.success({ type: 'found', figures: figures(overrides) }),
+    Result.success({
+      type: 'found',
+      figures: customerStatisticsFigures(overrides),
+    }),
   )
 
 const findStatisticsOf = ({

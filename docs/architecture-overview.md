@@ -268,9 +268,13 @@ domain/src/
 ├── models/customer.ts                 CustomerId, API and database types
 ├── schemas/customer.schema.ts         Zod schema of each request, and of the stored
 │                                      preferences
-├── mappers/write/customer.mapper.ts   API request → row. Nothing is converted: the
-│                                      request is the row
-├── mappers/read/customer.mapper.ts    Row → API response
+├── mappers/write/customer.mapper.ts   API request → what the repository takes. Nothing
+│                                      is converted: a request is the row, and the
+│                                      criteria of the list, the rows of a bulk request
+│                                      and the instruction of a merge are made here too
+├── mappers/read/customer.mapper.ts    Row → API response; the page of the list, the
+│                                      answers of the bulk operations and the export of
+│                                      the data of a customer
 ├── mappers/write/customer-profile.mapper.ts
 │                                      Request of a customer for their own profile → the
 │                                      new row, and the changes of a row that is taken over
@@ -310,9 +314,11 @@ domain/src/
 ├── schemas/customer-preferences.schema.ts
 │                                      Zod schema of the update request, and of the two
 │                                      stored jsonb columns
-├── mappers/read/customer-preferences.mapper.ts
-│                                      Columns → API response. There is no write mapper:
+├── mappers/write/customer-preferences.mapper.ts
+│                                      Update request → the change. Nothing is converted:
 │                                      the request is the change
+├── mappers/read/customer-preferences.mapper.ts
+│                                      Columns → API response
 ├── repositories/customer-preferences.repository.ts
 │                                      ICustomerPreferencesRepository; what became of an
 │                                      update is a sum type (CustomerPreferencesUpdate)

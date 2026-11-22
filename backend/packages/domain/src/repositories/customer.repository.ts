@@ -4,6 +4,7 @@ import type { DbUser, UserId } from '../models/auth'
 import type { BookingWithServices } from '../models/booking'
 import type {
   CustomerId,
+  CustomerMergeConflictResolution,
   CustomerProfileWrite,
   DbCustomer,
   DbCustomerChanges,
@@ -17,7 +18,6 @@ import type { DbPointTransaction } from '../models/point'
 import type { DbReview } from '../models/review'
 import type { SaleWithDetails } from '../models/sale'
 import type { TreatmentRecordWithDetails } from '../models/treatment-record'
-import type { CustomerMergeRequest } from '../schemas/customer-merge.schema'
 import type { DomainError } from '../shared'
 
 /** Which customers a list returns. A null filter does not restrict the list. */
@@ -144,6 +144,16 @@ export type CustomerRestoration =
 export type MergedCustomerField = 'primaryCustomerId' | 'secondaryCustomerId'
 
 /**
+ * What a merge is told: the customer that is kept, the one that is merged
+ * into it, and whose value is kept where the two differ.
+ */
+export type CustomerMergeInstruction = {
+  primaryCustomerId: CustomerId
+  secondaryCustomerId: CustomerId
+  conflictResolution: CustomerMergeConflictResolution
+}
+
+/**
  * What became of a merge:
  * - `merged`: the primary, as the merge left it
  * - `customersNotFound`: these of the two are not there, or are deleted
@@ -243,7 +253,7 @@ export interface ICustomerRepository {
    * not merged: the data it asked to erase would become another's.
    */
   merge(
-    request: CustomerMergeRequest,
+    instruction: CustomerMergeInstruction,
     changedBy: UserId,
   ): Promise<Result<CustomerMerge, DomainError>>
 

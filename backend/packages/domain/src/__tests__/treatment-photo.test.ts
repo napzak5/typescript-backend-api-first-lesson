@@ -374,7 +374,7 @@ describe('TreatmentRecordWriteMapper.fromPhotoBulkCreateRequest', () => {
   })
 })
 
-describe('TreatmentRecordReadMapper.toApiPhotos', () => {
+describe('TreatmentRecordReadMapper.toApiPhotoBulkCreate', () => {
   it('shows each photo with its ID and without its record and time, in the order given', () => {
     const later: DbTreatmentPhoto = {
       ...dbTreatmentPhoto(),
@@ -389,7 +389,10 @@ describe('TreatmentRecordReadMapper.toApiPhotos', () => {
     }
 
     expect(
-      TreatmentRecordReadMapper.toApiPhotos([later, dbTreatmentPhoto()]),
+      TreatmentRecordReadMapper.toApiPhotoBulkCreate([
+        later,
+        dbTreatmentPhoto(),
+      ]).created,
     ).toEqual([
       {
         id: '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d22',

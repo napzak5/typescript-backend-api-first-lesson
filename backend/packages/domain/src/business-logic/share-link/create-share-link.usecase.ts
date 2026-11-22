@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { ShareLinkReadMapper } from '../../mappers/read/share-link.mapper'
+import { ShareLinkWriteMapper } from '../../mappers/write/share-link.mapper'
 import { parseAttachmentId } from '../../models/attachment'
 import type { Actor } from '../../models/auth'
 import type { ApiShareLinkCreateResponse } from '../../models/share-link'
@@ -41,7 +42,8 @@ export class CreateShareLinkUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { expiresAt, maxDownloads, password } = request.data
+    const { expiresAt, maxDownloads, password } =
+      ShareLinkWriteMapper.fromCreateRequest(request.data)
 
     const {
       shareLinkRepository,
@@ -95,9 +97,6 @@ export class CreateShareLinkUseCase {
       return created
     }
 
-    return Result.map(
-      ShareLinkReadMapper.toApiShareLink(created.data),
-      (shareLink) => ({ shareLink, token }),
-    )
+    return ShareLinkReadMapper.toApiShareLinkCreate(created.data, token)
   }
 }

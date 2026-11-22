@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
+import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
 import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiCustomerBulkUpdateResponse } from '../../models/customer'
@@ -36,24 +37,18 @@ export class BulkUpdateCustomersUseCase {
     }
     const { customerRepository, clock } = this.dependencies
     const now = clock()
-    const { items } = request.data
-    const issues = items.flatMap(({ id, updates }, index) =>
+    const items = CustomerWriteMapper.fromBulkUpdateRequest(request.data)
+    const issues = items.flatMap(({ id, changes }, index) =>
       atPlace(`items.${index}.updates`, [
-        ...customerRuleIssues(updates, now),
-        ...referredByItself(id, updates),
+        ...customerRuleIssues(changes, now),
+        ...referredByItself(id, changes),
       ]),
     )
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
 
-    const updated = await customerRepository.updateMany(
-      items.map(({ id, updates }) => ({
-        id,
-        changes: CustomerWriteMapper.fromUpdateRequest(updates),
-      })),
-      actor.userId,
-    )
+    const updated = await customerRepository.updateMany(items, actor.userId)
     if (updated.type === 'error') {
       return updated
     }
@@ -61,7 +56,7 @@ export class BulkUpdateCustomersUseCase {
     return match(updated.data)
       .returnType<Result<ApiCustomerBulkUpdateResponse, DomainError>>()
       .with({ type: 'updated' }, ({ customers }) =>
-        Result.success({ updated: customers.map(({ id }) => id) }),
+        Result.success(CustomerReadMapper.toApiBulkUpdate(customers)),
       )
       .with({ type: 'customersNotFound' }, ({ missing }) =>
         Result.error(
@@ -75,7 +70,7 @@ export class BulkUpdateCustomersUseCase {
         Result.error(
           referrersNotFound(
             MESSAGE,
-            items.map(({ updates }) => updates.referredBy),
+            items.map(({ changes }) => changes.referredBy),
             missing,
             (index) => `items.${index}.updates`,
           ),

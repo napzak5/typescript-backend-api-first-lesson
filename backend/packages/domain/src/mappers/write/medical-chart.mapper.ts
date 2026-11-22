@@ -2,10 +2,13 @@ import type {
   DbMedicalChartChanges,
   DbNewMedicalChart,
 } from '../../models/medical-chart'
+import type { MedicalChartListCriteria } from '../../repositories/medical-chart.repository'
 import type {
   MedicalChartCreateRequest,
+  MedicalChartSearchRequest,
   MedicalChartUpdateRequest,
 } from '../../schemas/medical-chart.schema'
+import { toPaging } from './page'
 
 /**
  * API request → database row of a medical chart. Property names are the
@@ -27,5 +30,16 @@ export const MedicalChartWriteMapper = {
   /** What the update states, and nothing else. */
   fromUpdateRequest(request: MedicalChartUpdateRequest): DbMedicalChartChanges {
     return request
+  },
+
+  /** A filter the request does not name is none. */
+  fromSearchRequest(
+    request: MedicalChartSearchRequest,
+  ): MedicalChartListCriteria {
+    return {
+      ...toPaging(request),
+      search: request.search ?? null,
+      hasAllergies: request.hasAllergies ?? null,
+    }
   },
 }

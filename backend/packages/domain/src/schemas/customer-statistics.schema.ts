@@ -11,3 +11,8 @@ import { periodInOrder, reportPeriod } from './sales-report.schema'
 export const customerStatisticsGetRequestSchema = z
   .strictObject(reportPeriod)
   .check(periodInOrder) satisfies z.ZodType<ApiCustomerStatisticsGetRequest>
+
+/** A query that was checked: its salon is the ID of a salon. */
+export type CustomerStatisticsGetRequest = z.infer<
+  typeof customerStatisticsGetRequestSchema
+>

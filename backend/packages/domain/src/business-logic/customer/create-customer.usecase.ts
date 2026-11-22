@@ -34,23 +34,21 @@ export class CreateCustomerUseCase {
       return request
     }
     const { customerRepository, clock } = this.dependencies
-    const issues = customerRuleIssues(request.data, clock())
+    const customer = CustomerWriteMapper.fromCreateRequest(request.data)
+    const issues = customerRuleIssues(customer, clock())
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
 
-    const created = await customerRepository.create(
-      CustomerWriteMapper.fromCreateRequest(request.data),
-      actor.userId,
-    )
+    const created = await customerRepository.create(customer, actor.userId)
     if (created.type === 'error') {
       return created
     }
 
     return match(created.data)
       .returnType<Result<ApiCustomerResponse, DomainError>>()
-      .with({ type: 'created' }, ({ customer }) =>
-        CustomerReadMapper.toApiCustomer(customer),
+      .with({ type: 'created' }, ({ customer: added }) =>
+        CustomerReadMapper.toApiCustomer(added),
       )
       .with({ type: 'referrerNotFound' }, () =>
         Result.error(referrerNotFound(MESSAGE)),

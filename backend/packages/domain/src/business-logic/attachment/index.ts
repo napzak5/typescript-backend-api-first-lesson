@@ -5,8 +5,5 @@ export { DeleteAttachmentUseCase } from './delete-attachment.usecase'
 export { GetAttachmentUseCase } from './get-attachment.usecase'
 export { IssueAttachmentDownloadUrlUseCase } from './issue-attachment-download-url.usecase'
 export { IssueAttachmentUploadUrlUseCase } from './issue-attachment-upload-url.usecase'
-export {
-  type AttachmentPage,
-  ListAttachmentsUseCase,
-} from './list-attachments.usecase'
+export { ListAttachmentsUseCase } from './list-attachments.usecase'
 export { PurgeAttachmentsUseCase } from './purge-attachments.usecase'

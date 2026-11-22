@@ -18,7 +18,7 @@ import {
   type CustomerList,
   type CustomerListCriteria,
   type CustomerMerge,
-  type CustomerMergeRequest,
+  type CustomerMergeInstruction,
   type CustomerProfileCreation,
   type CustomerProfileWrite,
   type CustomerRestoration,
@@ -512,14 +512,17 @@ export class CustomerRepository implements ICustomerRepository {
   }
 
   async merge(
-    request: CustomerMergeRequest,
+    instruction: CustomerMergeInstruction,
     changedBy: UserId,
   ): Promise<Result<CustomerMerge, DomainError>> {
     return Result.flatMap(
       await attempt('Failed to merge customers', () =>
-        this.db.transaction((tx) => mergeCustomers(tx, request, changedBy), {
-          isolationLevel: 'read committed',
-        }),
+        this.db.transaction(
+          (tx) => mergeCustomers(tx, instruction, changedBy),
+          {
+            isolationLevel: 'read committed',
+          },
+        ),
       ),
       (merged) => merged,
     )

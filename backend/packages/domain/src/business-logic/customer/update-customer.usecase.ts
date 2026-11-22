@@ -46,9 +46,10 @@ export class UpdateCustomerUseCase {
       return request
     }
     const { customerRepository, clock } = this.dependencies
+    const changes = CustomerWriteMapper.fromUpdateRequest(request.data)
     const issues = [
-      ...customerRuleIssues(request.data, clock()),
-      ...referredByItself(customerId.data, request.data),
+      ...customerRuleIssues(changes, clock()),
+      ...referredByItself(customerId.data, changes),
     ]
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
@@ -56,7 +57,7 @@ export class UpdateCustomerUseCase {
 
     const updated = await customerRepository.update(
       customerId.data,
-      CustomerWriteMapper.fromUpdateRequest(request.data),
+      changes,
       actor.userId,
     )
     if (updated.type === 'error') {

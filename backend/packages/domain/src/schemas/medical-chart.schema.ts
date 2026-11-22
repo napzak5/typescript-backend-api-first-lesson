@@ -77,3 +77,8 @@ export const medicalChartSearchRequestSchema = z.strictObject({
   search: nonBlankText.max(100).exactOptional(),
   hasAllergies: z.boolean().exactOptional(),
 }) satisfies z.ZodType<ApiMedicalChartSearchRequest>
+
+/** A search that was checked: its cursor is the ID of a chart. */
+export type MedicalChartSearchRequest = z.infer<
+  typeof medicalChartSearchRequestSchema
+>

@@ -5,7 +5,7 @@ import {
   GetTreatmentStatisticsUseCase,
   type TreatmentRecordUseCaseDependencies,
 } from '../business-logic/treatment-record'
-import { statisticsOf } from '../business-logic/treatment-record/_shared/statistics'
+import { TreatmentRecordReadMapper } from '../mappers/read/treatment-record.mapper'
 import type { Actor } from '../models/auth'
 import { treatmentStatisticsGetRequestSchema } from '../schemas/treatment-record.schema'
 import { type DomainError, DomainErrors } from '../shared'
@@ -109,9 +109,11 @@ describe('treatmentStatisticsGetRequestSchema', () => {
   })
 })
 
-describe('statisticsOf', () => {
+describe('TreatmentRecordReadMapper.toApiStatistics', () => {
   it('passes the counts on as they were counted, and averages the processing times of the records that state one', () => {
-    expect(statisticsOf(treatmentFigures())).toEqual({
+    expect(
+      TreatmentRecordReadMapper.toApiStatistics(treatmentFigures()),
+    ).toEqual({
       totalTreatments: 3,
       treatmentsByCategory: [
         { category: 'cut', count: 3 },
@@ -137,7 +139,7 @@ describe('statisticsOf', () => {
     'averages %i minutes over %i records as %d, rounded half up to one decimal',
     (sum, count, average) => {
       expect(
-        statisticsOf(
+        TreatmentRecordReadMapper.toApiStatistics(
           treatmentFigures({
             processingTimeSum: sum,
             processingTimeCount: count,
@@ -149,7 +151,7 @@ describe('statisticsOf', () => {
 
   it('has no average when no record states a processing time, and nothing to list without records', () => {
     expect(
-      statisticsOf({
+      TreatmentRecordReadMapper.toApiStatistics({
         total: 0,
         processingTimeSum: 0,
         processingTimeCount: 0,
@@ -163,7 +165,7 @@ describe('statisticsOf', () => {
       topServices: [],
     })
     expect(
-      statisticsOf(
+      TreatmentRecordReadMapper.toApiStatistics(
         treatmentFigures({ processingTimeSum: 0, processingTimeCount: 0 }),
       ).averageProcessingTime,
     ).toBeNull()
@@ -171,7 +173,7 @@ describe('statisticsOf', () => {
 
   it('averages records whose processing time is zero', () => {
     expect(
-      statisticsOf(
+      TreatmentRecordReadMapper.toApiStatistics(
         treatmentFigures({ processingTimeSum: 0, processingTimeCount: 2 }),
       ).averageProcessingTime,
     ).toBe(0)
@@ -196,7 +198,9 @@ describe('GetTreatmentStatisticsUseCase', () => {
       const dependencies = treatmentRecordDependencies()
 
       expect(await get(dependencies, actor)).toEqual(
-        Result.success(statisticsOf(treatmentFigures())),
+        Result.success(
+          TreatmentRecordReadMapper.toApiStatistics(treatmentFigures()),
+        ),
       )
       expect(
         dependencies.treatmentRecordRepository.findFigures,

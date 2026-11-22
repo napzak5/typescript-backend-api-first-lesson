@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
+import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
 import type { Actor } from '../../models/auth'
 import { customerExportRequestSchema } from '../../schemas/customer.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -11,7 +12,6 @@ import {
   customersFileOf,
   MOST_EXPORTED,
 } from './_shared/export'
-import { phoneDigitsOf } from './_shared/search'
 
 const MESSAGE = 'Invalid customer export'
 
@@ -41,25 +41,9 @@ export class ExportCustomersUseCase {
     if (request.type === 'error') {
       return request
     }
-    const {
-      search,
-      tags,
-      registeredFrom,
-      registeredTo,
-      customerStatus,
-      membershipTier,
-    } = request.data
 
     const exported = await this.dependencies.customerRepository.exportMatching(
-      {
-        search: search ?? null,
-        phoneDigits: search === undefined ? null : phoneDigitsOf(search),
-        tags: tags ?? [],
-        registeredFrom: registeredFrom ?? null,
-        registeredTo: registeredTo ?? null,
-        customerStatus: customerStatus ?? null,
-        membershipTier: membershipTier ?? null,
-      },
+      CustomerWriteMapper.fromExportRequest(request.data),
       MOST_EXPORTED,
     )
     if (exported.type === 'error') {

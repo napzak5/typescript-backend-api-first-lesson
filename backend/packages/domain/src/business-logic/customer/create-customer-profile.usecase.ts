@@ -53,14 +53,15 @@ export class CreateCustomerProfileUseCase {
       return request
     }
     const { customerRepository, clock } = this.dependencies
-    const issues = customerRuleIssues(request.data, clock())
+    const profile = CustomerProfileWriteMapper.fromCreateRequest(request.data)
+    const issues = customerRuleIssues(profile.newEntry, clock())
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
 
     const created = await customerRepository.createProfile(
       actor.userId,
-      CustomerProfileWriteMapper.fromCreateRequest(request.data),
+      profile,
     )
     if (created.type === 'error') {
       return created

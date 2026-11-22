@@ -19,10 +19,8 @@ import type {
 import { type DomainError, DomainErrors } from '../shared'
 import { actors, CUSTOMER_ID, USER_ID } from './auth-fixtures'
 import { REFERRER_ID } from './customer-fixtures'
+import { dbCustomerVersion, VERSION_ID } from './customer-version-fixtures'
 import { brokenRules, OTHER_SALON_ID, SALON_ID } from './fixtures'
-
-const VERSION_ID = (n: number): string =>
-  `0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f8a0${n}`
 
 const forbidden = Result.error(DomainErrors.forbidden())
 const databaseDown = Result.error(
@@ -33,50 +31,7 @@ const databaseDown = Result.error(
 const rulesOf = (result: Result<unknown, DomainError>): string[] =>
   result.type === 'error' ? brokenRules(result.error) : []
 
-/** A version of the customer of the fixtures, as the driver returns it. */
-const dbVersion = (
-  overrides: Partial<DbCustomerVersion> = {},
-): DbCustomerVersion => ({
-  id: VERSION_ID(1),
-  customerId: CUSTOMER_ID,
-  version: 1,
-  operation: 'create',
-  changedBy: USER_ID,
-  changedAt: '2026-11-14 18:00:00.123456+09',
-  firstName: '花子',
-  lastName: '山田',
-  firstNameKana: 'ハナコ',
-  lastNameKana: null,
-  email: 'hanako.yamada@example.com',
-  phoneNumber: '090-1234-5678',
-  alternativePhone: null,
-  postalCode: '107-0062',
-  prefecture: '東京都',
-  city: '港区',
-  address: null,
-  building: null,
-  birthDate: '1990-04-01',
-  gender: 'female',
-  occupation: null,
-  membershipTier: 'gold',
-  preferences: { preferredServices: ['cut'], notes: null },
-  notes: null,
-  internalNotes: null,
-  tags: ['regular'],
-  referredBy: REFERRER_ID,
-  referralCode: 'HANAKO2026',
-  allowMarketing: true,
-  allowSms: false,
-  allowEmail: true,
-  isActive: true,
-  hairType: 'wavy',
-  hairThickness: null,
-  scalpCondition: null,
-  customerStatus: 'active',
-  ...overrides,
-})
-
-/** The version of `dbVersion()` as the API presents it. */
+/** The version of `dbCustomerVersion()` as the API presents it. */
 const apiVersion = (
   overrides: Partial<ApiCustomerVersionResponse> = {},
 ): ApiCustomerVersionResponse => ({
@@ -123,14 +78,14 @@ const apiVersion = (
 const updated = (
   overrides: Partial<DbCustomerVersion> = {},
 ): CustomerVersionWithPrevious => ({
-  version: dbVersion({
+  version: dbCustomerVersion({
     id: VERSION_ID(2),
     version: 2,
     operation: 'update',
     changedAt: '2026-11-15 10:00:00+00',
     ...overrides,
   }),
-  previous: dbVersion(),
+  previous: dbCustomerVersion(),
 })
 
 const listed = (
@@ -152,7 +107,7 @@ const dependenciesWith = (
     find: vi.fn(async () =>
       Result.success<CustomerVersionLookup>({
         type: 'found',
-        version: dbVersion(),
+        version: dbCustomerVersion(),
       }),
     ),
     ...overrides,
@@ -337,7 +292,7 @@ describe('GetCustomerHistoryUseCase', () => {
       const results = await Promise.all(
         [
           updated({ changedAt: 'yesterday' }),
-          { ...updated(), previous: dbVersion({ gender: 'unknown' }) },
+          { ...updated(), previous: dbCustomerVersion({ gender: 'unknown' }) },
         ].map((entry) =>
           history(
             dependenciesWith({
@@ -442,11 +397,14 @@ describe('GetCustomerHistoryUseCase', () => {
     })
 
     it.each<[string, CustomerVersionWithPrevious]>([
-      ['the first version', { version: dbVersion(), previous: null }],
+      ['the first version', { version: dbCustomerVersion(), previous: null }],
       [
         'a baseline',
         {
-          version: dbVersion({ operation: 'baseline', changedBy: null }),
+          version: dbCustomerVersion({
+            operation: 'baseline',
+            changedBy: null,
+          }),
           previous: null,
         },
       ],
@@ -633,7 +591,9 @@ describe('GetCustomerVersionUseCase', () => {
         find: vi.fn(async () =>
           Result.success<CustomerVersionLookup>({
             type: 'found',
-            version: dbVersion({ preferences: { preferredServices: 'cut' } }),
+            version: dbCustomerVersion({
+              preferences: { preferredServices: 'cut' },
+            }),
           }),
         ),
       }),

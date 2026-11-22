@@ -46,10 +46,8 @@ export class UpdateCustomerAllergyUseCase {
     if (request.type === 'error') {
       return request
     }
-    const issues = customerAllergyRuleIssues(
-      request.data,
-      this.dependencies.clock(),
-    )
+    const changes = CustomerAllergyWriteMapper.fromUpdateRequest(request.data)
+    const issues = customerAllergyRuleIssues(changes, this.dependencies.clock())
     if (issues.length > 0) {
       return Result.error(DomainErrors.validation(MESSAGE, issues))
     }
@@ -57,7 +55,7 @@ export class UpdateCustomerAllergyUseCase {
     const changed = await this.dependencies.customerAllergyRepository.update(
       ids.data.customerId,
       ids.data.allergyId,
-      CustomerAllergyWriteMapper.fromUpdateRequest(request.data),
+      changes,
     )
     if (changed.type === 'error') {
       return changed

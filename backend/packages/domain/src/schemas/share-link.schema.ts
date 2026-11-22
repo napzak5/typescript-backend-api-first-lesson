@@ -49,3 +49,8 @@ export const sharedFileDownloadUrlRequestSchema = z.strictObject({
   password: presentedPasswordSchema.nullable(),
   inline: z.boolean(),
 }) satisfies z.ZodType<ApiSharedFileDownloadUrlRequest>
+
+/** A search that was checked: its cursor is the ID of a share link. */
+export type ShareLinkSearchRequest = z.infer<
+  typeof shareLinkSearchRequestSchema
+>
