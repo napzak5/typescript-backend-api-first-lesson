@@ -11,6 +11,9 @@
         "@fontsource-variable/noto-sans-jp"
       ]
     },
+    "shared-config": {
+      "ignore": ["vite/__fixtures__/**"]
+    },
     "specs": {
       "ignoreDependencies": [
         "@typespec/http",

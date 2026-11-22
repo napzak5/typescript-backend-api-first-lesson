@@ -19,13 +19,13 @@
   "sideEffects": false,
   "scripts": {
     "clean": "rm -rf dist *.tsbuildinfo",
-    "build:dev": "NODE_ENV=development rslib build",
-    "build:test": "NODE_ENV=test rslib build",
-    "build:stg": "NODE_ENV=staging rslib build",
-    "build:prod": "NODE_ENV=production rslib build",
-    "build:watch": "NODE_ENV=development rslib build --watch",
+    "build:dev": "vite build --mode development",
+    "build:test": "vite build --mode test",
+    "build:stg": "vite build --mode staging",
+    "build:prod": "vite build --mode production",
+    "build:watch": "vite build --watch --mode development",
     "typecheck": "tsc --noEmit",
-    "dev": "NODE_ENV=development rslib build --watch",
+    "dev": "vite build --watch --mode development",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -37,7 +37,6 @@
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
-    "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",

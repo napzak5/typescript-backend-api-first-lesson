@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig/base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "incremental": false,
+    "allowJs": false
+  },
+  "include": ["vite/**/*.ts"],
+  "exclude": ["node_modules", "vite/__fixtures__"]
+}

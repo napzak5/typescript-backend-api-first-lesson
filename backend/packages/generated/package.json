@@ -19,12 +19,12 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "clean": "rm -rf dist *.tsbuildinfo",
-    "build:localhost": "NODE_ENV=localhost rslib build",
-    "build:dev": "NODE_ENV=development rslib build",
-    "build:test": "NODE_ENV=test rslib build",
-    "build:stg": "NODE_ENV=staging rslib build",
-    "build:prod": "NODE_ENV=production rslib build",
-    "build:watch": "NODE_ENV=development rslib build --watch",
+    "build:localhost": "vite build --mode localhost",
+    "build:dev": "vite build --mode development",
+    "build:test": "vite build --mode test",
+    "build:stg": "vite build --mode staging",
+    "build:prod": "vite build --mode production",
+    "build:watch": "vite build --watch --mode development",
     "generate": "tsx scripts/generate-types.ts",
     "typecheck": "tsc --noEmit && tsc --project scripts/tsconfig.json"
   },
@@ -33,11 +33,11 @@
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
-    "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
     "openapi-typescript": "^7.13.0",
     "tsx": "^4.23.15",
     "typescript": "5.9.3",
+    "vite": "^8.3.8",
     "yaml": "^2.9.1"
   }
 }

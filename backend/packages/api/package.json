@@ -17,12 +17,12 @@
   },
   "scripts": {
     "clean": "rm -rf dist *.tsbuildinfo",
-    "build:localhost": "NODE_ENV=localhost rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json",
-    "build:dev": "NODE_ENV=development rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json",
-    "build:test": "NODE_ENV=test rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json",
-    "build:stg": "NODE_ENV=staging rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json",
-    "build:prod": "NODE_ENV=production rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json",
-    "build:watch": "NODE_ENV=development rslib build --watch",
+    "build:localhost": "vite build --mode localhost",
+    "build:dev": "vite build --mode development",
+    "build:test": "vite build --mode test",
+    "build:stg": "vite build --mode staging",
+    "build:prod": "vite build --mode production",
+    "build:watch": "vite build --watch --mode development",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
@@ -46,7 +46,6 @@
   "devDependencies": {
     "@beauty-salon-backend/database": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
-    "@rslib/core": "^1.0.7",
     "@testcontainers/postgresql": "^12.2.1",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
@@ -59,6 +58,7 @@
     "testcontainers": "^12.2.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
+    "vite": "^8.3.8",
     "vitest": "^5.1.0"
   }
 }
