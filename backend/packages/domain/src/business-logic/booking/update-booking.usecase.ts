@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { BookingReadMapper } from '../../mappers/read/booking.mapper'
+import { BookingWriteMapper } from '../../mappers/write/booking.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiBookingResponse, parseBookingId } from '../../models/booking'
 import { bookingUpdateRequestSchema } from '../../schemas/booking.schema'
@@ -47,7 +48,7 @@ export class UpdateBookingUseCase {
     const updated = await this.dependencies.bookingRepository.update(
       bookingId.data,
       reach,
-      request.data,
+      BookingWriteMapper.fromUpdateRequest(request.data),
     )
     if (updated.type === 'error') {
       return updated

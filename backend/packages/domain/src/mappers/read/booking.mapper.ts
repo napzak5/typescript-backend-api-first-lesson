@@ -3,11 +3,15 @@ import { z } from 'zod'
 import type {
   ApiBookingResponse,
   ApiBookingServiceResponse,
+  BookingId,
   BookingWithServices,
   DbBookingService,
 } from '../../models/booking'
+import type { ApiPage, Paging } from '../../models/page'
+import type { BookingList } from '../../repositories/booking.repository'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { timestampSchema } from './columns'
+import { toApiPage } from './page'
 
 /**
  * Database rows → API response. Property names are the column names; what
@@ -175,5 +179,15 @@ export const BookingReadMapper = {
       apiBookings.push(mapped.data)
     }
     return Result.success(apiBookings)
+  },
+
+  /** The bookings a list found as a page of it. */
+  toApiBookingPage(
+    { bookings, total, hasMore }: BookingList,
+    paging: Paging<BookingId>,
+  ): Result<ApiPage<ApiBookingResponse>, DomainError> {
+    return Result.map(BookingReadMapper.toApiBookings(bookings), (data) =>
+      toApiPage(data, { total, hasMore }, paging),
+    )
   },
 }

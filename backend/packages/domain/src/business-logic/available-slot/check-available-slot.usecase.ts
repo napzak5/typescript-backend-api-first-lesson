@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { parseISO } from 'date-fns'
+import { AvailableSlotReadMapper } from '../../mappers/read/available-slot.mapper'
+import { AvailableSlotWriteMapper } from '../../mappers/write/available-slot.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiAvailableSlotCheckResponse } from '../../models/available-slot'
 import { parseSalonIdOfPath } from '../../models/salon'
@@ -47,6 +48,10 @@ export class CheckAvailableSlotUseCase {
     if (request.type === 'error') {
       return request
     }
+    const asked = AvailableSlotWriteMapper.fromCheckRequest(
+      request.data,
+      salonId.data,
+    )
 
     const { availableSlotRepository, salonRepository } = this.dependencies
     const salonExists = await requireSalon(salonRepository, salonId.data)
@@ -54,13 +59,7 @@ export class CheckAvailableSlotUseCase {
       return salonExists
     }
 
-    const startTime = parseISO(request.data.startTime)
-    const found = await availableSlotRepository.findOccupancy({
-      salonId: salonId.data,
-      serviceId: request.data.serviceId,
-      staffId: request.data.staffId,
-      startTime,
-    })
+    const found = await availableSlotRepository.findOccupancy(asked)
     if (found.type === 'error') {
       return found
     }
@@ -79,11 +78,13 @@ export class CheckAvailableSlotUseCase {
       )
     }
 
-    const wanted = timeOf(startTime, service.duration)
+    const wanted = timeOf(asked.startTime, service.duration)
 
-    return Result.success({
-      isAvailable: !isOccupiedBeyondCapacity(staff, [wanted], taken),
-      conflicts: conflictsOf(staff, wanted, taken),
-    })
+    return Result.success(
+      AvailableSlotReadMapper.toApiCheck(
+        !isOccupiedBeyondCapacity(staff, [wanted], taken),
+        conflictsOf(staff, wanted, taken),
+      ),
+    )
   }
 }

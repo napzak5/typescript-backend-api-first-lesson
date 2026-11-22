@@ -29,16 +29,14 @@ import type {
   DbBookingNotes,
   DbBookingService,
   LedgerReach,
+  RequestedBooking,
+  RequestedBookingMove,
+  RequestedBookingService,
+  RequestedCustomerBooking,
 } from '../models/booking'
 import type { CustomerId } from '../models/customer'
 import type { SalonId } from '../models/salon'
 import type { StaffId } from '../models/staff'
-import type {
-  BookingCreateRequest,
-  BookingRescheduleRequest,
-  BookingServiceCreateRequest,
-  CustomerBookingCreateRequest,
-} from '../schemas/booking.schema'
 import type { DomainError, ValidationIssue } from '../shared'
 
 /**
@@ -195,7 +193,7 @@ export interface IBookingRepository {
    * the other was not there yet.
    */
   create(
-    request: BookingCreateRequest,
+    request: RequestedBooking,
     origin: BookingOrigin,
   ): Promise<Result<BookingCreation, DomainError>>
 
@@ -209,7 +207,7 @@ export interface IBookingRepository {
    * second meets what the first wrote.
    */
   book(
-    request: CustomerBookingCreateRequest,
+    request: RequestedCustomerBooking,
     booker: CustomerBooker,
     origin: BookingOrigin,
   ): Promise<Result<CustomerBookingCreation, DomainError>>
@@ -257,7 +255,7 @@ export interface IBookingRepository {
   reschedule(
     id: BookingId,
     reach: LedgerReach,
-    request: BookingRescheduleRequest,
+    request: RequestedBookingMove,
   ): Promise<Result<BookingReschedule, DomainError>>
 
   /**
@@ -272,7 +270,7 @@ export interface IBookingRepository {
   rebook(
     id: BookingId,
     reach: CustomerReach,
-    request: BookingRescheduleRequest,
+    request: RequestedBookingMove,
     mover: CustomerMover,
   ): Promise<Result<CustomerBookingReschedule, DomainError>>
 
@@ -298,7 +296,7 @@ export interface IBookingRepository {
   addService(
     id: BookingId,
     reach: LedgerReach,
-    request: BookingServiceCreateRequest,
+    request: RequestedBookingService,
   ): Promise<Result<BookingServiceAddition, DomainError>>
 
   /**

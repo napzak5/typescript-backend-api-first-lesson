@@ -1,13 +1,14 @@
 import { addMinutes, parseISO } from 'date-fns'
 import { match } from 'ts-pattern'
 import type { ClientInfo, UserId } from '../../../models/auth'
-import type { BookingWrite, DbNewBookingService } from '../../../models/booking'
+import type {
+  BookingWrite,
+  DbNewBookingService,
+  RequestedBooking,
+  RequestedBookingService,
+} from '../../../models/booking'
 import type { DbService } from '../../../models/service'
 import type { DbStaff } from '../../../models/staff'
-import type {
-  BookingCreateRequest,
-  BookingServiceCreateRequest,
-} from '../../../schemas/booking.schema'
 import { MAX_INTEGER } from '../../../schemas/rules'
 import type { ValidationIssue } from '../../../shared'
 import { pricedLineOf } from '../../_shared/amounts'
@@ -78,7 +79,7 @@ export const notFound = (field: string, what: string): ValidationIssue => ({
  * include the tax are those of the service (`pricedLineOf`).
  */
 export const toServiceRow = (
-  line: BookingServiceCreateRequest,
+  line: RequestedBookingService,
   service: ServiceOfBooking,
   sortOrder: number,
 ): DbNewBookingService => ({
@@ -111,7 +112,7 @@ export const summedOf = (row: DbNewBookingService): SummedLine => ({
  * then; otherwise everything that is not there is reported at once.
  */
 export const planBooking = (
-  request: BookingCreateRequest,
+  request: RequestedBooking,
   references: BookingReferences,
   origin: BookingOrigin,
 ): BookingPlan => {

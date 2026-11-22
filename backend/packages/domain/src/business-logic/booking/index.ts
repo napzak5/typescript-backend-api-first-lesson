@@ -1,8 +1,3 @@
-export type {
-  BookingCreateRequest,
-  BookingRescheduleRequest,
-  BookingServiceCreateRequest,
-} from '../../schemas/booking.schema'
 export { bookingNumberFrom } from './_shared/booking-number'
 export type { BookingUseCaseDependencies } from './_shared/dependencies'
 export {
@@ -49,7 +44,7 @@ export { DeleteBookingUseCase } from './delete-booking.usecase'
 export { DeleteBookingServiceUseCase } from './delete-booking-service.usecase'
 export { GetBookingUseCase } from './get-booking.usecase'
 export { GetBookingServiceUseCase } from './get-booking-service.usecase'
-export { type BookingPage, ListBookingsUseCase } from './list-bookings.usecase'
+export { ListBookingsUseCase } from './list-bookings.usecase'
 export { NoShowBookingUseCase } from './no-show-booking.usecase'
 export { RescheduleBookingUseCase } from './reschedule-booking.usecase'
 export { StartBookingUseCase } from './start-booking.usecase'

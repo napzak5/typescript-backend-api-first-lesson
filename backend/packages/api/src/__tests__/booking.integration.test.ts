@@ -8,11 +8,11 @@ import {
   staff,
 } from '@beauty-salon-backend/database'
 import {
-  type BookingCreateRequest,
   bookingIdSchema,
   customerIdSchema,
   type DomainError,
   type LedgerReach,
+  type RequestedBooking,
   salonIdSchema,
   serviceIdSchema,
   staffIdSchema,
@@ -2758,8 +2758,8 @@ describe('Bookings API', () => {
       client: { ipAddress: '203.0.113.7', userAgent: 'SalonTest/1.0' },
     })
     const lineOf = (
-      overrides: Partial<BookingCreateRequest['services'][number]> = {},
-    ): BookingCreateRequest['services'][number] => ({
+      overrides: Partial<RequestedBooking['services'][number]> = {},
+    ): RequestedBooking['services'][number] => ({
       serviceId: serviceIdSchema.parse(cutId),
       staffId: staffIdSchema.parse(staffId),
       startTime: written('01:00'),
@@ -2768,8 +2768,8 @@ describe('Bookings API', () => {
     })
     /** A request as the use case hands it on: a cut by the staff member from ten in Tokyo. */
     const requestOf = (
-      overrides: Partial<BookingCreateRequest> = {},
-    ): BookingCreateRequest => ({
+      overrides: Partial<RequestedBooking> = {},
+    ): RequestedBooking => ({
       salonId: salonIdSchema.parse(salonId),
       customerId: customerIdSchema.parse(customerId),
       staffId: staffIdSchema.parse(staffId),

@@ -11,10 +11,10 @@ import {
   treatmentRecords,
 } from '@beauty-salon-backend/database'
 import {
-  type BookingRescheduleRequest,
   bookingIdSchema,
   type DomainError,
   type LedgerReach,
+  type RequestedBookingMove,
   salonIdSchema,
   staffIdSchema,
 } from '@beauty-salon-backend/domain'
@@ -2557,7 +2557,7 @@ describe('Booking changes API', () => {
     const moving = (
       time: string,
       member: string = staffId,
-    ): BookingRescheduleRequest => ({
+    ): RequestedBookingMove => ({
       startTime: written(time),
       staffId: staffIdSchema.parse(member),
     })

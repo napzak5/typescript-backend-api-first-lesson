@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { CustomerBookingReadMapper } from '../mappers/read/customer-booking.mapper'
-import type { ApiCustomerBookingResponse, DbBooking } from '../models/booking'
+import { CustomerBookingWriteMapper } from '../mappers/write/customer-booking.mapper'
+import {
+  type ApiCustomerBookingResponse,
+  bookingIdSchema,
+  type CustomerReach,
+  type DbBooking,
+} from '../models/booking'
+import { customerIdSchema } from '../models/customer'
+import {
+  bookingRescheduleRequestSchema,
+  customerBookingSearchRequestSchema,
+} from '../schemas/booking.schema'
+import { CUSTOMER_ID } from './auth-fixtures'
 import {
   apiBooking,
   BOOKING_ID,
@@ -11,7 +23,9 @@ import {
 import {
   apiCustomerBooking,
   apiCustomerBookingServices,
+  customerBookingRequest,
 } from './customer-booking-fixtures'
+import { STAFF_MEMBER_ID } from './staff-fixtures'
 
 const { toApiCustomerBooking, toApiCustomerBookings } =
   CustomerBookingReadMapper
@@ -191,6 +205,163 @@ describe('CustomerBookingReadMapper.toApiCustomerBookings', () => {
         type: 'database',
         message: `Stored booking ${OTHER_BOOKING_ID} does not match the API model`,
       },
+    })
+  })
+})
+
+describe('CustomerBookingReadMapper.toApiCustomerBookingPage', () => {
+  it('answers with the bookings as their customer is shown them, the counts of the list and the place of the page', () => {
+    expect(
+      CustomerBookingReadMapper.toApiCustomerBookingPage(
+        {
+          bookings: [
+            bookingWithServices({ id: OTHER_BOOKING_ID }),
+            bookingWithServices(),
+          ],
+          total: 5,
+          hasMore: true,
+        },
+        { limit: 2, after: bookingIdSchema.parse(BOOKING_ID) },
+      ),
+    ).toStrictEqual({
+      type: 'success',
+      data: {
+        data: [
+          apiCustomerBooking({ id: OTHER_BOOKING_ID }),
+          apiCustomerBooking(),
+        ],
+        meta: {
+          total: 5,
+          limit: 2,
+          hasMore: true,
+          cursor: BOOKING_ID,
+          nextCursor: BOOKING_ID,
+          prevCursor: null,
+        },
+      },
+    })
+  })
+
+  it('names no next page when the list ends with this one', () => {
+    expect(
+      CustomerBookingReadMapper.toApiCustomerBookingPage(
+        { bookings: [bookingWithServices()], total: 1, hasMore: false },
+        { limit: 20, after: null },
+      ),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        meta: { total: 1, limit: 20, hasMore: false, nextCursor: null },
+      },
+    })
+  })
+
+  it('answers with the error of the first booking that does not match the model', () => {
+    expect(
+      CustomerBookingReadMapper.toApiCustomerBookingPage(
+        {
+          bookings: [
+            bookingWithServices(),
+            bookingWithServices({ id: OTHER_BOOKING_ID, endTime: 'later' }),
+          ],
+          total: 2,
+          hasMore: false,
+        },
+        { limit: 20, after: null },
+      ),
+    ).toMatchObject({
+      type: 'error',
+      error: {
+        type: 'database',
+        message: `Stored booking ${OTHER_BOOKING_ID} does not match the API model`,
+      },
+    })
+  })
+})
+
+describe('CustomerBookingWriteMapper', () => {
+  const own: CustomerReach = {
+    type: 'customer',
+    customerId: customerIdSchema.parse(CUSTOMER_ID),
+  }
+
+  it('returns a create request as the slot the customer asks for', () => {
+    const request = customerBookingRequest('10:00', {
+      customerRequest: 'A quiet seat, please',
+    })
+
+    expect(CustomerBookingWriteMapper.fromCreateRequest(request)).toStrictEqual(
+      request,
+    )
+  })
+
+  it('returns a reschedule request as the slot the booking is moved to', () => {
+    const request = bookingRescheduleRequestSchema.parse({
+      startTime: '2026-11-20T01:00:00Z',
+      staffId: STAFF_MEMBER_ID,
+    })
+
+    expect(
+      CustomerBookingWriteMapper.fromRescheduleRequest(request),
+    ).toStrictEqual({
+      startTime: '2026-11-20T01:00:00.000Z',
+      staffId: STAFF_MEMBER_ID,
+    })
+  })
+
+  it.each<[string, string | null]>([
+    ['the reason they give', 'I cannot come'],
+    ['no reason', null],
+  ])(
+    'makes a cancel request the cancellation by the customer, with %s',
+    (_named, cancellationReason) => {
+      expect(
+        CustomerBookingWriteMapper.fromCancelRequest({ cancellationReason }),
+      ).toStrictEqual({ type: 'cancelAsCustomer', cancellationReason })
+    },
+  )
+
+  it('lists the first 20 of the customer’s own bookings when the request names nothing', () => {
+    expect(
+      CustomerBookingWriteMapper.fromSearchRequest(
+        customerBookingSearchRequestSchema.parse({}),
+        own,
+      ),
+    ).toStrictEqual({
+      reach: own,
+      limit: 20,
+      after: null,
+      salonId: null,
+      customerId: null,
+      staffId: null,
+      status: null,
+      bookingDateFrom: null,
+      bookingDateTo: null,
+    })
+  })
+
+  it('takes the place of the page, the status and the days the request names, and narrows by nothing else', () => {
+    expect(
+      CustomerBookingWriteMapper.fromSearchRequest(
+        customerBookingSearchRequestSchema.parse({
+          limit: 5,
+          cursor: BOOKING_ID,
+          status: 'completed',
+          bookingDateFrom: '2026-11-01',
+          bookingDateTo: '2026-11-30',
+        }),
+        own,
+      ),
+    ).toStrictEqual({
+      reach: own,
+      limit: 5,
+      after: BOOKING_ID,
+      salonId: null,
+      customerId: null,
+      staffId: null,
+      status: 'completed',
+      bookingDateFrom: '2026-11-01',
+      bookingDateTo: '2026-11-30',
     })
   })
 })

@@ -13,6 +13,8 @@ import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import type { CustomerId } from './customer'
 import type { SalonId } from './salon'
+import type { ServiceId } from './service'
+import type { StaffId } from './staff'
 
 // ID: a UUID that has been checked.
 export const bookingIdSchema = uuidSchema.brand<'BookingId'>()
@@ -174,6 +176,60 @@ export type DbBookingNotes = Partial<
     'depositAmount' | 'customerRequest' | 'internalNotes' | 'source'
   >
 >
+
+/**
+ * A service line as a request asks for it: of a booking that is entered,
+ * and of one a line is added to afterwards. Its end and its amounts are
+ * those of the service (`toServiceRow`).
+ */
+export type RequestedBookingService = {
+  serviceId: ServiceId
+  /** The staff member of the line; null when the request names none. */
+  staffId: StaffId | null
+  /** When the line begins: in UTC, on a whole minute, in one spelling. */
+  startTime: string
+  notes: string | null
+}
+
+/**
+ * The booking a salon asks to enter: who comes to which salon, the staff
+ * member in charge, what the salon notes of the booking, and its service
+ * lines. The other columns of its rows come from the rows it refers to
+ * (`planBooking`).
+ */
+export type RequestedBooking = {
+  salonId: SalonId
+  customerId: CustomerId
+  staffId: StaffId
+  depositAmount: number | null
+  customerRequest: string | null
+  internalNotes: string | null
+  source: string | null
+  services: RequestedBookingService[]
+}
+
+/**
+ * Where a booking is asked to move to: the time it begins at from then
+ * on, and the staff member in charge.
+ */
+export type RequestedBookingMove = {
+  /** In UTC, on a whole minute, in one spelling. */
+  startTime: string
+  staffId: StaffId
+}
+
+/**
+ * The booking a customer asks for by themself: one slot of the available
+ * slots of a salon, for one service.
+ */
+export type RequestedCustomerBooking = {
+  salonId: SalonId
+  serviceId: ServiceId
+  staffId: StaffId
+  /** In UTC, on a whole minute, in one spelling. */
+  startTime: string
+  customerRequest: string | null
+}
 
 /**
  * What a reschedule writes: the staff member in charge, the day and the

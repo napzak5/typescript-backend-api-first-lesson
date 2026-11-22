@@ -4,8 +4,8 @@ import type {
   CustomerBookingMoveWrite,
   DbBooking,
   DbBookingService,
+  RequestedBookingMove,
 } from '../../../models/booking'
-import type { BookingRescheduleRequest } from '../../../schemas/booking.schema'
 import { notFound } from '../../booking/_shared/plan'
 import {
   type BookingMove,
@@ -80,7 +80,7 @@ export type CustomerMove =
  */
 export const moveCustomerBooking = (
   booking: CustomerBookingToMove,
-  request: BookingRescheduleRequest,
+  request: RequestedBookingMove,
   now: Date,
 ): CustomerMove => {
   const move = moveBooking(booking, request)

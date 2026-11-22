@@ -3,9 +3,9 @@ import type {
   DbBooking,
   DbBookingSummary,
   DbNewBookingService,
+  RequestedBookingService,
 } from '../../../models/booking'
 import {
-  type BookingServiceCreateRequest,
   HOURS_OF_A_VISIT,
   MAX_BOOKING_SERVICES,
 } from '../../../schemas/booking.schema'
@@ -115,7 +115,7 @@ const refusedByStatus = (status: BookingStatus): StatusRefusal | null =>
  */
 export const planServiceAddition = (
   booking: BookingOfLines,
-  request: BookingServiceCreateRequest,
+  request: RequestedBookingService,
   { salon, service, staff }: ServiceLineReferences,
 ): ServiceAdditionPlan => {
   const refusal = refusedByStatus(booking.status)

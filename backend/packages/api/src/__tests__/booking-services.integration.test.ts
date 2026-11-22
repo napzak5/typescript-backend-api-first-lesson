@@ -8,11 +8,11 @@ import {
   staff,
 } from '@beauty-salon-backend/database'
 import {
-  type BookingServiceCreateRequest,
   bookingIdSchema,
   bookingServiceIdSchema,
   type DomainError,
   type LedgerReach,
+  type RequestedBookingService,
   salonIdSchema,
   serviceIdSchema,
   staffIdSchema,
@@ -2832,8 +2832,8 @@ describe('Booking service lines API', () => {
 
     /** A line as a request that passed its rules asks for it: a cut nobody is named for from eleven in Tokyo. */
     const asked = (
-      overrides: Partial<BookingServiceCreateRequest> = {},
-    ): BookingServiceCreateRequest => ({
+      overrides: Partial<RequestedBookingService> = {},
+    ): RequestedBookingService => ({
       serviceId: serviceIdSchema.parse(cutId),
       staffId: null,
       startTime: written('02:00'),

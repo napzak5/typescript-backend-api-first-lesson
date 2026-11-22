@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toApiPage } from '../mappers/read/page'
+import { toApiPage, toApiPageEndingAt } from '../mappers/read/page'
 import { toPaging } from '../mappers/write/page'
 
 describe('toPaging', () => {
@@ -69,6 +69,60 @@ describe('toApiPage', () => {
     expect(
       toApiPage([], { total: 0, hasMore: true }, { limit: 20, after: null })
         .meta.nextCursor,
+    ).toBeNull()
+  })
+})
+
+describe('toApiPageEndingAt', () => {
+  const items = [{ name: 'first' }, { name: 'second' }]
+
+  it('answers with the items, the counts of the list, the place of the page and the cursor its caller names', () => {
+    expect(
+      toApiPageEndingAt(
+        items,
+        { total: 7, hasMore: true },
+        { limit: 2, after: 'before-first' },
+        'at-second',
+      ),
+    ).toEqual({
+      data: items,
+      meta: {
+        total: 7,
+        limit: 2,
+        hasMore: true,
+        cursor: 'before-first',
+        nextCursor: 'at-second',
+        prevCursor: null,
+      },
+    })
+  })
+
+  it('names no next page when the list ends with this one, whatever its last item is', () => {
+    expect(
+      toApiPageEndingAt(
+        items,
+        { total: 2, hasMore: false },
+        { limit: 20, after: null },
+        'at-second',
+      ).meta,
+    ).toEqual({
+      total: 2,
+      limit: 20,
+      hasMore: false,
+      cursor: null,
+      nextCursor: null,
+      prevCursor: null,
+    })
+  })
+
+  it('names no next page when its caller names no last item', () => {
+    expect(
+      toApiPageEndingAt(
+        [],
+        { total: 0, hasMore: true },
+        { limit: 20, after: null },
+        null,
+      ).meta.nextCursor,
     ).toBeNull()
   })
 })
