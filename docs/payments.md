@@ -307,7 +307,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 
 支払いの記録（`PaymentRepository.record`）と返金（`PaymentRepository.refund`）は、それぞれ 1 つのトランザクションです（`READ COMMITTED`）。
 
-1. **売上の行を排他ロック（`FOR UPDATE`）して読みます**（`repositories/held-sale.ts` の `heldSaleOf`。売上の更新と取り消しと同じロック）。同じ売上の支払い、返金、更新、取り消しは、ここで 1 件ずつになります
+1. **売上の行を排他ロック（`FOR UPDATE`）して読みます**（`repositories/_shared/held-sale.ts` の `heldSaleOf`。売上の更新と取り消しと同じロック）。同じ売上の支払い、返金、更新、取り消しは、ここで 1 件ずつになります
 2. 次の文で、その売上の決済取引を読みます。待っていたリクエストは、先のリクエストが書いたあとの決済取引を読みます
 3. 支払いは、売上が支払いを受けるかを決め（`refusalOfPayment`）、**支払い方法の行を共有ロック（`FOR SHARE`）して読み**、書く行を決めて（`planPayment`）、決済取引と、売上の支払い状態を書きます
 4. 返金は、書く値を決めて（`planRefund`）、決済取引と、売上の支払い状態を書きます
@@ -362,7 +362,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | インフラ | `backend/packages/infrastructure/src/repositories/payment-method.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/payment-method/`（`/api/v1/salons/:salonId/payment-methods` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611160800_payment_method_rules.sql` |
-| テスト | `backend/packages/domain/src/schemas/__tests__/payment-method.schema.test.ts`、`backend/packages/domain/src/business-logic/payment-method/__tests__/payment-method.limits.test.ts`、`backend/packages/domain/src/mappers/__tests__/payment-method.mapper.test.ts`、`backend/packages/domain/src/business-logic/payment-method/__tests__/payment-method.usecase.test.ts`、`backend/packages/api/src/__tests__/payment-method.integration.test.ts` |
+| テスト | `backend/packages/domain/src/schemas/__tests__/payment-method.schema.test.ts`、`backend/packages/domain/src/business-logic/payment-method/__tests__/payment-method.limits.test.ts`、`backend/packages/domain/src/mappers/__tests__/payment-method.mapper.test.ts`、`backend/packages/domain/src/business-logic/payment-method/__tests__/payment-method.usecase.test.ts`、`backend/packages/api/src/routes/payment-method/__tests__/payment-method.integration.test.ts` |
 
 支払いの記録と返金:
 
@@ -370,7 +370,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 |---|---|
 | コントラクト | `specs/models/payment.tsp`（`SaleProcessRequest`、`PaymentRefundRequest`、`PaymentResponse`、`PaymentStatusType`）、`specs/operations/payment-operations.tsp`（`SaleCrud` の `process`、`PaymentCrud` の `refund`） |
 | ドメイン | `backend/packages/domain/src/models/payment.ts`、`schemas/payment.schema.ts`、`mappers/write/payment.mapper.ts`（行は作らない。支払いと返金が書く値は `_shared/plan.ts` が決める）、`mappers/read/payment.mapper.ts`、`repositories/payment.repository.ts`、`services/payment-number-issuer.ts`、`business-logic/payment/`（売上の支払い状態、支払いと返金が書く値、断る理由を決めるのは `_shared/plan.ts`、取引番号は `_shared/payment-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）。誰が記録し、誰が返金するかは、売上台帳の `business-logic/sale/_shared/authorization.ts` |
-| インフラ | `backend/packages/infrastructure/src/repositories/payment.repository.impl.ts`、`repositories/held-sale.ts`（売上の行のロック。売上の更新、取り消しと共有する）、`security/random-payment-number-issuer.ts` |
+| インフラ | `backend/packages/infrastructure/src/repositories/payment.repository.impl.ts`、`repositories/_shared/held-sale.ts`（売上の行のロック。売上の更新、取り消しと共有する）、`security/random-payment-number-issuer.ts` |
 | API | `backend/packages/api/src/routes/sale/process-sale.handler.ts`（支払いの記録）、`backend/packages/api/src/routes/payment/`（返金。`/api/v1/payments` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611160900_payment_transaction_rules.sql` |
-| テスト | `backend/packages/domain/src/schemas/__tests__/payment.schema.test.ts`、`backend/packages/domain/src/business-logic/payment/__tests__/payment.plan.test.ts`、`backend/packages/domain/src/mappers/__tests__/payment.mapper.test.ts`、`backend/packages/domain/src/business-logic/payment/__tests__/payment.usecase.test.ts`、`backend/packages/api/src/__tests__/payment.integration.test.ts` |
+| テスト | `backend/packages/domain/src/schemas/__tests__/payment.schema.test.ts`、`backend/packages/domain/src/business-logic/payment/__tests__/payment.plan.test.ts`、`backend/packages/domain/src/mappers/__tests__/payment.mapper.test.ts`、`backend/packages/domain/src/business-logic/payment/__tests__/payment.usecase.test.ts`、`backend/packages/api/src/routes/payment/__tests__/payment.integration.test.ts` |

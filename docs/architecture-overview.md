@@ -194,7 +194,7 @@ domain/src/
                                        who may administer accounts (authorization.ts)
 
 infrastructure/src/
-├── repositories/user.repository.impl.ts, session.repository.impl.ts, account.ts
+├── repositories/user.repository.impl.ts, session.repository.impl.ts, _shared/account.ts
 ├── security/                          Argon2PasswordHasher, RandomTokenIssuer, TotpAuthenticator
 └── mail/smtp-mailer.ts                SmtpMailer
 
@@ -467,7 +467,8 @@ infrastructure/src/
 │                                      The columns it selects; the update and the
 │                                      unlinking in a transaction that locks the
 │                                      staff member
-└── repositories/staff-member.ts       The staff member of a salon: the condition the
+└── repositories/_shared/staff-member.ts
+                                       The staff member of a salon: the condition the
                                        repositories below a staff member share
 
 api/src/
@@ -771,7 +772,7 @@ infrastructure/src/
 ├── repositories/payment.repository.impl.ts
 │                                      A payment and a refund in one transaction
 │                                      that holds the sale first
-├── repositories/held-sale.ts          The lock on a sale, shared with the update
+├── repositories/_shared/held-sale.ts  The lock on a sale, shared with the update
 │                                      and the void of a sale
 └── security/random-payment-number-issuer.ts
                                        RandomPaymentNumberIssuer
@@ -920,7 +921,7 @@ infrastructure/src/
                                        The reports oldest first; a dismissal holds the
                                        review of the report FOR NO KEY UPDATE and
                                        counts its pending reports again
-                                       (review-report-count.ts)
+                                       (_shared/review-report-count.ts)
 
 api/src/
 ├── routes/review/                     One *.handler.ts per operation, _shared/ (types,
@@ -971,6 +972,22 @@ authentication and mail are behind interfaces in the same way
 and the current time is a dependency (`clock`), so the authentication use
 cases are unit-tested without a database, a real hash, an authenticator app
 or a mail server.
+
+A repository therefore has a file in two packages, under one name: its
+contract in `backend/packages/domain/src/repositories/<domain>.repository.ts`
+and its implementation in
+`backend/packages/infrastructure/src/repositories/<domain>.repository.impl.ts`.
+The contract belongs to the domain because it says what the use cases ask
+for, in the types of the domain, and names neither SQL nor a connection. The
+implementation belongs to the infrastructure because it is I/O: it takes the
+connection, writes the statements, the transactions and the locks, and turns
+what the database refuses into a `DomainError`. Were it in the domain, the
+domain would import what performs I/O, and a use case could no longer be
+tested with an object in the place of the database. What the implementations
+share (a lock or a read that more than one of them needs, a long operation
+taken out of one) is in
+`backend/packages/infrastructure/src/repositories/_shared/`, so that
+`repositories/` itself holds one implementation for each contract.
 
 | Package (`@beauty-salon-backend/…`) | Contains | Workspace packages it depends on |
 |-------------------------------------|----------|----------------------------------|
@@ -1461,7 +1478,7 @@ request below a salon: the salon of the path, the permission from the path,
 - **No code for the effect on accounts.** The scope of an actor is rebuilt
   for every request from `users.staffId` and the staff row, which has to be
   active and not deleted (`staffOfUser` in
-  `infrastructure/src/repositories/account.ts`). Deactivating or deleting a
+  `infrastructure/src/repositories/_shared/account.ts`). Deactivating or deleting a
   staff member therefore takes the salon from the linked account at its
   next request, and reactivating gives it back, without the staff use cases
   touching `users`.
@@ -1813,7 +1830,7 @@ from a request below a salon:
   and, in the next statement, looks for a booking that refers to the row
   and is `draft`, `pending`, `confirmed` or `in_progress`
   (`UNFINISHED_STATUSES`, the statuses an action leads on from;
-  `repositories/unfinished-bookings.ts`). If there is one, nothing is
+  `repositories/_shared/unfinished-bookings.ts`). If there is one, nothing is
   written and the repository answers `bookingsUnfinished` (409). A create
   and a reschedule hold the rows they refer to until they have written, so
   the delete waits for them and then reads their booking, and a create or
@@ -2094,7 +2111,7 @@ repository looks the sale up within the reach. What differs:
   sale or the payment, 400 for the request) and what is written.
 - **The sale is held first.** `record` and `refund` of the repository hold
   the row of the sale `FOR UPDATE` (`heldSaleOf` in
-  `repositories/held-sale.ts`, which the update and the void of a sale use
+  `repositories/_shared/held-sale.ts`, which the update and the void of a sale use
   too) and read its payments in the statement after it, so the payments of
   one sale are written one after the other and never receive more than the
   sale charges. A payment then reads its payment method `FOR SHARE`:
@@ -2376,7 +2393,7 @@ See [Authentication and Authorization](./authentication.md).
 | Command | What runs | Where the tests are |
 |---------|-----------|---------------------|
 | `pnpm test` | Unit tests (Vitest), no external services | Next to the code: in `__tests__` directories, or as `*.test.ts(x)` files beside the module |
-| `pnpm test:integration` | Tests against a real PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a testcontainers container. The tests of the infrastructure package send mail to a real SMTP server and files to a real S3-compatible storage instead: a Mailpit and a SeaweedFS container they start through testcontainers | `backend/packages/api/src/__tests__` (the HTTP API through the production `createApp`, one database per test), `backend/apps/server/src/__tests__` (start-up and shutdown), `backend/packages/database/src/scripts/__tests__` (the migration runner), `backend/packages/infrastructure/src/mail/__tests__` (mail delivery), `backend/packages/infrastructure/src/storage/__tests__` (the file storage), `frontend/packages/*/src/**/*.integration.test.ts(x)` (frontend code against the production API, which the test server in `backend/packages/api/src/__tests__/test-server` starts on a copy of a seeded database for every test file) |
+| `pnpm test:integration` | Tests against a real PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a testcontainers container. The tests of the infrastructure package send mail to a real SMTP server and files to a real S3-compatible storage instead: a Mailpit and a SeaweedFS container they start through testcontainers | `backend/packages/api/src/routes/<domain>/__tests__` and, for what every route does, `backend/packages/api/src/__tests__` (the HTTP API through the production `createApp`, one database per test), `backend/apps/server/src/__tests__` (start-up and shutdown), `backend/packages/database/src/scripts/__tests__` (the migration runner), `backend/packages/infrastructure/src/mail/__tests__` (mail delivery), `backend/packages/infrastructure/src/storage/__tests__` (the file storage), `frontend/packages/*/src/**/*.integration.test.ts(x)` (frontend code against the production API, which the test server in `backend/packages/api/src/__tests__/test-server` starts on a copy of a seeded database for every test file) |
 | `pnpm test:e2e` | Browser tests (Playwright, Chromium) on the three frontend applications as they are built, which call the production application on a real PostgreSQL through the same test server | `frontend/e2e/src` (`*.e2e.test.ts`) |
 
 End-to-end coverage has three parts: the API integration tests drive the
