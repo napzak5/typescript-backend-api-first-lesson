@@ -1,11 +1,15 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   KENJI,
   OWNER,
@@ -13,7 +17,6 @@ import {
   SAKURA,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
@@ -42,39 +45,6 @@ const OSAKA = 'Hair & Spa Osaka'
 const named = (displayName: string, salon = TOKYO): string =>
   `${displayName}（${salon}）`
 
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 const text = (name: string): HTMLElement =>
   screen.getByRole('textbox', { name })
 
@@ -92,13 +62,6 @@ const avoided = (): (string | null)[] =>
   screen
     .queryAllByRole('checkbox', { checked: true })
     .map((checked) => checked.closest('label')?.textContent ?? null)
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 /** What the part of the preferences on the page of a customer describes, term by term. */
 const preferencesShown = (): Record<string, string> =>
@@ -158,7 +121,7 @@ describe('the preferences of a customer, changed by a salon against the API', ()
     // Assert
     await heading('好み設定を直す')
     await screen.findByRole('button', { name: '変更を保存する' })
-    expect(address).toBe(`/salons/${tokyo}/customers/${yuki}/preferences`)
+    expect(address()).toBe(`/salons/${tokyo}/customers/${yuki}/preferences`)
     expect(screen.getByText('Tanaka Yuki（タナカ ユキ） 様')).toBeVisible()
     expect(
       within(wished())
@@ -200,8 +163,8 @@ describe('the preferences of a customer, changed by a salon against the API', ()
 
     // Assert: the part reads what was written, and never shows what it read before
     await heading('お客様の台帳')
-    expect(address).toBe(`/salons/${tokyo}/customers/${customer}`)
-    expect(firstSight[1]).not.toContain('静かに過ごしたい')
+    expect(address()).toBe(`/salons/${tokyo}/customers/${customer}`)
+    expect(firstSight()[1]).not.toContain('静かに過ごしたい')
     expect(notifications()).toContain('好み設定を直しました。')
     await waitFor(() =>
       expect(preferencesShown()).toMatchObject({
@@ -300,10 +263,10 @@ describe('the preferences of a customer, changed by a salon against the API', ()
 
     // Assert: no control at first sight, then what was written meanwhile
     await heading('好み設定を直す')
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `/salons/${tokyo}/customers/${customer}/preferences`,
     )
-    expect(firstSight[1]).not.toContain('特別な要望')
+    expect(firstSight()[1]).not.toContain('特別な要望')
     await screen.findByRole('button', { name: '変更を保存する' })
     expect(text('特別な要望')).toHaveValue('タオルを首に')
   })
@@ -393,7 +356,7 @@ describe('the preferences of a customer, changed by a salon against the API', ()
 
     // Assert
     await heading('お客様の台帳')
-    expect(address).toBe(`/salons/${tokyo}/customers/${customer}`)
+    expect(address()).toBe(`/salons/${tokyo}/customers/${customer}`)
     expect(await storedPreferencesOf(YUKI.email)).toBeNull()
   })
 })

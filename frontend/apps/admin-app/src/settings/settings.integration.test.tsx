@@ -1,11 +1,11 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { heading, termsOf } from '@beauty-salon-frontend/testing/screens'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs, renderAt } from '../__tests__/screens'
 import {
   dayFromToday,
   MANAGER,
@@ -13,7 +13,6 @@ import {
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import {
@@ -36,28 +35,6 @@ import {
  * meanwhile where a test says so.
  */
 
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 /** Waits for the settings: their heading comes first, the record once the salon was read anew. */
 const openedSettings = async (): Promise<void> => {
   await heading('サロンの設定')
@@ -69,15 +46,6 @@ const openedForm = async (): Promise<void> => {
   await heading('サロンの情報を直す')
   await screen.findByRole('group', { name: '会計' })
 }
-
-/** What a card says, term by term. */
-const termsOf = (card: string): [string, string][] =>
-  within(screen.getByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
-    ])
 
 /** The rows of a table, each as the texts of its cells. */
 const rowsOf = (caption: string): string[][] =>

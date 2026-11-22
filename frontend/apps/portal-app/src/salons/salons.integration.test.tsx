@@ -1,13 +1,12 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { address, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 
 const TITLE = applications.portal.name
 /** The heading of the first screen of the portal, the search of the salons */
@@ -22,33 +21,6 @@ const NO_SALON = '00000000-0000-4000-8000-000000000000'
 
 const UNREAD =
   'を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。'
-
-/** The address the application is at, as the router knows it */
-let address = ''
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 const idSchema = z.tuple([z.object({ id: z.uuid() })])
 
@@ -212,7 +184,7 @@ describe('the screens of the salons, against the API', () => {
       // Assert
       await screen.findByText('1 件のサロンが見つかりました')
       expect(namesIn(await results())).toEqual([OSAKA])
-      expect(address).toBe('/?keyword=osaka')
+      expect(address()).toBe('/?keyword=osaka')
       expect(keyword()).toHaveValue('osaka')
       expect(send()).toHaveFocus()
       // The title is that of the application still: this is the same screen
@@ -229,7 +201,7 @@ describe('the screens of the salons, against the API', () => {
       await user.click(send())
       await screen.findByText('1 件のサロンが見つかりました')
       expect(namesIn(await results())).toEqual([TOKYO])
-      expect(address).toBe('/?prefecture=Tokyo&city=Shibuya-ku')
+      expect(address()).toBe('/?prefecture=Tokyo&city=Shibuya-ku')
 
       // Act: a part of the name of the city
       await user.clear(city())
@@ -244,7 +216,7 @@ describe('the screens of the salons, against the API', () => {
         screen.getByText('条件を変えて、もう一度お探しください。'),
       ).toBeVisible()
       expect(screen.queryByRole('region', { name: '検索結果' })).toBeNull()
-      expect(address).toBe('/?prefecture=Tokyo&city=Shibuya')
+      expect(address()).toBe('/?prefecture=Tokyo&city=Shibuya')
     })
 
     it('should find the salons that are rated at least as high as asked for', async () => {
@@ -260,7 +232,7 @@ describe('the screens of the salons, against the API', () => {
       // Assert: Tokyo is rated 4.0, Osaka 5.0
       await screen.findByText('1 件のサロンが見つかりました')
       expect(namesIn(await results())).toEqual([OSAKA])
-      expect(address).toBe('/?minRating=4.5')
+      expect(address()).toBe('/?minRating=4.5')
     })
 
     it('should search for what the address says, and show it in the controls', async () => {
@@ -297,7 +269,7 @@ describe('the screens of the salons, against the API', () => {
 
       // Assert
       await screen.findByText('2 件のサロンが見つかりました')
-      expect(address).toBe('/')
+      expect(address()).toBe('/')
       expect(keyword()).toHaveValue('')
       expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
     })
@@ -336,7 +308,7 @@ describe('the screens of the salons, against the API', () => {
       expect(
         await screen.findByRole('link', { name: 'Beauty Studio Tokyo Annex' }),
       ).toBeVisible()
-      expect(address).toBe('/')
+      expect(address()).toBe('/')
     })
 
     it('should not list a salon that takes no bookings', async () => {
@@ -462,14 +434,14 @@ describe('the screens of the salons, against the API', () => {
       // Assert
       expect(await heading(OSAKA)).toHaveFocus()
       expect(document.title).toBe(`${OSAKA} | ${TITLE}`)
-      expect(address).toBe(await salonPathOf(OSAKA))
+      expect(address()).toBe(await salonPathOf(OSAKA))
 
       // Act
       await user.click(screen.getByRole('link', { name: 'サロンを探す' }))
 
       // Assert
       expect(await heading(START)).toHaveFocus()
-      expect(address).toBe('/')
+      expect(address()).toBe('/')
       expect(namesIn(await results())).toHaveLength(2)
     })
 

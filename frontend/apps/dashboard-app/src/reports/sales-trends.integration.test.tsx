@@ -1,6 +1,7 @@
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,14 +15,11 @@ import {
   paySale,
   removeTokyo,
   salonIdOf,
-  signInAs,
   TOKYO,
   voidSale,
 } from '../__tests__/arrangements'
 import {
   countOver,
-  firstSight,
-  heading,
   menuLink,
   renderAt,
   rowsOf,

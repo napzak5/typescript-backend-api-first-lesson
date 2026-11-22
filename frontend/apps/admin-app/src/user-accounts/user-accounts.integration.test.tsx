@@ -1,12 +1,15 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import {
+  firstSight,
+  goBack,
+  goTo,
+  heading,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs } from '../__tests__/screens'
 import {
   ADMIN,
   MANAGER,
@@ -14,7 +17,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
@@ -50,61 +52,6 @@ import {
  * about. The accounts of the seed data are neither locked nor set up with
  * two factors; `__tests__/arrangements.ts` makes them so.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname, search } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [
-      `${pathname}${search}`,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname, search])
-
-  return null
-}
-
-/** Goes back in the history of the router, as the button of the browser does */
-let goBack: () => void = () => undefined
-
-/** Goes to an address, as typing it would */
-let goTo: (path: string) => void = () => undefined
-
-const History = () => {
-  const navigate = useNavigate()
-  useLayoutEffect(() => {
-    goBack = () => void navigate(-1)
-    goTo = (path) => void navigate(path)
-  }, [navigate])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-        <History />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 /** Opens the account of an address as the administrator, and waits for its record. */
 const openAccountOf = async (email: string): Promise<void> => {
@@ -188,7 +135,9 @@ describe('the accounts of the users, against the API', () => {
       // Assert
       expect(await heading('ログインアカウント')).toBeVisible()
       await screen.findByRole('region', { name: 'アカウントの状態' })
-      expect(firstSight[0]).toBe(userAccountHrefOf(await userIdOf(YUKI.email)))
+      expect(firstSight()[0]).toBe(
+        userAccountHrefOf(await userIdOf(YUKI.email)),
+      )
       expect(screen.getByRole('main')).toHaveTextContent(YUKI.email)
       expect(detailsOf()).toEqual(
         expect.arrayContaining([
@@ -517,8 +466,8 @@ describe('the accounts of the users, against the API', () => {
       expect(
         await screen.findByRole('region', { name: 'ログインアカウント' }),
       ).toHaveTextContent('2 要素認証設定していません')
-      expect(firstSight[0]).toBe(staffAccount)
-      expect(firstSight[1]).not.toContain('設定しています')
+      expect(firstSight()[0]).toBe(staffAccount)
+      expect(firstSight()[1]).not.toContain('設定しています')
     })
 
     it('should say that the second factor went meanwhile, close the dialog, and mail nobody', async () => {

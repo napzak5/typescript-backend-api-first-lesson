@@ -4,10 +4,9 @@ import {
   savedFiles,
 } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { address, goTo, heading } from '@beauty-salon-frontend/testing/screens'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import {
   afterEach,
   beforeEach,
@@ -17,7 +16,7 @@ import {
   type MockInstance,
   vi,
 } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   BECOMINGS,
   countsOf,
@@ -46,40 +45,8 @@ const UNUSABLE =
 const PASSWORD_REFUSED =
   'パスワードが違うか、5 回続けて間違えたために、15 分のあいだ使えなくなっています。確かめて、もう一度入力してください。'
 
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** Opens an address in the same tab, as a link pasted into its address bar does */
-let go: (to: string) => void = () => undefined
-
-const Address = () => {
-  const { pathname, hash } = useLocation()
-  const navigate = useNavigate()
-  address = `${pathname}${hash}`
-  go = (to) => void navigate(to)
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
 /** Opens a share link, as somebody who received it does. */
 const openLink = (token: string) => renderAt(`/share#token=${token}`)
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 const main = () => within(screen.getByRole('main'))
 
@@ -161,7 +128,7 @@ describe('the screen of a share link, against the API', () => {
 
       // Assert
       expect(await heading(PHOTO)).toBeVisible()
-      expect(address).toBe('/share')
+      expect(address()).toBe('/share')
       expect(facts()).toEqual([
         ['種類', 'PNG 画像'],
         ['サイズ', '24 バイト'],
@@ -233,14 +200,14 @@ describe('the screen of a share link, against the API', () => {
       const second = await sharePhoto()
 
       // Act
-      act(() => go(`/share#token=${second.token}`))
+      act(() => goTo(`/share#token=${second.token}`))
 
       // Assert
       expect(await heading(PHOTO)).toBeVisible()
       expect(loadButton()).toBeVisible()
       expect(within(part()).queryByRole('link')).toBeNull()
       expect(main().queryByText(CONSENT)).toBeNull()
-      expect(address).toBe('/share')
+      expect(address()).toBe('/share')
     })
 
     it('should be the same for somebody who is signed in', async () => {
@@ -284,7 +251,7 @@ describe('the screen of a share link, against the API', () => {
       expect(passwordField()).toHaveAttribute('autocomplete', 'off')
       expect(main().queryByText(CONSENT)).toBeNull()
       expect(main().queryByRole('region', { name: 'ファイル' })).toBeNull()
-      expect(address).toBe('/share')
+      expect(address()).toBe('/share')
       expect(await findAccessibilityViolations()).toEqual([])
       // Asking without a password is no guess at it
       expect(await countsOf(link.id)).toEqual({

@@ -1,11 +1,10 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs, renderAt } from '../__tests__/screens'
 import {
   ADMIN,
   dayFromToday,
@@ -14,7 +13,6 @@ import {
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
 import {
@@ -48,44 +46,6 @@ import { expiryNameOf } from './stock-format'
  * Storage Room A. Its owner and its manager keep the rows, its stylist
  * reads them. Somebody did something meanwhile where a test says so.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname, search } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [
-      `${pathname}${search}`,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname, search])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 /** Waits for the stock: its heading comes first, the table once the rows and their products were read. */
 const openedStock = async (caption = '在庫'): Promise<void> => {
@@ -195,7 +155,7 @@ describe('the stock screens', () => {
 
     // Assert
     await openedStock()
-    expect(firstSight[0]).toBe(inventoryHrefOf(salonId))
+    expect(firstSight()[0]).toBe(inventoryHrefOf(salonId))
     expect(rows()).toEqual(await seededRows())
     expect(screen.getByText('6 行')).toBeVisible()
     expect(
@@ -257,7 +217,7 @@ describe('the stock screens', () => {
     expect(rows('条件に合う在庫の行').map(([code]) => code)).toEqual([
       'COLOR001',
     ])
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `${inventoryHrefOf(salonId)}?product=${colourId}`,
     )
 
@@ -270,7 +230,7 @@ describe('the stock screens', () => {
       await screen.findByText('条件に合う在庫の行はありません'),
     ).toBeVisible()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `${inventoryHrefOf(salonId)}?product=${colourId}&lot=NO-SUCH-LOT`,
     )
 
@@ -330,7 +290,7 @@ describe('the stock screens', () => {
       ['COLOR001', await colourLot(), '20 tube'],
       ['COLOR001', 'LOT-2026-001', '0 tube'],
     ])
-    expect(firstSight[0]).toBe(`${inventoryHrefOf(salonId)}?view=low-stock`)
+    expect(firstSight()[0]).toBe(`${inventoryHrefOf(salonId)}?view=low-stock`)
   })
 
   it('should show the rows that expire within the window chosen, those expired first, and keep it in the address', async () => {
@@ -360,7 +320,7 @@ describe('the stock screens', () => {
       ['COND001', expiryNameOf(inFive)],
       ['SHMP001', expiryNameOf(await dayFromToday(20))],
     ])
-    expect(firstSight[0]).toBe(`${inventoryHrefOf(salonId)}?view=expiring`)
+    expect(firstSight()[0]).toBe(`${inventoryHrefOf(salonId)}?view=expiring`)
     expect(screen.getByRole('combobox', { name: '使用期限' })).toHaveValue('30')
 
     // Act
@@ -377,7 +337,7 @@ describe('the stock screens', () => {
       'COLOR001',
       'COND001',
     ])
-    expect(firstSight[0]).toBe(
+    expect(firstSight()[0]).toBe(
       `${inventoryHrefOf(salonId)}?view=expiring&days=7`,
     )
 
@@ -452,7 +412,7 @@ describe('the stock screens', () => {
     ).toBeInTheDocument()
     const added = await rowIdOf(TOKYO, 'WAX001')
     // What the record alone says
-    expect(firstSight).toEqual([
+    expect(firstSight()).toEqual([
       stockRowHrefOf(salonId, added),
       expect.stringContaining('棚卸ししていません'),
     ])
@@ -483,7 +443,7 @@ describe('the stock screens', () => {
     )
 
     // Assert: the rows read before the entry are not shown again, they are read anew
-    expect(firstSight).toEqual([
+    expect(firstSight()).toEqual([
       inventoryHrefOf(salonId),
       expect.not.stringContaining('6 行'),
     ])
@@ -661,7 +621,7 @@ describe('the stock screens', () => {
       ),
     ).toBeInTheDocument()
     // What the API answered is shown at once, before the row is read again
-    expect(firstSight).toEqual([
+    expect(firstSight()).toEqual([
       stockRowHrefOf(salonId, rowId),
       expect.stringContaining('開封済みから使う'),
     ])
@@ -768,7 +728,7 @@ describe('the stock screens', () => {
     await openedRow()
     await user.click(screen.getByRole('link', { name: '在庫の行を直す' }))
     await openedChange()
-    expect(firstSight[0]).toBe(stockRowChangeHrefOf(salonId, emptied))
+    expect(firstSight()[0]).toBe(stockRowChangeHrefOf(salonId, emptied))
     await user.click(screen.getByRole('button', { name: '削除' }))
     const dialog = screen.getByRole('dialog', {
       name: '在庫の行「Hair Color - Natural Brown（ロット LOT-2026-001）」を削除しますか？',
@@ -784,8 +744,8 @@ describe('the stock screens', () => {
       ),
     ).toBeInTheDocument()
     // The rows read before the removal are not shown again, they are read anew
-    await waitFor(() => expect(firstSight[0]).toBe(inventoryHrefOf(salonId)))
-    expect(firstSight).toEqual([
+    await waitFor(() => expect(firstSight()[0]).toBe(inventoryHrefOf(salonId)))
+    expect(firstSight()).toEqual([
       inventoryHrefOf(salonId),
       expect.not.stringContaining('7 行'),
     ])

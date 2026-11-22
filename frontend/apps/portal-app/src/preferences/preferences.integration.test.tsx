@@ -2,17 +2,22 @@ import type { ModelsCustomerPreferencesUpdateRequest } from '@beauty-salon-front
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  asTheApplicationKeeps,
+  firstSight,
+  heading,
+  queryClientOfATest,
+  statusMessages,
+} from '@beauty-salon-frontend/testing/screens'
 import { NotificationProvider } from '@beauty-salon-frontend/ui'
 import {
   focusManager,
   onlineManager,
-  QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import {
   afterEach,
   beforeEach,
@@ -23,7 +28,7 @@ import {
   vi,
 } from 'vitest'
 import * as z from 'zod'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   accessTokenOf,
   ask,
@@ -66,46 +71,6 @@ const TAKESHI = 'Takeshi Ito'
 /** How a screen names a member of the staff: with their salon. */
 const named = (displayName: string, salon = TOKYO): string =>
   `${displayName}（${salon}）`
-
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/**
- * The path of the last screen, and what the page said in the commit that
- * showed it: before an answer of the API could arrive. A test that looks
- * at the page after waiting for something on it looks too late: by then,
- * a screen that showed what it had kept has read again.
- */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-/** What the application keeps of what it read: for five minutes, it does not read again. */
-const asTheApplicationKeeps = (): QueryClient =>
-  new QueryClient({
-    defaultOptions: { queries: { retry: false, staleTime: 5 * 60 * 1000 } },
-  })
-
-const renderAt = (
-  path: string,
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-) =>
-  render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
 
 // --- What the tests ask of the API, as a client that is no screen does
 
@@ -269,9 +234,6 @@ const staffOffered = async (): Promise<string[]> =>
 
 // --- What the tests read on the screen
 
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 const region = (name: string) => screen.findByRole('region', { name })
 
 /** The names and the values of a record, as a description list shows them. */
@@ -297,11 +259,6 @@ const NOTHING_SAID = {
   接客の好み: '指定なし',
   特別な要望: '指定なし',
 }
-
-const statusMessages = (): (string | null)[] =>
-  within(screen.getByRole('main'))
-    .getAllByRole('status')
-    .map((status) => status.textContent)
 
 /**
  * What was asked of the API about the preferences and about what the form
@@ -342,10 +299,10 @@ const avoided = (): (string | null)[] =>
 const openForm = async (
   email = CUSTOMER,
   password = testApi().seedPassword,
-  client?: QueryClient,
+  client = queryClientOfATest(),
 ): Promise<void> => {
   await signedInAs(email, password)
-  renderAt('/mypage/preferences', client)
+  renderAt('/mypage/preferences', { client })
   await screen.findByRole('button', { name: '変更を保存する' })
 }
 
@@ -502,7 +459,7 @@ describe('the preferences of a customer, against the API', () => {
 
       // Assert
       expect(await heading('お客様の情報')).toHaveFocus()
-      expect(address).toBe('/mypage/profile')
+      expect(address()).toBe('/mypage/profile')
     })
   })
 
@@ -621,11 +578,7 @@ describe('the preferences of a customer, against the API', () => {
 
       // Act
       render(
-        <QueryClientProvider
-          client={
-            new QueryClient({ defaultOptions: { queries: { retry: false } } })
-          }
-        >
+        <QueryClientProvider client={queryClientOfATest()}>
           <NotificationProvider>
             <OwnPreferences />
           </NotificationProvider>
@@ -646,13 +599,13 @@ describe('the preferences of a customer, against the API', () => {
       // Arrange
       await signedInAs(CUSTOMER)
       const client = asTheApplicationKeeps()
-      const first = renderAt('/mypage', client)
+      const first = renderAt('/mypage', { client })
       await within(await region('好みの設定')).findByRole('link')
       first.unmount()
       await salonWrites({ communicationStyle: 'Likes to talk' })
 
       // Act
-      renderAt('/mypage', client)
+      renderAt('/mypage', { client })
 
       // Assert
       expect(
@@ -756,7 +709,7 @@ describe('the preferences of a customer, against the API', () => {
       // the page. A page that showed what it had read before would say
       // first that nothing is wished for
       expect(await heading('マイページ')).toHaveFocus()
-      expect(firstSight).toEqual([
+      expect(firstSight()).toEqual([
         '/mypage',
         expect.stringContaining(
           `指名したいスタッフ${named(HIROSHI)}避けたいスタッフ${named(MIKA)}、${named(TAKESHI, OSAKA)}希望する時間帯10:00〜12:00、18:00〜20:30`,
@@ -766,7 +719,7 @@ describe('the preferences of a customer, against the API', () => {
         detailsIn(screen.getByRole('region', { name: '好みの設定' })),
       ).toEqual(EVERYTHING_SAID)
       expect(statusMessages()).toContain('好みの設定を変更しました。')
-      expect(address).toBe('/mypage')
+      expect(address()).toBe('/mypage')
       expect(await storedPreferences()).toMatchObject(await everything())
     })
 
@@ -805,7 +758,7 @@ describe('the preferences of a customer, against the API', () => {
       // Assert: no preferences were ever written for this customer
       expect(await heading('マイページ')).toHaveFocus()
       expect(statusMessages()).toContain('変更された項目はありません。')
-      expect(address).toBe('/mypage')
+      expect(address()).toBe('/mypage')
       expect(await storedPreferences()).toBeNull()
     })
 
@@ -915,7 +868,7 @@ describe('the preferences of a customer, against the API', () => {
       expect(text('接客の好み')).toHaveAccessibleDescription(
         expect.stringContaining('100 文字以内で入力してください。'),
       )
-      expect(address).toBe('/mypage/preferences')
+      expect(address()).toBe('/mypage/preferences')
       expect(await storedPreferences()).toEqual(before)
     })
 
@@ -992,7 +945,7 @@ describe('the preferences of a customer, against the API', () => {
       ).toBeVisible()
       expect(wished()).toHaveFocus()
       expect(wished()).toHaveAttribute('aria-invalid', 'true')
-      expect(address).toBe('/mypage/preferences')
+      expect(address()).toBe('/mypage/preferences')
       expect(await storedPreferences()).toEqual(before)
     })
 
@@ -1020,13 +973,13 @@ describe('the preferences of a customer, against the API', () => {
       // Arrange
       await signedInAs(CUSTOMER)
       const client = asTheApplicationKeeps()
-      const first = renderAt('/mypage/preferences', client)
+      const first = renderAt('/mypage/preferences', { client })
       await screen.findByRole('button', { name: '変更を保存する' })
       first.unmount()
       await salonWrites({ communicationStyle: 'Likes to talk' })
 
       // Act
-      renderAt('/mypage/preferences', client)
+      renderAt('/mypage/preferences', { client })
 
       // Assert: the first form there is, not one that is corrected later.
       // A form that opened with what was kept would keep that value
@@ -1078,7 +1031,7 @@ describe('the preferences of a customer, against the API', () => {
       expect(times()).toEqual(['10:00', '12:00'])
       expect(text('好きな色')).toHaveValue('Beige')
       expect(saveButton()).toBeEnabled()
-      expect(address).toBe('/mypage/preferences')
+      expect(address()).toBe('/mypage/preferences')
 
       // Act
       await giveBack('customer_preferences')
@@ -1127,7 +1080,7 @@ describe('the preferences of a customer, against the API', () => {
         'お客様の情報が見つからなかったため、変更を保存できませんでした。',
       )
       expect(screen.queryByRole('textbox')).toBeNull()
-      expect(address).toBe('/mypage/preferences')
+      expect(address()).toBe('/mypage/preferences')
       expect(
         await testApi().query(
           'select count(*)::int as n from customer_preferences',
@@ -1143,7 +1096,7 @@ describe('the preferences of a customer, against the API', () => {
 
       // Assert: in the commit that shows the page, without asking
       expect(await heading('マイページ')).toHaveFocus()
-      expect(firstSight).toEqual([
+      expect(firstSight()).toEqual([
         '/mypage',
         expect.stringContaining('お客様の情報は、まだ登録されていません'),
       ])
@@ -1160,7 +1113,7 @@ describe('the preferences of a customer, against the API', () => {
 
       // Assert
       expect(await heading('マイページ')).toHaveFocus()
-      expect(address).toBe('/mypage')
+      expect(address()).toBe('/mypage')
       expect(await storedPreferences()).toBeNull()
     })
   })

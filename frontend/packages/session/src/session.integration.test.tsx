@@ -1,7 +1,8 @@
 import { authCrudGetCurrentUser } from '@beauty-salon-frontend/api-client'
 import { sessionStore } from '@beauty-salon-frontend/io'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -14,9 +15,7 @@ const signInAs = (email: string, password = testApi().seedPassword) =>
   signIn({ email, password, rememberMe: false, twoFactorCode: null })
 
 const renderSession = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  })
+  const queryClient = queryClientOfATest()
 
   return renderHook(useSession, {
     wrapper: ({ children }: { children: ReactNode }) => (

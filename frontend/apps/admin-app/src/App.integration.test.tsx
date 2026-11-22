@@ -1,45 +1,17 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import { heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from './App'
+import { renderAt } from './__tests__/screens'
 
 const TITLE = applications.admin.name
 const OWNER = 'owner@beautysalon.jp'
 
 /** The first screen of a member of the staff: the bookings of their salon */
 const BOOKINGS = '予約台帳'
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** Signs in on the screen, as a seeded account. */
-const signInAs = async (email: string): Promise<void> => {
-  const user = userEvent.setup()
-  await user.type(
-    await screen.findByRole('textbox', { name: 'メールアドレス' }),
-    email,
-  )
-  await user.type(screen.getByLabelText('パスワード'), testApi().seedPassword)
-  await user.click(screen.getByRole('button', { name: 'サインイン' }))
-}
 
 describe('App, against the API', () => {
   beforeEach(() => {

@@ -1,6 +1,4 @@
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import * as z from 'zod'
 
 /*
@@ -23,17 +21,6 @@ export const ADMIN = 'admin@beautysalon.jp'
 export const YUKI = { email: 'customer1@example.com', name: 'Tanaka Yuki' }
 export const KENJI = { email: 'customer2@example.com', name: 'Yamamoto Kenji' }
 export const SAKURA = { email: 'customer3@example.com', name: 'Sato Sakura' }
-
-/** Signs in on the screen, as a seeded account. */
-export const signInAs = async (email: string): Promise<void> => {
-  const user = userEvent.setup()
-  await user.type(
-    await screen.findByRole('textbox', { name: 'メールアドレス' }),
-    email,
-  )
-  await user.type(screen.getByLabelText('パスワード'), testApi().seedPassword)
-  await user.click(screen.getByRole('button', { name: 'サインイン' }))
-}
 
 const idsSchema = z.array(z.object({ id: z.uuid() }))
 

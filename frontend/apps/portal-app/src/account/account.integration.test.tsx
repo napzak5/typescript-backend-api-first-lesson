@@ -2,10 +2,9 @@ import { applications } from '@beauty-salon-frontend/brand'
 import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, render, screen, within } from '@testing-library/react'
+import { address, goTo, heading } from '@beauty-salon-frontend/testing/screens'
+import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import {
   afterEach,
   beforeEach,
@@ -16,7 +15,7 @@ import {
   vi,
 } from 'vitest'
 import * as z from 'zod'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import { accessTokenOf } from '../bookings/__tests__/arrangements'
 
 const TITLE = applications.portal.name
@@ -38,35 +37,6 @@ const TOO_SHORT = 'パスワードが短すぎます。15 文字以上で入力�
 const GUESSABLE_SAID =
   'このパスワードは推測されやすいため、使えません。別のパスワードを入力してください。'
 
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** Opens an address in the same tab, as the link of a mail opened in it does */
-let go: (to: string) => void = () => undefined
-
-const Address = () => {
-  const { pathname, hash } = useLocation()
-  const navigate = useNavigate()
-  address = `${pathname}${hash}`
-  go = (to) => void navigate(to)
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
 /** The link of the last mail to `to`, as the router takes it. */
 const mailedPath = async (to: string): Promise<string> => {
   const { pathname, hash } = new URL(await testApi().mailedLink(to))
@@ -78,9 +48,6 @@ const mailedPath = async (to: string): Promise<string> => {
 const openMailedLink = async (to: string): Promise<void> => {
   renderAt(await mailedPath(to))
 }
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 const main = () => within(screen.getByRole('main'))
 
@@ -365,7 +332,7 @@ describe('the screens of an account, against the API', () => {
       expect(
         screen.getByRole('button', { name: 'メールアドレスを確認する' }),
       ).toBeEnabled()
-      expect(address).toBe('/verify-email')
+      expect(address()).toBe('/verify-email')
       expect(await findAccessibilityViolations()).toEqual([])
       // Software that opens the links of a mail ahead of its reader uses nothing up
       expect(operationsAsked(fetched)).toEqual([])
@@ -561,7 +528,7 @@ describe('the screens of an account, against the API', () => {
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
         'パスワードの再設定',
       )
-      expect(address).toBe('/reset-password')
+      expect(address()).toBe('/reset-password')
       expect(await findAccessibilityViolations()).toEqual([])
       // Asking whether the link works is all that opening it does
       expect(operationsAsked(fetched)).toEqual(['/auth/reset-password/verify'])
@@ -604,12 +571,12 @@ describe('the screens of an account, against the API', () => {
       const later = await mailedPath(CUSTOMER)
 
       // Act
-      act(() => go(later))
+      act(() => goTo(later))
 
       // Assert
       expect(await screen.findByLabelText('新しいパスワード')).toBeRequired()
       expect(screen.queryByText('パスワードを変更しました')).toBeNull()
-      expect(address).toBe('/reset-password')
+      expect(address()).toBe('/reset-password')
     })
 
     it('should say at the password what the API says about one that is easy to guess, and take a better one with the same link', async () => {
@@ -735,7 +702,7 @@ describe('the screens of an account, against the API', () => {
       const user = userEvent.setup()
       const password = await screen.findByLabelText('パスワード')
       const shown = {
-        address,
+        address: address(),
         // Asking what the invitation is is all that opening the link does
         asked: operationsAsked(fetched),
         email: emailField().getAttribute('value'),

@@ -1,10 +1,13 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  heading,
+  renderApplicationAt,
+} from '@beauty-salon-frontend/testing/screens'
 import { PageHeader } from '@beauty-salon-frontend/ui'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route } from 'react-router'
+import { Route } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { isAtOrBelow } from './addresses'
 import type { NavigationOf } from './app-frame'
@@ -37,40 +40,19 @@ const renderAt = (
   path: string,
   environment: StaffApplicationProps['environment'] = 'production',
 ) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
+  renderApplicationAt(
+    <StaffApplication
+      title={TITLE}
+      roles={['owner', 'manager', 'admin']}
+      navigationFor={navigationFor}
+      environment={environment}
+      portalUrl='https://portal.salon.example'
     >
-      <MemoryRouter initialEntries={[path]}>
-        <StaffApplication
-          title={TITLE}
-          roles={['owner', 'manager', 'admin']}
-          navigationFor={navigationFor}
-          environment={environment}
-          portalUrl='https://portal.salon.example'
-        >
-          <Route path='/' element={<PageHeader title={START} />} />
-          <Route path='/reports/*' element={<PageHeader title='レポート' />} />
-        </StaffApplication>
-      </MemoryRouter>
-    </QueryClientProvider>,
+      <Route path='/' element={<PageHeader title={START} />} />
+      <Route path='/reports/*' element={<PageHeader title='レポート' />} />
+    </StaffApplication>,
+    path,
   )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** Signs in on the screen, as a seeded account. */
-const signInAs = async (email: string): Promise<void> => {
-  const user = userEvent.setup()
-  await user.type(
-    await screen.findByRole('textbox', { name: 'メールアドレス' }),
-    email,
-  )
-  await user.type(screen.getByLabelText('パスワード'), testApi().seedPassword)
-  await user.click(screen.getByRole('button', { name: 'サインイン' }))
-}
 
 const sessionCountOfTheApi = async (): Promise<unknown> =>
   testApi().query('select count(*)::int as count from sessions')

@@ -1,10 +1,13 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { signInAs, testApi } from '@beauty-salon-frontend/testing/api'
+import {
+  address,
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import {
   afterEach,
   beforeEach,
@@ -15,7 +18,7 @@ import {
   vi,
 } from 'vitest'
 import * as z from 'zod'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   arrange,
   dayFromToday,
@@ -23,7 +26,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from './__tests__/arrangements'
@@ -34,50 +36,10 @@ const MOVE_TAKEN =
 const ADDITION_TAKEN =
   '担当の時間が、ほかの予約と重なっているため、施術明細を足せませんでした。足す明細に重なる、ほかの予約を確かめました。'
 
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 const combobox = (name: string): HTMLElement =>
   screen.getByRole('combobox', { name })
 
 const field = (name: string): HTMLElement => screen.getByLabelText(name)
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((text) => text !== '')
 
 /** The lines of the page of a booking: the service, who does it and the hours. */
 const linesShown = (): string[][] =>
@@ -244,10 +206,11 @@ const toTheBooking = async (
 const backToTheDay = async (
   user: ReturnType<typeof userEvent.setup>,
   tokyo: string,
+  date: string,
 ): Promise<HTMLElement> => {
   await user.click(screen.getByRole('link', { name: 'この日の予約へ' }))
-  expect(firstSight).toEqual([
-    `/salons/${tokyo}/bookings`,
+  expect(firstSight()).toEqual([
+    `/salons/${tokyo}/bookings?date=${date}`,
     expect.stringContaining('予約を読み込んでいます'),
   ])
   const row = (await screen.findByRole('link', { name: YUKI.name })).closest(
@@ -331,7 +294,7 @@ describe('moving a booking and changing its lines, against the API', () => {
 
       // Assert
       expect(await heading('予約の内容')).toHaveFocus()
-      expect(address).toBe(`/salons/${tokyo}/bookings/${id}`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings/${id}`)
       expect(notifications()).toContain('予約の日時と担当を変えました。')
       expect(linesShown()).toEqual([
         ['Ladies Cut', 'Yui Watanabe', '14:30〜15:30'],
@@ -359,7 +322,7 @@ describe('moving a booking and changing its lines, against the API', () => {
       ])
 
       // Act: the bookings of the day were read before the move
-      const row = await backToTheDay(user, tokyo)
+      const row = await backToTheDay(user, tokyo, date)
 
       // Assert
       expect(row).toHaveTextContent('14:30〜16:00')
@@ -607,7 +570,7 @@ describe('moving a booking and changing its lines, against the API', () => {
 
       // Assert: the page of the booking, read anew
       expect(await heading('予約の内容')).toHaveFocus()
-      expect(address).toBe(`/salons/${tokyo}/bookings/${id}`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings/${id}`)
       expect(notifications()).toContain('施術明細を追加しました。')
       expect(
         await screen.findByRole('table', { name: '施術明細' }),
@@ -636,7 +599,7 @@ describe('moving a booking and changing its lines, against the API', () => {
       })
 
       // Act: the bookings of the day were read before the line was added
-      const row = await backToTheDay(user, tokyo)
+      const row = await backToTheDay(user, tokyo, date)
 
       // Assert
       expect(row).toHaveTextContent('10:00〜11:45')
@@ -847,7 +810,9 @@ describe('moving a booking and changing its lines, against the API', () => {
       )
       const [, second] = await lineIdsOf(id)
       expect(await heading('施術明細の内容')).toBeVisible()
-      expect(address).toBe(`/salons/${tokyo}/bookings/${id}/services/${second}`)
+      expect(address()).toBe(
+        `/salons/${tokyo}/bookings/${id}/services/${second}`,
+      )
       expect(
         within(screen.getByRole('region', { name: '施術明細' }))
           .getAllByRole('term')
@@ -879,7 +844,7 @@ describe('moving a booking and changing its lines, against the API', () => {
 
       // Assert: the page of the booking, read anew
       expect(await heading('予約の内容')).toHaveFocus()
-      expect(address).toBe(`/salons/${tokyo}/bookings/${id}`)
+      expect(address()).toBe(`/salons/${tokyo}/bookings/${id}`)
       expect(notifications()).toContain('施術明細を外しました。')
       expect(
         await screen.findByRole('table', { name: '施術明細' }),
@@ -901,7 +866,7 @@ describe('moving a booking and changing its lines, against the API', () => {
       })
 
       // Act: the bookings of the day were read before the line was taken away
-      const row = await backToTheDay(user, tokyo)
+      const row = await backToTheDay(user, tokyo, date)
 
       // Assert
       expect(row).toHaveTextContent('10:00〜11:00')

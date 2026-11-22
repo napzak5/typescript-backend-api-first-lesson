@@ -1,11 +1,9 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { firstSight, heading } from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { openAs } from '../__tests__/screens'
 import {
   ADMIN,
   MANAGER,
@@ -14,7 +12,6 @@ import {
   refuse,
   STYLIST,
   salonIdOf,
-  signInAs,
   THERAPIST,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
@@ -37,44 +34,6 @@ import {
  * that open and save it, and its removal. The seed data has no file; the
  * files a test needs are in `__tests__/arrangements.ts`.
  */
-
-/** The address a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname, search } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [
-      `${pathname}${search}`,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname, search])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-/** Opens a screen, signed in as an account of the seed data. */
-const openAs = async (path: string, email: string): Promise<void> => {
-  renderAt(path)
-  await signInAs(email)
-}
-
-const heading = (name: string | RegExp) =>
-  screen.findByRole('heading', { level: 1, name })
 
 /** The files of the salon in Tokyo */
 const filesOfTokyo = async (): Promise<string> =>
@@ -436,8 +395,8 @@ describe('the files of a salon', () => {
     await heading('ファイル')
     // The list that was read before is not shown, but read anew: the
     // notice names the file, and no row does
-    expect(firstSight[1]).toContain('ファイルを読み込んでいます')
-    expect(firstSight[1]).not.toContain('前.pdfPDF')
+    expect(firstSight()[1]).toContain('ファイルを読み込んでいます')
+    expect(firstSight()[1]).not.toContain('前.pdfPDF')
     await waitFor(() =>
       expect(listed().map(([name]) => name)).toEqual(['後.pdf']),
     )

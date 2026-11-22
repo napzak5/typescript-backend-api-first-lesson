@@ -1,14 +1,10 @@
 import { applications } from '@beauty-salon-frontend/brand'
+import { heading } from '@beauty-salon-frontend/testing/screens'
 import { screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderAt } from '../__tests__/screens'
 import { NOTHING, signedInAs } from '../bookings/__tests__/arrangements'
-import {
-  heading,
-  KENJI,
-  renderAt,
-  visitReviewed,
-  visitToReview,
-} from './__tests__/arrangements'
+import { KENJI, visitReviewed, visitToReview } from './__tests__/arrangements'
 
 /*
  * Who the screens of the reviews are for, and where each of them stands

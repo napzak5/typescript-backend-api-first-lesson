@@ -1,7 +1,5 @@
 import type { ModelsPaymentMethodType } from '@beauty-salon-frontend/api-client'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import * as z from 'zod'
 
 /*
@@ -17,17 +15,6 @@ export const OSAKA = 'Hair & Spa Osaka'
 export const OWNER = 'owner@beautysalon.jp'
 export const MANAGER = 'manager@beautysalon.jp'
 export const ADMIN = 'admin@beautysalon.jp'
-
-/** Signs in on the screen, as a seeded account. */
-export const signInAs = async (email: string): Promise<void> => {
-  const user = userEvent.setup()
-  await user.type(
-    await screen.findByRole('textbox', { name: 'メールアドレス' }),
-    email,
-  )
-  await user.type(screen.getByLabelText('パスワード'), testApi().seedPassword)
-  await user.click(screen.getByRole('button', { name: 'サインイン' }))
-}
 
 const idsSchema = z.tuple([z.object({ id: z.uuid() })])
 

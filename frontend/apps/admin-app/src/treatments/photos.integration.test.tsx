@@ -1,19 +1,21 @@
 import { periodNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   dayFromToday,
   OWNER,
   SAKURA,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
@@ -45,42 +47,6 @@ const VIP = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 /** The address the seed data keeps a photo of a record at */
 const seedPhotoOf = (treatmentId: string, file: string): string =>
   `https://images.example.com/treatments/${treatmentId}/${file}`
-
-/** The path a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 const photosPart = (): Promise<HTMLElement> =>
   screen.findByRole('region', { name: '施術写真' })
@@ -242,8 +208,8 @@ describe('the photos and the statistics of the treatment records, against the AP
     // Assert
     expect(await heading('施術記録の内容')).toHaveFocus()
     expect(notifications()).toContain('施術写真を 2 枚足しました。')
-    expect(firstSight[0]).toBe(treatmentHrefOf(salonId, treatmentId))
-    expect(firstSight[1]).toContain('3 枚目：施術後の写真')
+    expect(firstSight()[0]).toBe(treatmentHrefOf(salonId, treatmentId))
+    expect(firstSight()[1]).toContain('3 枚目：施術後の写真')
     expect(await captions()).toEqual([
       '1 枚目：施術後の写真（正面）お客様の同意あり。サロンの中だけで使います。',
       '2 枚目：施術前の写真（正面）毛先の広がりお客様の同意あり。サロンの中だけで使います。',

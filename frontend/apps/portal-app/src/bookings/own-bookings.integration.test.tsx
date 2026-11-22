@@ -1,20 +1,18 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react'
+  address,
+  asTheApplicationKeeps,
+  firstSight,
+  heading,
+  statusMessages,
+} from '@beauty-salon-frontend/testing/screens'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   ANOTHER_CUSTOMER,
   bookThroughApi,
@@ -56,60 +54,17 @@ const STATUS_NAMES: Record<string, string> = {
   cancelled: 'キャンセル',
 }
 
-/** The address the application is at, as the router knows it */
-let address = ''
-
-/**
- * The path of the last screen, and what the page said in the commit that
- * showed it: before an answer of the API could arrive. A test that looks
- * at the page after waiting for something on it looks too late: by then,
- * a screen that showed what it had kept has read again.
- */
-let firstSight: [string, string] = ['', '']
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
 /**
  * The list kept nothing of what it had read before the write: the commit
  * that shows it again holds no list, it says that the bookings are being
  * read.
  */
 const expectListReadAnew = (): void => {
-  expect(firstSight).toEqual([
+  expect(firstSight()).toEqual([
     '/bookings',
     expect.stringContaining('予約を読み込んでいます'),
   ])
 }
-
-/** What the application keeps of what it read: for five minutes, it does not read again. */
-const asTheApplicationKeeps = (): QueryClient =>
-  new QueryClient({
-    defaultOptions: { queries: { retry: false, staleTime: 5 * 60 * 1000 } },
-  })
-
-const renderAt = (
-  path: string,
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-) =>
-  render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
 
 // --- What the tests ask of the database
 
@@ -293,11 +248,6 @@ const detailsIn = (region: HTMLElement): Record<string, string | null> =>
       ]),
   )
 
-const statusMessages = (): (string | null)[] =>
-  within(screen.getByRole('main'))
-    .getAllByRole('status')
-    .map((status) => status.textContent)
-
 const QUESTION = '予約をキャンセルしますか？'
 
 const cancelButton = () =>
@@ -378,7 +328,7 @@ describe('the bookings of a customer, against the API', () => {
 
       // Assert
       expect(await heading('予約の一覧')).toHaveFocus()
-      expect(address).toBe('/bookings')
+      expect(address()).toBe('/bookings')
       expect(
         within(
           screen.getByRole('navigation', { name: 'メインメニュー' }),
@@ -496,7 +446,7 @@ describe('the bookings of a customer, against the API', () => {
         'completed',
         'cancelled',
       ])
-      expect(address).toBe('/bookings?when=past')
+      expect(address()).toBe('/bookings?when=past')
       expect(link).toHaveFocus()
       expect(link).toHaveAttribute('aria-current', 'page')
       expect(
@@ -538,7 +488,7 @@ describe('the bookings of a customer, against the API', () => {
 
       // Assert
       expect(await heading('予約の内容')).toHaveFocus()
-      expect(address).toBe(`/bookings/${first?.id}`)
+      expect(address()).toBe(`/bookings/${first?.id}`)
       expect(
         await screen.findByRole('region', {
           name: `予約番号 ${first?.bookingNumber}`,
@@ -711,7 +661,7 @@ describe('the bookings of a customer, against the API', () => {
     it('should read the list again whenever it is shown, with what the application keeps: a booking the salon confirmed meanwhile is shown as confirmed', async () => {
       // Arrange
       await signedInAs(CUSTOMER)
-      renderAt('/bookings', asTheApplicationKeeps())
+      renderAt('/bookings', { client: asTheApplicationKeeps() })
       const user = userEvent.setup()
       const before = linesIn(await listNamed('これからの予約')).map((lines) =>
         lines.at(-1),
@@ -1043,7 +993,7 @@ describe('the bookings of a customer, against the API', () => {
         'キャンセル',
       ])
       expect(before).toEqual(['確定待ち', '確定待ち', '確定待ち'])
-      expect(address).toBe('/bookings')
+      expect(address()).toBe('/bookings')
       expect(await rowOf(id)).toMatchObject({ status: 'cancelled' })
     })
 
@@ -1188,7 +1138,7 @@ describe('the bookings of a customer, against the API', () => {
       // Assert
       expect(await heading('日時の変更')).toHaveFocus()
       expect(document.title).toBe(`日時の変更 | ${TITLE}`)
-      expect(address).toBe(
+      expect(address()).toBe(
         `/bookings/${id}/reschedule?staffId=${await staffId(MIKA)}&date=${date}`,
       )
       expect(await staffControl()).toHaveValue(await staffId(MIKA))
@@ -1243,7 +1193,7 @@ describe('the bookings of a customer, against the API', () => {
 
       // Assert
       expect(await heading('予約の内容')).toHaveFocus()
-      expect(address).toBe(`/bookings/${id}`)
+      expect(address()).toBe(`/bookings/${id}`)
       expect(statusMessages()).toContain('予約の日時を変更しました。')
       expect(
         detailsIn(
@@ -1320,7 +1270,7 @@ describe('the bookings of a customer, against the API', () => {
         '11:30',
         '12:00',
       ])
-      expect(address).toBe(
+      expect(address()).toBe(
         `/bookings/${id}/reschedule?staffId=${await staffId(HIROSHI)}&date=${date}`,
       )
 
@@ -1436,7 +1386,7 @@ describe('the bookings of a customer, against the API', () => {
       ).toBeVisible()
       expect(screen.queryByRole('radiogroup', { name: '開始時刻' })).toBeNull()
       expect(await staffControl()).toHaveValue(await staffId(MIKA))
-      expect(address).toBe(path)
+      expect(address()).toBe(path)
       expect(await rowOf(id)).toMatchObject({
         startTime: momentAt(date, '11:30'),
         staff: MIKA,
@@ -1574,7 +1524,7 @@ describe('the bookings of a customer, against the API', () => {
       // Arrange
       await signedInAs(CUSTOMER)
       const { id } = await book()
-      renderAt(`/bookings/${id}`, asTheApplicationKeeps())
+      renderAt(`/bookings/${id}`, { client: asTheApplicationKeeps() })
       const move = await screen.findByRole('link', { name: '日時を変更する' })
       await testApi().query(
         `update bookings set status = 'confirmed' where id = $1::uuid`,

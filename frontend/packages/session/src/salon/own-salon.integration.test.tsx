@@ -1,5 +1,6 @@
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { queryClientOfATest } from '@beauty-salon-frontend/testing/screens'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, type MockInstance, vi } from 'vitest'
@@ -18,9 +19,7 @@ const signInAs = (email: string) =>
   })
 
 const renderOwnSalon = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  })
+  const queryClient = queryClientOfATest()
 
   return renderHook(useOwnSalon, {
     wrapper: ({ children }: { children: ReactNode }) => (

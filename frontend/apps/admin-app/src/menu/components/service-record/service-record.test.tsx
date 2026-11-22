@@ -1,4 +1,5 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { termsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
@@ -7,15 +8,6 @@ import { aService } from '../examples'
 import * as serviceRecordStories from './service-record.stories'
 
 const stories = composeStories(serviceRecordStories)
-
-/** What a card says, term by term. */
-const termsOf = (card: string): [string, string][] =>
-  within(screen.getByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
-    ])
 
 describe('ServiceRecord', () => {
   itShouldBeAccessibleInEveryStory(stories)

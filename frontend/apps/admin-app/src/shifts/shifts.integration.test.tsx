@@ -1,19 +1,21 @@
 import { dayAfter, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  firstSight,
+  heading,
+  notifications,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   dayFromToday,
   MANAGER,
   OWNER,
   STYLIST,
   salonIdOf,
-  signInAs,
   THERAPIST,
   TOKYO,
 } from '../bookings/__tests__/arrangements'
@@ -49,42 +51,6 @@ import { mondayOf, weekNameOf } from './shift-week'
  * dates a test arranges. The weeks are those of today at the salon, or
  * weeks after it, so that the rows of dates a test arranges are shown.
  */
-
-/** The path a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
 
 /** The name of the table of the shifts of a week */
 const weekTableOf = (monday: string): string => `${weekNameOf(monday)}のシフト`
@@ -453,7 +419,7 @@ describe('the shifts, against the API', () => {
       storedDayOff(leave, '有給休暇'),
     ])
     // The schedule read before it was saved is not shown
-    expect(firstSight[1]).toContain('有給休暇')
+    expect(firstSight()[1]).toContain('有給休暇')
     expect(rowsOf('毎週')[0]).toEqual([
       '月曜日',
       '10:00〜19:00',

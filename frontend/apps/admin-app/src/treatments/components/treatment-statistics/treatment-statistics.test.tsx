@@ -1,19 +1,11 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import { termsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
 import * as treatmentStatisticsStories from './treatment-statistics.stories'
 
 const stories = composeStories(treatmentStatisticsStories)
-
-/** What a card says, term by term */
-const termsOf = (card: string): [string, string][] =>
-  within(screen.getByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
-    ])
 
 /** The rows of a table, cell by cell in the order they are shown */
 const rowsOf = (table: string): (string | null)[][] =>

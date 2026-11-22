@@ -5,18 +5,9 @@ import type {
   ReviewCrudCreate201,
 } from '@beauty-salon-frontend/api-client'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import {
-  type RenderResult,
-  render,
-  screen,
-  within,
-} from '@testing-library/react'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
+import { screen, within } from '@testing-library/react'
 import { expect } from 'vitest'
 import * as z from 'zod'
-import { App } from '../../App'
 import { accessTokenOf } from '../../bookings/__tests__/arrangements'
 
 /*
@@ -46,50 +37,6 @@ export const WRITTEN = {
   comment:
     'Really enjoyed my visit. The stylist understood exactly what I wanted.',
 }
-
-// --- The application at an address
-
-/** The address the application is at, as the router knows it */
-export const shown = { address: '', firstSight: ['', ''] }
-
-/**
- * Keeps the address, and the path of the last screen with what the page
- * said in the commit that showed it: before an answer of the API could
- * arrive. A test that looks at the page after waiting for something on it
- * looks too late: by then, a screen that showed what it had kept has read
- * again.
- */
-const Address = () => {
-  const { pathname, search } = useLocation()
-  shown.address = `${pathname}${search}`
-  useLayoutEffect(() => {
-    shown.firstSight = [
-      pathname,
-      document.querySelector('main')?.textContent ?? '',
-    ]
-  }, [pathname])
-
-  return null
-}
-
-/** What the application keeps of what it read: for five minutes, it does not read again. */
-export const asTheApplicationKeeps = (): QueryClient =>
-  new QueryClient({
-    defaultOptions: { queries: { retry: false, staleTime: 5 * 60 * 1000 } },
-  })
-
-export const renderAt = (
-  path: string,
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-): RenderResult =>
-  render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
 
 // --- What the tests ask of the database
 
@@ -439,9 +386,6 @@ export const dismissesReportOf = async (
 
 // --- What the tests read on the screen
 
-export const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 /** A part of a page: the region of its heading. */
 export const region = (name: string) => screen.findByRole('region', { name })
 
@@ -455,11 +399,6 @@ export const detailsIn = (part: HTMLElement): Record<string, string | null> =>
         term.nextElementSibling?.textContent ?? null,
       ]),
   )
-
-export const statusMessages = (): (string | null)[] =>
-  within(screen.getByRole('main'))
-    .getAllByRole('status')
-    .map((status) => status.textContent)
 
 /** What stands on the page, paragraph by paragraph. */
 export const paragraphsIn = (part: HTMLElement): (string | null)[] =>

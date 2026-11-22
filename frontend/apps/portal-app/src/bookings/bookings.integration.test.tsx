@@ -1,19 +1,17 @@
 import { applications } from '@beauty-salon-frontend/brand'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from '@testing-library/react'
+  address,
+  asTheApplicationKeeps,
+  heading,
+  statusMessages,
+} from '@beauty-salon-frontend/testing/screens'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   ANOTHER_CUSTOMER,
   accessTokenOf,
@@ -44,32 +42,6 @@ import {
 
 const TITLE = applications.portal.name
 
-/** The address the application is at, as the router knows it */
-let address = ''
-
-const Address = () => {
-  const { pathname, search } = useLocation()
-  address = `${pathname}${search}`
-
-  return null
-}
-
-const renderAt = (
-  path: string,
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-) =>
-  render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <Address />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
 // --- The controls of the booking screen
 
 const staffControl = () => screen.findByRole('combobox', { name: 'スタッフ' })
@@ -97,11 +69,6 @@ const detailsIn = (region: HTMLElement): Record<string, string | null> =>
       ]),
   )
 
-const statusMessages = (): (string | null)[] =>
-  within(screen.getByRole('main'))
-    .getAllByRole('status')
-    .map((status) => status.textContent)
-
 describe('the screens of a booking, against the API', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_MODE', 'production')
@@ -127,7 +94,7 @@ describe('the screens of a booking, against the API', () => {
 
       // Assert
       expect(await heading('予約する')).toHaveFocus()
-      expect(address).toBe(await bookingPathOf())
+      expect(address()).toBe(await bookingPathOf())
     })
 
     it('should offer no booking of a service that cannot be booked online, and none at a salon that takes no bookings', async () => {
@@ -171,7 +138,7 @@ describe('the screens of a booking, against the API', () => {
       expect(
         await screen.findByText('予約するには、サインインしてください。'),
       ).toBeVisible()
-      expect(address).toBe(path)
+      expect(address()).toBe(path)
 
       // Act
       const user = userEvent.setup()
@@ -188,7 +155,7 @@ describe('the screens of a booking, against the API', () => {
       // Assert
       expect(await heading('予約する')).toBeVisible()
       expect(document.title).toBe(`予約する | ${TITLE}`)
-      expect(address).toBe(path)
+      expect(address()).toBe(path)
       expect(await offeredTimes()).toEqual([
         '10:00',
         '10:30',
@@ -282,21 +249,21 @@ describe('the screens of a booking, against the API', () => {
       expect(dateControl()).toHaveValue(today)
       expect(dateControl()).toHaveAttribute('min', today)
       expect(screen.getByRole('button', { name: '前の日' })).toBeDisabled()
-      expect(address).toBe(path)
+      expect(address()).toBe(path)
 
       // Act
       await user.click(screen.getByRole('button', { name: '次の日' }))
 
       // Assert
       expect(dateControl()).toHaveValue(tomorrow)
-      expect(address).toBe(`${path}?date=${tomorrow}`)
+      expect(address()).toBe(`${path}?date=${tomorrow}`)
       expect(screen.getByRole('button', { name: '次の日' })).toHaveFocus()
 
       // Act
       await user.selectOptions(await staffControl(), MIKA)
 
       // Assert
-      expect(address).toBe(
+      expect(address()).toBe(
         `${path}?staffId=${await staffId(MIKA)}&date=${tomorrow}`,
       )
       expect(await staffControl()).toHaveFocus()
@@ -321,7 +288,7 @@ describe('the screens of a booking, against the API', () => {
       fireEvent.change(dateControl(), { target: { value: date } })
 
       // Assert
-      expect(address).toBe(`${path}?date=${date}`)
+      expect(address()).toBe(`${path}?date=${date}`)
       expect(await offeredTimes()).toEqual(['11:00', '11:30', '12:00'])
 
       // Act
@@ -330,7 +297,7 @@ describe('the screens of a booking, against the API', () => {
       })
 
       // Assert
-      expect(address).toBe(`${path}?date=${date}`)
+      expect(address()).toBe(`${path}?date=${date}`)
       expect(dateControl()).toHaveValue(date)
     })
 
@@ -504,7 +471,7 @@ describe('the screens of a booking, against the API', () => {
         startTime: momentAt(date, '10:00'),
         customerRequest: '前髪は短めにお願いします',
       })
-      expect(address).toBe(`/bookings/${booked.id}`)
+      expect(address()).toBe(`/bookings/${booked.id}`)
       expect(
         detailsIn(
           await screen.findByRole('region', {
@@ -1020,7 +987,7 @@ describe('the screens of a booking, against the API', () => {
           name: `予約番号 ${bookingNumber}`,
         }),
       ).toBeVisible()
-      expect(address).toBe(`/bookings/${id}`)
+      expect(address()).toBe(`/bookings/${id}`)
     })
 
     it('should show a booking of the customer: where it stands, where and what it is, with whom, when, and what it comes to', async () => {
@@ -1086,14 +1053,13 @@ describe('the screens of a booking, against the API', () => {
 
     it('should read a booking again when its page is opened again, and show it as the salon confirmed it since', async () => {
       // Arrange: the application does not read again for five minutes what
-      // it has read (main.tsx), and the salon confirmed the booking after
+      // it has read (`startApplication`), and the salon confirmed the
+      // booking after
       // its page was shown
       await signedInAs(CUSTOMER)
       const { id } = await book()
-      const client = new QueryClient({
-        defaultOptions: { queries: { retry: false, staleTime: 5 * 60 * 1000 } },
-      })
-      const first = renderAt(`/bookings/${id}`, client)
+      const client = asTheApplicationKeeps()
+      const first = renderAt(`/bookings/${id}`, { client })
       expect(
         detailsIn(await screen.findByRole('region', { name: /^予約番号 / })),
       ).toMatchObject({ 状態: expect.stringContaining('確定待ち') })
@@ -1104,7 +1070,7 @@ describe('the screens of a booking, against the API', () => {
       )
 
       // Act
-      renderAt(`/bookings/${id}`, client)
+      renderAt(`/bookings/${id}`, { client })
 
       // Assert
       expect(await screen.findByText('確定')).toBeVisible()

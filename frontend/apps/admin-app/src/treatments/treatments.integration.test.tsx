@@ -1,11 +1,15 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { signInAs } from '@beauty-salon-frontend/testing/api'
+import {
+  firstSight,
+  heading,
+  notifications,
+  termsOf,
+} from '@beauty-salon-frontend/testing/screens'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLayoutEffect } from 'react'
-import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../App'
+import { renderAt } from '../__tests__/screens'
 import {
   ADMIN,
   arrange,
@@ -17,7 +21,6 @@ import {
   SAKURA,
   STYLIST,
   salonIdOf,
-  signInAs,
   TOKYO,
   YUKI,
 } from '../bookings/__tests__/arrangements'
@@ -62,42 +65,6 @@ const VIP = { email: 'vip.customer@example.com', name: 'Nakamura Hiroshi' }
 const MASK = 'Intensive Hair Mask 250ml（TREAT001）'
 const SHAMPOO = 'Professional Shampoo 500ml（SHMP001）'
 
-/** The path a screen was opened at, and what the page showed in the commit that opened it */
-let firstSight: [string, string] = ['', '']
-
-const FirstSight = () => {
-  const { pathname } = useLocation()
-  useLayoutEffect(() => {
-    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
-  }, [pathname])
-
-  return null
-}
-
-const renderAt = (path: string) =>
-  render(
-    <QueryClientProvider
-      client={
-        new QueryClient({ defaultOptions: { queries: { retry: false } } })
-      }
-    >
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-        <FirstSight />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  )
-
-const heading = (name: string) =>
-  screen.findByRole('heading', { level: 1, name })
-
-/** What the application says in its notifications. */
-const notifications = (): string[] =>
-  screen
-    .getAllByRole('status')
-    .map((region) => region.textContent ?? '')
-    .filter((said) => said !== '')
-
 /** The rows of a table, each as the texts of its cells, but for when a record was written. */
 const rowsOf = (table: HTMLElement): (string | null)[][] =>
   within(table)
@@ -120,15 +87,6 @@ const materialsOf = (): (string | null)[][] =>
         ...within(row).queryAllByRole('cell'),
       ].map((cell) => cell.textContent),
     )
-
-/** What a card says, term by term */
-const termsOf = (card: string): [string, string][] =>
-  within(screen.getByRole('region', { name: card }))
-    .getAllByRole('term')
-    .map((term) => [
-      term.textContent ?? '',
-      term.nextElementSibling?.textContent ?? '',
-    ])
 
 /** Waits until the form of a record is shown. */
 const theForm = (): Promise<HTMLElement> =>
@@ -784,9 +742,9 @@ describe('the treatment records, against the API', () => {
     expect(notifications()).toContain(
       `${SAKURA.name} 様の施術記録を削除しました。`,
     )
-    expect(firstSight[0]).toBe(treatmentsHrefOf(salonId))
+    expect(firstSight()[0]).toBe(treatmentsHrefOf(salonId))
     // Her row is the one with a men's cut
-    expect(firstSight[1]).not.toContain('Mens Cut')
+    expect(firstSight()[1]).not.toContain('Mens Cut')
     expect(within(table).getAllByRole('rowheader')).toHaveLength(2)
     expect(await storedTreatmentOf(bookingId)).toBeUndefined()
   })
