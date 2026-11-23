@@ -3,6 +3,7 @@ import {
   type ModelsUserResponse,
 } from '@beauty-salon-frontend/api-client'
 import { type StoredSession, sessionStore } from '@beauty-salon-frontend/io'
+import { changeInAnotherTab } from '@beauty-salon-frontend/testing'
 import {
   empty,
   OUTSIDE_THE_CONTRACT,
@@ -256,10 +257,7 @@ describe('the session of an application', () => {
       await waitFor(() => expect(result.current.type).toBe('signedIn'))
 
       // Act
-      localStorage.removeItem(STORAGE_KEY)
-      window.dispatchEvent(
-        new StorageEvent('storage', { key: STORAGE_KEY, newValue: null }),
-      )
+      changeInAnotherTab(STORAGE_KEY, null)
 
       // Assert
       await waitFor(() => expect(result.current).toEqual({ type: 'signedOut' }))
@@ -329,11 +327,10 @@ describe('the session of an application', () => {
       const before = states.length
 
       // Act: somebody else signs in, in another tab
-      localStorage.setItem(
+      changeInAnotherTab(
         STORAGE_KEY,
         new URLSearchParams(sessionOf(ICHIRO, 1)).toString(),
       )
-      window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }))
 
       // Assert
       await waitFor(() => expect(result.current).toEqual(signedIn(ICHIRO)))

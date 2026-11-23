@@ -9,6 +9,7 @@ export {
 export { PDF_BYTES, PDF_TEXT, PNG_BYTES } from './fixtures/file-bytes'
 export { type SavedFile, savedFiles } from './setup/saved-files'
 export { setWindowWidth } from './setup/window-width'
+export { changeInAnotherTab, refuseStorage } from './storage/browser-storage'
 export { itShouldBeSentByTheEnterKey } from './stories/enter-key'
 export { itShouldBeAccessibleInEveryStory } from './stories/story-accessibility'
 export { atTheWidthOfTheStory } from './stories/story-width'

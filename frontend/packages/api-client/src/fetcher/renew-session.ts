@@ -1,4 +1,8 @@
-import { type StoredSession, sessionStore } from '@beauty-salon-frontend/io'
+import {
+  languageStore,
+  type StoredSession,
+  sessionStore,
+} from '@beauty-salon-frontend/io'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
 import type { AuthCrudRefreshToken200 } from '../generated/models/authCrudRefreshToken200'
@@ -42,7 +46,10 @@ const requestRenewal = (
 ): Promise<Renewal> =>
   fetch(`${origin}${SESSION_RENEWAL_PATH}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept-Language': languageStore.read(),
+    },
     body: JSON.stringify({ refreshToken }),
     signal: AbortSignal.timeout(RENEWAL_TIMEOUT_MS),
   })

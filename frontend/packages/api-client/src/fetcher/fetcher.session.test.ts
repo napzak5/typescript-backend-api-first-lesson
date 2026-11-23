@@ -1,4 +1,5 @@
 import type { StoredSession } from '@beauty-salon-frontend/io'
+import { refuseStorage } from '@beauty-salon-frontend/testing'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const API_ORIGIN = 'http://localhost:3000'
@@ -116,12 +117,13 @@ const stubApi = ({
 /** Fresh copies of the fetch function and of the stored session: no renewal under way, no listeners. */
 const loadFresh = async () => {
   vi.resetModules()
-  const [{ customInstance }, { sessionStore }] = await Promise.all([
-    import('./fetcher'),
-    import('@beauty-salon-frontend/io'),
-  ])
+  const [{ customInstance }, { sessionStore, languageStore }] =
+    await Promise.all([
+      import('./fetcher'),
+      import('@beauty-salon-frontend/io'),
+    ])
 
-  return { call: customInstance<HttpResponse>, sessionStore }
+  return { call: customInstance<HttpResponse>, sessionStore, languageStore }
 }
 
 /** As another tab of the application stores a session: this tab is not told. */
@@ -168,12 +170,7 @@ describe('customInstance with a session', () => {
       // Arrange
       const sent = stubApi({ answer: () => json(200, PROFILE) })
       const { call } = await loadFresh()
-      vi.spyOn(globalThis, 'localStorage', 'get').mockImplementation(() => {
-        throw new DOMException(
-          'Access is denied for this document.',
-          'SecurityError',
-        )
-      })
+      refuseStorage()
 
       // Act
       const response = await call(RESOURCE, { method: 'GET' })
@@ -223,6 +220,7 @@ describe('customInstance with a session', () => {
       // Assert
       const [, init] = fetchMock.mock.calls[0] ?? []
       expect([...new Headers(init?.headers)]).toEqual([
+        ['accept-language', 'ja'],
         ['authorization', 'Bearer access-2'],
         ['content-type', 'application/json'],
         ['x-request-id', 'r_1'],
@@ -231,6 +229,31 @@ describe('customInstance with a session', () => {
   })
 
   describe('an access token that has expired', () => {
+    it('should say the language of the page in every request, in the one that renews the session too', async () => {
+      // Arrange
+      const sent = stubApi()
+      const { call, sessionStore, languageStore } = await loadFresh()
+      sessionStore.write(FIRST)
+      languageStore.choose('en')
+
+      // Act
+      await call(RESOURCE, { method: 'GET' })
+
+      // Assert
+      expect(sent.map(({ path }) => path)).toEqual([
+        RESOURCE,
+        RENEWAL,
+        RESOURCE,
+      ])
+      expect(
+        vi
+          .mocked(fetch)
+          .mock.calls.map(([, init]) =>
+            new Headers(init?.headers).get('Accept-Language'),
+          ),
+      ).toEqual(['en', 'en', 'en'])
+    })
+
     it('should renew the session once, store it, and send the request again with the new token', async () => {
       // Arrange
       const sent = stubApi()

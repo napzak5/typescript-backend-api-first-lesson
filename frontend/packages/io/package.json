@@ -1,4 +1,7 @@
 {
+  "dependencies": {
+    "@beauty-salon-shared/i18n": "workspace:*"
+  },
   "devDependencies": {
     "@beauty-salon-frontend/testing": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
