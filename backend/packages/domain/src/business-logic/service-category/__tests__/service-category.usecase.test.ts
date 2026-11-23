@@ -48,7 +48,11 @@ const salonNotFound = {
 }
 const categoryNotFound = {
   type: 'error',
-  error: expect.objectContaining({ type: 'notFound', id: CATEGORY_ID }),
+  error: {
+    type: 'notFound',
+    entity: entityMessages.serviceCategory,
+    id: CATEGORY_ID,
+  },
 }
 const storedRowIsCorrupt = {
   type: 'error',

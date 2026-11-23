@@ -59,7 +59,7 @@ const salonNotFound = {
 }
 const serviceNotFound = (id: string) => ({
   type: 'error',
-  error: expect.objectContaining({ type: 'notFound', id }),
+  error: { type: 'notFound', entity: entityMessages.service, id },
 })
 const storedRowIsCorrupt = {
   type: 'error',

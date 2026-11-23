@@ -1,5 +1,9 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  authMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   APP_CODE,
@@ -62,9 +66,9 @@ const conflict = {
   error: { type: 'conflict', message: expect.any(String) },
 }
 
-const notFound = (id: string) => ({
+const notFound = (entity: LocalizedText, id: string) => ({
   type: 'error',
-  error: { type: 'notFound', id },
+  error: { type: 'notFound', entity, id },
 })
 
 /** The broken rules of a failed result, as `field:rule`; empty for a success. */
@@ -557,7 +561,9 @@ describe('RevokeSessionUseCase', () => {
 
     const result = await revoke(dependencies, OTHER_SESSION_ID)
 
-    expect(result).toMatchObject(notFound(OTHER_SESSION_ID))
+    expect(result).toMatchObject(
+      notFound(entityMessages.session, OTHER_SESSION_ID),
+    )
     expect(mails).toEqual([])
   })
 
@@ -648,7 +654,7 @@ describe('GetUserUseCase', () => {
 
     const result = await getUser(dependencies, OTHER_USER_ID)
 
-    expect(result).toMatchObject(notFound(OTHER_USER_ID))
+    expect(result).toMatchObject(notFound(entityMessages.user, OTHER_USER_ID))
   })
 
   it.each(malformedIds)(
@@ -774,7 +780,7 @@ describe('UnlockAccountUseCase', () => {
 
     const result = await unlock(dependencies, OTHER_USER_ID)
 
-    expect(result).toMatchObject(notFound(OTHER_USER_ID))
+    expect(result).toMatchObject(notFound(entityMessages.user, OTHER_USER_ID))
     expect(dependencies.userRepository.unlock).not.toHaveBeenCalled()
   })
 
@@ -1015,7 +1021,7 @@ describe('ResetTwoFactorUseCase', () => {
 
     const result = await reset(dependencies, OTHER_USER_ID)
 
-    expect(result).toMatchObject(notFound(OTHER_USER_ID))
+    expect(result).toMatchObject(notFound(entityMessages.user, OTHER_USER_ID))
     expect(dependencies.userRepository.disableTwoFactor).not.toHaveBeenCalled()
     expect(mails).toEqual([])
   })
@@ -1085,7 +1091,7 @@ describe('ResetTwoFactorUseCase', () => {
 
     const result = await reset(dependencies, OTHER_USER_ID)
 
-    expect(result).toMatchObject(notFound(OTHER_USER_ID))
+    expect(result).toMatchObject(notFound(entityMessages.user, OTHER_USER_ID))
   })
 
   it('reports a changed user that cannot be presented as a database error', async () => {
