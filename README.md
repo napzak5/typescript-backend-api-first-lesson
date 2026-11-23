@@ -148,7 +148,7 @@ accounts and their roles are listed in
 │   └── e2e/                  # Browser tests of the applications (Playwright)
 │
 ├── shared-config/              # Shared TypeScript configuration, the build of the packages, Biome plugins
-├── shared-i18n/                # The languages (English, Japanese), how one is chosen, and the messages
+├── shared-i18n/                # The languages (English, Japanese), how one is chosen, how a value is written in each, and the messages
 ├── scripts/                    # Repository scripts (run with node)
 └── docs/                      # Documentation
 ```
