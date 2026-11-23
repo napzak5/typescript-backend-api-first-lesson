@@ -1,4 +1,7 @@
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  staffAccountMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { actors, dataOf } from '../../../__tests__/fixtures/auth-fixtures'
 import { OTHER_SALON_ID, SALON_ID } from '../../../__tests__/fixtures/fixtures'
@@ -48,11 +51,11 @@ describe('the refusals of the accounts of staff members', () => {
   it('tells an actor apart which of the two things they may not do to their own account', () => {
     expect(ownRoleStays()).toEqual({
       type: 'conflict',
-      message: 'You cannot change the role of your own account',
+      message: staffAccountMessages.ownRoleStays,
     })
     expect(ownAccountStaysLinked()).toEqual({
       type: 'conflict',
-      message: 'You cannot unlink your own account',
+      message: staffAccountMessages.ownAccountStaysLinked,
     })
   })
 })

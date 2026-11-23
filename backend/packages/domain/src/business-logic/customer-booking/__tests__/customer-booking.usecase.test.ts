@@ -1,5 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
+  availableSlotMessages,
   bookingMessages,
   entityMessages,
   ruleMessages,
@@ -70,7 +72,9 @@ const validationMessageOf = (
     : null
 
 /** The message of a conflict; null for anything else. */
-const conflictOf = (result: Result<unknown, DomainError>): string | null =>
+const conflictOf = (
+  result: Result<unknown, DomainError>,
+): LocalizedText | null =>
   result.type === 'error' && result.error.type === 'conflict'
     ? result.error.message
     : null
@@ -586,29 +590,17 @@ describe('CreateCustomerBookingUseCase', () => {
     )
   })
 
-  it.each<[CustomerBookingCreation, string]>([
-    [
-      { type: 'timeZoneUnknown' },
-      'The time zone of the salon is not one that is known, so the times of its hours cannot be told; correct the time zone of the salon first',
-    ],
-    [
-      { type: 'customerNotAccepted' },
-      'This customer profile does not take bookings online; contact the salon to book',
-    ],
-    [
-      { type: 'notASlot' },
-      'The staff member has no available slot for the service at that time; choose one of the available slots of the salon',
-    ],
-    [
-      { type: 'customerOccupied' },
-      'The customer has another booking at that time; cancel it first or choose another time',
-    ],
+  it.each<[CustomerBookingCreation, LocalizedText]>([
+    [{ type: 'timeZoneUnknown' }, availableSlotMessages.timeZoneUnknown],
+    [{ type: 'customerNotAccepted' }, bookingMessages.noOnlineBooking],
+    [{ type: 'notASlot' }, bookingMessages.noAvailableSlot],
+    [{ type: 'customerOccupied' }, bookingMessages.customerHasAnotherBooking],
   ])(
     'answers $type with a conflict that says what stands in the way',
     async (creation, message) => {
       const { result } = book(wanting(), answering(creation))
 
-      expect(conflictOf(await result)).toBe(message)
+      expect(conflictOf(await result)).toEqual(message)
     },
   )
 
@@ -818,7 +810,7 @@ describe('CancelCustomerBookingUseCase', () => {
     )
   })
 
-  it.each<[BookingStatusChange, string]>([
+  it.each<[BookingStatusChange, LocalizedText]>([
     [
       {
         type: 'statusDoesNotAllow',
@@ -826,20 +818,15 @@ describe('CancelCustomerBookingUseCase', () => {
         status: 'completed',
         allowed: ['draft', 'pending', 'confirmed'],
       },
-      'A booking that is completed cannot be cancelled; its status has to be draft or pending or confirmed',
+      bookingMessages.statusDoesNotAllow('cancelAsCustomer', 'completed', [
+        'draft',
+        'pending',
+        'confirmed',
+      ]),
     ],
-    [
-      { type: 'alreadyBegun' },
-      'The time of the booking has come, so the customer cannot cancel it any more; the salon notes what became of the visit',
-    ],
-    [
-      { type: 'notBegunYet' },
-      'The booking has not begun yet, so nobody failed to come to it; a booking that will not take place is cancelled',
-    ],
-    [
-      { type: 'actualTimesOutOfOrder' },
-      'The actual end has to be after the actual start, and one of the two is a time the booking already has; send both times',
-    ],
+    [{ type: 'alreadyBegun' }, bookingMessages.customerCancelsUntilTime],
+    [{ type: 'notBegunYet' }, bookingMessages.notBegunYet],
+    [{ type: 'actualTimesOutOfOrder' }, bookingMessages.actualTimesOutOfOrder],
   ])('answers $type with a conflict that says why', async (change, message) => {
     const { result } = cancel(
       BOOKING_ID,
@@ -847,7 +834,7 @@ describe('CancelCustomerBookingUseCase', () => {
       answering(change),
     )
 
-    expect(conflictOf(await result)).toBe(message)
+    expect(conflictOf(await result)).toEqual(message)
   })
 
   it('answers with the error of the repository', async () => {
@@ -997,45 +984,31 @@ describe('RescheduleCustomerBookingUseCase', () => {
     )
   })
 
-  it.each<[CustomerBookingReschedule, string]>([
+  it.each<[CustomerBookingReschedule, LocalizedText]>([
     [
       {
         type: 'statusDoesNotAllow',
         status: 'in_progress',
         allowed: ['draft', 'pending', 'confirmed'],
       },
-      'A booking that is in_progress cannot be rescheduled; its status has to be draft or pending or confirmed',
+      bookingMessages.cannotBeRescheduled('in_progress', [
+        'draft',
+        'pending',
+        'confirmed',
+      ]),
     ],
-    [
-      { type: 'alreadyBegun' },
-      'The time of the booking has come, so the customer cannot move it any more; the salon notes what became of the visit',
-    ],
-    [
-      { type: 'notOneSlot' },
-      'The booking has several services, or a service with another staff member than the one in charge, so the customer cannot move it; contact the salon to move it',
-    ],
-    [
-      { type: 'timeZoneUnknown' },
-      'The time zone of the salon is not one that is known, so the times of its hours cannot be told; correct the time zone of the salon first',
-    ],
-    [
-      { type: 'customerNotAccepted' },
-      'This customer profile does not take bookings online; contact the salon to book',
-    ],
-    [
-      { type: 'notASlot' },
-      'The staff member has no available slot for the service at that time; choose one of the available slots of the salon',
-    ],
-    [
-      { type: 'customerOccupied' },
-      'The customer has another booking at that time; cancel it first or choose another time',
-    ],
+    [{ type: 'alreadyBegun' }, bookingMessages.customerMovesUntilTime],
+    [{ type: 'notOneSlot' }, bookingMessages.notMovedByCustomer],
+    [{ type: 'timeZoneUnknown' }, availableSlotMessages.timeZoneUnknown],
+    [{ type: 'customerNotAccepted' }, bookingMessages.noOnlineBooking],
+    [{ type: 'notASlot' }, bookingMessages.noAvailableSlot],
+    [{ type: 'customerOccupied' }, bookingMessages.customerHasAnotherBooking],
   ])(
     'answers $type with a conflict that says what stands in the way',
     async (rebooked, message) => {
       const { result } = reschedule(BOOKING_ID, to(), answering(rebooked))
 
-      expect(conflictOf(await result)).toBe(message)
+      expect(conflictOf(await result)).toEqual(message)
     },
   )
 

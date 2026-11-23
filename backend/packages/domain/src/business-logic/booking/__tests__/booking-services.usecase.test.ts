@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   bookingMessages,
   entityMessages,
@@ -51,9 +52,8 @@ const lineNotFound = Result.error(
 )
 
 const INVALID_LINE = 'Invalid booking service'
-const TIME_ZONE_UNKNOWN =
-  'The time zone of the salon is not one that is known, so the day of the visit cannot be told; correct the time zone of the salon first'
-const AMOUNTS_TOO_BIG = 'The amounts of a booking must not exceed 2147483647'
+const TIME_ZONE_UNKNOWN = bookingMessages.timeZoneUnknown
+const AMOUNTS_TOO_BIG = bookingMessages.amountsWithinLimit(2147483647)
 
 /** The broken rules of a failed result, as `field:rule`; empty for a success. */
 const rulesOf = (result: Result<unknown, DomainError>): string[] =>
@@ -523,44 +523,49 @@ describe('CreateBookingServiceUseCase', () => {
     })
   })
 
-  it.each<[BookingServiceAddition, string]>([
+  it.each<[BookingServiceAddition, LocalizedText]>([
     [
       {
         type: 'statusDoesNotAllow',
         status: 'completed',
         allowed: ['draft', 'pending', 'confirmed', 'in_progress'],
       },
-      'The services of a booking that is completed cannot be changed; its status has to be draft or pending or confirmed or in_progress',
+      bookingMessages.servicesAreSettled('completed', [
+        'draft',
+        'pending',
+        'confirmed',
+        'in_progress',
+      ]),
     ],
     [
       { type: 'statusDoesNotAllow', status: 'cancelled', allowed: ['pending'] },
-      'The services of a booking that is cancelled cannot be changed; its status has to be pending',
+      bookingMessages.servicesAreSettled('cancelled', ['pending']),
     ],
     [
       { type: 'tooManyServices', limit: 20 },
-      'A booking has at most 20 services',
+      bookingMessages.atMostServices(20),
     ],
-    [{ type: 'tooManyServices', limit: 3 }, 'A booking has at most 3 services'],
+    [{ type: 'tooManyServices', limit: 3 }, bookingMessages.atMostServices(3)],
     [
       { type: 'visitTooLong', hours: 24 },
-      'Every service of a booking begins within 24 hours of the earliest one',
+      bookingMessages.servicesBeginWithinHours(24),
     ],
     [
       { type: 'visitTooLong', hours: 8 },
-      'Every service of a booking begins within 8 hours of the earliest one',
+      bookingMessages.servicesBeginWithinHours(8),
     ],
     [{ type: 'timeZoneUnknown' }, TIME_ZONE_UNKNOWN],
     [{ type: 'amountsTooBig' }, AMOUNTS_TOO_BIG],
     [
       { type: 'staffOccupied', staffIds: [STAFF_MEMBER_ID] },
-      `Other bookings occupy staff member ${STAFF_MEMBER_ID} at a time of this booking`,
+      bookingMessages.staffOccupied([STAFF_MEMBER_ID]),
     ],
     [
       {
         type: 'staffOccupied',
         staffIds: [STAFF_MEMBER_ID, OTHER_STAFF_MEMBER_ID],
       },
-      `Other bookings occupy staff members ${STAFF_MEMBER_ID}, ${OTHER_STAFF_MEMBER_ID} at a time of this booking`,
+      bookingMessages.staffOccupied([STAFF_MEMBER_ID, OTHER_STAFF_MEMBER_ID]),
     ],
   ])(
     'reports %j as a conflict that says what stands in the way',
@@ -673,19 +678,21 @@ describe('DeleteBookingServiceUseCase', () => {
     ).toEqual(lineNotFound)
   })
 
-  it.each<[BookingServiceRemoval, string]>([
+  it.each<[BookingServiceRemoval, LocalizedText]>([
     [
       {
         type: 'statusDoesNotAllow',
         status: 'no_show',
         allowed: ['draft', 'pending', 'confirmed', 'in_progress'],
       },
-      'The services of a booking that is no_show cannot be changed; its status has to be draft or pending or confirmed or in_progress',
+      bookingMessages.servicesAreSettled('no_show', [
+        'draft',
+        'pending',
+        'confirmed',
+        'in_progress',
+      ]),
     ],
-    [
-      { type: 'lastService' },
-      'A booking keeps at least one service; cancel a booking that will not take place',
-    ],
+    [{ type: 'lastService' }, bookingMessages.keepsAtLeastOneService],
     [{ type: 'timeZoneUnknown' }, TIME_ZONE_UNKNOWN],
     [{ type: 'amountsTooBig' }, AMOUNTS_TOO_BIG],
   ])(

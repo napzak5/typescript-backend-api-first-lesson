@@ -57,10 +57,10 @@ const accountNotFound = {
   },
 }
 const ownRoleStays = Result.error(
-  DomainErrors.conflict('You cannot change the role of your own account'),
+  DomainErrors.conflict(staffAccountMessages.ownRoleStays),
 )
 const ownAccountStaysLinked = Result.error(
-  DomainErrors.conflict('You cannot unlink your own account'),
+  DomainErrors.conflict(staffAccountMessages.ownAccountStaysLinked),
 )
 
 /** The broken rules of a failed result, as `field:rule`; empty for a success. */

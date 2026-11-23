@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   entityMessages,
   paymentMessages,
@@ -295,21 +296,17 @@ describe('RecordPaymentUseCase', () => {
     ).toEqual(Result.error(DomainErrors.notFound(entityMessages.sale, SALE_ID)))
   })
 
-  it.each<[string, PaymentRecording, string]>([
-    [
-      'a void sale',
-      { type: 'void' },
-      'The sale is void; a void sale takes no payment',
-    ],
+  it.each<[string, PaymentRecording, LocalizedText]>([
+    ['a void sale', { type: 'void' }, paymentMessages.saleIsVoid],
     [
       'a sale of which a payment was refunded',
       { type: 'refundMade' },
-      'A payment of the sale was refunded; a sale with a refund takes no further payment',
+      paymentMessages.saleHasRefund,
     ],
     [
       'a sale that is paid',
       { type: 'nothingLeft' },
-      'Nothing is left to pay of the sale',
+      paymentMessages.nothingLeftToPay,
     ],
   ])('reports %s as a conflict', async (_case, outcome, message) => {
     expect(await record(paymentDependencies(recording(outcome)))).toEqual({
@@ -646,8 +643,7 @@ describe('RefundPaymentUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'Only a payment that is completed is refunded; a payment is refunded once',
+        message: paymentMessages.onlyCompletedIsRefunded,
       },
     })
   })

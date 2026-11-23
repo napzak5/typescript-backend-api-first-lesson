@@ -310,7 +310,7 @@ describe('CreateBookingUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message: `Other bookings occupy staff member ${STAFF_MEMBER_ID} at a time of this booking`,
+        message: bookingMessages.staffOccupied([STAFF_MEMBER_ID]),
       },
     })
   })
@@ -329,7 +329,10 @@ describe('CreateBookingUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message: `Other bookings occupy staff members ${STAFF_MEMBER_ID}, ${OTHER_STAFF_MEMBER_ID} at a time of this booking`,
+        message: bookingMessages.staffOccupied([
+          STAFF_MEMBER_ID,
+          OTHER_STAFF_MEMBER_ID,
+        ]),
       },
     })
   })
@@ -343,8 +346,7 @@ describe('CreateBookingUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The time zone of the salon is not one that is known, so the day of the visit cannot be told; correct the time zone of the salon first',
+        message: bookingMessages.timeZoneUnknown,
       },
     })
   })

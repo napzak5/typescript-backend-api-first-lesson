@@ -780,6 +780,27 @@ describe('Customer bulk API', () => {
       expect(linked?.customerId).toBe(first)
     })
 
+    it('should name the customer a booking refers to with its ID as it is, in Japanese when Japanese is asked for', async () => {
+      // Arrange
+      const customer = await stored()
+      await insertBooking(customer, 'confirmed')
+
+      // Act
+      const response = await bulkDelete({ ids: [customer] }).set(
+        'Accept-Language',
+        'ja',
+      )
+
+      // Assert
+      expectProblem(response, notAllowed)
+      expect(response.headers['content-language']).toBe('ja')
+      expect(response.body.title).toBe('この操作はできません')
+      expect(response.body.detail).toBe(
+        `顧客 ${customer} は削除できません。終わっていない予約が参照しています`,
+      )
+      expect((await rowsOf([customer]))[0]?.deletedAt).toBeNull()
+    })
+
     it.each<[string, object, string[]]>([
       ['no IDs', {}, ['ids:invalid_type']],
       ['an ID twice', { ids: [UNKNOWN_ID, UNKNOWN_ID] }, ['ids.1:custom']],

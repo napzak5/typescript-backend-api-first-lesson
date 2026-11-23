@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   entityMessages,
+  reviewMessages,
   reviewReportMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -304,9 +305,7 @@ describe('ReportReviewUseCase', () => {
     [
       'a second report of the account as a conflict',
       { type: 'reportedAlready' },
-      DomainErrors.conflict(
-        'The account has reported the review already; an account reports a review once',
-      ),
+      DomainErrors.conflict(reviewMessages.alreadyReported),
     ],
   ])('answers %s', async (_, outcome, error) => {
     const dependencies = reviewDependencies(reporting(outcome))
@@ -673,9 +672,7 @@ describe('DismissReviewReportUseCase', () => {
 
     expect(await dismiss(dependencies)).toEqual({
       type: 'error',
-      error: DomainErrors.conflict(
-        'The report is dismissed already; a report is dismissed once',
-      ),
+      error: DomainErrors.conflict(reviewReportMessages.alreadyDismissed),
     })
   })
 

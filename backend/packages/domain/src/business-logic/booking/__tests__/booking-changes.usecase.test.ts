@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   bookingMessages,
   entityMessages,
@@ -534,33 +535,34 @@ describe('RescheduleBookingUseCase', () => {
     },
   )
 
-  it.each<[BookingReschedule, string]>([
+  it.each<[BookingReschedule, LocalizedText]>([
     [
       {
         type: 'statusDoesNotAllow',
         status: 'in_progress',
         allowed: ['draft', 'pending', 'confirmed'],
       },
-      'A booking that is in_progress cannot be rescheduled; its status has to be draft or pending or confirmed',
+      bookingMessages.cannotBeRescheduled('in_progress', [
+        'draft',
+        'pending',
+        'confirmed',
+      ]),
     ],
     [
       { type: 'statusDoesNotAllow', status: 'cancelled', allowed: ['pending'] },
-      'A booking that is cancelled cannot be rescheduled; its status has to be pending',
+      bookingMessages.cannotBeRescheduled('cancelled', ['pending']),
     ],
-    [
-      { type: 'timeZoneUnknown' },
-      'The time zone of the salon is not one that is known, so the day of the visit cannot be told; correct the time zone of the salon first',
-    ],
+    [{ type: 'timeZoneUnknown' }, bookingMessages.timeZoneUnknown],
     [
       { type: 'staffOccupied', staffIds: [STAFF_MEMBER_ID] },
-      `Other bookings occupy staff member ${STAFF_MEMBER_ID} at a time of this booking`,
+      bookingMessages.staffOccupied([STAFF_MEMBER_ID]),
     ],
     [
       {
         type: 'staffOccupied',
         staffIds: [STAFF_MEMBER_ID, OTHER_STAFF_MEMBER_ID],
       },
-      `Other bookings occupy staff members ${STAFF_MEMBER_ID}, ${OTHER_STAFF_MEMBER_ID} at a time of this booking`,
+      bookingMessages.staffOccupied([STAFF_MEMBER_ID, OTHER_STAFF_MEMBER_ID]),
     ],
   ])(
     'reports %j as a conflict that says what stands in the way',
@@ -627,30 +629,30 @@ describe('DeleteBookingUseCase', () => {
     },
   )
 
-  it.each<[BookingDeletion, string]>([
+  it.each<[BookingDeletion, LocalizedText]>([
     [
       { type: 'referredTo', by: ['sale'] },
-      'The booking cannot be deleted: a sale refers to it',
+      bookingMessages.referredTo(['sale']),
     ],
     [
       { type: 'referredTo', by: ['treatmentRecord'] },
-      'The booking cannot be deleted: a treatment record refers to it',
+      bookingMessages.referredTo(['treatmentRecord']),
     ],
     [
       { type: 'referredTo', by: ['review'] },
-      'The booking cannot be deleted: a review refers to it',
+      bookingMessages.referredTo(['review']),
     ],
     [
       { type: 'referredTo', by: ['sale', 'treatmentRecord'] },
-      'The booking cannot be deleted: a sale and a treatment record refer to it',
+      bookingMessages.referredTo(['sale', 'treatmentRecord']),
     ],
     [
       { type: 'referredTo', by: ['sale', 'review'] },
-      'The booking cannot be deleted: a sale and a review refer to it',
+      bookingMessages.referredTo(['sale', 'review']),
     ],
     [
       { type: 'referredTo', by: ['sale', 'treatmentRecord', 'review'] },
-      'The booking cannot be deleted: a sale, a treatment record and a review refer to it',
+      bookingMessages.referredTo(['sale', 'treatmentRecord', 'review']),
     ],
   ])(
     'reports %j as a conflict that says what refers to the booking',

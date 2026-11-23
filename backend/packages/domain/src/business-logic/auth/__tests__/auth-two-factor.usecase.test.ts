@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -57,10 +58,10 @@ const twoFactorRequired = Result.error(
 const invalidToken = Result.error(DomainErrors.unauthenticated('invalidToken'))
 
 /** The request is fine; the state of two-factor authentication does not allow it. */
-const conflict = {
+const conflict = (message: LocalizedText) => ({
   type: 'error',
-  error: { type: 'conflict', message: expect.any(String) },
-}
+  error: { type: 'conflict', message },
+})
 
 const EMAIL = 'hanako@example.com'
 
@@ -848,7 +849,7 @@ describe('EnableTwoFactorUseCase', () => {
 
     const result = await enable(dependencies)
 
-    expect(result).toEqual(conflict)
+    expect(result).toEqual(conflict(authMessages.twoFactorAlreadyEnabled))
     expectNothingStarted(dependencies)
     expectNothingCounted(dependencies)
   })
@@ -918,7 +919,7 @@ describe('EnableTwoFactorUseCase', () => {
 
     const result = await enable(dependencies)
 
-    expect(result).toEqual(conflict)
+    expect(result).toEqual(conflict(authMessages.twoFactorAlreadyEnabled))
   })
 
   it.each<[string, unknown, string[]]>([
@@ -1117,7 +1118,7 @@ describe('VerifyTwoFactorUseCase', () => {
 
       const result = await verify(dependencies)
 
-      expect(result).toEqual(conflict)
+      expect(result).toEqual(conflict(authMessages.noTwoFactorSetupUnderWay))
       expectNoCodeChecked(dependencies)
       expectNothingCounted(dependencies)
       expectNotEnabled(dependencies)
@@ -1130,7 +1131,7 @@ describe('VerifyTwoFactorUseCase', () => {
 
     const result = await verify(dependencies, { code: '000000' })
 
-    expect(result).toEqual(conflict)
+    expect(result).toEqual(conflict(authMessages.noTwoFactorSetupUnderWay))
     expectNothingCounted(dependencies)
   })
 
@@ -1252,7 +1253,7 @@ describe('VerifyTwoFactorUseCase', () => {
 
     const result = await verify(dependencies)
 
-    expect(result).toEqual(conflict)
+    expect(result).toEqual(conflict(authMessages.noTwoFactorSetupUnderWay))
     expect(mails).toEqual([])
   })
 
@@ -1432,7 +1433,7 @@ describe('DisableTwoFactorUseCase', () => {
 
       const result = await disable(dependencies)
 
-      expect(result).toEqual(conflict)
+      expect(result).toEqual(conflict(authMessages.twoFactorNotEnabled))
       expectNoCodeChecked(dependencies)
       expectNothingCounted(dependencies)
       expectNotDisabled(dependencies)
@@ -1517,7 +1518,7 @@ describe('DisableTwoFactorUseCase', () => {
 
     const result = await disable(dependencies)
 
-    expect(result).toEqual(conflict)
+    expect(result).toEqual(conflict(authMessages.twoFactorNotEnabled))
     expect(mails).toEqual([])
   })
 
@@ -1808,7 +1809,7 @@ describe('GenerateBackupCodesUseCase', () => {
 
       const result = await generate(dependencies)
 
-      expect(result).toEqual(conflict)
+      expect(result).toEqual(conflict(authMessages.twoFactorNotEnabled))
       expectNoCodeChecked(dependencies)
       expectNothingCounted(dependencies)
       expectNothingReplaced(dependencies)
@@ -1821,7 +1822,7 @@ describe('GenerateBackupCodesUseCase', () => {
 
     const result = await generate(dependencies, { code: BACKUP_CODE })
 
-    expect(result).toEqual(conflict)
+    expect(result).toEqual(conflict(authMessages.twoFactorNotEnabled))
     expectNoCodeChecked(dependencies)
     expect(dependencies.passwordHasher.verify).not.toHaveBeenCalled()
   })
@@ -1919,7 +1920,7 @@ describe('GenerateBackupCodesUseCase', () => {
 
     const result = await generate(dependencies)
 
-    expect(result).toEqual(conflict)
+    expect(result).toEqual(conflict(authMessages.twoFactorNotEnabled))
     expect(mails).toEqual([])
   })
 

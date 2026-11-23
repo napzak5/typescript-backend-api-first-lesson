@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
+  bookingMessages,
   entityMessages,
   ruleMessages,
   serviceMessages,
@@ -1744,7 +1745,7 @@ describe('DeleteServiceUseCase', () => {
 
     expect(result).toEqual({
       type: 'error',
-      error: { type: 'conflict', message: expect.any(String) },
+      error: { type: 'conflict', message: serviceMessages.partOfPackage },
     })
   })
 
@@ -1759,8 +1760,7 @@ describe('DeleteServiceUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The service cannot be deleted: bookings that are not finished refer to it',
+        message: bookingMessages.unfinishedBookingsReferTo.service,
       },
     })
   })

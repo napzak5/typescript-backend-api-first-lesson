@@ -201,7 +201,7 @@ describe('CreateTreatmentRecordUseCase', () => {
     ).toEqual(
       Result.error(
         DomainErrors.conflict(
-          'The booking is confirmed; a treatment is recorded once it has begun',
+          treatmentRecordMessages.bookingNotTreated('confirmed'),
         ),
       ),
     )
@@ -210,9 +210,7 @@ describe('CreateTreatmentRecordUseCase', () => {
   it('refuses a booking that has a record already with a conflict', async () => {
     expect(await create(creating({ type: 'recordExists' }))).toEqual(
       Result.error(
-        DomainErrors.conflict(
-          'The booking has a treatment record already; a booking has one',
-        ),
+        DomainErrors.conflict(treatmentRecordMessages.bookingHasRecord),
       ),
     )
   })

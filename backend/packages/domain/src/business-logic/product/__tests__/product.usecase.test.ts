@@ -1268,8 +1268,7 @@ describe('DeleteProductUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The product cannot be deleted: it has stock; delete its stock first or set isActive to false',
+        message: productMessages.hasStock,
       },
     })
   })

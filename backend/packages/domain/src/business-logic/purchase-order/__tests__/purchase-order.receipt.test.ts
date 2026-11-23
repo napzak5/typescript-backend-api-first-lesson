@@ -292,7 +292,11 @@ describe('ReceivePurchaseOrderUseCase', () => {
     ).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `Purchase order ${PURCHASE_ORDER_ID} is approved: the goods of an ordered or shipped order are received`,
+          purchaseOrderMessages.notFromStatus(
+            PURCHASE_ORDER_ID,
+            'approved',
+            'receipt',
+          ),
         ),
       ),
     )
@@ -301,7 +305,7 @@ describe('ReceivePurchaseOrderUseCase', () => {
     ).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `Purchase order ${PURCHASE_ORDER_ID} is delivered: a delivered or cancelled order does not change`,
+          purchaseOrderMessages.closed(PURCHASE_ORDER_ID, 'delivered'),
         ),
       ),
     )
@@ -347,7 +351,7 @@ describe('ReceivePurchaseOrderUseCase', () => {
     ).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `The stock of row ${INVENTORY_ID} would go above 99999999.99`,
+          purchaseOrderMessages.stockAboveLimit(INVENTORY_ID),
         ),
       ),
     )

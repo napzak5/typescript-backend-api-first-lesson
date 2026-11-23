@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -665,20 +666,23 @@ describe('MergeCustomersUseCase', () => {
     },
   )
 
-  const conflicts: [CustomerMerge, string][] = [
-    [{ type: 'accountsDiffer' }, 'accounts'],
-    [{ type: 'pointsBeyondLimit' }, 'points'],
-    [{ type: 'chartTooLong', list: 'avoidProducts' }, 'avoidProducts'],
+  const conflicts: [CustomerMerge, LocalizedText][] = [
+    [{ type: 'accountsDiffer' }, customerMessages.bothAreProfilesOfAccounts],
+    [{ type: 'pointsBeyondLimit' }, customerMessages.pointsBeyondBalance],
+    [
+      { type: 'chartTooLong', list: 'avoidProducts' },
+      customerMessages.chartListsTooLong('avoidProducts'),
+    ],
     [
       { type: 'deletionRequested', customers: [OTHER_CUSTOMER_ID] },
-      `Customer ${OTHER_CUSTOMER_ID} asked for their data to be erased`,
+      customerMessages.deletionRequested([OTHER_CUSTOMER_ID]),
     ],
     [
       {
         type: 'deletionRequested',
         customers: [CUSTOMER_ID, OTHER_CUSTOMER_ID],
       },
-      `Customer ${CUSTOMER_ID} and customer ${OTHER_CUSTOMER_ID} asked`,
+      customerMessages.deletionRequested([CUSTOMER_ID, OTHER_CUSTOMER_ID]),
     ],
   ]
 
@@ -688,9 +692,7 @@ describe('MergeCustomersUseCase', () => {
       customerMergeRequest(),
     )
 
-    expect(result).toEqual(
-      Result.error(DomainErrors.conflict(expect.stringContaining(said))),
-    )
+    expect(result).toEqual(Result.error(DomainErrors.conflict(said)))
   })
 
   it('passes on a failure of the database', async () => {
@@ -709,9 +711,9 @@ describe('MergeCustomersUseCase', () => {
 })
 
 describe('RestoreCustomerUseCase of a customer that cannot come back', () => {
-  const gone: [CustomerRestoration, string][] = [
-    [{ type: 'mergedAway' }, 'merged'],
-    [{ type: 'erased' }, 'erased at their request'],
+  const gone: [CustomerRestoration, LocalizedText][] = [
+    [{ type: 'mergedAway' }, customerMessages.mergedAway(CUSTOMER_ID)],
+    [{ type: 'erased' }, customerMessages.erased(CUSTOMER_ID)],
   ]
 
   it.each(gone)('refuses %j with a conflict', async (outcome, said) => {
@@ -724,8 +726,6 @@ describe('RestoreCustomerUseCase of a customer that cannot come back', () => {
       CUSTOMER_ID,
     )
 
-    expect(result).toEqual(
-      Result.error(DomainErrors.conflict(expect.stringContaining(said))),
-    )
+    expect(result).toEqual(Result.error(DomainErrors.conflict(said)))
   })
 })

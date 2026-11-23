@@ -344,7 +344,10 @@ describe('RequestCustomerDeletionUseCase', () => {
     expect(await take(dependencies)).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `Customer ${CUSTOMER_ID} has a pending deletion request, ${CUSTOMER_DELETION_REQUEST_ID}`,
+          customerDeletionRequestMessages.alreadyRequested(
+            CUSTOMER_ID,
+            CUSTOMER_DELETION_REQUEST_ID,
+          ),
         ),
       ),
     )

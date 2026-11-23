@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
+  attachmentMessages,
   authMessages,
   entityMessages,
   shareLinkMessages,
@@ -497,9 +498,7 @@ describe('CreateShareLinkUseCase', () => {
     })
 
     expect(await create(dependencies)).toEqual(
-      Result.error(
-        DomainErrors.conflict('The attachment has not been uploaded'),
-      ),
+      Result.error(DomainErrors.conflict(attachmentMessages.notUploaded)),
     )
     expect(dependencies.shareLinkRepository.create).not.toHaveBeenCalled()
   })

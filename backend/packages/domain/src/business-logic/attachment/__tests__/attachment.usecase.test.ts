@@ -376,9 +376,7 @@ describe('CompleteAttachmentUseCase', () => {
     const { calls, dependencies } = noting(null)
 
     expect(await complete(dependencies)).toEqual(
-      Result.error(
-        DomainErrors.conflict('No file has been uploaded for the attachment'),
-      ),
+      Result.error(DomainErrors.conflict(attachmentMessages.noFileUploaded)),
     )
     expect(calls).toEqual([])
   })
@@ -394,7 +392,7 @@ describe('CompleteAttachmentUseCase', () => {
 
       expect(await complete(dependencies)).toEqual(
         Result.error(
-          DomainErrors.conflict('The uploaded file is not of 64 bytes'),
+          DomainErrors.conflict(attachmentMessages.uploadedFileNotOfSize(64)),
         ),
       )
       expect(calls).toEqual(['markDeleted', 'remove'])
@@ -422,7 +420,7 @@ describe('CompleteAttachmentUseCase', () => {
       expect(await complete(dependencies)).toEqual(
         Result.error(
           DomainErrors.conflict(
-            'The uploaded file is not a file of the type image/png',
+            attachmentMessages.uploadedFileNotOfType('image/png'),
           ),
         ),
       )
@@ -435,7 +433,7 @@ describe('CompleteAttachmentUseCase', () => {
 
     expect(await complete(dependencies)).toEqual(
       Result.error(
-        DomainErrors.conflict('The uploaded file is not of 64 bytes'),
+        DomainErrors.conflict(attachmentMessages.uploadedFileNotOfSize(64)),
       ),
     )
   })
@@ -922,9 +920,7 @@ describe('IssueAttachmentDownloadUrlUseCase', () => {
     const dependencies = attachmentDependencies()
 
     expect(await issue(dependencies)).toEqual(
-      Result.error(
-        DomainErrors.conflict('The attachment has not been uploaded'),
-      ),
+      Result.error(DomainErrors.conflict(attachmentMessages.notUploaded)),
     )
     expect(dependencies.fileStorage.issueDownload).not.toHaveBeenCalled()
   })

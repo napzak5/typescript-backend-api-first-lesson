@@ -499,6 +499,17 @@ describe('the language of an error', () => {
         'email が aoyama@example.com のサロンは、すでにあります',
       ],
     ],
+    [
+      'a second factor to turn off that is not on',
+      (app, authorization) =>
+        request(app)
+          .post(`${AUTH}/2fa/disable`)
+          .set('Authorization', authorization)
+          .send({ password: PASSWORD, code: '123456' }),
+      409,
+      ['Operation not allowed', 'Two-factor authentication is not enabled'],
+      ['この操作はできません', '2 要素認証は、有効になっていません'],
+    ],
   ])(
     'should answer %s in English, and in Japanese when Japanese is asked for',
     async (_case, send, status, [title, detail], [
@@ -529,31 +540,6 @@ describe('the language of an error', () => {
       })
     },
   )
-
-  it('should answer what cannot be done in the state it is in, which the domain writes of in English alone, in English though Japanese is asked for', async () => {
-    // Arrange
-    const app = createTestApp()
-    const asAdmin = await signInAsAdmin(app, getTestDb())
-    const disable = () =>
-      request(app)
-        .post(`${AUTH}/2fa/disable`)
-        .set('Authorization', asAdmin)
-        .send({ password: PASSWORD, code: '123456' })
-    const unasked = await disable()
-
-    // Act
-    const response = await disable().set('Accept-Language', 'ja')
-
-    // Assert
-    expect(response.status).toBe(409)
-    expect(response.headers['content-language']).toBe('en')
-    expect(response.body).toEqual({
-      ...unasked.body,
-      title: 'Operation not allowed',
-      correlationId: response.headers['x-request-id'],
-      timestamp: expect.any(String),
-    })
-  })
 
   it.each<
     [

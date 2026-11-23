@@ -484,9 +484,7 @@ describe('ExportCustomersUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.conflict(
-          '10001 customers match; a file holds 10000 at most, so narrow the filters',
-        ),
+        DomainErrors.conflict(customerMessages.tooManyToExport(10001, 10000)),
       ),
     )
   })

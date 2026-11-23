@@ -4,6 +4,8 @@ import * as catalogues from './index'
 import {
   attachmentMessages,
   bookingMessages,
+  customerDeletionRequestMessages,
+  customerMessages,
   entityMessages,
   inventoryAlertMessages,
   inventoryMessages,
@@ -17,6 +19,7 @@ import {
   salonMessages,
   serviceMessages,
   shareLinkMessages,
+  staffInvitationMessages,
   staffScheduleMessages,
   treatmentRecordMessages,
 } from './index'
@@ -362,6 +365,272 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
       ja: '予約の日（2026-11-23）より前にはできません',
     },
   ],
+  [
+    'attachmentMessages.uploadedFileNotOfSize',
+    attachmentMessages.uploadedFileNotOfSize(64),
+    {
+      en: 'The uploaded file is not of 64 bytes',
+      ja: 'アップロードされたファイルは、64 バイトではありません',
+    },
+  ],
+  [
+    'attachmentMessages.uploadedFileNotOfType',
+    attachmentMessages.uploadedFileNotOfType('image/png'),
+    {
+      en: 'The uploaded file is not a file of the type image/png',
+      ja: 'アップロードされたファイルは、種類が image/png のファイルではありません',
+    },
+  ],
+  [
+    'bookingMessages.statusDoesNotAllow',
+    bookingMessages.statusDoesNotAllow('complete', 'cancelled', [
+      'confirmed',
+      'in_progress',
+    ]),
+    {
+      en: 'A booking that is cancelled cannot be completed; its status has to be confirmed or in_progress',
+      ja: '状態が cancelled の予約は、完了できません。状態は、confirmed か in_progress でなければなりません',
+    },
+  ],
+  [
+    'bookingMessages.staffOccupied',
+    bookingMessages.staffOccupied([
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1d',
+    ]),
+    {
+      en: 'Other bookings occupy staff members 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c, 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1d at a time of this booking',
+      ja: 'この予約の時刻に、スタッフ 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c, 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1d には、ほかの予約があります',
+    },
+  ],
+  [
+    'bookingMessages.cannotBeRescheduled',
+    bookingMessages.cannotBeRescheduled('in_progress', [
+      'draft',
+      'pending',
+      'confirmed',
+    ]),
+    {
+      en: 'A booking that is in_progress cannot be rescheduled; its status has to be draft or pending or confirmed',
+      ja: '状態が in_progress の予約は、日時を変更できません。状態は、draft か pending か confirmed でなければなりません',
+    },
+  ],
+  [
+    'bookingMessages.servicesAreSettled',
+    bookingMessages.servicesAreSettled('no_show', [
+      'draft',
+      'pending',
+      'confirmed',
+      'in_progress',
+    ]),
+    {
+      en: 'The services of a booking that is no_show cannot be changed; its status has to be draft or pending or confirmed or in_progress',
+      ja: '状態が no_show の予約は、サービスを変更できません。状態は、draft か pending か confirmed か in_progress でなければなりません',
+    },
+  ],
+  [
+    'bookingMessages.atMostServices',
+    bookingMessages.atMostServices(20),
+    {
+      en: 'A booking has at most 20 services',
+      ja: '予約のサービスは、20 個までです',
+    },
+  ],
+  [
+    'bookingMessages.servicesBeginWithinHours',
+    bookingMessages.servicesBeginWithinHours(24),
+    {
+      en: 'Every service of a booking begins within 24 hours of the earliest one',
+      ja: '予約のサービスは、どれも、最も早いサービスから 24 時間以内に始めます',
+    },
+  ],
+  [
+    'bookingMessages.referredTo',
+    bookingMessages.referredTo(['sale', 'treatmentRecord', 'review']),
+    {
+      en: 'The booking cannot be deleted: a sale, a treatment record and a review refer to it',
+      ja: 'この予約は削除できません。売上と施術記録とレビューが参照しています',
+    },
+  ],
+  [
+    'customerDeletionRequestMessages.alreadyRequested',
+    customerDeletionRequestMessages.alreadyRequested(
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1d',
+    ),
+    {
+      en: 'Customer 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c has a pending deletion request, 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1d',
+      ja: '顧客 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c には、受け付け中の削除の依頼 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1d があります',
+    },
+  ],
+  [
+    'customerMessages.unfinishedBookingsReferTo',
+    customerMessages.unfinishedBookingsReferTo(
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ),
+    {
+      en: 'Customer 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c cannot be deleted: bookings that are not finished refer to it',
+      ja: '顧客 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c は削除できません。終わっていない予約が参照しています',
+    },
+  ],
+  [
+    'customerMessages.tooManyToExport',
+    customerMessages.tooManyToExport(10001, 10000),
+    {
+      en: '10001 customers match; a file holds 10000 at most, so narrow the filters',
+      ja: '条件に合う顧客が 10001 人います。1 つのファイルは 10000 人までなので、条件を絞ってください',
+    },
+  ],
+  [
+    'customerMessages.chartListsTooLong',
+    customerMessages.chartListsTooLong('avoidProducts'),
+    {
+      en: 'The medical charts of both customers list more avoidProducts than a chart can; shorten one first',
+      ja: '2 人の顧客のカルテの avoidProducts を合わせると、1 つのカルテに書ける数を超えます。先に、どちらかを減らしてください',
+    },
+  ],
+  [
+    'customerMessages.deletionRequested',
+    customerMessages.deletionRequested([
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1d',
+    ]),
+    {
+      en: 'Customer 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c and customer 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1d asked for their data to be erased; cancel the deletion request first',
+      ja: '顧客 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c と顧客 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1d は、データの消去を依頼しています。先に、削除の依頼を取り消してください',
+    },
+  ],
+  [
+    'customerMessages.notDeleted',
+    customerMessages.notDeleted('0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c'),
+    {
+      en: 'Customer 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c is not deleted, so there is nothing to restore',
+      ja: '顧客 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c は削除されていないので、元に戻すものがありません',
+    },
+  ],
+  [
+    'customerMessages.mergedAway',
+    customerMessages.mergedAway('0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c'),
+    {
+      en: 'Customer 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c was merged into another customer, who has what it had',
+      ja: '顧客 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c は、ほかの顧客に統合されました。持っていたものは、その顧客にあります',
+    },
+  ],
+  [
+    'customerMessages.erased',
+    customerMessages.erased('0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c'),
+    {
+      en: 'The data of customer 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c was erased at their request',
+      ja: '顧客 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c のデータは、本人の依頼で消去されました',
+    },
+  ],
+  [
+    'inventoryAlertMessages.alreadyAcknowledged',
+    inventoryAlertMessages.alreadyAcknowledged(
+      'low_stock:0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ),
+    {
+      en: 'Inventory alert low_stock:0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c is acknowledged already: an acknowledgement holds while what it was given for lasts',
+      ja: '在庫のアラート low_stock:0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c は、すでに確認されています。確認は、その理由が続く間、有効です',
+    },
+  ],
+  [
+    'inventoryMessages.countedBelowReserved',
+    inventoryMessages.countedBelowReserved(
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ),
+    {
+      en: 'What was counted of stock row 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c is below its reserved stock',
+      ja: '在庫の行 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c の数えた数量が、引当済みの在庫を下回っています',
+    },
+  ],
+  [
+    'purchaseOrderMessages.closed',
+    purchaseOrderMessages.closed(
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+      'delivered',
+    ),
+    {
+      en: 'Purchase order 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c is delivered: a delivered or cancelled order does not change',
+      ja: '発注 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c の状態は delivered です。納品された発注と、取り消された発注は、変更できません',
+    },
+  ],
+  [
+    'purchaseOrderMessages.notFromStatus',
+    purchaseOrderMessages.notFromStatus(
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+      'approved',
+      'approval',
+    ),
+    {
+      en: 'Purchase order 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c is approved: only a pending order is approved',
+      ja: '発注 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c の状態は approved です。承認できるのは、pending の発注だけです',
+    },
+  ],
+  [
+    'purchaseOrderMessages.stockAboveLimit',
+    purchaseOrderMessages.stockAboveLimit(
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ),
+    {
+      en: 'The stock of row 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c would go above 99999999.99',
+      ja: '在庫の行 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c の在庫が、99999999.99 を超えます',
+    },
+  ],
+  [
+    'staffInvitationMessages.alreadyHasAccount',
+    staffInvitationMessages.alreadyHasAccount(
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ),
+    {
+      en: 'Staff member 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c already has an account',
+      ja: 'スタッフ 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c には、すでにアカウントがあります',
+    },
+  ],
+  [
+    'staffInvitationMessages.staffInactive',
+    staffInvitationMessages.staffInactive(
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ),
+    {
+      en: 'Staff member 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c is inactive',
+      ja: 'スタッフ 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c は、無効になっています',
+    },
+  ],
+  [
+    'staffInvitationMessages.mailedMomentsAgo',
+    staffInvitationMessages.mailedMomentsAgo(
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ),
+    {
+      en: 'An invitation was mailed to staff member 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c moments ago',
+      ja: 'スタッフ 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c には、少し前に、招待のメールを送りました',
+    },
+  ],
+  [
+    'treatmentRecordMessages.photoExists',
+    treatmentRecordMessages.photoExists('https://images.example.com/0.jpg'),
+    {
+      en: 'The record holds a photo at https://images.example.com/0.jpg already; a record holds one photo of an address',
+      ja: 'この施術記録には、https://images.example.com/0.jpg の写真が、すでにあります。同じアドレスの写真は、施術記録に 1 つです',
+    },
+  ],
+  [
+    'treatmentRecordMessages.tooManyPhotos',
+    treatmentRecordMessages.tooManyPhotos(19, 20),
+    {
+      en: 'The record holds 19 photos; a record holds at most 20',
+      ja: 'この施術記録には、写真が 19 枚あります。施術記録の写真は、20 枚までです',
+    },
+  ],
+  [
+    'treatmentRecordMessages.bookingNotTreated',
+    treatmentRecordMessages.bookingNotTreated('confirmed'),
+    {
+      en: 'The booking is confirmed; a treatment is recorded once it has begun',
+      ja: '予約の状態は confirmed です。施術は、予約が始まってから記録します',
+    },
+  ],
 ]
 
 describe('the messages of the API', () => {
@@ -429,5 +698,153 @@ describe('the messages of the API', () => {
       en: 'Account of staff member 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c was not found',
       ja: 'この ID のスタッフのアカウントが見つかりません（ID: 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c）',
     })
+  })
+
+  it.each<
+    [Parameters<typeof bookingMessages.statusDoesNotAllow>[0], string, string]
+  >([
+    ['confirm', 'confirmed', '確定'],
+    ['cancel', 'cancelled', 'キャンセル'],
+    ['cancelAsCustomer', 'cancelled', 'キャンセル'],
+    ['start', 'started', '開始'],
+    ['complete', 'completed', '完了'],
+    ['noShow', 'noted as one the customer did not come to', '無断キャンセルに'],
+  ])(
+    'should say what the action %s would have made of a booking, in each language',
+    (action, english, japanese) => {
+      // Act
+      const made = bookingMessages.statusDoesNotAllow(action, 'pending', [
+        'confirmed',
+      ])
+
+      // Assert
+      expect(made).toEqual({
+        en: `A booking that is pending cannot be ${english}; its status has to be confirmed`,
+        ja: `状態が pending の予約は、${japanese}できません。状態は、confirmed でなければなりません`,
+      })
+    },
+  )
+
+  it.each<[Parameters<typeof bookingMessages.referredTo>[0], LocalizedText]>([
+    [
+      ['sale'],
+      {
+        en: 'The booking cannot be deleted: a sale refers to it',
+        ja: 'この予約は削除できません。売上が参照しています',
+      },
+    ],
+    [
+      ['treatmentRecord'],
+      {
+        en: 'The booking cannot be deleted: a treatment record refers to it',
+        ja: 'この予約は削除できません。施術記録が参照しています',
+      },
+    ],
+    [
+      ['review'],
+      {
+        en: 'The booking cannot be deleted: a review refers to it',
+        ja: 'この予約は削除できません。レビューが参照しています',
+      },
+    ],
+    [
+      ['sale', 'review'],
+      {
+        en: 'The booking cannot be deleted: a sale and a review refer to it',
+        ja: 'この予約は削除できません。売上とレビューが参照しています',
+      },
+    ],
+  ])(
+    'should list what refers to a booking as a sentence of each language does: %j',
+    (by, expected) => {
+      // Act
+      const made = bookingMessages.referredTo(by)
+
+      // Assert
+      expect(made).toEqual(expected)
+    },
+  )
+
+  it('should say of one staff member with other bookings as of one', () => {
+    // Act
+    const made = bookingMessages.staffOccupied([
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ])
+
+    // Assert
+    expect(made).toEqual({
+      en: 'Other bookings occupy staff member 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c at a time of this booking',
+      ja: 'この予約の時刻に、スタッフ 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c には、ほかの予約があります',
+    })
+  })
+
+  it('should say of one customer who asked for their data to be erased as of one', () => {
+    // Act
+    const made = customerMessages.deletionRequested([
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ])
+
+    // Assert
+    expect(made).toEqual({
+      en: 'Customer 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c asked for their data to be erased; cancel the deletion request first',
+      ja: '顧客 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c は、データの消去を依頼しています。先に、削除の依頼を取り消してください',
+    })
+  })
+
+  it.each<
+    [Parameters<typeof purchaseOrderMessages.notFromStatus>[2], LocalizedText]
+  >([
+    [
+      'update',
+      {
+        en: 'Purchase order 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c is pending: an update moves a draft to pending, an approved order to ordered and an ordered one to shipped',
+        ja: '発注 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c の状態は pending です。変更で進められるのは、draft から pending、approved から ordered、ordered から shipped です',
+      },
+    ],
+    [
+      'approval',
+      {
+        en: 'Purchase order 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c is pending: only a pending order is approved',
+        ja: '発注 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c の状態は pending です。承認できるのは、pending の発注だけです',
+      },
+    ],
+    [
+      'cancellation',
+      {
+        en: 'Purchase order 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c is pending: an order is cancelled until it is delivered',
+        ja: '発注 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c の状態は pending です。発注を取り消せるのは、納品されるまでです',
+      },
+    ],
+    [
+      'receipt',
+      {
+        en: 'Purchase order 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c is pending: the goods of an ordered or shipped order are received',
+        ja: '発注 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c の状態は pending です。納品を受けられるのは、ordered か shipped の発注です',
+      },
+    ],
+  ])(
+    'should end with which orders the operation %s takes, in each language',
+    (operation, expected) => {
+      // Act
+      const made = purchaseOrderMessages.notFromStatus(
+        '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+        'pending',
+        operation,
+      )
+
+      // Assert
+      expect(made).toEqual(expected)
+    },
+  )
+
+  it('should keep the ID of a customer that cannot be deleted as it is in every language, where a screen looks for it', () => {
+    // Act
+    const made = customerMessages.unfinishedBookingsReferTo(
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    )
+
+    // Assert
+    expect(made.en).toContain('0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c')
+    expect(made.ja).toContain('0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c')
   })
 })

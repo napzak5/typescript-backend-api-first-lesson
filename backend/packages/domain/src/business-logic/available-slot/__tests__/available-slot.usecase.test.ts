@@ -636,8 +636,7 @@ describe('ListAvailableSlotsUseCase', () => {
         type: 'error',
         error: {
           type: 'conflict',
-          message:
-            'The time zone of the salon is not one that is known, so the times of its hours cannot be told; correct the time zone of the salon first',
+          message: availableSlotMessages.timeZoneUnknown,
         },
       })
     })

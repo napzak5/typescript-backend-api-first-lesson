@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   entityMessages,
   pointMessages,
@@ -404,24 +405,15 @@ const notAdjusters: [string, Actor][] = [
 ]
 
 /** What each refusal is told. */
-const refusals: [PointRecording, string][] = [
-  [
-    { type: 'referenceClosed', reference: 'sale' },
-    'The sale is void; points are not earned on or used for a void sale',
-  ],
+const refusals: [PointRecording, LocalizedText][] = [
+  [{ type: 'referenceClosed', reference: 'sale' }, pointMessages.saleIsVoid],
   [
     { type: 'referenceClosed', reference: 'booking' },
-    'The booking is a draft, cancelled or a no-show; points are not earned on or used for it',
+    pointMessages.bookingNotHeld,
   ],
-  [
-    { type: 'referenceTaken' },
-    'The record has a point transaction of this kind already; a record is earned on once and used for once',
-  ],
-  [{ type: 'balanceShort' }, 'The balance of the customer would fall below 0'],
-  [
-    { type: 'balanceOverLimit' },
-    'The balance of the customer would go above 2147483647',
-  ],
+  [{ type: 'referenceTaken' }, pointMessages.recordHasTransaction],
+  [{ type: 'balanceShort' }, pointMessages.balanceBelowZero],
+  [{ type: 'balanceOverLimit' }, pointMessages.balanceAboveLimit],
 ]
 
 /** The three movements, each with its use case, request, reach and message. */

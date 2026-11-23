@@ -174,9 +174,7 @@ describe('CreateMedicalChartUseCase', () => {
   it('refuses a second chart of a customer as a conflict', async () => {
     expect(await create(creating({ type: 'chartExists' }))).toEqual(
       Result.error(
-        DomainErrors.conflict(
-          'The customer has a medical chart already; a customer has one',
-        ),
+        DomainErrors.conflict(medicalChartMessages.customerHasChart),
       ),
     )
   })

@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
+  bookingMessages,
   entityMessages,
   salonMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -502,8 +503,7 @@ describe('DeleteSalonUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The salon cannot be deleted: bookings that are not finished refer to it',
+        message: bookingMessages.unfinishedBookingsReferTo.salon,
       },
     })
   })
