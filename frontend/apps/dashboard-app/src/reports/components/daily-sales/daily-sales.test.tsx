@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { termsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as dailySalesStories from './daily-sales.stories'
 
 const stories = composeStories(dailySalesStories)
@@ -32,6 +33,28 @@ describe('DailySales', () => {
       ['会計の件数', '0 件'],
       ['返金', '￥0'],
       ['純売上', '￥0'],
+    ])
+  })
+})
+
+describe('DailySales on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say the sums of the day under the name of the day, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Sold.run()
+
+    // Assert
+    expect(termsOf('Sales on Sat, November 21, 2026')).toEqual([
+      ['Sales', '¥13,200'],
+      ['Checkouts', '2'],
+      ['Refunds', '¥2,200'],
+      ['Net sales', '¥11,000'],
     ])
   })
 })

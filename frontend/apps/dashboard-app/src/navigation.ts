@@ -1,7 +1,9 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import { type FrameLink, isAtOrBelow } from '@beauty-salon-frontend/app-frame'
 import { salonIdIn } from '@beauty-salon-frontend/salon-screens'
-import { writtenInJapanese } from '@beauty-salon-frontend/ui'
+import { dashboardFrameMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
+
+const { navigation: names } = dashboardFrameMessages
 
 /** The sales report of a salon: where its screens begin. */
 export const reportsHrefOf = (salonId: string): string =>
@@ -41,7 +43,7 @@ export const navigationFor = (
       ? [
           {
             href: '/',
-            label: writtenInJapanese('サロンを選ぶ'),
+            label: names.chooseSalon,
             current: pathname === '/',
           },
         ]
@@ -57,33 +59,33 @@ export const navigationFor = (
       ...choice,
       {
         href: reports,
-        label: writtenInJapanese('売上レポート'),
+        label: names.report,
         current: pathname === reports,
       },
       {
         href: trends,
-        label: writtenInJapanese('売上の推移'),
+        label: names.trends,
         current: isAtOrBelow(pathname, trends),
       },
       {
         href: daily,
-        label: writtenInJapanese('1 日の売上'),
+        label: names.daily,
         current: isAtOrBelow(pathname, daily),
       },
       {
         href: staff,
-        label: writtenInJapanese('スタッフ別の売上'),
+        label: names.staff,
         current: isAtOrBelow(pathname, staff),
       },
       {
         href: categories,
-        label: writtenInJapanese('区分別の売上'),
+        label: names.categories,
         current: isAtOrBelow(pathname, categories),
       },
     ]
   }
 
   return role === 'owner' || role === 'manager'
-    ? [{ href: '/', label: writtenInJapanese('売上レポート'), current: false }]
+    ? [{ href: '/', label: names.report, current: false }]
     : choice
 }

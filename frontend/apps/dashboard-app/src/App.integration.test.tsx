@@ -1,4 +1,5 @@
 import { applications } from '@beauty-salon-frontend/brand'
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { signInAs } from '@beauty-salon-frontend/testing/api'
 import { heading } from '@beauty-salon-frontend/testing/screens'
@@ -12,7 +13,7 @@ import {
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from './__tests__/screens'
+import { menuLink, renderAt } from './__tests__/screens'
 
 const TITLE = applications.dashboard.name
 
@@ -133,4 +134,70 @@ describe('App, against the API', () => {
       expect(violations).toEqual([])
     },
   )
+})
+
+describe('App on a page in English, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it.each([
+    ['the owner of a salon', OWNER, 'Sales report'],
+    ['the operator of the platform', OPERATOR, 'Choose a salon'],
+  ])(
+    'should let %s in at a screen named in English: %s, at %s',
+    async (_, email, start) => {
+      // Arrange
+      renderAt('/')
+
+      // Act
+      await signInAs(email, 'en')
+
+      // Assert
+      expect(await heading(start)).toHaveFocus()
+      expect(document.title).toBe(`${start} | ${TITLE}`)
+      expect(menuLink(start, 'en')).toHaveAttribute('aria-current', 'page')
+    },
+  )
+
+  it('should name the screens of the sales in the header in English', async () => {
+    // Arrange
+    renderAt('/')
+
+    // Act
+    await signInAs(OWNER, 'en')
+
+    // Assert
+    await heading('Sales report')
+    expect(
+      within(screen.getByRole('navigation', { name: 'Main menu' }))
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual([
+      'Sales report',
+      'Sales trends',
+      'Daily sales',
+      'Sales by staff',
+      'Sales by category',
+    ])
+  })
+
+  it('should lead from a page that is none back to the report, in English', async () => {
+    // Arrange
+    renderAt('/no-such-page')
+    await signInAs(OWNER, 'en')
+    expect(await heading('Page not found')).toBeVisible()
+
+    // Act
+    await userEvent.click(screen.getByRole('link', { name: 'Back to the top' }))
+
+    // Assert
+    expect(await heading('Sales report')).toHaveFocus()
+  })
 })

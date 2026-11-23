@@ -1,6 +1,6 @@
 import type { Locale } from '../languages/locale'
 import type { LocalizedText } from '../languages/localized-text'
-import { displayNamesIn, numberFormatIn } from './formatters'
+import { displayNamesIn, numberFormatIn, pluralRulesIn } from './formatters'
 import { inEachLanguage } from './in-each-language'
 
 /**
@@ -36,6 +36,22 @@ export const numberOf = (
   decimals?: Decimals,
 ): LocalizedText =>
   inEachLanguage((language) => numberIn(language, value, decimals))
+
+/** The ending of an English ordinal, by the form its number takes */
+const ORDINAL_ENDINGS: Record<Intl.LDMLPluralRule, string> = {
+  zero: 'th',
+  one: 'st',
+  two: 'nd',
+  few: 'rd',
+  many: 'th',
+  other: 'th',
+}
+
+/** A place in a ranking, counted from 1: 「1 位」, "1st", 「12 位」, "12th". */
+export const placeOf = (place: number): LocalizedText => ({
+  en: `${numberIn('en', place, undefined)}${ORDINAL_ENDINGS[pluralRulesIn('en', { type: 'ordinal' }).select(place)]}`,
+  ja: `${numberIn('ja', place, undefined)} 位`,
+})
 
 /** A share of the whole, as the API writes it in percent (`12.5`): 「12.5%」. */
 export const percentOf = (

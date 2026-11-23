@@ -1,14 +1,15 @@
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, inJapanese, Note, Table } from '@beauty-salon-frontend/ui'
-import { countNameOf } from '../../utils/sales-report'
+import { Card, Note, Table, useSay } from '@beauty-salon-frontend/ui'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
 import {
   partNameOf,
-  TREND_PARTS,
   type TrendPart,
   type TrendUnit,
 } from '../../utils/sales-trends'
 import { TrendChart } from '../trend-chart/trend-chart'
 import styles from './sales-trend.module.css'
+
+const { columns, count, trends: words } = dashboardReportMessages
 
 export type SalesTrendProps = {
   /** The parts of the period, in their order, with their sums; a sale in one of them at least */
@@ -25,37 +26,37 @@ export type SalesTrendProps = {
  * table is what assistive technology reads; the chart draws its sales.
  */
 export const SalesTrend = ({ parts, unit, currency }: SalesTrendProps) => {
-  const money = (amount: number): string =>
-    inJapanese(amountOf(amount, currency))
+  const say = useSay()
+  const money = (amount: number): string => say(amountOf(amount, currency))
 
   return (
-    <Card title='区切りごとの売上'>
+    <Card title={say(words.title)}>
       <div className={styles['part']}>
         <TrendChart parts={parts} unit={unit} currency={currency} />
         <Table<TrendPart>
-          caption='区切りごとの売上、会計の件数、客単価'
+          caption={say(words.caption)}
           captionHidden
           columns={[
             {
               key: 'label',
-              header: '区切り',
-              cell: ({ label }) => partNameOf(label, unit),
+              header: say(words.unit),
+              cell: ({ label }) => say(partNameOf(label, unit)),
             },
             {
               key: 'sales',
-              header: '売上',
+              header: say(columns.sales),
               align: 'end',
               cell: ({ sales }) => money(sales),
             },
             {
               key: 'transactions',
-              header: '会計の件数',
+              header: say(columns.transactions),
               align: 'end',
-              cell: ({ transactions }) => countNameOf(transactions),
+              cell: ({ transactions }) => say(count(transactions)),
             },
             {
               key: 'average',
-              header: '客単価',
+              header: say(columns.averageTransaction),
               align: 'end',
               cell: ({ average }) => money(average),
             },
@@ -63,11 +64,9 @@ export const SalesTrend = ({ parts, unit, currency }: SalesTrendProps) => {
           rowHeader='label'
           rows={parts}
           rowKey={({ label }) => label}
-          emptyMessage='区切りはありません'
+          emptyMessage={say(words.none)}
         />
-        <Note>
-          {`売上は、消費税を含み、値引きを引いた額です。客単価は、売上を会計の件数で割った額です（1 円未満は切り捨て）。${TREND_PARTS}`}
-        </Note>
+        <Note>{say(words.note)}</Note>
       </div>
     </Card>
   )

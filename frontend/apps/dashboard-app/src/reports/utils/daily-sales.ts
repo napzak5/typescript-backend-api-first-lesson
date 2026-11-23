@@ -1,6 +1,12 @@
 import { EARLIEST_DAY, isDay } from '@beauty-salon-frontend/fields'
 import { dayAfter } from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  type FormErrors,
+  type FormRead,
+  textOf,
+} from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 
 /*
  * The day whose sales are shown: kept in the address, today at the salon
@@ -18,13 +24,18 @@ export const dayIn = (query: URLSearchParams, today: string): string => {
 export const dayQueryOf = (day: string): URLSearchParams =>
   new URLSearchParams({ date: day })
 
-/** The day that was filled in. */
-export const readDay = (values: FormData): FormRead<string> => {
+/** The day that was filled in; what is wrong with it is said as the period of a count says it. */
+export const readDay = (
+  values: FormData,
+): FormRead<string, FormErrors<LocalizedText>> => {
   const day = textOf(values, 'date').trim()
 
   return isDay(day)
     ? { type: 'valid', value: day }
-    : { type: 'invalid', errors: { date: '日付を入力してください。' } }
+    : {
+        type: 'invalid',
+        errors: { date: salonScreenMessages.period.dayMissing },
+      }
 }
 
 /** The days a day leads to */

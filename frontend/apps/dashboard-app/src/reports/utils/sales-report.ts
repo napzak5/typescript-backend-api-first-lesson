@@ -1,44 +1,28 @@
 import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { FileToSave } from '@beauty-salon-frontend/io'
 import { type Period, periodNameOf } from '@beauty-salon-frontend/salon-screens'
-import { inJapanese, writtenInJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
 import { match } from 'ts-pattern'
 import type { SalesReportExport } from '../api/sales-report-api'
 
 /*
- * How the sales report says what it counts, and what follows its export:
- * the file that is saved and what is said of it, or why there is none.
+ * How the sales report writes a share, and what follows its export: the
+ * file that is saved and what is said of it, or why there is none.
  */
 
-/** What is said of the days a report counts over */
-export const REPORT_PERIOD =
-  '会計した日（サロンの日付）で数えます。期間は 366 日までです。'
-
-/** How many sales, payments or services: 「12 件」. */
-export const countNameOf = (count: number): string =>
-  `${inJapanese(formats.numberOf(count))} 件`
+const { names, report: words } = dashboardReportMessages
 
 /** A share of the whole, as the API rounds it: 「42.5%」. */
-export const percentNameOf = (percentage: number): string =>
-  inJapanese(formats.percentOf(percentage, { most: 1, least: 1 }))
-
-/** A place among the members of the staff: 「1 位」. */
-export const rankNameOf = (rank: number): string => `${rank} 位`
-
-/** How the sales of a member of the staff are counted, said under them */
-export const STAFF_SALES_NOTE =
-  '明細を担当したスタッフ（明細になければ、会計の担当）の売上で、商品の売上も入ります。施術の数と施術の平均単価は、施術の明細だけで数えます。名前は、いまの表示名です。'
-
-/** How the sales of a kind of service are counted, said under them */
-export const CATEGORY_SALES_NOTE =
-  'サービスの売上を、サービスがいま属している区分で数えます。商品の売上は入りません。'
+export const percentNameOf = (percentage: number): LocalizedText =>
+  formats.percentOf(percentage, { most: 1, least: 1 })
 
 export type ExportSays =
   /** The file is saved, and the notification says what it holds */
-  | { type: 'saved'; file: FileToSave; message: string }
+  | { type: 'saved'; file: FileToSave; message: LocalizedText }
   /** No file: said beside the button that exports, which may be pressed again */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: LocalizedText }
 
 /** What follows an export of the sales of a period. */
 export const afterReportExport = (
@@ -50,24 +34,22 @@ export const afterReportExport = (
     .with({ type: 'exported' }, ({ file }) => ({
       type: 'saved',
       file,
-      message: `${inJapanese(periodNameOf(period))}の売上を、${file.name} に出力しました。`,
+      message: words.exported(periodNameOf(period), file.name),
     }))
     .with({ type: 'notFound' }, () => ({
       type: 'refused',
-      message: 'このサロンは削除されたため、売上を出力できません。',
+      message: words.exportGone,
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message:
-        'このアカウントでは、このサロンの売上を出力できません。売上を出力できるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      message: words.exportForbidden,
     }))
     .with({ type: 'tooManyRequests' }, (reason) => ({
       type: 'refused',
-      message: inJapanese(unreadMessageOf(writtenInJapanese('売上'), reason)),
+      message: unreadMessageOf(names.read.sales, reason),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'refused',
-      message:
-        '売上を出力できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: words.exportFailed,
     }))
     .exhaustive()

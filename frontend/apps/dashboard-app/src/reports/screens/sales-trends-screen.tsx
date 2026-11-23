@@ -11,25 +11,23 @@ import {
 import {
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   RadioGroup,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { readSalesTrends, salesTrendsKeyOf } from '../api/sales-report-api'
 import { SalesTrend } from '../components/sales-trend/sales-trend'
-import { REPORT_PERIOD } from '../utils/sales-report'
 import {
   partsOf,
   readTrendUnit,
-  TREND_UNIT_HELP,
   TREND_UNITS,
   trendsQueryOf,
   trendUnitIn,
@@ -38,7 +36,7 @@ import {
 } from '../utils/sales-trends'
 import { ReportRefusal } from './report-refusal'
 
-const TITLE = '売上の推移'
+const { names, titles, trends: words } = dashboardReportMessages
 
 /** What was wrong with the form, and the days and the parts the address showed when it was sent */
 type Refused = { asked: string; errors: FormErrors<LocalizedText> }
@@ -50,6 +48,7 @@ type Refused = { asked: string; errors: FormErrors<LocalizedText> }
  * what an earlier screen read is not shown meanwhile.
  */
 const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
   // What was wrong with what was sent, while the address shows what it was sent from
   const [refused, setRefused] = useState<Refused>()
@@ -90,10 +89,10 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.trends)} description={salon.name} />
       {match(shown)
         .with({ type: P.union('forbidden', 'notFound') }, ({ type }) => (
-          <ReportRefusal refusal={type} what={TITLE} />
+          <ReportRefusal refusal={type} what={names.seen.trends} />
         ))
         .with(
           P.union(undefined, {
@@ -103,31 +102,36 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             <>
               <StatisticsPeriod
                 period={period}
-                description={REPORT_PERIOD}
+                description={say(dashboardReportMessages.period)}
                 errors={errors}
                 onSubmit={count}
               >
                 <RadioGroup
-                  label='区切り'
+                  label={say(words.unit)}
                   name='period'
-                  options={TREND_UNITS}
-                  description={TREND_UNIT_HELP}
+                  options={TREND_UNITS.map(({ value, label }) => ({
+                    value,
+                    label: say(label),
+                  }))}
+                  description={say(words.unitHelp)}
                   value={chosen.unit}
                   onChange={(event) =>
                     setChosen({ asked, unit: trendUnitOf(event.target.value) })
                   }
                 />
               </StatisticsPeriod>
-              <p>{`${inJapanese(periodNameOf(period))}の売上の推移`}</p>
+              <p>{say(words.of(periodNameOf(period)))}</p>
               {match(counted)
                 .with(undefined, () => (
-                  <LoadingIndicator label='売上を集計しています' />
+                  <LoadingIndicator
+                    label={say(dashboardReportMessages.counting)}
+                  />
                 ))
                 .with({ type: 'found' }, ({ trends }) =>
                   trends.transactions.every((count) => count === 0) ? (
                     <EmptyState
-                      title='この期間の売上はありません'
-                      description='期間を変えて集計してください。'
+                      title={say(dashboardReportMessages.noSales)}
+                      description={say(dashboardReportMessages.changePeriod)}
                     />
                   ) : (
                     <SalesTrend
@@ -139,9 +143,7 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 )
                 .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                   <UnreadNotice
-                    message={inJapanese(
-                      unreadMessageOf(writtenInJapanese(TITLE), reason),
-                    )}
+                    message={say(unreadMessageOf(names.read.trends, reason))}
                     onRetry={() => void read.refetch()}
                     pending={read.isFetching}
                   />
@@ -157,10 +159,11 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The trends of the sales of the salon of the address. */
 export const SalesTrendsScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.trends)}>
       {(salon) => <TrendsPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
@@ -20,7 +21,13 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { removeTokyo, sellToBreakDown } from '../../__tests__/arrangements'
-import { countOver, menuLink, renderAt, TITLE } from '../../__tests__/screens'
+import {
+  countOver,
+  menuLink,
+  periodInEnglish,
+  renderAt,
+  TITLE,
+} from '../../__tests__/screens'
 import { categorySalesHrefOf } from '../../navigation'
 
 /*
@@ -221,5 +228,79 @@ describe('the sales by kind of service, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the sales by kind of service on a page in English, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should name every kind of service in English, over the month up to today', async () => {
+    // Arrange
+    await sellToBreakDown()
+    const today = await dayFromToday(0)
+    const first = `${today.slice(0, 8)}01`
+
+    // Act
+    renderAt(categorySalesHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+
+    // Assert
+    expect(await heading('Sales by category')).toHaveFocus()
+    expect(document.title).toBe(`Sales by category | ${TITLE}`)
+    expect(
+      screen.getByText(
+        `Sales by menu category for ${periodInEnglish(first, today)}`,
+      ),
+    ).toBeVisible()
+    await screen.findByRole('table', { name: 'Sales by category' })
+    expect(rowsOf('Sales by category')).toEqual([
+      ['Color', '¥24,300', '2', '¥12,150', '68.8%'],
+      ['Cut', '¥9,900', '2', '¥4,950', '28.0%'],
+      ['Other', '¥1,100', '1', '¥1,100', '3.1%'],
+    ])
+  })
+
+  it('should say in English that no service was sold on days that sold a product alone', async () => {
+    // Arrange
+    await sellToBreakDown()
+    const before = await dayFromToday(-40)
+    renderAt(categorySalesHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+    await screen.findByRole('table', { name: 'Sales by category' })
+
+    // Act
+    await countOver(before, before, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText('No menu sales in this period'),
+    ).toBeVisible()
+  })
+
+  it('should say in English that a salon removed since it was read has no sales by kind any more', async () => {
+    // Arrange
+    await sellToBreakDown()
+    renderAt(categorySalesHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OPERATOR, 'en')
+    await screen.findByRole('table', { name: 'Sales by category' })
+    await removeTokyo()
+
+    // Act
+    await countOver('2020-01-01', '2020-01-31', 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This salon was removed, so you cannot see its sales by category.',
+      ),
+    ).toBeVisible()
   })
 })

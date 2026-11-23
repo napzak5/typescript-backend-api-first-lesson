@@ -1,12 +1,17 @@
 import { OtherSalonNotice } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink, writtenInJapanese } from '@beauty-salon-frontend/ui'
+import { ButtonLink, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
+import { frameMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
+
+const { names, refusal: words } = dashboardReportMessages
 
 export type ReportRefusalProps = {
   /** Why there is no report: the account is of another salon, or the salon was removed */
   refusal: 'forbidden' | 'notFound'
-  /** What is not shown: 「売上レポート」 */
-  what: string
+  /** What is not shown, as a sentence names it: `dashboardReportMessages.names.seen.report` */
+  what: LocalizedText
 }
 
 /**
@@ -14,19 +19,18 @@ export type ReportRefusalProps = {
  * account's to see, and the way to those of its own salon; or that the
  * salon was removed since it was read.
  */
-export const ReportRefusal = ({ refusal, what }: ReportRefusalProps) =>
-  match(refusal)
+export const ReportRefusal = ({ refusal, what }: ReportRefusalProps) => {
+  const say = useSay()
+
+  return match(refusal)
     .with('forbidden', () => (
-      <OtherSalonNotice
-        what={writtenInJapanese(what)}
-        who={writtenInJapanese('そのサロンのオーナーとマネージャーと、管理者')}
-        start={writtenInJapanese('売上レポート')}
-      />
+      <OtherSalonNotice what={what} who={names.who} start={names.seen.report} />
     ))
     .with('notFound', () => (
       <>
-        <p>{`このサロンは削除されたため、${what}を見られません。`}</p>
-        <ButtonLink href='/'>トップへ戻る</ButtonLink>
+        <p>{say(words.removed(what))}</p>
+        <ButtonLink href='/'>{say(frameMessages.notFound.back)}</ButtonLink>
       </>
     ))
     .exhaustive()
+}

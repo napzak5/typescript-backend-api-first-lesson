@@ -427,8 +427,8 @@ In an area of an application that is done, the same rules hold, and:
   link as a link. Every language writes the parts so that they make one
   sentence in that order.
 - The links of the header are named by messages: `navigationFor` returns
-  `FrameLink`s of `app-frame`, and `AppFrame` says their names. An
-  application that is still written in Japanese gives
+  `FrameLink`s of `app-frame`, and `AppFrame` says their names. The admin
+  application, which is still written in Japanese, gives
   `writtenInJapanese('…')`.
 - A name that a message of another catalogue puts into its sentence (what
   was not read) is in `names` of the catalogue
@@ -438,20 +438,21 @@ In an area of an application that is done, the same rules hold, and:
   (`itShouldWriteItsTextsAsMessages(import.meta.dirname, ['account', …])`),
   and the test fails on a name that has no source. An application whose
   areas are all done checks the whole of its source, as a package does
-  (`itShouldWriteItsTextsAsMessages(import.meta.dirname)` of the portal);
-  what the tests share (`__tests__`) is not read.
+  (`itShouldWriteItsTextsAsMessages(import.meta.dirname)` of the portal
+  and of the dashboard); what the tests share (`__tests__`) is not read.
 - An area that is still written in Japanese says what it takes of an area
   that is done with `inJapanese`, and an area that is done hands on the
-  strings of one that is not as they are. The portal has neither any
-  more.
+  strings of one that is not as they are. The portal and the dashboard
+  have neither any more.
 
 A value is written by the formats of `@beauty-salon-shared/i18n/formats`,
 which return it in every language, as a message: a number with its
-decimals (`numberOf`), a share (`percentOf`), an amount and the name of a
+decimals (`numberOf`), a share (`percentOf`), a place in a ranking
+(`placeOf`: 「1 位」, `1st`), an amount and the name of a
 currency (`amountOf`, `shortAmountOf`, `currencyNameOf`), the size of a
 file (`bytesOf`, `fileSizeOf`), a day and a month of the calendar
 (`dayOf`, `dayWithWeekdayOf`, `fullDayOf`, `monthDayOf`, `shortDayOf`,
-`monthOf`) and a moment on the clock of a time zone (`timeOfDayAt`,
+`numericDayOf` for the axis of a chart, `monthOf`) and a moment on the clock of a time zone (`timeOfDayAt`,
 `momentAt`, `momentWithWeekdayAt`), a range of moments and the times of
 a day the API writes (`timeRangeAt`, `timeSlotsOf`), and a length in
 minutes (`durationOf`). A message that puts a number into its

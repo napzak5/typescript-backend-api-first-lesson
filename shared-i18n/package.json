@@ -40,6 +40,12 @@
       "types": "./dist/messages/portal/index.d.ts",
       "import": "./dist/messages/portal/index.js",
       "default": "./dist/messages/portal/index.js"
+    },
+    "./messages/dashboard": {
+      "@beauty-salon-frontend/source": "./src/messages/dashboard/index.ts",
+      "types": "./dist/messages/dashboard/index.d.ts",
+      "import": "./dist/messages/dashboard/index.js",
+      "default": "./dist/messages/dashboard/index.js"
     }
   },
   "scripts": {

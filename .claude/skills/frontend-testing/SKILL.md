@@ -186,9 +186,11 @@ describe('Button', () => {
   (`review-report.test.tsx`).
   A screen of such a package that has no test of its own (`WithSalon`,
   `SalonChoiceScreen` of `salon-screens`) is tested in English in the
-  integration test of an application: it signs in on the Japanese page,
-  whose labels `signInAs` looks for, then chooses English inside `act`
-  (`frontend/apps/admin-app/src/App.integration.test.tsx`).
+  integration test of an application: the admin application signs in on
+  the Japanese page, then chooses English inside `act`
+  (`frontend/apps/admin-app/src/App.integration.test.tsx`); the dashboard
+  chooses English before it draws and signs in on the English page
+  (`signInAs(OWNER, 'en')`, `frontend/apps/dashboard-app/src/App.integration.test.tsx`).
 - An area of an application whose texts are messages is tested the same
   way: its components in English beside the Japanese tests, the focus of
   its form as the language changes (`booking-form.test.tsx`,
@@ -609,6 +611,7 @@ it('should show the screen that was asked for after signing in', async () => {
   | `statusMessages()` | What the `status` regions of `main` say, the empty ones too |
   | `termsOf(card)`, `termsOnceThere(card)` | What a card says, term by term; the second awaits the card |
   | `rowsOf(table)` | What the rows of a table say below the row of its column headers: a row is the text of its cells in their order, the header of the row among them. The table is its caption, or the element (a table once awaited, the part of a page that holds one) |
+  | `columnsOf(table)` | What the headers of the columns of a table say, in their order; the headers of the rows are none of them. The table is its caption, or the element. A table whose headers are messages is read by it on a page in English |
   | `optionsOf(select)` | What a select offers, option by option. The select is its label, or the element |
   | `queryClientOfATest()`, `asTheApplicationKeeps()` | A client that tries a read once; the same with the five minutes an application keeps what it read |
 
@@ -619,7 +622,8 @@ it('should show the screen that was asked for after signing in', async () => {
   of an option beside its text, reads it itself.
 
   `signInAs(email)` of `@beauty-salon-frontend/testing/api` signs in on
-  the screen as an account of the seed data, and `openAs(path, email)` of
+  the screen as an account of the seed data, by the names of the controls
+  in Japanese, or in English with `signInAs(email, 'en')`, and `openAs(path, email)` of
   the admin application renders at an address and does so. The tools have
   tests of their own (`frontend/packages/testing/src/screens/screens.test.tsx`,
   `src/api/sign-in.integration.test.tsx`).

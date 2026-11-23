@@ -4,6 +4,7 @@ export {
   fullDayOf,
   monthDayOf,
   monthOf,
+  numericDayOf,
   shortDayOf,
 } from './days'
 export {
@@ -20,6 +21,7 @@ export {
   fileSizeOf,
   numberOf,
   percentOf,
+  placeOf,
   shortAmountOf,
 } from './numbers'
 export { durationOf, timeSlotsOf } from './times'

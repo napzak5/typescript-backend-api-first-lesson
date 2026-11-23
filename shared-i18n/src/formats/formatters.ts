@@ -41,3 +41,9 @@ export const displayNamesIn = keptBy(
   (language: Locale, options: Intl.DisplayNamesOptions) =>
     new Intl.DisplayNames(language, options),
 )
+
+/** The rules of a language for the forms of a number (an ordinal: 「1st」, 「2nd」). */
+export const pluralRulesIn = keptBy(
+  (language: Locale, options: Intl.PluralRulesOptions) =>
+    new Intl.PluralRules(language, options),
+)

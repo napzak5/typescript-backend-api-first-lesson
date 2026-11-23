@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as trendChartStories from './trend-chart.stories'
 
 const stories = composeStories(trendChartStories)
@@ -95,5 +96,46 @@ describe('TrendChart', () => {
     expect(
       screen.getByText('￥10万').closest('[aria-hidden="true"]'),
     ).not.toBeNull()
+  })
+})
+
+describe('TrendChart on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should write the amounts of the axis and name the months as English does', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Months.run()
+
+    // Assert
+    expect(columnOf('December 2025: ¥48,000')).toHaveStyle({
+      blockSize: '48%',
+    })
+    expect(screen.getByText('¥100K')).toBeInTheDocument()
+    expect(screen.getByText('¥50K')).toBeInTheDocument()
+    expect(screen.getByText('¥0')).toBeInTheDocument()
+    expect(screen.getByText('December 2025')).toBeInTheDocument()
+    expect(screen.getByText('November 2026')).toBeInTheDocument()
+  })
+
+  it('should name a week by its Monday, and write the days of the axis in figures, as English does', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Weeks.run()
+
+    // Assert
+    expect(columnOf('Week from Mon, November 2, 2026: ¥7,700')).toHaveStyle({
+      blockSize: '77%',
+    })
+    expect(screen.getByText('¥10K')).toBeInTheDocument()
+    expect(screen.getByText('¥5,000')).toBeInTheDocument()
+    expect(screen.getByText('10/26/2026')).toBeInTheDocument()
+    expect(screen.getByText('11/16/2026')).toBeInTheDocument()
   })
 })

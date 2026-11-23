@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { periodNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   findAccessibilityViolations,
@@ -23,7 +24,6 @@ import {
   OWNER,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -33,7 +33,13 @@ import {
   removeTokyo,
   voidSale,
 } from '../../__tests__/arrangements'
-import { countOver, menuLink, renderAt, TITLE } from '../../__tests__/screens'
+import {
+  countOver,
+  menuLink,
+  periodInEnglish,
+  renderAt,
+  TITLE,
+} from '../../__tests__/screens'
 import { reportsHrefOf } from '../../navigation'
 
 /*
@@ -168,7 +174,7 @@ describe('the sales report, against the API', () => {
       expect(screen.getByLabelText('集計する期間（まで）')).toHaveValue(today)
       expect(
         screen.getByText(
-          `${inJapanese(periodNameOf({ from: first, to: today }))}の売上`,
+          `${periodNameOf({ from: first, to: today }).ja}の売上`,
         ),
       ).toBeVisible()
       expect(await termsOnceThere('期間の合計')).toEqual(SUMS_OF_TODAY)
@@ -203,7 +209,7 @@ describe('the sales report, against the API', () => {
     expect(await screen.findByText('この期間の売上はありません')).toBeVisible()
     expect(
       screen.getByText(
-        `${inJapanese(periodNameOf({ from: '2020-01-01', to: '2020-12-31' }))}の売上`,
+        `${periodNameOf({ from: '2020-01-01', to: '2020-12-31' }).ja}の売上`,
       ),
     ).toBeVisible()
     // Nothing was sold, so there is nothing to export
@@ -329,7 +335,7 @@ describe('the sales report, against the API', () => {
       ].join('\r\n'),
     )
     expect(notifications()).toContain(
-      `${inJapanese(periodNameOf({ from: yesterday, to: today }))}の売上を、${file.name} に出力しました。`,
+      `${periodNameOf({ from: yesterday, to: today }).ja}の売上を、${file.name} に出力しました。`,
     )
     expect(exporting).toHaveFocus()
     expect(screen.queryByRole('alert')).toBeNull()
@@ -485,5 +491,172 @@ describe('the sales report, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the sales report on a page in English, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should say the report of the month up to today in English', async () => {
+    // Arrange
+    await sellToday()
+    const today = await dayFromToday(0)
+    const first = `${today.slice(0, 8)}01`
+    renderAt('/')
+
+    // Act
+    await signInAs(OWNER, 'en')
+
+    // Assert
+    expect(await heading('Sales report')).toHaveFocus()
+    expect(document.title).toBe(`Sales report | ${TITLE}`)
+    expect(
+      screen.getByText(`Sales for ${periodInEnglish(first, today)}`),
+    ).toBeVisible()
+    expect(await termsOnceThere('Totals for the period')).toEqual([
+      ['Sales', '¥21,000'],
+      ['Refunds', '¥3,300'],
+      ['Net sales', '¥17,700'],
+      ['Checkouts', '3'],
+      ['Average per checkout', '¥7,000'],
+      ['Tax', '¥2,000'],
+      ['Discounts', '¥1,000'],
+    ])
+    expect(rowsOf('Received by payment method')).toEqual([
+      ['Credit card', '¥7,800', '1', '58.6%'],
+      ['Cash', '¥5,500', '1', '41.4%'],
+    ])
+    expect(rowsOf('Sales by menu category')).toEqual([
+      ['Cut', '¥9,900', '2', '55.9%'],
+      ['Color', '¥7,800', '1', '44.1%'],
+    ])
+    expect(rowsOf('Top 5 staff by sales')).toEqual([
+      ['1st', 'Mika Suzuki', '¥11,100', '1', '¥7,800'],
+      ['2nd', 'Hiroshi Tanaka', '¥9,900', '2', '¥4,950'],
+    ])
+  })
+
+  it('should say in English that nothing was sold on the days chosen', async () => {
+    // Arrange
+    renderAt(reportsHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+    await heading('Sales report')
+
+    // Act
+    await countOver('2020-01-01', '2020-12-31', 'en')
+
+    // Assert
+    expect(await screen.findByText('No sales in this period')).toBeVisible()
+    expect(screen.getByText('Change the period and count again.')).toBeVisible()
+    expect(
+      screen.getByText(
+        `Sales for ${periodInEnglish('2020-01-01', '2020-12-31')}`,
+      ),
+    ).toBeVisible()
+  })
+
+  it('should save the sales of the period and say so in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellToday()
+    const today = await dayFromToday(0)
+    const yesterday = await dayFromToday(-1)
+    renderAt(
+      `${reportsHrefOf(await salonIdOf(TOKYO))}?from=${yesterday}&to=${today}`,
+    )
+    await signInAs(OWNER, 'en')
+    await screen.findByRole('region', { name: 'Totals for the period' })
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Export as CSV' }))
+
+    // Assert
+    const file = await theSavedFile()
+    expect(notifications()).toContain(
+      `The sales for ${periodInEnglish(yesterday, today)} were exported to ${file.name}.`,
+    )
+  })
+
+  it('should say in English why no file is saved of a salon removed since the report was read', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellToday()
+    renderAt(reportsHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OPERATOR, 'en')
+    await screen.findByRole('region', { name: 'Totals for the period' })
+    await removeTokyo()
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Export as CSV' }))
+
+    // Assert
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This salon was removed, so its sales cannot be exported.',
+    )
+  })
+
+  it('should say in English that a salon removed since it was read has no report any more', async () => {
+    // Arrange
+    await sellToday()
+    renderAt(reportsHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OPERATOR, 'en')
+    await screen.findByRole('region', { name: 'Totals for the period' })
+    await removeTokyo()
+
+    // Act
+    await countOver('2020-01-01', '2020-01-31', 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This salon was removed, so you cannot see its sales report.',
+      ),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Back to the top' })).toBeVisible()
+  })
+
+  it('should tell the owner in English that the report of another salon is not theirs to see, and lead them to their own', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    renderAt(reportsHrefOf(await salonIdOf(OSAKA)))
+    await signInAs(OWNER, 'en')
+    expect(
+      await screen.findByText(
+        'You cannot see the sales report of this salon. Only the owner and the managers of the salon and the administrators can.',
+      ),
+    ).toBeVisible()
+
+    // Act
+    await user.click(
+      screen.getByRole('link', {
+        name: 'Go to the sales report of your salon',
+      }),
+    )
+
+    // Assert
+    expect(await heading('Sales report')).toHaveFocus()
+    expect(await screen.findByText('No sales in this period')).toBeVisible()
+  })
+
+  it('should let an administrator choose in English the salon whose report to open', async () => {
+    // Arrange
+    renderAt('/')
+
+    // Act
+    await signInAs(OPERATOR, 'en')
+
+    // Assert
+    expect(await heading('Choose a salon')).toHaveFocus()
+    expect(
+      screen.getByText('Choose the salon whose sales report to open.'),
+    ).toBeVisible()
   })
 })

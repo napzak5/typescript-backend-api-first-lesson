@@ -13,24 +13,64 @@ import { App } from '../App'
 /** The title of the application in the tests */
 export const TITLE = applications.dashboard.name
 
+/** What the tests find on a screen, as a page in each language names it */
+const NAMES = {
+  ja: {
+    menu: 'メインメニュー',
+    from: '集計する期間（から）',
+    to: '集計する期間（まで）',
+    count: '集計する',
+  },
+  en: {
+    menu: 'Main menu',
+    from: 'Period to count (from)',
+    to: 'Period to count (to)',
+    count: 'Calculate',
+  },
+}
+
+/** The language of the page a test reads: Japanese unless it says */
+export type Language = keyof typeof NAMES
+
 /** A link of the header */
-export const menuLink = (name: string): HTMLElement =>
-  within(screen.getByRole('navigation', { name: 'メインメニュー' })).getByRole(
-    'link',
-    { name },
-  )
+export const menuLink = (
+  name: string,
+  language: Language = 'ja',
+): HTMLElement =>
+  within(
+    screen.getByRole('navigation', { name: NAMES[language].menu }),
+  ).getByRole('link', { name })
 
 /** Changes the days a screen counts over, as the owner types them, and counts. */
-export const countOver = async (from: string, to: string): Promise<void> => {
+export const countOver = async (
+  from: string,
+  to: string,
+  language: Language = 'ja',
+): Promise<void> => {
+  const names = NAMES[language]
   const user = userEvent.setup()
-  const first = screen.getByLabelText('集計する期間（から）')
-  const last = screen.getByLabelText('集計する期間（まで）')
+  const first = screen.getByLabelText(names.from)
+  const last = screen.getByLabelText(names.to)
   await user.clear(first)
   await user.type(first, from)
   await user.clear(last)
   await user.type(last, to)
-  await user.click(screen.getByRole('button', { name: '集計する' }))
+  await user.click(screen.getByRole('button', { name: names.count }))
 }
+
+/** A day of the calendar (`2026-11-20`) with its weekday, as a page in English writes it: 「Fri, November 20, 2026」. */
+export const dayInEnglish = (day: string): string =>
+  new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${day}T00:00:00Z`))
+
+/** The days a screen counts over, as a page in English writes them. */
+export const periodInEnglish = (from: string, to: string): string =>
+  `${dayInEnglish(from)} – ${dayInEnglish(to)}`
 
 /** The application at an address. */
 export const renderAt = (path: string): RenderResult =>
