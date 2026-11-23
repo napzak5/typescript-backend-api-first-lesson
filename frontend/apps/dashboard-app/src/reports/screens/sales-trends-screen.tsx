@@ -15,6 +15,7 @@ import {
   PageHeader,
   RadioGroup,
   UnreadNotice,
+  useSaidChoices,
   useSay,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
@@ -49,6 +50,7 @@ type Refused = { asked: string; errors: FormErrors<LocalizedText> }
  */
 const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
   const say = useSay()
+  const options = useSaidChoices()
   const [query, setQuery] = useSearchParams()
   // What was wrong with what was sent, while the address shows what it was sent from
   const [refused, setRefused] = useState<Refused>()
@@ -109,10 +111,7 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 <RadioGroup
                   label={say(words.unit)}
                   name='period'
-                  options={TREND_UNITS.map(({ value, label }) => ({
-                    value,
-                    label: say(label),
-                  }))}
+                  options={options(TREND_UNITS)}
                   description={say(words.unitHelp)}
                   value={chosen.unit}
                   onChange={(event) =>
