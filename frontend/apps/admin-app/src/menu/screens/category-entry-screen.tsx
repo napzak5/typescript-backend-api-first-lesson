@@ -8,14 +8,15 @@ import { salonKeyOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -37,7 +38,7 @@ import {
 import { nextDisplayOrderOf } from '../utils/menu-format'
 import { MenuForbidden, useKeepsMenu } from './keeps-menu'
 
-const TITLE = 'カテゴリーを足す'
+const { categories: WORDS, names, titles, words } = adminMenuMessages
 
 type CategoryEntryProps = {
   salon: ModelsSalonResponse
@@ -56,10 +57,11 @@ const CategoryEntry = ({
   categories,
   onParentRefused,
 }: CategoryEntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsServiceCategoryCreateRequest) =>
       addCategory(salon.id, request),
@@ -69,10 +71,7 @@ const CategoryEntry = ({
           const read: CategoryRead = { type: 'found', category }
           queryClient.setQueryData(categoryKeyOf(category.id), read)
           queryClient.removeQueries({ queryKey: categoriesKeyOf(salon.id) })
-          notify({
-            tone: 'success',
-            message: `カテゴリー「${category.name}」を、メニューに足しました。`,
-          })
+          notify({ tone: 'success', message: WORDS.added(category.name) })
           void navigate(menuHrefOf(salon.id))
         })
         // The salon was removed meanwhile
@@ -109,14 +108,14 @@ const CategoryEntry = ({
       parents={categories}
       categories={categories}
       displayOrder={nextDisplayOrderOf(categories)}
-      submitLabel='足す'
+      submitLabel={say(words.add)}
       message={said.message}
       errors={said.errors}
       pending={entry.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={menuHrefOf(salon.id)} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -127,6 +126,7 @@ type EntryPartProps = { salon: ModelsSalonResponse }
 
 /** The categories there are, read anew, and the form once they were. */
 const EntryPart = ({ salon }: EntryPartProps) => {
+  const say = useSay()
   const categories = useQuery({
     queryKey: categoriesKeyOf(salon.id),
     queryFn: () => readCategories(salon.id),
@@ -136,18 +136,14 @@ const EntryPart = ({ salon }: EntryPartProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.categoryEntry)} description={salon.name} />
       {match(shown)
-        .with(undefined, () => (
-          <LoadingIndicator label='カテゴリーを読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(WORDS.loading)} />)
         .with(
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('カテゴリー'), reason),
-              )}
+              message={say(unreadMessageOf(names.categories, reason))}
               onRetry={() => void categories.refetch()}
               pending={categories.isFetching}
             />
@@ -167,16 +163,17 @@ const EntryPart = ({ salon }: EntryPartProps) => {
 
 /** Adds a category to the menu of the salon of the address, for the owner, a manager and an administrator. */
 export const CategoryEntryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
   const keeps = useKeepsMenu()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.categoryEntry)}>
       {(salon) =>
         keeps ? (
           <EntryPart key={salon.id} salon={salon} />
         ) : (
-          <MenuForbidden salon={salon} title={TITLE} />
+          <MenuForbidden salon={salon} title={titles.categoryEntry} />
         )
       }
     </WithSalon>

@@ -18,20 +18,19 @@ import {
 import {
   aboutTheAttempt,
   errorAt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
 import { numberOf } from '../../treatments/utils/treatment-form'
 import type { TreatmentRemovalSays } from '../../treatments/utils/treatment-format'
 import type { CategoryRemoval, CategoryWrite } from '../api/menu-api'
-import { FORBIDDEN_MESSAGE } from './service-form'
 
 /*
  * The form of a category of the menu: what it sends, and what it says
@@ -41,22 +40,10 @@ import { FORBIDDEN_MESSAGE } from './service-form'
 /** The longest name of a category the API takes */
 export const LONGEST_NAME = 100
 
-const NAME_ERROR = neededWithin(
-  writtenInJapanese('カテゴリーの名前'),
-  LONGEST_NAME,
-)
-const KIND_ERROR = '種類を選んでください。'
-const ORDER_ERROR = '表示順は、0 以上の整数で入力してください。'
-const COLOR_ERROR =
-  '色は、#C8A2C8 のように、# と 16 進数 6 桁で入力してください。'
+const { categories: CATEGORY_WORDS } = adminMenuMessages
+const { errors: WORDS, removal: REMOVAL } = CATEGORY_WORDS
 
-/** What is said at the parent when it was removed meanwhile */
-const PARENT_GONE =
-  'この親カテゴリーは、その間に削除されていました。親を選び直してください。'
-
-/** What is said at the parent when it is below the category now */
-const PARENT_BELOW =
-  'このカテゴリーの下にあるカテゴリーは、親にできません。その間に、親が変わっていました。選び直してください。'
+const NAME_ERROR = neededWithin(WORDS.name, LONGEST_NAME)
 
 const colorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/)
 
@@ -75,7 +62,7 @@ const CONTROLS: readonly string[] = [
 /** The whole category the form holds, or what is wrong with it. */
 const readWhole = (
   values: FormData,
-): FormRead<ModelsServiceCategoryCreateRequest> => {
+): FormRead<ModelsServiceCategoryCreateRequest, FormErrors<LocalizedText>> => {
   const optional = (name: string): string | null =>
     textOrNull(textOf(values, name))
   const name = textOf(values, 'name').trim()
@@ -87,21 +74,16 @@ const readWhole = (
   const color = optional('color')
   const errors = {
     ...Object.fromEntries(
-      errorAt(
-        'name',
-        inJapaneseIfAny(neededError(name, LONGEST_NAME, NAME_ERROR)),
-      ),
+      errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
     ),
-    ...(kind === undefined ? { category: KIND_ERROR } : {}),
+    ...(kind === undefined ? { category: WORDS.type } : {}),
     ...(displayOrder === null || displayOrder === undefined
-      ? { displayOrder: ORDER_ERROR }
+      ? { displayOrder: WORDS.displayOrder }
       : {}),
-    ...Object.fromEntries(
-      errorAt('iconUrl', inJapaneseIfAny(webAddressError(iconUrl))),
-    ),
+    ...Object.fromEntries(errorAt('iconUrl', webAddressError(iconUrl))),
     ...(color === null || colorSchema.safeParse(color).success
       ? {}
-      : { color: COLOR_ERROR }),
+      : { color: WORDS.color }),
   }
   if (
     kind === undefined ||
@@ -130,11 +112,12 @@ const readWhole = (
 /** A new category, as the form holds it. */
 export const readCategoryEntry = (
   values: FormData,
-): FormRead<ModelsServiceCategoryCreateRequest> => readWhole(values)
+): FormRead<ModelsServiceCategoryCreateRequest, FormErrors<LocalizedText>> =>
+  readWhole(values)
 
 /** What a change of a category asks for: nothing, when nothing was changed. */
 type CategoryChange =
-  | FormRead<ModelsServiceCategoryUpdateRequest>
+  | FormRead<ModelsServiceCategoryUpdateRequest, FormErrors<LocalizedText>>
   | { type: 'unchanged' }
 /**
  * What was changed in the form: the values that are others than those of
@@ -174,14 +157,16 @@ export const readCategoryChange = (
 }
 
 /** What is said at a control the API refused a value of. */
-const refusalAt = (field: string, rule: string): string =>
+const refusalAt = (field: string, rule: string): LocalizedText =>
   match(field)
-    .with('name', () => inJapanese(NAME_ERROR))
-    .with('displayOrder', () => ORDER_ERROR)
-    .with('iconUrl', () => inJapanese(WEB_ADDRESS_ERROR))
-    .with('color', () => COLOR_ERROR)
-    .with('parentId', () => (rule === 'circular' ? PARENT_BELOW : PARENT_GONE))
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .with('name', () => NAME_ERROR)
+    .with('displayOrder', () => WORDS.displayOrder)
+    .with('iconUrl', () => WEB_ADDRESS_ERROR)
+    .with('color', () => WORDS.color)
+    .with('parentId', () =>
+      rule === 'circular' ? WORDS.parentBelow : WORDS.parentGone,
+    )
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /** Whether a refusal is of the parent: the categories are read again, to choose from what there is now. */
 export const refusesParent = (
@@ -194,30 +179,26 @@ export const afterCategoryWrite = (
     | Extract<CategoryWrite, { type: 'invalid' | 'forbidden' }>
     | { type: 'tooManyRequests' }
     | { type: 'failed' },
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message: inJapaneseIfAny(
-          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
       }
     })
-    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt(adminMenuMessages.forbidden),
+    )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        'カテゴリーを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(CATEGORY_WORDS.saveFailed))
     .exhaustive()
 
 /**
@@ -227,25 +208,24 @@ export const afterCategoryWrite = (
 export const afterCategoryRemoval = (
   outcome: CategoryRemoval,
   name: string,
-): TreatmentRemovalSays =>
+): TreatmentRemovalSays<LocalizedText> =>
   match(outcome)
-    .returnType<TreatmentRemovalSays>()
+    .returnType<TreatmentRemovalSays<LocalizedText>>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
-      message: `カテゴリー「${name}」を、メニューから削除しました。`,
+      message: REMOVAL.done(name),
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: FORBIDDEN_MESSAGE,
+      message: adminMenuMessages.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        'カテゴリーを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: REMOVAL.failed,
     }))
     .exhaustive()

@@ -1,8 +1,10 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
   heading,
   optionsOf,
+  rowsOf,
   termsOnceThere,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -550,5 +552,286 @@ describe('the services of the menu, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(container)).toEqual([])
+  })
+})
+
+describe('the services of the menu on a page in English', () => {
+  /** Waits for a form of a service in English: its heading, then the form. */
+  const openedFormInEnglish = async (title: string): Promise<void> => {
+    await heading(title)
+    await screen.findByRole('group', { name: 'Service' })
+  }
+
+  const textInEnglish = (name: string): HTMLElement =>
+    within(screen.getByRole('group', { name: 'Service' })).getByRole(
+      'textbox',
+      { name },
+    )
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should let the manager add a service with an option in English, and show it', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(menuHrefOf(tokyo), MANAGER, 'en')
+    await user.click(await screen.findByRole('link', { name: 'Add a service' }))
+    await openedFormInEnglish('Add a service')
+
+    // Act
+    await user.type(textInEnglish('Name'), 'Bangs Trim')
+    await user.selectOptions(
+      within(row('Service')).getByRole('combobox', { name: 'Category' }),
+      'Hair Cut',
+    )
+    await user.type(
+      field('Time and price', 'textbox', 'Duration (minutes)'),
+      '15',
+    )
+    await user.type(field('Time and price', 'textbox', 'Price'), '1500')
+    await user.type(
+      field('Time and price', 'textbox', 'Discounted price'),
+      '1200',
+    )
+    await user.selectOptions(
+      field('Booking', 'combobox', 'Staff who can do it'),
+      'Stylist or above',
+    )
+    await user.click(screen.getByRole('button', { name: 'Add an option' }))
+    await user.type(
+      within(row('Option 1')).getByRole('textbox', { name: 'Name' }),
+      'Fringe Styling',
+    )
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Added the service “Bangs Trim” to the menu.'),
+    ).toBeInTheDocument()
+    await heading('Service details')
+    expect(await termsOnceThere('Service')).toEqual(
+      expect.arrayContaining([
+        ['Name', 'Bangs Trim'],
+        ['Category', 'Hair Cut'],
+        ['Duration', '15 min'],
+        ['Price', '¥1,200 (discounted from ¥1,500) · Tax included'],
+      ]),
+    )
+    expect(
+      within(screen.getByRole('region', { name: 'Booking' })).getByText(
+        'Stylist or above',
+      ),
+    ).toBeInTheDocument()
+    expect(rowsOf(screen.getByRole('table', { name: 'Options' }))).toEqual([
+      [
+        'Fringe Styling',
+        'Add-on',
+        '0 min',
+        '¥0',
+        'Up to 1',
+        'Optional',
+        'Active',
+      ],
+    ])
+  })
+
+  it('should say in English what is wrong before sending, at the control and at the package', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(serviceEntryHrefOf(tokyo), MANAGER, 'en')
+    await openedFormInEnglish('Add a service')
+    await user.type(textInEnglish('Name'), 'Quick Blow')
+    await user.type(
+      field('Time and price', 'textbox', 'Duration (minutes)'),
+      '2000',
+    )
+    await user.type(field('Time and price', 'textbox', 'Price'), '2000')
+    await user.type(
+      field('Time and price', 'textbox', 'Discounted price'),
+      '2500',
+    )
+    await user.click(
+      screen.getByRole('checkbox', { name: 'Make it a package' }),
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Remove packaged service 2' }),
+    )
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    expect(
+      field('Time and price', 'textbox', 'Duration (minutes)'),
+    ).toHaveAccessibleDescription(
+      'A whole number from 1 to 1,440. Enter the duration as a whole number of minutes from 1 to 1,440.',
+    )
+    expect(
+      field('Time and price', 'textbox', 'Discounted price'),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('The discounted price can be at most the price.'),
+    )
+    expect(
+      screen.getByRole('checkbox', { name: 'Make it a package' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Choose 2 to 20 packaged services for a package.',
+      ),
+    )
+    expect(await storedServicesNamed(TOKYO, 'Quick Blow')).toEqual([])
+  })
+
+  it('should remove a service after asking in English, and say so', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(
+      serviceChangeHrefOf(tokyo, await serviceIdOf('Highlights')),
+      OWNER,
+      'en',
+    )
+    await openedFormInEnglish('Edit the service')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Remove' }))
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Remove the service “Highlights”?',
+    })
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'Removed the service “Highlights” from the menu.',
+      ),
+    ).toBeInTheDocument()
+    await heading('Menu')
+  })
+
+  it.each<[string, string, string, string]>([
+    [
+      'a package has',
+      OSAKA,
+      'Head Spa (30 min)',
+      'The service “Head Spa (30 min)” is in the package “Spa & Cut Package”, so it cannot be removed. Take it out of the packaged services first.',
+    ],
+    [
+      'a booking not over yet has',
+      TOKYO,
+      'Ladies Cut',
+      'The service “Ladies Cut” is on the lines of bookings that are not finished, so it cannot be removed. Finish or cancel those bookings, or take the lines off them, then remove it.',
+    ],
+  ])(
+    'should keep a service %s, and say in English what to do first',
+    async (_, salon, name, message) => {
+      // Arrange
+      const user = userEvent.setup()
+      await openAs(
+        serviceChangeHrefOf(await salonIdOf(salon), await serviceIdOf(name)),
+        OPERATOR,
+        'en',
+      )
+      await openedFormInEnglish('Edit the service')
+
+      // Act
+      await user.click(screen.getByRole('button', { name: 'Remove' }))
+      const dialog = await screen.findByRole('dialog')
+      await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+      // Assert
+      expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    },
+  )
+
+  it('should say in English at the package that one of its services was removed meanwhile', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(serviceEntryHrefOf(tokyo), MANAGER, 'en')
+    await openedFormInEnglish('Add a service')
+    await user.type(textInEnglish('Name'), 'Cut & Perm')
+    await user.type(
+      field('Time and price', 'textbox', 'Duration (minutes)'),
+      '150',
+    )
+    await user.type(field('Time and price', 'textbox', 'Price'), '14000')
+    await user.click(
+      screen.getByRole('checkbox', { name: 'Make it a package' }),
+    )
+    await user.selectOptions(
+      within(row('Packaged service 1')).getByRole('combobox', {
+        name: 'Service',
+      }),
+      'Mens Cut',
+    )
+    await user.selectOptions(
+      within(row('Packaged service 2')).getByRole('combobox', {
+        name: 'Service',
+      }),
+      'Straight Perm',
+    )
+    await serviceRemovedMeanwhile(await serviceIdOf('Straight Perm'))
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(
+        screen.getByRole('checkbox', { name: 'Make it a package' }),
+      ).toHaveAccessibleDescription(
+        expect.stringContaining(
+          'One of the packaged services was removed or made a package meanwhile. Choose again.',
+        ),
+      ),
+    )
+  })
+
+  it('should say in English that a service removed meanwhile is not found', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    const balayage = await serviceIdOf('Balayage')
+    await openAs(serviceChangeHrefOf(tokyo, balayage), MANAGER, 'en')
+    await openedFormInEnglish('Edit the service')
+    await user.type(textInEnglish('Name'), ' Plus')
+    await serviceRemovedMeanwhile(balayage)
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    expect(await heading('Service not found')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Check that the address is right. A service removed from the menu cannot be shown.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('should refuse a stylist the form of a new service in English', async () => {
+    // Arrange
+    const tokyo = await salonIdOf(TOKYO)
+
+    // Act
+    await openAs(serviceEntryHrefOf(tokyo), STYLIST, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This account cannot change the menu. Only the owners and managers of the salon, and administrators, can change the menu.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
 })

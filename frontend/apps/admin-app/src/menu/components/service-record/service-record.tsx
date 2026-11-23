@@ -7,26 +7,34 @@ import {
   BulletList,
   Card,
   DescriptionList,
-  inJapanese,
   Link,
   NONE,
   Table,
   TagList,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { levelNameOf } from '../../../staff/utils/staff-format'
-import { minutesNameOf } from '../../../treatments/utils/treatment-format'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   availabilityNameOf,
   categoriesById,
-  categoryPathOf,
+  categoryLineOf,
+  onlineBookingOf,
   optionTypeNameOf,
   priceLineOf,
   pricingNameOf,
   requirementNameOf,
   serviceStateOf,
+  switchNameOf,
 } from '../../utils/menu-format'
 import styles from './service-record.module.css'
+
+const {
+  services: { record: WORDS },
+  words: { levelOrAbove, upTo },
+} = adminMenuMessages
 
 export type ServiceRecordProps = {
   service: ModelsServiceResponse
@@ -38,9 +46,6 @@ export type ServiceRecordProps = {
   /** The address of a service */
   serviceHref: (serviceId: string) => string
 }
-
-/** What is said of a service of a package that is not on the menu any more */
-const UNLISTED_SERVICE = 'メニューにないサービス'
 
 /**
  * Everything the menu keeps of a service: what it is and costs, how it is
@@ -54,56 +59,68 @@ export const ServiceRecord = ({
   currency,
   serviceHref,
 }: ServiceRecordProps) => {
+  const say = useSay()
   const byId = categoriesById(categories)
   const category =
     service.categoryId === null ? undefined : byId.get(service.categoryId)
 
   return (
     <div className={styles['record']}>
-      <Card title='サービス'>
+      <Card title={say(WORDS.service)}>
         <DescriptionList
           items={[
-            { term: '名前', description: service.name },
+            { term: say(WORDS.name), description: service.name },
             {
-              term: 'カテゴリー',
-              description:
-                category === undefined
-                  ? '未分類'
-                  : categoryPathOf(category, byId),
-            },
-            { term: '状態', description: serviceStateOf(service) },
-            { term: '所要時間', description: minutesNameOf(service.duration) },
-            { term: '料金', description: priceLineOf(service, currency) },
-            {
-              term: '価格の決め方',
-              description: pricingNameOf(service.pricingStrategy),
+              term: say(WORDS.category),
+              description: say(categoryLineOf(category, byId)),
             },
             {
-              term: '提供日',
-              description: availabilityNameOf(service.availability),
+              term: say(WORDS.status),
+              description: say(serviceStateOf(service)),
             },
-            { term: '表示順', description: String(service.sortOrder) },
             {
-              term: '短い紹介',
+              term: say(WORDS.duration),
+              description: say(formats.minutesOf(service.duration)),
+            },
+            {
+              term: say(WORDS.price),
+              description: say(priceLineOf(service, currency)),
+            },
+            {
+              term: say(WORDS.pricing),
+              description: say(pricingNameOf(service.pricingStrategy)),
+            },
+            {
+              term: say(WORDS.availability),
+              description: say(availabilityNameOf(service.availability)),
+            },
+            {
+              term: say(WORDS.displayOrder),
+              description: say(formats.numberOf(service.sortOrder)),
+            },
+            {
+              term: say(WORDS.shortDescription),
               description: service.shortDescription,
             },
             {
-              term: '説明',
+              term: say(WORDS.description),
               description: <WrittenText>{service.description}</WrittenText>,
             },
             {
-              term: 'タグ',
-              description: <TagList label={'タグ'} items={service.tags} />,
+              term: say(WORDS.tags),
+              description: (
+                <TagList label={say(WORDS.tags)} items={service.tags} />
+              ),
             },
             {
-              term: '写真の URL',
+              term: say(WORDS.photo),
               description: service.imageUrl,
             },
             {
-              term: 'ほかの写真の URL',
+              term: say(WORDS.otherPhotos),
               description:
                 service.imageUrls.length === 0 ? (
-                  inJapanese(NONE)
+                  say(NONE)
                 ) : (
                   <ul className={styles['addresses']}>
                     {service.imageUrls.map((address) => (
@@ -115,45 +132,53 @@ export const ServiceRecord = ({
           ]}
         />
       </Card>
-      <Card title='予約'>
+      <Card title={say(WORDS.booking)}>
         <DescriptionList
           items={[
             {
-              term: 'オンライン予約',
-              description: service.allowOnlineBooking ? '受ける' : '受けない',
+              term: say(WORDS.onlineBooking),
+              description: say(onlineBookingOf(service.allowOnlineBooking)),
             },
             {
-              term: '予約の条件',
+              term: say(WORDS.requirements),
               description: (
                 <TagList
-                  label={'予約の条件'}
-                  items={service.bookingRequirements.map(requirementNameOf)}
+                  label={say(WORDS.requirements)}
+                  items={service.bookingRequirements.map((requirement) =>
+                    say(requirementNameOf(requirement)),
+                  )}
                 />
               ),
             },
             {
-              term: 'カウンセリング',
-              description: service.requiresConsultation ? '必要' : '不要',
+              term: say(WORDS.consultation),
+              description: say(
+                service.requiresConsultation ? WORDS.needed : WORDS.notNeeded,
+              ),
             },
             {
-              term: '担当できるスタッフ',
-              description:
+              term: say(WORDS.staffLevel),
+              description: say(
                 service.requiredStaffLevel === null
-                  ? 'だれでも'
-                  : `${levelNameOf(service.requiredStaffLevel)}以上`,
+                  ? WORDS.anybody
+                  : levelOrAbove(
+                      termMessages.staffLevel[service.requiredStaffLevel],
+                    ),
+              ),
             },
             {
-              term: '1 日の予約の上限',
-              description:
+              term: say(WORDS.mostBookings),
+              description: say(
                 service.maxBookingsPerDay === null
-                  ? '上限なし'
-                  : `${service.maxBookingsPerDay} 件`,
+                  ? WORDS.noLimit
+                  : WORDS.bookingsOf(service.maxBookingsPerDay),
+              ),
             },
           ]}
         />
       </Card>
       {service.isPackage && (
-        <Card title='パッケージのサービス'>
+        <Card title={say(WORDS.packaged)}>
           <BulletList>
             {service.packageServiceIds.map((id) => {
               const packaged = services.find((one) => one.id === id)
@@ -161,7 +186,7 @@ export const ServiceRecord = ({
               return (
                 <li key={id}>
                   {packaged === undefined ? (
-                    UNLISTED_SERVICE
+                    say(WORDS.unlisted)
                   ) : (
                     <Link href={serviceHref(id)}>{packaged.name}</Link>
                   )}
@@ -172,47 +197,49 @@ export const ServiceRecord = ({
         </Card>
       )}
       <Table
-        caption='オプション'
+        caption={say(WORDS.options)}
         columns={[
-          { key: 'name', header: '名前', cell: ({ name }) => name },
+          { key: 'name', header: say(WORDS.name), cell: ({ name }) => name },
           {
             key: 'optionType',
-            header: '種類',
-            cell: ({ optionType }) => optionTypeNameOf(optionType),
+            header: say(WORDS.optionType),
+            cell: ({ optionType }) => say(optionTypeNameOf(optionType)),
           },
           {
             key: 'additionalTime',
-            header: '追加の時間',
-            cell: ({ additionalTime }) => minutesNameOf(additionalTime),
+            header: say(WORDS.additionalTime),
+            cell: ({ additionalTime }) =>
+              say(formats.minutesOf(additionalTime)),
             align: 'end',
           },
           {
             key: 'additionalPrice',
-            header: '追加の料金',
+            header: say(WORDS.additionalPrice),
             cell: ({ additionalPrice }) =>
-              inJapanese(amountOf(additionalPrice, currency)),
+              say(amountOf(additionalPrice, currency)),
             align: 'end',
           },
           {
             key: 'maxQuantity',
-            header: '選べる数',
-            cell: ({ maxQuantity }) => `${maxQuantity} まで`,
+            header: say(WORDS.maxQuantity),
+            cell: ({ maxQuantity }) => say(upTo(maxQuantity)),
             align: 'end',
           },
           {
             key: 'isRequired',
-            header: '必須',
-            cell: ({ isRequired }) => (isRequired ? '必須' : '任意'),
+            header: say(WORDS.required),
+            cell: ({ isRequired }) =>
+              say(isRequired ? WORDS.required : WORDS.optional),
           },
           {
             key: 'isActive',
-            header: '状態',
-            cell: ({ isActive }) => (isActive ? '有効' : '無効'),
+            header: say(WORDS.status),
+            cell: ({ isActive }) => say(switchNameOf(isActive)),
           },
         ]}
         rows={service.options}
         rowKey={({ name, sortOrder }) => `${sortOrder}-${name}`}
-        emptyMessage='オプションはありません'
+        emptyMessage={say(WORDS.noOptions)}
       />
     </div>
   )

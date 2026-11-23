@@ -419,10 +419,13 @@ In an area of an application that is done, the same rules hold, and:
   (`adminCustomerMessages`), the inventory (`adminInventoryMessages`, its
   movements, its count and its alerts in files of their own), the sales
   (`adminSaleMessages`, its checkout, its payments and refunds, and its
-  change and voiding in files of their own), the frame of a screen of a
-  booking that the checkout opens in (`adminBookingMessages`) and the
-  words a screen names a service of the menu and a member of the staff
-  with (`adminMenuMessages`, `adminStaffMessages`). How the catalogues write a count, a
+  change and voiding in files of their own), the menu
+  (`adminMenuMessages`, its categories, its services, the form of a
+  service and the change of several services in files of their own, and
+  the name another screen gives a removed service), the frame of a screen
+  of a booking that the checkout opens in (`adminBookingMessages`) and the
+  words a screen names a member of the staff with (`adminStaffMessages`).
+  How the catalogues write a count, a
   list, sentences one after the other and a postal code is in
   `messages/written.ts`, which every catalogue shares.
 - What it writes (`booking-format.ts`, `salon-format.ts`,
@@ -457,8 +460,8 @@ In an area of an application that is done, the same rules hold, and:
   and of the dashboard); what the tests share (`__tests__`) is not read.
   An area that is done in parts names the folders and files inside it
   that are done (`'customers/components/customer-form'`), until the whole
-  area is and its name takes their place (`'customers'`, `'inventory'`
-  and `'sales'` of the admin application; the frame of a screen of a
+  area is and its name takes their place (`'customers'`, `'inventory'`,
+  `'menu'` and `'sales'` of the admin application; the frame of a screen of a
   booking, which the sales open in, is `'bookings/screens/with-booking.tsx'`
   until the bookings are done).
 - An area that is still written in Japanese says what it takes of an area
@@ -469,8 +472,8 @@ In an area of an application that is done, the same rules hold, and:
   that is done hands on the strings of one that is not as they are. A type
   of an area that is not done takes the type of its texts as a parameter
   where one that is done uses it (`TreatmentRemovalSays<Text = string>` of
-  the treatments, which the removal of a stock row uses as
-  `TreatmentRemovalSays<LocalizedText>`). The portal and the dashboard
+  the treatments, which the removal of a stock row and of a category or a
+  service of the menu use as `TreatmentRemovalSays<LocalizedText>`). The portal and the dashboard
   have none of these any more.
 - An area that is done in two parts splits a file of both, so that the
   file of the part that is done holds none of the texts of the other (the
@@ -2413,7 +2416,7 @@ the screens of a service and of a category, `menu-api.ts`,
 - **A removal refused for what holds the record (409) names it**: the
   lists are read again and the refusal is said above the form with what
   holds the record now and what to do first (`inUseMessageOf`).
-- **A change of several records at once opens at 「変えない」**
+- **A change of several records at once opens at “Keep” (「変えない」)**
   (`ServicesChangeForm`): every value is a select whose first choice
   keeps it, only what was chosen is sent, and a form that keeps
   everything is refused before the API is called. The records are

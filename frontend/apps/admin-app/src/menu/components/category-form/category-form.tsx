@@ -1,26 +1,37 @@
 import type { ModelsServiceCategoryResponse } from '@beauty-salon-frontend/api-client'
 import {
   CATEGORY_CHOICES,
-  upTo,
   WEB_ADDRESS_DESCRIPTION,
 } from '@beauty-salon-frontend/fields'
 import {
   Checkbox,
   FieldRow,
   Form,
+  type FormErrors,
   type FormProps,
-  inJapanese,
+  NO_ERRORS,
   Select,
   TextArea,
   TextField,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { LONGEST_NAME } from '../../utils/category-form'
 import { categoriesById, categoryPathOf } from '../../utils/menu-format'
 
+const { form: WORDS } = adminMenuMessages.categories
+
 export type CategoryFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   /**
    * The category the form opens with. `null` for a new one: the form then
    * opens with a category of the top that is switched on and comes last
@@ -46,88 +57,89 @@ export const CategoryForm = ({
   parents,
   categories,
   displayOrder,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
 }: CategoryFormProps) => {
+  const say = useSay()
+  const options = useSaidChoices()
+  const said = useSaidForm(message, errors)
   const byId = categoriesById(categories)
 
   return (
-    <Form {...form} errors={errors}>
+    <Form {...form} message={said.message} errors={errors}>
       <TextField
-        label='名前'
+        label={say(WORDS.name)}
         name='name'
         autoComplete='off'
         required
-        description={`${inJapanese(upTo(LONGEST_NAME))}お客様のメニューの見出しになります。`}
+        description={say(WORDS.nameDescription(LONGEST_NAME))}
         defaultValue={category?.name}
-        error={errors['name']}
+        error={said.errors['name']}
       />
       <Select
-        label='親カテゴリー'
+        label={say(WORDS.parent)}
         name='parentId'
-        placeholder='なし（最上位のカテゴリー）'
+        placeholder={say(WORDS.noParent)}
         options={parents.map((parent) => ({
           value: parent.id,
           label: categoryPathOf(parent, byId),
         }))}
-        description='このカテゴリーを、ほかのカテゴリーの下に置きます。'
+        description={say(WORDS.parentDescription)}
         defaultValue={category?.parentId ?? ''}
-        error={errors['parentId']}
+        error={said.errors['parentId']}
       />
       <FieldRow>
         <Select
-          label='種類'
+          label={say(WORDS.type)}
           name='category'
           required
-          placeholder='選んでください'
-          options={CATEGORY_CHOICES.map(({ value, label }) => ({
-            value,
-            label: inJapanese(label),
-          }))}
+          placeholder={say(WORDS.choose)}
+          options={options(CATEGORY_CHOICES)}
           defaultValue={category?.category ?? ''}
-          error={errors['category']}
+          error={said.errors['category']}
         />
         <TextField
-          label='表示順'
+          label={say(WORDS.displayOrder)}
           name='displayOrder'
           inputMode='numeric'
           autoComplete='off'
           required
-          description='0 以上の整数。小さいものから並びます。'
+          description={say(WORDS.displayOrderDescription)}
           defaultValue={String(category?.displayOrder ?? displayOrder)}
-          error={errors['displayOrder']}
+          error={said.errors['displayOrder']}
         />
       </FieldRow>
       <TextArea
-        label='説明'
+        label={say(WORDS.description)}
         name='description'
         defaultValue={category?.description ?? undefined}
-        error={errors['description']}
+        error={said.errors['description']}
       />
       <TextField
-        label='色'
+        label={say(WORDS.color)}
         name='color'
         autoComplete='off'
         width='short'
-        description='#C8A2C8 のように、# と 16 進数 6 桁で。'
+        description={say(WORDS.colorDescription)}
         defaultValue={category?.color ?? undefined}
-        error={errors['color']}
+        error={said.errors['color']}
       />
       <TextField
-        label='アイコンの URL'
+        label={say(WORDS.icon)}
         name='iconUrl'
         type='url'
         autoComplete='off'
-        description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
+        description={say(WEB_ADDRESS_DESCRIPTION)}
         defaultValue={category?.iconUrl ?? undefined}
-        error={errors['iconUrl']}
+        error={said.errors['iconUrl']}
       />
       <Checkbox
-        label='有効'
+        label={say(WORDS.active)}
         name='isActive'
-        description='外すと、お客様のメニューにこの見出しが出なくなり、このカテゴリーのサービスは「その他」に並びます。'
+        description={say(WORDS.activeDescription)}
         defaultChecked={category?.isActive ?? true}
-        error={errors['isActive']}
+        error={said.errors['isActive']}
       />
     </Form>
   )

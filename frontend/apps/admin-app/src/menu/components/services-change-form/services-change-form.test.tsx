@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { aDiscountedColour, aService } from '../examples'
 import * as servicesChangeFormStories from './services-change-form.stories'
 
@@ -17,6 +18,8 @@ const valueIn = (control: HTMLElement): string | undefined =>
     : undefined
 
 describe('ServicesChangeForm', () => {
+  itShouldBeAccessibleInEveryStory(stories)
+
   it('should offer the services of the menu in its order, each with its category, none chosen', async () => {
     // Act
     await stories.Opened.run()
@@ -133,6 +136,105 @@ describe('ServicesChangeForm', () => {
       'どのサービスも変えていません。',
     )
   })
+})
 
-  itShouldBeAccessibleInEveryStory(stories)
+describe('ServicesChangeForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the services and the values in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Opened.run()
+
+    // Assert
+    const services = screen.getByRole('group', { name: 'Services to change' })
+    expect(services).toHaveAccessibleDescription(
+      'In the order of the menu, each with its category. 1 to 100.',
+    )
+    expect(
+      within(services)
+        .getAllByRole('checkbox')
+        .map((service) => service.closest('label')?.textContent),
+    ).toEqual([
+      'カット (カット)',
+      'フルカラー (カラー)',
+      'カットとカラー (Uncategorized)',
+    ])
+    expect(
+      screen.getByRole('group', { name: 'Values to change' }),
+    ).toHaveAccessibleDescription(
+      'Every chosen service is given the same value. A value left at “Keep” stays as it is for each service.',
+    )
+    expect(optionsOf(choice('Category'))).toEqual([
+      'Keep',
+      'Make uncategorized',
+      'カット',
+      'カラー',
+      'カラー › ハイライト',
+    ])
+    expect(optionsOf(choice('Active'))).toEqual([
+      'Keep',
+      'Make active',
+      'Make inactive',
+    ])
+    expect(optionsOf(choice('Online booking'))).toEqual([
+      'Keep',
+      'Accepted',
+      'Not accepted',
+    ])
+    expect(optionsOf(choice('Offering status'))).toEqual([
+      'Keep',
+      'Active',
+      'Paused',
+      'Coming soon',
+      'Discontinued',
+    ])
+    expect(optionsOf(choice('Availability'))).toEqual([
+      'Keep',
+      'Always',
+      'Weekdays only',
+      'Weekends only',
+      'By appointment only',
+      'Seasonal',
+    ])
+    expect(optionsOf(choice('Staff who can do it'))).toEqual([
+      'Keep',
+      'All staff',
+      'Junior or above',
+      'Stylist or above',
+      'Senior or above',
+      'Expert or above',
+      'Director or above',
+    ])
+  })
+
+  it('should say in English what is wrong, and what went wrong with the attempt', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('group', { name: 'Services to change' }),
+    ).toHaveAccessibleDescription(
+      'In the order of the menu, each with its category. 1 to 100. Choose at least one service to change.',
+    )
+    expect(choice('Category')).toHaveAccessibleDescription(
+      'This category was removed meanwhile. Choose the category again.',
+    )
+
+    // Act
+    await stories.NotChanged.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'One of the chosen services was removed from the menu meanwhile. No service was changed. Choose again from the menu as it is now.',
+    )
+  })
 })

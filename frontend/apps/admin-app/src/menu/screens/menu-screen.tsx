@@ -4,12 +4,12 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import { useId } from 'react'
 import { useParams } from 'react-router'
@@ -28,7 +28,7 @@ import { MenuSections } from '../components/menu-sections/menu-sections'
 import { useKeepsMenu } from './keeps-menu'
 import styles from './menu-screen.module.css'
 
-const TITLE = 'メニュー'
+const { menu: WORDS, names, titles, words } = adminMenuMessages
 
 type MenuPartProps = { salon: ModelsSalonResponse }
 
@@ -40,6 +40,7 @@ type MenuPartProps = { salon: ModelsSalonResponse }
  * from its page.
  */
 const MenuPart = ({ salon }: MenuPartProps) => {
+  const say = useSay()
   const keeps = useKeepsMenu()
   const servicesName = useId()
   const categories = useQuery({
@@ -56,12 +57,12 @@ const MenuPart = ({ salon }: MenuPartProps) => {
   return (
     <>
       <PageHeader
-        title={TITLE}
+        title={say(titles.menu)}
         description={salon.name}
         actions={
           keeps ? (
             <ButtonLink href={serviceEntryHrefOf(salon.id)} variant='primary'>
-              サービスを足す
+              {say(WORDS.addService)}
             </ButtonLink>
           ) : undefined
         }
@@ -69,10 +70,10 @@ const MenuPart = ({ salon }: MenuPartProps) => {
           keeps ? (
             <>
               <ButtonLink href={categoryEntryHrefOf(salon.id)}>
-                カテゴリーを足す
+                {say(WORDS.addCategory)}
               </ButtonLink>
               <ButtonLink href={servicesChangeHrefOf(salon.id)}>
-                まとめて変える
+                {say(WORDS.changeServices)}
               </ButtonLink>
             </>
           ) : undefined
@@ -80,15 +81,13 @@ const MenuPart = ({ salon }: MenuPartProps) => {
       />
       {match(menuOf(categories.data, services.data))
         .with(undefined, () => (
-          <LoadingIndicator label='メニューを読み込んでいます' />
+          <LoadingIndicator label={say(words.loadingMenu)} />
         ))
         .with(
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('メニュー'), reason),
-              )}
+              message={say(unreadMessageOf(names.menu, reason))}
               onRetry={() => {
                 void categories.refetch()
                 void services.refetch()
@@ -101,12 +100,12 @@ const MenuPart = ({ salon }: MenuPartProps) => {
           <div className={styles['parts']}>
             <section className={styles['part']} aria-labelledby={servicesName}>
               <h2 className={styles['name']} id={servicesName}>
-                サービス
+                {say(WORDS.services)}
               </h2>
               {kept.length === 0 && offered.length === 0 ? (
                 <EmptyState
-                  title='メニューにサービスはありません'
-                  description='カテゴリーを足して、メニューを分けておけます。'
+                  title={say(WORDS.empty)}
+                  description={say(WORDS.emptyDescription)}
                 />
               ) : (
                 <MenuSections
@@ -119,7 +118,7 @@ const MenuPart = ({ salon }: MenuPartProps) => {
             </section>
             {/* The frame of the table is the region of the categories, named by its caption */}
             <div className={styles['part']}>
-              <h2 className={styles['name']}>カテゴリー</h2>
+              <h2 className={styles['name']}>{say(WORDS.categories)}</h2>
               <CategoryTable
                 categories={kept}
                 changeHref={
@@ -136,10 +135,11 @@ const MenuPart = ({ salon }: MenuPartProps) => {
 
 /** The menu of the salon of the address, for everybody who works there and an administrator. */
 export const MenuScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.menu)}>
       {(salon) => <MenuPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

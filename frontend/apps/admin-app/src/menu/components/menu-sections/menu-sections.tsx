@@ -2,16 +2,20 @@ import type {
   ModelsServiceCategoryResponse,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import { Link, Table } from '@beauty-salon-frontend/ui'
-import { minutesNameOf } from '../../../treatments/utils/treatment-format'
+import { Link, Table, useSay } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   categoriesById,
-  categoryPathOf,
+  categoryLineOf,
   menuSectionsOf,
+  onlineBookingOf,
   priceLineOf,
   serviceStateOf,
 } from '../../utils/menu-format'
 import styles from './menu-sections.module.css'
+
+const { sections: WORDS } = adminMenuMessages.services
 
 export type MenuSectionsProps = {
   /** The categories of the salon, in the order of the menu */
@@ -35,6 +39,7 @@ export const MenuSections = ({
   currency,
   serviceHref,
 }: MenuSectionsProps) => {
+  const say = useSay()
   const byId = categoriesById(categories)
 
   return (
@@ -42,43 +47,41 @@ export const MenuSections = ({
       {menuSectionsOf(categories, services).map(({ category, services }) => (
         <Table
           key={category?.id ?? 'none'}
-          caption={
-            category === null ? '未分類' : categoryPathOf(category, byId)
-          }
+          caption={say(categoryLineOf(category, byId))}
           columns={[
             {
               key: 'name',
-              header: 'サービス',
+              header: say(WORDS.service),
               cell: (service) => (
                 <Link href={serviceHref(service.id)}>{service.name}</Link>
               ),
             },
             {
               key: 'duration',
-              header: '所要時間',
-              cell: ({ duration }) => minutesNameOf(duration),
+              header: say(WORDS.duration),
+              cell: ({ duration }) => say(formats.minutesOf(duration)),
               align: 'end',
             },
             {
               key: 'price',
-              header: '料金',
-              cell: (service) => priceLineOf(service, currency),
+              header: say(WORDS.price),
+              cell: (service) => say(priceLineOf(service, currency)),
             },
             {
               key: 'allowOnlineBooking',
-              header: 'オンライン予約',
+              header: say(WORDS.onlineBooking),
               cell: ({ allowOnlineBooking }) =>
-                allowOnlineBooking ? '受ける' : '受けない',
+                say(onlineBookingOf(allowOnlineBooking)),
             },
             {
               key: 'state',
-              header: '状態',
-              cell: (service) => serviceStateOf(service),
+              header: say(WORDS.status),
+              cell: (service) => say(serviceStateOf(service)),
             },
           ]}
           rows={services}
           rowKey={({ id }) => id}
-          emptyMessage='このカテゴリーのサービスはありません'
+          emptyMessage={say(WORDS.empty)}
         />
       ))}
     </div>

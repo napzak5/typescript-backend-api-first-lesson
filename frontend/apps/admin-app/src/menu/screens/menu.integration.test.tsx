@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   salonIdOf,
@@ -618,5 +619,312 @@ describe('the menu, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(container)).toEqual([])
+  })
+})
+
+describe('the menu on a page in English', () => {
+  const menuInEnglish = () =>
+    screen.findByRole('heading', { level: 1, name: 'Menu' })
+
+  /** The tables of the services, by their categories, once the menu was read in English */
+  const serviceTablesInEnglish = async (): Promise<HTMLElement[]> => {
+    const part = await screen.findByRole('region', { name: 'Services' })
+
+    return within(part).getAllByRole('table')
+  }
+
+  const categoriesInEnglish = (): HTMLElement =>
+    screen.getByRole('table', { name: 'Categories' })
+
+  /** Waits for a form of a category in English: its heading, then the form. */
+  const openedFormInEnglish = async (title: string): Promise<void> => {
+    await formHeading(title)
+    await screen.findByRole('textbox', { name: /^Name/ })
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should show a stylist the menu and a service in English, without the ways to change them', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(menuHrefOf(tokyo), STYLIST, 'en')
+
+    // Act
+    await menuInEnglish()
+    const tables = await serviceTablesInEnglish()
+
+    // Assert
+    expect(captionsOf(tables)).toEqual(TOP_CATEGORIES)
+    expect(
+      within(tables[0] ?? document.body)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['Service', 'Duration', 'Price', 'Online booking', 'Status'])
+    expect(rowsOf(tables[1] ?? document.body)).toEqual([
+      [
+        'Full Color',
+        '120 min',
+        '¥7,200 (discounted from ¥8,000) · Tax included',
+        'Accepted',
+        'Active',
+      ],
+      ['Highlights', '150 min', '¥12,000 · Tax included', 'Accepted', 'Active'],
+      [
+        'Balayage',
+        '180 min',
+        '¥15,000 · Tax included',
+        'Not accepted',
+        'Active',
+      ],
+    ])
+    expect(rowsOf(tables[4] ?? document.body)).toEqual([
+      ['No services in this category'],
+    ])
+    expect(rowsOf(categoriesInEnglish()).slice(0, 2)).toEqual([
+      ['Hair Cut', 'None', 'Cut', '1', '#FF6B6B', 'Active'],
+      ['Hair Color', 'None', 'Color', '2', '#4ECDC4', 'Active'],
+    ])
+    expect(
+      screen.queryByRole('link', { name: 'Add a category' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'Change several at once' }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(screen.getByRole('navigation', { name: 'Main menu' })).getByRole(
+        'link',
+        { name: 'Menu' },
+      ),
+    ).toHaveAttribute('aria-current', 'page')
+
+    // Act
+    await user.click(
+      within(tables[0] ?? document.body).getByRole('link', {
+        name: 'Ladies Cut',
+      }),
+    )
+
+    // Assert
+    await formHeading('Service details')
+    const service = await screen.findByRole('region', { name: 'Service' })
+    expect(
+      within(service)
+        .getAllByRole('term')
+        .map((term) => [term.textContent, term.nextElementSibling?.textContent])
+        .slice(0, 8),
+    ).toEqual([
+      ['Name', 'Ladies Cut'],
+      ['Category', 'Hair Cut'],
+      ['Status', 'Active'],
+      ['Duration', '60 min'],
+      ['Price', '¥5,500 · Tax included'],
+      ['Pricing', 'Fixed price'],
+      ['Availability', 'Always'],
+      ['Display order', '1'],
+    ])
+    expect(
+      within(screen.getByRole('region', { name: 'Booking' })).getByText(
+        'Stylist or above',
+      ),
+    ).toBeInTheDocument()
+    expect(rowsOf(screen.getByRole('table', { name: 'Options' }))[0]).toEqual([
+      'Fringe Trim',
+      'Add-on',
+      '10 min',
+      '¥500',
+      'Up to 1',
+      'Optional',
+      'Active',
+    ])
+  })
+
+  it('should let the manager add a category in English, and say so', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(menuHrefOf(tokyo), MANAGER, 'en')
+
+    // Act
+    await user.click(
+      await screen.findByRole('link', { name: 'Add a category' }),
+    )
+    await openedFormInEnglish('Add a category')
+    await user.type(screen.getByRole('textbox', { name: /^Name/ }), 'Bob Cut')
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: /^Type/ }),
+      'Cut',
+    )
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Parent category' }),
+      'Hair Cut',
+    )
+    await user.type(screen.getByRole('textbox', { name: 'Color' }), '#aa66cc')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Added the category “Bob Cut” to the menu.'),
+    ).toBeInTheDocument()
+    await menuInEnglish()
+    await serviceTablesInEnglish()
+    expect(rowsOf(categoriesInEnglish())[8]).toEqual([
+      'Bob Cut',
+      'Hair Cut',
+      'Cut',
+      '9',
+      '#AA66CC',
+      'Active',
+    ])
+  })
+
+  it('should say in English that a form sent as it was opened changed nothing', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(
+      categoryChangeHrefOf(tokyo, await categoryIdOf(TOKYO, 'Perm')),
+      MANAGER,
+      'en',
+    )
+    await openedFormInEnglish('Edit the category')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    expect(await screen.findByText('Nothing was changed.')).toBeInTheDocument()
+    await menuInEnglish()
+  })
+
+  it('should remove a category after asking in English, and put its services under none', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(
+      categoryChangeHrefOf(tokyo, await categoryIdOf(TOKYO, 'Hair Cut')),
+      OWNER,
+      'en',
+    )
+    await openedFormInEnglish('Edit the category')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Remove' }))
+    const dialog = await screen.findByRole('dialog', {
+      name: 'Remove the category “Hair Cut”?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'The categories below this one become top categories, and the services of this category become uncategorized. Neither is removed. A removed category cannot be brought back.',
+    )
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Removed the category “Hair Cut” from the menu.'),
+    ).toBeInTheDocument()
+    await menuInEnglish()
+    expect(captionsOf(await serviceTablesInEnglish())).toEqual([
+      ...TOP_CATEGORIES.slice(1),
+      'Uncategorized',
+    ])
+  })
+
+  it('should say in English at the parent that it was removed meanwhile', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(categoryEntryHrefOf(tokyo), MANAGER, 'en')
+    await openedFormInEnglish('Add a category')
+    await user.type(screen.getByRole('textbox', { name: /^Name/ }), 'Updo')
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: /^Type/ }),
+      'Styling',
+    )
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Parent category' }),
+      'Styling',
+    )
+    await removedMeanwhile(await categoryIdOf(TOKYO, 'Styling'))
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(
+        screen.getByRole('combobox', { name: 'Parent category' }),
+      ).toHaveAccessibleDescription(
+        'Puts this category below another category. This parent category was removed meanwhile. Choose the parent again.',
+      ),
+    )
+  })
+
+  it('should say in English that a category removed meanwhile is not found', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    const spa = await categoryIdOf(TOKYO, 'Head Spa')
+    await openAs(categoryChangeHrefOf(tokyo, spa), MANAGER, 'en')
+    await openedFormInEnglish('Edit the category')
+    await user.type(screen.getByRole('textbox', { name: /^Name/ }), ' Plus')
+    await removedMeanwhile(spa)
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    expect(await formHeading('Category not found')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Check that the address is right. A removed category cannot be shown.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Back to the menu' }),
+    ).toHaveAttribute('href', menuHrefOf(tokyo))
+  })
+
+  it('should tell a stylist in English that the forms of the menu are not theirs', async () => {
+    // Act
+    await openAs(categoryEntryHrefOf(await salonIdOf(TOKYO)), STYLIST, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This account cannot change the menu. Only the owners and managers of the salon, and administrators, can change the menu.',
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Back to the menu' }),
+    ).toBeInTheDocument()
+  })
+
+  it('should tell the manager of another salon in English that its menu is not theirs to change', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(categoryEntryHrefOf(await salonIdOf(OSAKA)), MANAGER, 'en')
+    await openedFormInEnglish('Add a category')
+    await user.type(screen.getByRole('textbox', { name: /^Name/ }), 'Nail')
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: /^Type/ }),
+      'Other',
+    )
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The menu of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its menu.',
+    )
   })
 })

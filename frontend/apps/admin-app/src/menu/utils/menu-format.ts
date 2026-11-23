@@ -8,72 +8,61 @@ import {
   ModelsServiceStatusType,
 } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import type { ChoiceOption } from '@beauty-salon-frontend/ui'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { NamedChoice } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 
 /*
  * How the menu is named and ordered on the screens: the words of the values
- * of a service are those the contract describes them with.
+ * of a service are those the contract describes them with, and messages,
+ * which the components say in the language of the page.
  */
 
-const PRICING_NAMES: Record<ModelsPricingStrategyType, string> = {
-  fixed: '固定価格',
-  variable: '変動価格',
-  tiered: '段階価格',
-  dynamic: '動的価格',
-  consultation_based: '要相談',
-}
+const {
+  inALine,
+  services: { price: PRICE_WORDS },
+  words: WORDS,
+} = adminMenuMessages
+
+const PRICING_NAMES: Record<ModelsPricingStrategyType, LocalizedText> =
+  adminMenuMessages.pricing
 
 /** How the price of a service is decided: 「変動価格」. */
-export const pricingNameOf = (strategy: ModelsPricingStrategyType): string =>
-  PRICING_NAMES[strategy]
+export const pricingNameOf = (
+  strategy: ModelsPricingStrategyType,
+): LocalizedText => PRICING_NAMES[strategy]
 
-const STATUS_NAMES: Record<ModelsServiceStatusType, string> = {
-  active: '有効',
-  inactive: '一時停止',
-  coming_soon: '近日公開',
-  discontinued: '廃止',
-}
+const STATUS_NAMES: Record<ModelsServiceStatusType, LocalizedText> =
+  adminMenuMessages.serviceStatus
 
 /** Where a service is in its life: 「近日公開」. */
-export const serviceStatusNameOf = (status: ModelsServiceStatusType): string =>
-  STATUS_NAMES[status]
+export const serviceStatusNameOf = (
+  status: ModelsServiceStatusType,
+): LocalizedText => STATUS_NAMES[status]
 
-const AVAILABILITY_NAMES: Record<ModelsServiceAvailabilityType, string> = {
-  always: '常時提供',
-  weekdays_only: '平日のみ',
-  weekends_only: '週末のみ',
-  by_appointment_only: '予約制',
-  seasonal: '季節限定',
-}
+const AVAILABILITY_NAMES: Record<ModelsServiceAvailabilityType, LocalizedText> =
+  adminMenuMessages.availability
 
 /** On which days a service is given: 「平日のみ」. */
 export const availabilityNameOf = (
   availability: ModelsServiceAvailabilityType,
-): string => AVAILABILITY_NAMES[availability]
+): LocalizedText => AVAILABILITY_NAMES[availability]
 
-const REQUIREMENT_NAMES: Record<ModelsBookingRequirementType, string> = {
-  consultation_required: '事前カウンセリング必須',
-  patch_test_required: 'パッチテスト必須',
-  advance_booking_required: '事前予約必須',
-  deposit_required: 'デポジット必須',
-}
+const REQUIREMENT_NAMES: Record<ModelsBookingRequirementType, LocalizedText> =
+  adminMenuMessages.requirement
 
 /** What a booking of a service requires: 「パッチテスト必須」. */
 export const requirementNameOf = (
   requirement: ModelsBookingRequirementType,
-): string => REQUIREMENT_NAMES[requirement]
+): LocalizedText => REQUIREMENT_NAMES[requirement]
 
-const OPTION_NAMES: Record<ModelsServiceOptionType, string> = {
-  addon: 'アドオン',
-  upgrade: 'アップグレード',
-  duration_extension: '時間延長',
-  product_choice: '商品選択',
-}
+const OPTION_NAMES: Record<ModelsServiceOptionType, LocalizedText> =
+  adminMenuMessages.optionType
 
 /** What an option of a service is: 「アドオン」. */
-export const optionTypeNameOf = (type: ModelsServiceOptionType): string =>
-  OPTION_NAMES[type]
+export const optionTypeNameOf = (
+  type: ModelsServiceOptionType,
+): LocalizedText => OPTION_NAMES[type]
 
 /** The ways a price is decided, in the order of the contract */
 export const PRICINGS: readonly ModelsPricingStrategyType[] = Object.values(
@@ -97,27 +86,28 @@ export const OPTION_TYPES: readonly ModelsServiceOptionType[] = Object.values(
   ModelsServiceOptionType,
 )
 
-export const PRICING_OPTIONS: readonly ChoiceOption[] = PRICINGS.map(
-  (value) => ({
-    value,
-    label: PRICING_NAMES[value],
-  }),
+export const PRICING_OPTIONS: readonly NamedChoice[] = PRICINGS.map(
+  (value) => ({ value, label: PRICING_NAMES[value] }),
 )
 
-export const SERVICE_STATUS_OPTIONS: readonly ChoiceOption[] =
+export const SERVICE_STATUS_OPTIONS: readonly NamedChoice[] =
   SERVICE_STATUSES.map((value) => ({ value, label: STATUS_NAMES[value] }))
 
-export const AVAILABILITY_OPTIONS: readonly ChoiceOption[] = AVAILABILITIES.map(
+export const AVAILABILITY_OPTIONS: readonly NamedChoice[] = AVAILABILITIES.map(
   (value) => ({ value, label: AVAILABILITY_NAMES[value] }),
 )
 
-export const REQUIREMENT_OPTIONS: readonly ChoiceOption[] = REQUIREMENTS.map(
+export const REQUIREMENT_OPTIONS: readonly NamedChoice[] = REQUIREMENTS.map(
   (value) => ({ value, label: REQUIREMENT_NAMES[value] }),
 )
 
-export const OPTION_TYPE_OPTIONS: readonly ChoiceOption[] = OPTION_TYPES.map(
+export const OPTION_TYPE_OPTIONS: readonly NamedChoice[] = OPTION_TYPES.map(
   (value) => ({ value, label: OPTION_NAMES[value] }),
 )
+
+/** Whether a service, a category or an option is switched on: 「有効」 or 「無効」. */
+export const switchNameOf = (isActive: boolean): LocalizedText =>
+  isActive ? WORDS.active : WORDS.inactive
 
 /**
  * What a service is now, in a few words: whether it is switched on, and
@@ -127,17 +117,21 @@ export const OPTION_TYPE_OPTIONS: readonly ChoiceOption[] = OPTION_TYPES.map(
 export const serviceStateOf = ({
   isActive,
   serviceStatus,
-}: Pick<ModelsServiceResponse, 'isActive' | 'serviceStatus'>): string =>
-  [
-    isActive ? '有効' : '無効',
+}: Pick<ModelsServiceResponse, 'isActive' | 'serviceStatus'>): LocalizedText =>
+  inALine([
+    switchNameOf(isActive),
     ...(serviceStatus === 'active' ? [] : [serviceStatusNameOf(serviceStatus)]),
-  ].join('・')
+  ])
 
 /** Whether a category is switched on: 「有効」 or 「無効」. */
 export const categoryStateOf = ({
   isActive,
-}: Pick<ModelsServiceCategoryResponse, 'isActive'>): string =>
-  isActive ? '有効' : '無効'
+}: Pick<ModelsServiceCategoryResponse, 'isActive'>): LocalizedText =>
+  switchNameOf(isActive)
+
+/** Whether a service is booked online: 「受ける」 or 「受けない」. */
+export const onlineBookingOf = (allowOnlineBooking: boolean): LocalizedText =>
+  allowOnlineBooking ? WORDS.accepted : WORDS.notAccepted
 
 /**
  * The price of a service, as the menu of the customers reads it: the
@@ -151,16 +145,19 @@ export const priceLineOf = (
     'price' | 'discountPrice' | 'taxIncluded' | 'pricingStrategy'
   >,
   currency: string,
-): string =>
-  [
+): LocalizedText =>
+  inALine([
     service.discountPrice === null
-      ? inJapanese(amountOf(service.price, currency))
-      : `${inJapanese(amountOf(service.discountPrice, currency))}（${inJapanese(amountOf(service.price, currency))} から割引）`,
-    service.taxIncluded ? '税込' : '税別',
+      ? amountOf(service.price, currency)
+      : PRICE_WORDS.discounted(
+          amountOf(service.discountPrice, currency),
+          amountOf(service.price, currency),
+        ),
+    service.taxIncluded ? PRICE_WORDS.taxIncluded : PRICE_WORDS.taxExcluded,
     ...(service.pricingStrategy === 'fixed'
       ? []
       : [pricingNameOf(service.pricingStrategy)]),
-  ].join('・')
+  ])
 
 /** A category among those of its salon, by its ID. */
 type Categories = ReadonlyMap<string, ModelsServiceCategoryResponse>
@@ -187,6 +184,22 @@ export const categoryPathOf = (
   }
 
   return `${categoryPathOf(parent, categories, new Set([...seen, parent.id]))} › ${category.name}`
+}
+
+/**
+ * The category of a service, named with those it is below as they were
+ * written, or 「未分類」 for none, and for one that was not read.
+ */
+export const categoryLineOf = (
+  category: ModelsServiceCategoryResponse | null | undefined,
+  categories: Categories,
+): LocalizedText => {
+  if (category === null || category === undefined) {
+    return WORDS.uncategorized
+  }
+  const path = categoryPathOf(category, categories)
+
+  return { en: path, ja: path }
 }
 
 /** A part of the menu: the services of a category, or those of none. */

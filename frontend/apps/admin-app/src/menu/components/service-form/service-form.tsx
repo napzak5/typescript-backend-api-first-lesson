@@ -3,7 +3,7 @@ import type {
   ModelsServiceOption,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import { upTo, WEB_ADDRESS_DESCRIPTION } from '@beauty-salon-frontend/fields'
+import { WEB_ADDRESS_DESCRIPTION } from '@beauty-salon-frontend/fields'
 import {
   Button,
   Checkbox,
@@ -14,17 +14,23 @@ import {
   FormPart,
   type FormProps,
   FormRow,
-  inJapanese,
+  type NamedChoice,
   NO_ERRORS,
   Note,
   Select,
   TextArea,
   TextField,
   useRepeatedRows,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useState } from 'react'
 import { tagsTextOf } from '../../../customers/utils/customer-ledger'
-import { LEVELS, levelNameOf } from '../../../staff/utils/staff-format'
+import { LEVELS } from '../../../staff/utils/staff-format'
 import {
   AVAILABILITY_OPTIONS,
   categoriesById,
@@ -38,6 +44,7 @@ import {
 } from '../../utils/menu-format'
 import {
   FEWEST_PACKAGED,
+  LONGEST_DURATION,
   LONGEST_NAME,
   LONGEST_SHORT_DESCRIPTION,
   MOST_PACKAGED,
@@ -45,10 +52,17 @@ import {
   packagedControlOf,
 } from '../../utils/service-form'
 
+const {
+  serviceForm: WORDS,
+  words: { levelOrAbove },
+} = adminMenuMessages
+
 export type ServiceFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
   /**
    * The service the form opens with. `null` for a new one: the form then
    * opens with a service of no category that is switched on, given every
@@ -66,12 +80,12 @@ export type ServiceFormProps = Pick<
    * row's under `options.<n>.<name>` or `packageServiceIds.<n>`. A new
    * object is the answer to another attempt
    */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
 }
 
-const LEVEL_CHOICES = LEVELS.map((level) => ({
+const LEVEL_CHOICES: readonly NamedChoice[] = LEVELS.map((level) => ({
   value: level,
-  label: `${levelNameOf(level)}以上`,
+  label: levelOrAbove(termMessages.staffLevel[level]),
 }))
 
 /**
@@ -95,9 +109,13 @@ export const ServiceForm = ({
   categories,
   services,
   sortOrder,
+  message,
   errors = NO_ERRORS,
   ...form
 }: ServiceFormProps) => {
+  const say = useSay()
+  const choicesOf = useSaidChoices()
+  const said = useSaidForm(message, errors)
   const byId = categoriesById(categories)
   const choices = packagedChoicesOf(services, service?.id ?? null).map(
     (choice) => ({ value: choice.id, label: choice.name }),
@@ -108,14 +126,17 @@ export const ServiceForm = ({
       : packagesOf(services, service.id)
   // A row of an option and of a service of the package holds what it
   // opened with, if anything
-  const options = useRepeatedRows<ModelsServiceOption | undefined>(
-    () => service?.options ?? [],
-    errors,
-  )
-  const packaged = useRepeatedRows<string | undefined>(
+  const options = useRepeatedRows<
+    ModelsServiceOption | undefined,
+    LocalizedText
+  >(() => service?.options ?? [], errors)
+  const packaged = useRepeatedRows<string | undefined, LocalizedText>(
     () => service?.packageServiceIds ?? [],
     errors,
   )
+  /** What is wrong with a control of a row, in the language of the page */
+  const sayAt = (error: LocalizedText | undefined): string | undefined =>
+    error === undefined ? undefined : say(error)
   const [isPackage, setIsPackage] = useState(service?.isPackage ?? false)
 
   const makePackage = (checked: boolean): void => {
@@ -128,221 +149,225 @@ export const ServiceForm = ({
   }
 
   return (
-    <Form {...form} errors={errors}>
-      <FormPart label='サービス'>
+    <Form {...form} message={said.message} errors={errors}>
+      <FormPart label={say(WORDS.parts.service)}>
         <TextField
-          label='名前'
+          label={say(WORDS.name)}
           name='name'
           autoComplete='off'
           required
-          description={`${inJapanese(upTo(LONGEST_NAME))}お客様のメニューに出ます。`}
+          description={say(WORDS.nameDescription(LONGEST_NAME))}
           defaultValue={service?.name}
-          error={errors['name']}
+          error={said.errors['name']}
         />
         <Select
-          label='カテゴリー'
+          label={say(WORDS.category)}
           name='categoryId'
-          placeholder='未分類'
+          placeholder={say(WORDS.uncategorized)}
           options={categories.map((category) => ({
             value: category.id,
             label: categoryPathOf(category, byId),
           }))}
           defaultValue={service?.categoryId ?? ''}
-          error={errors['categoryId']}
+          error={said.errors['categoryId']}
         />
         <TextArea
-          label='短い紹介'
+          label={say(WORDS.shortDescription)}
           name='shortDescription'
           rows={2}
-          description={`${inJapanese(upTo(LONGEST_SHORT_DESCRIPTION))}メニューの一覧に出ます。`}
+          description={say(
+            WORDS.shortDescriptionDescription(LONGEST_SHORT_DESCRIPTION),
+          )}
           defaultValue={service?.shortDescription ?? undefined}
-          error={errors['shortDescription']}
+          error={said.errors['shortDescription']}
         />
         <TextArea
-          label='説明'
+          label={say(WORDS.description)}
           name='description'
           rows={4}
           defaultValue={service?.description ?? undefined}
-          error={errors['description']}
+          error={said.errors['description']}
         />
         <FieldRow>
           <TextField
-            label='タグ'
+            label={say(WORDS.tags)}
             name='tags'
             autoComplete='off'
-            description='「、」か「,」で区切って書きます。'
-            defaultValue={inJapanese(tagsTextOf(service?.tags ?? []))}
-            error={errors['tags']}
+            description={say(WORDS.tagsDescription)}
+            defaultValue={say(tagsTextOf(service?.tags ?? []))}
+            error={said.errors['tags']}
           />
           <TextField
-            label='表示順'
+            label={say(WORDS.displayOrder)}
             name='sortOrder'
             inputMode='numeric'
             autoComplete='off'
             required
-            description='0 以上の整数。小さいものから並びます。'
+            description={say(WORDS.displayOrderDescription)}
             defaultValue={String(service?.sortOrder ?? sortOrder)}
-            error={errors['sortOrder']}
+            error={said.errors['sortOrder']}
           />
         </FieldRow>
       </FormPart>
-      <FormPart label='時間と料金'>
+      <FormPart label={say(WORDS.parts.timeAndPrice)}>
         <FieldRow>
           <TextField
-            label='所要時間（分）'
+            label={say(WORDS.duration)}
             name='duration'
             inputMode='numeric'
             autoComplete='off'
             required
-            description='1 から 1440 までの整数。'
+            description={say(WORDS.durationDescription(LONGEST_DURATION))}
             defaultValue={service === null ? '' : String(service.duration)}
-            error={errors['duration']}
+            error={said.errors['duration']}
           />
           <Select
-            label='価格の決め方'
+            label={say(WORDS.pricing)}
             name='pricingStrategy'
             required
-            options={PRICING_OPTIONS}
+            options={choicesOf(PRICING_OPTIONS)}
             defaultValue={service?.pricingStrategy ?? 'fixed'}
-            error={errors['pricingStrategy']}
+            error={said.errors['pricingStrategy']}
           />
         </FieldRow>
         <FieldRow>
           <TextField
-            label='料金'
+            label={say(WORDS.price)}
             name='price'
             inputMode='numeric'
             autoComplete='off'
             required
-            description='0 以上の整数。'
+            description={say(WORDS.priceDescription)}
             defaultValue={service === null ? '' : String(service.price)}
-            error={errors['price']}
+            error={said.errors['price']}
           />
           <TextField
-            label='割引後の料金'
+            label={say(WORDS.discountPrice)}
             name='discountPrice'
             inputMode='numeric'
             autoComplete='off'
-            description='料金以下の整数。割引がなければ、空のままにします。'
+            description={say(WORDS.discountPriceDescription)}
             defaultValue={
               service?.discountPrice === null ||
               service?.discountPrice === undefined
                 ? ''
                 : String(service.discountPrice)
             }
-            error={errors['discountPrice']}
+            error={said.errors['discountPrice']}
           />
         </FieldRow>
         <Checkbox
-          label='税込'
+          label={say(WORDS.taxIncluded)}
           name='taxIncluded'
-          description='外すと、料金は税別です。'
+          description={say(WORDS.taxIncludedDescription)}
           defaultChecked={service?.taxIncluded ?? true}
         />
       </FormPart>
-      <FormPart label='提供'>
+      <FormPart label={say(WORDS.parts.offering)}>
         <Checkbox
-          label='有効'
+          label={say(WORDS.active)}
           name='isActive'
-          description='外すと、お客様のメニューに出なくなり、予約できなくなります。'
+          description={say(WORDS.activeDescription)}
           defaultChecked={service?.isActive ?? true}
         />
         <FieldRow>
           <Select
-            label='提供の状態'
+            label={say(WORDS.status)}
             name='serviceStatus'
             required
-            options={SERVICE_STATUS_OPTIONS}
-            description='お客様が予約できるのは、「有効」のサービスです。'
+            options={choicesOf(SERVICE_STATUS_OPTIONS)}
+            description={say(WORDS.statusDescription)}
             defaultValue={service?.serviceStatus ?? 'active'}
-            error={errors['serviceStatus']}
+            error={said.errors['serviceStatus']}
           />
           <Select
-            label='提供日'
+            label={say(WORDS.availability)}
             name='availability'
             required
-            options={AVAILABILITY_OPTIONS}
+            options={choicesOf(AVAILABILITY_OPTIONS)}
             defaultValue={service?.availability ?? 'always'}
-            error={errors['availability']}
+            error={said.errors['availability']}
           />
         </FieldRow>
       </FormPart>
-      <FormPart label='予約'>
+      <FormPart label={say(WORDS.parts.booking)}>
         <Checkbox
-          label='オンライン予約を受ける'
+          label={say(WORDS.onlineBooking)}
           name='allowOnlineBooking'
-          description='外すと、お客様が自分で予約できなくなります。サロンが入れる予約には使えます。'
+          description={say(WORDS.onlineBookingDescription)}
           defaultChecked={service?.allowOnlineBooking ?? true}
         />
         <Checkbox
-          label='カウンセリングが要る'
+          label={say(WORDS.consultation)}
           name='requiresConsultation'
           defaultChecked={service?.requiresConsultation ?? false}
         />
         <FieldRow>
           <Select
-            label='担当できるスタッフ'
+            label={say(WORDS.staffLevel)}
             name='requiredStaffLevel'
-            placeholder='すべてのスタッフ'
-            options={LEVEL_CHOICES}
+            placeholder={say(WORDS.everyMember)}
+            options={choicesOf(LEVEL_CHOICES)}
             defaultValue={service?.requiredStaffLevel ?? ''}
-            error={errors['requiredStaffLevel']}
+            error={said.errors['requiredStaffLevel']}
           />
           <TextField
-            label='1 日の予約の上限'
+            label={say(WORDS.mostBookings)}
             name='maxBookingsPerDay'
             inputMode='numeric'
             autoComplete='off'
-            description='1 以上の整数。上限がなければ、空のままにします。'
+            description={say(WORDS.mostBookingsDescription)}
             defaultValue={
               service?.maxBookingsPerDay === null ||
               service?.maxBookingsPerDay === undefined
                 ? ''
                 : String(service.maxBookingsPerDay)
             }
-            error={errors['maxBookingsPerDay']}
+            error={said.errors['maxBookingsPerDay']}
           />
         </FieldRow>
         <CheckboxGroup
-          label='予約の条件'
+          label={say(WORDS.requirements)}
           name='bookingRequirements'
           layout='columns'
-          options={REQUIREMENT_OPTIONS}
+          options={choicesOf(REQUIREMENT_OPTIONS)}
           defaultValue={service?.bookingRequirements ?? []}
-          error={errors['bookingRequirements']}
+          error={said.errors['bookingRequirements']}
         />
       </FormPart>
-      <FormPart label='写真'>
+      <FormPart label={say(WORDS.parts.photos)}>
         <TextField
-          label='写真の URL'
+          label={say(WORDS.photo)}
           name='imageUrl'
           type='url'
           autoComplete='off'
-          description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
+          description={say(WEB_ADDRESS_DESCRIPTION)}
           defaultValue={service?.imageUrl ?? undefined}
-          error={errors['imageUrl']}
+          error={said.errors['imageUrl']}
         />
         <TextArea
-          label='ほかの写真の URL'
+          label={say(WORDS.otherPhotos)}
           name='imageUrls'
-          description='1 行に 1 つ。http:// か https:// で始まる URL。'
+          description={say(WORDS.otherPhotosDescription)}
           defaultValue={(service?.imageUrls ?? []).join('\n')}
-          error={errors['imageUrls']}
+          error={said.errors['imageUrls']}
         />
       </FormPart>
-      <FormPart label='パッケージ'>
+      <FormPart label={say(WORDS.parts.package)}>
         {containers.length > 0 ? (
           <Note size='small'>
-            {`このサービスは、パッケージ${containers.map(({ name }) => `「${name}」`).join('')}に入っているので、パッケージにできません。`}
+            {say(WORDS.inPackages(containers.map(({ name }) => name)))}
           </Note>
         ) : (
           <Checkbox
-            label='パッケージにする'
+            label={say(WORDS.makePackage)}
             name='isPackage'
-            description={`ほかのサービスを ${FEWEST_PACKAGED} 件から ${MOST_PACKAGED} 件まとめて、1 つのサービスにします。パッケージに入れられるのは、パッケージでないサービスです。`}
+            description={say(
+              WORDS.makePackageDescription(FEWEST_PACKAGED, MOST_PACKAGED),
+            )}
             checked={isPackage}
             onChange={(event) => makePackage(event.currentTarget.checked)}
-            error={errors['isPackage']}
+            error={said.errors['isPackage']}
           />
         )}
         {isPackage &&
@@ -350,119 +375,125 @@ export const ServiceForm = ({
             <FormRow
               key={row.key}
               ref={packaged.rowRef(row.key)}
-              label={`構成サービス ${index + 1}`}
+              label={say(WORDS.packaged(index + 1))}
             >
               <Select
-                label='サービス'
+                label={say(WORDS.packagedService)}
                 name={packagedControlOf(index)}
-                placeholder='選んでください'
+                placeholder={say(WORDS.choose)}
                 required
                 options={choices}
                 defaultValue={row.value ?? ''}
-                error={packaged.errors[packagedControlOf(index)]}
+                error={sayAt(packaged.errors[packagedControlOf(index)])}
               />
               <Button
                 size='small'
-                aria-label={`構成サービス ${index + 1} を外す`}
+                aria-label={say(WORDS.removePackaged(index + 1))}
                 onClick={() => packaged.remove(row.key)}
               >
-                外す
+                {say(WORDS.removeRow)}
               </Button>
             </FormRow>
           ))}
         {isPackage && packaged.rows.length < MOST_PACKAGED && (
           <Button ref={packaged.addRef} onClick={() => packaged.add(undefined)}>
-            構成サービスを足す
+            {say(WORDS.addPackaged)}
           </Button>
         )}
       </FormPart>
       <FormPart
-        label='オプション'
-        description='お客様が予約のときに足せるものです。並びの順に、お客様に出ます。'
+        label={say(WORDS.parts.options)}
+        description={say(WORDS.parts.optionsDescription)}
       >
         {options.rows.map((row, index) => (
           <FormRow
             key={row.key}
             ref={options.rowRef(row.key)}
-            label={`オプション ${index + 1}`}
+            label={say(WORDS.option(index + 1))}
           >
             <TextField
-              label='名前'
+              label={say(WORDS.name)}
               name={optionControlOf(index, 'name')}
               autoComplete='off'
               required
               defaultValue={row.value?.name}
-              error={options.errors[optionControlOf(index, 'name')]}
+              error={sayAt(options.errors[optionControlOf(index, 'name')])}
             />
             <FieldRow>
               <Select
-                label='種類'
+                label={say(WORDS.optionType)}
                 name={optionControlOf(index, 'optionType')}
                 required
-                options={OPTION_TYPE_OPTIONS}
+                options={choicesOf(OPTION_TYPE_OPTIONS)}
                 defaultValue={row.value?.optionType ?? 'addon'}
-                error={options.errors[optionControlOf(index, 'optionType')]}
+                error={sayAt(
+                  options.errors[optionControlOf(index, 'optionType')],
+                )}
               />
               <TextField
-                label='選べる数'
+                label={say(WORDS.maxQuantity)}
                 name={optionControlOf(index, 'maxQuantity')}
                 inputMode='numeric'
                 autoComplete='off'
                 required
                 defaultValue={String(row.value?.maxQuantity ?? 1)}
-                error={options.errors[optionControlOf(index, 'maxQuantity')]}
+                error={sayAt(
+                  options.errors[optionControlOf(index, 'maxQuantity')],
+                )}
               />
             </FieldRow>
             <FieldRow>
               <TextField
-                label='追加の時間（分）'
+                label={say(WORDS.additionalTime)}
                 name={optionControlOf(index, 'additionalTime')}
                 inputMode='numeric'
                 autoComplete='off'
                 required
                 defaultValue={String(row.value?.additionalTime ?? 0)}
-                error={options.errors[optionControlOf(index, 'additionalTime')]}
+                error={sayAt(
+                  options.errors[optionControlOf(index, 'additionalTime')],
+                )}
               />
               <TextField
-                label='追加の料金'
+                label={say(WORDS.additionalPrice)}
                 name={optionControlOf(index, 'additionalPrice')}
                 inputMode='numeric'
                 autoComplete='off'
                 required
                 defaultValue={String(row.value?.additionalPrice ?? 0)}
-                error={
-                  options.errors[optionControlOf(index, 'additionalPrice')]
-                }
+                error={sayAt(
+                  options.errors[optionControlOf(index, 'additionalPrice')],
+                )}
               />
             </FieldRow>
             <TextArea
-              label='説明'
+              label={say(WORDS.description)}
               name={optionControlOf(index, 'description')}
               rows={2}
               defaultValue={row.value?.description ?? undefined}
             />
             <Checkbox
-              label='必須'
+              label={say(WORDS.required)}
               name={optionControlOf(index, 'isRequired')}
-              description='予約のときに、かならず付きます。'
+              description={say(WORDS.requiredDescription)}
               defaultChecked={row.value?.isRequired ?? false}
             />
             <Checkbox
-              label='有効'
+              label={say(WORDS.active)}
               name={optionControlOf(index, 'isActive')}
               defaultChecked={row.value?.isActive ?? true}
             />
             <Button
               size='small'
-              aria-label={`オプション ${index + 1} を外す`}
+              aria-label={say(WORDS.removeOption(index + 1))}
               onClick={() => options.remove(row.key)}
             >
-              外す
+              {say(WORDS.removeRow)}
             </Button>
           </FormRow>
         ))}
         <Button ref={options.addRef} onClick={() => options.add(undefined)}>
-          オプションを足す
+          {say(WORDS.addOption)}
         </Button>
       </FormPart>
     </Form>

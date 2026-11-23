@@ -1,7 +1,10 @@
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aCategory, CATEGORIES_OF_THE_MENU, highlights } from '../examples'
 import { CategoryForm } from './category-form'
+
+const { errors, saveFailed } = adminMenuMessages.categories
 
 const meta: Meta<typeof CategoryForm> = {
   title: 'Admin/Menu/CategoryForm',
@@ -37,19 +40,14 @@ export const WithErrors: Story = {
   args: {
     category: aCategory(),
     submitLabel: '変更を保存する',
-    errors: {
-      color: '色は、#C8A2C8 のように、# と 16 進数 6 桁で入力してください。',
-      parentId:
-        'この親カテゴリーは、その間に削除されていました。親を選び直してください。',
-    },
+    errors: { color: errors.color, parentId: errors.parentGone },
   },
 }
 
 /** What went wrong with the attempt, above the controls */
 export const Failed: Story = {
   args: {
-    message:
-      'カテゴリーを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: saveFailed,
   },
 }
 

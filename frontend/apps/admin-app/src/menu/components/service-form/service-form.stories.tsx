@@ -1,4 +1,5 @@
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import {
@@ -9,6 +10,8 @@ import {
   SERVICES_OF_THE_MENU,
 } from '../examples'
 import { ServiceForm } from './service-form'
+
+const { errors, failed } = adminMenuMessages.serviceForm
 
 const meta: Meta<typeof ServiceForm> = {
   title: 'Admin/Menu/ServiceForm',
@@ -56,8 +59,8 @@ export const WithErrors: Story = {
     service: aPackage(),
     submitLabel: '変更を保存する',
     errors: {
-      discountPrice: '割引後の料金は、料金以下にしてください。',
-      'packageServiceIds.1': '同じサービスは、1 回だけ入れられます。',
+      discountPrice: errors.discountAbovePrice,
+      'packageServiceIds.1': errors.packagedTwice,
     },
   },
 }
@@ -65,7 +68,6 @@ export const WithErrors: Story = {
 /** What went wrong with the attempt as a whole */
 export const NotSent: Story = {
   args: {
-    message:
-      'サービスを足せませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: failed.entry,
   },
 }

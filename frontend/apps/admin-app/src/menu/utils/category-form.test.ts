@@ -1,4 +1,5 @@
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { CategoryRemoval } from '../api/menu-api'
 import { aCategory, colouring, highlights } from '../components/examples'
@@ -150,10 +151,19 @@ describe('readCategoryEntry', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        name: 'カテゴリーの名前を、100 文字以内で入力してください。',
-        category: '種類を選んでください。',
-        displayOrder: '表示順は、0 以上の整数で入力してください。',
-        color: '色は、#C8A2C8 のように、# と 16 進数 6 桁で入力してください。',
+        name: {
+          en: 'Category name: enter 1 to 100 characters.',
+          ja: 'カテゴリーの名前を、100 文字以内で入力してください。',
+        },
+        category: { en: 'Choose a type.', ja: '種類を選んでください。' },
+        displayOrder: {
+          en: 'Enter the display order as a whole number of 0 or more.',
+          ja: '表示順は、0 以上の整数で入力してください。',
+        },
+        color: {
+          en: 'Enter the color as a # and 6 hexadecimal digits, such as #C8A2C8.',
+          ja: '色は、#C8A2C8 のように、# と 16 進数 6 桁で入力してください。',
+        },
       },
     })
   })
@@ -233,21 +243,27 @@ describe('readCategoryChange', () => {
   it('should pass on what is wrong with the form', () => {
     expect(
       readCategoryChange(formWith({ name: '' }), aCategory()),
-    ).toMatchObject({ type: 'invalid', errors: { name: expect.any(String) } })
+    ).toMatchObject({ type: 'invalid', errors: { name: expect.any(Object) } })
   })
 })
 
 describe('afterCategoryWrite', () => {
-  it.each<[string, string, string]>([
+  it.each<[string, string, LocalizedText]>([
     [
       'a parent removed meanwhile',
       'not_found',
-      'この親カテゴリーは、その間に削除されていました。親を選び直してください。',
+      {
+        en: 'This parent category was removed meanwhile. Choose the parent again.',
+        ja: 'この親カテゴリーは、その間に削除されていました。親を選び直してください。',
+      },
     ],
     [
       'a parent that is below the category now',
       'circular',
-      'このカテゴリーの下にあるカテゴリーは、親にできません。その間に、親が変わっていました。選び直してください。',
+      {
+        en: 'A category below this one cannot be its parent. The parents changed meanwhile: choose again.',
+        ja: 'このカテゴリーの下にあるカテゴリーは、親にできません。その間に、親が変わっていました。選び直してください。',
+      },
     ],
   ])('should say %s at the parent', (_, rule, error) => {
     // Act
@@ -278,33 +294,49 @@ describe('afterCategoryWrite', () => {
     expect(at).toEqual({
       message: undefined,
       errors: {
-        iconUrl:
-          'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
-        description:
-          'この値は受け付けられませんでした。入力を確かめてください。',
+        iconUrl: {
+          en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+          ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+        },
+        description: {
+          en: 'This value was not accepted. Check what you entered.',
+          ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+        },
       },
     })
     expect(above).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
 
-  it.each<[string, 'forbidden' | 'tooManyRequests' | 'failed', string]>([
+  it.each<[string, 'forbidden' | 'tooManyRequests' | 'failed', LocalizedText]>([
     [
       'an account that may not change the menu',
       'forbidden',
-      'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      {
+        en: 'The menu of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its menu.',
+        ja: 'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      },
     ],
     [
       'too many requests',
       'tooManyRequests',
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'no answer',
       'failed',
-      'カテゴリーを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The category could not be saved. Check your connection and try again.',
+        ja: 'カテゴリーを保存できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say above the form what came of %s', (_, type, message) => {
     expect(afterCategoryWrite({ type })).toEqual({ message, errors: {} })
@@ -336,7 +368,10 @@ describe('afterCategoryRemoval', () => {
       { type: 'removed' },
       {
         type: 'done',
-        message: 'カテゴリー「カラー」を、メニューから削除しました。',
+        message: {
+          en: 'Removed the category “カラー” from the menu.',
+          ja: 'カテゴリー「カラー」を、メニューから削除しました。',
+        },
       },
     ],
     ['a category removed meanwhile', { type: 'notFound' }, { type: 'gone' }],
@@ -345,8 +380,10 @@ describe('afterCategoryRemoval', () => {
       { type: 'forbidden' },
       {
         type: 'refused',
-        message:
-          'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+        message: {
+          en: 'The menu of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its menu.',
+          ja: 'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+        },
       },
     ],
     [
@@ -354,8 +391,10 @@ describe('afterCategoryRemoval', () => {
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
       },
     ],
     [
@@ -363,8 +402,10 @@ describe('afterCategoryRemoval', () => {
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          'カテゴリーを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The category could not be removed. Check your connection and try again.',
+          ja: 'カテゴリーを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what came of %s', (_, outcome, said) => {
