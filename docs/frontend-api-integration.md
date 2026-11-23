@@ -225,7 +225,8 @@ export function customInstance<T>(url: string, options: RequestInit): Promise<T>
 - `ui` の部品は、自分の文言（「閉じる」「必須」「さらに表示」など）を、その言語で言う（`useSay`）。文言は、`@beauty-salon-shared/i18n/messages/ui` のメッセージで、どれも、すべての言語で書いてある
 - 入力の決まり（`fields`）と、応答の読み方（`answers`）の文も、同じ所のメッセージ（`fieldMessages`、`answerMessages`）で、2 つのパッケージは、それを返す。セッションの画面（`session`）、アプリの枠（`app-frame`）、サロンの画面が共有する部分（`salon-screens`）、好み設定（`preferences`）の文言も、同じ所のメッセージ（`sessionMessages`、`securityMessages`、`frameMessages`、`salonScreenMessages`、`preferenceMessages`）で、フォームは、誤りと文をメッセージで持ち、表示する部品が `ui` の `useSaidForm` で言う。2 つ以上のアプリかパッケージが名前を言う列挙の値（予約の状態、性別、会員ランク、ロール、レベル、サービスと支払いの種類、レビューの通報の理由、ファイルの種類）も、業務の言葉のメッセージ（`termMessages`）で、アプリの名前の表は、それから作る。まだ日本語だけの画面は、`ui` の橋渡し（`inJapanese`、`inJapaneseIfAny`、`errorsInJapanese`、`writtenInJapanese`）で、日本語で言う
 - ポータルのすべての画面と、ヘッダーのリンクの文言は、ポータルのメッセージ（`@beauty-salon-shared/i18n/messages/portal` の `portalFrameMessages`、`portalAccountMessages`、`portalSalonMessages`、`portalBookingMessages`、`portalProfileMessages`、`portalPreferenceMessages`、`portalReviewMessages`、`portalShareMessages`）で、値の書き方とフォームの関数も、メッセージを返す。ヘッダーのリンクは、名前をメッセージで持ち（`app-frame` の `FrameLink`）、アプリの枠が言う
-- 言語を選ぶ部品は、まだ、どのアプリにも出していない。管理画面とダッシュボードの文言は、まだ日本語だけで、アプリの領域ごとに順に、メッセージにしていく
+- ダッシュボードのすべての画面と、ヘッダーのリンクの文言は、ダッシュボードのメッセージ（`@beauty-salon-shared/i18n/messages/dashboard` の `dashboardFrameMessages`、`dashboardReportMessages`）で、値の書き方とフォームの関数も、メッセージを返す
+- 言語を選ぶ部品は、まだ、どのアプリにも出していない。管理画面の文言は、まだ日本語だけで、領域ごとに順に、メッセージにしていく
 
 ## セッション
 
@@ -1218,8 +1219,9 @@ dashboard-app の `src/reports/` に、サロンの売上レポートの画面�
 - **区分別**は、サービスがいま属している区分で、API の順に並べる。1 件あたりは、売上 ÷ 施術の数（1 円未満は切り捨て。API の平均と同じ）。割合の下の棒は、割合の長さ。商品だけが売れた期間は「この期間のメニューの売上はありません」
 - **棒**は、表の数の下に描く飾りで、文字を持たない（数は表の文字で読む。`components/share-bar/`）
 - **ヘッダーのリンク**は、管理者には「サロンを選ぶ」と、サロンのアドレスの下では「売上レポート」「売上の推移」「1 日の売上」「スタッフ別の売上」「区分別の売上」。オーナーとマネージャーには、この 5 つ（`src/navigation.ts`）。いまの画面に印を付ける
-- **API を呼ぶ関数**は `src/reports/api/sales-report-api.ts`（レポート、CSV、推移、1 日の売上、スタッフ別、区分別）にある。reject せず、画面が区別する結果の直和型を返す。件数、割合（小数第 1 位まで）、順位の言葉と、CSV に出力したあとに言うことは `utils/sales-report.ts`、区切りとその名前、12 か月、目盛りの額は `utils/sales-trends.ts`、アドレスの日と前後の日は `utils/daily-sales.ts`、棒の長さと 1 件あたりの額は `utils/sales-breakdown.ts` の純粋な関数。アドレスの期間で集計して読むこと（期間の誤りと、同じ期間の読み直しを含む）は、売上レポート、スタッフ別、区分別が `hooks/use-period-count.ts` の `usePeriodCount` で共有する。ほかのサロンと削除されたサロンについて言うことは、3 つの画面の `ReportRefusal`。期間は `salon-screens` の `period.ts`（`periodIn`、`monthUntil`）、保存するファイルは `io` の `fileOfAnswer`
+- **API を呼ぶ関数**は `src/reports/api/sales-report-api.ts`（レポート、CSV、推移、1 日の売上、スタッフ別、区分別）にある。reject せず、画面が区別する結果の直和型を返す。割合（小数第 1 位まで）と、CSV に出力したあとに言うことは `utils/sales-report.ts`、区切りとその名前、12 か月、目盛りの額は `utils/sales-trends.ts`、アドレスの日と前後の日は `utils/daily-sales.ts`、棒の長さと 1 件あたりの額は `utils/sales-breakdown.ts` の純粋な関数。アドレスの期間で集計して読むこと（期間の誤りと、同じ期間の読み直しを含む）は、売上レポート、スタッフ別、区分別が `hooks/use-period-count.ts` の `usePeriodCount` で共有する。ほかのサロンと削除されたサロンについて言うことは、5 つの画面の `ReportRefusal`。期間は `salon-screens` の `period.ts`（`periodIn`、`monthUntil`）、保存するファイルは `io` の `fileOfAnswer`
 - **表示するだけの部品**は、レポートの 4 つの部分（`SalesReport`）、推移のグラフ（`TrendChart`）と、グラフと表（`SalesTrend`）、1 日の売上（`DailySales`）と、日付のフォーム（`DayChoice`）、スタッフ別（`StaffSales`）、区分別（`CategorySales`）、表の数の下の棒（`ShareBar`）。`ui` のカタログに、`Dashboard/Reports/...` として並ぶ。区切りの選択は、`salon-screens` の `StatisticsPeriod` の `children`（その `FilterForm` のほかの条件。広い画面では期間の後、狭い画面では「条件」のシートの中）
+- **言語**: 文言は、ダッシュボードのメッセージ（`dashboardReportMessages`、ヘッダーのリンクと始まりの画面の案内は `dashboardFrameMessages`）で、部品が、ページの言語で言う。件数は、日本語は「3 件」、英語は数だけ（`3`）。順位は、値の書式の `placeOf`（「1 位」、`1st`）。グラフの軸の日は `numericDayOf`（「2026/11/16」、`11/16/2026`）、目盛りの額は `shortAmountOf`（「￥2.5万」、`¥25K`）
 - **この画面にないもの**: 前の期間や前年との比較（API にない）
 
 ## TanStack Query の設定
