@@ -217,6 +217,40 @@ describe('sourcesIn', () => {
     ).toEqual([])
   })
 
+  it('should read the modules of a folder and of a file it names deeper below the directory, and none beside them', () => {
+    // Act
+    const paths = sourcesIn(path.join(packages, 'ui/src'), [
+      'components/form',
+      'hooks/language.ts',
+    ]).map((source) => source.path)
+
+    // Assert
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        'components/form/form-values.ts',
+        'hooks/language.ts',
+      ]),
+    )
+    expect(
+      paths.filter(
+        (file) =>
+          file !== 'hooks/language.ts' && !file.startsWith('components/form/'),
+      ),
+    ).toEqual([])
+  })
+
+  it('should take no folder whose name begins with the name of the folder it names for a part of it', () => {
+    // Act
+    const paths = sourcesIn(path.join(packages, 'ui/src'), [
+      'components/form',
+    ]).map((source) => source.path)
+
+    // Assert
+    expect(paths.filter((file) => file.startsWith('components/form-'))).toEqual(
+      [],
+    )
+  })
+
   it('should read nothing of a part that is not there', () => {
     // Act
     const sources = sourcesIn(path.join(packages, 'ui/src'), ['no-such-area'])
@@ -238,6 +272,22 @@ describe('partsWithoutSources', () => {
 
     // Assert
     expect(missing).toEqual(['no-such-area', 'no-such-file.ts'])
+  })
+
+  it('should name a part deeper below the directory that has no source, and none of those that have', () => {
+    // Act
+    const missing = partsWithoutSources(path.join(packages, 'ui/src'), [
+      'components/form',
+      'components/no-such-component',
+      'hooks/language.ts',
+      'hooks/no-such-hook.ts',
+    ])
+
+    // Assert
+    expect(missing).toEqual([
+      'components/no-such-component',
+      'hooks/no-such-hook.ts',
+    ])
   })
 })
 
