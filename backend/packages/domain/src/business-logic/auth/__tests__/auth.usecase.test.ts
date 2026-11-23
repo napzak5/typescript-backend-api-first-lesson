@@ -906,12 +906,30 @@ describe('AuthenticateUseCase', () => {
     expect(result.type).toBe('success')
   })
 
-  it('reports a stored session that does not describe an actor as a database error', async () => {
-    const result = await new AuthenticateUseCase(
-      withSession({ id: 'session-1' }),
-    ).execute('Bearer access-token')
+  it('should report a stored session that does not describe an actor as a database error, which names the session and says what of it breaks which rule', async () => {
+    // Arrange
+    const useCase = new AuthenticateUseCase(withSession({ id: 'session-1' }))
 
-    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+    // Act
+    const result = await useCase.execute('Bearer access-token')
+
+    // Assert
+    expect(result).toEqual({
+      type: 'error',
+      error: {
+        type: 'database',
+        message: 'Stored session session-1 does not describe an actor',
+        cause: {
+          issues: [
+            {
+              field: 'sessionId',
+              rule: 'invalid_format',
+              message: 'Invalid UUID',
+            },
+          ],
+        },
+      },
+    })
   })
 
   it('passes on a database error', async () => {

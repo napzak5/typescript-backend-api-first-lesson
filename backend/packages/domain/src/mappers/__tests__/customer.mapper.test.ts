@@ -7,6 +7,7 @@ import {
   OTHER_CUSTOMER_ID,
   REFERRER_ID,
 } from '../../__tests__/fixtures/customer-fixtures'
+import { RULES_BROKEN_BY_STORED } from '../../__tests__/fixtures/fixtures'
 import {
   type ApiCustomerCreateRequest,
   type ApiCustomerResponse,
@@ -342,11 +343,12 @@ describe('CustomerReadMapper.toApiCustomer', () => {
         ...stored,
       })
 
-      expect(result).toMatchObject({
+      expect(result).toEqual({
         type: 'error',
         error: {
           type: 'database',
-          message: expect.stringContaining(OTHER_CUSTOMER_ID),
+          message: `Stored customer ${OTHER_CUSTOMER_ID} does not match the API model`,
+          cause: RULES_BROKEN_BY_STORED,
         },
       })
     },

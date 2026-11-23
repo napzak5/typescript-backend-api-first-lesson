@@ -4,6 +4,7 @@ import {
   dbCustomerVersion,
   VERSION_ID,
 } from '../../__tests__/fixtures/customer-version-fixtures'
+import { RULES_BROKEN_BY_STORED } from '../../__tests__/fixtures/fixtures'
 import { customerIdSchema } from '../../models/customer'
 import { customerVersionIdSchema } from '../../models/customer-version'
 import { CustomerVersionReadMapper } from '../read/customer-version.mapper'
@@ -70,7 +71,14 @@ describe('CustomerVersionReadMapper.toApiHistoryPage', () => {
       { limit: 20, after: null },
     )
 
-    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+    expect(result).toEqual({
+      type: 'error',
+      error: {
+        type: 'database',
+        message: `Stored customer version ${VERSION_ID(1)} does not match the API model`,
+        cause: RULES_BROKEN_BY_STORED,
+      },
+    })
   })
 })
 
