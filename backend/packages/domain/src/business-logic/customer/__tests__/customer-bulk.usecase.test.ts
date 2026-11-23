@@ -534,6 +534,30 @@ describe('BulkUpdateCustomersUseCase', () => {
     expect(callsOf(dependencies.customerRepository, 'updateMany')).toEqual([])
   })
 
+  it('should say that an item names the customer of an earlier one', async () => {
+    // Arrange
+    const items = [
+      { id: CUSTOMER_ID, updates: { notes: null } },
+      { id: CUSTOMER_ID, updates: { tags: [] } },
+    ]
+
+    // Act
+    const result = await new BulkUpdateCustomersUseCase(updated).execute(
+      actors.admin,
+      { items },
+    )
+
+    // Assert
+    expect(result).toMatchObject({
+      type: 'error',
+      error: {
+        issues: [
+          { field: 'items.1.id', message: customerMessages.noRepeatedCustomer },
+        ],
+      },
+    })
+  })
+
   it('refuses a customer referred by themselves and a birth date in the future, at their items', async () => {
     const dependencies = updated
 

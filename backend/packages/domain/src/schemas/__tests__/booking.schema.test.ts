@@ -1019,6 +1019,25 @@ describe('bookingSearchRequestSchema', () => {
     ).toEqual(['bookingDateTo:custom'])
   })
 
+  it('should say that a last day before the first one is earlier than bookingDateFrom', () => {
+    // Arrange
+    const search = {
+      bookingDateFrom: '2026-11-20',
+      bookingDateTo: '2026-11-19',
+    }
+
+    // Act
+    const result = parseSearch(search)
+
+    // Assert
+    expect(result).toMatchObject({
+      type: 'error',
+      error: {
+        issues: [{ message: ruleMessages.notEarlierThan('bookingDateFrom') }],
+      },
+    })
+  })
+
   it.each([
     ['a keyword', 'search'],
     ['a page number', 'page'],

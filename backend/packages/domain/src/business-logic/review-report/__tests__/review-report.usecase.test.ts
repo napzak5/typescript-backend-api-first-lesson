@@ -252,6 +252,27 @@ describe('ReportReviewUseCase', () => {
     repositoryWasNotCalled(dependencies)
   })
 
+  it('should say that a report for another reason says what it is about', async () => {
+    // Arrange
+    const dependencies = reviewDependencies()
+
+    // Act
+    const reported = await report(dependencies, actors.customer, REVIEW_ID, {
+      reason: 'other',
+      details: null,
+    })
+
+    // Assert
+    expect(reported).toMatchObject({
+      type: 'error',
+      error: {
+        issues: [
+          { field: 'details', message: reviewReportMessages.detailsForOther },
+        ],
+      },
+    })
+  })
+
   it.each<[string, ReviewReporting, DomainError]>([
     [
       'a review that is not there, or of a deleted salon, as not found',

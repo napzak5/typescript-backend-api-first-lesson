@@ -493,6 +493,20 @@ describe('purchaseOrderSearchRequestSchema', () => {
   ])('refuses %s', (_case, query, expected) => {
     expect(brokenBy(purchaseOrderSearchRequestSchema, query)).toEqual(expected)
   })
+
+  it('should say that an end before the start is earlier than startDate', () => {
+    // Arrange
+    const search = {
+      startDate: '2026-11-02T00:00:00Z',
+      endDate: '2026-11-01T23:59:59.999Z',
+    }
+
+    // Act
+    const messages = messagesOf(purchaseOrderSearchRequestSchema, search)
+
+    // Assert
+    expect(messages).toEqual(['Must not be earlier than startDate'])
+  })
 })
 
 describe('purchaseOrderReceiveRequestSchema', () => {

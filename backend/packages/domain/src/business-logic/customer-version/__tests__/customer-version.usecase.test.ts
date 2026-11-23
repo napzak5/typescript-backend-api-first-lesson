@@ -557,6 +557,24 @@ describe('GetCustomerVersionUseCase', () => {
     expect(dependencies.customerVersionRepository.find).not.toHaveBeenCalled()
   })
 
+  it('should say that the number of a version is a whole number', async () => {
+    // Arrange
+    const dependencies = dependenciesWith()
+
+    // Act
+    const result = await get(dependencies, 'first')
+
+    // Assert
+    expect(result).toMatchObject({
+      type: 'error',
+      error: {
+        issues: [
+          { field: 'version', message: customerVersionMessages.wholeNumber },
+        ],
+      },
+    })
+  })
+
   it('refuses an ID that is not one before the number', async () => {
     const result = await get(
       dependenciesWith(),
