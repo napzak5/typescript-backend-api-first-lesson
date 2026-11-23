@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LocalizedText } from '../languages/localized-text'
-import { durationOf, timeSlotsOf } from './times'
+import { durationOf, minutesOf, timeSlotsOf } from './times'
 
 describe('durationOf', () => {
   it.each<[number, LocalizedText]>([
@@ -14,6 +14,24 @@ describe('durationOf', () => {
     (minutes, expected) => {
       // Act
       const written = durationOf(minutes)
+
+      // Assert
+      expect(written).toEqual(expected)
+    },
+  )
+})
+
+describe('minutesOf', () => {
+  it.each<[number, LocalizedText]>([
+    [0, { en: '0 min', ja: '0 分' }],
+    [45, { en: '45 min', ja: '45 分' }],
+    [90, { en: '90 min', ja: '90 分' }],
+    [1440, { en: '1,440 min', ja: '1,440 分' }],
+  ])(
+    'should write %d minutes in minutes alone in each language',
+    (minutes, expected) => {
+      // Act
+      const written = minutesOf(minutes)
 
       // Assert
       expect(written).toEqual(expected)

@@ -24,4 +24,4 @@ export {
   placeOf,
   shortAmountOf,
 } from './numbers'
-export { durationOf, timeSlotsOf } from './times'
+export { durationOf, minutesOf, timeSlotsOf } from './times'

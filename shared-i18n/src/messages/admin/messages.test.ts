@@ -806,8 +806,12 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
   ],
 ]
 
-/** The catalogues whose messages that are made from a value are tested in a file of their own (`inventory.test.ts`, `sales.test.ts`) */
-const TESTED_APART = ['adminInventoryMessages', 'adminSaleMessages']
+/** The catalogues whose messages that are made from a value are tested in a file of their own (`inventory.test.ts`, `menu.test.ts`, `sales.test.ts`) */
+const TESTED_APART = [
+  'adminInventoryMessages',
+  'adminMenuMessages',
+  'adminSaleMessages',
+]
 
 /** A name that stands inside a sentence: it begins as it stands there */
 const INSIDE_A_SENTENCE = /\.names\./

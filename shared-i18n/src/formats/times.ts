@@ -4,9 +4,9 @@ import { numberFormatIn } from './formatters'
 import { inEachLanguage } from './in-each-language'
 
 /*
- * A length of time (how long a service takes), and times of a day from
- * when until when, as the API writes a time of a day: `10:00` or
- * `10:00:00`.
+ * A length of time (how long a service takes, in hours and minutes or in
+ * minutes alone), and times of a day from when until when, as the API
+ * writes a time of a day: `10:00` or `10:00:00`.
  */
 
 const unitIn = (
@@ -35,6 +35,13 @@ export const durationOf = (minutes: number): LocalizedText =>
       ...(rest === 0 && hours > 0 ? [] : [unitIn(language, rest, 'minute')]),
     ].join(' ')
   })
+
+/**
+ * How long something takes, in minutes alone, as a form that takes minutes
+ * writes it back: 「90 分」, "90 min".
+ */
+export const minutesOf = (minutes: number): LocalizedText =>
+  inEachLanguage((language) => unitIn(language, minutes, 'minute'))
 
 /** A time of a day without its seconds: `10:00` of `10:00:00`. */
 const withoutSeconds = (time: string): string => time.slice(0, 5)
