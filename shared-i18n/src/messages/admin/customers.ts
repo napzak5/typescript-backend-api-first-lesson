@@ -1,9 +1,20 @@
-import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
 import { uiMessages } from '../ui/components'
 import { customerMessages as record } from '../ui/customers'
 import { salonScreenMessages } from '../ui/salon-screens'
-import { countedIn, followed, joined, listed, postalCodeOf } from '../written'
+import { followed, joined, listed, postalCodeOf } from '../written'
+import { customerBulkMessages } from './customer-bulk'
+import { customerErasureMessages } from './customer-erasure'
+import { customerExportMessages } from './customer-export'
+import { customerFileMessages } from './customer-file'
+import { customerMergeMessages } from './customer-merge'
+import { customerPointMessages } from './customer-points'
+import {
+  countOf,
+  honored,
+  KEPT_BY_OTHERS,
+  KEYWORD_DESCRIPTION,
+} from './customer-words'
 
 /*
  * What the screens of the ledger of the customers say in the admin
@@ -12,6 +23,11 @@ import { countedIn, followed, joined, listed, postalCodeOf } from '../written'
  * the preferences, the use of the salon, the removal and the way back, the
  * history and its versions. The names of the customers, their notes and
  * tags, and the name of the salon stand as they were written.
+ *
+ * The other parts of the ledger are files of their own beside this one,
+ * collected here under the same name: the points, the file of customers to
+ * register, the merge, what is done at once to the chosen customers, the
+ * exports, and the requests to have the data erased.
  */
 
 const TITLES = {
@@ -23,11 +39,6 @@ const TITLES = {
   history: text({ en: 'Change history', ja: '変更履歴' }),
   version: text({ en: 'Record version', ja: '台帳の版' }),
 }
-
-const KEYWORD_DESCRIPTION = text({
-  en: 'Part of a name (also phonetic), an email address or a phone number.',
-  ja: 'お名前（カナでも）、メールアドレス、電話番号の一部。',
-})
 
 const STATUS = text({ en: 'Status', ja: 'ステータス' })
 const TAGS = text({ en: 'Tags', ja: 'タグ' })
@@ -50,26 +61,10 @@ const CHECK_THE_ADDRESS = text({
   en: 'Check that the address is right.',
   ja: 'アドレスが正しいか、お確かめください。',
 })
-const KEPT_BY_OTHERS = text({
-  en: 'Owners and managers remove customers from the ledger, merge them and read the change history.',
-  ja: '台帳からの削除と統合、変更履歴は、オーナーとマネージャーができます。',
-})
 const GONE = text({
   en: 'This customer was removed from the ledger.',
   ja: 'このお客様は、台帳から削除されました。',
 })
-
-/** A count beside the term that names what it counts, which Japanese counts with one word: 「3 回」, "3 visits" */
-const countOf = (
-  count: number,
-  one: string,
-  many: string,
-  counter: string,
-): LocalizedText =>
-  text({
-    en: countedIn(count, one, many),
-    ja: `${numberOf(count).ja} ${counter}`,
-  })
 
 /** The name of a customer, with how it is read when there is a reading: 「山田 花子（ヤマダ ハナコ）」 */
 const fullName = (name: string, kana: string): LocalizedText =>
@@ -79,6 +74,11 @@ const fullName = (name: string, kana: string): LocalizedText =>
 
 export const adminCustomerMessages = {
   titles: TITLES,
+  /** The link from a screen of a customer (the history, the points) back to their page */
+  backToCustomer: text({
+    en: 'Back to the customer',
+    ja: 'お客様の台帳へ',
+  }),
   /** What a screen could not read, as a sentence names it: in English with its article */
   names: {
     ledger: text({ en: 'the customer ledger', ja: '顧客台帳' }),
@@ -94,7 +94,7 @@ export const adminCustomerMessages = {
   },
   /** How the staff name a customer in a sentence: 「山田 花子 様」; English names them alone */
   naming: {
-    honored: (name: string) => text({ en: name, ja: `${name} 様` }),
+    honored,
     full: fullName,
     /** The full name below the heading of a screen of a customer: 「山田 花子（ヤマダ ハナコ） 様」 */
     honoredFull: (name: string, kana: string) => {
@@ -654,10 +654,6 @@ export const adminCustomerMessages = {
     changedItems: (terms: readonly (string | LocalizedText)[]) =>
       terms.length === 0 ? uiMessages.none : listed(terms),
     empty: text({ en: 'No versions', ja: '版はありません' }),
-    backToCustomer: text({
-      en: 'Back to the customer',
-      ja: 'お客様の台帳へ',
-    }),
     loading: text({
       en: 'Loading the change history',
       ja: '変更履歴を読み込んでいます',
@@ -743,4 +739,10 @@ export const adminCustomerMessages = {
       ja: 'お客様を読み込んでいます',
     }),
   },
+  points: customerPointMessages,
+  file: customerFileMessages,
+  merge: customerMergeMessages,
+  bulk: customerBulkMessages,
+  exports: customerExportMessages,
+  erasure: customerErasureMessages,
 }
