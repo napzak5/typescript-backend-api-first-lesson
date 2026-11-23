@@ -1154,7 +1154,7 @@ describe('the page and the profile of a customer on a page in English, against t
     // Assert
     expect(await heading('Your details')).toHaveFocus()
     expect(
-      screen.getByText(
+      await screen.findByText(
         'Your name and phone number are needed to book a salon. You can register the rest later.',
       ),
     ).toBeVisible()
