@@ -3,11 +3,15 @@ import {
   ButtonLink,
   Form,
   type FormSays,
-  inJapanese,
   NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalAccountMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { match, P } from 'ts-pattern'
@@ -20,11 +24,14 @@ import { useMailedToken } from '../hooks/mailed-token'
 import { afterRefusal, readNewPassword } from '../utils/account-flow'
 import { CheckingLink, LinkNotChecked, LinkUnusable } from './mailed-link'
 
-const TITLE = 'パスワードの再設定'
+const { passwordReset: words } = portalAccountMessages
+const { password } = securityMessages
 
-const AskAgain = () => (
-  <ButtonLink href='/forgot-password'>再設定のメールをもう一度送る</ButtonLink>
-)
+const AskAgain = () => {
+  const say = useSay()
+
+  return <ButtonLink href='/forgot-password'>{say(words.sendAgain)}</ButtonLink>
+}
 
 const ResetWithToken = ({ token }: { token: string }) => {
   // Asked once for this screen, and forgotten with it: the answer is about
@@ -35,7 +42,9 @@ const ResetWithToken = ({ token }: { token: string }) => {
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: 0,
   })
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
+  const said = useSaidForm(says.message, says.errors)
   const [ended, setEnded] = useState<'changed' | 'linkRefused' | null>(null)
   const reset = useMutation({
     mutationFn: (newPassword: string) => resetPassword(token, newPassword),
@@ -64,42 +73,44 @@ const ResetWithToken = ({ token }: { token: string }) => {
     return (
       <>
         <PageHeader
-          title='パスワードを変更しました'
-          description='このアカウントは、すべての端末でサインアウトされました。新しいパスワードでサインインしてください。'
+          title={say(words.changed)}
+          description={say(words.changedDescription)}
         />
-        <ButtonLink href='/sign-in'>サインインする</ButtonLink>
+        <ButtonLink href='/sign-in'>
+          {say(portalAccountMessages.signIn)}
+        </ButtonLink>
       </>
     )
   }
 
   return match(ended === 'linkRefused' ? TOKEN_REFUSED : check.data)
-    .with(undefined, () => <CheckingLink title={TITLE} />)
+    .with(undefined, () => <CheckingLink title={words.title} />)
     .with({ type: 'accepted' }, () => (
       <>
         <PageHeader
-          title={TITLE}
-          description='新しいパスワードを決めてください。'
+          title={say(words.title)}
+          description={say(words.chooseNew)}
         />
         <Form
-          submitLabel='パスワードを変更する'
-          message={says.message}
+          submitLabel={say(password.change)}
+          message={said.message}
           errors={says.errors}
           pending={reset.isPending}
           onSubmit={submit}
         >
           <PasswordField
-            label='新しいパスワード'
+            label={say(password.new)}
             name='newPassword'
             autoComplete='new-password'
             required
-            description={inJapanese(PASSWORD_RULE)}
-            error={says.errors['newPassword']}
+            description={say(PASSWORD_RULE)}
+            error={said.errors['newPassword']}
           />
         </Form>
       </>
     ))
     .with({ type: 'tokenRefused' }, () => (
-      <LinkUnusable description='リンクの有効期間（30 分）が過ぎたか、すでに使われています。再設定のメールを、もう一度お送りします。'>
+      <LinkUnusable description={words.expired}>
         <AskAgain />
       </LinkUnusable>
     ))
@@ -107,7 +118,7 @@ const ResetWithToken = ({ token }: { token: string }) => {
       { type: P.union('invalid', 'tooManyAttempts', 'failed') },
       (refusal) => (
         <LinkNotChecked
-          title={TITLE}
+          title={words.title}
           refusal={refusal}
           onRetry={() => void check.refetch()}
         />
@@ -125,7 +136,7 @@ export const ResetPasswordScreen = () => {
   const token = useMailedToken()
 
   return token === null ? (
-    <LinkUnusable description='このページは、再設定のメールのリンクから開いてください。メールが見つからないときは、もう一度お送りします。'>
+    <LinkUnusable description={words.noLink}>
       <AskAgain />
     </LinkUnusable>
   ) : (

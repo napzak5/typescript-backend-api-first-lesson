@@ -9,44 +9,49 @@ import {
 } from '@beauty-salon-frontend/session'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import type { Refusal, RefusedValue } from '../api/account-api'
+
+/** What a form of an account read: the value to send, or what to say at its controls */
+type AccountRead<Value> = FormRead<Value, FormErrors<LocalizedText>>
 
 /**
  * The address of the control `email`, without the spaces around it, which
  * come with a pasted value.
  */
-export const readEmail = (values: FormData): FormRead<string> => {
+export const readEmail = (values: FormData): AccountRead<string> => {
   const email = textOf(values, 'email').trim()
   const error = emailError(email)
 
   return error === undefined
     ? { type: 'valid', value: email }
-    : { type: 'invalid', errors: { email: inJapanese(error) } }
+    : { type: 'invalid', errors: { email: error } }
 }
 
 /** The password of the control `name`, as it was typed. */
 export const readNewPassword = (
   values: FormData,
   name: 'password' | 'newPassword',
-): FormRead<string> => {
+): AccountRead<string> => {
   const password = textOf(values, name)
   const error = newPasswordError(password)
 
   return error === undefined
     ? { type: 'valid', value: password }
-    : { type: 'invalid', errors: { [name]: inJapanese(error) } }
+    : { type: 'invalid', errors: { [name]: error } }
 }
 
 /** The address and the password of a registration: both are checked, and both errors are said. */
 export const readRegistration = (
   values: FormData,
-): FormRead<{ email: string; password: string }> => {
+): AccountRead<{ email: string; password: string }> => {
   const email = readEmail(values)
   const password = readNewPassword(values, 'password')
 
@@ -62,13 +67,15 @@ export const readRegistration = (
 }
 
 /** What to say at the control of a value that the API did not take. */
-const messageOf = ({ field, rule }: RefusedValue): string | undefined =>
+const messageOf = ({ field, rule }: RefusedValue): LocalizedText | undefined =>
   match(field)
-    .with('email', () => inJapanese(EMAIL_MALFORMED))
-    .with('password', 'newPassword', () =>
-      inJapanese(refusedPasswordMessage(rule)),
-    )
+    .returnType<LocalizedText | undefined>()
+    .with('email', () => EMAIL_MALFORMED)
+    .with('password', 'newPassword', () => refusedPasswordMessage(rule))
     .otherwise(() => undefined)
+
+/** A message said at a control: the value the API named */
+type Said = { field: string; message: LocalizedText }
 
 /**
  * What a form says after the API did not carry out what it was sent for.
@@ -76,46 +83,48 @@ const messageOf = ({ field, rule }: RefusedValue): string | undefined =>
  * the API names is said at its control; one it names that the form has no
  * control for is said about the whole attempt.
  */
-export const afterRefusal = (refusal: Refusal): FormSays =>
+export const afterRefusal = (refusal: Refusal): FormSays<LocalizedText> =>
   match(refusal)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
-      const said = values.flatMap((value) => {
+      const said = values.flatMap((value): Said[] => {
         const message = messageOf(value)
 
         return message === undefined ? [] : [{ field: value.field, message }]
       })
 
       return said.length === 0
-        ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
+        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
         : {
             message: undefined,
             // The first thing the API says about a value is the one to act on
             errors: Object.fromEntries(
-              said.toReversed().map(({ field, message }) => [field, message]),
+              said
+                .toReversed()
+                .map(({ field, message }): [string, LocalizedText] => [
+                  field,
+                  message,
+                ]),
             ),
           }
     })
+    // The sentence of the sign-in: the API counts the attempts of an address alike
     .with({ type: 'tooManyAttempts' }, () =>
-      aboutTheAttempt(
-        '試した回数が多すぎます。しばらくしてから、もう一度お試しください。',
-      ),
+      aboutTheAttempt(sessionMessages.signInFlow.tooManyAttempts),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /**
  * The same in one sentence, where there is no control to say it at: a
  * button that sends nothing a person typed.
  */
-export const messageAfter = (refusal: Refusal): string => {
+export const messageAfter = (refusal: Refusal): LocalizedText => {
   const { message, errors } = afterRefusal(refusal)
 
   return (
     message ??
     Object.values(errors).find((error) => error !== undefined) ??
-    inJapanese(CHECK_THE_VALUES_MESSAGE)
+    CHECK_THE_VALUES_MESSAGE
   )
 }

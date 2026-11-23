@@ -7,7 +7,12 @@ import {
   NOTHING_TO_SAY,
   PageHeader,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalAccountMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -17,15 +22,20 @@ import { useMailedToken } from '../hooks/mailed-token'
 import { afterRefusal, messageAfter, readEmail } from '../utils/account-flow'
 import { VerificationSent } from './verification-sent'
 
+const { verifyEmail: words } = portalAccountMessages
+const { alreadyConfirmedWithLink: alreadyConfirmed } = words
+
 type AskForAnotherMailProps = {
-  title: string
+  title: LocalizedText
   /** Why this screen cannot confirm the address */
-  children: string
+  description: LocalizedText
 }
 
 /** Where somebody whose link does not work asks for another mail. */
-const AskForAnotherMail = ({ title, children }: AskForAnotherMailProps) => {
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+const AskForAnotherMail = ({ title, description }: AskForAnotherMailProps) => {
+  const say = useSay()
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
+  const said = useSaidForm(says.message, says.errors)
   const [sentTo, setSentTo] = useState<string | null>(null)
   const sending = useMutation({
     mutationFn: sendVerificationAgain,
@@ -53,38 +63,40 @@ const AskForAnotherMail = ({ title, children }: AskForAnotherMailProps) => {
 
   return (
     <>
-      <PageHeader title={title} description={children} />
+      <PageHeader title={say(title)} description={say(description)} />
       <Form
-        submitLabel='確認メールを送る'
-        message={says.message}
+        submitLabel={say(words.send)}
+        message={said.message}
         errors={says.errors}
         pending={sending.isPending}
         onSubmit={submit}
       >
         <TextField
-          label='メールアドレス'
+          label={say(sessionMessages.signInForm.email)}
           name='email'
           type='email'
           autoComplete='username'
           required
-          description='登録したメールアドレスに、確認メールをもう一度お送りします。'
-          error={says.errors['email']}
+          description={say(words.emailDescription)}
+          error={said.errors['email']}
         />
       </Form>
       <p>
-        確認がすでに済んでいれば、そのまま
-        <Link to='/sign-in'>サインイン</Link>できます。
+        {say(alreadyConfirmed.before)}
+        <Link to='/sign-in'>{say(alreadyConfirmed.link)}</Link>
+        {say(alreadyConfirmed.after)}
       </p>
     </>
   )
 }
 
 type Step =
-  | { type: 'ready'; message: string | undefined }
+  | { type: 'ready'; message: LocalizedText | undefined }
   | { type: 'confirmed' }
   | { type: 'linkRefused' }
 
 const ConfirmWithToken = ({ token }: { token: string }) => {
+  const say = useSay()
   const [step, setStep] = useState<Step>({ type: 'ready', message: undefined })
   const confirmation = useMutation({
     mutationFn: confirmEmail,
@@ -107,33 +119,35 @@ const ConfirmWithToken = ({ token }: { token: string }) => {
     .with({ type: 'ready' }, ({ message }) => (
       <>
         <PageHeader
-          title='メールアドレスの確認'
-          description='ボタンを押すと、メールアドレスの確認が済み、アカウントを使えるようになります。'
+          title={say(words.title)}
+          description={say(words.description)}
         />
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
         <Button
           variant='primary'
           pending={confirmation.isPending}
           onClick={() => confirmation.mutate(token)}
         >
-          メールアドレスを確認する
+          {say(words.confirm)}
         </Button>
       </>
     ))
     .with({ type: 'confirmed' }, () => (
       <>
         <PageHeader
-          title='メールアドレスを確認しました'
-          description='登録が完了しました。登録したメールアドレスとパスワードでサインインしてください。'
+          title={say(words.confirmed)}
+          description={say(words.confirmedDescription)}
         />
-        <ButtonLink href='/sign-in'>サインインする</ButtonLink>
+        <ButtonLink href='/sign-in'>
+          {say(portalAccountMessages.signIn)}
+        </ButtonLink>
       </>
     ))
     .with({ type: 'linkRefused' }, () => (
-      <AskForAnotherMail title='このリンクは使えません'>
-        リンクの有効期間（24
-        時間）が過ぎたか、すでに使われています。新しいリンクをお送りします。
-      </AskForAnotherMail>
+      <AskForAnotherMail
+        title={portalAccountMessages.mailedLink.unusable}
+        description={words.expired}
+      />
     ))
     .exhaustive()
 }
@@ -148,9 +162,7 @@ export const VerifyEmailScreen = () => {
   const token = useMailedToken()
 
   return token === null ? (
-    <AskForAnotherMail title='メールアドレスの確認'>
-      このページは、確認メールのリンクから開いてください。メールが見つからないときは、新しいリンクをお送りします。
-    </AskForAnotherMail>
+    <AskForAnotherMail title={words.title} description={words.noLink} />
   ) : (
     <ConfirmWithToken key={token} token={token} />
   )
