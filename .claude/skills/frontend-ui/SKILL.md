@@ -22,7 +22,7 @@ this one: a component is not done without its stories and its test.
 | The check of the style rules | `frontend/packages/theme/src/style-rules.ts`, run by `style-rules.test.ts` over every package and app |
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
-| The language of the page: where the choice is kept (`languageStore`), the hook that says a message in it (`useSay`), the messages of the shared components (`uiMessages`), and what a screen that is still written in Japanese takes a message through (`inJapanese`, `writtenInJapanese`) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/`, `frontend/packages/ui/src/utils/japanese.ts` |
+| The language of the page: where the choice is kept (`languageStore`), the hook that says a message in it (`useSay`), the messages of the shared parts of the screens (`uiMessages` of the components, `fieldMessages` of the rules of `fields`, `answerMessages` of the reading of `answers`), and what a screen that is still written in Japanese takes a message through (`inJapanese`, `inJapaneseIfAny`, `errorsInJapanese`, `writtenInJapanese`) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/`, `frontend/packages/ui/src/utils/japanese.ts` |
 | How a value is written in each language: numbers, shares, amounts, the names of currencies, the sizes of files, days and months of the calendar, and moments on the clock of a time zone | `shared-i18n/src/formats/` (`@beauty-salon-shared/i18n/formats`) |
 | What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls (`FormSays`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/screens/`; what they show is in `src/components/` |
@@ -332,8 +332,15 @@ In a package that is done:
 
 - A text is a message of `shared-i18n/src/messages/<who says it>/`, written
   in every language with `text({ en, ja })`; one whose words depend on a
-  value is a function of the value. The messages of the shared components
-  are `uiMessages` (`@beauty-salon-shared/i18n/messages/ui`).
+  value is a function of the value. The messages of the shared parts of
+  the screens are in `@beauty-salon-shared/i18n/messages/ui`: `uiMessages`
+  (the components), `fieldMessages` (the rules of `fields`) and
+  `answerMessages` (the reading of `answers`). `fields` and `answers` hand
+  them on under their own names (`TOO_MANY_REQUESTS_MESSAGE`,
+  `emailError(email)`), and take as a message the name a sentence speaks
+  of: in English a control is named as a label (`Supplier: enter up to 100
+  characters.`), and what was not read with its article (`Could not load
+  the bookings.`).
 - The component that shows a text says it: `const say = useSay()`, then
   `say(uiMessages.close)`. The hook reads the store, so there is no
   provider, and a component says its texts anew when a language is chosen,
@@ -374,14 +381,27 @@ application is written by `quantityOf` of `products/utils/quantity.ts`.
 The whole is in `docs/i18n.md` (「値の書き方」).
 
 A screen that is still written in Japanese takes what became a message
-through two functions of `ui`, which go when the last screen is done.
-`inJapanese(message)` is the string such a screen shows:
-`count={inJapanese(countOf(total, rows.length, COUNTED.items))}`,
-`inJapanese(NONE)`, and the functions that write a value say a format with
-it (`inJapanese(formats.amountOf(amount, currency))`).
-`writtenInJapanese(text)` hands a sentence the screen wrote itself to what
-takes a message: a counter in words of its own is
-`(count) => writtenInJapanese(`${count} 台`)`.
+through the functions of `ui/src/utils/japanese.ts`, which go when the
+last screen is done. `inJapanese(message)` is the string such a screen
+shows: `count={inJapanese(countOf(total, rows.length, COUNTED.items))}`,
+`inJapanese(NONE)`, `aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE))`,
+and the functions that write a value say a format with it
+(`inJapanese(formats.amountOf(amount, currency))`).
+`inJapaneseIfAny(message)` says a rule that says nothing (`undefined`) of a
+right value: `errorAt('email', inJapaneseIfAny(emailError(email)))`.
+`errorsInJapanese(errors)` makes the errors of a form of the messages
+under the names of the controls (`...errorsInJapanese(lengthErrors(LENGTHS,
+optional))`). `writtenInJapanese(text)` hands a sentence or a name the
+screen wrote itself to what takes a message: a counter in words of its own
+is `(count) => writtenInJapanese(`${count} 台`)`, the name of a control is
+`tooLongOf(writtenInJapanese('仕入先'), 100)`, and what was not read is
+`unreadMessageOf(writtenInJapanese('予約'), reason)`. A message never goes
+into a template literal, a `+` or a `join`, where it is written
+`[object Object]`: a screen puts the string it said there
+(`` `${inJapanese(charactersOf(500))}以内で書いてください。` ``). The type
+check does not see these, nor the values of an `Object.fromEntries` whose
+entries are no tuples (it answers `any`), nor a record spread into an
+object: the tests of a form compare its errors with the sentences.
 
 ## Form components
 
@@ -602,7 +622,8 @@ the shortest).
   message)` for one that has to be written. (A password is counted by a
   rule of its own, after NFC: `password-rule.ts` of `session`.)
 - **The sentence of a text that is too long is one of four**, all of
-  `fields`, and none is written by hand: `tooLong(most)`
+  `fields` (messages, as every text of `fields` is), and none is written
+  by hand: `tooLong(most)`
   (「255 文字以内で入力してください。」) below a control that says it alone;
   `tooLongOf(what, most)` (「仕入先は、255 文字以内で入力してください。」)
   where the sentence names the text; `eachTooLongOf(what, most)`
