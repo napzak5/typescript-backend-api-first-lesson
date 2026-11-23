@@ -1,9 +1,10 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it } from 'vitest'
-import { countOf } from './paged-list'
+import { COUNTED, type Counted, countOf } from './paged-list'
 import * as pagedListStories from './paged-list.stories'
 
 const stories = composeStories(pagedListStories)
@@ -132,34 +133,86 @@ describe('PagedList', () => {
 })
 
 describe('countOf', () => {
-  it.each<[number | null, number, string]>([
-    [12, 10, '12 件（10 件を表示しています）'],
-    [10, 10, '10 件'],
+  it.each<[number | null, number, LocalizedText]>([
+    [
+      12,
+      10,
+      { en: '12 items (showing 10)', ja: '12 件（10 件を表示しています）' },
+    ],
+    [10, 10, { en: '10 items', ja: '10 件' }],
     // A list that grew while it was read says the count of its last page
-    [2, 3, '2 件'],
-    [null, 10, '10 件を表示しています'],
+    [2, 3, { en: '2 items', ja: '2 件' }],
+    [null, 10, { en: 'Showing 10 items', ja: '10 件を表示しています' }],
+    [1, 1, { en: '1 item', ja: '1 件' }],
+    [null, 1, { en: 'Showing 1 item', ja: '1 件を表示しています' }],
   ])(
-    'should say how many of %s are shown when %i are',
+    'should say how many of %s are shown when %i are, in every language',
     (total, shown, said) => {
-      expect(countOf(total, shown, '件')).toBe(said)
+      // Act
+      const count = countOf(total, shown, COUNTED.items)
+
+      // Assert
+      expect(count).toEqual(said)
     },
   )
 
-  it.each<[number | null, number, string]>([
-    [3, 3, '3 台の端末でサインインしています'],
-    [24, 20, '24 台の端末でサインインしています（20 台を表示しています）'],
-    [null, 20, '20 台を表示しています'],
+  it.each<[keyof typeof COUNTED, LocalizedText]>([
+    [
+      'items',
+      { en: '34 items (showing 20)', ja: '34 件（20 件を表示しています）' },
+    ],
+    [
+      'people',
+      { en: '34 people (showing 20)', ja: '34 人（20 人を表示しています）' },
+    ],
+    [
+      'rows',
+      { en: '34 rows (showing 20)', ja: '34 行（20 行を表示しています）' },
+    ],
+  ])('should count with the word of the %s', (word, said) => {
+    // Act
+    const count = countOf(34, 20, COUNTED[word])
+
+    // Assert
+    expect(count).toEqual(said)
+  })
+
+  it.each<[number | null, number, LocalizedText]>([
+    [
+      3,
+      3,
+      {
+        en: 'Signed in on 3 devices',
+        ja: '3 台の端末でサインインしています',
+      },
+    ],
+    [
+      24,
+      20,
+      {
+        en: 'Signed in on 24 devices (showing 20)',
+        ja: '24 台の端末でサインインしています（20 台を表示しています）',
+      },
+    ],
+    [null, 20, { en: 'Showing 20 devices', ja: '20 台を表示しています' }],
   ])(
     'should say the whole in the words it is given, of %s and %i',
     (total, shown, said) => {
-      expect(
-        countOf(
-          total,
-          shown,
-          '台',
-          (count) => `${count} 台の端末でサインインしています`,
-        ),
-      ).toBe(said)
+      // Arrange
+      const devices: Counted = (count) => ({
+        en: `${count} devices`,
+        ja: `${count} 台`,
+      })
+      const signedIn: Counted = (count) => ({
+        en: `Signed in on ${count} devices`,
+        ja: `${count} 台の端末でサインインしています`,
+      })
+
+      // Act
+      const count = countOf(total, shown, devices, signedIn)
+
+      // Assert
+      expect(count).toEqual(said)
     },
   )
 })

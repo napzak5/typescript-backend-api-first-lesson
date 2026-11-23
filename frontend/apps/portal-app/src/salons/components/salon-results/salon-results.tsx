@@ -1,12 +1,15 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
+  COUNTED,
   countOf,
+  inJapanese,
   Link,
   type More,
   Note,
   PagedList,
   Rating,
   TagList,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
 import { addressOf } from '../../utils/salon-format'
@@ -50,11 +53,10 @@ export const SalonResults = ({
       <PagedList
         items={salons}
         itemKey={({ id }) => id}
-        count={countOf(
-          total,
-          salons.length,
-          '件',
-          (count) => `${count} 件のサロンが見つかりました`,
+        count={inJapanese(
+          countOf(total, salons.length, COUNTED.items, (count) =>
+            writtenInJapanese(`${count} 件のサロンが見つかりました`),
+          ),
         )}
         more={more}
         onMore={onMore}

@@ -21,6 +21,12 @@
       "types": "./dist/messages/api/index.d.ts",
       "import": "./dist/messages/api/index.js",
       "default": "./dist/messages/api/index.js"
+    },
+    "./messages/ui": {
+      "@beauty-salon-frontend/source": "./src/messages/ui/index.ts",
+      "types": "./dist/messages/ui/index.d.ts",
+      "import": "./dist/messages/ui/index.js",
+      "default": "./dist/messages/ui/index.js"
     }
   },
   "scripts": {

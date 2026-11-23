@@ -1,4 +1,6 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useLayoutEffect, useRef } from 'react'
+import { useSay } from '../../hooks/language'
 import { Alert } from '../alert/alert'
 import { Button } from '../button/button'
 
@@ -61,20 +63,24 @@ export type LoadMoreProps = {
  * Below a list that is read a page at a time: the button that asks for the
  * next page, and why it did not come when it did not.
  */
-export const LoadMore = ({ more, onMore }: LoadMoreProps) => (
-  <>
-    {more === 'failed' && (
-      <Alert tone='danger'>
-        続きを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。
-      </Alert>
-    )}
-    {more !== 'none' && (
-      <Button onClick={onMore} pending={more === 'loading'}>
-        {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
-      </Button>
-    )}
-  </>
-)
+export const LoadMore = ({ more, onMore }: LoadMoreProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      {more === 'failed' && (
+        <Alert tone='danger'>{say(uiMessages.loadMore.failed)}</Alert>
+      )}
+      {more !== 'none' && (
+        <Button onClick={onMore} pending={more === 'loading'}>
+          {say(
+            more === 'failed' ? uiMessages.loadAgain : uiMessages.loadMore.more,
+          )}
+        </Button>
+      )}
+    </>
+  )
+}
 
 /**
  * Moves the focus into the first of the items that the button of

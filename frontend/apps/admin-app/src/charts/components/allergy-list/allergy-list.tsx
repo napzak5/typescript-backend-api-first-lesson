@@ -6,8 +6,10 @@ import {
   Button,
   ButtonLink,
   Card,
+  COUNTED,
   countOf,
   Dialog,
+  inJapanese,
   Link,
   LoadingIndicator,
   type More,
@@ -177,7 +179,7 @@ export const AllergyList = ({
             rows={allergies}
             rowKey={({ id }) => id}
             emptyMessage='アレルギーの記録はありません'
-            count={countOf(total, allergies.length, '件')}
+            count={inJapanese(countOf(total, allergies.length, COUNTED.items))}
             more={more}
             onMore={onMore}
           />

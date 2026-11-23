@@ -2,6 +2,7 @@ import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   Card,
   DescriptionList,
+  inJapanese,
   Link,
   NONE,
   Table,
@@ -97,7 +98,7 @@ export const SalonRecord = ({
             term: '写真の URL',
             description:
               salon.imageUrls.length === 0 ? (
-                NONE
+                inJapanese(NONE)
               ) : (
                 <ul className={styles['addresses']}>
                   {salon.imageUrls.map((address) => (

@@ -1,5 +1,12 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
-import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+} from '@beauty-salon-frontend/ui'
 import { PagedTable } from '../paged-table/paged-table'
 
 export type SalonChoicesProps = {
@@ -62,7 +69,7 @@ export const SalonChoices = ({
     rows={salons}
     rowKey={({ id }) => id}
     emptyMessage='サロンはありません'
-    count={countOf(total, salons.length, '件')}
+    count={inJapanese(countOf(total, salons.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

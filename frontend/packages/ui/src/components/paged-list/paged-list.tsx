@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useRef } from 'react'
 import { CardList, type CardListProps } from '../card-list/card-list'
 import { LoadMore, type More, useFocusOnMore } from '../load-more/load-more'
@@ -21,24 +23,31 @@ export type PagedListProps<Item> = Omit<CardListProps<Item>, 'ref'> & {
   focus?: PagedListFocus | undefined
 }
 
+/** How many there are of something, in the words of each language: `12 items`, 「12 件」. */
+export type Counted = (count: number) => LocalizedText
+
+/** The words a list is counted with: its items (件), its people (人), its rows (行). */
+export const COUNTED = uiMessages.counted
+
 /**
  * How many items a list has, and how many of them are shown while not all
- * are: the `count` of a list read a page at a time. `unit` counts the items
- * (件, 人); `whole` says how many there are, `12 件` when it is not given.
- * When the API did not count them, it says how many are shown.
+ * are: the `count` of a list read a page at a time. `counted` counts the
+ * items (`COUNTED.items`); `whole` says how many there are, as `counted`
+ * does when it is not given. When the API did not count them, it says how
+ * many are shown.
  */
 export const countOf = (
   total: number | null,
   shown: number,
-  unit: string,
-  whole: (total: number) => string = (count) => `${count} ${unit}`,
-): string => {
+  counted: Counted,
+  whole: Counted = counted,
+): LocalizedText => {
   if (total === null) {
-    return `${shown} ${unit}を表示しています`
+    return uiMessages.pagedList.shown(counted(shown))
   }
 
   return shown < total
-    ? `${whole(total)}（${shown} ${unit}を表示しています）`
+    ? uiMessages.pagedList.shownOf(whole(total), shown, counted(shown))
     : whole(total)
 }
 

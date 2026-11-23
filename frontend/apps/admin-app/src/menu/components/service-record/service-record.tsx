@@ -7,6 +7,7 @@ import {
   BulletList,
   Card,
   DescriptionList,
+  inJapanese,
   Link,
   NONE,
   Table,
@@ -102,7 +103,7 @@ export const ServiceRecord = ({
               term: 'ほかの写真の URL',
               description:
                 service.imageUrls.length === 0 ? (
-                  NONE
+                  inJapanese(NONE)
                 ) : (
                   <ul className={styles['addresses']}>
                     {service.imageUrls.map((address) => (

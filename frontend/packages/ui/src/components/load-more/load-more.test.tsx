@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { type More, moreOf, moreOfRows } from './load-more'
 import * as loadMoreStories from './load-more.stories'
 
@@ -9,6 +10,10 @@ const stories = composeStories(loadMoreStories)
 
 describe('LoadMore', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should ask for the next page when its button is pressed', async () => {
     // Arrange
@@ -53,6 +58,35 @@ describe('LoadMore', () => {
     // Assert
     expect(screen.queryByRole('button')).toBeNull()
     expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('should offer the next page in English on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Available.run()
+
+    // Assert
+    expect(
+      screen.getAllByRole('button').map(({ textContent }) => textContent),
+    ).toEqual(['Show more'])
+  })
+
+  it('should say in English that the page did not come, and offer to load again', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Failed.run()
+
+    // Assert
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The rest could not be loaded. Check your connection and try again.',
+    )
+    expect(
+      screen.getAllByRole('button').map(({ textContent }) => textContent),
+    ).toEqual(['Load again'])
   })
 })
 

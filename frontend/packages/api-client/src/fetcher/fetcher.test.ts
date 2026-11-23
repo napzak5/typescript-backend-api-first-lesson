@@ -1,6 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const API_ORIGIN = 'http://localhost:3000'
+
+type Language = Parameters<typeof languageStore.choose>[0]
 
 type HttpResponse = {
   data: unknown
@@ -59,6 +62,7 @@ describe('customInstance', () => {
     vi.unstubAllEnvs()
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
+    localStorage.clear()
   })
 
   describe('request', () => {
@@ -92,9 +96,68 @@ describe('customInstance', () => {
       const [, sent] = fetchMock.mock.calls[0] ?? []
       expect(sent?.method).toBe('PATCH')
       expect([...new Headers(sent?.headers)]).toEqual([
+        ['accept-language', 'ja'],
         ['content-type', 'application/json'],
         ['x-request-id', 'r_1'],
       ])
+    })
+
+    it.each<[string, Language | null, string]>([
+      ['Japanese while no language is chosen', null, 'ja'],
+      ['the language that was chosen', 'en', 'en'],
+      ['Japanese when that was chosen', 'ja', 'ja'],
+    ])(
+      'should say the language of the page in Accept-Language: %s',
+      async (_case, chosen, expected) => {
+        // Arrange
+        const fetchMock = stubFetch(respondWithJson(200, { data: [] }))
+        const customInstance = await loadCustomInstance()
+        if (chosen !== null) {
+          languageStore.choose(chosen)
+        }
+
+        // Act
+        await customInstance('/api/v1/salons', { method: 'GET' })
+
+        // Assert
+        const [, sent] = fetchMock.mock.calls[0] ?? []
+        expect(new Headers(sent?.headers).get('Accept-Language')).toBe(expected)
+      },
+    )
+
+    it('should say the language of the page instead of the one the caller named', async () => {
+      // Arrange
+      const fetchMock = stubFetch(respondWithJson(200, { data: [] }))
+      const customInstance = await loadCustomInstance()
+      languageStore.choose('en')
+
+      // Act
+      await customInstance('/api/v1/salons', {
+        method: 'GET',
+        headers: { 'Accept-Language': 'fr' },
+      })
+
+      // Assert
+      const [, sent] = fetchMock.mock.calls[0] ?? []
+      expect(new Headers(sent?.headers).get('Accept-Language')).toBe('en')
+    })
+
+    it('should say the language that is chosen when each request is sent', async () => {
+      // Arrange
+      const fetchMock = stubFetch(respondWithJson(200, { data: [] }))
+      const customInstance = await loadCustomInstance()
+
+      // Act
+      await customInstance('/api/v1/salons', { method: 'GET' })
+      languageStore.choose('en')
+      await customInstance('/api/v1/salons', { method: 'GET' })
+
+      // Assert
+      expect(
+        fetchMock.mock.calls.map(([, sent]) =>
+          new Headers(sent?.headers).get('Accept-Language'),
+        ),
+      ).toEqual(['ja', 'en'])
     })
 
     it('should send the body as it is, without encoding it a second time', async () => {

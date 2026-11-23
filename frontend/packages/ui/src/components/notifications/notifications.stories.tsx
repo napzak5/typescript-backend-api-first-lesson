@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { userEvent } from 'storybook/test'
 import { Button } from '../button/button'
+import { NO_CHANGE_MESSAGE } from '../form/form-values'
 import {
   type Notification,
   NotificationOutlet,
@@ -76,5 +77,14 @@ export const Warning: Story = {
 
 export const Danger: Story = {
   args: { tone: 'danger', message: '予約を確定できませんでした。' },
+  play: confirmTheBooking,
+}
+
+/**
+ * A message that is written in every language: the notification says it
+ * in the language of the page, and anew when another one is chosen.
+ */
+export const NothingChanged: Story = {
+  args: { tone: 'info', message: NO_CHANGE_MESSAGE },
   play: confirmTheBooking,
 }

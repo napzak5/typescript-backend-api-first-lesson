@@ -1,10 +1,13 @@
 import type { ModelsCustomerBookingResponse } from '@beauty-salon-frontend/api-client'
 import {
   Badge,
+  COUNTED,
   countOf,
+  inJapanese,
   Link,
   type More,
   PagedList,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
 import {
@@ -61,11 +64,10 @@ export const BookingList = ({
       <PagedList
         items={rows}
         itemKey={({ booking }) => booking.id}
-        count={countOf(
-          total,
-          rows.length,
-          '件',
-          (count) => `${count} 件の予約があります`,
+        count={inJapanese(
+          countOf(total, rows.length, COUNTED.items, (count) =>
+            writtenInJapanese(`${count} 件の予約があります`),
+          ),
         )}
         more={more}
         onMore={onMore}

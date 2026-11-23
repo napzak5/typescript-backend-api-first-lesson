@@ -1,4 +1,6 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { type ReactNode, useState } from 'react'
+import { useSay } from '../../hooks/language'
 import { useWideScreen } from '../../hooks/wide-screen'
 import { useScreen } from '../app-shell/screens'
 import { Button } from '../button/button'
@@ -22,8 +24,6 @@ export type PageHeaderProps = {
   otherActions?: ReactNode
 }
 
-const OTHER_ACTIONS = 'ほかの操作'
-
 /**
  * The top of a screen: what it is, and what can be done with all of it. It
  * is not a `header` element: the one banner of a page is that of its frame.
@@ -37,6 +37,7 @@ export const PageHeader = ({
   actions,
   otherActions,
 }: PageHeaderProps) => {
+  const say = useSay()
   const heading = useScreen(title)
   const wide = useWideScreen()
   const inSheet = !wide && otherActions !== undefined
@@ -61,7 +62,7 @@ export const PageHeader = ({
           {actions}
           {inSheet ? (
             <Button aria-haspopup='dialog' onClick={() => setSheetOpen(true)}>
-              {OTHER_ACTIONS}
+              {say(uiMessages.pageHeader.otherActions)}
             </Button>
           ) : (
             otherActions
@@ -72,9 +73,9 @@ export const PageHeader = ({
         <Dialog
           open={sheetOpen}
           onClose={close}
-          title={OTHER_ACTIONS}
+          title={say(uiMessages.pageHeader.otherActions)}
           kind='menu'
-          actions={<Button onClick={close}>閉じる</Button>}
+          actions={<Button onClick={close}>{say(uiMessages.close)}</Button>}
         >
           <div className={styles['otherActions']}>{otherActions}</div>
         </Dialog>

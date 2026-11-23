@@ -1,4 +1,6 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { type ReactNode, useId } from 'react'
+import { useSay } from '../../hooks/language'
 import { classNames } from '../../utils/class-names'
 import { Note } from '../note/note'
 import controlStyles from './control.module.css'
@@ -71,11 +73,15 @@ export const messageAttributes = (
  * it, and it stands beside the label, not inside: the text of the label is
  * the name of the control and nothing else.
  */
-export const RequiredMark = () => (
-  <span className={styles['required']} aria-hidden='true'>
-    必須
-  </span>
-)
+export const RequiredMark = () => {
+  const say = useSay()
+
+  return (
+    <span className={styles['required']} aria-hidden='true'>
+      {say(uiMessages.required)}
+    </span>
+  )
+}
 
 export const FieldMessages = ({
   id,

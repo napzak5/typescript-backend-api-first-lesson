@@ -15,7 +15,8 @@
     "./screens": "./src/screens/screens.tsx",
     "./seed": "./src/fixtures/seed.ts",
     "./answers": "./src/fixtures/answers.ts",
-    "./forms": "./src/fixtures/forms.ts"
+    "./forms": "./src/fixtures/forms.ts",
+    "./language": "./src/language/written-texts.ts"
   },
   "scripts": {
     "clean": "rm -rf *.tsbuildinfo",

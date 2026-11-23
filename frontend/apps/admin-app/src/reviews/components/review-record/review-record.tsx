@@ -6,6 +6,7 @@ import {
   Card,
   DescriptionList,
   type DescriptionListItem,
+  inJapanese,
   Link,
   NONE,
   Rating,
@@ -122,7 +123,7 @@ export const ReviewRecord = ({
       term: '未処理の通報',
       description:
         review.reportCount === 0 ? (
-          NONE
+          inJapanese(NONE)
         ) : (
           <Badge tone='danger'>{`${review.reportCount} 件`}</Badge>
         ),

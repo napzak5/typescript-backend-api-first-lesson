@@ -22,6 +22,7 @@ this one: a component is not done without its stories and its test.
 | The check of the style rules | `frontend/packages/theme/src/style-rules.ts`, run by `style-rules.test.ts` over every package and app |
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
+| The language of the page: where the choice is kept (`languageStore`), the hook that says a message in it (`useSay`), the messages of the shared components (`uiMessages`), and what a screen that is still written in Japanese takes a message through (`inJapanese`, `writtenInJapanese`) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/`, `frontend/packages/ui/src/utils/japanese.ts` |
 | What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls (`FormSays`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/screens/`; what they show is in `src/components/` |
 | The start and the frame of an application: what `src/main.tsx` calls (`startApplication`), the frame around the routes (`AppFrame`), an application that is all behind a session, with the screens of the account (`StaffApplication`), the screen of an address that is none (`NotFoundPage`), the change of the password at a route (`PasswordChangePage`), and whether an address is at or below a screen (`isAtOrBelow`) | `frontend/packages/app-frame/src/screens/`, `src/components/not-found-page/`, `src/utils/addresses.ts` (`@beauty-salon-frontend/app-frame`) |
@@ -285,9 +286,11 @@ nobody reads is removed.
   Zod schemas.
 - `@beauty-salon-frontend/ui` knows React and nothing else of the system: no
   API client, no router, no query library, no text of a business domain. Text
-  comes in through props. The text of the interface is Japanese; the few
-  words that belong to a component itself are in it (必須, 閉じる, 戻る,
-  本文へ移動, メインメニュー, ほかの操作).
+  comes in through props, as strings the screen has said. The few words
+  that belong to a component itself (必須, 閉じる, 戻る, 本文へ移動,
+  メインメニュー, ほかの操作) are messages, written in every language, and
+  the component says them in the language of the page ("The language of
+  the page", below).
 - A component that one application uses stays in that application, with the
   same four files, in `src/<area>/components/<name>/`
   (`frontend/apps/portal-app/src/salons/components/`). It only shows: what
@@ -309,6 +312,55 @@ nobody reads is removed.
   `src/screens/`) hand them their props and are tested against the real
   API. The folders of such a package are those of "Folders", above.
 - Export a new component and its props from `frontend/packages/ui/src/index.ts`.
+
+## The language of the page
+
+A page has one language: the one its visitor chose, and Japanese when they
+chose none. `languageStore` of `io` keeps the choice (`localStorage`,
+`beauty-salon:language`). The fetch function says it to the API in
+`Accept-Language`, so the API tells its errors in it; `startApplication`
+keeps `<html lang>` at it; and a component says its texts in it. The whole
+is in `docs/i18n.md` (「画面の言語」).
+
+The texts become messages a package at a time. `ui` is done, and so are
+`io` and `api-client`, which say nothing. The other packages and the
+applications still write their texts in Japanese, in the source, and no
+application shows a control that chooses the language yet.
+
+In a package that is done:
+
+- A text is a message of `shared-i18n/src/messages/<who says it>/`, written
+  in every language with `text({ en, ja })`; one whose words depend on a
+  value is a function of the value. The messages of the shared components
+  are `uiMessages` (`@beauty-salon-shared/i18n/messages/ui`).
+- The component that shows a text says it: `const say = useSay()`, then
+  `say(uiMessages.close)`. The hook reads the store, so there is no
+  provider, and a component says its texts anew when a language is chosen,
+  in this tab or in another.
+- What is no component (the rule of a value, the reading of an answer, a
+  constant) hands the message on as it is, a `LocalizedText`, and makes no
+  string of it: `NO_CHANGE_MESSAGE`, `NOT_RECORDED`, `NONE` and what
+  `countOf` returns are messages.
+- A component of `ui` says its own texts and no other. What a screen gives
+  it (`label`, `title`, `description`, the children of a button) is a string
+  the screen has said. A notification is the exception: `notify` takes a
+  message as well as a string, and says the message where it is shown, in
+  the language the page has then.
+- A count is made with the counters of `ui`:
+  `countOf(total, shown, COUNTED.people)` is 「12 人（10 人を表示しています）」
+  and "12 people (showing 10)". `COUNTED` has `items`, `people` and `rows`,
+  and English names one of them in the singular. A list that is counted in
+  other words gives a counter of its own.
+- `src/texts.test.ts` of the package fails on a text that is written in
+  Japanese in its source. A comment may be.
+
+A screen that is still written in Japanese takes what became a message
+through two functions of `ui`, which go when the last screen is done.
+`inJapanese(message)` is the string such a screen shows:
+`count={inJapanese(countOf(total, rows.length, COUNTED.items))}`,
+`inJapanese(NONE)`. `writtenInJapanese(text)` hands a sentence the screen
+wrote itself to what takes a message: a counter in words of its own is
+`(count) => writtenInJapanese(`${count} 台`)`.
 
 ## Form components
 
@@ -887,7 +939,8 @@ that has none).
 - **A value the record does not hold is `null`, and is given as it is**:
   a `DescriptionList` and a `Table` say 「記録なし」 for it, quietly
   (`NotRecorded`), and a sentence that needs the words takes
-  `NOT_RECORDED` of `ui`. A function that names a value returns `null`
+  `NOT_RECORDED` of `ui` (a message: `inJapanese(NOT_RECORDED)` on a screen
+  that is written in Japanese). A function that names a value returns `null`
   when there is none, and the screen writes no words of its own: a text of
   several lines is given to `WrittenText` as it is, `null` and all. 「なし」
   (`NONE` of `ui`) is for what is none as a fact: an empty list, which a
@@ -2596,7 +2649,7 @@ A share link opens a file for somebody who has no account
 | `PagedList` | A `CardList` that is read a page at a time: how many there are (`count`, a status), the items, and `LoadMore`. The focus moves into the first item that 「さらに表示」 added: its first link, or the item (`focus='item'`) |
 | `LoadMore`, `useFocusOnMore`, `More` | Below a list that is read a page at a time: 「さらに表示」, 「もう一度読み込む」 and why the page did not come (`More`: `none`, `available`, `loading`, `failed`); and the hook that moves the focus into the first item the button added, for a list that is no `PagedList` (`PagedTable`) |
 | `PeriodSwitch` | The links from the period that is shown to the one before, to the one that holds today and to the one after, by the day or the week (`unit`): the words are its own. A link that `beforeHref` or `afterHref` does not give is left out |
-| `NotRecorded`, `NOT_RECORDED`, `NONE` | 「記録なし」, quietly: what a `DescriptionList` and a `Table` show for a `null`, and the words for a sentence. 「なし」 (`NONE`) is what is none as a fact |
+| `NotRecorded`, `NOT_RECORDED`, `NONE` | 「記録なし」, quietly: what a `DescriptionList` and a `Table` show for a `null`, and the words for a sentence. 「なし」 (`NONE`) is what is none as a fact. The two constants are messages, in every language |
 | `DescriptionList` | The names and values of one record, side by side on every screen, one line for a value. The names share a column as wide as the longest of them, and never more than two fifths of the list: a longer name goes on in a second line. A description that is `null` says 「記録なし」 |
 | `Badge` | The state of a record, in a word, in the colours of a `Tone`, or `neutral` (`BadgeTone`) |
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends. No words are said as 「なし」 |
@@ -2792,7 +2845,9 @@ The configuration is `moduleLibrary()` of `@beauty-salon-shared/config/vite`
 calls; `session`, `app-frame`, `preferences` and `salon-screens` are built in
 the same way. Every import of a package stays an import, so a package that a
 module imports is listed in `package.json`. A test, a story and what lies in
-`__tests__/` or `__stories__/` is not built.
+`__tests__/` or `__stories__/` is not built. The package of the languages
+(`shared-i18n`) is built before the frontend packages, which read its
+`dist/` (`pnpm prepare:frontend` builds them in that order).
 
 The build of an application reads `dist/`. Its dev server and the tests read
 the source, through the export condition `@beauty-salon-frontend/source`: a

@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/react-vite'
+import { languageOfTheCatalogue } from '../src/__stories__/language'
 import '@beauty-salon-frontend/theme/styles.css'
 
 /**
@@ -6,6 +7,7 @@ import '@beauty-salon-frontend/theme/styles.css'
  * (`vitest.setup.ts` gives this file to `setProjectAnnotations`).
  */
 const preview: Preview = {
+  ...languageOfTheCatalogue,
   tags: ['autodocs'],
   parameters: {
     layout: 'padded',

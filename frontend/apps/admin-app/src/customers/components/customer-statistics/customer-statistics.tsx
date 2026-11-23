@@ -1,6 +1,11 @@
 import type { ModelsCustomerStatisticsResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { DescriptionList, NONE, Table } from '@beauty-salon-frontend/ui'
+import {
+  DescriptionList,
+  inJapanese,
+  NONE,
+  Table,
+} from '@beauty-salon-frontend/ui'
 import { countNameOf, rateNameOf } from '../../utils/customer-format'
 import styles from './customer-statistics.module.css'
 
@@ -44,7 +49,7 @@ export const CustomerStatistics = ({
           term: '最後の来店',
           description:
             statistics.lastVisit === null
-              ? NONE
+              ? inJapanese(NONE)
               : momentNameAt(statistics.lastVisit, timezone),
         },
         {

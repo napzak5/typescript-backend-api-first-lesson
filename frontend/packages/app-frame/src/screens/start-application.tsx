@@ -4,6 +4,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { type ReactNode, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
+import { keepLanguageOfTheDocument } from '../utils/page-language'
 
 /** The element of `index.html` an application is drawn in. */
 const ROOT_ID = 'root'
@@ -19,6 +20,8 @@ const ROOT_ID = 'root'
  * - What was read for one user is not shown to the next
  *   (`keepQueriesOfOneUser`).
  * - The addresses are those of the browser (`BrowserRouter`).
+ * - The document says the language of the page (`<html lang>`), also when
+ *   another one is chosen (`keepLanguageOfTheDocument`).
  * - The panel of TanStack Query is drawn by the dev server alone: the
  *   component draws nothing in a build.
  *
@@ -39,6 +42,7 @@ export const startApplication = (application: ReactNode): (() => void) => {
     },
   })
   const stopKeeping = keepQueriesOfOneUser(queryClient)
+  const stopSaying = keepLanguageOfTheDocument()
   const root = createRoot(
     document.getElementById(ROOT_ID) ??
       document.body.appendChild(document.createElement('div')),
@@ -54,6 +58,7 @@ export const startApplication = (application: ReactNode): (() => void) => {
 
   return () => {
     stopKeeping()
+    stopSaying()
     root.unmount()
   }
 }

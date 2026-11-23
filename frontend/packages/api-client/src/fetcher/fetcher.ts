@@ -1,5 +1,9 @@
 import { env } from '@beauty-salon-frontend/config'
-import { type StoredSession, sessionStore } from '@beauty-salon-frontend/io'
+import {
+  languageStore,
+  type StoredSession,
+  sessionStore,
+} from '@beauty-salon-frontend/io'
 import { match } from 'ts-pattern'
 import * as z from 'zod/mini'
 // The module of the codes alone: the index of the models loads all 777 of them
@@ -41,11 +45,16 @@ const withTimeout = (signal: AbortSignal | null | undefined): AbortSignal => {
   return signal ? AbortSignal.any([signal, timeout]) : timeout
 }
 
-const withAccessToken = (
+/**
+ * The headers of a request: those of the caller, the language of the page,
+ * which the API says its errors in, and the access token of the session.
+ */
+const headersOf = (
   headers: HeadersInit | undefined,
   session: StoredSession | null,
 ): Headers => {
   const sent = new Headers(headers)
+  sent.set('Accept-Language', languageStore.read())
   if (session !== null) {
     sent.set('Authorization', `Bearer ${session.accessToken}`)
   }
@@ -60,7 +69,7 @@ const send = async (
 ): Promise<HttpResponse> => {
   const response = await fetch(url, {
     ...options,
-    headers: withAccessToken(options.headers, session),
+    headers: headersOf(options.headers, session),
     signal: withTimeout(options.signal),
   })
   const text = await response.text()
@@ -107,7 +116,9 @@ const sessionToRetryWith = (
  * JSON that its `Content-Type` announces, or `VITE_BACKEND_BASE_URL` is not
  * set.
  *
- * While a session is stored (`sessionStore`), the request carries its access
+ * Every request says the language of the page (`languageStore`) in
+ * `Accept-Language`: the API answers its errors in that language. While a
+ * session is stored (`sessionStore`), the request carries its access
  * token. When the API answers that the token has expired, the session is
  * renewed and the request is sent once more, with the new token; the caller
  * gets the answer to that second request. When the session cannot be renewed

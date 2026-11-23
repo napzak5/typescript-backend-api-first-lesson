@@ -1,4 +1,6 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { type ComponentProps, useState } from 'react'
+import { useSay } from '../../hooks/language'
 import choiceStyles from '../field/choice.module.css'
 import controlStyles from '../field/control.module.css'
 import { Field } from '../field/field'
@@ -39,6 +41,7 @@ export const PasswordField = ({
   className,
   ...input
 }: PasswordFieldProps) => {
+  const say = useSay()
   const [shown, setShown] = useState(false)
 
   return (
@@ -71,7 +74,7 @@ export const PasswordField = ({
               checked={shown}
               onChange={(event) => setShown(event.currentTarget.checked)}
             />
-            <span>{label}を表示する</span>
+            <span>{say(uiMessages.passwordField.show(label))}</span>
           </label>
         </div>
       )}

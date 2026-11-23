@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as formDialogStories from './form-dialog.stories'
 
 const stories = composeStories(formDialogStories)
@@ -15,6 +16,10 @@ const entriesOf = (values: FormData | undefined): [string, string][] =>
 
 describe('FormDialog', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should send the values of its controls with the button among its actions', async () => {
     // Arrange
@@ -148,5 +153,32 @@ describe('FormDialog', () => {
     expect(dialog()).toHaveAccessibleDescription(
       '取り消した売上は、直すことも支払いを受けることもできません。',
     )
+  })
+
+  it('should name the way back in English on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(within(dialog()).getAllByRole('button')[0]?.textContent).toBe('Back')
+    expect(screen.queryByRole('button', { name: '戻る' })).toBeNull()
+  })
+
+  it('should name the button that closes what the form brought in English on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Answered.run()
+
+    // Assert
+    expect(
+      within(dialog())
+        .getAllByRole('button')
+        .map(({ textContent }) => textContent),
+    ).toEqual(['Close'])
   })
 })

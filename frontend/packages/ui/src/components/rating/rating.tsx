@@ -1,4 +1,6 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useId } from 'react'
+import { useSay } from '../../hooks/language'
 import { classNames } from '../../utils/class-names'
 import styles from './rating.module.css'
 
@@ -24,24 +26,25 @@ const STARS = Array.from({ length: HIGHEST }, (_, index) => index * STAR_WIDTH)
  * out of (「5 段階中 4.5（128 件）」).
  */
 export const Rating = ({ value, count }: RatingProps) => {
+  const say = useSay()
   const clipId = useId()
 
   if (value === null) {
     return (
       <span className={classNames(styles['rating'], styles['none'])}>
-        評価なし
+        {say(uiMessages.rating.none)}
       </span>
     )
   }
 
   const shown = value.toFixed(1)
-  const counted = count === undefined ? '' : `（${count} 件）`
+  const counted = count === undefined ? null : uiMessages.rating.count(count)
 
   return (
     <span
       className={styles['rating']}
       role='img'
-      aria-label={`${HIGHEST} 段階中 ${shown}${counted}`}
+      aria-label={say(uiMessages.rating.outOf(HIGHEST, shown, counted))}
     >
       <svg
         className={styles['stars']}
@@ -65,9 +68,9 @@ export const Rating = ({ value, count }: RatingProps) => {
       <span className={styles['value']} aria-hidden='true'>
         {shown}
       </span>
-      {count !== undefined && (
+      {counted !== null && (
         <span className={styles['count']} aria-hidden='true'>
-          {counted}
+          {say(counted)}
         </span>
       )}
     </span>

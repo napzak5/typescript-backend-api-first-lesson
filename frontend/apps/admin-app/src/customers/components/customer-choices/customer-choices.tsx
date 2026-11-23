@@ -1,6 +1,13 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
 import { PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { Button, countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import {
+  Button,
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { customerKanaOf, customerNameOf } from '../../api/customers-api'
 
@@ -75,7 +82,7 @@ export const CustomerChoices = ({
     rows={customers}
     rowKey={({ id }) => id}
     emptyMessage='お客様はいません'
-    count={countOf(total, customers.length, '人')}
+    count={inJapanese(countOf(total, customers.length, COUNTED.people))}
     more={more}
     onMore={onMore}
   />

@@ -1,4 +1,8 @@
-import { type StoredSession, sessionStore } from '@beauty-salon-frontend/io'
+import {
+  languageStore,
+  type StoredSession,
+  sessionStore,
+} from '@beauty-salon-frontend/io'
 import {
   type QueryClient,
   useQuery,
@@ -95,6 +99,7 @@ describe('startApplication', () => {
       }
     })
     document.body.replaceChildren()
+    document.documentElement.removeAttribute('lang')
     localStorage.clear()
     window.history.replaceState(null, '', '/')
   })
@@ -198,6 +203,36 @@ describe('startApplication', () => {
 
     // Assert
     expect(shown).toEqual(['shown', 'shown'])
+  })
+
+  it('should say the language of the page in the document, from the start and when another one is chosen', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await start(<p>はじめの画面</p>)
+    const atTheStart = document.documentElement.lang
+    act(() => {
+      languageStore.choose('ja')
+    })
+
+    // Assert
+    expect(atTheStart).toBe('en')
+    expect(document.documentElement).toHaveAttribute('lang', 'ja')
+  })
+
+  it('should leave the language the document says alone once the application is ended', async () => {
+    // Arrange
+    const end = await start(<p>はじめの画面</p>)
+
+    // Act
+    act(() => {
+      end()
+    })
+    languageStore.choose('en')
+
+    // Assert
+    expect(document.documentElement).toHaveAttribute('lang', 'ja')
   })
 
   it('should take the application away when it is ended, and leave what it read alone from then on', async () => {

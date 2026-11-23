@@ -5,7 +5,7 @@ import {
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
 import type { More } from '@beauty-salon-frontend/ui'
-import { countOf } from '@beauty-salon-frontend/ui'
+import { COUNTED, countOf, inJapanese } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { countNameOf } from '../../utils/customer-format'
 import { movementOf, transactionNameOf } from '../../utils/points'
@@ -84,7 +84,7 @@ export const PointHistory = ({
     rows={transactions}
     rowKey={({ id }) => id}
     emptyMessage='ポイントの履歴はありません'
-    count={countOf(total, transactions.length, '件')}
+    count={inJapanese(countOf(total, transactions.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

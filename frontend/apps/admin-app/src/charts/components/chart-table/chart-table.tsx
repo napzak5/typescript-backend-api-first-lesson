@@ -1,5 +1,12 @@
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { countOf, Link, type More, NONE } from '@beauty-salon-frontend/ui'
+import {
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+  NONE,
+} from '@beauty-salon-frontend/ui'
 import { customerNameOf } from '../../../customers/api/customers-api'
 import { tagsTextOf } from '../../../customers/utils/customer-ledger'
 import type { FoundChart } from '../../api/charts-api'
@@ -22,7 +29,7 @@ export type ChartTableProps = {
 
 /** The names of products, as the form takes them */
 const productsOrNone = (names: readonly string[]) =>
-  names.length === 0 ? NONE : tagsTextOf(names)
+  names.length === 0 ? inJapanese(NONE) : tagsTextOf(names)
 
 /**
  * The charts that were found: each by the name of its customer, which
@@ -81,7 +88,7 @@ export const ChartTable = ({
     rows={rows}
     rowKey={({ chart }) => chart.id}
     emptyMessage='カルテはありません'
-    count={countOf(total, rows.length, '件')}
+    count={inJapanese(countOf(total, rows.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

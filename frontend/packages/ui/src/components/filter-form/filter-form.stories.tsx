@@ -1,6 +1,8 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { fn, userEvent } from 'storybook/test'
+import { saidOnThePage } from '../../__stories__/said'
 import type { FormErrors } from '../form/error-focus'
 import { Select } from '../select/select'
 import { TextField } from '../text-field/text-field'
@@ -242,7 +244,11 @@ export const OnANarrowScreen: Story = {
 }
 
 const openTheSheet: NonNullable<Story['play']> = async ({ canvas }) => {
-  await userEvent.click(canvas.getByRole('button', { name: /^条件/ }))
+  // The button counts the conditions after its name: 「条件（2）」
+  const name = saidOnThePage(uiMessages.filterForm.conditions(0))
+  await userEvent.click(
+    canvas.getByRole('button', { name: new RegExp(`^${name}`) }),
+  )
 }
 
 /** The sheet of the conditions, opened: on the bottom edge of the screen */

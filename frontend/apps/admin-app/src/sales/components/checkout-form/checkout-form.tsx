@@ -13,6 +13,7 @@ import {
   Form,
   FormPart,
   type FormProps,
+  inJapanese,
   LoadingIndicator,
   NONE,
   Note,
@@ -223,7 +224,7 @@ export const CheckoutForm = ({
                     term: '1 回で受け取れる支払い方法',
                     description:
                       recommendedMethods.length === 0
-                        ? NONE
+                        ? inJapanese(NONE)
                         : recommendedMethods.map(methodKindNameOf).join('、'),
                   },
                 ]}

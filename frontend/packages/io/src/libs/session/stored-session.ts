@@ -1,3 +1,5 @@
+import { keptValue } from '../storage/kept-value'
+
 /**
  * The session of the person who is signed in, as the browser keeps it: the
  * two tokens of the API and the ID of the user they belong to.
@@ -8,24 +10,7 @@ export type StoredSession = {
   userId: string
 }
 
-const STORAGE_KEY = 'beauty-salon:session'
-
-type Listener = () => void
-
-const listeners = new Set<Listener>()
-
-const notify = (): void => {
-  for (const listener of listeners) {
-    listener()
-  }
-}
-
-/** Another tab wrote or removed the session: the listeners of this tab hear of it too */
-const onStorage = (event: StorageEvent): void => {
-  if (event.key === STORAGE_KEY || event.key === null) {
-    notify()
-  }
-}
+const kept = keptValue('beauty-salon:session')
 
 /**
  * The session is written as one value, so that another tab never reads the
@@ -48,26 +33,19 @@ const decode = (stored: string | null): StoredSession | null => {
 }
 
 /**
- * What is stored, or null when the browser refuses access to its storage, as
- * it does for a visitor who lets no site keep data. That visitor has no
- * session, and is still served what needs none.
- */
-const storedValue = (): string | null => {
-  try {
-    return localStorage.getItem(STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
-
-/**
  * Where the session is kept: `localStorage`, so that it outlives a reload and
  * is the same in every tab of the application. See docs/authentication.md
  * for why it is kept there.
  */
 export const sessionStore = {
+  /**
+   * The session, or null when none is stored, also in a browser that
+   * refuses access to its storage, as it does for a visitor who lets no
+   * site keep data. That visitor has no session, and is still served what
+   * needs none
+   */
   read(): StoredSession | null {
-    return decode(storedValue())
+    return decode(kept.read())
   },
 
   /** The user the session belongs to: a value that stays the same while the tokens are renewed */
@@ -80,40 +58,14 @@ export const sessionStore = {
    * site store nothing refuses, and then nobody is signed in.
    */
   write(session: StoredSession): boolean {
-    try {
-      localStorage.setItem(STORAGE_KEY, encode(session))
-    } catch {
-      return false
-    }
-    notify()
-
-    return true
+    return kept.write(encode(session))
   },
 
-  clear(): void {
-    try {
-      localStorage.removeItem(STORAGE_KEY)
-    } catch {
-      // Nothing is stored in a browser that refuses access to its storage
-    }
-    notify()
-  },
+  clear: kept.clear,
 
   /**
    * Calls the listener whenever the session may have changed, in this tab or
    * in another one. Returns the function that ends the subscription.
    */
-  subscribe(listener: Listener): () => void {
-    if (listeners.size === 0) {
-      window.addEventListener('storage', onStorage)
-    }
-    listeners.add(listener)
-
-    return () => {
-      listeners.delete(listener)
-      if (listeners.size === 0) {
-        window.removeEventListener('storage', onStorage)
-      }
-    }
-  },
+  subscribe: kept.subscribe,
 }

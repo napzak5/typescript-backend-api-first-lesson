@@ -1,5 +1,7 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn, userEvent } from 'storybook/test'
+import { saidOnThePage } from '../../__stories__/said'
 import { Button } from '../button/button'
 import { ButtonLink } from '../button-link/button-link'
 import { PageHeader } from './page-header'
@@ -82,7 +84,11 @@ export const OtherActionsInTheSheet: Story = {
   ...WithOtherActions,
   globals: PHONE,
   play: async ({ canvas }) => {
-    await userEvent.click(canvas.getByRole('button', { name: 'ほかの操作' }))
+    await userEvent.click(
+      canvas.getByRole('button', {
+        name: saidOnThePage(uiMessages.pageHeader.otherActions),
+      }),
+    )
   },
 }
 

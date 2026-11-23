@@ -3,7 +3,7 @@ import {
   ModelsStaffLevelType,
   type ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type ChoiceOption, NONE } from '@beauty-salon-frontend/ui'
+import { type ChoiceOption, inJapanese, NONE } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { TreatmentRemovalSays } from '../../treatments/utils/treatment-format'
 import type { StaffRemoval } from '../api/staff-api'
@@ -78,7 +78,7 @@ export const commissionNameOf = (rate: number): string =>
 
 /** A time kept before or after each booking: 「15 分」, or none. */
 export const bufferNameOf = (minutes: number): string =>
-  minutes === 0 ? NONE : `${minutes} 分`
+  minutes === 0 ? inJapanese(NONE) : `${minutes} 分`
 
 /** The member of the staff the signed-in account is linked to: the API refuses to let it lock itself out */
 export const isOwnStaffRecord = (

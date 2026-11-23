@@ -1,3 +1,7 @@
+import {
+  changeInAnotherTab,
+  refuseStorage,
+} from '@beauty-salon-frontend/testing'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { type StoredSession, sessionStore } from './stored-session'
 
@@ -7,27 +11,6 @@ const SESSION: StoredSession = {
   accessToken: 'access-1',
   refreshToken: 'refresh-1',
   userId: '0193a5b2-7c4e-7d1a-9f3b-2a6c8e4d1f07',
-}
-
-/** What the browser tells this tab when another tab has changed the storage. */
-const changeInAnotherTab = (key: string | null, newValue: string | null) => {
-  if (key !== null && newValue !== null) {
-    localStorage.setItem(key, newValue)
-  }
-  if (key !== null && newValue === null) {
-    localStorage.removeItem(key)
-  }
-  window.dispatchEvent(new StorageEvent('storage', { key, newValue }))
-}
-
-/** As a browser does for a visitor who lets no site keep data. */
-const refuseStorage = (): void => {
-  vi.spyOn(globalThis, 'localStorage', 'get').mockImplementation(() => {
-    throw new DOMException(
-      'Access is denied for this document.',
-      'SecurityError',
-    )
-  })
 }
 
 describe('sessionStore', () => {
@@ -203,7 +186,6 @@ describe('sessionStore', () => {
     const unsubscribe = sessionStore.subscribe(listener)
 
     // Act
-    localStorage.clear()
     changeInAnotherTab(null, null)
 
     // Assert

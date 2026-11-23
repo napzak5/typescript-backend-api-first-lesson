@@ -6,7 +6,7 @@ import type {
   ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
 import { dayAt, dayNameOf } from '@beauty-salon-frontend/salon-screens'
-import { NOT_RECORDED } from '@beauty-salon-frontend/ui'
+import { inJapanese, NOT_RECORDED } from '@beauty-salon-frontend/ui'
 import { timeNameOf, WEEKDAYS } from '../../shifts/utils/shift-week'
 
 /*
@@ -130,7 +130,7 @@ export const coordinatesNameOf = (
 ): string | null =>
   latitude === null && longitude === null
     ? null
-    : `緯度 ${latitude ?? NOT_RECORDED}、経度 ${longitude ?? NOT_RECORDED}`
+    : `緯度 ${latitude ?? inJapanese(NOT_RECORDED)}、経度 ${longitude ?? inJapanese(NOT_RECORDED)}`
 
 /** How the customers rate the salon: 「4.0（3 件のレビュー）」, or that there is no rating yet. */
 export const ratingNameOf = (

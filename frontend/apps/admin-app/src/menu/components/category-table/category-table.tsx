@@ -1,6 +1,6 @@
 import type { ModelsServiceCategoryResponse } from '@beauty-salon-frontend/api-client'
 import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Link, NONE, Table } from '@beauty-salon-frontend/ui'
+import { inJapanese, Link, NONE, Table } from '@beauty-salon-frontend/ui'
 import {
   categoriesById,
   categoryPathOf,
@@ -51,7 +51,9 @@ export const CategoryTable = ({
           cell: ({ parentId }) => {
             const parent = parentId === null ? undefined : byId.get(parentId)
 
-            return parent === undefined ? NONE : categoryPathOf(parent, byId)
+            return parent === undefined
+              ? inJapanese(NONE)
+              : categoryPathOf(parent, byId)
           },
         },
         {

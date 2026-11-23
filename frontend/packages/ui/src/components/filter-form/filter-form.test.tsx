@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   setWindowWidth,
@@ -5,7 +6,7 @@ import {
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { act, useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as filterFormStories from './filter-form.stories'
 
 const stories = composeStories(filterFormStories)
@@ -37,6 +38,10 @@ const entriesOf = (values: FormData | undefined): [string, string][] =>
 
 describe('FilterForm', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should show every condition on a wide screen, and send them under their names', async () => {
     // Arrange
@@ -351,5 +356,89 @@ describe('FilterForm', () => {
     // Assert
     expect(screen.getByRole('button', { name: '探す' })).toBeVisible()
     expect(screen.queryByRole('button', { name: /^条件/ })).toBeNull()
+  })
+
+  it.each([
+    { story: stories.Default, name: 'Search' },
+    { story: stories.ChoicesOnly, name: 'Show' },
+    { story: stories.Counting, name: 'Calculate' },
+  ])(
+    'should name the button that sends it in English on a page in English: $name',
+    async ({ story, name }) => {
+      // Arrange
+      languageStore.choose('en')
+
+      // Act
+      await story.run()
+
+      // Assert
+      expect(
+        screen
+          .getAllByRole('button')
+          .filter((button) => button.getAttribute('type') === 'submit')
+          .map(({ textContent }) => textContent),
+      ).toEqual([name])
+    },
+  )
+
+  it('should offer in English to clear the conditions that narrow the list', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Narrowed.run()
+
+    // Assert
+    expect(screen.getByRole('link', { name: 'Clear filters' })).toBeVisible()
+    expect(screen.queryByRole('link', { name: '条件を外す' })).toBeNull()
+  })
+
+  it('should count the conditions behind the button of the sheet in English on a narrow screen', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.OnANarrowScreen.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: 'Filters (2)' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
+    expect(screen.getByRole('link', { name: 'Clear filters' })).toBeVisible()
+  })
+
+  it('should name the button of the sheet in English without a count when nothing of the sheet narrows the list', async () => {
+    // Arrange
+    languageStore.choose('en')
+    const Unnarrowed = composeStory(
+      { ...filterFormStories.OnANarrowScreen, args: { shown: {} } },
+      filterFormStories.default,
+    )
+
+    // Act
+    await Unnarrowed.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: 'Filters' })).toHaveAttribute(
+      'aria-haspopup',
+      'dialog',
+    )
+  })
+
+  it('should name the buttons of the sheet in English: the one that sends, and the one that closes', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.SheetOnANarrowScreen.run()
+
+    // Assert
+    expect(
+      within(sheet())
+        .getAllByRole('button')
+        .map(({ textContent }) => textContent),
+    ).toEqual(expect.arrayContaining(['Close', 'Search']))
+    expect(within(sheet()).queryByRole('button', { name: '閉じる' })).toBeNull()
   })
 })

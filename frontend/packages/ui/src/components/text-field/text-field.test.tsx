@@ -1,13 +1,18 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as textFieldStories from './text-field.stories'
 
 const stories = composeStories(textFieldStories)
 
 describe('TextField', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should be named by its label', async () => {
     // Act
@@ -219,5 +224,17 @@ describe('TextField', () => {
       'aria-describedby',
       'contact-email-description contact-email-error',
     )
+  })
+
+  it('should mark a value that is required in English on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Required.run()
+
+    // Assert
+    expect(screen.getByText('Required')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.queryByText('必須')).toBeNull()
   })
 })
