@@ -10,6 +10,7 @@ import {
 } from '@playwright/test'
 import * as z from 'zod'
 import type { TestApi } from './fixtures'
+import type { Language } from './language'
 
 /** Somebody who registers in a test: an account without a profile */
 export const NEWCOMER = 'newcomer@example.com'
@@ -34,28 +35,53 @@ export const DASHBOARD_START = '売上レポート'
 export const heading = (page: Page, name: string): Locator =>
   page.getByRole('heading', { level: 1, name })
 
-export const emailField = (page: Page): Locator =>
-  page.getByRole('textbox', { name: 'メールアドレス' })
+/**
+ * What the sign-in screen and the account in the header say, in the
+ * language of the page: Japanese where the visitor chose none.
+ */
+const SIGN_IN: Record<
+  Language,
+  { email: string; password: string; signIn: string; signOut: string }
+> = {
+  ja: {
+    email: 'メールアドレス',
+    password: 'パスワード',
+    signIn: 'サインイン',
+    signOut: 'サインアウト',
+  },
+  en: {
+    email: 'Email address',
+    password: 'Password',
+    signIn: 'Sign in',
+    signOut: 'Sign out',
+  },
+}
 
-export const passwordField = (page: Page): Locator =>
-  page.getByLabel('パスワード', { exact: true })
+export const emailField = (page: Page, language: Language = 'ja'): Locator =>
+  page.getByRole('textbox', { name: SIGN_IN[language].email })
 
-export const signInButton = (page: Page): Locator =>
-  page.getByRole('button', { name: 'サインイン' })
+export const passwordField = (page: Page, language: Language = 'ja'): Locator =>
+  page.getByLabel(SIGN_IN[language].password, { exact: true })
+
+export const signInButton = (page: Page, language: Language = 'ja'): Locator =>
+  page.getByRole('button', { name: SIGN_IN[language].signIn })
 
 /** The sign-out of the header, which every screen has for who is signed in. */
-export const signOutButton = (page: Page): Locator =>
-  page.getByRole('banner').getByRole('button', { name: 'サインアウト' })
+export const signOutButton = (page: Page, language: Language = 'ja'): Locator =>
+  page
+    .getByRole('banner')
+    .getByRole('button', { name: SIGN_IN[language].signOut })
 
 /** Fills in the sign-in screen and sends it, as a user with a pointer does. */
 export const enterCredentials = async (
   page: Page,
   email: string,
   password: string,
+  language: Language = 'ja',
 ): Promise<void> => {
-  await emailField(page).fill(email)
-  await passwordField(page).fill(password)
-  await signInButton(page).click()
+  await emailField(page, language).fill(email)
+  await passwordField(page, language).fill(password)
+  await signInButton(page, language).click()
 }
 
 /** What a test reads of a sign-in: the access token */
