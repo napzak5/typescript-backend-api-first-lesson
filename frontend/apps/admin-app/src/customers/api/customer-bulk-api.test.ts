@@ -187,6 +187,23 @@ describe('removeCustomers', () => {
     expect(attempt).toEqual({ type: 'unfinished', id: ichiro.id })
   })
 
+  it('should name the customer the API names in a sentence in Japanese', async () => {
+    // Arrange
+    answering(() =>
+      problemWithCode(
+        409,
+        '3003',
+        `顧客 ${ichiro.id} は削除できません。終わっていない予約が参照しています`,
+      ),
+    )
+
+    // Act
+    const attempt = await removeCustomers(ids)
+
+    // Assert
+    expect(attempt).toEqual({ type: 'unfinished', id: ichiro.id })
+  })
+
   it('should name no customer when the API names none of the chosen', async () => {
     // Arrange
     answering(() =>

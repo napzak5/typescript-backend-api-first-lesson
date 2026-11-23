@@ -42,6 +42,8 @@ const storedSchema = z.array(
   }),
 )
 
+const idsSchema = z.array(z.object({ id: z.string() }))
+
 /** The customers of the file as the database of the API has them: their tags, and whether they are in the ledger. */
 const storedCustomers = async (api: TestApi) =>
   storedSchema.parse(
@@ -190,6 +192,53 @@ test.describe('a file with a customer of the ledger, in a browser that asks for 
       'このメールアドレスのお客様が、もう台帳にいます。',
     )
     expect(await storedCustomers(api)).toEqual([])
+  })
+})
+
+test.describe('a customer of the ledger whose booking is not finished, in a browser that asks for Japanese', () => {
+  test.use({ locale: 'ja-JP' })
+
+  test('should find the customer in what the API says in Japanese, and say who it is', async ({
+    page,
+    api,
+  }) => {
+    // Arrange
+    const salon = await salonId(api)
+    const [yuki] = idsSchema.parse(
+      await api.query('select id from customers where email = $1', [
+        YUKI.email,
+      ]),
+    )
+    await page.goto(`${ADMIN.origin}/salons/${salon}/customers`)
+    await enterCredentials(page, OWNER, api.seedPassword)
+    await expect(heading(page, '顧客台帳')).toBeFocused()
+    await chooseCustomer(page, YUKI.name)
+    await page.getByRole('button', { name: '台帳から削除する' }).click()
+    const removal = page.getByRole('dialog', {
+      name: '1 人のお客様を台帳から削除しますか？',
+    })
+    const answered = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'DELETE' &&
+        response.url().endsWith('/customers/bulk'),
+    )
+
+    // Act
+    await removal.getByRole('button', { name: '削除する' }).click()
+
+    // Assert
+    const answer = await answered
+    expect(answer.status()).toBe(409)
+    expect(answer.headers()['content-language']).toBe('ja')
+    expect(await answer.json()).toMatchObject({
+      detail: `顧客 ${yuki?.id} は削除できません。終わっていない予約が参照しています`,
+    })
+    await expect(removal).toContainText(
+      `${YUKI.name} 様には、終わっていない予約があります。`,
+    )
+    await expect(
+      page.getByRole('checkbox', { name: `${YUKI.name} 様を選ぶ` }),
+    ).toBeChecked()
   })
 })
 
