@@ -7,7 +7,7 @@ import type {
   DbServiceCategory,
 } from '../../models/service-category'
 import type { ServiceCategoryList } from '../../repositories/service-category.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -27,21 +27,13 @@ const convertedColumnsSchema = z.object({
 const toApiServiceCategory = (
   category: DbServiceCategory,
 ): Result<ApiServiceCategoryResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(
-        convertedColumnsSchema,
-        category,
-        'Invalid stored service category',
-      ),
-      (converted) => ({ ...category, ...converted }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      category,
+      `Stored service category ${category.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored service category ${category.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({ ...category, ...converted }),
   )
 
 export const ServiceCategoryReadMapper = {

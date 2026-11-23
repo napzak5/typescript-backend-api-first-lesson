@@ -1,6 +1,7 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
-import { type DomainError, DomainErrors, type Told } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import type { SaleChangeRefusal, SaleVoidRefusal } from './change'
 import type { SalePlan } from './plan'
 import type { ReceiptRefusal } from './receipt'
@@ -15,7 +16,7 @@ type AnsweredRefusal = Exclude<SalePlan, { type: 'planned' }>
  */
 export const toRefusalError = (
   refusal: AnsweredRefusal,
-  message: Told,
+  message: LocalizedText,
 ): DomainError =>
   match(refusal)
     .with({ type: 'invalid' }, ({ issues }) =>

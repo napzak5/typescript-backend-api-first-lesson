@@ -16,7 +16,7 @@ import type {
   CustomerList,
 } from '../../repositories/customer.repository'
 import { storedCustomerPreferencesSchema } from '../../schemas/customer.schema'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { BookingReadMapper } from './booking.mapper'
 import { timestampSchema } from './columns'
 import { CustomerAllergyReadMapper } from './customer-allergy.mapper'
@@ -55,17 +55,13 @@ const toApiCustomer = (
 ): Result<ApiCustomerResponse, DomainError> => {
   const { deletedAt, ...columns } = customer
 
-  return Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, customer, 'Invalid stored customer'),
-      (converted) => ({ ...columns, ...converted }),
+  return Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      customer,
+      `Stored customer ${customer.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored customer ${customer.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({ ...columns, ...converted }),
   )
 }
 

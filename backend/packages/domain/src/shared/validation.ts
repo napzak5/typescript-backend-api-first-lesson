@@ -9,7 +9,6 @@ import { match } from 'ts-pattern'
 import type { z } from 'zod'
 import { ja } from 'zod/locales'
 import { type DomainError, DomainErrors, type ValidationIssue } from './errors'
-import type { Told } from './told'
 
 /**
  * What Zod says of a broken rule in each language of the product but
@@ -71,7 +70,7 @@ const toValidationIssues = (
 export const parseWith = <T>(
   schema: z.ZodType<T>,
   input: unknown,
-  message: Told,
+  message: LocalizedText,
 ): Result<T, DomainError> =>
   match(schema.safeParse(input))
     .with({ success: true }, ({ data }) => Result.success(data))
@@ -88,4 +87,32 @@ export const parseWith = <T>(
         ),
       )
     })
+    .exhaustive()
+
+/**
+ * Parses what the database holds into `T`. A value that breaks a rule is
+ * not the fault of the request: it is a `database` error, of which a
+ * client is told nothing. `description` says what does not match, for the
+ * log (`Stored product <id> does not match the API model`), and the cause
+ * names the properties and the rules they break, in English and without
+ * the values.
+ */
+export const parseStored = <T>(
+  schema: z.ZodType<T>,
+  stored: unknown,
+  description: string,
+): Result<T, DomainError> =>
+  match(schema.safeParse(stored))
+    .with({ success: true }, ({ data }) => Result.success(data))
+    .with({ success: false }, ({ error }) =>
+      Result.error(
+        DomainErrors.database(description, {
+          issues: error.issues.map(({ code, path, message }) => ({
+            field: toField(path),
+            rule: code,
+            message: textOfOneString(message)?.en ?? message,
+          })),
+        }),
+      ),
+    )
     .exhaustive()

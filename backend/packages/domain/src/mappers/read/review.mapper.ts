@@ -10,7 +10,7 @@ import type {
   ReviewTally,
 } from '../../models/review'
 import type { ReviewList } from '../../repositories/review.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -37,17 +37,13 @@ const convertedColumnsSchema = z.object({
 const toApiReview = (
   review: DbReview,
 ): Result<ApiReviewResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, review, 'Invalid stored review'),
-      (converted) => ({ ...review, ...converted }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      review,
+      `Stored review ${review.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored review ${review.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({ ...review, ...converted }),
   )
 
 export const ReviewReadMapper = {
@@ -84,29 +80,22 @@ export const ReviewReadMapper = {
   toApiReviewSummary(
     tally: ReviewTally,
   ): Result<ApiReviewSummaryResponse, DomainError> {
-    return Result.mapError(
-      Result.map(
-        parseWith(
-          numericSchema.nullable(),
-          tally.averageRating,
-          'Invalid average rating',
-        ),
-        (averageRating) => ({
-          averageRating,
-          totalReviews: tally.totalReviews,
-          ratingDistribution: Object.fromEntries(
-            tally.ratingCounts.map((reviews, index) => [
-              String(index + 1),
-              reviews,
-            ]),
-          ),
-        }),
+    return Result.map(
+      parseStored(
+        numericSchema.nullable(),
+        tally.averageRating,
+        'The average rating of the reviews does not match the API model',
       ),
-      (error) =>
-        DomainErrors.database(
-          'The average rating of the reviews does not match the API model',
-          error,
+      (averageRating) => ({
+        averageRating,
+        totalReviews: tally.totalReviews,
+        ratingDistribution: Object.fromEntries(
+          tally.ratingCounts.map((reviews, index) => [
+            String(index + 1),
+            reviews,
+          ]),
         ),
+      }),
     )
   },
 }

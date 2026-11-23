@@ -7,7 +7,7 @@ import type {
   ApiUserResponse,
   DbUser,
 } from '../../models/auth'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 
 /**
@@ -48,29 +48,25 @@ export const UserReadMapper = {
       staffId,
     } = user
 
-    return Result.mapError(
-      Result.map(
-        parseWith(convertedColumnsSchema, user, 'Invalid stored user'),
-        (converted) => ({
-          id,
-          email,
-          role,
-          status,
-          emailVerified,
-          twoFactorStatus,
-          failedLoginAttempts,
-          lastLoginIp,
-          customerId,
-          staffId,
-          ...converted,
-        }),
+    return Result.map(
+      parseStored(
+        convertedColumnsSchema,
+        user,
+        `Stored user ${user.id} does not match the API model`,
       ),
-      // The request was fine; the stored row is not.
-      (error) =>
-        DomainErrors.database(
-          `Stored user ${user.id} does not match the API model`,
-          error,
-        ),
+      (converted) => ({
+        id,
+        email,
+        role,
+        status,
+        emailVerified,
+        twoFactorStatus,
+        failedLoginAttempts,
+        lastLoginIp,
+        customerId,
+        staffId,
+        ...converted,
+      }),
     )
   },
 

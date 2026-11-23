@@ -1,9 +1,6 @@
-import {
-  type DomainError,
-  parseWith,
-  type Told,
-} from '@beauty-salon-backend/domain'
+import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { asOneString } from '@beauty-salon-shared/i18n'
 import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
@@ -37,6 +34,6 @@ export const listParameter = z.union([
  * answers is checked as a whole by the schema of the use case.
  */
 export const queryDecoder =
-  (schema: z.ZodType, message: Told) =>
+  (schema: z.ZodType, message: LocalizedText) =>
   (query: unknown): Result<unknown, DomainError> =>
     parseWith(schema, query, message)

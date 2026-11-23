@@ -1,8 +1,8 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import {
   type DomainError,
   DomainErrors,
-  type Told,
   type ValidationIssue,
 } from '../../../shared'
 import { referrerMissing } from './rules'
@@ -45,7 +45,7 @@ export const customerNotFound = (
  * (`pathOf` the index of the part).
  */
 export const referrersNotFound = (
-  message: Told,
+  message: LocalizedText,
   referrers: readonly (string | null | undefined)[],
   missing: readonly string[],
   pathOf: (index: number) => string,

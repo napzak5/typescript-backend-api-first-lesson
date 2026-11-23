@@ -11,7 +11,7 @@ import type {
   ServiceWithOptions,
 } from '../../models/service'
 import type { ServiceList } from '../../repositories/service.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -55,21 +55,17 @@ const toApiService = (
 ): Result<ApiServiceResponse, DomainError> => {
   const { deletedAt, ...columns } = service
 
-  return Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, service, 'Invalid stored service'),
-      (converted) => ({
-        ...columns,
-        ...converted,
-        options: options.map(toApiServiceOption),
-      }),
+  return Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      service,
+      `Stored service ${service.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored service ${service.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      ...columns,
+      ...converted,
+      options: options.map(toApiServiceOption),
+    }),
   )
 }
 

@@ -8,7 +8,7 @@ import type {
 import type { ApiPage, Paging } from '../../models/page'
 import type { MedicalChartListing } from '../../repositories/medical-chart.repository'
 import { previousTreatmentSchema } from '../../schemas/medical-chart.schema'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -37,27 +37,23 @@ const convertedChartSchema = z.object({
 const toApiMedicalChart = (
   chart: DbMedicalChart,
 ): Result<ApiMedicalChartResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(convertedChartSchema, chart, 'Invalid stored medical chart'),
-      (converted) => ({
-        id: chart.id,
-        customerId: chart.customerId,
-        previousTreatments: converted.previousTreatments,
-        medicalConditions: chart.medicalConditions,
-        preferredProducts: chart.preferredProducts,
-        avoidProducts: chart.avoidProducts,
-        notes: chart.notes,
-        createdAt: converted.createdAt,
-        updatedAt: converted.updatedAt,
-      }),
+  Result.map(
+    parseStored(
+      convertedChartSchema,
+      chart,
+      `Stored medical chart ${chart.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored medical chart ${chart.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id: chart.id,
+      customerId: chart.customerId,
+      previousTreatments: converted.previousTreatments,
+      medicalConditions: chart.medicalConditions,
+      preferredProducts: chart.preferredProducts,
+      avoidProducts: chart.avoidProducts,
+      notes: chart.notes,
+      createdAt: converted.createdAt,
+      updatedAt: converted.updatedAt,
+    }),
   )
 
 export const MedicalChartReadMapper = {

@@ -3,7 +3,7 @@ import { z } from 'zod'
 import type { ApiPage, Paging } from '../../models/page'
 import type { ApiStaffResponse, DbStaff, StaffId } from '../../models/staff'
 import type { StaffList } from '../../repositories/staff.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -26,17 +26,13 @@ const convertedColumnsSchema = z.object({
 const toApiStaff = (member: DbStaff): Result<ApiStaffResponse, DomainError> => {
   const { deletedAt, ...columns } = member
 
-  return Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, member, 'Invalid stored staff member'),
-      (converted) => ({ ...columns, ...converted }),
+  return Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      member,
+      `Stored staff member ${member.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored staff member ${member.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({ ...columns, ...converted }),
   )
 }
 

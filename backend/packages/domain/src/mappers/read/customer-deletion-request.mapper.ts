@@ -4,7 +4,7 @@ import type {
   ApiCustomerDeletionRequestResponse,
   DbCustomerDeletionRequest,
 } from '../../models/customer-deletion-request'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 
 /**
@@ -27,21 +27,13 @@ const convertedColumnsSchema = z.object({
 const toApiCustomerDeletionRequest = (
   request: DbCustomerDeletionRequest,
 ): Result<ApiCustomerDeletionRequestResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(
-        convertedColumnsSchema,
-        request,
-        'Invalid stored customer deletion request',
-      ),
-      (converted) => ({ ...request, ...converted }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      request,
+      `Stored customer deletion request ${request.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored customer deletion request ${request.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({ ...request, ...converted }),
   )
 
 export const CustomerDeletionRequestReadMapper = {

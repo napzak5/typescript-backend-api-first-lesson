@@ -11,7 +11,7 @@ import type {
 import type { ApiPage, Paging } from '../../models/page'
 import type { AttachmentList } from '../../repositories/attachment.repository'
 import type { UploadTicket } from '../../services/file-storage'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -38,33 +38,25 @@ const convertedColumnsSchema = z.object({
 const toApiAttachment = (
   attachment: DbAttachment,
 ): Result<ApiAttachmentResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(
-        convertedColumnsSchema,
-        attachment,
-        'Invalid stored attachment',
-      ),
-      (converted) => ({
-        id: attachment.id,
-        salonId: attachment.salonId,
-        filename: attachment.filename,
-        contentType: attachment.contentType,
-        size: attachment.size,
-        status: attachment.status,
-        uploadedBy: attachment.uploadedBy,
-        uploadExpiresAt: converted.uploadExpiresAt,
-        uploadedAt: converted.uploadedAt,
-        createdAt: converted.createdAt,
-        updatedAt: converted.updatedAt,
-      }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      attachment,
+      `Stored attachment ${attachment.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored attachment ${attachment.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id: attachment.id,
+      salonId: attachment.salonId,
+      filename: attachment.filename,
+      contentType: attachment.contentType,
+      size: attachment.size,
+      status: attachment.status,
+      uploadedBy: attachment.uploadedBy,
+      uploadExpiresAt: converted.uploadExpiresAt,
+      uploadedAt: converted.uploadedAt,
+      createdAt: converted.createdAt,
+      updatedAt: converted.updatedAt,
+    }),
   )
 
 export const AttachmentReadMapper = {

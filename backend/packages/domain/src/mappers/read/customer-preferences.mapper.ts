@@ -9,7 +9,7 @@ import {
   storedStylePreferenceSchema,
   storedTimeSlotsSchema,
 } from '../../schemas/customer-preferences.schema'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 
 /**
  * Database columns → API response. Property names are the column names, and
@@ -32,21 +32,13 @@ export const CustomerPreferencesReadMapper = {
     customerId: CustomerId,
     preferences: DbCustomerPreferences,
   ): Result<ApiCustomerPreferencesResponse, DomainError> {
-    return Result.mapError(
-      Result.map(
-        parseWith(
-          convertedColumnsSchema,
-          preferences,
-          'Invalid stored customer preferences',
-        ),
-        (converted) => ({ ...preferences, ...converted }),
+    return Result.map(
+      parseStored(
+        convertedColumnsSchema,
+        preferences,
+        `Stored preferences of customer ${customerId} do not match the API model`,
       ),
-      // The request was fine; the stored row is not.
-      (error) =>
-        DomainErrors.database(
-          `Stored preferences of customer ${customerId} do not match the API model`,
-          error,
-        ),
+      (converted) => ({ ...preferences, ...converted }),
     )
   },
 }

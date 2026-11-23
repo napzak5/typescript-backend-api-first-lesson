@@ -7,7 +7,7 @@ import type {
   PaymentMethodId,
 } from '../../models/payment-method'
 import type { PaymentMethodList } from '../../repositories/payment-method.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -33,37 +33,29 @@ const convertedColumnsSchema = z.object({
 const toApiPaymentMethod = (
   paymentMethod: DbPaymentMethod,
 ): Result<ApiPaymentMethodResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(
-        convertedColumnsSchema,
-        paymentMethod,
-        'Invalid stored payment method',
-      ),
-      (converted) => ({
-        id: paymentMethod.id,
-        salonId: paymentMethod.salonId,
-        method: paymentMethod.method,
-        displayName: paymentMethod.displayName,
-        description: paymentMethod.description,
-        processorName: paymentMethod.processorName,
-        fee: converted.fee,
-        minimumAmount: paymentMethod.minimumAmount,
-        maximumAmount: paymentMethod.maximumAmount,
-        isOnlineEnabled: paymentMethod.isOnlineEnabled,
-        isOfflineEnabled: paymentMethod.isOfflineEnabled,
-        sortOrder: paymentMethod.sortOrder,
-        isActive: paymentMethod.isActive,
-        createdAt: converted.createdAt,
-        updatedAt: converted.updatedAt,
-      }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      paymentMethod,
+      `Stored payment method ${paymentMethod.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored payment method ${paymentMethod.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({
+      id: paymentMethod.id,
+      salonId: paymentMethod.salonId,
+      method: paymentMethod.method,
+      displayName: paymentMethod.displayName,
+      description: paymentMethod.description,
+      processorName: paymentMethod.processorName,
+      fee: converted.fee,
+      minimumAmount: paymentMethod.minimumAmount,
+      maximumAmount: paymentMethod.maximumAmount,
+      isOnlineEnabled: paymentMethod.isOnlineEnabled,
+      isOfflineEnabled: paymentMethod.isOfflineEnabled,
+      sortOrder: paymentMethod.sortOrder,
+      isActive: paymentMethod.isActive,
+      createdAt: converted.createdAt,
+      updatedAt: converted.updatedAt,
+    }),
   )
 
 export const PaymentMethodReadMapper = {

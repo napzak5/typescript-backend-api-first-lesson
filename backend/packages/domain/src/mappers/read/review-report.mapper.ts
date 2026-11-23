@@ -7,7 +7,7 @@ import type {
   ReviewReportId,
 } from '../../models/review-report'
 import type { ReviewReportList } from '../../repositories/review-report.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -28,17 +28,13 @@ const convertedColumnsSchema = z.object({
 const toApiReviewReport = (
   report: DbReviewReport,
 ): Result<ApiReviewReportResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, report, 'Invalid stored review report'),
-      (converted) => ({ ...report, ...converted }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      report,
+      `Stored review report ${report.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored review report ${report.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({ ...report, ...converted }),
   )
 
 export const ReviewReportReadMapper = {

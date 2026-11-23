@@ -1,8 +1,4 @@
-import {
-  type DomainError,
-  isToldInEveryLanguage,
-  toldIn,
-} from '@beauty-salon-backend/domain'
+import type { DomainError } from '@beauty-salon-backend/domain'
 import type { components } from '@beauty-salon-backend/generated'
 import {
   type Locale,
@@ -10,7 +6,7 @@ import {
   textIn,
 } from '@beauty-salon-shared/i18n'
 import { problemMessages } from '@beauty-salon-shared/i18n/messages/api'
-import { match, P } from 'ts-pattern'
+import { match } from 'ts-pattern'
 
 export type ProblemDetails = components['schemas']['Models.ProblemDetails']
 
@@ -42,51 +38,6 @@ export type ProblemContext = Pick<
   'instance' | 'correlationId' | 'timestamp'
 >
 
-/**
- * The language of a text that the domain writes in one language alone: the
- * headline of a validation error that is no message of the language package.
- */
-const LANGUAGE_OF_THE_DOMAIN: Locale = 'en'
-
-/**
- * The language a problem is told in: the one that was asked for, where
- * every text of the error is written in it. A text that the domain writes
- * in one language alone is told in that language, and so is the error as a
- * whole: no answer is in two languages, and `Content-Language` names the
- * one it is in. What a validation error says of each broken rule is
- * written in every language, so the error is when its headline is.
- * Every kind of error is named, so a new one does not compile until it is
- * said who writes its detail.
- */
-export const languageOf = (error: ApiError, asked: Locale): Locale =>
-  match(error)
-    .with({ type: 'validation' }, ({ message }) =>
-      isToldInEveryLanguage(message) ? asked : LANGUAGE_OF_THE_DOMAIN,
-    )
-    .with(
-      {
-        type: P.union(
-          'unauthenticated',
-          'forbidden',
-          'passwordRequired',
-          'notFound',
-          'alreadyExists',
-          'conflict',
-          'database',
-          'storage',
-          'routeNotFound',
-          'malformedBody',
-          'unsupportedMediaType',
-          'bodyTooLarge',
-          'badRequest',
-          'rateLimited',
-          'unexpected',
-        ),
-      },
-      () => asked,
-    )
-    .exhaustive()
-
 const toProblem = (error: ApiError, language: Locale): Problem => {
   const said = (text: LocalizedText): string => textIn(text, language)
 
@@ -97,7 +48,7 @@ const toProblem = (error: ApiError, language: Locale): Problem => {
         type: 'urn:beauty-salon:problem:validation',
         title: said(problemMessages.validation.title),
         status: 400,
-        detail: toldIn(message, language),
+        detail: said(message),
         code: '2001',
         errors: issues.map(({ field, rule, message: issueMessage }) => ({
           field,
@@ -302,14 +253,15 @@ export const toBearerChallenge = (error: ApiError): string | null =>
     : null
 
 /**
- * Error → RFC 9457 problem details, told in the language that was asked
- * for where the error is written in it (`languageOf`).
+ * Error → RFC 9457 problem details, told in a language. Every text of an
+ * error is written in every language, so an answer is in one language as a
+ * whole, whichever is asked for.
  */
 export const toProblemDetails = (
   error: ApiError,
   context: ProblemContext,
-  asked: Locale,
+  language: Locale,
 ): ProblemDetails => ({
-  ...toProblem(error, languageOf(error, asked)),
+  ...toProblem(error, language),
   ...context,
 })

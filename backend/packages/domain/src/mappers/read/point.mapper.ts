@@ -16,7 +16,7 @@ import type {
   PointExpiryOutcome,
   PointListing,
 } from '../../repositories/point.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, parseStored } from '../../shared'
 import { timestampSchema } from './columns'
 import { toApiPage } from './page'
 
@@ -37,21 +37,13 @@ const convertedColumnsSchema = z.object({
 const toApiPointTransaction = (
   transaction: DbPointTransaction,
 ): Result<ApiPointTransactionResponse, DomainError> =>
-  Result.mapError(
-    Result.map(
-      parseWith(
-        convertedColumnsSchema,
-        transaction,
-        'Invalid stored point transaction',
-      ),
-      (converted) => ({ ...transaction, ...converted }),
+  Result.map(
+    parseStored(
+      convertedColumnsSchema,
+      transaction,
+      `Stored point transaction ${transaction.id} does not match the API model`,
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored point transaction ${transaction.id} does not match the API model`,
-        error,
-      ),
+    (converted) => ({ ...transaction, ...converted }),
   )
 
 export const PointReadMapper = {

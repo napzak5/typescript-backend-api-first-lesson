@@ -9,7 +9,7 @@ import type {
   DbInventoryValueCategory,
   DbStockCountDiscrepancy,
 } from '../../repositories/inventory.repository'
-import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { type DomainError, DomainErrors, parseStored } from '../../shared'
 import { numericSchema } from './columns'
 import { InventoryTransactionReadMapper } from './inventory-transaction.mapper'
 
@@ -62,18 +62,13 @@ export const InventoryReportReadMapper = {
   ): Result<ApiInventoryStockCountResponse, DomainError> {
     const differed: ApiInventoryStockCountResponse['discrepancies'] = []
     for (const discrepancy of discrepancies) {
-      const figures = parseWith(
+      const figures = parseStored(
         discrepancySchema,
         discrepancy,
-        'Invalid stored stock count',
+        `The count of stock row ${discrepancy.inventoryId} does not match the API model`,
       )
       if (figures.type === 'error') {
-        return Result.error(
-          DomainErrors.database(
-            `The count of stock row ${discrepancy.inventoryId} does not match the API model`,
-            figures.error,
-          ),
-        )
+        return figures
       }
       differed.push({ inventoryId: discrepancy.inventoryId, ...figures.data })
     }
@@ -91,18 +86,13 @@ export const InventoryReportReadMapper = {
     salonId: string,
     categories: DbInventoryValueCategory[],
   ): Result<ApiInventoryValueReportResponse, DomainError> {
-    const parsed = parseWith(
+    const parsed = parseStored(
       z.array(valueCategorySchema),
       categories,
-      'Invalid stored stock value',
+      `The value of the stock of salon ${salonId} does not match the API model`,
     )
     if (parsed.type === 'error') {
-      return Result.error(
-        DomainErrors.database(
-          `The value of the stock of salon ${salonId} does not match the API model`,
-          parsed.error,
-        ),
-      )
+      return parsed
     }
     const totalValue = parsed.data.reduce((sum, { value }) => sum + value, 0n)
     if (totalValue > MOST_EXACT) {

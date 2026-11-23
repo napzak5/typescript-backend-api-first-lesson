@@ -1,5 +1,4 @@
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
-import type { Told } from './told'
 
 /** One rule that an input value broke. */
 export type ValidationIssue = {
@@ -29,10 +28,13 @@ export type AuthenticationFailure =
   | 'twoFactorRequired'
 
 /**
- * Every way a use case can fail. `database` covers both a failed query and
- * stored data that does not have the shape the schema promises; its `cause`
- * is for logs and is never sent to a client. `storage` is a call to the
- * object storage that failed; its `cause` is for logs as well. `forbidden`
+ * Every way a use case can fail. `validation` means the request breaks
+ * rules; its `message`, the headline, and what it says of each rule are
+ * written in every language. `database` covers both a failed query and
+ * stored data that does not have the shape the schema promises
+ * (`parseStored`); its `cause` is for logs and is never sent to a client.
+ * `storage` is a call to the object storage that failed; its `cause` is
+ * for logs as well. `forbidden`
  * means the actor is known and may not do this. `conflict` means the
  * request is fine and what it acts on is not in a state that allows it;
  * its `message` says why, in every language.
@@ -44,7 +46,7 @@ export type AuthenticationFailure =
  * when what the thing was looked for by is not to be repeated.
  */
 export type DomainError =
-  | { type: 'validation'; message: Told; issues: ValidationIssue[] }
+  | { type: 'validation'; message: LocalizedText; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
@@ -60,7 +62,7 @@ export type DomainError =
   | { type: 'storage'; message: string; cause: unknown }
 
 export const DomainErrors = {
-  validation(message: Told, issues: ValidationIssue[]): DomainError {
+  validation(message: LocalizedText, issues: ValidationIssue[]): DomainError {
     return { type: 'validation', message, issues }
   },
 
