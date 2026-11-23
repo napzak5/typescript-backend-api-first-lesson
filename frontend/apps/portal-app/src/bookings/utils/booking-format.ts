@@ -3,7 +3,8 @@ import type {
   ModelsCustomerBookingResponse,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { BadgeTone } from '@beauty-salon-frontend/ui'
+import { type BadgeTone, inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import {
   amountOf,
   timeOfDayAt,
@@ -75,10 +76,7 @@ export const whenOf = (
  * is a calendar date at the salon, and is read without a time zone.
  */
 export const visitDayOf = (bookingDate: string): string =>
-  new Intl.DateTimeFormat('ja-JP', {
-    dateStyle: 'full',
-    timeZone: 'UTC',
-  }).format(new Date(`${bookingDate}T00:00:00Z`))
+  inJapanese(formats.fullDayOf(bookingDate))
 
 /**
  * When a booking is, where its salon may be gone: as `whenOf` says it, or

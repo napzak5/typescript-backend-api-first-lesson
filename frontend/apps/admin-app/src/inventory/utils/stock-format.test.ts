@@ -46,9 +46,16 @@ describe('quantityNameOf', () => {
     expect(quantityNameOf(quantity, shampoo)).toBe(name)
   })
 
-  it('should say a quantity of a product that was removed without a unit', () => {
-    expect(quantityNameOf(2.5, undefined)).toBe('2.5')
-  })
+  it.each<[number, string]>([
+    [2.5, '2.5'],
+    [1234.25, '1,234.25'],
+  ])(
+    'should say %d of a product that was removed without a unit',
+    (quantity, name) => {
+      // Act, Assert
+      expect(quantityNameOf(quantity, undefined)).toBe(name)
+    },
+  )
 })
 
 describe('expiryNameOf', () => {

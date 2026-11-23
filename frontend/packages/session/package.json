@@ -38,6 +38,7 @@
     "@beauty-salon-frontend/fields": "workspace:*",
     "@beauty-salon-frontend/io": "workspace:*",
     "@beauty-salon-frontend/ui": "workspace:*",
+    "@beauty-salon-shared/i18n": "workspace:*",
     "ts-pattern": "^5.9.2"
   },
   "devDependencies": {

@@ -20,9 +20,11 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match, P } from 'ts-pattern'
 import type { SaleRead } from '../../sales/api/sales-api'
 import type { CustomerRead } from '../api/customers-api'
@@ -80,8 +82,7 @@ const TRANSACTION_NAMES: Record<ModelsPointTransactionType, string> = {
 export const transactionNameOf = (type: ModelsPointTransactionType): string =>
   TRANSACTION_NAMES[type]
 
-const format = (count: number): string =>
-  new Intl.NumberFormat('ja-JP').format(count)
+const format = (count: number): string => inJapanese(formats.numberOf(count))
 
 /** How a transaction moved the balance, with its sign: 「+500」, 「−200」. */
 export const movementOf = (points: number): string =>
@@ -111,7 +112,7 @@ const POINTS_ERROR = `ポイント数は、1 から ${format(MOST_POINTS)} ま�
 
 const EXPIRY_IN_THE_PAST = '有効期限は、今日以降の日付にしてください。'
 
-const EXPIRY_ERROR = `有効期限は、今日から${LATEST_DAY.slice(0, 4)}年12月31日までの日付で入力してください。`
+const EXPIRY_ERROR = `有効期限は、今日から${inJapanese(formats.dayOf(LATEST_DAY))}までの日付で入力してください。`
 
 /** The request a form makes, for the operation of its kind. */
 export type PointRecording =

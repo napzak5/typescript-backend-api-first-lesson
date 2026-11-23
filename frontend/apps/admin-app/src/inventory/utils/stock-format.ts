@@ -3,7 +3,13 @@ import type {
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import type { ChoiceOption, NavigationItem } from '@beauty-salon-frontend/ui'
+import {
+  type ChoiceOption,
+  inJapanese,
+  type NavigationItem,
+} from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { quantityOf } from '../../products/utils/quantity'
 import { EXPIRY_WINDOWS, type StockView, stockQueryOf } from './stock-view'
 
 /*
@@ -29,27 +35,18 @@ export const stockRowNameOf = (
 ): string =>
   `${product?.name ?? REMOVED_PRODUCT}${row.lotNumber === null ? '' : `（ロット ${row.lotNumber}）`}`
 
-const QUANTITY = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 2 })
-
 /** A quantity of stock in the unit of its product: 「12.5 bottle」. */
 export const quantityNameOf = (
   quantity: number,
   product: Pick<ModelsProductResponse, 'unit'> | undefined,
 ): string =>
   product === undefined
-    ? QUANTITY.format(quantity)
-    : `${QUANTITY.format(quantity)} ${product.unit}`
-
-const EXPIRY = new Intl.DateTimeFormat('ja-JP', {
-  dateStyle: 'long',
-  timeZone: 'UTC',
-})
+    ? inJapanese(quantityOf(quantity))
+    : `${inJapanese(quantityOf(quantity))} ${product.unit}`
 
 /** An expiry: 「2025年12月31日」, or that there is none. A day of the calendar: its weekday says nothing of it. */
 export const expiryNameOf = (expiryDate: string | null): string =>
-  expiryDate === null
-    ? '期限なし'
-    : EXPIRY.format(new Date(`${expiryDate}T00:00:00Z`))
+  expiryDate === null ? '期限なし' : inJapanese(formats.dayOf(expiryDate))
 
 /** Whether a row expired before today, the day at the salon. */
 export const isExpired = (expiryDate: string | null, today: string): boolean =>

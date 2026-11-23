@@ -613,6 +613,9 @@ importers:
       '@beauty-salon-frontend/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@beauty-salon-shared/i18n':
+        specifier: workspace:*
+        version: link:../../../shared-i18n
       '@tanstack/react-query':
         specifier: ^5.108.0
         version: 5.108.0(@types/react@19.3.0)(react@19.3.1)
@@ -713,6 +716,9 @@ importers:
       '@beauty-salon-frontend/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@beauty-salon-shared/i18n':
+        specifier: workspace:*
+        version: link:../../../shared-i18n
       '@tanstack/react-query':
         specifier: ^5.108.0
         version: 5.108.0(@types/react@19.3.0)(react@19.3.1)
@@ -813,6 +819,9 @@ importers:
       '@beauty-salon-frontend/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@beauty-salon-shared/i18n':
+        specifier: workspace:*
+        version: link:../../../shared-i18n
       '@tanstack/react-query':
         specifier: ^5.108.0
         version: 5.108.0(@types/react@19.3.0)(react@19.3.1)
@@ -1238,6 +1247,9 @@ importers:
       '@beauty-salon-frontend/ui':
         specifier: workspace:*
         version: link:../ui
+      '@beauty-salon-shared/i18n':
+        specifier: workspace:*
+        version: link:../../../shared-i18n
       ts-pattern:
         specifier: ^5.9.2
         version: 5.9.2
@@ -1314,6 +1326,9 @@ importers:
       '@beauty-salon-frontend/ui':
         specifier: workspace:*
         version: link:../ui
+      '@beauty-salon-shared/i18n':
+        specifier: workspace:*
+        version: link:../../../shared-i18n
       ts-pattern:
         specifier: ^5.9.2
         version: 5.9.2

@@ -3,6 +3,8 @@ import type {
   ModelsTwoFactorStatusType,
   ModelsUserResponse,
 } from '@beauty-salon-frontend/api-client'
+import { inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 
 /*
@@ -13,11 +15,7 @@ import { match } from 'ts-pattern'
 
 /** A moment, as 「2026年11月20日 10:15」. */
 export const momentOf = (instant: string, timeZone: string): string =>
-  new Intl.DateTimeFormat('ja-JP', {
-    dateStyle: 'long',
-    timeStyle: 'short',
-    timeZone,
-  }).format(new Date(instant))
+  inJapanese(formats.momentAt(instant, timeZone))
 
 /** When the password was changed last, or that it never was. */
 export const passwordChangedOf = (

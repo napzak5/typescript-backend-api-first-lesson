@@ -8,7 +8,8 @@ import {
   type Period,
   periodQueryOf,
 } from '@beauty-salon-frontend/salon-screens'
-import { textOf } from '@beauty-salon-frontend/ui'
+import { inJapanese, textOf } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 
 /*
@@ -74,7 +75,7 @@ export const trendsQueryOf = (
 
 /** A month the API labels (`2026-11`) in words: 「2026年11月」. */
 const monthNameOf = (label: string): string =>
-  `${Number(label.slice(0, 4))}年${Number(label.slice(5, 7))}月`
+  inJapanese(formats.monthOf(label))
 
 /**
  * A part as the table names it: a day 「2026年11月21日（土）」, the week
@@ -149,9 +150,5 @@ const SHORT_FROM = 10_000
  */
 export const axisAmountOf = (amount: number, currency: string): string =>
   amount >= SHORT_FROM
-    ? new Intl.NumberFormat('ja-JP', {
-        style: 'currency',
-        currency,
-        notation: 'compact',
-      }).format(amount)
+    ? inJapanese(formats.shortAmountOf(amount, currency))
     : amountOf(amount, currency)

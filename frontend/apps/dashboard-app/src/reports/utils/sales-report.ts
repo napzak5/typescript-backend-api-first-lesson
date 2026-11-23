@@ -1,6 +1,8 @@
 import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { FileToSave } from '@beauty-salon-frontend/io'
 import { type Period, periodNameOf } from '@beauty-salon-frontend/salon-screens'
+import { inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 import type { SalesReportExport } from '../api/sales-report-api'
 
@@ -15,16 +17,11 @@ export const REPORT_PERIOD =
 
 /** How many sales, payments or services: 「12 件」. */
 export const countNameOf = (count: number): string =>
-  `${count.toLocaleString('ja-JP')} 件`
-
-const PERCENT = new Intl.NumberFormat('ja-JP', {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-})
+  `${inJapanese(formats.numberOf(count))} 件`
 
 /** A share of the whole, as the API rounds it: 「42.5%」. */
 export const percentNameOf = (percentage: number): string =>
-  `${PERCENT.format(percentage)}%`
+  inJapanese(formats.percentOf(percentage, { most: 1, least: 1 }))
 
 /** A place among the members of the staff: 「1 位」. */
 export const rankNameOf = (rank: number): string => `${rank} 位`

@@ -231,7 +231,7 @@ changing anything under `frontend/`. `pnpm test` fails on a broken style rule.
 ### Shared Packages
 ```
 shared-config/            # @beauty-salon-shared/config: tsconfig files, the build of the packages, Biome plugins
-shared-i18n/              # @beauty-salon-shared/i18n: the languages (en, ja), how one is chosen from Accept-Language, and the messages
+shared-i18n/              # @beauty-salon-shared/i18n: the languages (en, ja), how one is chosen from Accept-Language, how a value is written in each, and the messages
 ```
 
 A text that is told in more than one language is a message of
@@ -260,7 +260,9 @@ choice (`languageStore` of `io`): every request says it to the API in
 `Accept-Language`, and a component says a message in it with `useSay` of
 `ui`. The texts of the screens become messages a package at a time, and a
 package that is done has a test that fails on a text written in Japanese in
-its source (`src/texts.test.ts`). See "画面の言語" in
+its source (`src/texts.test.ts`). A number, an amount, a day or a time is
+written in every language by the formats of `@beauty-salon-shared/i18n/formats`,
+and nowhere else. See "値の書き方" and "画面の言語" in
 [docs/i18n.md](docs/i18n.md) and the skill frontend-ui.
 
 ### Namespace Convention

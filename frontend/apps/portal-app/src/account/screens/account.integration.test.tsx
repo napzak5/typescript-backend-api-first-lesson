@@ -112,6 +112,24 @@ const invite = async (email: string, owner: string): Promise<void> => {
   expect(answer.status).toBe(201)
 }
 
+const expirySchema = z.tuple([z.object({ expiry: z.string() })])
+
+/**
+ * Until when the invitation of an address can be taken, as a page in
+ * Japanese writes it on the clock of the salons of the system.
+ */
+const expiryOf = async (email: string): Promise<string> => {
+  const [{ expiry }] = expirySchema.parse(
+    await testApi().query(
+      `select to_char("expiresAt" at time zone 'Asia/Tokyo', 'YYYY"年"FMMM"月"FMDD"日" FMHH24:MI') as expiry
+         from staff_invitations where email = $1`,
+      [email],
+    ),
+  )
+
+  return expiry
+}
+
 const accountSchema = z.array(
   z.object({ status: z.string(), emailVerified: z.boolean() }),
 )
@@ -686,6 +704,7 @@ describe('the screens of an account, against the API', () => {
     it('should show whom the invitation is for, and make the account with the password that is chosen', async () => {
       // Arrange
       await invite(STAFF_WITHOUT_ACCOUNT, await accessTokenOf(OWNER))
+      const expiry = await expiryOf(STAFF_WITHOUT_ACCOUNT)
       const fetched = vi.spyOn(globalThis, 'fetch')
       await openMailedLink(STAFF_WITHOUT_ACCOUNT)
       const user = userEvent.setup()
@@ -697,6 +716,7 @@ describe('the screens of an account, against the API', () => {
         email: emailField().getAttribute('value'),
         readOnly: emailField().hasAttribute('readonly'),
         role: main().getByText('スタッフ').tagName,
+        expiry: main().getByText('招待の期限').nextElementSibling?.textContent,
         violations: await findAccessibilityViolations(),
       }
 
@@ -711,6 +731,7 @@ describe('the screens of an account, against the API', () => {
         email: STAFF_WITHOUT_ACCOUNT,
         readOnly: true,
         role: 'DD',
+        expiry,
         violations: [],
       })
       expect(

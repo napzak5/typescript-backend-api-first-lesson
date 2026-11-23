@@ -1,3 +1,6 @@
+import { inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+
 /*
  * Days and times at a salon. A booking is on a day at the salon, and its
  * times are said as the clock of the salon shows them, whatever the time
@@ -22,32 +25,16 @@ export const dayAfter = (day: string, days: number): string => {
 }
 
 /** A day as a heading names it: 「2026年11月20日（金）」. */
-export const dayNameOf = (day: string): string => {
-  const moment = new Date(`${day}T00:00:00Z`)
-  const date = new Intl.DateTimeFormat('ja-JP', {
-    dateStyle: 'long',
-    timeZone: 'UTC',
-  }).format(moment)
-  const weekday = new Intl.DateTimeFormat('ja-JP', {
-    weekday: 'short',
-    timeZone: 'UTC',
-  }).format(moment)
-
-  return `${date}（${weekday}）`
-}
+export const dayNameOf = (day: string): string =>
+  inJapanese(formats.dayWithWeekdayOf(day))
 
 /** The time of day of a moment at a salon: 「10:30」. */
 export const timeOfDayAt = (moment: string, timezone: string): string =>
-  new Intl.DateTimeFormat('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-    timeZone: timezone,
-  }).format(new Date(moment))
+  inJapanese(formats.timeOfDayAt(moment, timezone))
 
 /** A moment at a salon, day and time: 「2026年11月20日（金） 10:30」. */
 export const momentNameAt = (moment: string, timezone: string): string =>
-  `${dayNameOf(dayAt(new Date(moment), timezone))} ${timeOfDayAt(moment, timezone)}`
+  inJapanese(formats.momentWithWeekdayAt(moment, timezone))
 
 const LOCAL_MOMENT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
 

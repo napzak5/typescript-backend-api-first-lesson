@@ -29,6 +29,7 @@
     "@beauty-salon-frontend/salon-screens": "workspace:*",
     "@beauty-salon-frontend/theme": "workspace:*",
     "@beauty-salon-frontend/ui": "workspace:*",
+    "@beauty-salon-shared/i18n": "workspace:*",
     "@tanstack/react-query": "^5.108.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

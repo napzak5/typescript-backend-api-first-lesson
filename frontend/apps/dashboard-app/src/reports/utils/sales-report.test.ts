@@ -19,6 +19,7 @@ describe('the words of a report', () => {
   it.each<[number, string]>([
     [0, '0.0%'],
     [33.3, '33.3%'],
+    [33.333, '33.3%'],
     [50, '50.0%'],
     [100, '100.0%'],
   ])('should write a share of %s to one decimal', (percentage, written) => {

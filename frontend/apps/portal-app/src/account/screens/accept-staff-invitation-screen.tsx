@@ -10,11 +10,13 @@ import {
   DescriptionList,
   Form,
   type FormSays,
+  inJapanese,
   NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
   TextField,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -43,11 +45,7 @@ const ROLE: Record<ModelsSalonRoleType, string> = {
 }
 
 /** The salons of the system are in Japan: a moment is said in their time */
-const moment = new Intl.DateTimeFormat('ja-JP', {
-  dateStyle: 'long',
-  timeStyle: 'short',
-  timeZone: 'Asia/Tokyo',
-})
+const TIME_ZONE = 'Asia/Tokyo'
 
 const ACCOUNT_EXISTS: { type: 'accountExists' } = { type: 'accountExists' }
 
@@ -61,7 +59,7 @@ const termsOf = (invitation: ModelsStaffInvitationResponse) => [
   { term: '役割', description: ROLE[invitation.role] },
   {
     term: '招待の期限',
-    description: moment.format(new Date(invitation.expiresAt)),
+    description: inJapanese(formats.momentAt(invitation.expiresAt, TIME_ZONE)),
   },
 ]
 

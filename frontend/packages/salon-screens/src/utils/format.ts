@@ -2,10 +2,12 @@ import type {
   ModelsPaymentMethodType,
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
+import { inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 
 /** An amount in the currency of the salon: 「￥5,500」. */
 export const amountOf = (amount: number, currency: string): string =>
-  new Intl.NumberFormat('ja-JP', { style: 'currency', currency }).format(amount)
+  inJapanese(formats.amountOf(amount, currency))
 
 const METHOD_NAMES: Record<ModelsPaymentMethodType, string> = {
   cash: '現金',

@@ -171,6 +171,15 @@ describe('afterErasure', () => {
       '2 件の依頼を実行して、お客様のデータを消去しました。消去したことは、依頼を受け付けたサロンから本人に知らせてください。',
     ])
   })
+
+  it('should count the requests that were carried out with the separators of the language', () => {
+    // Act, Assert
+    expect(
+      erasureResultOf(Array.from({ length: 1234 }, () => aDeletionRequest())),
+    ).toBe(
+      '1,234 件の依頼を実行して、お客様のデータを消去しました。消去したことは、依頼を受け付けたサロンから本人に知らせてください。',
+    )
+  })
 })
 
 describe('afterPurge', () => {

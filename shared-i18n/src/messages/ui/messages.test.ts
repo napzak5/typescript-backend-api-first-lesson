@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { numberOf } from '../../formats/numbers'
 import type { LocalizedText } from '../../languages/localized-text'
 import { JAPANESE, messagesOf } from '../__tests__/found-messages'
 import * as catalogues from './index'
@@ -7,6 +8,10 @@ import { uiMessages } from './index'
 const FOUND = messagesOf(catalogues, '')
 
 const { counted, filterForm, pagedList, passwordField, rating } = uiMessages
+
+/** A rating as the component writes it, to one decimal */
+const ratingOf = (value: number): LocalizedText =>
+  numberOf(value, { most: 1, least: 1 })
 
 /** Every message that is made from a value, with a value and what it then says. */
 const MADE: [string, LocalizedText, LocalizedText][] = [
@@ -48,7 +53,7 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
   ],
   [
     'uiMessages.rating.outOf',
-    rating.outOf(5, '4.5', rating.count(128)),
+    rating.outOf(5, ratingOf(4.5), rating.count(128)),
     { en: '4.5 out of 5 (128 ratings)', ja: '5 段階中 4.5（128 件）' },
   ],
 ]
@@ -105,6 +110,39 @@ describe('the messages of the shared components', () => {
     expect(made).toEqual(expected)
   })
 
+  it.each<[string, LocalizedText, LocalizedText]>([
+    ['a count', counted.items(1234), { en: '1,234 items', ja: '1,234 件' }],
+    [
+      'a count of what is shown',
+      pagedList.shownOf(counted.people(12345), 1234, counted.people(1234)),
+      {
+        en: '12,345 people (showing 1,234)',
+        ja: '12,345 人（1,234 人を表示しています）',
+      },
+    ],
+    [
+      'the conditions',
+      filterForm.conditions(1000),
+      { en: 'Filters (1,000)', ja: '条件（1,000）' },
+    ],
+    [
+      'the ratings of a mean',
+      rating.count(1280),
+      { en: '(1,280 ratings)', ja: '（1,280 件）' },
+    ],
+    [
+      'a rating',
+      rating.outOf(5, ratingOf(4.25), null),
+      { en: '4.3 out of 5', ja: '5 段階中 4.3' },
+    ],
+  ])(
+    'should write the numbers of %s with the format of numbers',
+    (_what, made, expected) => {
+      // Assert
+      expect(made).toEqual(expected)
+    },
+  )
+
   it('should name the button of the other conditions without a number while none narrows the list', () => {
     // Act
     const made = filterForm.conditions(0)
@@ -139,7 +177,7 @@ describe('the messages of the shared components', () => {
 
   it('should read a rating out without a count when it is the rating of one', () => {
     // Act
-    const made = rating.outOf(5, '4.0', null)
+    const made = rating.outOf(5, ratingOf(4), null)
 
     // Assert
     expect(made).toEqual({ en: '4.0 out of 5', ja: '5 段階中 4.0' })

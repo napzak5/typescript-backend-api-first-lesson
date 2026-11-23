@@ -11,7 +11,9 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 
 /*
@@ -35,23 +37,15 @@ export const isImage = (contentType: ModelsAttachmentContentType): boolean =>
   contentType !== 'application/pdf'
 
 const KILOBYTE = 1024
-const MEGABYTE = 1024 * 1024
 
 /**
  * The size of a file in words, and in bytes when the words round it:
  * 「512 バイト」, 「340 KB（348,160 バイト）」, 「1.2 MB（1,258,291 バイト）」.
  */
-export const sizeNameOf = (size: number): string => {
-  if (size < KILOBYTE) {
-    return `${size} バイト`
-  }
-  const rounded =
-    size < MEGABYTE
-      ? `${Math.round(size / KILOBYTE)} KB`
-      : `${(size / MEGABYTE).toFixed(1)} MB`
-
-  return `${rounded}（${size.toLocaleString('ja-JP')} バイト）`
-}
+export const sizeNameOf = (size: number): string =>
+  size < KILOBYTE
+    ? inJapanese(formats.bytesOf(size))
+    : `${inJapanese(formats.fileSizeOf(size))}（${inJapanese(formats.bytesOf(size))}）`
 
 /** What is said of the file before it is loaded */
 export const factsOf = (

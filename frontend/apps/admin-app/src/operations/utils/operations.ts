@@ -4,6 +4,8 @@ import type {
   ModelsHealthCheck,
   ModelsHealthStatus,
 } from '@beauty-salon-frontend/api-client'
+import { inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match, P } from 'ts-pattern'
 import type {
   Erasure,
@@ -167,7 +169,7 @@ export const expiryResultOf = ({
 }: ExpiryResult): string =>
   processedCount === 0
     ? '失効させるポイントはありませんでした。'
-    : `${processedCount.toLocaleString('ja-JP')} 人のお客様の、合わせて ${totalPoints.toLocaleString('ja-JP')} ポイントを失効させました。`
+    : `${inJapanese(formats.numberOf(processedCount))} 人のお客様の、合わせて ${inJapanese(formats.numberOf(totalPoints))} ポイントを失効させました。`
 
 /** What follows a run of the deletion requests that are due. */
 export const afterErasure = (
@@ -197,7 +199,7 @@ export const erasureResultOf = (
 ): string =>
   requests.length === 0
     ? '予定日時を過ぎた依頼はありませんでした。'
-    : `${requests.length.toLocaleString('ja-JP')} 件の依頼を実行して、お客様のデータを消去しました。消去したことは、依頼を受け付けたサロンから本人に知らせてください。`
+    : `${inJapanese(formats.numberOf(requests.length))} 件の依頼を実行して、お客様のデータを消去しました。消去したことは、依頼を受け付けたサロンから本人に知らせてください。`
 
 /** What follows a run of the removal of the attachments that are no longer needed. */
 export const afterPurge = (outcome: Purge): RunSays<number> =>
@@ -223,7 +225,7 @@ export const afterPurge = (outcome: Purge): RunSays<number> =>
 export const purgeResultOf = (purgedCount: number): string =>
   purgedCount === 0
     ? '消す添付ファイルはありませんでした。'
-    : `${purgedCount.toLocaleString('ja-JP')} 件の添付ファイルを、保存先のファイルと一緒に消しました。`
+    : `${inJapanese(formats.numberOf(purgedCount))} 件の添付ファイルを、保存先のファイルと一緒に消しました。`
 
 /** When an operation was run, with what it did */
 export const ranAtOf = (moment: string, result: string): string =>

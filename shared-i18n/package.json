@@ -16,6 +16,13 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./formats": {
+      "@beauty-salon-backend/source": "./src/formats/index.ts",
+      "@beauty-salon-frontend/source": "./src/formats/index.ts",
+      "types": "./dist/formats/index.d.ts",
+      "import": "./dist/formats/index.js",
+      "default": "./dist/formats/index.js"
+    },
     "./messages/api": {
       "@beauty-salon-backend/source": "./src/messages/api/index.ts",
       "types": "./dist/messages/api/index.d.ts",

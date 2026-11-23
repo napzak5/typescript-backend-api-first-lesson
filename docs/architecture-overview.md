@@ -121,7 +121,7 @@ shape the system, and why:
 │   ├── packages/            Shared packages, including the generated API client
 │   └── apps/                admin-app, portal-app, dashboard-app
 ├── shared-config/           Shared tsconfig files, the build of the packages, Biome plugins
-├── shared-i18n/             The languages, how one is chosen, and the messages (i18n)
+├── shared-i18n/             The languages, how one is chosen, how a value is written, and the messages (i18n)
 ├── scripts/                 Repository scripts, run with node
 ├── docs/
 ├── Dockerfile.backend, Dockerfile.frontend, docker-compose.yml

@@ -154,10 +154,10 @@ describe('contentTypeNameOf and isImage', () => {
 describe('sizeNameOf', () => {
   it.each<[number, string]>([
     [1, '1 バイト'],
-    [1023, '1023 バイト'],
+    [1023, '1,023 バイト'],
     [1024, '1 KB'],
     [348_160, '340 KB'],
-    [1_048_575, '1024 KB'],
+    [1_048_575, '1,024 KB'],
     [1_048_576, '1.0 MB'],
     [1_258_291, '1.2 MB'],
     [MEGABYTES_10, '10.0 MB'],

@@ -6,10 +6,12 @@ import {
   Card,
   DescriptionList,
   Dialog,
+  inJapanese,
   LoadingIndicator,
   Note,
   UnreadNotice,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 import {
   contentTypeNameOf,
@@ -119,7 +121,7 @@ export const AttachmentRecord = ({
           },
           {
             term: 'サイズ',
-            description: `${sizeNameOf(attachment.size)}（${attachment.size.toLocaleString('ja-JP')} バイト）`,
+            description: `${sizeNameOf(attachment.size)}（${inJapanese(formats.bytesOf(attachment.size))}）`,
           },
           { term: 'アップロードした人', description: uploaderName },
           {

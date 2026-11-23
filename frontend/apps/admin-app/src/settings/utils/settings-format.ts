@@ -7,6 +7,7 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { dayAt, dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { inJapanese, NOT_RECORDED } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { timeNameOf, WEEKDAYS } from '../../shifts/utils/shift-week'
 
 /*
@@ -28,11 +29,7 @@ const slotsNameOf = (slots: readonly ModelsTimeSlot[]): string =>
     .join('、')
 
 /** A day without its day of the week: 「2026年4月1日」. */
-const dateNameOf = (day: string): string =>
-  new Intl.DateTimeFormat('ja-JP', {
-    dateStyle: 'long',
-    timeZone: 'UTC',
-  }).format(new Date(`${day}T00:00:00Z`))
+const dateNameOf = (day: string): string => inJapanese(formats.dayOf(day))
 
 /** The days hours are kept in, at the clock of the salon: 「2026年4月1日から2026年9月30日まで」. */
 export const periodNameOf = (
@@ -139,4 +136,4 @@ export const ratingNameOf = (
 ): string =>
   rating === null
     ? 'まだありません'
-    : `${rating.toFixed(1)}（${reviewCount} 件のレビュー）`
+    : `${inJapanese(formats.numberOf(rating, { most: 1, least: 1 }))}（${reviewCount} 件のレビュー）`

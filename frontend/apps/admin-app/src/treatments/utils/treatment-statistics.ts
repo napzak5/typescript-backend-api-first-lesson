@@ -1,5 +1,7 @@
 import { isDay } from '@beauty-salon-frontend/fields'
 import { monthUntil, type Period } from '@beauty-salon-frontend/salon-screens'
+import { inJapanese } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 
 /*
  * The statistics of the treatment records of a salon: the days they are
@@ -26,8 +28,8 @@ export const statisticsPeriodIn = (
 /** How many records were counted: 「12 件」. */
 export const countNameOf = (count: number): string => `${count} 件`
 
-const MINUTES = new Intl.NumberFormat('ja-JP', { maximumFractionDigits: 1 })
-
 /** How long the treatments took on average: 「72.5 分」, or `null` when no time was recorded. */
 export const averageNameOf = (minutes: number | null): string | null =>
-  minutes === null ? null : `${MINUTES.format(minutes)} 分`
+  minutes === null
+    ? null
+    : `${inJapanese(formats.numberOf(minutes, { most: 1 }))} 分`

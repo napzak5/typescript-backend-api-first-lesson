@@ -56,6 +56,7 @@ describe('countNameOf', () => {
 describe('averageNameOf', () => {
   it.each<[number | null, string | null]>([
     [72.5, '72.5 分'],
+    [72.25, '72.3 分'],
     [80, '80 分'],
     [1234.5, '1,234.5 分'],
     [null, null],

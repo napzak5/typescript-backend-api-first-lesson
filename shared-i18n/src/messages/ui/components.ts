@@ -1,3 +1,4 @@
+import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
 
 /**
@@ -9,11 +10,14 @@ const counted = (
   one: string,
   many: string,
   counter: string,
-): LocalizedText =>
-  text({
-    en: `${count} ${count === 1 ? one : many}`,
-    ja: `${count} ${counter}`,
+): LocalizedText => {
+  const written = numberOf(count)
+
+  return text({
+    en: `${written.en} ${count === 1 ? one : many}`,
+    ja: `${written.ja} ${counter}`,
   })
+}
 
 /** What the shared components say by themselves, whatever the screen they are on. */
 export const uiMessages = {
@@ -50,7 +54,10 @@ export const uiMessages = {
     /** The button that opens the other conditions, with how many of them narrow the list */
     conditions: (narrowing: number) =>
       narrowing > 0
-        ? text({ en: `Filters (${narrowing})`, ja: `条件（${narrowing}）` })
+        ? text({
+            en: `Filters (${numberOf(narrowing).en})`,
+            ja: `条件（${numberOf(narrowing).ja}）`,
+          })
         : text({ en: 'Filters', ja: '条件' }),
     clear: text({ en: 'Clear filters', ja: '条件を外す' }),
   },
@@ -74,7 +81,7 @@ export const uiMessages = {
     /** How many there are, and how many of them are shown so far */
     shownOf: (whole: LocalizedText, count: number, shown: LocalizedText) =>
       text({
-        en: `${whole.en} (showing ${count})`,
+        en: `${whole.en} (showing ${numberOf(count).en})`,
         ja: `${whole.ja}（${shown.ja}を表示しています）`,
       }),
   },
@@ -108,14 +115,18 @@ export const uiMessages = {
     /** How many ratings a mean is the mean of */
     count: (count: number) =>
       text({
-        en: `(${count} ${count === 1 ? 'rating' : 'ratings'})`,
-        ja: `（${count} 件）`,
+        en: `(${numberOf(count).en} ${count === 1 ? 'rating' : 'ratings'})`,
+        ja: `（${numberOf(count).ja} 件）`,
       }),
     /** A rating as it is read out, in one piece with what it is out of */
-    outOf: (highest: number, rating: string, count: LocalizedText | null) =>
+    outOf: (
+      highest: number,
+      rating: LocalizedText,
+      count: LocalizedText | null,
+    ) =>
       text({
-        en: `${rating} out of ${highest}${count === null ? '' : ` ${count.en}`}`,
-        ja: `${highest} 段階中 ${rating}${count === null ? '' : count.ja}`,
+        en: `${rating.en} out of ${numberOf(highest).en}${count === null ? '' : ` ${count.en}`}`,
+        ja: `${numberOf(highest).ja} 段階中 ${rating.ja}${count === null ? '' : count.ja}`,
       }),
   },
 }

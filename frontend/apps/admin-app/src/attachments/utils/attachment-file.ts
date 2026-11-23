@@ -8,7 +8,9 @@ import {
   aboutTheAttempt,
   type FormErrors,
   type FormSays,
+  inJapanese,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 import type { AttachmentRemoval, Uploading } from '../api/attachments-api'
 
@@ -58,20 +60,9 @@ export const contentTypeNameOf = (
 export const isImage = (contentType: ModelsAttachmentContentType): boolean =>
   contentType !== 'application/pdf'
 
-const KILOBYTE = 1024
-const MEGABYTE = 1024 * 1024
-
 /** The size of a file in words: 「512 バイト」, 「340 KB」, 「1.2 MB」. */
-export const sizeNameOf = (size: number): string => {
-  if (size < KILOBYTE) {
-    return `${size} バイト`
-  }
-  if (size < MEGABYTE) {
-    return `${Math.round(size / KILOBYTE)} KB`
-  }
-
-  return `${(size / MEGABYTE).toFixed(1)} MB`
-}
+export const sizeNameOf = (size: number): string =>
+  inJapanese(formats.fileSizeOf(size))
 
 /**
  * The kind of a file by the ending of its name, in whatever case, after at
