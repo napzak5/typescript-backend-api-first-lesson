@@ -239,10 +239,13 @@ A text that is told in more than one language is a message of
 `ui/`, for what the shared parts of the screens say: the components of
 `ui`, the rules of `fields`, the reading of `answers`, the screens of
 `session`, the frame of `app-frame`, the screens of a salon of
-`salon-screens`, the preferences of `preferences`, and the words of the
-business in `terms.ts`: the names of the values of the enums of the
-contract; `portal/` and `dashboard/`, for what each of these applications
-says, a file for each of its areas),
+`salon-screens`, the preferences of `preferences`, the names of what the
+record of a customer holds in `customers.ts`, which the portal and the
+admin application say alike, and the words of the business in `terms.ts`:
+the names of the values of the enums of the contract; `portal/`,
+`dashboard/` and `admin/`, for what each of these applications says, a
+file for each of its areas; `written.ts`, for how the catalogues write a
+count, a list or sentences one after the other),
 written in every language with `text({ en, ja })`: one that lacks a language
 does not compile. The headline of a validation error and the message of a
 rule, of a schema or of a use case, are such messages, in the file of their
@@ -259,7 +262,7 @@ operation is a message of the file of its domain
 in it (a status, an ID) stands in every language as it is, and a string
 does not compile. Read [docs/i18n.md](docs/i18n.md) before
 adding one: it also says what is told in one language alone (the mails, the
-log, and the screens of the admin application).
+log, and the areas of the admin application that are not done yet).
 
 A page has one language, the one its visitor chose and Japanese without a
 choice (`languageStore` of `io`): every request says it to the API in
