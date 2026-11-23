@@ -18,17 +18,21 @@ import { isDay, LATEST_DAY } from '@beauty-salon-frontend/fields'
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
-import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match, P } from 'ts-pattern'
 import type { SaleRead } from '../../sales/api/sales-api'
 import type { CustomerRead } from '../api/customers-api'
+
+const { points: words } = adminCustomerMessages
+const { recorded, refusals } = words
 
 /*
  * The points of a customer: what a form records, what is said about the
@@ -56,37 +60,26 @@ export const pointKindsFor = (role: string): readonly PointKind[] =>
     ? ['earned', 'used', 'added', 'taken']
     : ['earned', 'used']
 
-const KIND_NAMES: Record<PointKind, string> = {
-  earned: 'ポイントを付与する',
-  used: '使ったポイントを記録する',
-  added: '調整で増やす',
-  taken: '調整で減らす',
-}
+const KIND_NAMES: Record<PointKind, LocalizedText> = words.kinds
 
 /** What a kind records, as the form offers it. */
-export const kindNameOf = (kind: PointKind): string => KIND_NAMES[kind]
+export const kindNameOf = (kind: PointKind): LocalizedText => KIND_NAMES[kind]
 
 /** The kind an address asks for: points used when it says so, points given otherwise. */
 export const pointKindIn = (search: URLSearchParams): PointKind =>
   search.get('kind') === 'used' ? 'used' : 'earned'
 
-const TRANSACTION_NAMES: Record<ModelsPointTransactionType, string> = {
-  earned: '付与',
-  used: '利用',
-  adjusted: '調整',
-  expired: '失効',
-  transferred: '統合による移行',
-}
+const TRANSACTION_NAMES: Record<ModelsPointTransactionType, LocalizedText> =
+  words.transactions
 
 /** What a transaction of the history was, in a word: 「付与」. */
-export const transactionNameOf = (type: ModelsPointTransactionType): string =>
-  TRANSACTION_NAMES[type]
-
-const format = (count: number): string => inJapanese(formats.numberOf(count))
+export const transactionNameOf = (
+  type: ModelsPointTransactionType,
+): LocalizedText => TRANSACTION_NAMES[type]
 
 /** How a transaction moved the balance, with its sign: 「+500」, 「−200」. */
-export const movementOf = (points: number): string =>
-  points < 0 ? `−${format(-points)}` : `+${format(points)}`
+export const movementOf = (points: number): LocalizedText =>
+  words.movementOf(points)
 
 /** The largest balance a customer may have, and the largest count of a transaction */
 const MOST_POINTS = 2_147_483_647
@@ -106,13 +99,13 @@ const pointsOf = (text: string): number | null | undefined => {
   return count >= 1 && count <= MOST_POINTS ? count : undefined
 }
 
-const KIND_ERROR = '記録することを選んでください。'
+const KIND_ERROR = words.form.kindMissing
 
-const POINTS_ERROR = `ポイント数は、1 から ${format(MOST_POINTS)} までの整数で入力してください。`
+const POINTS_ERROR = words.form.pointsError(MOST_POINTS)
 
-const EXPIRY_IN_THE_PAST = '有効期限は、今日以降の日付にしてください。'
+const EXPIRY_IN_THE_PAST = words.form.expiryInThePast
 
-const EXPIRY_ERROR = `有効期限は、今日から${inJapanese(formats.dayOf(LATEST_DAY))}までの日付で入力してください。`
+const EXPIRY_ERROR = words.form.expiryError(formats.dayOf(LATEST_DAY))
 
 /** The request a form makes, for the operation of its kind. */
 export type PointRecording =
@@ -144,7 +137,7 @@ const kindIn = (
 const expiryErrorOf = (
   expiryDate: string | null,
   today: string,
-): string | undefined => {
+): LocalizedText | undefined => {
   if (expiryDate === null) {
     return undefined
   }
@@ -163,7 +156,7 @@ const expiryErrorOf = (
 export const readPointRecording = (
   values: FormData,
   { customerId, kinds, today, offeredSale }: PointContext,
-): FormRead<PointRecording> => {
+): FormRead<PointRecording, FormErrors<LocalizedText>> => {
   const kind = kindIn(values, kinds)
   const saleId =
     offeredSale !== null && textOf(values, 'saleId') === offeredSale
@@ -258,8 +251,8 @@ export const whyRefused = (
 
 /** The sale the address names for the points, as the form offers it. */
 export type OfferedSale =
-  | { type: 'sale'; id: string; name: string }
-  | { type: 'unusable'; why: string }
+  | { type: 'sale'; id: string; name: LocalizedText }
+  | { type: 'unusable'; why: LocalizedText }
 
 /**
  * Whether the sale of the address can be what the points are recorded
@@ -275,37 +268,32 @@ export const offeredSaleOf = (
     .returnType<OfferedSale>()
     .with({ type: 'found' }, ({ sale }) => {
       if (sale.customerId === null) {
-        return {
-          type: 'unusable',
-          why: 'アドレスの売上は、お客様を記録していない売上です。売上に結びつけずに記録します。',
-        }
+        return { type: 'unusable', why: words.sale.noCustomer }
       }
       if (sale.customerId !== customerId) {
-        return {
-          type: 'unusable',
-          why: 'アドレスの売上は、ほかのお客様の売上です。売上に結びつけずに記録します。',
-        }
+        return { type: 'unusable', why: words.sale.otherCustomer }
       }
       if (sale.isVoid) {
-        return {
-          type: 'unusable',
-          why: 'アドレスの売上は取り消されています。取り消した売上には、ポイントを付与も利用もできないため、売上に結びつけずに記録します。',
-        }
+        return { type: 'unusable', why: words.sale.voided }
       }
 
       return {
         type: 'sale',
         id: sale.id,
-        name: `売上番号 ${sale.saleNumber}（${inJapanese(momentNameAt(sale.saleTime, timezone))}、${inJapanese(amountOf(sale.totalAmount, currency))}）`,
+        name: words.sale.nameOf(
+          sale.saleNumber,
+          momentNameAt(sale.saleTime, timezone),
+          amountOf(sale.totalAmount, currency),
+        ),
       }
     })
     .with({ type: P.union('notFound', 'forbidden') }, () => ({
       type: 'unusable',
-      why: 'アドレスの売上が見つかりません。売上に結びつけずに記録します。',
+      why: words.sale.notFound,
     }))
     .with({ type: P.union(...UNREAD_TYPES) }, () => ({
       type: 'unusable',
-      why: 'アドレスの売上を読み込めませんでした。売上に結びつけるときは、読み込み直してください。',
+      why: words.sale.unread,
     }))
     .exhaustive()
 
@@ -322,16 +310,15 @@ export type PointSays =
   /** The points were recorded: the notification says what, and the balance */
   | {
       type: 'done'
-      message: string
+      message: LocalizedText
       /** What the points left the customer with */
       balance: number
     }
-  | { type: 'again'; message: string | undefined; errors: FormSays['errors'] }
+  | ({ type: 'again' } & FormSays<LocalizedText>)
   /** The customer is not in the ledger any more */
   | { type: 'gone' }
 
-const RECORD_AGAIN =
-  'ポイントを記録できませんでした。通信の状態を確かめて、もう一度お試しください。'
+const RECORD_AGAIN = refusals.failed
 
 /** What the notification says of recorded points: what moved, and the balance after it. */
 export const recordedMessageOf = ({
@@ -341,56 +328,45 @@ export const recordedMessageOf = ({
 }: Pick<
   ModelsPointTransactionResponse,
   'transactionType' | 'points' | 'balance'
->): string => {
-  const moved = inJapanese(customerMessages.pointsOf(Math.abs(points)))
+>): LocalizedText => {
+  const moved = Math.abs(points)
   const done = match(transactionType)
-    .with('earned', () => `${moved}を付与しました。`)
-    .with('used', () => `${moved}を使いました。`)
+    .returnType<LocalizedText>()
+    .with('earned', () => recorded.earned(moved))
+    .with('used', () => recorded.used(moved))
     .with('adjusted', () =>
-      points > 0
-        ? `調整で${moved}増やしました。`
-        : `調整で${moved}減らしました。`,
+      points > 0 ? recorded.added(moved) : recorded.taken(moved),
     )
-    .with(P.union('expired', 'transferred'), () => 'ポイントを記録しました。')
+    .with(P.union('expired', 'transferred'), () => recorded.other)
     .exhaustive()
 
-  return `${done}残高は ${inJapanese(customerMessages.pointsOf(balance))}です。`
+  return recorded.withBalance(done, balance)
 }
 
 /** What is said of a refusal: at the count when it is the count that does not fit the balance. */
-const refusalSays = (why: PointRefusal): FormSays =>
+const refusalSays = (why: PointRefusal): FormSays<LocalizedText> =>
   match(why)
-    .returnType<FormSays>()
-    .with({ type: 'voidSale' }, () =>
-      aboutTheAttempt('取り消した売上には、ポイントを付与も利用もできません。'),
-    )
+    .returnType<FormSays<LocalizedText>>()
+    .with({ type: 'voidSale' }, () => aboutTheAttempt(refusals.voidSale))
     .with({ type: 'short' }, ({ balance }) => ({
       message: undefined,
-      errors: {
-        points: `残高（${inJapanese(customerMessages.pointsOf(balance))}）より多くは減らせません。`,
-      },
+      errors: { points: refusals.short(balance) },
     }))
     .with({ type: 'over' }, () => ({
       message: undefined,
-      errors: {
-        points: `残高が上限（${inJapanese(customerMessages.pointsOf(MOST_POINTS))}）を超えるため、記録できません。`,
-      },
+      errors: { points: refusals.over(MOST_POINTS) },
     }))
     .with({ type: 'recordedAlready', recording: 'earn' }, () =>
-      aboutTheAttempt(
-        'この売上には、もうポイントを付与しています。ポイントの履歴をお確かめください。',
-      ),
+      aboutTheAttempt(refusals.earnedAlready),
     )
     .with({ type: 'recordedAlready', recording: 'use' }, () =>
-      aboutTheAttempt(
-        'この売上には、もう使ったポイントを記録しています。ポイントの履歴をお確かめください。',
-      ),
+      aboutTheAttempt(refusals.usedAlready),
     )
     .with({ type: 'unknown' }, () => aboutTheAttempt(RECORD_AGAIN))
     .exhaustive()
 
 /** What is said at a control of a value the API refused. */
-const messageAt = ({ field, rule }: RefusedValue): string =>
+const messageAt = ({ field, rule }: RefusedValue): LocalizedText =>
   match([field, rule])
     .with(['expiryDate', 'too_small'], () => EXPIRY_IN_THE_PAST)
     .with(['expiryDate', P._], () => EXPIRY_ERROR)
@@ -414,8 +390,7 @@ export const afterRecording = (outcome: PointAttempt): PointSays =>
       if (values.some(({ field }) => field === 'referenceId')) {
         return {
           type: 'again',
-          message:
-            'この売上は、このお客様の売上として見つかりません。売上に結びつけるチェックを外して、もう一度お試しください。',
+          message: refusals.saleOfAnother,
           errors: {},
         }
       }
@@ -439,13 +414,12 @@ export const afterRecording = (outcome: PointAttempt): PointSays =>
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message:
-        'このアカウントでは、このポイントを記録できません。ポイントの調整は、オーナーとマネージャーができます。',
+      message: refusals.forbidden,
       errors: {},
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      ...aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      ...aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

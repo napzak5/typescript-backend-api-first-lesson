@@ -4,13 +4,17 @@ import type {
   ModelsCustomerResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
-  aboutTheAttempt,
+  type FormErrors,
   type FormRead,
-  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { customerNameOf } from '../api/customers-api'
+import { TAG_SEPARATORS } from './customer-ledger'
+
+const { bulk: words, refusals } = adminCustomerMessages
 
 /*
  * What is done at once to the customers chosen in the ledger: a tag given
@@ -50,18 +54,17 @@ export type TagChange = { way: TagWay; tag: string }
 export const TAG_WAY = 'way'
 export const TAG = 'tag'
 
-/** The characters the form of a customer separates tags with */
-const SEPARATORS = /[,、，]/
-
 /** The change of tags of the dialog: one tag, without the characters that separate tags. */
-export const readTagChange = (values: FormData): FormRead<TagChange> => {
+export const readTagChange = (
+  values: FormData,
+): FormRead<TagChange, FormErrors<LocalizedText>> => {
   const tag = textOf(values, TAG).trim()
   const error = match(tag)
-    .returnType<string | undefined>()
-    .with('', () => 'タグを入力してください。')
+    .returnType<LocalizedText | undefined>()
+    .with('', () => words.tag.missing)
     .when(
-      (text) => SEPARATORS.test(text),
-      () => 'タグは 1 つずつ入力してください。「、」とカンマは使えません。',
+      (text) => TAG_SEPARATORS.test(text),
+      () => words.tag.oneAtATime,
     )
     .otherwise(() => undefined)
 
@@ -123,27 +126,18 @@ export type RemovalAttempt =
 /** What the ledger says after a write of the chosen customers */
 export type BulkSays =
   /** It was done: the notification, and whether the choice is over */
-  | { type: 'done'; message: string; clear: boolean }
+  | { type: 'done'; message: LocalizedText; clear: boolean }
   /** It was not done: what the dialog says */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /** Some chosen customers left the ledger: they leave the choice, and the ledger is read again */
-  | { type: 'gone'; message: string; ids: string[] }
+  | { type: 'gone'; message: LocalizedText; ids: string[] }
 
-/** The chosen customers that are named: 「山田 花子 様、鈴木 一郎 様」. */
-const namesOf = (chosen: Chosen, ids: readonly string[]): string =>
-  ids
-    .flatMap((id) => {
-      const customer = chosen.get(id)
-      return customer === undefined ? [] : [`${customerNameOf(customer)} 様`]
-    })
-    .join('、')
-
-const goneMessageOf = (
-  chosen: Chosen,
-  ids: readonly string[],
-  untouched: string,
-): string =>
-  `選んだお客様のうち、${namesOf(chosen, ids)}は、もう台帳にいません。そのお客様を選ぶのをやめ、台帳を読み直しました。${untouched}`
+/** The names of the chosen customers of the IDs: 「山田 花子」. */
+const namesOf = (chosen: Chosen, ids: readonly string[]): string[] =>
+  ids.flatMap((id) => {
+    const customer = chosen.get(id)
+    return customer === undefined ? [] : [customerNameOf(customer)]
+  })
 
 /** What the ledger says after the tag of the chosen customers was changed, or not. */
 export const afterRetagging = (
@@ -157,36 +151,34 @@ export const afterRetagging = (
       type: 'done',
       message:
         way === 'add'
-          ? `${count} 人にタグ「${tag}」を付けました。`
-          : `${count} 人からタグ「${tag}」を外しました。`,
+          ? words.retagging.added(count, tag)
+          : words.retagging.removed(count, tag),
       clear: false,
     }))
     .with({ type: 'unchanged' }, () => ({
       type: 'done',
       message:
         way === 'add'
-          ? `選んだお客様には、もうタグ「${tag}」が付いています。`
-          : `選んだお客様に、タグ「${tag}」の付いた人はいません。`,
+          ? words.retagging.addedAlready(tag)
+          : words.retagging.noneHave(tag),
       clear: false,
     }))
     .with({ type: 'gone' }, ({ ids }) => ({
       type: 'gone',
-      message: goneMessageOf(chosen, ids, 'だれのタグも変えていません。'),
+      message: words.gone(namesOf(chosen, ids), words.retagging.unchanged),
       ids,
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message: 'このアカウントでは、顧客台帳を扱えません。',
+      message: refusals.cannotHandle,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)).message ?? '',
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        'タグを変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: words.retagging.failed,
     }))
     .exhaustive()
 
@@ -199,38 +191,33 @@ export const afterRemoval = (
     .returnType<BulkSays>()
     .with({ type: 'removed' }, ({ count }) => ({
       type: 'done',
-      message: `${count} 人を台帳から削除しました。`,
+      message: words.removing.removed(count),
       clear: true,
     }))
     .with({ type: 'unfinished' }, ({ id }) => {
       const customer = id === undefined ? undefined : chosen.get(id)
       return {
         type: 'again',
-        message: `${
-          customer === undefined
-            ? '選んだお客様のなかに、終わっていない予約のあるお客様がいます。'
-            : `${customerNameOf(customer)} 様には、終わっていない予約があります。`
-        }予約を完了、キャンセル、または削除してから、もう一度お試しください。だれも削除していません。`,
+        message: words.removing.unfinished(
+          customer === undefined ? undefined : customerNameOf(customer),
+        ),
       }
     })
     .with({ type: 'gone' }, ({ ids }) => ({
       type: 'gone',
-      message: goneMessageOf(chosen, ids, 'だれも削除していません。'),
+      message: words.gone(namesOf(chosen, ids), words.removing.nobodyRemoved),
       ids,
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message:
-        'このアカウントでは、お客様を台帳から削除できません。台帳からの削除は、オーナーとマネージャーができます。',
+      message: words.removing.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message:
-        aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)).message ?? '',
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        '台帳から削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: words.removing.failed,
     }))
     .exhaustive()

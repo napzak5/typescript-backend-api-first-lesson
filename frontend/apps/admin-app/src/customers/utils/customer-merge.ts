@@ -8,12 +8,14 @@ import type {
   ModelsCustomerResponse,
   ModelsMedicalChartResponse,
 } from '@beauty-salon-frontend/api-client'
-import { inJapanese, same } from '@beauty-salon-frontend/ui'
-import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import { same } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { customerNameOf } from '../api/customers-api'
 import type { LedgerValues } from '../components/customer-record/ledger-items'
-import { KEPT_BY_OTHERS } from './customer-history'
+
+const { merge: words } = adminCustomerMessages
 
 /*
  * Two records of one customer made one: the customer that is kept (the
@@ -32,13 +34,10 @@ export const MERGE_WAYS: readonly MergeWay[] = [
   'keep_newest',
 ]
 
+const WAY_NAMES: Record<MergeWay, LocalizedText> = words.ways
+
 /** How a way is offered. */
-export const mergeWayNameOf = (way: MergeWay): string =>
-  match(way)
-    .with('keep_primary', () => '残すお客様の値')
-    .with('keep_secondary', () => 'まとめるお客様の値')
-    .with('keep_newest', () => 'あとから台帳を直したほうの値')
-    .exhaustive()
+export const mergeWayNameOf = (way: MergeWay): LocalizedText => WAY_NAMES[way]
 
 /** The value of a radio button that is a way; `undefined` for any other */
 export const mergeWayIn = (value: string | null): MergeWay | undefined =>
@@ -52,8 +51,10 @@ export const whoIs = ({
   lastName,
   firstName,
   email,
-}: Pick<ModelsCustomerResponse, 'lastName' | 'firstName' | 'email'>): string =>
-  `${customerNameOf({ lastName, firstName })} 様（${email}）`
+}: Pick<
+  ModelsCustomerResponse,
+  'lastName' | 'firstName' | 'email'
+>): LocalizedText => words.whoIs(customerNameOf({ lastName, firstName }), email)
 
 /** The two customers of a merge: the one kept, and the one merged into it */
 export type MergePair = {
@@ -171,10 +172,10 @@ const CHART_LISTS: readonly ChartList[] = [
   'avoidProducts',
 ]
 
-const CHART_LIST_NAMES: Record<ChartList, string> = {
-  previousTreatments: '施術歴',
-  preferredProducts: '使いたい製品',
-  avoidProducts: '避けたい製品',
+const CHART_LIST_NAMES: Record<ChartList, LocalizedText> = {
+  previousTreatments: words.names.previousTreatments,
+  preferredProducts: words.names.preferredProducts,
+  avoidProducts: words.names.avoidProducts,
 }
 
 /** How many entries a list has once both are put together: those of one, then those of the other it does not have. */
@@ -201,7 +202,7 @@ export type MergeObstacle =
   /** Both are the profiles of accounts, which cannot be made one */
   | { type: 'accounts' }
   /** The customer asked for their data to be erased: who they are */
-  | { type: 'erasureAsked'; who: string }
+  | { type: 'erasureAsked'; who: LocalizedText }
   /** The points of both are more than a balance holds */
   | { type: 'points'; total: number }
   /** A list of both charts holds more than a chart does */
@@ -244,27 +245,18 @@ export const mergeObstaclesOf = (
 }
 
 /** Why two customers cannot be merged, in a sentence. */
-export const obstacleTextOf = (obstacle: MergeObstacle): string =>
+export const obstacleTextOf = (obstacle: MergeObstacle): LocalizedText =>
   match(obstacle)
-    .with(
-      { type: 'accounts' },
-      () =>
-        '2 人とも、ご自分のアカウントでサインインしているお客様です。アカウントは 1 つにまとめられないため、まとめられません。',
+    .returnType<LocalizedText>()
+    .with({ type: 'accounts' }, () => words.obstacles.accounts)
+    .with({ type: 'erasureAsked' }, ({ who }) =>
+      words.obstacles.erasureAsked(who),
     )
-    .with(
-      { type: 'erasureAsked' },
-      ({ who }) =>
-        `${who}から、データの削除の依頼を受け付けています。依頼を取り消してから、まとめてください。`,
+    .with({ type: 'points' }, ({ total }) =>
+      words.obstacles.points(total, LARGEST_BALANCE),
     )
-    .with(
-      { type: 'points' },
-      ({ total }) =>
-        `2 人のポイントを合わせると ${inJapanese(customerMessages.pointsOf(total))}になり、1 人が持てる ${inJapanese(customerMessages.pointsOf(LARGEST_BALANCE))}を超えます。`,
-    )
-    .with(
-      { type: 'chart' },
-      ({ list }) =>
-        `2 人のカルテを合わせると、${CHART_LIST_NAMES[list]}が ${MOST_LISTED} 件を超えます。どちらかのカルテを短くしてから、まとめてください。`,
+    .with({ type: 'chart' }, ({ list }) =>
+      words.obstacles.chart(CHART_LIST_NAMES[list], MOST_LISTED),
     )
     .exhaustive()
 
@@ -285,11 +277,11 @@ export type MergeAttempt =
 /** What follows an attempt to merge two customers */
 export type MergeSays =
   /** The two are one: the page of the primary shows them */
-  | { type: 'done'; customer: ModelsCustomerResponse; message: string }
+  | { type: 'done'; customer: ModelsCustomerResponse; message: LocalizedText }
   /** Nothing was done, and nothing is known to have changed: said in the dialog */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /** Nothing was done, and the two are read again: the dialog closes, and the page says why */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: LocalizedText }
 
 export const afterMerge = (
   outcome: MergeAttempt,
@@ -303,33 +295,29 @@ export const afterMerge = (
     .with({ type: 'merged' }, ({ customer }) => ({
       type: 'done',
       customer,
-      message: `2 人のお客様を、${customerNameOf(pair.primary)} 様にまとめました。`,
+      message: words.done(customerNameOf(pair.primary)),
     }))
     .with({ type: 'gone' }, ({ sides }) => ({
       type: 'refused',
-      message: `${sides
-        .map((side) => (side === 'primary' ? primary : secondary))
-        .join(
-          'と',
-        )}は、もう台帳にいません。ほかの画面で、台帳から削除されたか、ほかのお客様にまとめられました。`,
+      message: words.gone(
+        sides.map((side) => (side === 'primary' ? primary : secondary)),
+      ),
     }))
     .with({ type: 'refused' }, () => ({
       type: 'refused',
-      message:
-        'その間に 2 人の記録が変わったため、まとめられませんでした。2 人の記録を読み直しました。',
+      message: words.refused,
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: `このアカウントでは、お客様をまとめられません。${inJapanese(KEPT_BY_OTHERS)}`,
+      message: words.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        'お客様をまとめられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: words.failed,
     }))
     .exhaustive()
 }

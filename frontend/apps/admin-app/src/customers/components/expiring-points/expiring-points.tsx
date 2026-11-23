@@ -1,9 +1,12 @@
 import type { ModelsPointExpiringResponse } from '@beauty-salon-frontend/api-client'
 import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { Card, inJapanese, Table } from '@beauty-salon-frontend/ui'
+import { Card, Table, useSay } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { transactionNameOf } from '../../utils/points'
 import styles from './expiring-points.module.css'
+
+const { expiring: words } = adminCustomerMessages.points
 
 export type ExpiringPointsProps = {
   /** The points that expire within the days, as the API counted them */
@@ -27,64 +30,71 @@ export const ExpiringPoints = ({
   today,
   timezone,
 }: ExpiringPointsProps) => {
+  const say = useSay()
   const anyPast = expiring.transactions.some(
     ({ expiryDate }) => expiryDate !== null && expiryDate < today,
   )
 
   return (
-    <Card title='期限が近いポイント'>
+    <Card title={say(words.title)}>
       {expiring.expirationDate === null ? (
-        <p>{`${days} 日以内に期限が来るポイントはありません。`}</p>
+        <p>{say(words.noneWithin(days))}</p>
       ) : (
         <div className={styles['expiring']}>
           <p>
-            {`${days} 日以内に期限が来るポイントは、${inJapanese(customerMessages.pointsOf(expiring.expiringPoints))}です。最も早い期限は、${inJapanese(dayNameOf(expiring.expirationDate))}です。`}
+            {say(
+              words.within(
+                days,
+                expiring.expiringPoints,
+                dayNameOf(expiring.expirationDate),
+              ),
+            )}
           </p>
-          {anyPast && <p>期限を過ぎたポイントも、失効させるまでは使えます。</p>}
+          {anyPast && <p>{say(words.pastUsable)}</p>}
           <Table
-            caption='期限が近いポイントの内訳'
+            caption={say(words.breakdown)}
             captionHidden
             columns={[
               {
                 key: 'expiryDate',
-                header: '有効期限',
+                header: say(words.expiryDate),
                 cell: ({ expiryDate }) =>
                   expiryDate === null
                     ? ''
-                    : `${inJapanese(dayNameOf(expiryDate))}${expiryDate < today ? '（期限切れ）' : ''}`,
+                    : say(
+                        expiryDate < today
+                          ? words.expired(dayNameOf(expiryDate))
+                          : dayNameOf(expiryDate),
+                      ),
               },
               {
                 key: 'transactionType',
-                header: '種類',
+                header: say(words.kind),
                 cell: ({ transactionType }) =>
-                  transactionNameOf(transactionType),
+                  say(transactionNameOf(transactionType)),
               },
               {
                 key: 'points',
-                header: 'ポイント',
-                cell: ({ points }) =>
-                  inJapanese(customerMessages.pointsOf(points)),
+                header: say(words.points),
+                cell: ({ points }) => say(customerMessages.pointsOf(points)),
                 align: 'end',
               },
               {
                 key: 'createdAt',
-                header: '日時',
-                cell: ({ createdAt }) =>
-                  inJapanese(momentNameAt(createdAt, timezone)),
+                header: say(words.moment),
+                cell: ({ createdAt }) => say(momentNameAt(createdAt, timezone)),
               },
               {
                 key: 'description',
-                header: '説明',
+                header: say(words.description),
                 cell: ({ description }) => description,
               },
             ]}
             rows={expiring.transactions}
             rowKey={({ id }) => id}
-            emptyMessage='期限が近いポイントはありません'
+            emptyMessage={say(words.empty)}
           />
-          <p>
-            表のポイントは、付与したとき（統合で移したとき）の数で、使われずに残っている数ではありません。
-          </p>
+          <p>{say(words.asGiven)}</p>
         </div>
       )}
     </Card>

@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
@@ -8,6 +9,7 @@ import {
 } from '@beauty-salon-frontend/testing/api'
 import {
   address,
+  columnsOf,
   firstSight,
   heading,
   notifications,
@@ -22,6 +24,7 @@ import {
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
 import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -84,10 +87,14 @@ const text = (name: string): HTMLElement =>
   screen.getByRole('textbox', { name })
 
 /** Opens a page of the salon in Tokyo at its address, signed in. */
-const openAt = async (path: (tokyo: string) => string, email = STYLIST) => {
+const openAt = async (
+  path: (tokyo: string) => string,
+  email = STYLIST,
+  language: Locale = 'ja',
+) => {
   const tokyo = await salonIdOf(TOKYO)
   renderAt(path(tokyo))
-  await signInAs(email)
+  await signInAs(email, language)
 
   return tokyo
 }
@@ -693,5 +700,182 @@ describe('the points of customers, against the API', () => {
       await screen.findByRole('region', { name: 'レシート' })
       expect(screen.queryByRole('region', { name: 'ポイント' })).toBeNull()
     })
+  })
+})
+
+describe('the points of customers on a page in English, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should show the balance, the points that expire soon and the history with the record each was made for, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const saleId = await aSaleOfYuki('0701')
+    const bookingId = await arrange({
+      bookingNumber: 'BK-TEST-0702',
+      day: -10,
+      at: '10:00',
+      status: 'completed',
+    })
+    await arrangePoints(YUKI.email, [
+      {
+        type: 'earned',
+        points: 300,
+        daysAgo: 35,
+        description: 'Thanks for a referral',
+        expiresIn: -1,
+      },
+      {
+        type: 'earned',
+        points: 500,
+        daysAgo: 20,
+        expiresIn: 10,
+        reference: { type: 'sale', id: saleId },
+      },
+      {
+        type: 'used',
+        points: -200,
+        daysAgo: 10,
+        reference: { type: 'booking', id: bookingId },
+      },
+    ])
+    const yuki = await customerIdOf(YUKI.email)
+    await openAt((salon) => `/salons/${salon}/customers/${yuki}`, STYLIST, 'en')
+    await heading('Customer record')
+
+    // Act
+    await user.click(
+      within(
+        await screen.findByRole('region', { name: 'Visits and points' }),
+      ).getByRole('link', { name: 'Point history' }),
+    )
+
+    // Assert
+    await heading('Points')
+    expect(
+      await screen.findByRole('region', { name: 'Balance' }),
+    ).toHaveTextContent('3,100 points')
+    const yesterday = dayNameOf(await dayFromToday(-1)).en
+    const soon = dayNameOf(await dayFromToday(10)).en
+    const expiring = await screen.findByRole('region', {
+      name: 'Points expiring soon',
+    })
+    expect(expiring).toHaveTextContent(
+      `Points expiring within 30 days: 600 points. The earliest expiry date is ${yesterday}.`,
+    )
+    expect(
+      rowsOf('Breakdown of the points expiring soon').map(
+        ([day, kind, points]) => [day, kind, points],
+      ),
+    ).toEqual([
+      [`${yesterday} (expired)`, 'Given', '300 points'],
+      [soon, 'Given', '500 points'],
+    ])
+    await screen.findByRole('table', { name: 'Point history' })
+    expect(
+      await screen.findByRole('link', { name: 'Sale SL-TEST-0701' }),
+    ).toBeVisible()
+    expect(
+      await screen.findByRole('link', { name: 'Booking BK-TEST-0702' }),
+    ).toBeVisible()
+    expect(columnsOf('Point history')).toEqual([
+      'Date and time',
+      'Kind',
+      'Change',
+      'Balance',
+      'Expiry date',
+      'Recorded for',
+      'Description',
+    ])
+    expect(rowsOf('Point history').map(([, ...rest]) => rest)).toEqual([
+      [
+        'Used',
+        '−200',
+        '3,100 points',
+        '',
+        'Booking BK-TEST-0702',
+        'Not recorded',
+      ],
+      [
+        'Given',
+        '+500',
+        '3,300 points',
+        soon,
+        'Sale SL-TEST-0701',
+        'Not recorded',
+      ],
+      ['Given', '+300', '2,800 points', yesterday, '', 'Thanks for a referral'],
+      ['Adjusted', '+2,500', '2,500 points', '', '', 'ポイント台帳の開始残高'],
+    ])
+    expect(
+      screen.getByRole('link', { name: 'Back to the customer' }),
+    ).toBeVisible()
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+
+  it('should record points in English and say so with the balance', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const yuki = await customerIdOf(YUKI.email)
+    await openAt(
+      (salon) => `/salons/${salon}/customers/${yuki}/points/new`,
+      STYLIST,
+      'en',
+    )
+    await heading('Record points')
+    expect(
+      await screen.findByRole('radio', { name: 'Give points' }),
+    ).toBeChecked()
+    expect(text('Points')).toHaveAccessibleDescription(
+      'Enter a whole number of 1 or more. To take points away, enter how many to take away. The balance is now 2,500 points.',
+    )
+    await user.type(text('Points'), '500')
+    await user.type(text('Description'), 'Birthday points')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Record' }))
+
+    // Assert
+    await heading('Points')
+    expect(notifications()).toContain(
+      'Gave 500 points. The balance is now 3,000 points.',
+    )
+    expect(await storedBalanceOf(YUKI.email)).toBe(3000)
+  })
+
+  it('should say in English at the count that no more points can be used than the balance', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const kenji = await customerIdOf(KENJI.email)
+    await openAt(
+      (salon) => `/salons/${salon}/customers/${kenji}/points/new?kind=used`,
+      STYLIST,
+      'en',
+    )
+    await heading('Record points')
+    await screen.findByRole('radiogroup', { name: 'What to record' })
+    await user.type(text('Points'), '1000')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Record' }))
+
+    // Assert
+    await vi.waitFor(() =>
+      expect(text('Points')).toHaveAccessibleDescription(
+        expect.stringContaining(
+          'You cannot take away more than the balance (800 points).',
+        ),
+      ),
+    )
+    expect(text('Points')).toBeInvalid()
+    expect(await storedBalanceOf(KENJI.email)).toBe(800)
   })
 })

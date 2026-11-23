@@ -169,9 +169,7 @@ test.describe('writing customers at once, in a browser', () => {
 /**
  * The pages a screen reads a sentence of the API on: the API answers in
  * the language of the page, and the screen finds what it looks for in the
- * sentence of either. The ledger says its texts in the language of the
- * page; the screens of a file and of the customers written at once are
- * written in Japanese alone yet.
+ * sentence of either, and says what it found in the language of the page.
  */
 const PAGES: { language: Language; open: (page: Page) => Promise<void> }[] = [
   // Japanese is the language of a page whose visitor chose none
@@ -183,6 +181,57 @@ const PAGES: { language: Language; open: (page: Page) => Promise<void> }[] = [
 const TAKEN: Record<Language, (email: string) => string> = {
   ja: (email) => `email が ${email} の顧客は、すでにあります`,
   en: (email) => `Customer with email ${email} already exists`,
+}
+
+/** What the screen of a file says, in the language of the page */
+const IMPORT: Record<
+  Language,
+  {
+    title: string
+    file: string
+    register: (count: number) => string
+    row: string
+    taken: string
+  }
+> = {
+  ja: {
+    title: 'CSV から登録する',
+    file: 'CSV ファイル',
+    register: (count) => `${count} 人を登録する`,
+    row: '3 行目 メールアドレス',
+    taken: 'このメールアドレスのお客様が、もう台帳にいます。',
+  },
+  en: {
+    title: 'Register from a CSV file',
+    file: 'CSV file',
+    register: (count) => `Register ${count} customers`,
+    row: 'Row 3, Email address',
+    taken: 'A customer with this email address is already in the ledger.',
+  },
+}
+
+/** What the ledger says of the removal of the chosen customers, in the language of the page */
+const REMOVAL: Record<
+  Language,
+  {
+    remove: string
+    title: string
+    confirm: string
+    unfinished: (name: string) => string
+  }
+> = {
+  ja: {
+    remove: '台帳から削除する',
+    title: '1 人のお客様を台帳から削除しますか？',
+    confirm: '削除する',
+    unfinished: (name) => `${name} 様には、終わっていない予約があります。`,
+  },
+  en: {
+    remove: 'Remove from the ledger',
+    title: 'Remove 1 customer from the ledger?',
+    confirm: 'Remove',
+    unfinished: (name) => `${name} has bookings that are not finished.`,
+  },
 }
 
 /** What the API says of a customer whose booking is not finished */
@@ -200,13 +249,14 @@ for (const { language, open } of PAGES) {
       api,
     }) => {
       // Arrange
+      const says = IMPORT[language]
       await open(page)
       const salon = await salonId(api)
       await page.goto(`${ADMIN.origin}/salons/${salon}/customers/import`)
       await enterCredentials(page, OWNER, api.seedPassword, language)
-      await expect(heading(page, 'CSV から登録する')).toBeFocused()
+      await expect(heading(page, says.title)).toBeFocused()
       await page
-        .getByLabel('CSV ファイル')
+        .getByLabel(says.file)
         .setInputFiles(
           fileOf([
             'lastName,firstName,email,phoneNumber',
@@ -221,7 +271,7 @@ for (const { language, open } of PAGES) {
       )
 
       // Act
-      await page.getByRole('button', { name: '2 人を登録する' }).click()
+      await page.getByRole('button', { name: says.register(2) }).click()
 
       // Assert
       const answer = await answered
@@ -231,10 +281,8 @@ for (const { language, open } of PAGES) {
         detail: TAKEN[language](YUKI.email),
       })
       const refusal = page.getByRole('alert')
-      await expect(refusal).toContainText('3 行目 メールアドレス')
-      await expect(refusal).toContainText(
-        'このメールアドレスのお客様が、もう台帳にいます。',
-      )
+      await expect(refusal).toContainText(says.row)
+      await expect(refusal).toContainText(says.taken)
       expect(await storedCustomers(api)).toEqual([])
     })
   })
@@ -245,6 +293,7 @@ for (const { language, open } of PAGES) {
       api,
     }) => {
       // Arrange
+      const says = REMOVAL[language]
       await open(page)
       const salon = await salonId(api)
       const [yuki] = idsSchema.parse(
@@ -256,10 +305,8 @@ for (const { language, open } of PAGES) {
       await enterCredentials(page, OWNER, api.seedPassword, language)
       await expect(heading(page, LEDGER[language])).toBeFocused()
       await chooseCustomer(page, YUKI.name, language)
-      await page.getByRole('button', { name: '台帳から削除する' }).click()
-      const removal = page.getByRole('dialog', {
-        name: '1 人のお客様を台帳から削除しますか？',
-      })
+      await page.getByRole('button', { name: says.remove }).click()
+      const removal = page.getByRole('dialog', { name: says.title })
       const answered = page.waitForResponse(
         (response) =>
           response.request().method() === 'DELETE' &&
@@ -267,7 +314,7 @@ for (const { language, open } of PAGES) {
       )
 
       // Act
-      await removal.getByRole('button', { name: '削除する' }).click()
+      await removal.getByRole('button', { name: says.confirm }).click()
 
       // Assert
       const answer = await answered
@@ -276,9 +323,7 @@ for (const { language, open } of PAGES) {
       expect(await answer.json()).toMatchObject({
         detail: UNFINISHED[language](yuki?.id ?? ''),
       })
-      await expect(removal).toContainText(
-        `${YUKI.name} 様には、終わっていない予約があります。`,
-      )
+      await expect(removal).toContainText(says.unfinished(YUKI.name))
       await expect(
         page.getByRole('checkbox', { name: CHOICE[language](YUKI.name) }),
       ).toBeChecked()

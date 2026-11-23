@@ -3,9 +3,13 @@ import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   Card,
+  type FormErrors,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -29,12 +33,14 @@ import {
   textOfFile,
 } from '../utils/customer-file'
 
-const TITLE = 'CSV から登録する'
+const { file: words } = adminCustomerMessages
+
+const TITLE = words.title
 
 /** What the screen says after an attempt */
 type Said = {
-  message: string | undefined
-  errors: Record<string, string>
+  message: LocalizedText | undefined
+  errors: FormErrors<LocalizedText>
   refused: readonly FileProblem[]
 }
 
@@ -43,14 +49,7 @@ const NOTHING_SAID: Said = { message: undefined, errors: {}, refused: [] }
 /** A file the browser could not read: moved or removed after it was chosen */
 const UNREADABLE: CustomerFileRead = {
   type: 'invalid',
-  problems: [
-    {
-      row: null,
-      column: null,
-      message:
-        'ファイルを読み込めませんでした。もう一度、ファイルを選んでください。',
-    },
-  ],
+  problems: [{ row: null, column: null, message: words.problems.unreadable }],
 }
 
 type CustomerImportProps = {
@@ -67,6 +66,7 @@ const CustomerImport = ({ salon }: CustomerImportProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
+  const say = useSay()
   const [chosen, setChosen] = useState<ChosenFile | undefined>(undefined)
   const [said, setSaid] = useState<Said>(NOTHING_SAID)
   // The file chosen last: one read after it was replaced is not shown
@@ -117,10 +117,7 @@ const CustomerImport = ({ salon }: CustomerImportProps) => {
       .with({ type: 'read', read: { type: 'invalid' } }, () =>
         setSaid({
           message: undefined,
-          errors: {
-            [FILE]:
-              'ファイルに誤りがあります。下の一覧を確かめて、直したファイルを選び直してください。',
-          },
+          errors: { [FILE]: words.form.fileWrong },
           refused: [],
         }),
       )
@@ -128,7 +125,7 @@ const CustomerImport = ({ salon }: CustomerImportProps) => {
       .with(undefined, () =>
         setSaid({
           message: undefined,
-          errors: { [FILE]: 'ファイルを選んでください。' },
+          errors: { [FILE]: words.form.chooseFile },
           refused: [],
         }),
       )
@@ -146,16 +143,12 @@ const CustomerImport = ({ salon }: CustomerImportProps) => {
         onSubmit={submit}
         actions={
           <ButtonLink href={customersHrefOf(salon.id)} variant='quiet'>
-            やめる
+            {say(words.form.cancel)}
           </ButtonLink>
         }
       />
-      <Card title='ファイルの書き方'>
-        <p>
-          台帳の CSV 出力と同じ形です。1
-          行目の列名は、下の表の名前で書きます。表にない台帳の出力の列（id、visitCount、createdAt
-          など）は、読み飛ばします。メールアドレスは、ファイルの中でも台帳でも、ほかのお客様と重ならないものにします。
-        </p>
+      <Card title={say(words.guide.title)}>
+        <p>{say(words.guide.about)}</p>
         <FileColumns columns={COLUMN_GUIDES} />
       </Card>
     </>
@@ -168,12 +161,13 @@ const CustomerImport = ({ salon }: CustomerImportProps) => {
  */
 export const CustomerImportScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => (
         <>
-          <PageHeader title={TITLE} description={salon.name} />
+          <PageHeader title={say(TITLE)} description={salon.name} />
           <CustomerImport key={salon.id} salon={salon} />
         </>
       )}

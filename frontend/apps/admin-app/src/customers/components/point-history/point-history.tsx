@@ -5,10 +5,13 @@ import {
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
 import type { More } from '@beauty-salon-frontend/ui'
-import { COUNTED, countOf, inJapanese } from '@beauty-salon-frontend/ui'
+import { COUNTED, countOf, useSay } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { ReactNode } from 'react'
 import { movementOf, transactionNameOf } from '../../utils/points'
+
+const { history: words } = adminCustomerMessages.points
 
 export type PointHistoryProps = {
   /** The transactions that were read so far, the latest first */
@@ -37,55 +40,60 @@ export const PointHistory = ({
   onMore,
   referenceOf,
   timezone,
-}: PointHistoryProps) => (
-  <PagedTable
-    caption='ポイントの履歴'
-    columns={[
-      {
-        key: 'createdAt',
-        header: '日時',
-        cell: ({ createdAt }) => inJapanese(momentNameAt(createdAt, timezone)),
-      },
-      {
-        key: 'transactionType',
-        header: '種類',
-        cell: ({ transactionType }) => transactionNameOf(transactionType),
-      },
-      {
-        key: 'points',
-        header: '増減',
-        cell: ({ points }) => movementOf(points),
-        align: 'end',
-      },
-      {
-        key: 'balance',
-        header: '残高',
-        cell: ({ balance }) => inJapanese(customerMessages.pointsOf(balance)),
-        align: 'end',
-      },
-      {
-        key: 'expiryDate',
-        header: '有効期限',
-        cell: ({ expiryDate }) =>
-          expiryDate === null ? '' : inJapanese(dayNameOf(expiryDate)),
-      },
-      {
-        key: 'reference',
-        header: 'もとになった記録',
-        cell: (transaction) =>
-          transaction.referenceId === null ? '' : referenceOf(transaction),
-      },
-      {
-        key: 'description',
-        header: '説明',
-        cell: ({ description }) => description,
-      },
-    ]}
-    rows={transactions}
-    rowKey={({ id }) => id}
-    emptyMessage='ポイントの履歴はありません'
-    count={inJapanese(countOf(total, transactions.length, COUNTED.items))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: PointHistoryProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={say(words.title)}
+      columns={[
+        {
+          key: 'createdAt',
+          header: say(words.moment),
+          cell: ({ createdAt }) => say(momentNameAt(createdAt, timezone)),
+        },
+        {
+          key: 'transactionType',
+          header: say(words.kind),
+          cell: ({ transactionType }) =>
+            say(transactionNameOf(transactionType)),
+        },
+        {
+          key: 'points',
+          header: say(words.movement),
+          cell: ({ points }) => say(movementOf(points)),
+          align: 'end',
+        },
+        {
+          key: 'balance',
+          header: say(words.balance),
+          cell: ({ balance }) => say(customerMessages.pointsOf(balance)),
+          align: 'end',
+        },
+        {
+          key: 'expiryDate',
+          header: say(words.expiryDate),
+          cell: ({ expiryDate }) =>
+            expiryDate === null ? '' : say(dayNameOf(expiryDate)),
+        },
+        {
+          key: 'reference',
+          header: say(words.reference),
+          cell: (transaction) =>
+            transaction.referenceId === null ? '' : referenceOf(transaction),
+        },
+        {
+          key: 'description',
+          header: say(words.description),
+          cell: ({ description }) => description,
+        },
+      ]}
+      rows={transactions}
+      rowKey={({ id }) => id}
+      emptyMessage={say(words.empty)}
+      count={say(countOf(total, transactions.length, COUNTED.items))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

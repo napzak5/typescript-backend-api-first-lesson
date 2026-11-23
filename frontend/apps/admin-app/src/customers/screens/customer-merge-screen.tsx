@@ -18,12 +18,13 @@ import {
   Alert,
   ButtonLink,
   Card,
-  inJapanese,
   LoadingIndicator,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
@@ -51,7 +52,10 @@ import {
 import { FoundCustomers } from './found-customers'
 import { fullNameOf, WithCustomer } from './with-customer'
 
-const TITLE = 'ほかのお客様とまとめる'
+const { merge: words } = adminCustomerMessages
+const { search } = words
+
+const TITLE = words.title
 
 type MergeWithProps = {
   salon: ModelsSalonResponse
@@ -80,6 +84,7 @@ const MergeWith = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
+  const say = useSay()
   const read = useQuery({
     queryKey: mergeKeyOf(customer.id, otherId),
     queryFn: () => readMerge(customer.id, otherId),
@@ -89,8 +94,8 @@ const MergeWith = ({
   const [thisKept, setThisKept] = useState(true)
   const [way, setWay] = useState<MergeWay>('keep_primary')
   const [open, setOpen] = useState(false)
-  const [message, setMessage] = useState<string | undefined>(undefined)
-  const [refusal, setRefusal] = useState<string | undefined>(undefined)
+  const [message, setMessage] = useState<LocalizedText | undefined>(undefined)
+  const [refusal, setRefusal] = useState<LocalizedText | undefined>(undefined)
 
   useLayoutEffect(() => {
     if (refusal !== undefined) {
@@ -132,23 +137,19 @@ const MergeWith = ({
   })
 
   return match(read.isFetchedAfterMount ? read.data : undefined)
-    .with(undefined, () => (
-      <LoadingIndicator label='まとめる相手を読み込んでいます' />
-    ))
+    .with(undefined, () => <LoadingIndicator label={say(search.loading)} />)
     .with({ type: 'notFound' }, () => (
       <>
-        {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
-        <p>
-          選んだお客様は、台帳にいません。まとめる相手を選び直してください。
-        </p>
-        <ButtonLink href={chooseAgainHref}>相手を選び直す</ButtonLink>
+        {refusal !== undefined && <Alert tone='danger'>{say(refusal)}</Alert>}
+        <p>{say(search.notInLedger)}</p>
+        <ButtonLink href={chooseAgainHref}>
+          {say(search.chooseAgain)}
+        </ButtonLink>
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('まとめる相手'), reason),
-        )}
+        message={say(unreadMessageOf(words.names.other, reason))}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
@@ -160,8 +161,10 @@ const MergeWith = ({
 
       return (
         <>
-          <p>{`${inJapanese(fullNameOf(found.other))} 様（${found.other.email}）`}</p>
-          <ButtonLink href={chooseAgainHref}>相手を選び直す</ButtonLink>
+          <p>{say(words.chosen(fullNameOf(found.other), found.other.email))}</p>
+          <ButtonLink href={chooseAgainHref}>
+            {say(search.chooseAgain)}
+          </ButtonLink>
           <CustomerMerge
             customer={customer}
             other={found.other}
@@ -202,6 +205,7 @@ type MergePartProps = {
  */
 const MergePart = ({ salon, customer }: MergePartProps) => {
   const navigate = useNavigate()
+  const say = useSay()
   const [query] = useSearchParams()
   const keyword = keywordIn(query, 'keyword')
   const chosen = query.get('with')
@@ -218,12 +222,12 @@ const MergePart = ({ salon, customer }: MergePartProps) => {
   }, [otherId])
 
   return (
-    <Card title='まとめる相手' headingRef={heading}>
+    <Card title={say(search.title)} headingRef={heading}>
       {otherId === undefined ? (
         <>
           <KeywordSearch
-            label='まとめる相手を探す'
-            description='お名前（カナでも）、メールアドレス、電話番号の一部。'
+            label={say(search.label)}
+            description={say(search.description)}
             keyword={keyword}
             clearHref={customerMergeHrefOf(salon.id, customer.id)}
             onSubmit={(values) =>
@@ -271,20 +275,18 @@ const MergePart = ({ salon, customer }: MergePartProps) => {
 export const CustomerMergeScreen = () => {
   const { salonId = '' } = useParams()
   const session = useSession()
+  const say = useSay()
   const keeper =
     session.type === 'signedIn' && mayKeepCustomers(session.user.role)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh>
+        <WithCustomer key={salon.id} salon={salon} title={say(TITLE)} fresh>
           {(customer) =>
             keeper ? (
               <>
-                <p>
-                  同じお客様が台帳に 2 人いるとき、もう一方を探して選び、1
-                  人にまとめます。
-                </p>
+                <p>{say(search.about)}</p>
                 <MergePart
                   key={customer.id}
                   salon={salon}
@@ -292,7 +294,7 @@ export const CustomerMergeScreen = () => {
                 />
               </>
             ) : (
-              <p>{inJapanese(KEPT_BY_OTHERS)}</p>
+              <p>{say(KEPT_BY_OTHERS)}</p>
             )
           }
         </WithCustomer>

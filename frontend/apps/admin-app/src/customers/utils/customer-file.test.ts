@@ -1,4 +1,5 @@
 import type { ModelsCustomerCreateRequest } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   afterRegistration,
@@ -14,6 +15,23 @@ import {
 } from './customer-file'
 
 const TODAY = '2026-11-20'
+
+/** The labels of the columns the problems name */
+const EMAIL = { en: 'Email address', ja: 'メールアドレス' }
+const REFERRAL_CODE = { en: 'Referral code', ja: '紹介コード' }
+
+const EMAIL_TAKEN = {
+  en: 'A customer with this email address is already in the ledger. Find them in the ledger, and take the row of this customer out of the file.',
+  ja: 'このメールアドレスのお客様が、もう台帳にいます。台帳で探して、このお客様の行を外してください。',
+}
+const REFERRAL_CODE_TAKEN = {
+  en: 'Another customer uses this referral code (customers removed from the ledger included). Write another code.',
+  ja: 'この紹介コードは、ほかのお客様が使っています（台帳から削除したお客様も含みます）。別のコードを書いてください。',
+}
+const OVERLAP = {
+  en: 'An email address or a referral code of the file is one of a customer of the ledger. Check the file.',
+  ja: '台帳のお客様と、メールアドレスか紹介コードが重なっています。ファイルを確かめてください。',
+}
 
 /** A customer as the form of a registration makes one with nothing but the needed values */
 const BARE: ModelsCustomerCreateRequest = {
@@ -135,20 +153,29 @@ describe('textOfFile', () => {
 })
 
 describe('problemTextOf', () => {
-  it.each<[string, FileProblem, string]>([
+  const WRONG = { en: 'Wrong.', ja: '誤り。' }
+
+  it.each<[string, FileProblem, LocalizedText]>([
     [
       'a value',
-      { row: 3, column: 'メールアドレス', message: '誤り。' },
-      '3 行目 メールアドレス: 誤り。',
+      { row: 3, column: EMAIL, message: WRONG },
+      {
+        en: 'Row 3, Email address: Wrong.',
+        ja: '3 行目 メールアドレス: 誤り。',
+      },
     ],
-    ['a row', { row: 4, column: null, message: '誤り。' }, '4 行目: 誤り。'],
-    ['the file', { row: null, column: null, message: '誤り。' }, '誤り。'],
+    [
+      'a row',
+      { row: 4, column: null, message: WRONG },
+      { en: 'Row 4: Wrong.', ja: '4 行目: 誤り。' },
+    ],
+    ['the file', { row: null, column: null, message: WRONG }, WRONG],
   ])('should say where a problem of %s is', (_, problem, text) => {
     // Act
     const said = problemTextOf(problem)
 
     // Assert
-    expect(said).toBe(text)
+    expect(said).toEqual(text)
   })
 })
 
@@ -303,20 +330,40 @@ describe('readCustomerFile', () => {
         {
           row: 1,
           column: null,
-          message:
-            '列「emial」は、台帳の項目ではありません。列名は、下の表の名前で書いてください。',
+          message: {
+            en: '“emial” is not an item of the ledger. Name the columns as in the table below.',
+            ja: '列「emial」は、台帳の項目ではありません。列名は、下の表の名前で書いてください。',
+          },
         },
       ],
     ],
     [
       'a column written twice',
       `${NEEDED},email`,
-      [{ row: 1, column: null, message: '列「email」が 2 つあります。' }],
+      [
+        {
+          row: 1,
+          column: null,
+          message: {
+            en: 'There are two columns “email”.',
+            ja: '列「email」が 2 つあります。',
+          },
+        },
+      ],
     ],
     [
       'a column without a name',
       `${NEEDED},`,
-      [{ row: 1, column: null, message: '5 列目に、列名がありません。' }],
+      [
+        {
+          row: 1,
+          column: null,
+          message: {
+            en: 'Column 5 has no name.',
+            ja: '5 列目に、列名がありません。',
+          },
+        },
+      ],
     ],
     [
       'the columns every file has, left out',
@@ -325,12 +372,18 @@ describe('readCustomerFile', () => {
         {
           row: 1,
           column: null,
-          message: '列「email」（メールアドレス）がありません。',
+          message: {
+            en: 'The column “email” (Email address) is missing.',
+            ja: '列「email」（メールアドレス）がありません。',
+          },
         },
         {
           row: 1,
           column: null,
-          message: '列「phoneNumber」（電話番号）がありません。',
+          message: {
+            en: 'The column “phoneNumber” (Phone number) is missing.',
+            ja: '列「phoneNumber」（電話番号）がありません。',
+          },
         },
       ],
     ],
@@ -348,16 +401,22 @@ describe('readCustomerFile', () => {
     },
   )
 
-  it.each<[string, string, string]>([
+  it.each<[string, string, LocalizedText]>([
     [
       'an empty file',
       '',
-      'ファイルが空です。1 行目に列名を、2 行目から 1 行に 1 人ずつ、お客様を書いてください。',
+      {
+        en: 'The file is empty. Write the names of the columns in row 1, then one customer a row from row 2.',
+        ja: 'ファイルが空です。1 行目に列名を、2 行目から 1 行に 1 人ずつ、お客様を書いてください。',
+      },
     ],
     [
       'the names of the columns alone',
       lines(NEEDED),
-      'ファイルに、登録するお客様がいません。2 行目から、1 行に 1 人ずつ書いてください。',
+      {
+        en: 'The file has no customers to register. Write one customer a row from row 2.',
+        ja: 'ファイルに、登録するお客様がいません。2 行目から、1 行に 1 人ずつ書いてください。',
+      },
     ],
     [
       '101 customers',
@@ -368,12 +427,18 @@ describe('readCustomerFile', () => {
           (_, index) => `山田,花子,hanako${index}@example.com,090-1234-5678`,
         ),
       ),
-      'ファイルには 101 人います。一度に登録できるのは 100 人までです。ファイルを分けてください。',
+      {
+        en: 'The file has 101 customers. Up to 100 customers can be registered at once. Split the file.',
+        ja: 'ファイルには 101 人います。一度に登録できるのは 100 人までです。ファイルを分けてください。',
+      },
     ],
     [
       'a quoted value that is not closed',
       lines(NEEDED, '"山田,花子'),
-      'ダブルクォートで始まった値が、ファイルの終わりまで閉じられていません。',
+      {
+        en: 'A value that begins with a double quote is not closed before the end of the file.',
+        ja: 'ダブルクォートで始まった値が、ファイルの終わりまで閉じられていません。',
+      },
     ],
   ])('should refuse %s', async (_, text, message) => {
     // Act
@@ -416,16 +481,43 @@ describe('readCustomerFile', () => {
     const read = await readCustomerFile(text, TODAY)
 
     // Assert
-    expect(problemsOf(read).map(problemTextOf)).toEqual([
-      '2 行目 メールアドレス: メールアドレスは、hanako@example.com のような形で入力してください。',
-      '3 行目 SMS での連絡: SMS での連絡は、true か false で書いてください。',
-      '3 行目 姓: 姓を入力してください。',
-      '3 行目 電話番号: 電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
-      '3 行目 生年月日: 生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
-      '3 行目 会員ランク: 会員ランクは、regular、silver、gold、platinum、vip のどれかで書いてください。',
-      '4 行目 好み: 好みは、台帳の出力と同じ JSON（{"preferredServices":["cut"],"notes":null}）で書くか、空にしてください。preferredServices は、cut、color、perm、treatment、spa、styling、extension、other のどれかです。',
-      '4 行目 タグ: タグは、「、」かカンマで区切るか、台帳の出力と同じ JSON の文字列の配列で書いてください。',
-      '5 行目: 値が 4 個あり、列の数（9）と合いません。',
+    expect(problemsOf(read).map(problemTextOf)).toEqual<LocalizedText[]>([
+      {
+        en: 'Row 2, Email address: Enter an email address in a form such as hanako@example.com.',
+        ja: '2 行目 メールアドレス: メールアドレスは、hanako@example.com のような形で入力してください。',
+      },
+      {
+        en: 'Row 3, Messages by SMS: Write true or false.',
+        ja: '3 行目 SMS での連絡: SMS での連絡は、true か false で書いてください。',
+      },
+      {
+        en: 'Row 3, Last name: Enter the last name.',
+        ja: '3 行目 姓: 姓を入力してください。',
+      },
+      {
+        en: 'Row 3, Phone number: Enter a phone number in digits and hyphens, with the area code (for example 03-1234-5678).',
+        ja: '3 行目 電話番号: 電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      },
+      {
+        en: 'Row 3, Date of birth: Enter a date of birth from January 1, 1900 to today.',
+        ja: '3 行目 生年月日: 生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
+      },
+      {
+        en: 'Row 3, Membership rank: Write one of regular, silver, gold, platinum, vip.',
+        ja: '3 行目 会員ランク: 会員ランクは、regular、silver、gold、platinum、vip のどれかで書いてください。',
+      },
+      {
+        en: 'Row 4, Preferences: Write the preferences as JSON, as the ledger exports them ({"preferredServices":["cut"],"notes":null}), or leave them empty. preferredServices are each one of cut, color, perm, treatment, spa, styling, extension, other.',
+        ja: '4 行目 好み: 好みは、台帳の出力と同じ JSON（{"preferredServices":["cut"],"notes":null}）で書くか、空にしてください。preferredServices は、cut、color、perm、treatment、spa、styling、extension、other のどれかです。',
+      },
+      {
+        en: 'Row 4, Tags: Separate the tags with commas, or write them as a JSON array of strings, as the ledger exports them.',
+        ja: '4 行目 タグ: タグは、「、」かカンマで区切るか、台帳の出力と同じ JSON の文字列の配列で書いてください。',
+      },
+      {
+        en: 'Row 5: The row has 4 values, which does not match the number of columns (9).',
+        ja: '5 行目: 値が 4 個あり、列の数（9）と合いません。',
+      },
     ])
   })
 
@@ -442,9 +534,15 @@ describe('readCustomerFile', () => {
     )
 
     // Assert
-    expect(problemsOf(read).map(problemTextOf)).toEqual([
-      '3 行目 紹介コード: 2 行目と同じ紹介コードです。',
-      '4 行目 メールアドレス: 2 行目と同じメールアドレスです。',
+    expect(problemsOf(read).map(problemTextOf)).toEqual<LocalizedText[]>([
+      {
+        en: 'Row 3, Referral code: The same referral code as row 2.',
+        ja: '3 行目 紹介コード: 2 行目と同じ紹介コードです。',
+      },
+      {
+        en: 'Row 4, Email address: The same email address as row 2.',
+        ja: '4 行目 メールアドレス: 2 行目と同じメールアドレスです。',
+      },
     ])
   })
 })
@@ -459,7 +557,13 @@ describe('afterRegistration', () => {
     [
       'customers registered',
       { type: 'registered', count: 2 },
-      { type: 'done', message: '2 人を台帳に登録しました。' },
+      {
+        type: 'done',
+        message: {
+          en: 'Registered 2 customers in the ledger.',
+          ja: '2 人を台帳に登録しました。',
+        },
+      },
     ],
     [
       'values refused, by the place of the customer in the request',
@@ -477,21 +581,27 @@ describe('afterRegistration', () => {
         problems: [
           {
             row: 4,
-            column: '紹介元',
-            message:
-              '台帳にいないお客様の ID です。台帳の出力の id を書くか、空にしてください。',
+            column: { en: 'Referred by', ja: '紹介元' },
+            message: {
+              en: 'No customer of the ledger has this ID. Write the id of the ledger export, or leave it empty.',
+              ja: '台帳にいないお客様の ID です。台帳の出力の id を書くか、空にしてください。',
+            },
           },
           {
             row: 2,
-            column: '生年月日',
-            message:
-              '生年月日は、1900-01-01 から今日までの日付を書いてください。',
+            column: { en: 'Date of birth', ja: '生年月日' },
+            message: {
+              en: 'Write a date of birth from 1900-01-01 to today.',
+              ja: '生年月日は、1900-01-01 から今日までの日付を書いてください。',
+            },
           },
           {
             row: 2,
-            column: 'タグ',
-            message:
-              'この値は受け付けられませんでした。書き方を確かめてください。',
+            column: { en: 'Tags', ja: 'タグ' },
+            message: {
+              en: 'This value was not accepted. Check how it is written.',
+              ja: 'この値は受け付けられませんでした。書き方を確かめてください。',
+            },
           },
         ],
       },
@@ -501,7 +611,10 @@ describe('afterRegistration', () => {
       { type: 'invalid', values: [{ field: 'items', rule: 'too_big' }] },
       {
         type: 'again',
-        message: 'ファイルの内容を確かめて、もう一度お試しください。',
+        message: {
+          en: 'Check the contents of the file and try again.',
+          ja: 'ファイルの内容を確かめて、もう一度お試しください。',
+        },
         problems: [],
       },
     ],
@@ -517,9 +630,8 @@ describe('afterRegistration', () => {
         problems: [
           {
             row: 4,
-            column: 'メールアドレス',
-            message:
-              'このメールアドレスのお客様が、もう台帳にいます。台帳で探して、このお客様の行を外してください。',
+            column: EMAIL,
+            message: EMAIL_TAKEN,
           },
         ],
       },
@@ -532,8 +644,7 @@ describe('afterRegistration', () => {
       },
       {
         type: 'again',
-        message:
-          '台帳のお客様と、メールアドレスか紹介コードが重なっています。ファイルを確かめてください。',
+        message: OVERLAP,
         problems: [],
       },
     ],
@@ -549,9 +660,8 @@ describe('afterRegistration', () => {
         problems: [
           {
             row: 2,
-            column: '紹介コード',
-            message:
-              'この紹介コードは、ほかのお客様が使っています（台帳から削除したお客様も含みます）。別のコードを書いてください。',
+            column: REFERRAL_CODE,
+            message: REFERRAL_CODE_TAKEN,
           },
         ],
       },
@@ -568,9 +678,8 @@ describe('afterRegistration', () => {
         problems: [
           {
             row: 4,
-            column: 'メールアドレス',
-            message:
-              'このメールアドレスのお客様が、もう台帳にいます。台帳で探して、このお客様の行を外してください。',
+            column: EMAIL,
+            message: EMAIL_TAKEN,
           },
         ],
       },
@@ -583,8 +692,7 @@ describe('afterRegistration', () => {
       },
       {
         type: 'again',
-        message:
-          '台帳のお客様と、メールアドレスか紹介コードが重なっています。ファイルを確かめてください。',
+        message: OVERLAP,
         problems: [],
       },
     ],
@@ -600,9 +708,8 @@ describe('afterRegistration', () => {
         problems: [
           {
             row: 2,
-            column: '紹介コード',
-            message:
-              'この紹介コードは、ほかのお客様が使っています（台帳から削除したお客様も含みます）。別のコードを書いてください。',
+            column: REFERRAL_CODE,
+            message: REFERRAL_CODE_TAKEN,
           },
         ],
       },
@@ -612,8 +719,7 @@ describe('afterRegistration', () => {
       { type: 'conflict', detail: '' },
       {
         type: 'again',
-        message:
-          '台帳のお客様と、メールアドレスか紹介コードが重なっています。ファイルを確かめてください。',
+        message: OVERLAP,
         problems: [],
       },
     ],
@@ -622,8 +728,10 @@ describe('afterRegistration', () => {
       { type: 'tooLarge' },
       {
         type: 'again',
-        message:
-          'ファイルが大きすぎて、一度に送れません。ファイルを分けて、登録してください。',
+        message: {
+          en: 'The file is too large to send at once. Split the file, then register each part.',
+          ja: 'ファイルが大きすぎて、一度に送れません。ファイルを分けて、登録してください。',
+        },
         problems: [],
       },
     ],
@@ -632,7 +740,10 @@ describe('afterRegistration', () => {
       { type: 'forbidden' },
       {
         type: 'again',
-        message: 'このアカウントでは、顧客台帳を扱えません。',
+        message: {
+          en: 'This account cannot work with the customer ledger.',
+          ja: 'このアカウントでは、顧客台帳を扱えません。',
+        },
         problems: [],
       },
     ],
@@ -641,8 +752,10 @@ describe('afterRegistration', () => {
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
         problems: [],
       },
     ],
@@ -651,8 +764,10 @@ describe('afterRegistration', () => {
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          'お客様を登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The customers could not be registered. Check your connection and try again.',
+          ja: 'お客様を登録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
         problems: [],
       },
     ],

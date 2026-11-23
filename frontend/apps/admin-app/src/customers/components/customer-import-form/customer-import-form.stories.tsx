@@ -1,8 +1,21 @@
 import type { ModelsCustomerCreateRequest } from '@beauty-salon-frontend/api-client'
-import { Button } from '@beauty-salon-frontend/ui'
+import { EMAIL_MALFORMED } from '@beauty-salon-frontend/fields'
+import { Button, useSay } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { customerMessages as record } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
+import { TIERS } from '../../utils/customer-format'
 import { CustomerImportForm } from './customer-import-form'
+
+const { file: words } = adminCustomerMessages
+
+/** The way back that the screen puts beside the button that registers */
+const Cancel = () => {
+  const say = useSay()
+
+  return <Button>{say(words.form.cancel)}</Button>
+}
 
 const ENTRY: ModelsCustomerCreateRequest = {
   lastName: '山田',
@@ -45,7 +58,7 @@ const meta: Meta<typeof CustomerImportForm> = {
     refused: [],
     onChoose: fn(),
     onSubmit: fn(),
-    actions: <Button>やめる</Button>,
+    actions: <Cancel />,
   },
 }
 
@@ -108,24 +121,13 @@ export const Invalid: Story = {
       read: {
         type: 'invalid',
         problems: [
-          {
-            row: 3,
-            column: 'メールアドレス',
-            message:
-              'メールアドレスは、hanako@example.com のような形で入力してください。',
-          },
+          { row: 3, column: record.email, message: EMAIL_MALFORMED },
           {
             row: 4,
-            column: '会員ランク',
-            message:
-              '会員ランクは、regular、silver、gold、platinum、vip のどれかで書いてください。',
+            column: record.membershipTier,
+            message: words.problems.choice(record.membershipTier, TIERS),
           },
-          {
-            row: 1,
-            column: null,
-            message:
-              '列「emial」は、台帳の項目ではありません。列名は、下の表の名前で書いてください。',
-          },
+          { row: 1, column: null, message: words.problems.unknown('emial') },
         ],
       },
     },
@@ -134,7 +136,7 @@ export const Invalid: Story = {
 
 /** The button was pressed before a file was chosen */
 export const NoFile: Story = {
-  args: { errors: { file: 'ファイルを選んでください。' } },
+  args: { errors: { file: words.form.chooseFile } },
 }
 
 /** The API refused a customer of the file: their address of mail is in the ledger */
@@ -144,9 +146,8 @@ export const Refused: Story = {
     refused: [
       {
         row: 5,
-        column: 'メールアドレス',
-        message:
-          'このメールアドレスのお客様が、もう台帳にいます。台帳で探して、このお客様の行を外してください。',
+        column: record.email,
+        message: words.registration.emailTaken,
       },
     ],
   },

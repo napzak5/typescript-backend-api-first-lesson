@@ -5,12 +5,13 @@ import {
   Button,
   Dialog,
   FieldRow,
-  inJapanese,
   Link,
   RadioGroup,
   Table,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
 import { customerNameOf } from '../../api/customers-api'
 import {
@@ -29,6 +30,9 @@ import {
 } from '../customer-record/ledger-items'
 import styles from './customer-merge.module.css'
 
+const { merge: words, referrer } = adminCustomerMessages
+const { compared } = words
+
 export type CustomerMergeProps = {
   /** The customer of the address */
   customer: ModelsCustomerResponse
@@ -44,16 +48,16 @@ export type CustomerMergeProps = {
   obstacles: readonly MergeObstacle[]
   /** The address of the page of a customer: the one who referred another */
   customerHref: (customerId: string) => string
-  /** Why the last attempt was refused, and the two were read again: said above the choices */
-  refusal?: string | undefined
+  /** Why the last attempt was refused, and the two were read again: said above the choices, in the language of the page */
+  refusal?: LocalizedText | undefined
   /** The dialog that asks before the two are merged is open */
   open: boolean
   /** The button that merges was pressed: the dialog is to be opened */
   onOpen: () => void
   /** The dialog has closed, or its button that changes nothing was pressed. Set `open` to false here */
   onClose: () => void
-  /** What went wrong with the attempt, and may be tried again: said in the dialog */
-  message?: string | undefined
+  /** What went wrong with the attempt, and may be tried again: said in the dialog, in the language of the page */
+  message?: LocalizedText | undefined
   /** The merge is on its way */
   pending?: boolean | undefined
   /** The merge was confirmed */
@@ -85,6 +89,7 @@ export const CustomerMerge = ({
   pending = false,
   onMerge,
 }: CustomerMergeProps) => {
+  const say = useSay()
   const pair = thisKept
     ? { primary: customer, secondary: other }
     : { primary: other, secondary: customer }
@@ -92,38 +97,38 @@ export const CustomerMerge = ({
   const secondary = customerNameOf(pair.secondary)
   const referrerOf = ({ referredBy }: LedgerValues): ReactNode =>
     referredBy === null ? null : (
-      <Link href={customerHref(referredBy)}>紹介したお客様</Link>
+      <Link href={customerHref(referredBy)}>{say(referrer.link)}</Link>
     )
   const items = comparedItemsOf(
     pair.primary,
     pair.secondary,
     mergedLedgerOf(pair, way),
     referrerOf,
-    inJapanese,
+    say,
   )
   const points = pair.primary.loyaltyPoints + pair.secondary.loyaltyPoints
 
   return (
     <div className={styles['merge']}>
-      {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
+      {refusal !== undefined && <Alert tone='danger'>{say(refusal)}</Alert>}
       <FieldRow>
         <RadioGroup
-          label='残すお客様'
+          label={say(compared.kept)}
           name='kept'
           options={[
-            { value: 'this', label: `このお客様: ${whoIs(customer)}` },
-            { value: 'other', label: `選んだお客様: ${whoIs(other)}` },
+            { value: 'this', label: say(compared.thisOne(whoIs(customer))) },
+            { value: 'other', label: say(compared.chosenOne(whoIs(other))) },
           ]}
           value={thisKept ? 'this' : 'other'}
           onChange={(event) => onKeep(event.currentTarget.value === 'this')}
-          description='残さないお客様は、台帳から削除されます。'
+          description={say(compared.keptDescription)}
         />
         <RadioGroup
-          label='2 人の値が違う項目'
+          label={say(compared.way)}
           name='way'
           options={MERGE_WAYS.map((value) => ({
             value,
-            label: mergeWayNameOf(value),
+            label: say(mergeWayNameOf(value)),
           }))}
           value={way}
           onChange={(event) => {
@@ -132,72 +137,76 @@ export const CustomerMerge = ({
               onWay(chosen)
             }
           }}
-          description='片方だけが値を持つ項目は、その値を残します。'
+          description={say(compared.wayDescription)}
         />
       </FieldRow>
       {items.length === 0 ? (
-        <p>2 人の台帳の項目は、すべて同じです。</p>
+        <p>{say(compared.allSame)}</p>
       ) : (
         <Table
-          caption='2 人で違う項目'
+          caption={say(compared.caption)}
           columns={[
-            { key: 'term', header: '項目', cell: ({ term }) => term },
+            {
+              key: 'term',
+              header: say(compared.item),
+              cell: ({ term }) => term,
+            },
             {
               key: 'primary',
-              header: `残す ${primary} 様`,
+              header: say(compared.keptColumn(primary)),
               wrap: 'lines',
               cell: ({ primary: shown }) => shown,
             },
             {
               key: 'secondary',
-              header: `まとめる ${secondary} 様`,
+              header: say(compared.mergedColumn(secondary)),
               wrap: 'lines',
               cell: ({ secondary: shown }) => shown,
             },
             {
               key: 'merged',
-              header: 'まとめたあと',
+              header: say(compared.merged),
               wrap: 'lines',
               cell: ({ merged }) => merged,
             },
           ]}
           rows={items}
           rowKey={({ term }) => term}
-          emptyMessage='違う項目はありません'
+          emptyMessage={say(compared.empty)}
         />
       )}
-      <p>
-        {`予約、売上、施術記録、レビューは、${primary} 様のものになります。好み設定、カルテ、アレルギーは、2 人のものを合わせます。ポイントは、2 人の残高を合わせて ${inJapanese(customerMessages.pointsOf(points))}になります。`}
-      </p>
+      <p>{say(compared.whatMoves(primary, points))}</p>
       {obstacles.length > 0 ? (
-        <Alert tone='warning' title='まとめられません'>
+        <Alert tone='warning' title={say(words.obstacles.title)}>
           <BulletList>
             {obstacles.map((obstacle) => {
-              const text = obstacleTextOf(obstacle)
+              const text = say(obstacleTextOf(obstacle))
               return <li key={text}>{text}</li>
             })}
           </BulletList>
         </Alert>
       ) : (
         <Button variant='danger' onClick={onOpen}>
-          まとめる
+          {say(words.merge)}
         </Button>
       )}
       <Dialog
         open={open}
         onClose={onClose}
-        title='2 人のお客様を 1 人にまとめますか？'
-        description={`${whoIs(pair.primary)}を残し、${whoIs(pair.secondary)}を台帳から削除します。削除したお客様は、台帳に戻せません。`}
+        title={say(words.confirm)}
+        description={say(
+          words.confirmDescription(whoIs(pair.primary), whoIs(pair.secondary)),
+        )}
         actions={
           <>
-            <Button onClick={onClose}>戻る</Button>
+            <Button onClick={onClose}>{say(words.back)}</Button>
             <Button variant='danger' pending={pending} onClick={onMerge}>
-              まとめる
+              {say(words.merge)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </div>
   )

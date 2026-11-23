@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as pointBalanceStories from './point-balance.stories'
 
 const stories = composeStories(pointBalanceStories)
@@ -27,5 +28,31 @@ describe('PointBalance', () => {
 
     // Assert
     expect(screen.getByText('0 ポイント')).toBeVisible()
+  })
+})
+
+describe('PointBalance on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show the balance and lead to the recording of points, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Balance.run()
+
+    // Assert
+    const part = screen.getByRole('region', { name: 'Balance' })
+    expect(within(part).getByText('2,700 points')).toBeVisible()
+    expect(
+      within(part).getByText(
+        'Points saved at any salon can be used at every salon.',
+      ),
+    ).toBeVisible()
+    expect(
+      within(part).getByRole('link', { name: 'Record points' }),
+    ).toHaveAttribute('href', stories.Balance.args.entryHref)
   })
 })

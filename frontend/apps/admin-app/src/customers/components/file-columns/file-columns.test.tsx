@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as fileColumnsStories from './file-columns.stories'
 
 const stories = composeStories(fileColumnsStories)
@@ -73,6 +74,43 @@ describe('FileColumns', () => {
     ).toEqual([
       'メールアドレス',
       '必ず書く。ファイルの中でも台帳でも、ほかのお客様と重ならないもの',
+    ])
+  })
+})
+
+describe('FileColumns on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the columns as the file does, and say what each holds and how it is written, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Columns.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('table', { name: 'Columns of the file' }))
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['Column', 'Item', 'How to write it'])
+    expect(
+      within(screen.getByRole('row', { name: /^membershipTier/ }))
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      'Membership rank',
+      'One of regular, silver, gold, platinum, vip. Without the column: regular',
+    ])
+    expect(
+      within(screen.getByRole('row', { name: /^allowSms/ }))
+        .getAllByRole('cell')
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      'Messages by SMS',
+      'Either true or false. Without the column: false',
     ])
   })
 })

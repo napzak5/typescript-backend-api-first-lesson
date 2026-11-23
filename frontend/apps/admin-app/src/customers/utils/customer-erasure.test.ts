@@ -1,4 +1,5 @@
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type {
   ErasureAsking,
@@ -12,8 +13,30 @@ import {
   readErasureAsk,
 } from './customer-erasure'
 
-const BY_OTHERS =
-  'ご本人からのデータの開示と消去の請求には、オーナーとマネージャーが応えます。'
+const BY_OTHERS = {
+  en: 'Owners and managers answer the requests of customers to see or erase their data.',
+  ja: 'ご本人からのデータの開示と消去の請求には、オーナーとマネージャーが応えます。',
+}
+
+const BLANK_REASON = {
+  en: 'Enter the reason for the request.',
+  ja: '依頼の理由を入力してください。',
+}
+
+const LONG_REASON = {
+  en: 'Reason for the request: enter up to 1,000 characters.',
+  ja: '依頼の理由は、1,000 文字以内で入力してください。',
+}
+
+const TOO_MANY_REQUESTS = {
+  en: 'There are too many requests. Wait a while and try again.',
+  ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+}
+
+const ASK_AGAIN = {
+  en: 'The request could not be taken. Check your connection and try again.',
+  ja: '消去の依頼を受け付けられませんでした。通信の状態を確かめて、もう一度お試しください。',
+}
 
 describe('readErasureAsk', () => {
   it('should keep the reason as it was written', () => {
@@ -37,7 +60,7 @@ describe('readErasureAsk', () => {
     // Assert
     expect(read).toEqual({
       type: 'invalid',
-      errors: { reason: '依頼の理由を入力してください。' },
+      errors: { reason: BLANK_REASON },
     })
   })
 
@@ -51,7 +74,7 @@ describe('readErasureAsk', () => {
     expect(longer).toEqual({
       type: 'invalid',
       errors: {
-        reason: '依頼の理由は、1,000 文字以内で入力してください。',
+        reason: LONG_REASON,
       },
     })
   })
@@ -86,9 +109,10 @@ describe('erasureStateOf', () => {
     )
 
     // Assert
-    expect(said).toBe(
-      '2026年11月19日（木） 20:30 に受け付けた依頼は、2026年11月21日（土） 01:00 に取り消しました。',
-    )
+    expect(said).toEqual({
+      en: 'The request taken on Thu, November 19, 2026 at 20:30 was cancelled on Sat, November 21, 2026 at 01:00.',
+      ja: '2026年11月19日（木） 20:30 に受け付けた依頼は、2026年11月21日（土） 01:00 に取り消しました。',
+    })
   })
 
   it('should say when the data was erased, and that the customer is to be told', () => {
@@ -103,21 +127,28 @@ describe('erasureStateOf', () => {
     )
 
     // Assert
-    expect(said).toBe(
-      '2026年11月20日（金） 10:30 に受け付けた依頼により、2026年12月5日（土） 09:00 にデータを消去しました。消去したことを、ご本人にお知らせください。',
-    )
+    expect(said).toEqual({
+      en: 'The data was erased on Sat, December 5, 2026 at 09:00, on the request taken on Fri, November 20, 2026 at 10:30. Let the customer know that the data was erased.',
+      ja: '2026年11月20日（金） 10:30 に受け付けた依頼により、2026年12月5日（土） 09:00 にデータを消去しました。消去したことを、ご本人にお知らせください。',
+    })
   })
 
-  it.each<[string, Parameters<typeof aDeletionRequest>[0], string]>([
+  it.each<[string, Parameters<typeof aDeletionRequest>[0], LocalizedText]>([
     [
       'called off',
       { status: 'cancelled' },
-      '2026年11月20日（金） 10:30 に受け付けた依頼は、取り消しました。',
+      {
+        en: 'The request taken on Fri, November 20, 2026 at 10:30 was cancelled.',
+        ja: '2026年11月20日（金） 10:30 に受け付けた依頼は、取り消しました。',
+      },
     ],
     [
       'erased',
       { status: 'completed' },
-      '2026年11月20日（金） 10:30 に受け付けた依頼により、データを消去しました。消去したことを、ご本人にお知らせください。',
+      {
+        en: 'The data was erased on the request taken on Fri, November 20, 2026 at 10:30. Let the customer know that the data was erased.',
+        ja: '2026年11月20日（金） 10:30 に受け付けた依頼により、データを消去しました。消去したことを、ご本人にお知らせください。',
+      },
     ],
   ])(
     'should say a request was %s without a moment it lacks',
@@ -126,7 +157,7 @@ describe('erasureStateOf', () => {
       const said = erasureStateOf(aDeletionRequest(changes), 'Asia/Tokyo')
 
       // Assert
-      expect(said).toBe(sentence)
+      expect(said).toEqual(sentence)
     },
   )
 })
@@ -146,14 +177,16 @@ describe('afterErasureAsk', () => {
     expect(says).toEqual({
       type: 'done',
       request,
-      message:
-        '田中 優希 様のデータの消去の依頼を受け付けました。2026年12月4日（金） 10:30 以降に消去します。',
+      message: {
+        en: 'The request to erase the data of 田中 優希 was taken. The data will be erased on or after Fri, December 4, 2026 at 10:30.',
+        ja: '田中 優希 様のデータの消去の依頼を受け付けました。2026年12月4日（金） 10:30 以降に消去します。',
+      },
     })
   })
 
-  it.each<[string, string, string]>([
-    ['too long', 'too_big', '依頼の理由は、1,000 文字以内で入力してください。'],
-    ['blank', 'custom', '依頼の理由を入力してください。'],
+  it.each<[string, string, LocalizedText]>([
+    ['too long', 'too_big', LONG_REASON],
+    ['blank', 'custom', BLANK_REASON],
   ])('should say under the reason that it is %s', (_, rule, error) => {
     // Act
     const says = ask({ type: 'invalid', values: [{ field: 'reason', rule }] })
@@ -176,22 +209,27 @@ describe('afterErasureAsk', () => {
     // Assert
     expect(says).toEqual({
       type: 'again',
-      message:
-        '消去の依頼を受け付けられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: ASK_AGAIN,
       errors: {},
     })
   })
 
-  it.each<[string, ErasureAsking, string]>([
+  it.each<[string, ErasureAsking, LocalizedText]>([
     [
       'another request was taken meanwhile',
       { type: 'pending' },
-      'その間に、ほかのアカウントがこのお客様の消去の依頼を受け付けていました。',
+      {
+        en: 'In the meantime, another account took a request to erase the data of this customer.',
+        ja: 'その間に、ほかのアカウントがこのお客様の消去の依頼を受け付けていました。',
+      },
     ],
     [
       'the account may not take one',
       { type: 'forbidden' },
-      `このアカウントでは、消去の依頼を受け付けられません。${BY_OTHERS}`,
+      {
+        en: `This account cannot take requests to erase data. ${BY_OTHERS.en}`,
+        ja: `このアカウントでは、消去の依頼を受け付けられません。${BY_OTHERS.ja}`,
+      },
     ],
   ])('should close the dialog and say so when %s', (_, outcome, message) => {
     // Act
@@ -209,15 +247,9 @@ describe('afterErasureAsk', () => {
     expect(says).toEqual({ type: 'gone' })
   })
 
-  it.each<[ErasureAsking, string]>([
-    [
-      { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-    ],
-    [
-      { type: 'failed' },
-      '消去の依頼を受け付けられませんでした。通信の状態を確かめて、もう一度お試しください。',
-    ],
+  it.each<[ErasureAsking, LocalizedText]>([
+    [{ type: 'tooManyRequests' }, TOO_MANY_REQUESTS],
+    [{ type: 'failed' }, ASK_AGAIN],
   ])(
     'should say in the dialog what may be tried again after %o',
     (outcome, message) => {
@@ -249,20 +281,29 @@ describe('afterErasureCancel', () => {
     expect(says).toEqual({
       type: 'done',
       request,
-      message: '田中 優希 様のデータの消去の依頼を取り消しました。',
+      message: {
+        en: 'The request to erase the data of 田中 優希 was cancelled.',
+        ja: '田中 優希 様のデータの消去の依頼を取り消しました。',
+      },
     })
   })
 
-  it.each<[string, ErasureCancelling, string]>([
+  it.each<[string, ErasureCancelling, LocalizedText]>([
     [
       'no request is pending any more',
       { type: 'notFound' },
-      'この依頼は、その間に取り消されたか、消去が実行されていました。',
+      {
+        en: 'In the meantime, this request was cancelled or the data was erased.',
+        ja: 'この依頼は、その間に取り消されたか、消去が実行されていました。',
+      },
     ],
     [
       'the account may not call it off',
       { type: 'forbidden' },
-      `このアカウントでは、消去の依頼を取り消せません。${BY_OTHERS}`,
+      {
+        en: `This account cannot cancel requests to erase data. ${BY_OTHERS.en}`,
+        ja: `このアカウントでは、消去の依頼を取り消せません。${BY_OTHERS.ja}`,
+      },
     ],
   ])('should close the dialog and say so when %s', (_, outcome, message) => {
     // Act
@@ -272,14 +313,14 @@ describe('afterErasureCancel', () => {
     expect(says).toEqual({ type: 'refused', message })
   })
 
-  it.each<[ErasureCancelling, string]>([
-    [
-      { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-    ],
+  it.each<[ErasureCancelling, LocalizedText]>([
+    [{ type: 'tooManyRequests' }, TOO_MANY_REQUESTS],
     [
       { type: 'failed' },
-      '消去の依頼を取り消せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The request could not be cancelled. Check your connection and try again.',
+        ja: '消去の依頼を取り消せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])(
     'should say in the dialog what may be tried again after %o',

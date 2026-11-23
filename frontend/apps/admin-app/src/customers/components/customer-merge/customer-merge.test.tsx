@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import * as customerMergeStories from './customer-merge.stories'
 
@@ -188,5 +189,120 @@ describe('CustomerMerge', () => {
     ).toBe(
       'お客様をまとめられませんでした。通信の状態を確かめて、もう一度お試しください。',
     )
+  })
+})
+
+describe('CustomerMerge on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the choices and show the items the two differ in, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.KeepingThisOne.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('radiogroup', { name: 'Customer to keep' }))
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual([
+      'This customer: 山田 花子 (hanako@example.com)',
+      'Chosen customer: 山田 花子 (hanako.yamada@example.com)',
+    ])
+    expect(
+      screen.getByRole('radiogroup', { name: 'Customer to keep' }),
+    ).toHaveAccessibleDescription(
+      'The customer who is not kept is removed from the ledger.',
+    )
+    expect(
+      within(
+        screen.getByRole('radiogroup', {
+          name: 'Items the two have differently',
+        }),
+      )
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual([
+      'The value of the customer kept',
+      'The value of the customer merged',
+      'The value of the record changed last',
+    ])
+    expect(columnsOf('Items that differ')).toEqual([
+      'Item',
+      '山田 花子 (kept)',
+      '山田 花子 (merged)',
+      'After the merge',
+    ])
+    expect(rowsOf('Items that differ')).toEqual([
+      ['Phonetic name', 'ヤマダ ハナコ', 'Not recorded', 'ヤマダ ハナコ'],
+      [
+        'Email address',
+        'hanako@example.com',
+        'hanako.yamada@example.com',
+        'hanako@example.com',
+      ],
+      ['Occupation', 'Not recorded', '会社員', '会社員'],
+      ['Tags', 'vip', 'None', 'vip'],
+      ['Referred by', 'None', 'Referring customer', 'Referring customer'],
+    ])
+    expect(
+      screen.getByText(
+        'The bookings, sales, treatment records and reviews become those of 山田 花子. The preferences, charts and allergies of the two are put together. The points of the two balances are added up to 1,500 points.',
+      ),
+    ).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Merge' })).toBeVisible()
+  })
+
+  it('should say in English what is in the way, and why the last attempt was refused', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.InTheWay.run()
+
+    // Assert
+    const said = screen.getByRole('status')
+    expect(within(said).getByText('Cannot be merged')).toBeVisible()
+    expect(
+      within(said)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      'Both customers sign in with their own accounts. Accounts cannot be made one, so the two cannot be merged.',
+      'A request of 山田 花子 (hanako@example.com) to have their data erased was taken. Cancel the request, then merge them.',
+    ])
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The records of the two changed in the meantime, so they could not be merged. The two records were loaded again.',
+    )
+  })
+
+  it('should ask before the merge, and say that it was not sent, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotSent.run()
+
+    // Assert
+    const dialog = screen.getByRole('dialog', {
+      name: 'Merge the two customers into one?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      '山田 花子 (hanako@example.com) is kept, and 山田 花子 (hanako.yamada@example.com) is removed from the ledger. A customer removed by a merge cannot be brought back to the ledger.',
+    )
+    expect(within(dialog).getByRole('alert').textContent).toBe(
+      'The customers could not be merged. Check your connection and try again.',
+    )
+    expect(within(dialog).getByRole('button', { name: 'Back' })).toBeVisible()
+    expect(within(dialog).getByRole('button', { name: 'Merge' })).toBeVisible()
   })
 })

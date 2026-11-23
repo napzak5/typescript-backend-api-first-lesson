@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import { heading, notifications } from '@beauty-salon-frontend/testing/screens'
@@ -9,6 +10,7 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -38,17 +40,17 @@ const REASON = '店頭で、ご本人から口頭でお申し出がありまし�
 /** A moment at the salon, as the screens show one: 「2026年12月4日（金） 10:30」 */
 const MOMENT = /^\d{4}年\d{1,2}月\d{1,2}日（.） \d{2}:\d{2}$/
 
-/** The part of the erasure, below the part of the requests. */
-const erasure = (): HTMLElement =>
-  screen.getByRole('region', { name: 'データの消去' })
+/** The part of the erasure, below the part of the requests, as the page names it. */
+const erasure = (name = 'データの消去'): HTMLElement =>
+  screen.getByRole('region', { name })
 
 const dialog = (name: string): HTMLElement =>
   screen.getByRole('dialog', { name })
 
 /** What the part of the erasure describes, term by term. */
-const described = (): Record<string, string> =>
+const described = (part = erasure()): Record<string, string> =>
   Object.fromEntries(
-    within(erasure())
+    within(part)
       .getAllByRole('term')
       .map((term) => [
         term.textContent ?? '',
@@ -64,22 +66,44 @@ const described = (): Record<string, string> =>
 const openYuki = async (
   email = OWNER,
   customerId?: string,
+  language: Locale = 'ja',
 ): Promise<string> => {
+  const parts = PARTS[language]
   const yuki = customerId ?? (await customerIdOf(YUKI.email))
   renderAt(customerHrefOf(await salonIdOf(TOKYO), yuki))
-  await signInAs(email)
-  await heading('お客様の台帳')
-  await screen.findByRole('region', { name: 'ご本人からの請求' })
+  await signInAs(email, language)
+  await heading(parts.customer)
+  await screen.findByRole('region', { name: parts.requests })
 
   return yuki
 }
 
+/** What the page of a customer names the parts of the requests, in Japanese and in English */
+const PARTS = {
+  ja: {
+    customer: 'お客様の台帳',
+    requests: 'ご本人からの請求',
+    erasure: 'データの消去',
+    loading: '消去の依頼を読み込んでいます',
+  },
+  en: {
+    customer: 'Customer record',
+    requests: 'Requests from the customer',
+    erasure: 'Erasure of the data',
+    loading: 'Loading the request to erase the data',
+  },
+} satisfies Record<
+  Locale,
+  { customer: string; requests: string; erasure: string; loading: string }
+>
+
 /** Waits for the request, or for none, in the part of the erasure. */
-const theRequest = async (): Promise<void> => {
-  await screen.findByRole('region', { name: 'データの消去' })
+const theRequest = async (language: Locale = 'ja'): Promise<void> => {
+  const parts = PARTS[language]
+  await screen.findByRole('region', { name: parts.erasure })
   await waitFor(() =>
     expect(
-      within(erasure()).queryByText('消去の依頼を読み込んでいます'),
+      within(erasure(parts.erasure)).queryByText(parts.loading),
     ).toBeNull(),
   )
 }
@@ -470,5 +494,151 @@ describe('the requests of a customer to have their data erased, against the API'
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('the requests of a customer to have their data erased on a page in English, against the API', () => {
+  /** A moment at the salon, as a page in English shows one: "Fri, December 4, 2026 at 10:30" */
+  const MOMENT_IN_ENGLISH =
+    /^[A-Z][a-z]{2}, [A-Z][a-z]+ \d{1,2}, \d{4} at \d{2}:\d{2}$/
+
+  const ERASURE = 'Erasure of the data'
+
+  const ASK_IN_ENGLISH = 'Take the request to erase the data?'
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should take a request with its reason in English, and show from when the data is erased', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openYuki(OWNER, undefined, 'en')
+    await theRequest('en')
+    await user.click(
+      within(erasure(ERASURE)).getByRole('button', {
+        name: 'Take a request to erase the data',
+      }),
+    )
+    expect(dialog(ASK_IN_ENGLISH)).toHaveAccessibleDescription(
+      `The request to erase the data of ${YUKI.name} will be taken. It can be cancelled for 14 days after it is taken.`,
+    )
+
+    // Act
+    await user.type(
+      within(dialog(ASK_IN_ENGLISH)).getByRole('textbox', {
+        name: 'Reason for the request',
+      }),
+      'Asked in person at the counter.',
+    )
+    await user.click(
+      within(dialog(ASK_IN_ENGLISH)).getByRole('button', {
+        name: 'Take the request',
+      }),
+    )
+
+    // Assert
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    const shown = described(erasure(ERASURE))
+    const scheduled = (shown['To be erased'] ?? '').replace(/^On or after /, '')
+    expect(shown['Taken']).toMatch(MOMENT_IN_ENGLISH)
+    expect(scheduled).toMatch(MOMENT_IN_ENGLISH)
+    expect(shown['Reason for the request']).toBe(
+      'Asked in person at the counter.',
+    )
+    expect(notifications()).toContain(
+      `The request to erase the data of ${YUKI.name} was taken. The data will be erased on or after ${scheduled}.`,
+    )
+    expect(
+      within(erasure(ERASURE)).getByRole('button', {
+        name: 'Cancel the request',
+      }),
+    ).toBeVisible()
+  })
+
+  it('should send no reason of blanks alone, and say so in English under it', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openYuki(OWNER, undefined, 'en')
+    await theRequest('en')
+    await user.click(
+      within(erasure(ERASURE)).getByRole('button', {
+        name: 'Take a request to erase the data',
+      }),
+    )
+    const reason = within(dialog(ASK_IN_ENGLISH)).getByRole('textbox', {
+      name: 'Reason for the request',
+    })
+    await user.click(reason)
+    await user.paste('   ')
+
+    // Act
+    await user.click(
+      within(dialog(ASK_IN_ENGLISH)).getByRole('button', {
+        name: 'Take the request',
+      }),
+    )
+
+    // Assert
+    expect(reason).toBeInvalid()
+    expect(reason).toHaveAccessibleDescription(
+      expect.stringContaining('Enter the reason for the request.'),
+    )
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+
+  it('should call off a pending request in English after asking', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await askedForErasure(YUKI.email, MANAGER)
+    await openYuki(OWNER, undefined, 'en')
+    await theRequest('en')
+    await user.click(
+      within(erasure(ERASURE)).getByRole('button', {
+        name: 'Cancel the request',
+      }),
+    )
+    const cancel = dialog('Cancel the request to erase the data?')
+    expect(cancel).toHaveAccessibleDescription(
+      `The data of ${YUKI.name} will not be erased. Cancel a request when the customer withdraws it, or when it was taken by mistake.`,
+    )
+
+    // Act
+    await user.click(within(cancel).getByRole('button', { name: 'Cancel it' }))
+
+    // Assert
+    expect(
+      await within(erasure(ERASURE)).findByText(
+        /^The request taken on .+ was cancelled on .+\.$/,
+      ),
+    ).toBeVisible()
+    expect(notifications()).toContain(
+      `The request to erase the data of ${YUKI.name} was cancelled.`,
+    )
+  })
+
+  it('should say in English of an erased customer that the data was erased, and that they are to be told', async () => {
+    // Arrange
+    const yuki = await customerIdOf(YUKI.email)
+    await askedForErasure(YUKI.email, OWNER)
+    await erasedMeanwhile(yuki, OPERATOR)
+
+    // Act
+    await openYuki(OWNER, yuki, 'en')
+    await theRequest('en')
+
+    // Assert
+    expect(
+      within(erasure(ERASURE)).getByText(
+        /^The data was erased on .+, on the request taken on .+\. Let the customer know that the data was erased\.$/,
+      ),
+    ).toBeVisible()
   })
 })

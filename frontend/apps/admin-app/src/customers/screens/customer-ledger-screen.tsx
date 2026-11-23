@@ -14,6 +14,7 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
+  type FormSays,
   LoadingIndicator,
   moreOf,
   NOTHING_TO_SAY,
@@ -77,13 +78,13 @@ const { names, ledger: words, titles } = adminCustomerMessages
 const TITLE = titles.ledger
 
 /** What a dialog of the chosen customers says */
-type DialogSays = { message: string | undefined; errors: FormErrors }
+type DialogSays = FormSays<LocalizedText>
 
 /** Why an export of the ledger saved no file, under the conditions it was asked for */
 type ExportSaid = {
   asked: string
   tone: 'warning' | 'danger'
-  message: string
+  message: LocalizedText
 }
 
 type CustomerLedgerProps = {
@@ -257,7 +258,7 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
         }
       />
       {exportSaid !== undefined && exportSaid.asked === asked && (
-        <Alert tone={exportSaid.tone}>{exportSaid.message}</Alert>
+        <Alert tone={exportSaid.tone}>{say(exportSaid.message)}</Alert>
       )}
       <CustomerFilter
         conditions={conditions}

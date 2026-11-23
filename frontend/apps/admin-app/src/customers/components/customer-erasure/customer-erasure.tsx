@@ -8,22 +8,27 @@ import {
   EmptyState,
   FormDialog,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   NO_ERRORS,
   TextArea,
   UnreadNotice,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Ref } from 'react'
 import { match } from 'ts-pattern'
 import type { ErasureRequest } from '../../api/customer-erasure-api'
 import { erasureStateOf } from '../../utils/customer-erasure'
 import styles from './customer-erasure.module.css'
 
+const { erasure: words } = adminCustomerMessages
+
 /** What the part shows of the latest request below its heading */
 export type ErasureShown =
   | { type: 'reading' }
-  | { type: 'unread'; message: string; retrying: boolean }
+  | { type: 'unread'; message: LocalizedText; retrying: boolean }
   /** `null` when the customer never asked */
   | { type: 'read'; request: ErasureRequest | null }
 
@@ -43,8 +48,8 @@ export type CustomerErasureProps = {
    * request is taken once they are back
    */
   requestable: boolean
-  /** What the API refused, or what changed meanwhile: said under the heading */
-  refusal?: string | undefined
+  /** What the API refused, or what changed meanwhile: said under the heading, in the language of the page */
+  refusal?: LocalizedText | undefined
   /** The heading, which takes the focus when a dialog closes on what it changed */
   headingRef?: Ref<HTMLHeadingElement> | undefined
   dialog: ErasureDialog
@@ -55,10 +60,10 @@ export type CustomerErasureProps = {
    * Set `dialog` to `none` here
    */
   onClose: () => void
-  /** What went wrong with an attempt that can be made again: said in the dialog */
-  message?: string | undefined
+  /** What went wrong with an attempt that can be made again: said in the dialog, in the language of the page */
+  message?: LocalizedText | undefined
   /** What is wrong with the reason, under its control */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The request, or its calling off, is on its way */
   pending?: boolean | undefined
   /** The form of the request was sent: `reason` */
@@ -92,21 +97,24 @@ export const CustomerErasure = ({
   onAsk,
   onCancel,
 }: CustomerErasureProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const pendingShown =
     shown.type === 'read' && shown.request?.status === 'pending'
 
   const asking = (
     <>
-      <p>
-        お客様ご本人から、保有している個人データの消去を求められたときは、ご本人であることを確かめてから、依頼を受け付けます。受け付けてから
-        14
-        日のあいだは取り消せ、そのあとで消去します。売上と、売上のもとになった予約は、帳簿の保存のために残し、お客様を特定できる情報を消します。消去したデータは、元に戻せません。
-      </p>
+      <p>{say(words.about)}</p>
       <Button variant='danger' onClick={() => onOpen('ask')}>
-        消去の依頼を受け付ける
+        {say(words.ask)}
       </Button>
     </>
   )
+
+  const saidState = (request: ErasureRequest): string | undefined => {
+    const state = erasureStateOf(request, timezone)
+    return state === undefined ? undefined : say(state)
+  }
 
   const shownRequest = (request: ErasureRequest | null) =>
     match(request)
@@ -114,7 +122,7 @@ export const CustomerErasure = ({
         requestable ? (
           asking
         ) : (
-          <EmptyState kind='part' title='消去の依頼はありません。' />
+          <EmptyState kind='part' title={say(words.none)} />
         ),
       )
       .with({ status: 'pending' }, ({ requestedAt, scheduledAt, reason }) => (
@@ -123,44 +131,48 @@ export const CustomerErasure = ({
             className={styles['details']}
             items={[
               {
-                term: '受け付けた日時',
-                description: inJapanese(momentNameAt(requestedAt, timezone)),
+                term: say(words.pending.requestedAt),
+                description: say(momentNameAt(requestedAt, timezone)),
               },
               {
-                term: '消去の予定',
-                description: `${inJapanese(momentNameAt(scheduledAt, timezone))} 以降`,
+                term: say(words.pending.scheduled),
+                description: say(
+                  words.pending.scheduledOf(
+                    momentNameAt(scheduledAt, timezone),
+                  ),
+                ),
               },
-              { term: '依頼の理由', description: reason },
+              { term: say(words.pending.reason), description: reason },
             ]}
           />
-          <p>
-            予定の日時を過ぎたあとに、消去が実行されます。それまでは、依頼を取り消せます。
-          </p>
-          <Button onClick={() => onOpen('cancel')}>依頼を取り消す</Button>
+          <p>{say(words.pending.about)}</p>
+          <Button onClick={() => onOpen('cancel')}>
+            {say(words.pending.cancel)}
+          </Button>
         </>
       ))
       .with({ status: 'cancelled' }, (cancelled) => (
         <>
-          <p>{erasureStateOf(cancelled, timezone)}</p>
+          <p>{saidState(cancelled)}</p>
           {requestable && asking}
         </>
       ))
       .with({ status: 'completed' }, (completed) => (
-        <p>{erasureStateOf(completed, timezone)}</p>
+        <p>{saidState(completed)}</p>
       ))
       .exhaustive()
 
   return (
-    <Card title='データの消去' headingLevel={3} headingRef={headingRef}>
+    <Card title={say(words.title)} headingLevel={3} headingRef={headingRef}>
       <div className={styles['erasure']}>
-        {refusal !== undefined && <Alert tone='warning'>{refusal}</Alert>}
+        {refusal !== undefined && <Alert tone='warning'>{say(refusal)}</Alert>}
         {match(shown)
           .with({ type: 'reading' }, () => (
-            <LoadingIndicator label='消去の依頼を読み込んでいます' />
+            <LoadingIndicator label={say(words.loading)} />
           ))
           .with({ type: 'unread' }, ({ message: unread, retrying }) => (
             <UnreadNotice
-              message={unread}
+              message={say(unread)}
               onRetry={onRetry}
               pending={retrying}
             />
@@ -172,21 +184,21 @@ export const CustomerErasure = ({
         <FormDialog
           open={dialog === 'ask'}
           onClose={onClose}
-          title='消去の依頼を受け付けますか？'
-          description={`${name} 様のデータの消去の依頼を受け付けます。受け付けてから 14 日のあいだは、取り消せます。`}
-          submitLabel='受け付ける'
+          title={say(words.asking.title)}
+          description={say(words.asking.description(name))}
+          submitLabel={say(words.asking.submit)}
           submitVariant='danger'
-          message={message}
+          message={said.message}
           errors={errors}
           pending={pending}
           onSubmit={onAsk}
         >
           <TextArea
-            label='依頼の理由'
+            label={say(words.asking.reason)}
             name='reason'
             required
-            description='ご本人が述べた理由や、依頼を受けた方法を書きます。依頼の記録に残ります。'
-            error={errors['reason']}
+            description={say(words.asking.reasonDescription)}
+            error={said.errors['reason']}
           />
         </FormDialog>
       )}
@@ -194,18 +206,20 @@ export const CustomerErasure = ({
         <Dialog
           open={dialog === 'cancel'}
           onClose={onClose}
-          title='消去の依頼を取り消しますか？'
-          description={`${name} 様のデータは消去されません。ご本人が依頼を撤回したときや、誤って受け付けたときに取り消します。`}
+          title={say(words.cancelling.title)}
+          description={say(words.cancelling.description(name))}
           actions={
             <>
-              <Button onClick={onClose}>戻る</Button>
+              <Button onClick={onClose}>{say(words.cancelling.back)}</Button>
               <Button pending={pending} onClick={onCancel}>
-                取り消す
+                {say(words.cancelling.confirm)}
               </Button>
             </>
           }
         >
-          {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+          {said.message !== undefined && (
+            <Alert tone='danger'>{said.message}</Alert>
+          )}
         </Dialog>
       )}
     </Card>
