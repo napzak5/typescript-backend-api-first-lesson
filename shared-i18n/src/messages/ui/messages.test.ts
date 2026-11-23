@@ -3,11 +3,15 @@ import { numberOf } from '../../formats/numbers'
 import type { LocalizedText } from '../../languages/localized-text'
 import { JAPANESE, messagesOf } from '../__tests__/found-messages'
 import * as catalogues from './index'
-import { uiMessages } from './index'
+import { answerMessages, fieldMessages, uiMessages } from './index'
 
 const FOUND = messagesOf(catalogues, '')
 
 const { counted, filterForm, pagedList, passwordField, rating } = uiMessages
+
+/** A name a screen gives a control, or what it reads */
+const SUPPLIER = { en: 'Supplier', ja: '仕入先' }
+const BOOKINGS = { en: 'the bookings', ja: '予約' }
 
 /** A rating as the component writes it, to one decimal */
 const ratingOf = (value: number): LocalizedText =>
@@ -56,9 +60,83 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
     rating.outOf(5, ratingOf(4.5), rating.count(128)),
     { en: '4.5 out of 5 (128 ratings)', ja: '5 段階中 4.5（128 件）' },
   ],
+  [
+    'fieldMessages.characters',
+    fieldMessages.characters(255),
+    { en: '255 characters', ja: '255 文字' },
+  ],
+  [
+    'fieldMessages.tooLong',
+    fieldMessages.tooLong(255),
+    {
+      en: 'Enter up to 255 characters.',
+      ja: '255 文字以内で入力してください。',
+    },
+  ],
+  [
+    'fieldMessages.tooLongOf',
+    fieldMessages.tooLongOf(SUPPLIER, 100),
+    {
+      en: 'Supplier: enter up to 100 characters.',
+      ja: '仕入先は、100 文字以内で入力してください。',
+    },
+  ],
+  [
+    'fieldMessages.eachTooLongOf',
+    fieldMessages.eachTooLongOf(SUPPLIER, 100),
+    {
+      en: 'Supplier: enter up to 100 characters for each entry.',
+      ja: '仕入先は、1 つ 100 文字以内で入力してください。',
+    },
+  ],
+  [
+    'fieldMessages.neededWithin',
+    fieldMessages.neededWithin(SUPPLIER, 100),
+    {
+      en: 'Supplier: enter 1 to 100 characters.',
+      ja: '仕入先を、100 文字以内で入力してください。',
+    },
+  ],
+  [
+    'fieldMessages.upTo',
+    fieldMessages.upTo(500),
+    { en: 'Up to 500 characters.', ja: '500 文字まで。' },
+  ],
+  [
+    'fieldMessages.notWebAddress',
+    fieldMessages.notWebAddress(500),
+    {
+      en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+      ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+    },
+  ],
+  [
+    'fieldMessages.webAddressDescription',
+    fieldMessages.webAddressDescription(500),
+    {
+      en: 'A URL that begins with http:// or https://. Up to 500 characters.',
+      ja: 'http:// か https:// で始まる URL。500 文字まで。',
+    },
+  ],
+  [
+    'fieldMessages.lineToCheck',
+    fieldMessages.lineToCheck(2, fieldMessages.unlisted),
+    {
+      en: 'Check line 2. Choose one of the options.',
+      ja: '2 行目を確かめてください。選択肢から選んでください。',
+    },
+  ],
+  [
+    'answerMessages.unread',
+    answerMessages.unread(BOOKINGS),
+    {
+      en: 'Could not load the bookings. Check your connection and try again.',
+      ja: '予約を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+    },
+  ],
 ]
 
-describe('the messages of the shared components', () => {
+describe('the messages of the shared parts of the screens', () => {
   it.each(FOUND.texts)(
     'should be written in each language: %s',
     (_where, written) => {
@@ -135,6 +213,22 @@ describe('the messages of the shared components', () => {
       rating.outOf(5, ratingOf(4.25), null),
       { en: '4.3 out of 5', ja: '5 段階中 4.3' },
     ],
+    [
+      'a length',
+      fieldMessages.tooLongOf(SUPPLIER, 2000),
+      {
+        en: 'Supplier: enter up to 2,000 characters.',
+        ja: '仕入先は、2,000 文字以内で入力してください。',
+      },
+    ],
+    [
+      'a line',
+      fieldMessages.lineToCheck(1200, fieldMessages.unlisted),
+      {
+        en: 'Check line 1,200. Choose one of the options.',
+        ja: '1,200 行目を確かめてください。選択肢から選んでください。',
+      },
+    ],
   ])(
     'should write the numbers of %s with the format of numbers',
     (_what, made, expected) => {
@@ -165,6 +259,25 @@ describe('the messages of the shared components', () => {
 
     // Assert
     expect(made.en).toBe('Show new password')
+  })
+
+  it('should count one character as one in English', () => {
+    // Act
+    const made = fieldMessages.upTo(1)
+
+    // Assert
+    expect(made).toEqual({ en: 'Up to 1 character.', ja: '1 文字まで。' })
+  })
+
+  it('should name no length of an address of the web where it may be of any', () => {
+    // Act
+    const made = fieldMessages.notWebAddress(null)
+
+    // Assert
+    expect(made).toEqual({
+      en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com).',
+      ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
+    })
   })
 
   it('should count one rating as one in English', () => {

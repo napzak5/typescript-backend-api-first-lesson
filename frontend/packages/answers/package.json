@@ -31,9 +31,11 @@
   },
   "dependencies": {
     "@beauty-salon-frontend/api-client": "workspace:*",
+    "@beauty-salon-shared/i18n": "workspace:*",
     "ts-pattern": "^5.9.2"
   },
   "devDependencies": {
+    "@beauty-salon-frontend/testing": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
     "@types/node": "^26.6.6",
     "typescript": "^7.0.2",
