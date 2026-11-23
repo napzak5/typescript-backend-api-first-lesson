@@ -3,6 +3,8 @@ import type {
   ModelsSalonResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { preferenceMessages } from '@beauty-salon-shared/i18n/messages/ui'
 
 /** A member of the staff a customer may wish for or avoid, with the salon they work at. */
 export type StaffChoice = {
@@ -58,8 +60,11 @@ export const staffChoicesOf = (
 }
 
 /** How a member of the staff is named where staff of several salons stand together: 「田中 美咲（Beauty Salon Tokyo）」. */
-export const staffLabelOf = ({ displayName, salonName }: StaffChoice): string =>
-  `${displayName}（${salonName}）`
+export const staffLabelOf = ({
+  displayName,
+  salonName,
+}: StaffChoice): LocalizedText =>
+  preferenceMessages.staffOfSalon(displayName, salonName)
 
 /**
  * The names of the members of the staff with the given IDs, in the order
@@ -69,7 +74,7 @@ export const staffLabelOf = ({ displayName, salonName }: StaffChoice): string =>
 export const staffNamed = (
   ids: readonly string[],
   staff: readonly StaffChoice[],
-): string[] =>
+): LocalizedText[] =>
   ids.flatMap((id) => {
     const member = staff.find((choice) => choice.id === id)
 

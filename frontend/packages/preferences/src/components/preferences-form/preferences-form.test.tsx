@@ -1,7 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
+import { act } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { kenta, misaki, yui } from '../examples'
 import * as preferencesFormStories from './preferences-form.stories'
 
@@ -306,5 +308,100 @@ describe('PreferencesForm', () => {
     expect(text('接客の好み')).toHaveAccessibleDescription(
       '会話の多さなどを、100 文字以内で書いてください。',
     )
+  })
+})
+
+describe('PreferencesForm on a page in English', () => {
+  /** What is said of the staff to avoid when the one wished for is among them */
+  const AVOIDED_IS_WISHED_FOR =
+    'The staff you wish for cannot be among those to avoid. Change one of them.'
+
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its parts, its controls and the staff it offers in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Filled.run()
+
+    // Assert
+    expect(
+      screen
+        .getAllByRole('group')
+        .map((group) => group.querySelector('legend')?.textContent),
+    ).toEqual([
+      'Staff',
+      'Staff to avoid',
+      'Preferred times',
+      'Style',
+      'Service',
+    ])
+    expect(
+      screen.getByRole('combobox', { name: 'Preferred staff' }),
+    ).toHaveDisplayValue('田中 美咲 (Beauty Salon Tokyo)')
+    expect(
+      screen.getByRole('option', { name: 'No preference' }),
+    ).toBeInTheDocument()
+    expect(text('Favorite colors')).toHaveAccessibleDescription(
+      'Write one on each line.',
+    )
+    expect(text('How you like to be served')).toHaveAccessibleDescription(
+      'How much you like to talk, and the like, in up to 100 characters.',
+    )
+  })
+
+  it('should say in English that the staff are chosen after a booking, when it is given none', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutStaff.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'You can choose the staff you wish for, and those you would rather avoid, once you have booked at a salon.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say in English what went wrong with the attempt', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithMessage.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'It could not be sent. Check your connection and try again.',
+    )
+  })
+
+  it('should say the errors anew when the page turns English, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.WithErrors.run()
+    screen
+      .getByRole('checkbox', { name: '田中 美咲（Beauty Salon Tokyo）' })
+      .blur()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(part('Staff to avoid')).toHaveAccessibleDescription(
+      AVOIDED_IS_WISHED_FOR,
+    )
+    expect(screen.getByLabelText('End of time 2')).toHaveAccessibleDescription(
+      'Make the end later than the start.',
+    )
+    expect(
+      screen.getByRole('checkbox', { name: '田中 美咲 (Beauty Salon Tokyo)' }),
+    ).not.toHaveFocus()
   })
 })

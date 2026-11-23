@@ -1,3 +1,8 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
+import {
+  fieldMessages,
+  preferenceMessages,
+} from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import {
@@ -46,13 +51,13 @@ export const StaffThatLeft: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      avoidStaffIds:
-        '指名したいスタッフは、避けたいスタッフに選べません。どちらかを変えてください。',
-      'preferredTimeSlots.1.endTime':
-        '終了は、開始より後の時刻にしてください。',
-      'stylePreferences.inspirationImages':
-        '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
-      communicationStyle: '100 文字以内で入力してください。',
+      avoidStaffIds: preferenceMessages.flow.avoidedIsWishedFor,
+      'preferredTimeSlots.1.endTime': preferenceMessages.flow.endNotLater,
+      'stylePreferences.inspirationImages': fieldMessages.lineToCheck(
+        2,
+        fieldMessages.notWebAddress(500),
+      ),
+      communicationStyle: fieldMessages.tooLong(100),
     },
   },
 }
@@ -60,8 +65,7 @@ export const WithErrors: Story = {
 /** Nothing came of the attempt, and no control is to blame */
 export const WithMessage: Story = {
   args: {
-    message:
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: NOT_SENT_MESSAGE,
   },
 }
 

@@ -4,9 +4,14 @@ import {
   type FormErrors,
   TextField,
   useRepeatedRows,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { preferenceMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { endOf, startOf } from '../../utils/preferences-flow'
 import styles from './time-slot-fields.module.css'
+
+const { timeSlots: words } = preferenceMessages
 
 export type TimeSlotFieldsProps = {
   /**
@@ -17,10 +22,11 @@ export type TimeSlotFieldsProps = {
   /** The time slots the rows open with */
   defaultValue: readonly ModelsTimeSlot[]
   /**
-   * What is wrong with a time, under the name of its control. A new object
-   * is the answer to another attempt
+   * What is wrong with a time, under the name of its control, which the
+   * component says in the language of the page. A new object is the answer
+   * to another attempt
    */
-  errors: FormErrors
+  errors: FormErrors<LocalizedText>
 }
 
 /**
@@ -41,11 +47,18 @@ export const TimeSlotFields = ({
   defaultValue,
   errors,
 }: TimeSlotFieldsProps) => {
+  const say = useSay()
   // A row holds the time slot it opened with; a row that was added opened empty
-  const slots = useRepeatedRows<ModelsTimeSlot | undefined>(
+  const slots = useRepeatedRows<ModelsTimeSlot | undefined, LocalizedText>(
     () => defaultValue,
     errors,
   )
+  /** What is said at a control */
+  const errorAt = (control: string): string | undefined => {
+    const error = slots.errors[control]
+
+    return error === undefined ? undefined : say(error)
+  }
 
   return (
     <div className={styles['slots']}>
@@ -58,34 +71,34 @@ export const TimeSlotFields = ({
               className={styles['row']}
             >
               <TextField
-                label={`時間帯 ${index + 1} の開始`}
+                label={say(words.start(index + 1))}
                 name={startOf(name, index)}
                 autoComplete='off'
                 type='time'
                 defaultValue={row.value?.startTime}
-                error={slots.errors[startOf(name, index)]}
+                error={errorAt(startOf(name, index))}
               />
               <TextField
-                label={`時間帯 ${index + 1} の終了`}
+                label={say(words.end(index + 1))}
                 name={endOf(name, index)}
                 autoComplete='off'
                 type='time'
                 defaultValue={row.value?.endTime}
-                error={slots.errors[endOf(name, index)]}
+                error={errorAt(endOf(name, index))}
               />
               <Button
                 size='small'
                 className={styles['remove']}
                 onClick={() => slots.remove(row.key)}
               >
-                {`時間帯 ${index + 1} を削除する`}
+                {say(words.remove(index + 1))}
               </Button>
             </li>
           ))}
         </ol>
       )}
       <Button ref={slots.addRef} onClick={() => slots.add(undefined)}>
-        時間帯を追加する
+        {say(words.add)}
       </Button>
     </div>
   )

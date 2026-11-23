@@ -30,6 +30,108 @@ import {
 const GONE = '0f6d3b8a-7e21-4c95-b4a0-6d9e2c5f1a73'
 const ALSO_GONE = '2a9c5e7f-4b10-4d68-a3f2-8e1b6c0d4f95'
 
+/** A member who is wished for and to be avoided at once */
+const AVOIDED_IS_WISHED_FOR = {
+  en: 'The staff you wish for cannot be among those to avoid. Change one of them.',
+  ja: '指名したいスタッフは、避けたいスタッフに選べません。どちらかを変えてください。',
+}
+
+/** A time slot without the time it begins at */
+const START_MISSING = {
+  en: 'Enter the start time.',
+  ja: '開始の時刻を入力してください。',
+}
+
+/** A time slot without the time it ends at */
+const END_MISSING = {
+  en: 'Enter the end time.',
+  ja: '終了の時刻を入力してください。',
+}
+
+/** A time that is no time of a day */
+const TIME_MALFORMED = {
+  en: 'Enter a time such as 09:30.',
+  ja: '時刻は、09:30 のように入力してください。',
+}
+
+/** A time slot that ends when it begins, or before */
+const END_NOT_LATER = {
+  en: 'Make the end later than the start.',
+  ja: '終了は、開始より後の時刻にしてください。',
+}
+
+/** A time slot that overlaps an earlier one */
+const OVERLAPPING = {
+  en: 'This overlaps another time. Choose times that do not overlap.',
+  ja: 'ほかの時間帯と重なっています。重ならない時刻にしてください。',
+}
+
+/** The second line of the pictures is no address of the web */
+const LINE_2_NO_ADDRESS = {
+  en: 'Check line 2. Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+  ja: '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+}
+
+/** The first line of the pictures is no address of the web */
+const LINE_1_NO_ADDRESS = {
+  en: 'Check line 1. Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+  ja: '1 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+}
+
+/** A way to be talked to that is too long */
+const UP_TO_100 = {
+  en: 'Enter up to 100 characters.',
+  ja: '100 文字以内で入力してください。',
+}
+
+/** Too many requests */
+const TOO_MANY_REQUESTS = {
+  en: 'There are too many requests. Wait a while and try again.',
+  ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+}
+
+/** No answer */
+const NOT_SENT = {
+  en: 'It could not be sent. Check your connection and try again.',
+  ja: '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+}
+
+/** A member who is wished for and is gone */
+const STAFF_GONE = {
+  en: 'This member of the staff can no longer be chosen. Choose another.',
+  ja: 'このスタッフは、選べなくなりました。ほかのスタッフを選んでください。',
+}
+
+/** A member who is wished for and was made one to avoid in the meantime */
+const WISHED_FOR_IS_AVOIDED = {
+  en: 'This member of the staff is among those to avoid. Change one of them.',
+  ja: 'このスタッフは、避けたいスタッフに入っています。どちらかを変えてください。',
+}
+
+/** One of those to avoid who is gone */
+const AVOIDED_STAFF_GONE = {
+  en: 'Some of the staff can no longer be chosen. Load the page again and choose anew.',
+  ja: '選べなくなったスタッフが含まれています。ページを読み込み直して、選び直してください。',
+}
+
+/** A value the API does not take, for a rule the form does not know */
+const REFUSED_VALUE = {
+  en: 'This value was not accepted. Check what you entered.',
+  ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+}
+
+/** Time slots the API does not take */
+const TIME_SLOTS_REFUSED = {
+  en: 'Check the preferred times and try again.',
+  ja: '希望する時間帯を確かめて、もう一度お試しください。',
+}
+
+/** Something is wrong and no control is to blame */
+const CHECK_THE_VALUES = {
+  en: 'Check what you entered and try again.',
+  ja: '入力した内容を確かめて、もう一度お試しください。',
+}
+
 /** The form as a browser sends it, for what its controls hold. */
 const formOf = (entered: Entered): FormData => {
   const values = new FormData()
@@ -299,8 +401,7 @@ describe('readPreferencesChange', () => {
       expect(sending({ ...OPENED, preferredStaffId: kenta.id })).toEqual({
         type: 'invalid',
         errors: {
-          avoidStaffIds:
-            '指名したいスタッフは、避けたいスタッフに選べません。どちらかを変えてください。',
+          avoidStaffIds: AVOIDED_IS_WISHED_FOR,
         },
       })
     })
@@ -404,49 +505,49 @@ describe('readPreferencesChange', () => {
         'the time it begins at is missing',
         ['', '12:00'],
         'preferredTimeSlots.0.startTime',
-        '開始の時刻を入力してください。',
+        START_MISSING,
       ],
       [
         'the time it ends at is missing',
         ['10:00', ''],
         'preferredTimeSlots.0.endTime',
-        '終了の時刻を入力してください。',
+        END_MISSING,
       ],
       [
         'the time it begins at has one digit for the hour',
         ['9:30', '12:00'],
         'preferredTimeSlots.0.startTime',
-        '時刻は、09:30 のように入力してください。',
+        TIME_MALFORMED,
       ],
       [
         'the time it begins at has seconds',
         ['09:30:00', '12:00'],
         'preferredTimeSlots.0.startTime',
-        '時刻は、09:30 のように入力してください。',
+        TIME_MALFORMED,
       ],
       [
         'the time it ends at is no time of a day',
         ['10:00', '24:00'],
         'preferredTimeSlots.0.endTime',
-        '時刻は、09:30 のように入力してください。',
+        TIME_MALFORMED,
       ],
       [
         'the time it ends at has no minute of an hour',
         ['10:00', '11:60'],
         'preferredTimeSlots.0.endTime',
-        '時刻は、09:30 のように入力してください。',
+        TIME_MALFORMED,
       ],
       [
         'it ends when it begins',
         ['10:00', '10:00'],
         'preferredTimeSlots.0.endTime',
-        '終了は、開始より後の時刻にしてください。',
+        END_NOT_LATER,
       ],
       [
         'it ends before it begins',
         ['18:00', '09:00'],
         'preferredTimeSlots.0.endTime',
-        '終了は、開始より後の時刻にしてください。',
+        END_NOT_LATER,
       ],
     ])(
       'should not send a time slot when %s, and say so at the time to correct',
@@ -475,8 +576,7 @@ describe('readPreferencesChange', () => {
         ).toEqual({
           type: 'invalid',
           errors: {
-            'preferredTimeSlots.1.startTime':
-              'ほかの時間帯と重なっています。重ならない時刻にしてください。',
+            'preferredTimeSlots.1.startTime': OVERLAPPING,
           },
         })
       },
@@ -497,11 +597,9 @@ describe('readPreferencesChange', () => {
       ).toEqual({
         type: 'invalid',
         errors: {
-          'preferredTimeSlots.2.endTime':
-            '終了は、開始より後の時刻にしてください。',
-          'preferredTimeSlots.3.startTime':
-            'ほかの時間帯と重なっています。重ならない時刻にしてください。',
-          'preferredTimeSlots.4.startTime': '開始の時刻を入力してください。',
+          'preferredTimeSlots.2.endTime': END_NOT_LATER,
+          'preferredTimeSlots.3.startTime': OVERLAPPING,
+          'preferredTimeSlots.4.startTime': START_MISSING,
         },
       })
     })
@@ -515,8 +613,7 @@ describe('readPreferencesChange', () => {
       ).toEqual({
         type: 'invalid',
         errors: {
-          'preferredTimeSlots.0.endTime':
-            '終了は、開始より後の時刻にしてください。',
+          'preferredTimeSlots.0.endTime': END_NOT_LATER,
         },
       })
     })
@@ -674,8 +771,7 @@ describe('readPreferencesChange', () => {
         ).toEqual({
           type: 'invalid',
           errors: {
-            'stylePreferences.inspirationImages':
-              '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+            'stylePreferences.inspirationImages': LINE_2_NO_ADDRESS,
           },
         })
       },
@@ -691,8 +787,10 @@ describe('readPreferencesChange', () => {
       ).toMatchObject({
         type: 'invalid',
         errors: {
-          'stylePreferences.inspirationImages':
-            expect.stringMatching(/^4 行目を確かめてください。/),
+          'stylePreferences.inspirationImages': {
+            en: expect.stringMatching(/^Check line 4\. /),
+            ja: expect.stringMatching(/^4 行目を確かめてください。/),
+          },
         },
       })
     })
@@ -721,7 +819,7 @@ describe('readPreferencesChange', () => {
         sending({ ...OPENED, communicationStyle: 'あ'.repeat(101) }),
       ).toEqual({
         type: 'invalid',
-        errors: { communicationStyle: '100 文字以内で入力してください。' },
+        errors: { communicationStyle: UP_TO_100 },
       })
     })
   })
@@ -757,12 +855,10 @@ describe('readPreferencesChange', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        avoidStaffIds:
-          '指名したいスタッフは、避けたいスタッフに選べません。どちらかを変えてください。',
-        'preferredTimeSlots.0.endTime': '終了の時刻を入力してください。',
-        'stylePreferences.inspirationImages':
-          '1 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
-        communicationStyle: '100 文字以内で入力してください。',
+        avoidStaffIds: AVOIDED_IS_WISHED_FOR,
+        'preferredTimeSlots.0.endTime': END_MISSING,
+        'stylePreferences.inspirationImages': LINE_1_NO_ADDRESS,
+        communicationStyle: UP_TO_100,
       },
     })
   })
@@ -777,16 +873,14 @@ describe('afterPreferencesChange', () => {
 
   it('should say that there were too many requests', () => {
     expect(afterPreferencesChange({ type: 'tooManyRequests' })).toEqual({
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS,
       errors: {},
     })
   })
 
   it('should say that nothing was sent when there was no answer', () => {
     expect(afterPreferencesChange({ type: 'failed' })).toEqual({
-      message:
-        '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: NOT_SENT,
       errors: {},
     })
   })
@@ -797,77 +891,77 @@ describe('afterPreferencesChange', () => {
       'preferredStaffId',
       'not_found',
       'preferredStaffId',
-      'このスタッフは、選べなくなりました。ほかのスタッフを選んでください。',
+      STAFF_GONE,
     ],
     [
       'a member who is wished for and is to be avoided, as a salon stored it in the meantime',
       'preferredStaffId',
       'avoided',
       'preferredStaffId',
-      'このスタッフは、避けたいスタッフに入っています。どちらかを変えてください。',
+      WISHED_FOR_IS_AVOIDED,
     ],
     [
       'one of those to avoid who is gone',
       'avoidStaffIds.1',
       'not_found',
       'avoidStaffIds',
-      '選べなくなったスタッフが含まれています。ページを読み込み直して、選び直してください。',
+      AVOIDED_STAFF_GONE,
     ],
     [
       'the list of those to avoid',
       'avoidStaffIds',
       'invalid_type',
       'avoidStaffIds',
-      '選べなくなったスタッフが含まれています。ページを読み込み直して、選び直してください。',
+      AVOIDED_STAFF_GONE,
     ],
     [
       'a way to be talked to that is too long',
       'communicationStyle',
       'too_big',
       'communicationStyle',
-      '100 文字以内で入力してください。',
+      UP_TO_100,
     ],
     [
       'a way to be talked to that is refused for another rule',
       'communicationStyle',
       'invalid_format',
       'communicationStyle',
-      'この値は受け付けられませんでした。入力を確かめてください。',
+      REFUSED_VALUE,
     ],
     [
       'a request',
       'specialRequests',
       'invalid_format',
       'specialRequests',
-      'この値は受け付けられませんでした。入力を確かめてください。',
+      REFUSED_VALUE,
     ],
     [
       'a length',
       'stylePreferences.preferredLength',
       'invalid_format',
       'stylePreferences.preferredLength',
-      'この値は受け付けられませんでした。入力を確かめてください。',
+      REFUSED_VALUE,
     ],
     [
       'one of the colours',
       'stylePreferences.preferredColors.0',
       'custom',
       'stylePreferences.preferredColors',
-      'この値は受け付けられませんでした。入力を確かめてください。',
+      REFUSED_VALUE,
     ],
     [
       'one of the styles to avoid',
       'stylePreferences.avoidStyles.2',
       'custom',
       'stylePreferences.avoidStyles',
-      'この値は受け付けられませんでした。入力を確かめてください。',
+      REFUSED_VALUE,
     ],
     [
       'one of the pictures',
       'stylePreferences.inspirationImages.1',
       'invalid_format',
       'stylePreferences.inspirationImages',
-      'この値は受け付けられませんでした。入力を確かめてください。',
+      REFUSED_VALUE,
     ],
   ])(
     'should say at its control what the API does not take: %s',
@@ -887,7 +981,7 @@ describe('afterPreferencesChange', () => {
     'should say of the attempt that the time slots were not taken, when the API refuses %s: its rows are not those of the form',
     (_case, field) => {
       expect(refused([field, 'custom'])).toEqual({
-        message: '希望する時間帯を確かめて、もう一度お試しください。',
+        message: TIME_SLOTS_REFUSED,
         errors: {},
       })
     },
@@ -900,10 +994,9 @@ describe('afterPreferencesChange', () => {
         ['specialRequests', 'custom'],
       ),
     ).toEqual({
-      message: '希望する時間帯を確かめて、もう一度お試しください。',
+      message: TIME_SLOTS_REFUSED,
       errors: {
-        specialRequests:
-          'この値は受け付けられませんでした。入力を確かめてください。',
+        specialRequests: REFUSED_VALUE,
       },
     })
   })
@@ -919,7 +1012,7 @@ describe('afterPreferencesChange', () => {
     'should say of the attempt that something is wrong, when the API refuses %s',
     (_case, field) => {
       expect(refused([field, 'custom'])).toEqual({
-        message: '入力した内容を確かめて、もう一度お試しください。',
+        message: CHECK_THE_VALUES,
         errors: {},
       })
     },
@@ -927,7 +1020,7 @@ describe('afterPreferencesChange', () => {
 
   it('should say of the attempt that something is wrong when the API names no value', () => {
     expect(refused()).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: CHECK_THE_VALUES,
       errors: {},
     })
   })
@@ -941,8 +1034,7 @@ describe('afterPreferencesChange', () => {
     ).toEqual({
       message: undefined,
       errors: {
-        preferredStaffId:
-          'このスタッフは、避けたいスタッフに入っています。どちらかを変えてください。',
+        preferredStaffId: WISHED_FOR_IS_AVOIDED,
       },
     })
   })

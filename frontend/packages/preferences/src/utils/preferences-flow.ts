@@ -23,11 +23,12 @@ import {
   type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
   same,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { preferenceMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import type { StaffChoice } from './staff-choices'
 
@@ -194,14 +195,9 @@ const wholeOf = (entered: Entered): Whole => ({
   specialRequests: textOrNull(entered.specialRequests),
 })
 
-const AVOIDED_IS_WISHED_FOR =
-  '指名したいスタッフは、避けたいスタッフに選べません。どちらかを変えてください。'
-const START_MISSING = '開始の時刻を入力してください。'
-const END_MISSING = '終了の時刻を入力してください。'
-const TIME_MALFORMED = '時刻は、09:30 のように入力してください。'
-const END_NOT_LATER = '終了は、開始より後の時刻にしてください。'
-const OVERLAPPING =
-  'ほかの時間帯と重なっています。重ならない時刻にしてください。'
+/** What the form says of what it was sent with, and of what the API did not take */
+const { flow } = preferenceMessages
+
 const COMMUNICATION_STYLE_TOO_LONG = tooLong(MAX_COMMUNICATION_STYLE_LENGTH)
 
 /** A time of day as the API takes it: `09:30`. Two of them compare as text. */
@@ -220,7 +216,7 @@ const isTimeSlot = ({ startTime, endTime }: ModelsTimeSlot): boolean =>
 const timeSlotError = (
   rows: readonly ModelsTimeSlot[],
   index: number,
-): [string, string] | undefined => {
+): [string, LocalizedText] | undefined => {
   const startTime = rows[index]?.startTime.trim() ?? ''
   const endTime = rows[index]?.endTime.trim() ?? ''
   const start = startOf(TIME_SLOTS, index)
@@ -230,19 +226,19 @@ const timeSlotError = (
     return undefined
   }
   if (startTime === '') {
-    return [start, START_MISSING]
+    return [start, flow.startMissing]
   }
   if (!TIME_OF_DAY.test(startTime)) {
-    return [start, TIME_MALFORMED]
+    return [start, flow.timeMalformed]
   }
   if (endTime === '') {
-    return [end, END_MISSING]
+    return [end, flow.endMissing]
   }
   if (!TIME_OF_DAY.test(endTime)) {
-    return [end, TIME_MALFORMED]
+    return [end, flow.timeMalformed]
   }
   if (startTime >= endTime) {
-    return [end, END_NOT_LATER]
+    return [end, flow.endNotLater]
   }
 
   return rows
@@ -255,33 +251,41 @@ const timeSlotError = (
     .some(
       (earlier) => startTime < earlier.endTime && earlier.startTime < endTime,
     )
-    ? [start, OVERLAPPING]
+    ? [start, flow.overlapping]
     : undefined
 }
 
+/** What is said at a control */
+const said = (
+  control: string,
+  error: LocalizedText,
+): [string, LocalizedText] => [control, error]
+
 /** What cannot be right of what the form was sent with, under the names of the controls. */
-const errorsOf = (entered: Entered): FormErrors => {
+const errorsOf = (entered: Entered): FormErrors<LocalizedText> => {
   const wished = entered.preferredStaffId ?? ''
   const images = webAddressLinesError(
     entered.inspirationImages,
     LONGEST_WEB_ADDRESS,
   )
 
-  return Object.fromEntries([
+  const wrong: [string, LocalizedText][] = [
     ...(wished !== '' && (entered.avoidStaffIds ?? []).includes(wished)
-      ? [[AVOIDED_STAFF, AVOIDED_IS_WISHED_FOR]]
+      ? [said(AVOIDED_STAFF, flow.avoidedIsWishedFor)]
       : []),
     ...entered.timeSlots.flatMap((_, index) => {
       const error = timeSlotError(entered.timeSlots, index)
 
       return error === undefined ? [] : [error]
     }),
-    ...(images === undefined ? [] : [[INSPIRATION_IMAGES, inJapanese(images)]]),
+    ...(images === undefined ? [] : [said(INSPIRATION_IMAGES, images)]),
     ...(lengthOf(entered.communicationStyle.trim()) >
     MAX_COMMUNICATION_STYLE_LENGTH
-      ? [[COMMUNICATION_STYLE, inJapanese(COMMUNICATION_STYLE_TOO_LONG)]]
+      ? [said(COMMUNICATION_STYLE, COMMUNICATION_STYLE_TOO_LONG)]
       : []),
-  ])
+  ]
+
+  return Object.fromEntries(wrong)
 }
 /**
  * The preferences the form was sent with other values for than it was
@@ -315,7 +319,7 @@ const changesOf = (
 
 /** What the form was sent with: what to change, nothing to change, or what is wrong. */
 export type PreferencesChangeRead =
-  | FormRead<ModelsCustomerPreferencesUpdateRequest>
+  | FormRead<ModelsCustomerPreferencesUpdateRequest, FormErrors<LocalizedText>>
   /** The form was sent as it was opened: there is nothing to ask the API for */
   | { type: 'unchanged' }
 
@@ -345,14 +349,6 @@ export const readPreferencesChange = (
     : { type: 'valid', value: changes }
 }
 
-const STAFF_GONE =
-  'このスタッフは、選べなくなりました。ほかのスタッフを選んでください。'
-const WISHED_FOR_IS_AVOIDED =
-  'このスタッフは、避けたいスタッフに入っています。どちらかを変えてください。'
-const AVOIDED_STAFF_GONE =
-  '選べなくなったスタッフが含まれています。ページを読み込み直して、選び直してください。'
-const TIME_SLOTS_REFUSED = '希望する時間帯を確かめて、もう一度お試しください。'
-
 /** A value of a list is entered at the control of the list. */
 const LISTS = [
   AVOIDED_STAFF,
@@ -378,20 +374,17 @@ const controlOf = (field: string): string | undefined =>
   LISTS.find((list) => field.startsWith(`${list}.`))
 
 /** What to say at a control whose value the API did not take, for the rule the value broke. */
-const messageOf = (control: string, rule: string): string =>
+const messageOf = (control: string, rule: string): LocalizedText =>
   match(control)
+    .returnType<LocalizedText>()
     .with(PREFERRED_STAFF, () =>
-      rule === 'avoided' ? WISHED_FOR_IS_AVOIDED : STAFF_GONE,
+      rule === 'avoided' ? flow.wishedForIsAvoided : flow.staffGone,
     )
-    .with(AVOIDED_STAFF, () => AVOIDED_STAFF_GONE)
+    .with(AVOIDED_STAFF, () => flow.avoidedStaffGone)
     .with(COMMUNICATION_STYLE, () =>
-      inJapanese(
-        rule === 'too_big'
-          ? COMMUNICATION_STYLE_TOO_LONG
-          : REFUSED_VALUE_MESSAGE,
-      ),
+      rule === 'too_big' ? COMMUNICATION_STYLE_TOO_LONG : REFUSED_VALUE_MESSAGE,
     )
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /**
  * What the form says about the values the API did not take: at the
@@ -400,7 +393,9 @@ const messageOf = (control: string, rule: string): string =>
  * left empty: a time slot that is refused all the same is said of the
  * attempt, and so is a value the form has no control for.
  */
-const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
+const afterRefusedValues = (
+  values: readonly RefusedValue[],
+): FormSays<LocalizedText> => {
   const said = values.flatMap(({ field, rule }) => {
     const control = controlOf(field)
 
@@ -413,12 +408,17 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
   )
 
   return said.length === 0 && !ofTimeSlots
-    ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
+    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
     : {
-        message: ofTimeSlots ? TIME_SLOTS_REFUSED : undefined,
+        message: ofTimeSlots ? flow.timeSlotsRefused : undefined,
         // The first thing the API says about a value is the one to act on
         errors: Object.fromEntries(
-          said.toReversed().map(({ control, message }) => [control, message]),
+          said
+            .toReversed()
+            .map(({ control, message }): [string, LocalizedText] => [
+              control,
+              message,
+            ]),
         ),
       }
 }
@@ -433,14 +433,14 @@ export type PreferencesRefusal =
   | { type: 'failed' }
 
 /** What the form says after the API did not change the preferences. */
-export const afterPreferencesChange = (outcome: PreferencesRefusal): FormSays =>
+export const afterPreferencesChange = (
+  outcome: PreferencesRefusal,
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()

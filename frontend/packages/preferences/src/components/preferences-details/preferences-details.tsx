@@ -3,30 +3,31 @@ import type {
   ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
 import { webAddressOf } from '@beauty-salon-frontend/fields'
-import { DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
+import { DescriptionList, useSay, WrittenText } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { preferenceMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import styles from './preferences-details.module.css'
+
+const { details, form: words } = preferenceMessages
 
 export type PreferencesDetailsProps = {
   preferences: ModelsCustomerPreferencesResponse
   /**
    * The names of the members of the staff with the given IDs, as the
-   * screen names them, in the order of the IDs. What a screen does with a
+   * screen names them in every language, in the order of the IDs. What a screen does with a
    * member nobody shows any more is its own: it leaves them out, or says
    * that there is one
    */
-  staffNames: (ids: readonly string[]) => readonly string[]
+  staffNames: (ids: readonly string[]) => readonly LocalizedText[]
 }
 
-/** What stands where a preference would, when the customer has none */
-const UNSET = '指定なし'
-
 /** The entries of a list, as a sentence lists them; the word for none when there is none. */
-const listed = (entries: readonly string[]): string =>
-  entries.length === 0 ? UNSET : entries.join('、')
+const listed = (entries: readonly string[]): LocalizedText =>
+  entries.length === 0 ? details.unset : details.listed(entries)
 
-/** A time slot as it is read: 「10:00〜12:00」. */
-const timeSlotOf = ({ startTime, endTime }: ModelsTimeSlot): string =>
-  `${startTime}〜${endTime}`
+/** The time slots, as they are read: 「10:00〜12:00、14:00〜16:00」; the word for none when there is none. */
+const timeSlotsOf = (slots: readonly ModelsTimeSlot[]): LocalizedText =>
+  slots.length === 0 ? details.unset : details.timeSlots(slots)
 
 /**
  * What a customer wants the salons to keep in mind, as it is read: whom
@@ -42,6 +43,8 @@ export const PreferencesDetails = ({
   preferences,
   staffNames,
 }: PreferencesDetailsProps) => {
+  const say = useSay()
+  const unset = say(details.unset)
   const wished = staffNames(
     preferences.preferredStaffId === null ? [] : [preferences.preferredStaffId],
   )
@@ -51,32 +54,37 @@ export const PreferencesDetails = ({
   return (
     <DescriptionList
       items={[
-        { term: '指名したいスタッフ', description: listed(wished) },
         {
-          term: '避けたいスタッフ',
-          description: listed(staffNames(preferences.avoidStaffIds)),
+          term: say(words.preferredStaff),
+          description: say(listed(wished.map(say))),
         },
         {
-          term: '希望する時間帯',
-          description: listed(preferences.preferredTimeSlots.map(timeSlotOf)),
+          term: say(words.avoidedStaff),
+          description: say(
+            listed(staffNames(preferences.avoidStaffIds).map(say)),
+          ),
         },
         {
-          term: '希望の長さ',
-          description: style?.preferredLength ?? UNSET,
+          term: say(words.timeSlots),
+          description: say(timeSlotsOf(preferences.preferredTimeSlots)),
         },
         {
-          term: '好きな色',
-          description: listed(style?.preferredColors ?? []),
+          term: say(words.preferredLength),
+          description: style?.preferredLength ?? unset,
         },
         {
-          term: '避けたいスタイル',
-          description: listed(style?.avoidStyles ?? []),
+          term: say(words.preferredColors),
+          description: say(listed(style?.preferredColors ?? [])),
         },
         {
-          term: '参考の画像',
+          term: say(words.avoidedStyles),
+          description: say(listed(style?.avoidStyles ?? [])),
+        },
+        {
+          term: say(details.inspirationImages),
           description:
             images.length === 0
-              ? UNSET
+              ? unset
               : images.map((image) => {
                   const address = webAddressOf(image)
 
@@ -94,14 +102,14 @@ export const PreferencesDetails = ({
                 }),
         },
         {
-          term: '接客の好み',
-          description: preferences.communicationStyle ?? UNSET,
+          term: say(words.communicationStyle),
+          description: preferences.communicationStyle ?? unset,
         },
         {
-          term: '特別な要望',
+          term: say(words.specialRequests),
           description:
             preferences.specialRequests === null ? (
-              UNSET
+              unset
             ) : (
               <WrittenText>{preferences.specialRequests}</WrittenText>
             ),
