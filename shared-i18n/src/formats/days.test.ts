@@ -6,6 +6,7 @@ import {
   fullDayOf,
   monthDayOf,
   monthOf,
+  numericDayOf,
   shortDayOf,
 } from './days'
 
@@ -28,6 +29,7 @@ describe('the days of the calendar', () => {
       { en: 'Fri, November 20', ja: '11月20日（金）' },
     ],
     ['shortDayOf', shortDayOf, { en: 'Fri, 11/20', ja: '11/20（金）' }],
+    ['numericDayOf', numericDayOf, { en: '11/20/2026', ja: '2026/11/20' }],
   ])('should write a day with %s in each language', (_, format, expected) => {
     // Act
     const written = format('2026-11-20')
@@ -50,6 +52,7 @@ describe('the days of the calendar', () => {
     ],
     ['monthDayOf', monthDayOf, { en: 'Fri, January 1', ja: '1月1日（金）' }],
     ['shortDayOf', shortDayOf, { en: 'Fri, 1/1', ja: '1/1（金）' }],
+    ['numericDayOf', numericDayOf, { en: '1/1/2027', ja: '2027/1/1' }],
   ])(
     'should write the day that is written with %s as it stands, whatever the time zone where it is read',
     (_, format, expected) => {

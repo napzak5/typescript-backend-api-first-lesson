@@ -8,6 +8,7 @@ import {
   fileSizeOf,
   numberOf,
   percentOf,
+  placeOf,
   shortAmountOf,
 } from './numbers'
 
@@ -40,6 +41,32 @@ describe('numberOf', () => {
     // Assert
     expect(written).toEqual({ en: '214,748,364,749', ja: '214,748,364,749' })
   })
+})
+
+describe('placeOf', () => {
+  it.each<[number, LocalizedText]>([
+    [1, { en: '1st', ja: '1 位' }],
+    [2, { en: '2nd', ja: '2 位' }],
+    [3, { en: '3rd', ja: '3 位' }],
+    [4, { en: '4th', ja: '4 位' }],
+    [11, { en: '11th', ja: '11 位' }],
+    [12, { en: '12th', ja: '12 位' }],
+    [13, { en: '13th', ja: '13 位' }],
+    [21, { en: '21st', ja: '21 位' }],
+    [22, { en: '22nd', ja: '22 位' }],
+    [103, { en: '103rd', ja: '103 位' }],
+    [111, { en: '111th', ja: '111 位' }],
+    [1001, { en: '1,001st', ja: '1,001 位' }],
+  ])(
+    'should write place %d of a ranking in each language',
+    (place, expected) => {
+      // Act
+      const written = placeOf(place)
+
+      // Assert
+      expect(written).toEqual(expected)
+    },
+  )
 })
 
 describe('percentOf', () => {

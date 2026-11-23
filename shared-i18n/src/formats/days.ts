@@ -53,6 +53,16 @@ export const monthDayOf = (day: string): LocalizedText => ({
   ja: `${written('ja', day, { month: 'long', day: 'numeric' })}（${weekdayIn('ja', day)}）`,
 })
 
+/** A day in figures alone, where room is shortest (the axis of a chart): 「2026/11/20」, "11/20/2026". */
+export const numericDayOf = (day: string): LocalizedText =>
+  inEachLanguage((language) =>
+    written(language, day, {
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+    }),
+  )
+
 /** A day where room is short (a column of a week): 「11/20（金）」, "Fri, 11/20". */
 export const shortDayOf = (day: string): LocalizedText => ({
   en: written('en', day, {
