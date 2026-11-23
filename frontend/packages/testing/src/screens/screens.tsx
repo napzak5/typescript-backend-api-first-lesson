@@ -152,20 +152,30 @@ export const termsOnceThere = async (
 ): Promise<[string, string][]> =>
   termsIn(await screen.findByRole('region', { name: card }))
 
+/** A table named by its caption, or the one handed over. */
+const tableOf = (table: string | HTMLElement): HTMLElement =>
+  typeof table === 'string' ? screen.getByRole('table', { name: table }) : table
+
 /**
  * What the rows of a table say, below the row of its column headers: a row
  * is the text of its cells in their order, the header of the row among
  * them. The table is named by its caption, or handed over.
  */
 export const rowsOf = (table: string | HTMLElement): string[][] =>
-  within(
-    typeof table === 'string'
-      ? screen.getByRole('table', { name: table })
-      : table,
-  )
+  within(tableOf(table))
     .getAllByRole('row')
     .slice(1)
     .map((row) => Array.from(row.children, (cell) => cell.textContent ?? ''))
+
+/**
+ * What the headers of the columns of a table say, in their order; the
+ * headers of the rows are none of them. The table is named by its caption,
+ * or handed over.
+ */
+export const columnsOf = (table: string | HTMLElement): string[] =>
+  within(tableOf(table))
+    .getAllByRole('columnheader')
+    .map((header) => header.textContent ?? '')
 
 /**
  * What a select offers, option by option. The select is named by its

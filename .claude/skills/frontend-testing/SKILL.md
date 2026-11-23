@@ -611,6 +611,7 @@ it('should show the screen that was asked for after signing in', async () => {
   | `statusMessages()` | What the `status` regions of `main` say, the empty ones too |
   | `termsOf(card)`, `termsOnceThere(card)` | What a card says, term by term; the second awaits the card |
   | `rowsOf(table)` | What the rows of a table say below the row of its column headers: a row is the text of its cells in their order, the header of the row among them. The table is its caption, or the element (a table once awaited, the part of a page that holds one) |
+  | `columnsOf(table)` | What the headers of the columns of a table say, in their order; the headers of the rows are none of them. The table is its caption, or the element. A table whose headers are messages is read by it on a page in English |
   | `optionsOf(select)` | What a select offers, option by option. The select is its label, or the element |
   | `queryClientOfATest()`, `asTheApplicationKeeps()` | A client that tries a read once; the same with the five minutes an application keeps what it read |
 

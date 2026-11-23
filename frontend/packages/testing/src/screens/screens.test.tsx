@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   address,
   asTheApplicationKeeps,
+  columnsOf,
   firstSight,
   goBack,
   goTo,
@@ -519,6 +520,25 @@ describe('the screen tools', () => {
         ['都道府県', '東京都'],
         ['建物', ''],
       ])
+    })
+  })
+
+  describe('columnsOf', () => {
+    it('should read the headers of the columns in their order, and none of the headers of the rows', () => {
+      // Arrange
+      render(<Tables />)
+
+      // Act, Assert
+      expect(columnsOf('スタッフ')).toEqual(['名前', '役職', 'メモ'])
+    })
+
+    it('should read the table it is handed, and not another one', () => {
+      // Arrange
+      render(<Tables />)
+      const [, plans] = screen.getAllByRole('table')
+
+      // Act, Assert
+      expect(plans && columnsOf(plans)).toEqual(['日', '名前'])
     })
   })
 
