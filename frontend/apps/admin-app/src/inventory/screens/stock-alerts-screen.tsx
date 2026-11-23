@@ -158,7 +158,7 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
     return (
       <>
         <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what='在庫' />
+        <OtherSalonNotice what={writtenInJapanese('在庫')} />
       </>
     )
   }

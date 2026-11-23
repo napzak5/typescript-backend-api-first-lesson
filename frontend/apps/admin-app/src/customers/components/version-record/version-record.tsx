@@ -4,6 +4,7 @@ import {
   Card,
   DescriptionList,
   EmptyState,
+  inJapanese,
   Link,
   Table,
 } from '@beauty-salon-frontend/ui'
@@ -57,7 +58,7 @@ export const VersionRecord = ({
         {[
           `版 ${version.version}`,
           operationNameOf(version.operation),
-          momentNameAt(version.changedAt, timezone),
+          inJapanese(momentNameAt(version.changedAt, timezone)),
           ...(changer === '' ? [] : [changer]),
         ].join('・')}
       </p>

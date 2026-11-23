@@ -106,7 +106,7 @@ const ITEMS: readonly LedgerItemOf[] = [
     term: '生年月日',
     fields: ['birthDate'],
     describe: ({ birthDate }) =>
-      birthDate === null ? null : dayNameOf(birthDate),
+      birthDate === null ? null : inJapanese(dayNameOf(birthDate)),
   },
   {
     term: '性別',

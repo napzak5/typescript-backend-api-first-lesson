@@ -55,7 +55,7 @@ const StaffPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 errors={errors}
                 onSubmit={count}
               />
-              <p>{`${periodNameOf(period)}のスタッフ別の売上`}</p>
+              <p>{`${inJapanese(periodNameOf(period))}のスタッフ別の売上`}</p>
               {match(counted)
                 .with(undefined, () => (
                   <LoadingIndicator label='売上を集計しています' />

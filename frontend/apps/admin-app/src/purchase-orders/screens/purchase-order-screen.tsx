@@ -267,7 +267,7 @@ const OrderPart = ({ salon, purchaseOrderId }: OrderPartProps) => {
       .with({ type: 'forbidden' }, () => (
         <>
           <PageHeader title={TITLE} description={salon.name} />
-          <OtherSalonNotice what='発注' />
+          <OtherSalonNotice what={writtenInJapanese('発注')} />
         </>
       ))
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (

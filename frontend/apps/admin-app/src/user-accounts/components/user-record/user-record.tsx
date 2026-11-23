@@ -1,6 +1,12 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { Alert, Card, DescriptionList, Note } from '@beauty-salon-frontend/ui'
+import {
+  Alert,
+  Card,
+  DescriptionList,
+  inJapanese,
+  Note,
+} from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
 import {
   statusNameOf,
@@ -81,14 +87,14 @@ export const UserRecord = ({
             description:
               user.lastPasswordChange === null
                 ? 'まだ変えていません'
-                : momentNameAt(user.lastPasswordChange, timezone),
+                : inJapanese(momentNameAt(user.lastPasswordChange, timezone)),
           },
           {
             term: '最後のログイン',
             description:
               user.lastLoginAt === null
                 ? 'まだログインしていません'
-                : momentNameAt(user.lastLoginAt, timezone),
+                : inJapanese(momentNameAt(user.lastLoginAt, timezone)),
           },
           {
             term: '最後のログインの IP アドレス',
@@ -97,7 +103,7 @@ export const UserRecord = ({
           { term: '紐づいている台帳', description: ledgersOf(user) },
           {
             term: '作った日時',
-            description: momentNameAt(user.createdAt, timezone),
+            description: inJapanese(momentNameAt(user.createdAt, timezone)),
           },
         ]}
       />

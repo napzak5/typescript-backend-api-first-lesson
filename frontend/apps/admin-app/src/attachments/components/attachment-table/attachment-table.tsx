@@ -67,7 +67,7 @@ export const AttachmentTable = ({
         key: 'uploadedAt',
         header: 'アップロード日時',
         cell: ({ uploadedAt, createdAt }) =>
-          momentNameAt(uploadedAt ?? createdAt, timezone),
+          inJapanese(momentNameAt(uploadedAt ?? createdAt, timezone)),
       },
     ]}
     rows={attachments}

@@ -12,6 +12,7 @@ import {
 import {
   Card,
   DescriptionList,
+  inJapanese,
   Link,
   Note,
   Table,
@@ -51,7 +52,8 @@ export const SalesReport = ({
   staffHref,
   categoriesHref,
 }: SalesReportProps) => {
-  const money = (amount: number): string => amountOf(amount, currency)
+  const money = (amount: number): string =>
+    inJapanese(amountOf(amount, currency))
 
   return (
     <div className={styles['report']}>
@@ -88,7 +90,7 @@ export const SalesReport = ({
               {
                 key: 'method',
                 header: '支払い方法',
-                cell: ({ method }) => methodKindNameOf(method),
+                cell: ({ method }) => inJapanese(methodKindNameOf(method)),
               },
               {
                 key: 'amount',
@@ -128,7 +130,7 @@ export const SalesReport = ({
               {
                 key: 'category',
                 header: 'メニューの区分',
-                cell: ({ category }) => categoryNameOf(category),
+                cell: ({ category }) => inJapanese(categoryNameOf(category)),
               },
               {
                 key: 'amount',

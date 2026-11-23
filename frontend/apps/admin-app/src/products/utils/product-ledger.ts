@@ -104,7 +104,7 @@ export const readProductConditions = (
   const keyword = textOf(values, 'keyword').trim()
   const barcode = textOf(values, 'barcode').trim()
   const errors: Record<string, string> = Object.fromEntries([
-    ...errorAt('keyword', keywordError(keyword)),
+    ...errorAt('keyword', inJapaneseIfAny(keywordError(keyword))),
     ...errorAt('barcode', barcodeError(barcode)),
   ])
   if (Object.keys(errors).length > 0) {

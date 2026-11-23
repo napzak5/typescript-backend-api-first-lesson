@@ -8,6 +8,7 @@ import {
   DescriptionList,
   Form,
   type FormProps,
+  inJapanese,
   TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -48,16 +49,18 @@ export const RefundForm = ({
           { term: '取引番号', description: payment.transactionNumber },
           {
             term: '受けた日時',
-            description: momentNameAt(
-              payment.processedAt ?? payment.createdAt,
-              timezone,
+            description: inJapanese(
+              momentNameAt(payment.processedAt ?? payment.createdAt, timezone),
             ),
           },
           {
             term: '支払い方法',
             description: methodNameOf(payment.paymentMethodId, methods),
           },
-          { term: '金額', description: amountOf(payment.amount, currency) },
+          {
+            term: '金額',
+            description: inJapanese(amountOf(payment.amount, currency)),
+          },
           { term: 'カード', description: cardNameOf(payment) },
         ]}
       />
@@ -71,7 +74,7 @@ export const RefundForm = ({
         autoComplete='off'
         required
         defaultValue={String(payment.amount)}
-        description={`円の整数で、1 円から支払いの金額（${amountOf(payment.amount, currency)}）まで入れます。1 件の支払いの返金は 1 回です。一部だけ返金すると、残りは返金できず、売上も取り消せなくなります。`}
+        description={`円の整数で、1 円から支払いの金額（${inJapanese(amountOf(payment.amount, currency))}）まで入れます。1 件の支払いの返金は 1 回です。一部だけ返金すると、残りは返金できず、売上も取り消せなくなります。`}
         error={errors['refundAmount']}
       />
       <TextArea

@@ -99,7 +99,7 @@ const OrdersPart = ({ salon }: { salon: ModelsSalonResponse }) => {
     return (
       <>
         <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what='発注' />
+        <OtherSalonNotice what={writtenInJapanese('発注')} />
       </>
     )
   }

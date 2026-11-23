@@ -75,7 +75,7 @@ export const CustomerHistory = ({
       {
         key: 'changedAt',
         header: '日時',
-        cell: ({ changedAt }) => momentNameAt(changedAt, timezone),
+        cell: ({ changedAt }) => inJapanese(momentNameAt(changedAt, timezone)),
       },
       {
         key: 'changedBy',

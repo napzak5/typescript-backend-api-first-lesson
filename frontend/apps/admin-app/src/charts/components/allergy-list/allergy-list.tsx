@@ -149,7 +149,9 @@ export const AllergyList = ({
                 key: 'confirmedDate',
                 header: '確かめた日',
                 cell: ({ confirmedDate }) =>
-                  confirmedDate === null ? '不明' : dayNameOf(confirmedDate),
+                  confirmedDate === null
+                    ? '不明'
+                    : inJapanese(dayNameOf(confirmedDate)),
               },
               {
                 key: 'actions',

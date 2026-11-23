@@ -8,6 +8,7 @@ import {
   EmptyState,
   FormDialog,
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   NO_ERRORS,
   TextArea,
@@ -123,11 +124,11 @@ export const CustomerErasure = ({
             items={[
               {
                 term: '受け付けた日時',
-                description: momentNameAt(requestedAt, timezone),
+                description: inJapanese(momentNameAt(requestedAt, timezone)),
               },
               {
                 term: '消去の予定',
-                description: `${momentNameAt(scheduledAt, timezone)} 以降`,
+                description: `${inJapanese(momentNameAt(scheduledAt, timezone))} 以降`,
               },
               { term: '依頼の理由', description: reason },
             ]}

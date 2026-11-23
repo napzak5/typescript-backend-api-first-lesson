@@ -1,6 +1,6 @@
 import type { ModelsPointExpiringResponse } from '@beauty-salon-frontend/api-client'
 import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { Card, Table } from '@beauty-salon-frontend/ui'
+import { Card, inJapanese, Table } from '@beauty-salon-frontend/ui'
 import { countNameOf } from '../../utils/customer-format'
 import { transactionNameOf } from '../../utils/points'
 import styles from './expiring-points.module.css'
@@ -38,7 +38,7 @@ export const ExpiringPoints = ({
       ) : (
         <div className={styles['expiring']}>
           <p>
-            {`${days} 日以内に期限が来るポイントは、${countNameOf(expiring.expiringPoints, 'ポイント')}です。最も早い期限は、${dayNameOf(expiring.expirationDate)}です。`}
+            {`${days} 日以内に期限が来るポイントは、${countNameOf(expiring.expiringPoints, 'ポイント')}です。最も早い期限は、${inJapanese(dayNameOf(expiring.expirationDate))}です。`}
           </p>
           {anyPast && <p>期限を過ぎたポイントも、失効させるまでは使えます。</p>}
           <Table
@@ -51,7 +51,7 @@ export const ExpiringPoints = ({
                 cell: ({ expiryDate }) =>
                   expiryDate === null
                     ? ''
-                    : `${dayNameOf(expiryDate)}${expiryDate < today ? '（期限切れ）' : ''}`,
+                    : `${inJapanese(dayNameOf(expiryDate))}${expiryDate < today ? '（期限切れ）' : ''}`,
               },
               {
                 key: 'transactionType',
@@ -68,7 +68,8 @@ export const ExpiringPoints = ({
               {
                 key: 'createdAt',
                 header: '日時',
-                cell: ({ createdAt }) => momentNameAt(createdAt, timezone),
+                cell: ({ createdAt }) =>
+                  inJapanese(momentNameAt(createdAt, timezone)),
               },
               {
                 key: 'description',

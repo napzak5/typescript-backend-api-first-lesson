@@ -10,6 +10,7 @@ import {
   STYLIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -326,7 +327,7 @@ describe('the status of a purchase order, and what is written down on it', () =>
       await screen.findByText('発注 PO-SEED-0001 を直しました。'),
     ).toBeVisible()
     expect(firstSight()[0]).toBe(purchaseOrderHrefOf(salonId, id))
-    expect(termOf('納品予定日')).toBe(dayNameOf(delivery))
+    expect(termOf('納品予定日')).toBe(inJapanese(dayNameOf(delivery)))
     expect(termOf('納品のメモ')).toBe('午前中に、裏口へ。')
     expect(termOf('メモ')).toBe('記録なし')
     expect(await storedOrderOf('PO-SEED-0001')).toMatchObject({

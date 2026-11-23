@@ -1,6 +1,10 @@
 import { isDay } from '@beauty-salon-frontend/fields'
 import { daysErrorsOf } from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  errorsInJapanese,
+  type FormRead,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import * as z from 'zod'
 import type { TreatmentConditions } from '../api/treatments-api'
 
@@ -56,7 +60,7 @@ export const readTreatmentConditions = (
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
   const errors = {
-    ...daysErrorsOf(from, to, 'optional'),
+    ...errorsInJapanese(daysErrorsOf(from, to, 'optional')),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }

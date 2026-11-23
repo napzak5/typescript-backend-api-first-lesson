@@ -7,6 +7,7 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { performerNameOf } from './movement-format'
 import { stockRowNameOf } from './stock-format'
 
@@ -139,5 +140,5 @@ export const acknowledgementNameOf = (
       ? undefined
       : performerNameOf(acknowledgedBy, staff)
 
-  return `${momentNameAt(acknowledgedAt, timezone)}${who === undefined ? '' : `（${who}）`}`
+  return `${inJapanese(momentNameAt(acknowledgedAt, timezone))}${who === undefined ? '' : `（${who}）`}`
 }

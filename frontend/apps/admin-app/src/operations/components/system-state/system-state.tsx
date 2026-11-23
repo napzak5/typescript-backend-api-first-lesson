@@ -5,6 +5,7 @@ import {
   Card,
   DescriptionList,
   type DescriptionListItem,
+  inJapanese,
   Table,
   type TableColumn,
 } from '@beauty-salon-frontend/ui'
@@ -79,7 +80,10 @@ export const SystemStateRecord = ({
     ...(health.type === 'reported'
       ? [{ term: 'API のバージョン', description: health.health.version }]
       : []),
-    { term: '確かめた日時', description: momentNameAt(readAt, timezone) },
+    {
+      term: '確かめた日時',
+      description: inJapanese(momentNameAt(readAt, timezone)),
+    },
   ]
 
   return (

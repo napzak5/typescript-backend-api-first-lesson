@@ -82,14 +82,14 @@ export const ReviewRecord = ({
     },
     {
       term: '投稿日時',
-      description: momentNameAt(review.createdAt, timezone),
+      description: inJapanese(momentNameAt(review.createdAt, timezone)),
     },
     ...(review.updatedAt === review.createdAt
       ? []
       : [
           {
             term: '修正日時',
-            description: momentNameAt(review.updatedAt, timezone),
+            description: inJapanese(momentNameAt(review.updatedAt, timezone)),
           },
         ]),
     ...(review.imageUrls.length === 0

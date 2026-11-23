@@ -81,7 +81,7 @@ export const BookingSale = ({
                 },
                 {
                   term: '合計',
-                  description: amountOf(sale.totalAmount, currency),
+                  description: inJapanese(amountOf(sale.totalAmount, currency)),
                 },
                 {
                   term: '支払い',

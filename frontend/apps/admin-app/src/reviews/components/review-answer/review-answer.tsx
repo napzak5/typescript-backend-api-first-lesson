@@ -8,6 +8,7 @@ import {
   Card,
   Dialog,
   EmptyState,
+  inJapanese,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
 import type { Ref } from 'react'
@@ -74,7 +75,7 @@ export const ReviewAnswer = ({
             </WrittenText>
             {review.ownerRespondedAt !== null && (
               <p className={styles['moment']}>
-                {`返信日時 ${momentNameAt(review.ownerRespondedAt, timezone)}`}
+                {`返信日時 ${inJapanese(momentNameAt(review.ownerRespondedAt, timezone))}`}
               </p>
             )}
           </>

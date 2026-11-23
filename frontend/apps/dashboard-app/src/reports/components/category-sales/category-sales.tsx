@@ -1,6 +1,6 @@
 import type { ModelsSalesByCategoryResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, categoryNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, Note, Table } from '@beauty-salon-frontend/ui'
+import { Card, inJapanese, Note, Table } from '@beauty-salon-frontend/ui'
 import { perServiceOf } from '../../utils/sales-breakdown'
 import {
   CATEGORY_SALES_NOTE,
@@ -23,7 +23,8 @@ export type CategorySalesProps = {
  * with a bar as long as it. How they are counted is said under the table.
  */
 export const CategorySales = ({ categories, currency }: CategorySalesProps) => {
-  const money = (amount: number): string => amountOf(amount, currency)
+  const money = (amount: number): string =>
+    inJapanese(amountOf(amount, currency))
 
   return (
     <Card title='メニューの区分ごとの売上'>
@@ -35,7 +36,7 @@ export const CategorySales = ({ categories, currency }: CategorySalesProps) => {
             {
               key: 'category',
               header: '区分',
-              cell: ({ category }) => categoryNameOf(category),
+              cell: ({ category }) => inJapanese(categoryNameOf(category)),
             },
             {
               key: 'amount',

@@ -113,7 +113,7 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             errors={errors}
             onSubmit={count}
           />
-          <p>{`${periodNameOf(period)}の売上`}</p>
+          <p>{`${inJapanese(periodNameOf(period))}の売上`}</p>
           {match(counted)
             .with(undefined, () => (
               <LoadingIndicator label='売上を集計しています' />

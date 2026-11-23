@@ -7,7 +7,9 @@ import type {
   ModelsTwoFactorStatusType,
   ModelsUserAccountStatusType,
 } from '@beauty-salon-frontend/api-client'
-import type { ChoiceOption } from '@beauty-salon-frontend/ui'
+import { type ChoiceOption, inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match, P } from 'ts-pattern'
 import type { AccountRead, InvitationRead } from '../api/accounts-api'
 
@@ -16,15 +18,12 @@ import type { AccountRead, InvitationRead } from '../api/accounts-api'
  * that makes it, and what the account that keeps them may do.
  */
 
-const ROLE_NAMES: Record<ModelsSalonRoleType, string> = {
-  owner: 'オーナー',
-  manager: 'マネージャー',
-  staff: 'スタッフ',
-}
+const ROLE_NAMES: Record<ModelsSalonRoleType, LocalizedText> =
+  termMessages.salonRole
 
 /** A role of an account of a salon, in words. */
 export const roleNameOf = (role: ModelsSalonRoleType): string =>
-  ROLE_NAMES[role]
+  inJapanese(ROLE_NAMES[role])
 
 /** The roles an account of the role may give: that of an owner only an administrator gives. */
 export const rolesGivenBy = (role: string): ModelsSalonRoleType[] =>

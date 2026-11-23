@@ -114,14 +114,15 @@ export const ShareLinkList = ({
                 header: '発行日時',
                 cell: ({ id, createdAt }) => (
                   <Link href={shareLinkHref(id)}>
-                    {momentNameAt(createdAt, timezone)}
+                    {inJapanese(momentNameAt(createdAt, timezone))}
                   </Link>
                 ),
               },
               {
                 key: 'expiresAt',
                 header: '有効期限',
-                cell: ({ expiresAt }) => momentNameAt(expiresAt, timezone),
+                cell: ({ expiresAt }) =>
+                  inJapanese(momentNameAt(expiresAt, timezone)),
               },
               {
                 key: 'downloadCount',

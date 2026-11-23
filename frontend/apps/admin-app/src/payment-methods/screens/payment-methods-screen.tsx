@@ -65,7 +65,7 @@ const PaymentMethodsPart = ({ salon }: PaymentMethodsPartProps) => {
           <LoadingIndicator label='支払い方法を読み込んでいます' />
         ))
         .with({ type: 'forbidden' }, () => (
-          <OtherSalonNotice what='支払い方法' />
+          <OtherSalonNotice what={writtenInJapanese('支払い方法')} />
         ))
         .with(
           { type: P.union('notFound', 'tooManyRequests', 'failed') },

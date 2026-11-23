@@ -21,6 +21,7 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -839,7 +840,7 @@ describe('the sales of a salon, against the API', () => {
       })
       await paySale(paid)
       const today = await dayFromToday(0)
-      const caption = `${dayNameOf(today)}の売上`
+      const caption = `${inJapanese(dayNameOf(today))}の売上`
       const user = userEvent.setup()
       const tokyo = await openAt((salon) => `/salons/${salon}/bookings`)
       await heading('予約台帳')
@@ -851,8 +852,18 @@ describe('the sales of a salon, against the API', () => {
       await heading('売上台帳')
       await screen.findByRole('table', { name: caption })
       expect(rowsOf(caption)).toEqual([
-        ['SL-TEST-0202', `${dayNameOf(today)} 11:05`, '￥4,000', '支払い済み'],
-        ['SL-TEST-0201', `${dayNameOf(today)} 10:05`, '￥5,500', '未払い'],
+        [
+          'SL-TEST-0202',
+          `${inJapanese(dayNameOf(today))} 11:05`,
+          '￥4,000',
+          '支払い済み',
+        ],
+        [
+          'SL-TEST-0201',
+          `${inJapanese(dayNameOf(today))} 10:05`,
+          '￥5,500',
+          '未払い',
+        ],
       ])
       expect(screen.getByRole('link', { name: '売上' })).toHaveAttribute(
         'aria-current',
@@ -870,7 +881,12 @@ describe('the sales of a salon, against the API', () => {
       // Assert
       await waitFor(() =>
         expect(rowsOf(caption)).toEqual([
-          ['SL-TEST-0201', `${dayNameOf(today)} 10:05`, '￥5,500', '未払い'],
+          [
+            'SL-TEST-0201',
+            `${inJapanese(dayNameOf(today))} 10:05`,
+            '￥5,500',
+            '未払い',
+          ],
         ]),
       )
       const narrowed = `/salons/${tokyo}/sales?from=${today}&to=${today}&paymentStatus=pending`

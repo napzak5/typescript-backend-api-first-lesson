@@ -3,21 +3,16 @@ import type {
   ModelsBookingStatusType,
 } from '@beauty-salon-frontend/api-client'
 import { timeOfDayAt } from '@beauty-salon-frontend/salon-screens'
-import type { BadgeTone } from '@beauty-salon-frontend/ui'
+import { type BadgeTone, inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 
-const STATUS_NAMES: Record<ModelsBookingStatusType, string> = {
-  draft: '下書き',
-  pending: '確定待ち',
-  confirmed: '確定',
-  in_progress: '施術中',
-  completed: '完了',
-  cancelled: 'キャンセル',
-  no_show: '無断キャンセル',
-}
+const STATUS_NAMES: Record<ModelsBookingStatusType, LocalizedText> =
+  termMessages.bookingStatus
 
 /** The state of a booking, in the word the salon uses. */
 export const statusNameOf = (status: ModelsBookingStatusType): string =>
-  STATUS_NAMES[status]
+  inJapanese(STATUS_NAMES[status])
 
 const STATUS_TONES: Record<ModelsBookingStatusType, BadgeTone> = {
   draft: 'neutral',
@@ -38,7 +33,7 @@ export const hoursOf = (
   { startTime, endTime }: Pick<ModelsBookingResponse, 'startTime' | 'endTime'>,
   timezone: string,
 ): string =>
-  `${timeOfDayAt(startTime, timezone)}〜${timeOfDayAt(endTime, timezone)}`
+  `${inJapanese(timeOfDayAt(startTime, timezone))}〜${inJapanese(timeOfDayAt(endTime, timezone))}`
 
 /** What is said of a customer who was removed. */
 export const GONE_CUSTOMER = '削除された顧客'

@@ -22,6 +22,7 @@ import {
   UnreadNotice,
   writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
@@ -51,7 +52,9 @@ type StatisticsPartProps = {
  */
 const StatisticsPart = ({ salon, services }: StatisticsPartProps) => {
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
+    undefined,
+  )
   const period = statisticsPeriodIn(query, dayAt(new Date(), salon.timezone))
   const read = useQuery({
     queryKey: treatmentStatisticsKeyOf(salon.id, period),
@@ -83,7 +86,7 @@ const StatisticsPart = ({ salon, services }: StatisticsPartProps) => {
         errors={errors}
         onSubmit={count}
       />
-      <p>{`${periodNameOf(period)}に書いた施術記録`}</p>
+      <p>{`${inJapanese(periodNameOf(period))}に書いた施術記録`}</p>
       {match(read.data)
         .with(undefined, () => (
           <LoadingIndicator label='施術記録を集計しています' />

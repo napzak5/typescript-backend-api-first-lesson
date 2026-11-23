@@ -17,6 +17,7 @@ import {
   OWNER,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -126,7 +127,7 @@ const NOTHING: [string, string][] = [
 ]
 
 /** The card of the sales of a day */
-const salesOf = (day: string): string => `${dayNameOf(day)}の売上`
+const salesOf = (day: string): string => `${inJapanese(dayNameOf(day))}の売上`
 
 /** Shows the sales of a day, as the owner types it. */
 const showDay = async (day: string): Promise<void> => {

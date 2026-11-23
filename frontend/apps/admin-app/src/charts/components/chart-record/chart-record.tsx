@@ -7,6 +7,7 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
+  inJapanese,
   Table,
   TagList,
   WrittenText,
@@ -85,7 +86,7 @@ export const ChartRecord = ({
             },
             {
               term: '最後に書いた日時',
-              description: momentNameAt(chart.updatedAt, timezone),
+              description: inJapanese(momentNameAt(chart.updatedAt, timezone)),
             },
           ]}
         />
@@ -98,7 +99,7 @@ export const ChartRecord = ({
             {
               key: 'date',
               header: '施術日',
-              cell: ({ treatment: { date } }) => dayNameOf(date),
+              cell: ({ treatment: { date } }) => inJapanese(dayNameOf(date)),
             },
             {
               key: 'treatment',

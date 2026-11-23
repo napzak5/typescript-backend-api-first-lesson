@@ -7,6 +7,7 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   errorAt,
+  errorsInJapanese,
   type FormRead,
   textOf,
   textOrNull,
@@ -72,7 +73,7 @@ export const readOrderConditions = (
   const to = textOf(values, 'to')
   const errors = {
     ...Object.fromEntries(errorAt('supplier', supplierError(supplier))),
-    ...daysErrorsOf(from, to, 'optional'),
+    ...errorsInJapanese(daysErrorsOf(from, to, 'optional')),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }

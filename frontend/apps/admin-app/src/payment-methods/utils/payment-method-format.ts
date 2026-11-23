@@ -7,6 +7,7 @@ import {
   methodKindNameOf,
 } from '@beauty-salon-frontend/salon-screens'
 import type { ChoiceOption } from '@beauty-salon-frontend/ui'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -23,7 +24,7 @@ export const METHOD_KINDS: readonly ModelsPaymentMethodType[] = Object.values(
 export const KIND_OPTIONS: readonly ChoiceOption[] = METHOD_KINDS.map(
   (kind) => ({
     value: kind,
-    label: methodKindNameOf(kind),
+    label: inJapanese(methodKindNameOf(kind)),
   }),
 )
 
@@ -42,12 +43,18 @@ export const amountsNameOf = (
   match([minimumAmount, maximumAmount])
     .returnType<string>()
     .with([null, null], () => '下限も上限もなし')
-    .with([P.number, null], ([least]) => `${amountOf(least, currency)}から`)
-    .with([null, P.number], ([, most]) => `${amountOf(most, currency)}まで`)
+    .with(
+      [P.number, null],
+      ([least]) => `${inJapanese(amountOf(least, currency))}から`,
+    )
+    .with(
+      [null, P.number],
+      ([, most]) => `${inJapanese(amountOf(most, currency))}まで`,
+    )
     .with(
       [P.number, P.number],
       ([least, most]) =>
-        `${amountOf(least, currency)}から${amountOf(most, currency)}まで`,
+        `${inJapanese(amountOf(least, currency))}から${inJapanese(amountOf(most, currency))}まで`,
     )
     .exhaustive()
 

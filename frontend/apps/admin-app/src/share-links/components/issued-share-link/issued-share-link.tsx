@@ -7,6 +7,7 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
+  inJapanese,
   Note,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -81,7 +82,9 @@ export const IssuedShareLink = ({
         items={[
           {
             term: '有効期限',
-            description: momentNameAt(shareLink.expiresAt, timezone),
+            description: inJapanese(
+              momentNameAt(shareLink.expiresAt, timezone),
+            ),
           },
           {
             term: 'ダウンロードの回数の上限',

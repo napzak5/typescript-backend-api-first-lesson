@@ -108,7 +108,7 @@ const ProductLedger = ({ salon }: ProductLedgerProps) => {
     return (
       <>
         <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what='商品' />
+        <OtherSalonNotice what={writtenInJapanese('商品')} />
       </>
     )
   }

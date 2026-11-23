@@ -5,7 +5,13 @@ import type {
   ModelsTreatmentsByServiceResponse,
 } from '@beauty-salon-frontend/api-client'
 import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList, Note, Table } from '@beauty-salon-frontend/ui'
+import {
+  Card,
+  DescriptionList,
+  inJapanese,
+  Note,
+  Table,
+} from '@beauty-salon-frontend/ui'
 import { serviceNameOf } from '../../../bookings/utils/day-bookings'
 import { averageNameOf, countNameOf } from '../../utils/treatment-statistics'
 import styles from './treatment-statistics.module.css'
@@ -54,7 +60,7 @@ export const TreatmentStatistics = ({
             {
               key: 'category',
               header: 'メニューの区分',
-              cell: ({ category }) => categoryNameOf(category),
+              cell: ({ category }) => inJapanese(categoryNameOf(category)),
             },
             {
               key: 'count',

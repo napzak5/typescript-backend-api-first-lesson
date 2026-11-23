@@ -1,5 +1,5 @@
 import { OtherSalonNotice } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { ButtonLink, writtenInJapanese } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 
 export type ReportRefusalProps = {
@@ -18,9 +18,9 @@ export const ReportRefusal = ({ refusal, what }: ReportRefusalProps) =>
   match(refusal)
     .with('forbidden', () => (
       <OtherSalonNotice
-        what={what}
-        who='そのサロンのオーナーとマネージャーと、管理者'
-        start='売上レポート'
+        what={writtenInJapanese(what)}
+        who={writtenInJapanese('そのサロンのオーナーとマネージャーと、管理者')}
+        start={writtenInJapanese('売上レポート')}
       />
     ))
     .with('notFound', () => (

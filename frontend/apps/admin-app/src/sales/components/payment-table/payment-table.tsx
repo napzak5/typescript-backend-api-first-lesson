@@ -76,7 +76,7 @@ export const PaymentTable = ({
             key: 'processedAt',
             header: '受けた日時',
             cell: ({ processedAt, createdAt }) =>
-              momentNameAt(processedAt ?? createdAt, timezone),
+              inJapanese(momentNameAt(processedAt ?? createdAt, timezone)),
           },
           {
             key: 'method',
@@ -87,7 +87,7 @@ export const PaymentTable = ({
           {
             key: 'amount',
             header: '金額',
-            cell: ({ amount }) => amountOf(amount, currency),
+            cell: ({ amount }) => inJapanese(amountOf(amount, currency)),
           },
           {
             key: 'card',

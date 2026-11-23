@@ -1,5 +1,6 @@
 import type { ModelsReviewResponse } from '@beauty-salon-frontend/api-client'
 import { dayAt, dayNameOf } from '@beauty-salon-frontend/salon-screens'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 
 /*
  * How the screens name what a review holds.
@@ -38,7 +39,7 @@ export const detailRatingsOf = (
 
 /** The day of a moment at the salon: 「2026年11月21日（土）」. */
 export const reviewDayNameOf = (moment: string, timezone: string): string =>
-  dayNameOf(dayAt(new Date(moment), timezone))
+  inJapanese(dayNameOf(dayAt(new Date(moment), timezone)))
 
 /** What a review is called where it is named: its title, or its overall rating when it has none. */
 export const reviewNameOf = ({

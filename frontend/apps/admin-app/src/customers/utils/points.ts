@@ -296,7 +296,7 @@ export const offeredSaleOf = (
       return {
         type: 'sale',
         id: sale.id,
-        name: `売上番号 ${sale.saleNumber}（${momentNameAt(sale.saleTime, timezone)}、${amountOf(sale.totalAmount, currency)}）`,
+        name: `売上番号 ${sale.saleNumber}（${inJapanese(momentNameAt(sale.saleTime, timezone))}、${inJapanese(amountOf(sale.totalAmount, currency))}）`,
       }
     })
     .with({ type: P.union('notFound', 'forbidden') }, () => ({

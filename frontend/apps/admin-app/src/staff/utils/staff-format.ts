@@ -4,7 +4,9 @@ import {
   type ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
 import { type ChoiceOption, inJapanese, NONE } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import type { TreatmentRemovalSays } from '../../treatments/utils/treatment-format'
 import type { StaffRemoval } from '../api/staff-api'
@@ -19,20 +21,15 @@ import type { StaffRemoval } from '../api/staff-api'
 export const LEVELS: readonly ModelsStaffLevelType[] =
   Object.values(ModelsStaffLevelType)
 
-const LEVEL_NAMES: Record<ModelsStaffLevelType, string> = {
-  junior: 'ジュニア',
-  stylist: 'スタイリスト',
-  senior: 'シニア',
-  expert: 'エキスパート',
-  director: 'ディレクター',
-}
+const LEVEL_NAMES: Record<ModelsStaffLevelType, LocalizedText> =
+  termMessages.staffLevel
 
 export const levelNameOf = (level: ModelsStaffLevelType): string =>
-  LEVEL_NAMES[level]
+  inJapanese(LEVEL_NAMES[level])
 
 export const LEVEL_OPTIONS: readonly ChoiceOption[] = LEVELS.map((level) => ({
   value: level,
-  label: LEVEL_NAMES[level],
+  label: inJapanese(LEVEL_NAMES[level]),
 }))
 
 /** The name of a member as the ledger keeps it, family name first: 「Tanaka Hiroshi」. */

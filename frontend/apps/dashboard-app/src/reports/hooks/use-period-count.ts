@@ -8,12 +8,13 @@ import {
   readPeriod,
 } from '@beauty-salon-frontend/salon-screens'
 import type { FormErrors } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { type UseQueryResult, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 /** What was wrong with the form, and the days the address showed when it was sent */
-type Refused = { asked: string; errors: FormErrors }
+type Refused = { asked: string; errors: FormErrors<LocalizedText> }
 
 export type PeriodCount<Read> = {
   /** The days counted: those of the address, or the month up to today at the salon */
@@ -21,7 +22,7 @@ export type PeriodCount<Read> = {
   /** The days counted, as the query of the address writes them */
   asked: string
   /** What was wrong with the days last sent, while the address shows those it was sent from */
-  errors: FormErrors | undefined
+  errors: FormErrors<LocalizedText> | undefined
   /** Counts over the days of the form: anew when they are the same, at another address when not */
   count: (values: FormData) => void
   read: UseQueryResult<Read>

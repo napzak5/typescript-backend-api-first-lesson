@@ -76,7 +76,7 @@ export const BookingTreatment = ({
           .with({ type: 'found', record: P.nonNullable }, ({ record }) => (
             <div className={styles['part']}>
               <p>
-                {`${momentNameAt(record.createdAt, timezone)}に書いた施術記録があります。`}
+                {`${inJapanese(momentNameAt(record.createdAt, timezone))}に書いた施術記録があります。`}
               </p>
               <ButtonLink href={treatmentHref(record.id)}>
                 施術記録を見る

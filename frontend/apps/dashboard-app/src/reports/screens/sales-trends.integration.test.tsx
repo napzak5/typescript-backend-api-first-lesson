@@ -17,6 +17,7 @@ import {
   OWNER,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -202,14 +203,16 @@ describe('the trends of the sales, against the API', () => {
     // Assert
     expect(
       await screen.findByText(
-        `${dayNameOf(weekAgo)}〜${dayNameOf(today)}の売上の推移`,
+        `${inJapanese(dayNameOf(weekAgo))}〜${inJapanese(dayNameOf(today))}の売上の推移`,
       ),
     ).toBeVisible()
-    await screen.findByRole('rowheader', { name: dayNameOf(weekAgo) })
+    await screen.findByRole('rowheader', {
+      name: inJapanese(dayNameOf(weekAgo)),
+    })
     const rows = rowsOf(TABLE)
     expect(rows).toHaveLength(7)
-    expect(rows[0]).toEqual([dayNameOf(weekAgo), ...NONE])
-    expect(rows.at(-1)).toEqual([dayNameOf(today), ...TODAY])
+    expect(rows[0]).toEqual([inJapanese(dayNameOf(weekAgo)), ...NONE])
+    expect(rows.at(-1)).toEqual([inJapanese(dayNameOf(today)), ...TODAY])
     expect(chosenUnit()).toBe('daily')
   })
 
@@ -234,8 +237,11 @@ describe('the trends of the sales, against the API', () => {
       twoWeeksAgo,
     )
     const rows = rowsOf(TABLE)
-    expect(rows[0]?.[0]).toBe(`${dayNameOf(firstMonday)}からの週`)
-    expect(rows.at(-1)).toEqual([`${dayNameOf(monday)}からの週`, ...TODAY])
+    expect(rows[0]?.[0]).toBe(`${inJapanese(dayNameOf(firstMonday))}からの週`)
+    expect(rows.at(-1)).toEqual([
+      `${inJapanese(dayNameOf(monday))}からの週`,
+      ...TODAY,
+    ])
     expect(screen.getByText(new RegExp(TREND_PARTS))).toBeVisible()
   })
 
@@ -320,7 +326,9 @@ describe('the trends of the sales, against the API', () => {
     await user.click(menuLink('売上の推移'))
 
     // Assert
-    await screen.findByText(new RegExp(`${dayNameOf(today)}の売上の推移$`))
+    await screen.findByText(
+      new RegExp(`${inJapanese(dayNameOf(today))}の売上の推移$`),
+    )
     const last = screen.getByLabelText('集計する期間（まで）')
     expect(last).toHaveValue(today)
     expect(last).not.toHaveAttribute('aria-invalid')

@@ -54,7 +54,7 @@ export const erasureStateOf = (
   request: ErasureRequest,
   timezone: string,
 ): string | undefined => {
-  const asked = momentNameAt(request.requestedAt, timezone)
+  const asked = inJapanese(momentNameAt(request.requestedAt, timezone))
 
   return match(request)
     .returnType<string | undefined>()
@@ -62,12 +62,12 @@ export const erasureStateOf = (
     .with({ status: 'cancelled' }, ({ cancelledAt }) =>
       cancelledAt === null
         ? `${asked} に受け付けた依頼は、取り消しました。`
-        : `${asked} に受け付けた依頼は、${momentNameAt(cancelledAt, timezone)} に取り消しました。`,
+        : `${asked} に受け付けた依頼は、${inJapanese(momentNameAt(cancelledAt, timezone))} に取り消しました。`,
     )
     .with({ status: 'completed' }, ({ completedAt }) =>
       completedAt === null
         ? `${asked} に受け付けた依頼により、データを消去しました。消去したことを、ご本人にお知らせください。`
-        : `${asked} に受け付けた依頼により、${momentNameAt(completedAt, timezone)} にデータを消去しました。消去したことを、ご本人にお知らせください。`,
+        : `${asked} に受け付けた依頼により、${inJapanese(momentNameAt(completedAt, timezone))} にデータを消去しました。消去したことを、ご本人にお知らせください。`,
     )
     .exhaustive()
 }
@@ -101,7 +101,7 @@ export const afterErasureAsk = (
     .with({ type: 'asked' }, ({ request }) => ({
       type: 'done',
       request,
-      message: `${name} 様のデータの消去の依頼を受け付けました。${momentNameAt(request.scheduledAt, timezone)} 以降に消去します。`,
+      message: `${name} 様のデータの消去の依頼を受け付けました。${inJapanese(momentNameAt(request.scheduledAt, timezone))} 以降に消去します。`,
     }))
     .with({ type: 'invalid' }, ({ values }) => {
       const reason = values.find(({ field }) => field === 'reason')

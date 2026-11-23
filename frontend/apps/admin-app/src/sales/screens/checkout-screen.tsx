@@ -237,7 +237,9 @@ const CheckoutOfBooking = ({ salon, booking }: CheckoutOfBookingProps) => {
         pending={sales.isFetching}
       />
     ))
-    .with({ type: 'forbidden' }, () => <OtherSalonNotice what='会計' />)
+    .with({ type: 'forbidden' }, () => (
+      <OtherSalonNotice what={writtenInJapanese('会計')} />
+    ))
     .with({ type: 'found' }, ({ sales: found }) => {
       const sale = saleOfBooking(found)
 

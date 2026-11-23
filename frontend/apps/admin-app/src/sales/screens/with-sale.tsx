@@ -74,7 +74,7 @@ export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
         <>
           <PageHeader title={title} description={salon.name} />
           <p>
-            {`売上番号 ${sale.saleNumber}（${momentNameAt(sale.saleTime, salon.timezone)}）`}
+            {`売上番号 ${sale.saleNumber}（${inJapanese(momentNameAt(sale.saleTime, salon.timezone))}）`}
           </p>
           {children(sale)}
         </>
@@ -92,7 +92,7 @@ export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
       .with({ type: 'forbidden' }, () => (
         <>
           <PageHeader title={title} description={salon.name} />
-          <OtherSalonNotice what='売上' />
+          <OtherSalonNotice what={writtenInJapanese('売上')} />
         </>
       ))
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
@@ -137,7 +137,9 @@ export const WithPaymentMethods = ({
       <LoadingIndicator label='支払い方法を読み込んでいます' />
     ))
     .with({ type: 'found' }, ({ items }) => children(items))
-    .with({ type: 'forbidden' }, () => <OtherSalonNotice what='売上' />)
+    .with({ type: 'forbidden' }, () => (
+      <OtherSalonNotice what={writtenInJapanese('売上')} />
+    ))
     .with({ type: P.union(...UNREAD_TYPES, 'notFound') }, (reason) => (
       <UnreadNotice
         message={inJapanese(

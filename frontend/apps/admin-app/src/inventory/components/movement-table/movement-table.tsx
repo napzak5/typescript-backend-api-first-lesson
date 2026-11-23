@@ -57,7 +57,7 @@ export const MovementTable = ({
       {
         key: 'createdAt',
         header: '日時',
-        cell: ({ createdAt }) => momentNameAt(createdAt, timezone),
+        cell: ({ createdAt }) => inJapanese(momentNameAt(createdAt, timezone)),
       },
       {
         key: 'transactionType',

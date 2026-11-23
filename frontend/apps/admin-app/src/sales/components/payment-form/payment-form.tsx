@@ -4,6 +4,7 @@ import {
   FieldRow,
   Form,
   type FormProps,
+  inJapanese,
   RadioGroup,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -61,7 +62,7 @@ export const PaymentForm = ({
         autoComplete='off'
         required
         defaultValue={String(owed)}
-        description={`円の整数で入れます。未払い残額は${amountOf(owed, currency)}です。分けて受け取るときは、受け取った分を入れます。`}
+        description={`円の整数で入れます。未払い残額は${inJapanese(amountOf(owed, currency))}です。分けて受け取るときは、受け取った分を入れます。`}
         error={errors['amount']}
       />
       {method !== undefined && takesCard(method) && (

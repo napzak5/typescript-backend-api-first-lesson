@@ -117,7 +117,9 @@ export const CustomerTable = ({
         key: 'lastVisitDate',
         header: '最終来店日',
         cell: ({ lastVisitDate }) =>
-          lastVisitDate === null ? '来店なし' : dayNameOf(lastVisitDate),
+          lastVisitDate === null
+            ? '来店なし'
+            : inJapanese(dayNameOf(lastVisitDate)),
       },
     ]}
     rows={rows}

@@ -140,7 +140,7 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
     setQuery(next, { replace: true })
   }
 
-  const heading = `${dayNameOf(conditions.date)}の予約`
+  const heading = `${inJapanese(dayNameOf(conditions.date))}の予約`
 
   if (pages[0]?.type === 'forbidden') {
     return (

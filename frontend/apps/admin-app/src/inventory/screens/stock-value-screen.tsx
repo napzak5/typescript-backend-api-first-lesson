@@ -37,7 +37,9 @@ const ValuePart = ({ salon }: { salon: ModelsSalonResponse }) => {
         .with(undefined, () => (
           <LoadingIndicator label='在庫評価額を読み込んでいます' />
         ))
-        .with({ type: 'forbidden' }, () => <OtherSalonNotice what='在庫' />)
+        .with({ type: 'forbidden' }, () => (
+          <OtherSalonNotice what={writtenInJapanese('在庫')} />
+        ))
         .with({ type: 'tooManyRequests' }, { type: 'failed' }, (reason) => (
           <UnreadNotice
             message={inJapanese(

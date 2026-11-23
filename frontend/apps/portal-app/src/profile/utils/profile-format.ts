@@ -9,68 +9,44 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { GENDERS, SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
 import { type ChoiceOption, inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 
-const TIER_NAMES: Record<ModelsMembershipTierType, string> = {
-  regular: 'レギュラー',
-  silver: 'シルバー',
-  gold: 'ゴールド',
-  platinum: 'プラチナ',
-  vip: 'VIP',
-}
+const TIER_NAMES: Record<ModelsMembershipTierType, LocalizedText> =
+  termMessages.membershipTier
 
 /** The rank of a member, in a word. */
 export const tierNameOf = (tier: ModelsMembershipTierType): string =>
-  TIER_NAMES[tier]
+  inJapanese(TIER_NAMES[tier])
 
-const GENDER_NAMES: Record<ModelsCustomerGenderType, string> = {
-  male: '男性',
-  female: '女性',
-  other: 'その他',
-  prefer_not_to_say: '回答しない',
-}
+const GENDER_NAMES: Record<ModelsCustomerGenderType, LocalizedText> =
+  termMessages.gender
 
-const CATEGORY_NAMES: Record<ModelsServiceCategoryType, string> = {
-  cut: 'カット',
-  color: 'カラー',
-  perm: 'パーマ',
-  treatment: 'トリートメント',
-  spa: 'スパ',
-  styling: 'スタイリング',
-  extension: 'エクステンション',
-  other: 'その他',
-}
+const CATEGORY_NAMES: Record<ModelsServiceCategoryType, LocalizedText> =
+  termMessages.serviceCategory
 
 /** What the form offers as a gender, in the order of the contract. */
 export const GENDER_OPTIONS: readonly ChoiceOption[] = GENDERS.map(
-  (gender) => ({ value: gender, label: GENDER_NAMES[gender] }),
+  (gender) => ({ value: gender, label: inJapanese(GENDER_NAMES[gender]) }),
 )
 
 /** The kinds of service the form offers, in the order of the contract. */
 export const CATEGORY_OPTIONS: readonly ChoiceOption[] = SERVICE_CATEGORIES.map(
-  (category) => ({ value: category, label: CATEGORY_NAMES[category] }),
+  (category) => ({
+    value: category,
+    label: inJapanese(CATEGORY_NAMES[category]),
+  }),
 )
 
-const HAIR_TYPE_NAMES: Record<ModelsHairType, string> = {
-  straight: 'ストレート',
-  wavy: 'ウェーブ',
-  curly: 'カール',
-  coily: '強いカール',
-}
+const HAIR_TYPE_NAMES: Record<ModelsHairType, LocalizedText> =
+  termMessages.hairType
 
-const HAIR_THICKNESS_NAMES: Record<ModelsHairThicknessType, string> = {
-  thin: '細い',
-  medium: 'ふつう',
-  thick: '太い',
-}
+const HAIR_THICKNESS_NAMES: Record<ModelsHairThicknessType, LocalizedText> =
+  termMessages.hairThickness
 
-const SCALP_CONDITION_NAMES: Record<ModelsScalpConditionType, string> = {
-  normal: 'ふつう',
-  dry: '乾燥',
-  oily: '脂性',
-  sensitive: '敏感',
-  dandruff: 'フケが出やすい',
-}
+const SCALP_CONDITION_NAMES: Record<ModelsScalpConditionType, LocalizedText> =
+  termMessages.scalpCondition
 
 /** A day of the calendar, as it is written: 「2026年11月9日」. It is read in no time zone. */
 export const calendarDayOf = (date: string): string =>
@@ -140,14 +116,14 @@ export const addressLinesOf = ({
 }
 
 export const genderNameOf = (gender: ModelsCustomerGenderType): string =>
-  GENDER_NAMES[gender]
+  inJapanese(GENDER_NAMES[gender])
 
 /** The kinds of service a customer likes, in the order the form offers them. */
 export const categoryNamesOf = (
   categories: readonly ModelsServiceCategoryType[],
 ): string[] =>
   SERVICE_CATEGORIES.filter((category) => categories.includes(category)).map(
-    (category) => CATEGORY_NAMES[category],
+    (category) => inJapanese(CATEGORY_NAMES[category]),
   )
 
 /** The ways a customer lets a salon reach them: those that are allowed, by name. */
@@ -179,16 +155,21 @@ export const hairOf = ({
 >): { term: string; description: string | null }[] => [
   {
     term: '髪質',
-    description: hairType === null ? null : HAIR_TYPE_NAMES[hairType],
+    description:
+      hairType === null ? null : inJapanese(HAIR_TYPE_NAMES[hairType]),
   },
   {
     term: '髪の太さ',
     description:
-      hairThickness === null ? null : HAIR_THICKNESS_NAMES[hairThickness],
+      hairThickness === null
+        ? null
+        : inJapanese(HAIR_THICKNESS_NAMES[hairThickness]),
   },
   {
     term: '頭皮の状態',
     description:
-      scalpCondition === null ? null : SCALP_CONDITION_NAMES[scalpCondition],
+      scalpCondition === null
+        ? null
+        : inJapanese(SCALP_CONDITION_NAMES[scalpCondition]),
   },
 ]

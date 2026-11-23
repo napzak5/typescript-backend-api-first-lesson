@@ -10,6 +10,7 @@ import { dayNameOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
+  inJapanese,
   NOTHING_TO_SAY,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -115,7 +116,7 @@ const Addition = ({ salon, booking, staff, services }: AdditionProps) => {
     <BookingLineForm
       staff={staff}
       services={services}
-      day={dayNameOf(booking.bookingDate)}
+      day={inJapanese(dayNameOf(booking.bookingDate))}
       timezone={salon.timezone}
       check={check}
       onValuesChange={() => setCheck(undefined)}

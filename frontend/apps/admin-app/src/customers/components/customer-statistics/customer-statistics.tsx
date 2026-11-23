@@ -39,18 +39,20 @@ export const CustomerStatistics = ({
         },
         {
           term: '利用額',
-          description: amountOf(statistics.totalSpent, currency),
+          description: inJapanese(amountOf(statistics.totalSpent, currency)),
         },
         {
           term: '予約 1 件あたりの会計',
-          description: amountOf(statistics.averageBookingValue, currency),
+          description: inJapanese(
+            amountOf(statistics.averageBookingValue, currency),
+          ),
         },
         {
           term: '最後の来店',
           description:
             statistics.lastVisit === null
               ? inJapanese(NONE)
-              : momentNameAt(statistics.lastVisit, timezone),
+              : inJapanese(momentNameAt(statistics.lastVisit, timezone)),
         },
         {
           term: 'キャンセル率',

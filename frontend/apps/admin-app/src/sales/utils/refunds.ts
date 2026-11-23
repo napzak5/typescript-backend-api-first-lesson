@@ -60,7 +60,7 @@ const amountErrorOf = (
   }
 
   return amount > paid
-    ? `返金する金額は、支払いの金額（${amountOf(paid, currency)}）以下にしてください。`
+    ? `返金する金額は、支払いの金額（${inJapanese(amountOf(paid, currency))}）以下にしてください。`
     : undefined
 }
 

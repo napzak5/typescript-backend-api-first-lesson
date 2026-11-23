@@ -23,6 +23,7 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -108,7 +109,7 @@ describe('a booking of a salon, against the API', () => {
     expect(await heading('予約の内容')).toHaveFocus()
     expect(recordTerms()).toEqual([
       ['予約番号', 'BK-TEST-0001'],
-      ['来店日', dayNameOf(day)],
+      ['来店日', inJapanese(dayNameOf(day))],
       ['時刻', '14:30〜16:30'],
       ['お客様', KENJI.name],
       ['お客様の電話番号', expect.stringMatching(/\d/)],
@@ -237,8 +238,8 @@ describe('a booking of a salon, against the API', () => {
     ])
     expect(recordTerms()).toEqual(
       expect.arrayContaining([
-        ['実際の開始', `${dayNameOf(day)} 10:05`],
-        ['実際の終了', `${dayNameOf(day)} 11:10`],
+        ['実際の開始', `${inJapanese(dayNameOf(day))} 10:05`],
+        ['実際の終了', `${inJapanese(dayNameOf(day))} 11:10`],
       ]),
     )
   })
@@ -263,7 +264,7 @@ describe('a booking of a salon, against the API', () => {
     expect(
       within(dialog).getByLabelText('実際の開始'),
     ).toHaveAccessibleDescription(
-      expect.stringContaining(`${dayNameOf(day)} 10:05`),
+      expect.stringContaining(`${inJapanese(dayNameOf(day))} 10:05`),
     )
     fireEvent.change(within(dialog).getByLabelText('実際の終了'), {
       target: { value: `${day}T10:00` },

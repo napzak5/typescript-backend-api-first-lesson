@@ -126,9 +126,11 @@ export const AttachmentRecord = ({
           { term: 'アップロードした人', description: uploaderName },
           {
             term: 'アップロード日時',
-            description: momentNameAt(
-              attachment.uploadedAt ?? attachment.createdAt,
-              timezone,
+            description: inJapanese(
+              momentNameAt(
+                attachment.uploadedAt ?? attachment.createdAt,
+                timezone,
+              ),
             ),
           },
         ]}

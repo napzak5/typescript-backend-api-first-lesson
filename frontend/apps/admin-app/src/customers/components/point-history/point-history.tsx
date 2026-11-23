@@ -44,7 +44,7 @@ export const PointHistory = ({
       {
         key: 'createdAt',
         header: '日時',
-        cell: ({ createdAt }) => momentNameAt(createdAt, timezone),
+        cell: ({ createdAt }) => inJapanese(momentNameAt(createdAt, timezone)),
       },
       {
         key: 'transactionType',
@@ -67,7 +67,7 @@ export const PointHistory = ({
         key: 'expiryDate',
         header: '有効期限',
         cell: ({ expiryDate }) =>
-          expiryDate === null ? '' : dayNameOf(expiryDate),
+          expiryDate === null ? '' : inJapanese(dayNameOf(expiryDate)),
       },
       {
         key: 'reference',

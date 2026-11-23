@@ -22,6 +22,7 @@ import {
   VIP,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -161,7 +162,7 @@ describe('the ledger of the customers, against the API', () => {
         'シルバー',
         '通常',
         '2 回',
-        dayNameOf(lastVisit),
+        inJapanese(dayNameOf(lastVisit)),
       ])
       expect(screen.getByText('4 人')).toBeVisible()
       expect(screen.getByRole('link', { name: '顧客' })).toHaveAttribute(
@@ -561,15 +562,15 @@ describe('the ledger of the customers, against the API', () => {
       expect(describedIn('台帳')).toMatchObject({
         電話番号: '+81-70-1111-2222',
         住所: '〒160-0022 TokyoShinjuku-ku5-6-7 Shinjuku Shinjuku Tower 15F',
-        生年月日: dayNameOf('1995-03-10'),
+        生年月日: inJapanese(dayNameOf('1995-03-10')),
         好みのメニュー: 'カラー、トリートメント、スパ',
         好みについてのメモ: 'Sensitive skin, requires patch test',
         会員ランク: 'レギュラー',
         タグ: 'sensitive-skintreatment-focus',
       })
       expect(describedIn('来店とポイント')).toMatchObject({
-        初回来店日: dayNameOf(visit),
-        最終来店日: dayNameOf(visit),
+        初回来店日: inJapanese(dayNameOf(visit)),
+        最終来店日: inJapanese(dayNameOf(visit)),
         来店回数: '1 回',
         ポイント: '300 ポイント',
       })
@@ -581,13 +582,15 @@ describe('the ledger of the customers, against the API', () => {
         接客の好み: '静かに過ごしたい',
       })
       expect(
-        screen.getByText(`${dayNameOf(yearAgo)}〜${dayNameOf(today)}の集計`),
+        screen.getByText(
+          `${inJapanese(dayNameOf(yearAgo))}〜${inJapanese(dayNameOf(today))}の集計`,
+        ),
       ).toBeVisible()
       expect(describedIn('このサロンでの利用')).toEqual({
         予約: '2 件',
         利用額: '￥0',
         '予約 1 件あたりの会計': '￥0',
-        最後の来店: `${dayNameOf(visit)} 10:30`,
+        最後の来店: `${inJapanese(dayNameOf(visit))} 10:30`,
         キャンセル率: '0%',
         無断キャンセル率: '50%',
       })
@@ -825,7 +828,7 @@ describe('the ledger of the customers, against the API', () => {
         'シルバー',
         '休眠',
         '2 回',
-        dayNameOf(lastVisit),
+        inJapanese(dayNameOf(lastVisit)),
       ])
     })
 

@@ -7,6 +7,7 @@ import {
   Card,
   DescriptionList,
   Dialog,
+  inJapanese,
   Note,
 } from '@beauty-salon-frontend/ui'
 import {
@@ -73,7 +74,9 @@ export const ShareLinkRecord = ({
             },
             {
               term: '有効期限',
-              description: momentNameAt(shareLink.expiresAt, timezone),
+              description: inJapanese(
+                momentNameAt(shareLink.expiresAt, timezone),
+              ),
             },
             { term: 'ダウンロード', description: downloadsNameOf(shareLink) },
             {
@@ -83,7 +86,9 @@ export const ShareLinkRecord = ({
             { term: '発行した人', description: issuerName },
             {
               term: '発行日時',
-              description: momentNameAt(shareLink.createdAt, timezone),
+              description: inJapanese(
+                momentNameAt(shareLink.createdAt, timezone),
+              ),
             },
           ]}
         />

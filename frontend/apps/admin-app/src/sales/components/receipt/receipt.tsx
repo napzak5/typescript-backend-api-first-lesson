@@ -4,7 +4,7 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { DescriptionList, Table } from '@beauty-salon-frontend/ui'
+import { DescriptionList, inJapanese, Table } from '@beauty-salon-frontend/ui'
 import { useId } from 'react'
 import { cardNameOf, methodNameOf, refundedOf } from '../../utils/sale-format'
 import styles from './receipt.module.css'
@@ -73,11 +73,15 @@ export const Receipt = ({ receipt, salon, methods }: ReceiptProps) => {
           { term: 'レシート番号', description: receipt.receiptNumber },
           {
             term: '会計日時',
-            description: momentNameAt(sale.saleTime, salon.timezone),
+            description: inJapanese(
+              momentNameAt(sale.saleTime, salon.timezone),
+            ),
           },
           {
             term: '発行日時',
-            description: momentNameAt(receipt.issuedAt, salon.timezone),
+            description: inJapanese(
+              momentNameAt(receipt.issuedAt, salon.timezone),
+            ),
           },
         ]}
       />
@@ -93,17 +97,19 @@ export const Receipt = ({ receipt, salon, methods }: ReceiptProps) => {
           {
             key: 'unitPrice',
             header: '単価',
-            cell: ({ unitPrice }) => amountOf(unitPrice, currency),
+            cell: ({ unitPrice }) => inJapanese(amountOf(unitPrice, currency)),
           },
           {
             key: 'discountAmount',
             header: '割引',
-            cell: ({ discountAmount }) => amountOf(discountAmount, currency),
+            cell: ({ discountAmount }) =>
+              inJapanese(amountOf(discountAmount, currency)),
           },
           {
             key: 'totalAmount',
             header: '金額',
-            cell: ({ totalAmount }) => amountOf(totalAmount, currency),
+            cell: ({ totalAmount }) =>
+              inJapanese(amountOf(totalAmount, currency)),
           },
         ]}
         rows={sale.details}
@@ -113,23 +119,29 @@ export const Receipt = ({ receipt, salon, methods }: ReceiptProps) => {
       <DescriptionList
         className={styles['amounts']}
         items={[
-          { term: '小計', description: amountOf(sale.subtotal, currency) },
+          {
+            term: '小計',
+            description: inJapanese(amountOf(sale.subtotal, currency)),
+          },
           {
             term: '割引',
-            description: amountOf(sale.discountAmount, currency),
+            description: inJapanese(amountOf(sale.discountAmount, currency)),
           },
           {
             term: '消費税',
-            description: amountOf(sale.taxAmount, currency),
+            description: inJapanese(amountOf(sale.taxAmount, currency)),
           },
-          { term: '合計', description: amountOf(sale.totalAmount, currency) },
+          {
+            term: '合計',
+            description: inJapanese(amountOf(sale.totalAmount, currency)),
+          },
           ...sale.payments.map((payment) => {
             const method = methodNameOf(payment.paymentMethodId, methods)
             const card = cardNameOf(payment)
 
             return {
               term: `お支払い（${card === null ? method : `${method} ${card}`}）`,
-              description: amountOf(payment.amount, currency),
+              description: inJapanese(amountOf(payment.amount, currency)),
             }
           }),
           ...(refunded === 0
@@ -137,7 +149,7 @@ export const Receipt = ({ receipt, salon, methods }: ReceiptProps) => {
             : [
                 {
                   term: 'ご返金',
-                  description: amountOf(refunded, currency),
+                  description: inJapanese(amountOf(refunded, currency)),
                 },
               ]),
         ]}

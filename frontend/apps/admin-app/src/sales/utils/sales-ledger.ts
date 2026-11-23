@@ -1,7 +1,12 @@
 import type { ModelsPaymentStatusType } from '@beauty-salon-frontend/api-client'
 import { isDay } from '@beauty-salon-frontend/fields'
 import { dayNameOf, daysErrorsOf } from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  errorsInJapanese,
+  type FormRead,
+  inJapanese,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 
 /**
  * Which sales of a salon the ledger shows: those whose day (at the salon)
@@ -61,7 +66,7 @@ export const readLedgerConditions = (
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
   const paymentStatus = paymentStatusFrom(textOf(values, 'paymentStatus'))
-  const errors = daysErrorsOf(from, to, 'required')
+  const errors = errorsInJapanese(daysErrorsOf(from, to, 'required'))
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
   }
@@ -91,4 +96,6 @@ export const ledgerQueryOf = (conditions: LedgerConditions): URLSearchParams =>
 
 /** The days of a range, in words: one day, or from one to another. */
 export const rangeNameOf = ({ from, to }: LedgerConditions): string =>
-  from === to ? dayNameOf(from) : `${dayNameOf(from)}〜${dayNameOf(to)}`
+  from === to
+    ? inJapanese(dayNameOf(from))
+    : `${inJapanese(dayNameOf(from))}〜${inJapanese(dayNameOf(to))}`

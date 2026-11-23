@@ -50,7 +50,7 @@ export const afterReportExport = (
     .with({ type: 'exported' }, ({ file }) => ({
       type: 'saved',
       file,
-      message: `${periodNameOf(period)}の売上を、${file.name} に出力しました。`,
+      message: `${inJapanese(periodNameOf(period))}の売上を、${file.name} に出力しました。`,
     }))
     .with({ type: 'notFound' }, () => ({
       type: 'refused',

@@ -7,7 +7,13 @@ import {
   dayNameOf,
   momentNameAt,
 } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
+import {
+  Card,
+  DescriptionList,
+  inJapanese,
+  Link,
+  Table,
+} from '@beauty-salon-frontend/ui'
 import { customerNameOf } from '../../../customers/api/customers-api'
 import { sourceNameOf } from '../../utils/booking-entry'
 import {
@@ -64,7 +70,9 @@ export const BookingRecord = ({
       : [
           {
             term: 'キャンセルした日時',
-            description: momentNameAt(booking.cancelledAt, timezone),
+            description: inJapanese(
+              momentNameAt(booking.cancelledAt, timezone),
+            ),
           },
           {
             term: 'キャンセルの理由',
@@ -76,7 +84,9 @@ export const BookingRecord = ({
       : [
           {
             term: '実際の開始',
-            description: momentNameAt(booking.actualStartTime, timezone),
+            description: inJapanese(
+              momentNameAt(booking.actualStartTime, timezone),
+            ),
           },
         ]),
     ...(booking.actualEndTime === null
@@ -84,7 +94,9 @@ export const BookingRecord = ({
       : [
           {
             term: '実際の終了',
-            description: momentNameAt(booking.actualEndTime, timezone),
+            description: inJapanese(
+              momentNameAt(booking.actualEndTime, timezone),
+            ),
           },
         ]),
     ...(booking.completedAt === null
@@ -92,7 +104,9 @@ export const BookingRecord = ({
       : [
           {
             term: '完了を記録した日時',
-            description: momentNameAt(booking.completedAt, timezone),
+            description: inJapanese(
+              momentNameAt(booking.completedAt, timezone),
+            ),
           },
         ]),
   ]
@@ -103,7 +117,10 @@ export const BookingRecord = ({
         <DescriptionList
           items={[
             { term: '予約番号', description: booking.bookingNumber },
-            { term: '来店日', description: dayNameOf(booking.bookingDate) },
+            {
+              term: '来店日',
+              description: inJapanese(dayNameOf(booking.bookingDate)),
+            },
             { term: '時刻', description: hoursOf(booking, timezone) },
             {
               term: 'お客様',
@@ -145,7 +162,7 @@ export const BookingRecord = ({
               description:
                 booking.depositAmount === null
                   ? null
-                  : amountOf(booking.depositAmount, currency),
+                  : inJapanese(amountOf(booking.depositAmount, currency)),
             },
             ...happened,
           ]}
@@ -180,7 +197,7 @@ export const BookingRecord = ({
               header: '金額',
               align: 'end',
               cell: ({ finalPrice, discountAmount, taxIncluded }) =>
-                `${amountOf(finalPrice, currency)}${discountAmount > 0 ? `（割引 ${amountOf(discountAmount, currency)}）` : ''}${taxIncluded ? '（税込）' : '（税別）'}`,
+                `${inJapanese(amountOf(finalPrice, currency))}${discountAmount > 0 ? `（割引 ${inJapanese(amountOf(discountAmount, currency))}）` : ''}${taxIncluded ? '（税込）' : '（税別）'}`,
             },
             {
               key: 'completed',
@@ -198,18 +215,23 @@ export const BookingRecord = ({
       <Card title='金額'>
         <DescriptionList
           items={[
-            { term: '小計', description: amountOf(booking.subtotal, currency) },
+            {
+              term: '小計',
+              description: inJapanese(amountOf(booking.subtotal, currency)),
+            },
             {
               term: '割引',
-              description: amountOf(booking.discountAmount, currency),
+              description: inJapanese(
+                amountOf(booking.discountAmount, currency),
+              ),
             },
             {
               term: '消費税',
-              description: amountOf(booking.taxAmount, currency),
+              description: inJapanese(amountOf(booking.taxAmount, currency)),
             },
             {
               term: '合計',
-              description: amountOf(booking.totalAmount, currency),
+              description: inJapanese(amountOf(booking.totalAmount, currency)),
             },
           ]}
         />

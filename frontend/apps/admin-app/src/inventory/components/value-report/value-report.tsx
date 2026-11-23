@@ -1,6 +1,6 @@
 import type { ModelsInventoryValueReportResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { EmptyState, Table } from '@beauty-salon-frontend/ui'
+import { EmptyState, inJapanese, Table } from '@beauty-salon-frontend/ui'
 
 export type ValueReportProps = {
   report: ModelsInventoryValueReportResponse
@@ -22,7 +22,7 @@ export const ValueReport = ({ report, currency }: ValueReportProps) =>
   ) : (
     <>
       <p>
-        {`在庫評価額の合計は ${amountOf(report.totalValue, currency)}（${report.totalItems} 品目）です。在庫数に商品の仕入価格を掛けた額で、仕入価格のない商品は 0 円として数えます。`}
+        {`在庫評価額の合計は ${inJapanese(amountOf(report.totalValue, currency))}（${report.totalItems} 品目）です。在庫数に商品の仕入価格を掛けた額で、仕入価格のない商品は 0 円として数えます。`}
       </p>
       <Table
         caption='カテゴリーごとの在庫評価額'
@@ -42,7 +42,7 @@ export const ValueReport = ({ report, currency }: ValueReportProps) =>
             key: 'value',
             header: '在庫評価額',
             align: 'end',
-            cell: ({ value }) => amountOf(value, currency),
+            cell: ({ value }) => inJapanese(amountOf(value, currency)),
           },
         ]}
         rows={report.categories}

@@ -73,7 +73,7 @@ export const countedNameOf = (
 ): string =>
   lastCountedAt === null
     ? '棚卸ししていません'
-    : `${momentNameAt(lastCountedAt, timezone)}${counter === undefined ? '' : `（${counter}）`}`
+    : `${inJapanese(momentNameAt(lastCountedAt, timezone))}${counter === undefined ? '' : `（${counter}）`}`
 
 /**
  * The products a row may be of, in the order they were read (that of their

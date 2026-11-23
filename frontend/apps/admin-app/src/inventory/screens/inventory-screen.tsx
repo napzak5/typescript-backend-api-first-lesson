@@ -180,7 +180,7 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
     return (
       <>
         <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what='在庫' />
+        <OtherSalonNotice what={writtenInJapanese('在庫')} />
       </>
     )
   }

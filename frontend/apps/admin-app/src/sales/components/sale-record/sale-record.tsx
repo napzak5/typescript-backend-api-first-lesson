@@ -81,9 +81,12 @@ export const SaleRecord = ({
             { term: '売上番号', description: sale.saleNumber },
             {
               term: '会計日時',
-              description: momentNameAt(sale.saleTime, timezone),
+              description: inJapanese(momentNameAt(sale.saleTime, timezone)),
             },
-            { term: '会計日', description: dayNameOf(sale.saleDate) },
+            {
+              term: '会計日',
+              description: inJapanese(dayNameOf(sale.saleDate)),
+            },
             {
               term: 'お客様',
               description: customerNameIn(sale.customerId, customer),
@@ -119,7 +122,9 @@ export const SaleRecord = ({
               : [
                   {
                     term: '取り消した日時',
-                    description: momentNameAt(sale.voidedAt, timezone),
+                    description: inJapanese(
+                      momentNameAt(sale.voidedAt, timezone),
+                    ),
                   },
                   {
                     term: '取り消しの理由',
@@ -153,22 +158,26 @@ export const SaleRecord = ({
             {
               key: 'unitPrice',
               header: '単価',
-              cell: ({ unitPrice }) => amountOf(unitPrice, currency),
+              cell: ({ unitPrice }) =>
+                inJapanese(amountOf(unitPrice, currency)),
             },
             {
               key: 'discountAmount',
               header: '割引',
-              cell: ({ discountAmount }) => amountOf(discountAmount, currency),
+              cell: ({ discountAmount }) =>
+                inJapanese(amountOf(discountAmount, currency)),
             },
             {
               key: 'taxAmount',
               header: '消費税',
-              cell: ({ taxAmount }) => amountOf(taxAmount, currency),
+              cell: ({ taxAmount }) =>
+                inJapanese(amountOf(taxAmount, currency)),
             },
             {
               key: 'totalAmount',
               header: '金額',
-              cell: ({ totalAmount }) => amountOf(totalAmount, currency),
+              cell: ({ totalAmount }) =>
+                inJapanese(amountOf(totalAmount, currency)),
             },
           ]}
           rows={sale.details}
@@ -179,31 +188,37 @@ export const SaleRecord = ({
       <Card title='金額'>
         <DescriptionList
           items={[
-            { term: '小計', description: amountOf(sale.subtotal, currency) },
+            {
+              term: '小計',
+              description: inJapanese(amountOf(sale.subtotal, currency)),
+            },
             {
               term: '割引',
-              description: amountOf(sale.discountAmount, currency),
+              description: inJapanese(amountOf(sale.discountAmount, currency)),
             },
             {
               term: '消費税',
-              description: amountOf(sale.taxAmount, currency),
+              description: inJapanese(amountOf(sale.taxAmount, currency)),
             },
-            { term: '合計', description: amountOf(sale.totalAmount, currency) },
+            {
+              term: '合計',
+              description: inJapanese(amountOf(sale.totalAmount, currency)),
+            },
             {
               term: '受け取った金額',
-              description: amountOf(receivedOf(sale), currency),
+              description: inJapanese(amountOf(receivedOf(sale), currency)),
             },
             ...(refunded === 0
               ? []
               : [
                   {
                     term: '返金した金額',
-                    description: amountOf(refunded, currency),
+                    description: inJapanese(amountOf(refunded, currency)),
                   },
                 ]),
             {
               term: '未払い残額',
-              description: amountOf(owedOf(sale), currency),
+              description: inJapanese(amountOf(owedOf(sale), currency)),
             },
           ]}
         />

@@ -228,7 +228,7 @@ const ChangePart = ({ salon, paymentMethodId }: ChangePartProps) => {
     .with({ type: 'forbidden' }, () => (
       <>
         {header}
-        <OtherSalonNotice what='支払い方法' />
+        <OtherSalonNotice what={writtenInJapanese('支払い方法')} />
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (

@@ -8,7 +8,9 @@ import type {
   ModelsTimeSlot,
 } from '@beauty-salon-frontend/api-client'
 import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 
 /** The days of a week in the order a timetable lists them, with their names. */
 const WEEKDAYS: readonly { day: ModelsDayOfWeekType; name: string }[] = [
@@ -21,16 +23,11 @@ const WEEKDAYS: readonly { day: ModelsDayOfWeekType; name: string }[] = [
   { day: 'sunday', name: '日曜日' },
 ]
 
-const LEVEL_NAMES: Record<ModelsStaffLevelType, string> = {
-  junior: 'ジュニア',
-  stylist: 'スタイリスト',
-  senior: 'シニア',
-  expert: 'エキスパート',
-  director: 'ディレクター',
-}
+const LEVEL_NAMES: Record<ModelsStaffLevelType, LocalizedText> =
+  termMessages.staffLevel
 
 export const levelNameOf = (level: ModelsStaffLevelType): string =>
-  LEVEL_NAMES[level]
+  inJapanese(LEVEL_NAMES[level])
 
 /** Where a salon is, in one line: the parts of the address as the salon wrote them. */
 export const addressOf = (

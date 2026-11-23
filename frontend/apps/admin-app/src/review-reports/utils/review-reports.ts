@@ -66,7 +66,7 @@ export const reasonNameOf = (reason: ModelsReviewReportReasonType): string =>
 
 /** A moment on the clock of the salon: 「2026年11月21日（土） 14:05」. */
 export const reportMomentOf = (moment: string, timezone: string): string =>
-  `${dayNameOf(dayAt(new Date(moment), timezone))} ${timeOfDayAt(moment, timezone)}`
+  `${inJapanese(dayNameOf(dayAt(new Date(moment), timezone)))} ${inJapanese(timeOfDayAt(moment, timezone))}`
 
 /** Whether a report waits for the platform, or when it was dismissed. */
 export const reportStateOf = (

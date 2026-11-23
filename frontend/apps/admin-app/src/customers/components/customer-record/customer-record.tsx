@@ -4,6 +4,7 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
+  inJapanese,
   Link,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -57,7 +58,7 @@ const referrerShownOf = (
 
 /** A day the ledger keeps, or that there is none. */
 const dayOrNone = (day: string | null, none: string): string =>
-  day === null ? none : dayNameOf(day)
+  day === null ? none : inJapanese(dayNameOf(day))
 
 /**
  * What the ledger keeps of a customer: who they are and how to reach them,
@@ -95,11 +96,11 @@ export const CustomerRecord = ({
           ),
           {
             term: '登録日時',
-            description: momentNameAt(customer.createdAt, timezone),
+            description: inJapanese(momentNameAt(customer.createdAt, timezone)),
           },
           {
             term: '最後に直した日時',
-            description: momentNameAt(customer.updatedAt, timezone),
+            description: inJapanese(momentNameAt(customer.updatedAt, timezone)),
           },
         ]}
       />
