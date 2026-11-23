@@ -3,13 +3,18 @@ import {
   NOTHING_TO_SAY,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { match, P } from 'ts-pattern'
 import { changePassword, OWN_ACCOUNT_PARTS } from '../api/security-api'
 import { PasswordChangeForm } from '../components/password-change-form/password-change-form'
 import { afterPasswordChange, readPasswordChange } from '../utils/security-flow'
+
+const { password } = securityMessages
 
 export type PasswordChangeScreenProps = {
   /** The address of the screen of the security of the account: the way back */
@@ -26,9 +31,10 @@ export const PasswordChangeScreen = ({
   securityHref,
   onChanged,
 }: PasswordChangeScreenProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
 
   const change = useMutation({
     mutationFn: changePassword,
@@ -38,11 +44,7 @@ export const PasswordChangeScreen = ({
           // The screen it goes back to reads the account and its devices
           // anew, and shows nothing of what was read before
           queryClient.removeQueries({ queryKey: OWN_ACCOUNT_PARTS })
-          notify({
-            tone: 'success',
-            message:
-              'パスワードを変更しました。この端末のほかは、すべての端末でサインアウトしました。変更したことを、メールでお知らせしました。',
-          })
+          notify({ tone: 'success', message: password.changed })
           onChanged()
         })
         .with(
@@ -64,8 +66,8 @@ export const PasswordChangeScreen = ({
   return (
     <>
       <PageHeader
-        title='パスワードを変更する'
-        description='変更すると、この端末のほかは、すべての端末でサインアウトします。'
+        title={say(password.change)}
+        description={say(password.changeDescription)}
       />
       <PasswordChangeForm
         message={says.message}

@@ -1,9 +1,10 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { renderApplicationAt } from '@beauty-salon-frontend/testing/screens'
 import { PageHeader } from '@beauty-salon-frontend/ui'
 import { screen } from '@testing-library/react'
 import { Route } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import type { NavigationOf } from './app-frame'
 import {
   StaffApplication,
@@ -101,5 +102,28 @@ describe('StaffApplication', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('StaffApplication on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show the sign-in screen, and the way to a new password, in English', () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    renderAt('/')
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Sign in' }),
+    ).toBeVisible()
+    expect(document.title).toBe(`Sign in | ${TITLE}`)
+    expect(
+      screen.getByRole('link', { name: 'Forgot your password?' }),
+    ).toHaveAttribute('href', 'https://portal.salon.example/forgot-password')
   })
 })

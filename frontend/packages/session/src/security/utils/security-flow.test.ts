@@ -1,6 +1,7 @@
 import { FAILED, TOO_MANY_REQUESTS } from '@beauty-salon-frontend/answers'
 import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { SessionPage } from '../api/security-api'
 import { phone, thisDevice, unrecorded } from '../components/examples'
@@ -15,14 +16,30 @@ import {
 
 const CURRENT = 'kirei na kami de dekakeru'
 const NEW = 'aoi sora to shiroi kumo'
-const UNCHANGED =
-  '現在のパスワードと同じです。別のパスワードを入力してください。'
-const WRONG =
-  '現在のパスワードが違います。5 回続けて違うと、15 分間、サインインもできなくなります。'
-const TOO_MANY =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
-const NOT_SENT =
-  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
+const UNCHANGED = {
+  en: 'This is the current password. Enter another password.',
+  ja: '現在のパスワードと同じです。別のパスワードを入力してください。',
+}
+const WRONG = {
+  en: 'The current password is not correct. After 5 wrong attempts in a row, you cannot sign in either for 15 minutes.',
+  ja: '現在のパスワードが違います。5 回続けて違うと、15 分間、サインインもできなくなります。',
+}
+const GUESSABLE = {
+  en: 'This password is easy to guess and cannot be used. Enter another password.',
+  ja: 'このパスワードは推測されやすいため、使えません。別のパスワードを入力してください。',
+}
+const TOO_SHORT = {
+  en: 'The password is too short. Enter 15 characters or more.',
+  ja: 'パスワードが短すぎます。15 文字以上で入力してください。',
+}
+const TOO_MANY = {
+  en: 'There are too many requests. Wait a while and try again.',
+  ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+}
+const NOT_SENT = {
+  en: 'It could not be sent. Check your connection and try again.',
+  ja: '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+}
 
 describe('readPasswordChange', () => {
   it('should take both passwords as they were typed, spaces and all', () => {
@@ -49,8 +66,14 @@ describe('readPasswordChange', () => {
     expect(readPasswordChange(formOf({}))).toEqual({
       type: 'invalid',
       errors: {
-        currentPassword: '現在のパスワードを入力してください。',
-        newPassword: 'パスワードを入力してください。',
+        currentPassword: {
+          en: 'Enter the current password.',
+          ja: '現在のパスワードを入力してください。',
+        },
+        newPassword: {
+          en: 'Enter a password.',
+          ja: 'パスワードを入力してください。',
+        },
       },
     })
   })
@@ -64,7 +87,7 @@ describe('readPasswordChange', () => {
       type: 'invalid',
       errors: {
         currentPassword: undefined,
-        newPassword: 'パスワードが短すぎます。15 文字以上で入力してください。',
+        newPassword: TOO_SHORT,
       },
     })
   })
@@ -98,25 +121,14 @@ describe('readPasswordChange', () => {
 })
 
 describe('afterPasswordChange', () => {
-  it.each([
+  it.each<[{ field: string; rule: string }, Record<string, LocalizedText>]>([
     [
       { field: 'currentPassword', rule: 'incorrect' },
       { currentPassword: WRONG },
     ],
     [{ field: 'newPassword', rule: 'unchanged' }, { newPassword: UNCHANGED }],
-    [
-      { field: 'newPassword', rule: 'blocklisted' },
-      {
-        newPassword:
-          'このパスワードは推測されやすいため、使えません。別のパスワードを入力してください。',
-      },
-    ],
-    [
-      { field: 'newPassword', rule: 'too_small' },
-      {
-        newPassword: 'パスワードが短すぎます。15 文字以上で入力してください。',
-      },
-    ],
+    [{ field: 'newPassword', rule: 'blocklisted' }, { newPassword: GUESSABLE }],
+    [{ field: 'newPassword', rule: 'too_small' }, { newPassword: TOO_SHORT }],
   ])('should say at its control what the API refused: %o', (value, errors) => {
     expect(afterPasswordChange({ type: 'invalid', values: [value] })).toEqual({
       message: undefined,
@@ -135,8 +147,7 @@ describe('afterPasswordChange', () => {
       }).errors,
     ).toEqual({
       currentPassword: WRONG,
-      newPassword:
-        'このパスワードは推測されやすいため、使えません。別のパスワードを入力してください。',
+      newPassword: GUESSABLE,
     })
   })
 
@@ -150,7 +161,10 @@ describe('afterPasswordChange', () => {
     'should say about the attempt what to do when the API %s',
     (_case, values) => {
       expect(afterPasswordChange({ type: 'invalid', values })).toEqual({
-        message: '入力した内容を確かめて、もう一度お試しください。',
+        message: {
+          en: 'Check what you entered and try again.',
+          ja: '入力した内容を確かめて、もう一度お試しください。',
+        },
         errors: {},
       })
     },

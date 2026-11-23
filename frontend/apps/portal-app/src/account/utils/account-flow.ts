@@ -40,7 +40,7 @@ export const readNewPassword = (
 
   return error === undefined
     ? { type: 'valid', value: password }
-    : { type: 'invalid', errors: { [name]: error } }
+    : { type: 'invalid', errors: { [name]: inJapanese(error) } }
 }
 
 /** The address and the password of a registration: both are checked, and both errors are said. */
@@ -65,7 +65,9 @@ export const readRegistration = (
 const messageOf = ({ field, rule }: RefusedValue): string | undefined =>
   match(field)
     .with('email', () => inJapanese(EMAIL_MALFORMED))
-    .with('password', 'newPassword', () => refusedPasswordMessage(rule))
+    .with('password', 'newPassword', () =>
+      inJapanese(refusedPasswordMessage(rule)),
+    )
     .otherwise(() => undefined)
 
 /**

@@ -2,9 +2,14 @@ import {
   Button,
   ButtonLink,
   useInMenu,
+  useSay,
   useWideScreen,
   VisuallyHidden,
 } from '@beauty-salon-frontend/ui'
+import {
+  securityMessages,
+  sessionMessages,
+} from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import type { Session } from '../../hooks/use-session'
 import styles from './account-menu.module.css'
@@ -42,6 +47,7 @@ export const AccountMenu = ({
   securityHref,
   onSignOut,
 }: AccountMenuProps) => {
+  const say = useSay()
   const inMenu = useInMenu()
   const wide = useWideScreen()
   const size = inMenu ? 'medium' : 'small'
@@ -58,18 +64,18 @@ export const AccountMenu = ({
         )}
         {securityHref !== undefined && (
           <ButtonLink href={securityHref} variant='quiet' size={size}>
-            アカウントの安全
+            {say(securityMessages.accountSecurity)}
           </ButtonLink>
         )}
         <Button variant='quiet' size={size} onClick={onSignOut}>
-          サインアウト
+          {say(sessionMessages.signOut)}
         </Button>
       </>
     ))
     .with({ type: 'signedOut' }, () =>
       signInHref === undefined ? null : (
         <ButtonLink href={signInHref} size='small'>
-          サインイン
+          {say(sessionMessages.signIn)}
         </ButtonLink>
       ),
     )

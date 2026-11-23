@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 
 /*
@@ -6,22 +8,17 @@ import { match } from 'ts-pattern'
  * is accepted and when the password is changed.
  */
 
-/** The rule, as a person is told it. */
-export const PASSWORD_RULE =
-  '15 文字以上で入力してください。長い文や、いくつかの単語の組み合わせが安全です。'
-
 const MIN_PASSWORD_LENGTH = 15
 const MAX_PASSWORD_LENGTH = 128
 
-const PASSWORD_MISSING = 'パスワードを入力してください。'
-const PASSWORD_TOO_SHORT =
-  'パスワードが短すぎます。15 文字以上で入力してください。'
-const PASSWORD_TOO_LONG =
-  'パスワードが長すぎます。128 文字以下で入力してください。'
-const PASSWORD_GUESSABLE =
-  'このパスワードは推測されやすいため、使えません。別のパスワードを入力してください。'
-const PASSWORD_REFUSED =
-  'このパスワードは使えません。別のパスワードを入力してください。'
+const { passwordRule } = securityMessages
+
+/** The rule, as a person is told it. */
+export const PASSWORD_RULE: LocalizedText =
+  passwordRule.rule(MIN_PASSWORD_LENGTH)
+
+const PASSWORD_TOO_SHORT = passwordRule.tooShort(MIN_PASSWORD_LENGTH)
+const PASSWORD_TOO_LONG = passwordRule.tooLong(MAX_PASSWORD_LENGTH)
 
 /**
  * The length the API counts: the characters of the password as it is
@@ -35,9 +32,9 @@ const lengthOf = (password: string): number =>
  * asked: only what cannot be right (nothing, too short, too long). Whether
  * a password is easy to guess is the API's to say.
  */
-export const newPasswordError = (password: string): string | undefined =>
+export const newPasswordError = (password: string): LocalizedText | undefined =>
   match(lengthOf(password))
-    .with(0, () => PASSWORD_MISSING)
+    .with(0, () => passwordRule.missing)
     .when(
       (length) => length < MIN_PASSWORD_LENGTH,
       () => PASSWORD_TOO_SHORT,
@@ -49,9 +46,9 @@ export const newPasswordError = (password: string): string | undefined =>
     .otherwise(() => undefined)
 
 /** What to say at the control of a chosen password that the API did not take, for the rule it broke. */
-export const refusedPasswordMessage = (rule: string): string =>
+export const refusedPasswordMessage = (rule: string): LocalizedText =>
   match(rule)
     .with('too_small', () => PASSWORD_TOO_SHORT)
     .with('too_big', () => PASSWORD_TOO_LONG)
-    .with('blocklisted', () => PASSWORD_GUESSABLE)
-    .otherwise(() => PASSWORD_REFUSED)
+    .with('blocklisted', () => passwordRule.guessable)
+    .otherwise(() => passwordRule.refused)

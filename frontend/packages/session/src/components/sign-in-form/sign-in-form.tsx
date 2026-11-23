@@ -1,11 +1,20 @@
-import { Button, Checkbox, Form, TextField } from '@beauty-salon-frontend/ui'
+import {
+  Button,
+  Checkbox,
+  Form,
+  TextField,
+  useSaidForm,
+  useSay,
+} from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useLayoutEffect, useRef } from 'react'
 
 /** What is wrong with a value, under the name of its control. */
 export type SignInFormErrors = {
-  email?: string | undefined
-  password?: string | undefined
-  twoFactorCode?: string | undefined
+  email?: LocalizedText | undefined
+  password?: LocalizedText | undefined
+  twoFactorCode?: LocalizedText | undefined
 }
 
 export type SignInFormProps = {
@@ -16,7 +25,7 @@ export type SignInFormProps = {
    */
   step: 'credentials' | 'twoFactorCode'
   /** What went wrong with the attempt as a whole */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   errors?: SignInFormErrors | undefined
   /** The attempt is on its way */
   pending?: boolean | undefined
@@ -27,6 +36,8 @@ export type SignInFormProps = {
 }
 
 const NO_ERRORS: SignInFormErrors = {}
+
+const { signInForm } = sessionMessages
 
 /**
  * The form a person signs in with: what it asks for, and what it says about
@@ -46,6 +57,8 @@ export const SignInForm = ({
   onSubmit,
   onBack,
 }: SignInFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const code = useRef<HTMLInputElement>(null)
 
   // After the error of the code, if there is one, has taken the focus
@@ -57,15 +70,15 @@ export const SignInForm = ({
 
   return (
     <Form
-      submitLabel='サインイン'
-      message={message}
+      submitLabel={say(sessionMessages.signIn)}
+      message={said.message}
       errors={errors}
       pending={pending}
       actions={
         step === 'twoFactorCode' &&
         onBack !== undefined && (
           <Button variant='quiet' onClick={onBack}>
-            メールアドレスの入力に戻る
+            {say(signInForm.back)}
           </Button>
         )
       }
@@ -74,36 +87,36 @@ export const SignInForm = ({
       {step === 'credentials' ? (
         <>
           <TextField
-            label='メールアドレス'
+            label={say(signInForm.email)}
             name='email'
             type='email'
             autoComplete='username'
             required
-            error={errors.email}
+            error={said.errors['email']}
           />
           <TextField
-            label='パスワード'
+            label={say(signInForm.password)}
             name='password'
             type='password'
             autoComplete='current-password'
             required
-            error={errors.password}
+            error={said.errors['password']}
           />
           <Checkbox
-            label='30 日間サインインしたままにする'
+            label={say(signInForm.rememberMe)}
             name='rememberMe'
-            description='ほかの人も使う端末では、選ばないでください。'
+            description={say(signInForm.rememberMeDescription)}
           />
         </>
       ) : (
         <TextField
           ref={code}
-          label='認証コード'
+          label={say(signInForm.code)}
           name='twoFactorCode'
           autoComplete='one-time-code'
           required
-          description='認証アプリに表示されている 6 桁のコードか、バックアップコードを入力してください。'
-          error={errors.twoFactorCode}
+          description={say(signInForm.codeDescription)}
+          error={said.errors['twoFactorCode']}
         />
       )}
     </Form>

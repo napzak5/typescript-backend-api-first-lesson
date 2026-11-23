@@ -3,6 +3,7 @@ import {
   ButtonLink,
   Form,
   type FormSays,
+  inJapanese,
   NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
@@ -91,7 +92,7 @@ const ResetWithToken = ({ token }: { token: string }) => {
             name='newPassword'
             autoComplete='new-password'
             required
-            description={PASSWORD_RULE}
+            description={inJapanese(PASSWORD_RULE)}
             error={says.errors['newPassword']}
           />
         </Form>

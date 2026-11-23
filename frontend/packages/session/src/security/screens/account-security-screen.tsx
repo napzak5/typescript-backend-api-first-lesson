@@ -8,15 +8,16 @@ import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
 import {
   Card,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   type InfiniteData,
   useInfiniteQuery,
@@ -59,6 +60,8 @@ import {
 
 type SessionPages = InfiniteData<SessionPage, string | undefined>
 
+const { names, sessions, twoFactor } = securityMessages
+
 type PartProps = {
   /** The time zone of whoever reads: the moments are said in it */
   timeZone: string
@@ -73,7 +76,7 @@ type DialogProps = {
 
 /** The dialog that issues new backup codes, and shows them. */
 const BackupCodes = ({ open, onClose, onChangedElsewhere }: DialogProps) => {
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [issued, setIssued] = useState<string[]>()
   const issue = useMutation({
     mutationFn: issueBackupCodes,
@@ -115,7 +118,7 @@ const StopTwoFactor = ({
   onChangedElsewhere,
   onStopped,
 }: DialogProps & { onStopped: () => void }) => {
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const stop = useMutation({
     mutationFn: stopTwoFactor,
     onSuccess: (outcome) =>
@@ -158,6 +161,7 @@ type AccountProps = PartProps & {
 
 /** The password and the second factor, as the API has them now. */
 const Account = ({ passwordHref, twoFactorHref, timeZone }: AccountProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const read = useQuery({
@@ -201,7 +205,7 @@ const Account = ({ passwordHref, twoFactorHref, timeZone }: AccountProps) => {
 
   return match(read.data)
     .with(undefined, () => (
-      <LoadingIndicator label='アカウントを読み込んでいます' />
+      <LoadingIndicator label={say(securityMessages.loadingAccount)} />
     ))
     .with({ type: 'found' }, ({ user }) => (
       <>
@@ -240,11 +244,7 @@ const Account = ({ passwordHref, twoFactorHref, timeZone }: AccountProps) => {
                   withTwoFactorStatus(account, 'disabled'),
                 )
                 readAgain()
-                notify({
-                  tone: 'success',
-                  message:
-                    '2 要素認証を無効にしました。サインインのときに確かめるのは、パスワードだけになりました。無効にしたことを、メールでお知らせしました。',
-                })
+                notify({ tone: 'success', message: twoFactor.turnedOff })
               }}
             />
           </>
@@ -253,9 +253,7 @@ const Account = ({ passwordHref, twoFactorHref, timeZone }: AccountProps) => {
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('アカウント'), reason),
-        )}
+        message={say(unreadMessageOf(names.account, reason))}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
@@ -268,6 +266,7 @@ const Account = ({ passwordHref, twoFactorHref, timeZone }: AccountProps) => {
  * one at a time, or all of them with this one.
  */
 const Sessions = ({ timeZone }: PartProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const heading = useRef<HTMLHeadingElement>(null)
@@ -281,7 +280,7 @@ const Sessions = ({ timeZone }: PartProps) => {
   })
   const [asking, setAsking] = useState(false)
   /** What went wrong with the attempt to sign out everywhere: said in the dialog */
-  const [unsent, setUnsent] = useState<string>()
+  const [unsent, setUnsent] = useState<LocalizedText>()
   /** A device was signed out here: its button went with its row */
   const answered = useRef(false)
   const listing =
@@ -313,11 +312,7 @@ const Sessions = ({ timeZone }: PartProps) => {
           // The row named where the next page begins: the pages are read
           // again behind the list, from its start
           void queryClient.invalidateQueries({ queryKey: OWN_SESSIONS })
-          notify({
-            tone: 'success',
-            message:
-              '端末をサインアウトさせました。その端末で使うには、もう一度サインインが必要です。',
-          })
+          notify({ tone: 'success', message: sessions.signedOut })
         })
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) =>
           notify({ tone: 'danger', message: unsentMessageOf(reason) }),
@@ -334,11 +329,11 @@ const Sessions = ({ timeZone }: PartProps) => {
         .with({ type: 'signedOut' }, () =>
           notify({
             tone: 'success',
-            message: 'すべての端末でサインアウトしました。',
+            message: securityMessages.everywhere.signedOut,
           }),
         )
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) =>
-          setUnsent(inJapanese(unsentMessageOf(reason))),
+          setUnsent(unsentMessageOf(reason)),
         )
         .exhaustive(),
   })
@@ -353,22 +348,15 @@ const Sessions = ({ timeZone }: PartProps) => {
   }
 
   return (
-    <Card title='サインインしている端末' headingRef={heading}>
-      <p>
-        このアカウントでサインインしている端末です。心当たりのない端末や、使わなくなった端末は、サインアウトさせてください。
-      </p>
+    <Card title={say(sessions.title)} headingRef={heading}>
+      <p>{say(sessions.description)}</p>
       {match(listing)
         .with(undefined, () => (
-          <LoadingIndicator label='サインインしている端末を読み込んでいます' />
+          <LoadingIndicator label={say(sessions.loading)} />
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(
-                writtenInJapanese('サインインしている端末'),
-                reason,
-              ),
-            )}
+            message={say(unreadMessageOf(names.devices, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -427,13 +415,14 @@ export const AccountSecurityScreen = ({
   twoFactorHref,
   actions,
 }: AccountSecurityScreenProps) => {
+  const say = useSay()
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
   return (
     <>
       <PageHeader
-        title='アカウントの安全'
-        description='パスワードと 2 要素認証、このアカウントでサインインしている端末です。'
+        title={say(securityMessages.accountSecurity)}
+        description={say(securityMessages.description)}
         actions={actions}
       />
       <Account

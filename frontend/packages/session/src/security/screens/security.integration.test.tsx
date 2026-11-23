@@ -229,7 +229,7 @@ describe('the security of an account, against the API', () => {
       expect(
         within(device).getByRole('heading', { level: 3 }),
       ).toHaveTextContent(
-        `${momentOf(session.createdAt, TIME_ZONE)} にサインインした端末`,
+        `${momentOf(session.createdAt, TIME_ZONE).ja} にサインインした端末`,
       )
       expect(within(device).getByText('この端末')).toBeVisible()
       expect(
@@ -239,8 +239,8 @@ describe('the security of an account, against the API', () => {
       ).toEqual([
         session.userAgent ?? '記録されていません',
         session.ipAddress ?? '記録されていません',
-        momentOf(session.lastActivityAt, TIME_ZONE),
-        momentOf(session.refreshExpiresAt, TIME_ZONE),
+        momentOf(session.lastActivityAt, TIME_ZONE).ja,
+        momentOf(session.refreshExpiresAt, TIME_ZONE).ja,
       ])
       expect(within(device).queryByRole('button')).toBeNull()
       expect(await findAccessibilityViolations()).toEqual([])
@@ -261,7 +261,7 @@ describe('the security of an account, against the API', () => {
       expect(
         await within(
           await screen.findByRole('region', { name: 'パスワード' }),
-        ).findByText(momentOf('2026-10-02T09:30:00.000Z', TIME_ZONE)),
+        ).findByText(momentOf('2026-10-02T09:30:00.000Z', TIME_ZONE).ja),
       ).toBeVisible()
     })
 
@@ -326,7 +326,7 @@ describe('the security of an account, against the API', () => {
       expect(
         within(second).getByRole('button', { name: /をサインアウトさせる$/ }),
       ).toHaveAccessibleName(
-        `${momentOf(other.createdAt, TIME_ZONE)} にサインインした端末をサインアウトさせる`,
+        `${momentOf(other.createdAt, TIME_ZONE).ja} にサインインした端末をサインアウトさせる`,
       )
     })
 

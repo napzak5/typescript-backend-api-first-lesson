@@ -1,21 +1,21 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { phone, sessions, thisDevice, unrecorded } from '../examples'
 import { SessionList, type SessionListProps } from './session-list'
 import * as sessionListStories from './session-list.stories'
 
 const stories = composeStories(sessionListStories)
 
-const listed = (): HTMLElement[] =>
-  within(
-    screen.getByRole('list', { name: 'サインインしている端末' }),
-  ).getAllByRole('listitem')
+/** The devices of the list, which is named in the language of the page */
+const listed = (name = 'サインインしている端末'): HTMLElement[] =>
+  within(screen.getByRole('list', { name })).getAllByRole('listitem')
 
-const deviceAt = (index: number): HTMLElement => {
-  const device = listed().at(index)
+const deviceAt = (index: number, list?: string): HTMLElement => {
+  const device = listed(list).at(index)
   if (device === undefined) {
     throw new Error(`The list has no device at ${index}`)
   }
@@ -270,5 +270,59 @@ describe('SessionList', () => {
       // Assert
       expect(document.body).toHaveFocus()
     })
+  })
+})
+
+describe('SessionList on a page in English', () => {
+  /** The name of the list in English */
+  const DEVICES = 'Signed-in devices'
+
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name, count and describe the devices in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.SeveralDevices.run()
+
+    // Assert
+    expect(screen.getByText('Signed in on 3 devices')).toBeVisible()
+    expect(listed(DEVICES).map((device) => nameOf(device).textContent)).toEqual(
+      [
+        'Device signed in on November 20, 2026 at 10:15',
+        'Device signed in on November 20, 2026 at 08:30',
+        'Device signed in on November 13, 2026 at 20:00',
+      ],
+    )
+    expect(within(deviceAt(0, DEVICES)).getByText('This device')).toBeVisible()
+    expect(detailsOf(deviceAt(1, DEVICES))).toEqual([
+      'Browser: Not recorded',
+      'IP address: Not recorded',
+      'Last used: November 20, 2026 at 09:45',
+      'Sign-in expires: November 20, 2026 at 16:30',
+    ])
+    expect(
+      within(deviceAt(2, DEVICES)).getByRole('button', {
+        name: 'Sign out the device signed in on November 13, 2026 at 20:00',
+      }),
+    ).toHaveTextContent('Sign out')
+  })
+
+  it.each([
+    [stories.OnlyThisDevice, 'Signed in on 1 device'],
+    [stories.WithMore, 'Signed in on 24 devices (showing 3)'],
+    [stories.NotCounted, 'Showing 3 devices'],
+  ])('should count the devices in English: %#, "%s"', async (story, count) => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await story.run()
+
+    // Assert
+    expect(screen.getByText(count)).toBeVisible()
   })
 })

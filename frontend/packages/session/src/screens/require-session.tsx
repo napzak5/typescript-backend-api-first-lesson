@@ -1,5 +1,6 @@
 import type { ModelsUserRoleType } from '@beauty-salon-frontend/api-client'
 import { useNotifications } from '@beauty-salon-frontend/ui'
+import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { ReactNode } from 'react'
 import { signOut } from '../api/sign-out'
 import { SessionGate } from '../components/session-gate/session-gate'
@@ -12,7 +13,7 @@ export const useSignOut = (): (() => void) => {
 
   return () => {
     void signOut().then(() =>
-      notify({ tone: 'success', message: 'サインアウトしました。' }),
+      notify({ tone: 'success', message: sessionMessages.signedOut }),
     )
   }
 }

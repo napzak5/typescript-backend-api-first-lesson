@@ -1,3 +1,5 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { twoFactorSetup } from '../examples'
@@ -24,7 +26,7 @@ export const Issued: Story = {}
 export const CodeWrong: Story = {
   args: {
     errors: {
-      code: 'コードが違います。認証アプリに表示されている、いまのコードを入力してください。5 回続けて違うと、15 分間、サインインもできなくなります。',
+      code: securityMessages.twoFactorFlow.appCodeWrong,
     },
   },
 }
@@ -36,7 +38,6 @@ export const Sending: Story = {
 /** The code did not reach the API */
 export const Unsent: Story = {
   args: {
-    message:
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: NOT_SENT_MESSAGE,
   },
 }

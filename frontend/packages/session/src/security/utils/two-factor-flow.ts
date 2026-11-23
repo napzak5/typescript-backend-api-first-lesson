@@ -15,9 +15,10 @@ import {
   type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import type { AccountRead } from '../api/security-api'
 
@@ -37,22 +38,11 @@ export type CodeKind = 'app' | 'appOrBackup'
 const MAX_CODE_LENGTH = 64
 const APP_CODE = /^[0-9]{6}$/
 
-const LOCK = '5 回続けて違うと、15 分間、サインインもできなくなります。'
-const PASSWORD_MISSING = 'パスワードを入力してください。'
-const PASSWORD_WRONG = `パスワードが違います。${LOCK}`
-const APP_CODE_MISSING =
-  '認証アプリに表示されている 6 桁のコードを入力してください。'
-const APP_CODE_MALFORMED =
-  'コードは 6 桁の数字です。認証アプリに表示されている、いまのコードを入力してください。'
-const APP_CODE_WRONG = `コードが違います。認証アプリに表示されている、いまのコードを入力してください。${LOCK}`
-const CODE_MISSING =
-  '認証アプリに表示されている 6 桁のコードか、バックアップコードを入力してください。'
-const CODE_TOO_LONG =
-  'コードが長すぎます。認証アプリの 6 桁のコードか、バックアップコードを入力してください。'
-const CODE_WRONG = `コードが違うか、使ったことのあるバックアップコードです。${LOCK}`
+const { twoFactorFlow } = securityMessages
+
 /** What is wrong with the password that confirms a change, if anything. */
-const passwordError = (password: string): string | undefined =>
-  password === '' ? PASSWORD_MISSING : undefined
+const passwordError = (password: string): LocalizedText | undefined =>
+  password === '' ? twoFactorFlow.passwordMissing : undefined
 
 /**
  * A code as it is sent: in the characters a keyboard of half width types
@@ -63,41 +53,44 @@ const codeOf = (typed: string): string =>
   typed.normalize('NFKC').replace(/\s/g, '')
 
 /** What is wrong with a code, if anything. */
-const codeError = (code: string, kind: CodeKind): string | undefined =>
+const codeError = (code: string, kind: CodeKind): LocalizedText | undefined =>
   match(kind)
     .with('app', () =>
       code === ''
-        ? APP_CODE_MISSING
+        ? twoFactorFlow.appCodeMissing
         : APP_CODE.test(code)
           ? undefined
-          : APP_CODE_MALFORMED,
+          : twoFactorFlow.appCodeMalformed,
     )
     .with('appOrBackup', () =>
       code === ''
-        ? CODE_MISSING
+        ? twoFactorFlow.codeMissing
         : lengthOf(code) > MAX_CODE_LENGTH
-          ? CODE_TOO_LONG
+          ? twoFactorFlow.codeTooLong
           : undefined,
     )
     .exhaustive()
 
-const readOf = <Value>(errors: FormErrors, value: Value): FormRead<Value> =>
+/** What a form of the second factor was sent with: its errors are messages */
+type Read<Value> = FormRead<Value, FormErrors<LocalizedText>>
+
+const readOf = <Value>(
+  errors: FormErrors<LocalizedText>,
+  value: Value,
+): Read<Value> =>
   Object.values(errors).some((error) => error !== undefined)
     ? { type: 'invalid', errors }
     : { type: 'valid', value }
 
 /** Reads the form that begins the set-up: the password, as it was typed. */
-export const readPassword = (values: FormData): FormRead<string> => {
+export const readPassword = (values: FormData): Read<string> => {
   const password = textOf(values, PASSWORD)
 
   return readOf({ [PASSWORD]: passwordError(password) }, password)
 }
 
 /** Reads a form that takes one code: of the authenticator app alone, or a backup code too. */
-export const readCode = (
-  values: FormData,
-  kind: CodeKind,
-): FormRead<string> => {
+export const readCode = (values: FormData, kind: CodeKind): Read<string> => {
   const code = codeOf(textOf(values, CODE))
 
   return readOf({ [CODE]: codeError(code, kind) }, code)
@@ -106,7 +99,7 @@ export const readCode = (
 /** Reads the form that turns the second factor off: the password and a code. */
 export const readStop = (
   values: FormData,
-): FormRead<ModelsAuthTwoFactorDisableRequest> => {
+): Read<ModelsAuthTwoFactorDisableRequest> => {
   const password = textOf(values, PASSWORD)
   const code = codeOf(textOf(values, CODE))
 
@@ -126,10 +119,12 @@ export type FormRefusal = { type: 'invalid'; values: RefusedValue[] } | Unsent
 const messageOf = (
   { field }: RefusedValue,
   kind: CodeKind,
-): string | undefined =>
+): LocalizedText | undefined =>
   match(field)
-    .with(PASSWORD, () => PASSWORD_WRONG)
-    .with(CODE, () => (kind === 'app' ? APP_CODE_WRONG : CODE_WRONG))
+    .with(PASSWORD, () => twoFactorFlow.passwordWrong)
+    .with(CODE, () =>
+      kind === 'app' ? twoFactorFlow.appCodeWrong : twoFactorFlow.codeWrong,
+    )
     .otherwise(() => undefined)
 
 /**
@@ -137,26 +132,27 @@ const messageOf = (
  * value it named, and about the attempt when it named none the form has.
  * What was typed stays, to be corrected.
  */
-export const afterRefusal = (outcome: FormRefusal, kind: CodeKind): FormSays =>
+export const afterRefusal = (
+  outcome: FormRefusal,
+  kind: CodeKind,
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
-      const said = values.flatMap((value): [string, string][] => {
+      const said = values.flatMap((value): [string, LocalizedText][] => {
         const message = messageOf(value, kind)
 
         return message === undefined ? [] : [[value.field, message]]
       })
 
       return said.length === 0
-        ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
+        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
         : { message: undefined, errors: Object.fromEntries(said) }
     })
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /**
@@ -167,8 +163,8 @@ export const secretGroupsOf = (secret: string): string =>
   (secret.match(/.{1,4}/g) ?? []).join(' ')
 
 /** What the API says when the second factor was changed elsewhere in the meantime. */
-export const CHANGED_ELSEWHERE =
-  '2 要素認証の状態が、ほかの画面か端末で変わっていました。いまの状態を読み込み直しました。'
+export const CHANGED_ELSEWHERE: LocalizedText =
+  securityMessages.twoFactor.changedElsewhere
 
 /**
  * The account as the API left it after it changed the second factor: what

@@ -3,8 +3,9 @@ import type {
   ModelsTwoFactorStatusType,
   ModelsUserResponse,
 } from '@beauty-salon-frontend/api-client'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 
 /*
@@ -13,24 +14,26 @@ import { match } from 'ts-pattern'
  * whoever reads (the screens hand over that of the browser).
  */
 
+const { password, sessions, twoFactor } = securityMessages
+
 /** A moment, as 「2026年11月20日 10:15」. */
-export const momentOf = (instant: string, timeZone: string): string =>
-  inJapanese(formats.momentAt(instant, timeZone))
+export const momentOf = (instant: string, timeZone: string): LocalizedText =>
+  formats.momentAt(instant, timeZone)
 
 /** When the password was changed last, or that it never was. */
 export const passwordChangedOf = (
   { lastPasswordChange }: Pick<ModelsUserResponse, 'lastPasswordChange'>,
   timeZone: string,
-): string =>
+): LocalizedText =>
   lastPasswordChange === null
-    ? 'アカウントを作ってから、変更していません'
+    ? password.neverChanged
     : momentOf(lastPasswordChange, timeZone)
 
 /** What the two-factor authentication of the account is, in a word and in a sentence. */
 export type TwoFactorState = {
-  label: string
+  label: LocalizedText
   tone: 'success' | 'warning' | 'neutral'
-  description: string
+  description: LocalizedText
 }
 
 export const twoFactorStateOf = (
@@ -39,22 +42,19 @@ export const twoFactorStateOf = (
   match(status)
     .returnType<TwoFactorState>()
     .with('enabled', () => ({
-      label: '有効',
+      label: twoFactor.enabled,
       tone: 'success',
-      description:
-        'サインインのときに、パスワードに加えて、認証アプリが表示するコードを確かめます。',
+      description: twoFactor.enabledDescription,
     }))
     .with('pending', () => ({
-      label: '設定の途中',
+      label: twoFactor.pending,
       tone: 'warning',
-      description:
-        '設定を始めましたが、認証アプリのコードで確かめていません。サインインのときに、コードは求められません。',
+      description: twoFactor.pendingDescription,
     }))
     .with('disabled', () => ({
-      label: '未設定',
+      label: twoFactor.disabled,
       tone: 'neutral',
-      description:
-        'サインインのときに確かめるのは、パスワードだけです。認証アプリのコードも確かめると、パスワードが知られても、サインインされません。',
+      description: twoFactor.disabledDescription,
     }))
     .exhaustive()
 
@@ -65,16 +65,10 @@ export const twoFactorStateOf = (
 export const sessionNameOf = (
   { createdAt }: Pick<ModelsSessionResponse, 'createdAt'>,
   timeZone: string,
-): string => `${momentOf(createdAt, timeZone)} にサインインした端末`
+): LocalizedText => sessions.name(momentOf(createdAt, timeZone))
 
-/** What the API kept of the browser of a session: the User-Agent it sent, as it is. */
-export const browserOf = ({
-  userAgent,
-}: Pick<ModelsSessionResponse, 'userAgent'>): string =>
-  userAgent ?? '記録されていません'
-
-/** Where a session signed in from. */
-export const addressOf = ({
-  ipAddress,
-}: Pick<ModelsSessionResponse, 'ipAddress'>): string =>
-  ipAddress ?? '記録されていません'
+/** The button that signs a session out, named after the session. */
+export const signOutNameOf = (
+  { createdAt }: Pick<ModelsSessionResponse, 'createdAt'>,
+  timeZone: string,
+): LocalizedText => sessions.signOutOf(momentOf(createdAt, timeZone))

@@ -1,3 +1,7 @@
+import {
+  fieldMessages,
+  sessionMessages,
+} from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { SignInForm } from './sign-in-form'
@@ -18,8 +22,8 @@ export const Credentials: Story = {}
 export const WithFieldErrors: Story = {
   args: {
     errors: {
-      email: 'メールアドレスを入力してください。',
-      password: 'パスワードを入力してください。',
+      email: fieldMessages.emailMissing,
+      password: sessionMessages.signInFlow.passwordMissing,
     },
   },
 }
@@ -27,8 +31,7 @@ export const WithFieldErrors: Story = {
 /** The API refused the attempt: it does not say which value is wrong. */
 export const Refused: Story = {
   args: {
-    message:
-      'メールアドレスまたはパスワードが正しくありません。続けて 5 回誤ると、15 分間サインインできなくなります。',
+    message: sessionMessages.signInFlow.wrongCredentials,
   },
 }
 
@@ -46,8 +49,7 @@ export const WrongTwoFactorCode: Story = {
     step: 'twoFactorCode',
     onBack: fn(),
     errors: {
-      twoFactorCode:
-        'コードが正しくありません。新しいコードを入力してください。',
+      twoFactorCode: sessionMessages.signInFlow.wrongCode,
     },
   },
 }

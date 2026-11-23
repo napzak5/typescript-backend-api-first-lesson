@@ -15,9 +15,10 @@ import {
   type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import type { PasswordChange, SessionPage } from '../api/security-api'
 import { newPasswordError, refusedPasswordMessage } from './password-rule'
@@ -30,11 +31,7 @@ import { newPasswordError, refusedPasswordMessage } from './password-rule'
 export const CURRENT_PASSWORD = 'currentPassword'
 export const NEW_PASSWORD = 'newPassword'
 
-const CURRENT_PASSWORD_MISSING = '現在のパスワードを入力してください。'
-const CURRENT_PASSWORD_WRONG =
-  '現在のパスワードが違います。5 回続けて違うと、15 分間、サインインもできなくなります。'
-const UNCHANGED =
-  '現在のパスワードと同じです。別のパスワードを入力してください。'
+const { password } = securityMessages
 /**
  * Reads the form that changes the password. Both passwords are taken as
  * they were typed: a space is a character of a password. The new one is
@@ -43,16 +40,16 @@ const UNCHANGED =
  */
 export const readPasswordChange = (
   values: FormData,
-): FormRead<ModelsAuthPasswordChangeRequest> => {
+): FormRead<ModelsAuthPasswordChangeRequest, FormErrors<LocalizedText>> => {
   const currentPassword = textOf(values, CURRENT_PASSWORD)
   const newPassword = textOf(values, NEW_PASSWORD)
-  const errors: FormErrors = {
+  const errors: FormErrors<LocalizedText> = {
     [CURRENT_PASSWORD]:
-      currentPassword === '' ? CURRENT_PASSWORD_MISSING : undefined,
+      currentPassword === '' ? password.currentMissing : undefined,
     [NEW_PASSWORD]:
       newPasswordError(newPassword) ??
       (newPassword.normalize('NFC') === currentPassword.normalize('NFC')
-        ? UNCHANGED
+        ? password.unchanged
         : undefined),
   }
 
@@ -62,11 +59,11 @@ export const readPasswordChange = (
 }
 
 /** What to say at the control of a value the API did not take; `undefined` when the form has none for it. */
-const messageOf = ({ field, rule }: RefusedValue): string | undefined =>
+const messageOf = ({ field, rule }: RefusedValue): LocalizedText | undefined =>
   match(field)
-    .with(CURRENT_PASSWORD, () => CURRENT_PASSWORD_WRONG)
+    .with(CURRENT_PASSWORD, () => password.currentWrong)
     .with(NEW_PASSWORD, () =>
-      rule === 'unchanged' ? UNCHANGED : refusedPasswordMessage(rule),
+      rule === 'unchanged' ? password.unchanged : refusedPasswordMessage(rule),
     )
     .otherwise(() => undefined)
 
@@ -77,26 +74,24 @@ const messageOf = ({ field, rule }: RefusedValue): string | undefined =>
  */
 export const afterPasswordChange = (
   outcome: Exclude<PasswordChange, { type: 'changed' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
-      const said = values.flatMap((value): [string, string][] => {
+      const said = values.flatMap((value): [string, LocalizedText][] => {
         const message = messageOf(value)
 
         return message === undefined ? [] : [[value.field, message]]
       })
 
       return said.length === 0
-        ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
+        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
         : { message: undefined, errors: Object.fromEntries(said) }
     })
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /** What the pages of the sessions that were read so far amount to. */

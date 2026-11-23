@@ -1,5 +1,6 @@
 import type { Unsent } from '@beauty-salon-frontend/answers'
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { account } from '../components/examples'
 import {
@@ -12,16 +13,42 @@ import {
 } from './two-factor-flow'
 
 const PASSWORD = 'kirei na kami de dekakeru'
-const LOCK = '5 回続けて違うと、15 分間、サインインもできなくなります。'
-const PASSWORD_MISSING = 'パスワードを入力してください。'
-const APP_CODE_MISSING =
-  '認証アプリに表示されている 6 桁のコードを入力してください。'
-const APP_CODE_MALFORMED =
-  'コードは 6 桁の数字です。認証アプリに表示されている、いまのコードを入力してください。'
-const CODE_MISSING =
-  '認証アプリに表示されている 6 桁のコードか、バックアップコードを入力してください。'
-const CODE_TOO_LONG =
-  'コードが長すぎます。認証アプリの 6 桁のコードか、バックアップコードを入力してください。'
+const LOCK = {
+  en: 'After 5 wrong attempts in a row, you cannot sign in either for 15 minutes.',
+  ja: '5 回続けて違うと、15 分間、サインインもできなくなります。',
+}
+const PASSWORD_MISSING = {
+  en: 'Enter your password.',
+  ja: 'パスワードを入力してください。',
+}
+const APP_CODE_MISSING = {
+  en: 'Enter the 6-digit code the authenticator app shows.',
+  ja: '認証アプリに表示されている 6 桁のコードを入力してください。',
+}
+const APP_CODE_MALFORMED = {
+  en: 'The code has 6 digits. Enter the code the authenticator app shows now.',
+  ja: 'コードは 6 桁の数字です。認証アプリに表示されている、いまのコードを入力してください。',
+}
+const CODE_MISSING = {
+  en: 'Enter the 6-digit code the authenticator app shows, or a backup code.',
+  ja: '認証アプリに表示されている 6 桁のコードか、バックアップコードを入力してください。',
+}
+const CODE_TOO_LONG = {
+  en: 'The code is too long. Enter the 6-digit code of the authenticator app, or a backup code.',
+  ja: 'コードが長すぎます。認証アプリの 6 桁のコードか、バックアップコードを入力してください。',
+}
+const PASSWORD_WRONG = {
+  en: `The password is not correct. ${LOCK.en}`,
+  ja: `パスワードが違います。${LOCK.ja}`,
+}
+const APP_CODE_WRONG = {
+  en: `The code is not correct. Enter the code the authenticator app shows now. ${LOCK.en}`,
+  ja: `コードが違います。認証アプリに表示されている、いまのコードを入力してください。${LOCK.ja}`,
+}
+const CODE_WRONG = {
+  en: `The code is not correct, or it is a backup code that was used already. ${LOCK.en}`,
+  ja: `コードが違うか、使ったことのあるバックアップコードです。${LOCK.ja}`,
+}
 
 const TOO_MANY_REQUESTS: Unsent = { type: 'tooManyRequests' }
 const FAILED: Unsent = { type: 'failed' }
@@ -183,7 +210,7 @@ describe('afterRefusal', () => {
       ),
     ).toEqual({
       message: undefined,
-      errors: { password: `パスワードが違います。${LOCK}` },
+      errors: { password: PASSWORD_WRONG },
     })
   })
 
@@ -195,9 +222,7 @@ describe('afterRefusal', () => {
       ),
     ).toEqual({
       message: undefined,
-      errors: {
-        code: `コードが違います。認証アプリに表示されている、いまのコードを入力してください。${LOCK}`,
-      },
+      errors: { code: APP_CODE_WRONG },
     })
   })
 
@@ -209,9 +234,7 @@ describe('afterRefusal', () => {
       ),
     ).toEqual({
       message: undefined,
-      errors: {
-        code: `コードが違うか、使ったことのあるバックアップコードです。${LOCK}`,
-      },
+      errors: { code: CODE_WRONG },
     })
   })
 
@@ -228,8 +251,8 @@ describe('afterRefusal', () => {
         'appOrBackup',
       ).errors,
     ).toEqual({
-      password: `パスワードが違います。${LOCK}`,
-      code: `コードが違うか、使ったことのあるバックアップコードです。${LOCK}`,
+      password: PASSWORD_WRONG,
+      code: CODE_WRONG,
     })
   })
 
@@ -241,7 +264,10 @@ describe('afterRefusal', () => {
     ],
   ])('should speak of the attempt when the API %s', (_case, values) => {
     expect(afterRefusal({ type: 'invalid', values }, 'app')).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
@@ -260,20 +286,24 @@ describe('afterRefusal', () => {
       ),
     ).toEqual({
       message: undefined,
-      errors: {
-        code: `コードが違います。認証アプリに表示されている、いまのコードを入力してください。${LOCK}`,
-      },
+      errors: { code: APP_CODE_WRONG },
     })
   })
 
-  it.each([
+  it.each<[Unsent, LocalizedText]>([
     [
       TOO_MANY_REQUESTS,
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       FAILED,
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'It could not be sent. Check your connection and try again.',
+        ja: '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])(
     'should speak of the attempt when nothing was sent: %o',

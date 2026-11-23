@@ -1,7 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
+import { act } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { twoFactorSetup } from '../examples'
 import * as backupCodesDialogStories from './backup-codes-dialog.stories'
 
@@ -143,5 +145,73 @@ describe('BackupCodesDialog', () => {
 
     // Assert
     expect(stories.Issued.args.onClose).toHaveBeenCalled()
+  })
+})
+
+describe('BackupCodesDialog on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  const englishDialog = () =>
+    screen.getByRole('dialog', { name: 'Issue new backup codes' })
+
+  it('should say what it does, and ask for a code, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    expect(englishDialog()).toHaveAccessibleDescription(
+      'Issues 10 new backup codes. The backup codes you have now can no longer be used.',
+    )
+    expect(
+      within(englishDialog()).getByRole('textbox', {
+        name: 'Code of the authenticator app or backup code',
+      }),
+    ).toBeRequired()
+    expect(
+      within(englishDialog()).getByRole('button', { name: 'Issue' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English what the new codes are', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Issued.run()
+
+    // Assert
+    expect(
+      within(englishDialog()).getByText(/^These are your new backup codes\./),
+    ).toBeVisible()
+    expect(
+      within(englishDialog()).getByRole('list', { name: 'Backup codes' }),
+    ).toBeVisible()
+  })
+
+  it('should say the errors anew when the page turns English, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.CodeWrong.run()
+    const code = within(dialog()).getByRole('textbox', {
+      name: '認証アプリのコードかバックアップコード',
+    })
+    code.blur()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(code).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'The code is not correct, or it is a backup code that was used already. After 5 wrong attempts in a row, you cannot sign in either for 15 minutes.',
+      ),
+    )
+    expect(code).not.toHaveFocus()
   })
 })

@@ -1,7 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
+import { act } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as twoFactorStopDialogStories from './two-factor-stop-dialog.stories'
 
 const stories = composeStories(twoFactorStopDialogStories)
@@ -120,5 +122,53 @@ describe('TwoFactorStopDialog', () => {
     expect(within(dialog()).getByRole('alert')).toHaveTextContent(
       '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
     )
+  })
+})
+
+describe('TwoFactorStopDialog on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  const englishDialog = () =>
+    screen.getByRole('dialog', { name: 'Turn off two-factor authentication?' })
+
+  it('should ask for the password and a code in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    expect(within(englishDialog()).getByLabelText('Password')).toBeRequired()
+    expect(
+      within(englishDialog()).getByLabelText(
+        'Code of the authenticator app or backup code',
+      ),
+    ).toHaveAccessibleDescription(
+      'The 6-digit code the authenticator app shows, or a backup code that was not used yet.',
+    )
+    expect(
+      within(englishDialog()).getByRole('button', { name: 'Turn off' }),
+    ).toBeVisible()
+  })
+
+  it('should say the errors anew when the page turns English, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.PasswordWrong.run()
+    password().blur()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    const englishPassword = within(englishDialog()).getByLabelText('Password')
+    expect(englishPassword).toHaveAccessibleDescription(
+      'The password is not correct. After 5 wrong attempts in a row, you cannot sign in either for 15 minutes.',
+    )
+    expect(englishPassword).not.toHaveFocus()
   })
 })

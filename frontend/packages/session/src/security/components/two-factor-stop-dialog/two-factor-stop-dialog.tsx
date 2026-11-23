@@ -4,16 +4,22 @@ import {
   NO_ERRORS,
   PasswordField,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { CODE, PASSWORD } from '../../utils/two-factor-flow'
+
+const { turnOff } = securityMessages
 
 export type TwoFactorStopDialogProps = {
   open: boolean
   onClose: () => void
   /** What went wrong with the attempt as a whole */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** What is wrong with a value, under the name of its control */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The request is on its way */
   pending?: boolean | undefined
   /** The values of the two controls, under their names */
@@ -32,33 +38,36 @@ export const TwoFactorStopDialog = ({
   pending = false,
   onStop,
 }: TwoFactorStopDialogProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+
   return (
     <FormDialog
       open={open}
       onClose={onClose}
-      title='2 要素認証を無効にしますか？'
-      description='無効にすると、サインインのときに確かめるのは、パスワードだけになります。アカウントの持ち主であることを、パスワードと、認証アプリのコードかバックアップコードで確かめます。'
-      submitLabel='無効にする'
+      title={say(turnOff.title)}
+      description={say(turnOff.description)}
+      submitLabel={say(turnOff.submit)}
       submitVariant='danger'
-      message={message}
+      message={said.message}
       errors={errors}
       pending={pending}
       onSubmit={onStop}
     >
       <PasswordField
-        label='パスワード'
+        label={say(securityMessages.password.title)}
         name={PASSWORD}
         autoComplete='current-password'
         required
-        error={errors[PASSWORD]}
+        error={said.errors[PASSWORD]}
       />
       <TextField
-        label='認証アプリのコードかバックアップコード'
+        label={say(turnOff.code)}
         name={CODE}
         autoComplete='one-time-code'
         required
-        description='認証アプリに表示されている 6 桁のコードか、まだ使っていないバックアップコードです。'
-        error={errors[CODE]}
+        description={say(turnOff.codeDescription)}
+        error={said.errors[CODE]}
       />
     </FormDialog>
   )

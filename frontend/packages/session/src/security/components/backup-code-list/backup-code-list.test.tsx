@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { twoFactorSetup } from '../examples'
 import * as backupCodeListStories from './backup-code-list.stories'
 
@@ -24,5 +25,22 @@ describe('BackupCodeList', () => {
     expect(list.getAllByRole('code').map((code) => code.textContent)).toEqual(
       twoFactorSetup.backupCodes,
     )
+  })
+})
+
+describe('BackupCodeList on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the list in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Issued.run()
+
+    // Assert
+    expect(screen.getByRole('list', { name: 'Backup codes' })).toBeVisible()
   })
 })
