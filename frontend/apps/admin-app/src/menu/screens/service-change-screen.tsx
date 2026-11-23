@@ -17,15 +17,16 @@ import {
   ButtonLink,
   Dialog,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -51,10 +52,9 @@ import {
   readServiceChange,
   refusesChoice,
 } from '../utils/service-form'
-import { MenuForbidden, useKeepsMenu } from './keeps-menu'
-import { ServiceNotFound } from './service-screen'
+import { MenuForbidden, MenuPartNotFound, useKeepsMenu } from './keeps-menu'
 
-const TITLE = 'サービスを直す'
+const { names, services: WORDS, titles, words } = adminMenuMessages
 
 type ServiceChangeProps = {
   salon: ModelsSalonResponse
@@ -80,13 +80,14 @@ const ServiceChange = ({
   services,
   readMenuAgain,
 }: ServiceChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [removing, setRemoving] = useState(false)
   /** What went wrong with a removal that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   const key = serviceKeyOf(service.id)
   const menu = menuHrefOf(salon.id)
   const page = serviceHrefOf(salon.id, service.id)
@@ -106,10 +107,7 @@ const ServiceChange = ({
           const read: ServiceRead = { type: 'found', service: changed }
           queryClient.setQueryData(key, read)
           queryClient.removeQueries({ queryKey: servicesKeyOf(salon.id) })
-          notify({
-            tone: 'success',
-            message: `サービス「${changed.name}」を直しました。`,
-          })
+          notify({ tone: 'success', message: WORDS.changed(changed.name) })
           void navigate(page)
         })
         .with({ type: 'notFound' }, gone)
@@ -183,7 +181,7 @@ const ServiceChange = ({
         categories={categories}
         services={services}
         sortOrder={service.sortOrder}
-        submitLabel='変更を保存する'
+        submitLabel={say(words.save)}
         message={said.message}
         errors={said.errors}
         pending={change.isPending}
@@ -191,10 +189,10 @@ const ServiceChange = ({
         actions={
           <>
             <ButtonLink href={page} variant='quiet'>
-              やめる
+              {say(words.cancel)}
             </ButtonLink>
             <Button variant='danger' onClick={() => setRemoving(true)}>
-              削除
+              {say(words.remove)}
             </Button>
           </>
         }
@@ -202,11 +200,11 @@ const ServiceChange = ({
       <Dialog
         open={removing}
         onClose={close}
-        title={`サービス「${service.name}」を削除しますか？`}
-        description='メニューから消え、お客様もサロンも、このサービスで予約を入れられなくなります。すでにある予約の施術明細は、そのまま残ります。削除したサービスは、元に戻せません。'
+        title={say(WORDS.removal.confirm(service.name))}
+        description={say(WORDS.removal.description)}
         actions={
           <>
-            <Button onClick={close}>戻る</Button>
+            <Button onClick={close}>{say(words.back)}</Button>
             <Button
               variant='danger'
               pending={removal.isPending}
@@ -215,12 +213,12 @@ const ServiceChange = ({
                 removal.mutate()
               }}
             >
-              削除する
+              {say(words.confirmRemoval)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </>
   )
@@ -236,6 +234,7 @@ type ChangePartProps = { salon: ModelsSalonResponse; serviceId: string }
  * what is sent with what it was opened with.
  */
 const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
+  const say = useSay()
   const service = useQuery({
     queryKey: serviceKeyOf(serviceId),
     queryFn: () => readService(salon.id, serviceId),
@@ -253,7 +252,9 @@ const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
     queryFn: () => readServices(salon.id),
     staleTime: 0,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const header = (
+    <PageHeader title={say(titles.serviceChange)} description={salon.name} />
+  )
   const retry = (): void => {
     void service.refetch()
     void categories.refetch()
@@ -276,14 +277,14 @@ const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
   )
 
   return match(shown)
-    .with({ type: 'notFound' }, () => <ServiceNotFound salon={salon} />)
+    .with({ type: 'notFound' }, () => (
+      <MenuPartNotFound salon={salon} said={WORDS.notFound} />
+    ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         {header}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('サービス'), reason),
-          )}
+          message={say(unreadMessageOf(names.service, reason))}
           onRetry={retry}
           pending={retrying}
         />
@@ -292,7 +293,7 @@ const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
     .with(undefined, () => (
       <>
         {header}
-        <LoadingIndicator label='サービスを読み込んでいます' />
+        <LoadingIndicator label={say(WORDS.loading)} />
       </>
     ))
     .with({ type: 'found' }, (found) =>
@@ -300,7 +301,7 @@ const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
         .with(undefined, () => (
           <>
             {header}
-            <LoadingIndicator label='メニューを読み込んでいます' />
+            <LoadingIndicator label={say(words.loadingMenu)} />
           </>
         ))
         .with(
@@ -309,9 +310,7 @@ const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
             <>
               {header}
               <UnreadNotice
-                message={inJapanese(
-                  unreadMessageOf(writtenInJapanese('メニュー'), reason),
-                )}
+                message={say(unreadMessageOf(names.menu, reason))}
                 onRetry={retry}
                 pending={retrying}
               />
@@ -337,16 +336,17 @@ const ChangePart = ({ salon, serviceId }: ChangePartProps) => {
 
 /** Changes a service of the menu of the salon of the address, and removes it, for the owner, a manager and an administrator. */
 export const ServiceChangeScreen = () => {
+  const say = useSay()
   const { salonId = '', serviceId = '' } = useParams()
   const keeps = useKeepsMenu()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.serviceChange)}>
       {(salon) =>
         keeps ? (
           <ChangePart key={serviceId} salon={salon} serviceId={serviceId} />
         ) : (
-          <MenuForbidden salon={salon} title={TITLE} />
+          <MenuForbidden salon={salon} title={titles.serviceChange} />
         )
       }
     </WithSalon>

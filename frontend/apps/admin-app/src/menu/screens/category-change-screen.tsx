@@ -16,15 +16,16 @@ import {
   ButtonLink,
   Dialog,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -48,9 +49,9 @@ import {
   refusesParent,
 } from '../utils/category-form'
 import { parentChoicesOf } from '../utils/menu-format'
-import { MenuForbidden, useKeepsMenu } from './keeps-menu'
+import { MenuForbidden, MenuPartNotFound, useKeepsMenu } from './keeps-menu'
 
-const TITLE = 'カテゴリーを直す'
+const { categories: WORDS, names, titles, words } = adminMenuMessages
 
 type CategoryChangeProps = {
   salon: ModelsSalonResponse
@@ -73,13 +74,14 @@ const CategoryChange = ({
   categories,
   onParentRefused,
 }: CategoryChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [removing, setRemoving] = useState(false)
   /** What went wrong with a removal that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   const key = categoryKeyOf(category.id)
   const menu = menuHrefOf(salon.id)
 
@@ -99,10 +101,7 @@ const CategoryChange = ({
           const read: CategoryRead = { type: 'found', category: changed }
           queryClient.setQueryData(key, read)
           queryClient.removeQueries({ queryKey: categoriesKeyOf(salon.id) })
-          notify({
-            tone: 'success',
-            message: `カテゴリー「${changed.name}」を直しました。`,
-          })
+          notify({ tone: 'success', message: WORDS.changed(changed.name) })
           void navigate(menu)
         })
         .with({ type: 'notFound' }, gone)
@@ -164,7 +163,7 @@ const CategoryChange = ({
         parents={parentChoicesOf(categories, category.id)}
         categories={categories}
         displayOrder={category.displayOrder}
-        submitLabel='変更を保存する'
+        submitLabel={say(words.save)}
         message={said.message}
         errors={said.errors}
         pending={change.isPending}
@@ -172,10 +171,10 @@ const CategoryChange = ({
         actions={
           <>
             <ButtonLink href={menu} variant='quiet'>
-              やめる
+              {say(words.cancel)}
             </ButtonLink>
             <Button variant='danger' onClick={() => setRemoving(true)}>
-              削除
+              {say(words.remove)}
             </Button>
           </>
         }
@@ -183,11 +182,11 @@ const CategoryChange = ({
       <Dialog
         open={removing}
         onClose={close}
-        title={`カテゴリー「${category.name}」を削除しますか？`}
-        description='このカテゴリーの下にあるカテゴリーは、最上位のカテゴリーになります。このカテゴリーのサービスは、未分類になります。どちらも削除されません。削除したカテゴリーは、元に戻せません。'
+        title={say(WORDS.removal.confirm(category.name))}
+        description={say(WORDS.removal.description)}
         actions={
           <>
-            <Button onClick={close}>戻る</Button>
+            <Button onClick={close}>{say(words.back)}</Button>
             <Button
               variant='danger'
               pending={removal.isPending}
@@ -196,12 +195,12 @@ const CategoryChange = ({
                 removal.mutate()
               }}
             >
-              削除する
+              {say(words.confirmRemoval)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </>
   )
@@ -209,23 +208,13 @@ const CategoryChange = ({
 
 type ChangePartProps = { salon: ModelsSalonResponse; categoryId: string }
 
-/** What a screen of a category says when there is none to show. */
-const CategoryNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
-  <>
-    <PageHeader
-      title='カテゴリーが見つかりません'
-      description='アドレスが正しいか、お確かめください。削除したカテゴリーは、表示できません。'
-    />
-    <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
-  </>
-)
-
 /**
  * The category of the address and the categories of the salon, both read
  * anew whenever the screen opens, so that what the form writes on is what
  * the menu holds now; the form once both were.
  */
 const ChangePart = ({ salon, categoryId }: ChangePartProps) => {
+  const say = useSay()
   const category = useQuery({
     queryKey: categoryKeyOf(categoryId),
     queryFn: () => readCategory(salon.id, categoryId),
@@ -238,7 +227,9 @@ const ChangePart = ({ salon, categoryId }: ChangePartProps) => {
     queryFn: () => readCategories(salon.id),
     staleTime: 0,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const header = (
+    <PageHeader title={say(titles.categoryChange)} description={salon.name} />
+  )
   const retry = (): void => {
     void category.refetch()
     void categories.refetch()
@@ -249,14 +240,14 @@ const ChangePart = ({ salon, categoryId }: ChangePartProps) => {
     category.isFetchedAfterMount ? category.data : undefined,
     categories.isFetchedAfterMount ? categories.data : undefined,
   ])
-    .with([{ type: 'notFound' }, P._], () => <CategoryNotFound salon={salon} />)
+    .with([{ type: 'notFound' }, P._], () => (
+      <MenuPartNotFound salon={salon} said={WORDS.notFound} />
+    ))
     .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
       <>
         {header}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('カテゴリー'), reason),
-          )}
+          message={say(unreadMessageOf(names.category, reason))}
           onRetry={retry}
           pending={retrying}
         />
@@ -268,9 +259,7 @@ const ChangePart = ({ salon, categoryId }: ChangePartProps) => {
         <>
           {header}
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('カテゴリー'), reason),
-            )}
+            message={say(unreadMessageOf(names.categories, reason))}
             onRetry={retry}
             pending={retrying}
           />
@@ -280,7 +269,7 @@ const ChangePart = ({ salon, categoryId }: ChangePartProps) => {
     .with([undefined, P._], [P._, undefined], () => (
       <>
         {header}
-        <LoadingIndicator label='カテゴリーを読み込んでいます' />
+        <LoadingIndicator label={say(WORDS.loading)} />
       </>
     ))
     .with([{ type: 'found' }, { type: 'found' }], ([found, { items }]) => (
@@ -299,16 +288,17 @@ const ChangePart = ({ salon, categoryId }: ChangePartProps) => {
 
 /** Changes a category of the menu of the salon of the address, and removes it, for the owner, a manager and an administrator. */
 export const CategoryChangeScreen = () => {
+  const say = useSay()
   const { salonId = '', categoryId = '' } = useParams()
   const keeps = useKeepsMenu()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.categoryChange)}>
       {(salon) =>
         keeps ? (
           <ChangePart key={categoryId} salon={salon} categoryId={categoryId} />
         ) : (
-          <MenuForbidden salon={salon} title={TITLE} />
+          <MenuForbidden salon={salon} title={titles.categoryChange} />
         )
       }
     </WithSalon>

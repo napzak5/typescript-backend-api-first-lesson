@@ -1,11 +1,15 @@
 import type { ModelsServiceCategoryResponse } from '@beauty-salon-frontend/api-client'
 import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
-import { inJapanese, Link, NONE, Table } from '@beauty-salon-frontend/ui'
+import { Link, NONE, Table, useSay } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   categoriesById,
   categoryPathOf,
   categoryStateOf,
 } from '../../utils/menu-format'
+
+const { table: WORDS } = adminMenuMessages.categories
 
 export type CategoryTableProps = {
   /** The categories of the salon, in the order of the menu; at least one */
@@ -28,16 +32,17 @@ export const CategoryTable = ({
   categories,
   changeHref,
 }: CategoryTableProps) => {
+  const say = useSay()
   const byId = categoriesById(categories)
 
   return (
     <Table
-      caption='カテゴリー'
+      caption={say(WORDS.caption)}
       captionHidden
       columns={[
         {
           key: 'name',
-          header: '名前',
+          header: say(WORDS.name),
           cell: (category) =>
             changeHref === undefined ? (
               category.name
@@ -47,40 +52,40 @@ export const CategoryTable = ({
         },
         {
           key: 'parent',
-          header: '親',
+          header: say(WORDS.parent),
           cell: ({ parentId }) => {
             const parent = parentId === null ? undefined : byId.get(parentId)
 
             return parent === undefined
-              ? inJapanese(NONE)
+              ? say(NONE)
               : categoryPathOf(parent, byId)
           },
         },
         {
           key: 'category',
-          header: '種類',
-          cell: ({ category }) => inJapanese(categoryNameOf(category)),
+          header: say(WORDS.type),
+          cell: ({ category }) => say(categoryNameOf(category)),
         },
         {
           key: 'displayOrder',
-          header: '表示順',
-          cell: ({ displayOrder }) => displayOrder,
+          header: say(WORDS.displayOrder),
+          cell: ({ displayOrder }) => say(formats.numberOf(displayOrder)),
           align: 'end',
         },
         {
           key: 'color',
-          header: '色',
+          header: say(WORDS.color),
           cell: ({ color }) => color,
         },
         {
           key: 'isActive',
-          header: '状態',
-          cell: (category) => categoryStateOf(category),
+          header: say(WORDS.status),
+          cell: (category) => say(categoryStateOf(category)),
         },
       ]}
       rows={categories}
       rowKey={({ id }) => id}
-      emptyMessage='カテゴリーはありません'
+      emptyMessage={say(WORDS.empty)}
     />
   )
 }

@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import { heading, optionsOf } from '@beauty-salon-frontend/testing/screens'
@@ -248,5 +249,101 @@ describe('several services of the menu changed at once, against the API', () => 
 
     // Assert
     expect(await findAccessibilityViolations(container)).toEqual([])
+  })
+})
+
+describe('several services of the menu changed at once on a page in English', () => {
+  /** Waits for the form in English: its heading, then the form. */
+  const openedFormInEnglish = async (): Promise<void> => {
+    await heading('Change several services at once')
+    await screen.findByRole('group', { name: 'Services to change' })
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should let the manager stop the online booking of two services in English, and count them', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(menuHrefOf(await salonIdOf(TOKYO)), MANAGER, 'en')
+    await user.click(
+      await screen.findByRole('link', { name: 'Change several at once' }),
+    )
+    await openedFormInEnglish()
+
+    // Act
+    await user.click(service('Ladies Cut (Hair Cut)'))
+    await user.click(service('Mens Cut (Hair Cut)'))
+    await user.selectOptions(choice('Online booking'), 'Not accepted')
+    await user.click(screen.getByRole('button', { name: 'Change' }))
+
+    // Assert
+    expect(await screen.findByText('Changed 2 services.')).toBeInTheDocument()
+    await heading('Menu')
+    expect(
+      within(
+        await screen.findByRole('table', { name: 'Hair Cut' }),
+      ).getAllByText('Not accepted'),
+    ).toHaveLength(2)
+  })
+
+  it('should say in English what is wrong before sending', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(servicesChangeHrefOf(await salonIdOf(TOKYO)), MANAGER, 'en')
+    await openedFormInEnglish()
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Change' }))
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Choose at least one value to change. Left at “Keep”, nothing changes.',
+    )
+    expect(
+      screen.getByRole('group', { name: 'Services to change' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Choose at least one service to change.'),
+    )
+  })
+
+  it('should say in English that none of the services changed when one was removed meanwhile', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(servicesChangeHrefOf(await salonIdOf(TOKYO)), MANAGER, 'en')
+    await openedFormInEnglish()
+    await user.click(service('Ladies Cut (Hair Cut)'))
+    await user.click(service('Mens Cut (Hair Cut)'))
+    await user.selectOptions(choice('Active'), 'Make inactive')
+    await serviceRemovedMeanwhile(await serviceIdOf('Mens Cut'))
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Change' }))
+
+    // Assert
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'One of the chosen services was removed from the menu meanwhile. No service was changed. Choose again from the menu as it is now.',
+    )
+  })
+
+  it('should refuse a stylist the form in English', async () => {
+    // Act
+    await openAs(servicesChangeHrefOf(await salonIdOf(TOKYO)), STYLIST, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This account cannot change the menu. Only the owners and managers of the salon, and administrators, can change the menu.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
   })
 })

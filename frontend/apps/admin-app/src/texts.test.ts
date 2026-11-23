@@ -9,6 +9,7 @@ describe('the texts of the parts of the admin application that are done', () => 
     'bookings/screens/with-booking.tsx',
     'customers',
     'inventory',
+    'menu',
     'sales',
   ])
 })

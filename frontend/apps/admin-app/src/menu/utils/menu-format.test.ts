@@ -2,6 +2,7 @@ import type {
   ModelsServiceCategoryResponse,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   aCategory,
@@ -48,50 +49,75 @@ describe('the names of the values of a service', () => {
       availabilityNameOf('weekends_only'),
       requirementNameOf('advance_booking_required'),
       optionTypeNameOf('duration_extension'),
-    ]).toEqual(['要相談', '廃止', '週末のみ', '事前予約必須', '時間延長'])
+    ]).toEqual([
+      { en: 'Price on consultation', ja: '要相談' },
+      { en: 'Discontinued', ja: '廃止' },
+      { en: 'Weekends only', ja: '週末のみ' },
+      { en: 'Advance booking required', ja: '事前予約必須' },
+      { en: 'Time extension', ja: '時間延長' },
+    ])
   })
 })
 
 describe('serviceStateOf', () => {
   it.each<
-    [string, Pick<ModelsServiceResponse, 'isActive' | 'serviceStatus'>, string]
+    [
+      string,
+      Pick<ModelsServiceResponse, 'isActive' | 'serviceStatus'>,
+      LocalizedText,
+    ]
   >([
-    ['on and given', { isActive: true, serviceStatus: 'active' }, '有効'],
-    ['off', { isActive: false, serviceStatus: 'active' }, '無効'],
+    [
+      'on and given',
+      { isActive: true, serviceStatus: 'active' },
+      { en: 'Active', ja: '有効' },
+    ],
+    [
+      'off',
+      { isActive: false, serviceStatus: 'active' },
+      { en: 'Inactive', ja: '無効' },
+    ],
     [
       'off and coming soon',
       { isActive: false, serviceStatus: 'coming_soon' },
-      '無効・近日公開',
+      { en: 'Inactive · Coming soon', ja: '無効・近日公開' },
     ],
     [
       'on and paused',
       { isActive: true, serviceStatus: 'inactive' },
-      '有効・一時停止',
+      { en: 'Active · Paused', ja: '有効・一時停止' },
     ],
   ])('should name a service that is %s', (_, service, state) => {
-    expect(serviceStateOf(service)).toBe(state)
+    expect(serviceStateOf(service)).toEqual(state)
   })
 })
 
 describe('categoryStateOf', () => {
   it('should say whether a category is switched on', () => {
     expect([aCategory(), highlights()].map(categoryStateOf)).toEqual([
-      '有効',
-      '無効',
+      { en: 'Active', ja: '有効' },
+      { en: 'Inactive', ja: '無効' },
     ])
   })
 })
 
 describe('priceLineOf', () => {
-  it.each<[string, ModelsServiceResponse, string]>([
-    ['a fixed price with tax', aService(), '￥5,500・税込'],
+  it.each<[string, ModelsServiceResponse, LocalizedText]>([
+    [
+      'a fixed price with tax',
+      aService(),
+      { en: '¥5,500 · Tax included', ja: '￥5,500・税込' },
+    ],
     [
       'a price on a discount, without tax, that depends on the hair',
       aDiscountedColour(),
-      '￥7,200（￥8,000 から割引）・税別・変動価格',
+      {
+        en: '¥7,200 (discounted from ¥8,000) · Before tax · Variable price',
+        ja: '￥7,200（￥8,000 から割引）・税別・変動価格',
+      },
     ],
   ])('should name %s', (_, service, line) => {
-    expect(priceLineOf(service, 'JPY')).toBe(line)
+    expect(priceLineOf(service, 'JPY')).toEqual(line)
   })
 })
 
@@ -201,11 +227,11 @@ describe('nextDisplayOrderOf', () => {
 describe('the choices of the values of a service', () => {
   it('should offer every value of the contract, in its order, by its name', () => {
     expect(PRICING_OPTIONS.map(({ label }) => label)).toEqual([
-      '固定価格',
-      '変動価格',
-      '段階価格',
-      '動的価格',
-      '要相談',
+      { en: 'Fixed price', ja: '固定価格' },
+      { en: 'Variable price', ja: '変動価格' },
+      { en: 'Tiered price', ja: '段階価格' },
+      { en: 'Dynamic price', ja: '動的価格' },
+      { en: 'Price on consultation', ja: '要相談' },
     ])
     expect(SERVICE_STATUS_OPTIONS.map(({ value }) => value)).toEqual([
       'active',
@@ -214,11 +240,11 @@ describe('the choices of the values of a service', () => {
       'discontinued',
     ])
     expect(AVAILABILITY_OPTIONS.map(({ label }) => label)).toEqual([
-      '常時提供',
-      '平日のみ',
-      '週末のみ',
-      '予約制',
-      '季節限定',
+      { en: 'Always', ja: '常時提供' },
+      { en: 'Weekdays only', ja: '平日のみ' },
+      { en: 'Weekends only', ja: '週末のみ' },
+      { en: 'By appointment only', ja: '予約制' },
+      { en: 'Seasonal', ja: '季節限定' },
     ])
     expect(REQUIREMENT_OPTIONS.map(({ value }) => value)).toEqual([
       'consultation_required',
@@ -227,10 +253,10 @@ describe('the choices of the values of a service', () => {
       'deposit_required',
     ])
     expect(OPTION_TYPE_OPTIONS.map(({ label }) => label)).toEqual([
-      'アドオン',
-      'アップグレード',
-      '時間延長',
-      '商品選択',
+      { en: 'Add-on', ja: 'アドオン' },
+      { en: 'Upgrade', ja: 'アップグレード' },
+      { en: 'Time extension', ja: '時間延長' },
+      { en: 'Product choice', ja: '商品選択' },
     ])
   })
 })

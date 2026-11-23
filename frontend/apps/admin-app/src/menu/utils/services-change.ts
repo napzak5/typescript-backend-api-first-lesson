@@ -10,23 +10,24 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   aboutTheAttempt,
-  type ChoiceOption,
+  type FormErrors,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
+  type NamedChoice,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { LEVELS } from '../../staff/utils/staff-format'
 import type { ServicesChange } from '../api/menu-api'
 import {
   AVAILABILITIES,
   categoriesById,
-  categoryPathOf,
+  categoryLineOf,
   menuSectionsOf,
   SERVICE_STATUSES,
 } from './menu-format'
-import { CATEGORY_GONE, FORBIDDEN_MESSAGE } from './service-form'
+import { CATEGORY_GONE } from './service-form'
 
 /*
  * The form that gives several services of the menu the same values: which
@@ -40,14 +41,7 @@ export const MOST_SERVICES = 100
 /** The value of the choice that takes something away: no category, every member of the staff */
 export const NONE = 'none'
 
-const SERVICES_ERROR = '変えるサービスを、1 件以上選んでください。'
-const TOO_MANY_SERVICES = `一度に変えられるサービスは、${MOST_SERVICES} 件までです。`
-const NOTHING_TO_CHANGE =
-  '変える項目を、1 つ以上選んでください。「変えない」のままでは、何も変わりません。'
-const SERVICES_GONE =
-  '選んだサービスのどれかが、その間にメニューから削除されていました。どのサービスも変えていません。いまのメニューから、選び直してください。'
-const FAILED =
-  'サービスを変えられませんでした。通信の状態を確かめて、もう一度お試しください。'
+const { bulk: WORDS } = adminMenuMessages
 
 /** The choices of a value that is on or off */
 export const SWITCH_ON = 'on'
@@ -60,14 +54,17 @@ export const SWITCH_OFF = 'off'
 export const serviceChoicesOf = (
   categories: readonly ModelsServiceCategoryResponse[],
   services: readonly ModelsServiceResponse[],
-): ChoiceOption[] => {
+): NamedChoice[] => {
   const byId = categoriesById(categories)
 
   return menuSectionsOf(categories, services).flatMap(
     ({ category, services: inIt }) =>
       inIt.map((service) => ({
         value: service.id,
-        label: `${service.name}（${category === null ? '未分類' : categoryPathOf(category, byId)}）`,
+        label: adminMenuMessages.services.choiceOf(
+          service.name,
+          categoryLineOf(category, byId),
+        ),
       })),
   )
 }
@@ -88,7 +85,7 @@ const chosen = <Value extends string>(
 /** What a change of several services asks for, or what is wrong with the form. */
 export type ServicesChangeRead =
   | { type: 'valid'; value: ModelsServiceBulkUpdateRequest }
-  | { type: 'invalid'; says: FormSays }
+  | { type: 'invalid'; says: FormSays<LocalizedText> }
 
 /**
  * The services that were chosen, and the values that were: a category or
@@ -122,17 +119,20 @@ export const readServicesChange = (values: FormData): ServicesChangeRead => {
         ? {}
         : { requiredStaffLevel }),
   }
-  const errors: Record<string, string> =
+  const errors: FormErrors<LocalizedText> =
     serviceIds.length === 0
-      ? { serviceIds: SERVICES_ERROR }
+      ? { serviceIds: WORDS.errors.services }
       : serviceIds.length > MOST_SERVICES
-        ? { serviceIds: TOO_MANY_SERVICES }
+        ? { serviceIds: WORDS.errors.tooManyServices(MOST_SERVICES) }
         : {}
   const nothing = Object.keys(updates).length === 0
   if (nothing || Object.keys(errors).length > 0) {
     return {
       type: 'invalid',
-      says: { message: nothing ? NOTHING_TO_CHANGE : undefined, errors },
+      says: {
+        message: nothing ? WORDS.errors.nothingToChange : undefined,
+        errors,
+      },
     }
   }
 
@@ -156,31 +156,33 @@ export const afterServicesChange = (
     | Extract<ServicesChange, { type: 'servicesGone' | 'forbidden' }>
     | { type: 'tooManyRequests' }
     | { type: 'failed' },
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, (refused) =>
       refusesCategory(refused)
         ? {
-            message: inJapaneseIfAny(
-              refused.values.every(
-                ({ field }) => field === 'updates.categoryId',
-              )
-                ? undefined
-                : CHECK_THE_VALUES_MESSAGE,
-            ),
+            message: refused.values.every(
+              ({ field }) => field === 'updates.categoryId',
+            )
+              ? undefined
+              : CHECK_THE_VALUES_MESSAGE,
             errors: { categoryId: CATEGORY_GONE },
           }
-        : aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE)),
+        : aboutTheAttempt(CHECK_THE_VALUES_MESSAGE),
     )
-    .with({ type: 'servicesGone' }, () => aboutTheAttempt(SERVICES_GONE))
-    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'servicesGone' }, () =>
+      aboutTheAttempt(WORDS.errors.servicesGone),
+    )
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt(adminMenuMessages.forbidden),
+    )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(FAILED))
+    .with({ type: 'failed' }, () => aboutTheAttempt(WORDS.failed))
     .exhaustive()
 
 /** What is said once the services were changed. */
-export const changedMessageOf = (updated: readonly string[]): string =>
-  `${updated.length} 件のサービスを変えました。`
+export const changedMessageOf = (updated: readonly string[]): LocalizedText =>
+  WORDS.changed(updated.length)

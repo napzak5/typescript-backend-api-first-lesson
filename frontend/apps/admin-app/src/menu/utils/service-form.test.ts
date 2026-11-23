@@ -1,4 +1,5 @@
 import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { ServiceRemoval, ServiceWrite } from '../api/menu-api'
 import {
@@ -190,150 +191,216 @@ describe('readServiceEntry', () => {
     })
   })
 
-  it.each<[string, Record<string, string>, string, string]>([
+  it.each<[string, Record<string, string>, string, LocalizedText]>([
     [
       'a blank name',
       { name: '  ' },
       'name',
-      'サービスの名前を、255 文字以内で入力してください。',
+      {
+        en: 'Service name: enter 1 to 255 characters.',
+        ja: 'サービスの名前を、255 文字以内で入力してください。',
+      },
     ],
     [
       'a name of 256 letters',
       { name: 'あ'.repeat(256) },
       'name',
-      'サービスの名前を、255 文字以内で入力してください。',
+      {
+        en: 'Service name: enter 1 to 255 characters.',
+        ja: 'サービスの名前を、255 文字以内で入力してください。',
+      },
     ],
     [
       'a short description of 501 letters',
       { shortDescription: 'あ'.repeat(501) },
       'shortDescription',
-      '短い紹介は、500 文字以内で入力してください。',
+      {
+        en: 'Short description: enter up to 500 characters.',
+        ja: '短い紹介は、500 文字以内で入力してください。',
+      },
     ],
     [
       'no time',
       { duration: '' },
       'duration',
-      '所要時間は、1 から 1440 までの整数（分）で入力してください。',
+      {
+        en: 'Enter the duration as a whole number of minutes from 1 to 1,440.',
+        ja: '所要時間は、1 から 1,440 までの整数（分）で入力してください。',
+      },
     ],
     [
       'a time of none',
       { duration: '0' },
       'duration',
-      '所要時間は、1 から 1440 までの整数（分）で入力してください。',
+      {
+        en: 'Enter the duration as a whole number of minutes from 1 to 1,440.',
+        ja: '所要時間は、1 から 1,440 までの整数（分）で入力してください。',
+      },
     ],
     [
       'a time longer than a day',
       { duration: '1441' },
       'duration',
-      '所要時間は、1 から 1440 までの整数（分）で入力してください。',
+      {
+        en: 'Enter the duration as a whole number of minutes from 1 to 1,440.',
+        ja: '所要時間は、1 から 1,440 までの整数（分）で入力してください。',
+      },
     ],
     [
       'a time in parts of a minute',
       { duration: '30.5' },
       'duration',
-      '所要時間は、1 から 1440 までの整数（分）で入力してください。',
+      {
+        en: 'Enter the duration as a whole number of minutes from 1 to 1,440.',
+        ja: '所要時間は、1 から 1,440 までの整数（分）で入力してください。',
+      },
     ],
     [
       'no price',
       { price: '' },
       'price',
-      '料金は、0 以上の整数で入力してください。',
+      {
+        en: 'Enter the price as a whole number of 0 or more.',
+        ja: '料金は、0 以上の整数で入力してください。',
+      },
     ],
     [
       'a price below none',
       { price: '-1' },
       'price',
-      '料金は、0 以上の整数で入力してください。',
+      {
+        en: 'Enter the price as a whole number of 0 or more.',
+        ja: '料金は、0 以上の整数で入力してください。',
+      },
     ],
     [
       'a discount that is no number',
       { discountPrice: 'なし' },
       'discountPrice',
-      '割引後の料金は、0 以上の整数で入力してください。割引がなければ、空のままにします。',
+      {
+        en: 'Enter the discounted price as a whole number of 0 or more. Leave it empty when there is no discount.',
+        ja: '割引後の料金は、0 以上の整数で入力してください。割引がなければ、空のままにします。',
+      },
     ],
     [
       'a discount above the price',
       { discountPrice: '5501' },
       'discountPrice',
-      '割引後の料金は、料金以下にしてください。',
+      {
+        en: 'The discounted price can be at most the price.',
+        ja: '割引後の料金は、料金以下にしてください。',
+      },
     ],
     [
       'a way of pricing the contract has not',
       { pricingStrategy: 'auction' },
       'pricingStrategy',
-      '価格の決め方を選んでください。',
+      {
+        en: 'Choose how the price is decided.',
+        ja: '価格の決め方を選んでください。',
+      },
     ],
     [
       'no place in the order',
       { sortOrder: '' },
       'sortOrder',
-      '表示順は、0 以上の整数で入力してください。',
+      {
+        en: 'Enter the display order as a whole number of 0 or more.',
+        ja: '表示順は、0 以上の整数で入力してください。',
+      },
     ],
     [
       'a state the contract has not',
       { serviceStatus: 'paused' },
       'serviceStatus',
-      '提供の状態を選んでください。',
+      { en: 'Choose the offering status.', ja: '提供の状態を選んでください。' },
     ],
     [
       'days the contract has not',
       { availability: 'mondays' },
       'availability',
-      '提供日を選んでください。',
+      { en: 'Choose the availability.', ja: '提供日を選んでください。' },
     ],
     [
       'a limit of none a day',
       { maxBookingsPerDay: '0' },
       'maxBookingsPerDay',
-      '1 日の予約の上限は、1 以上の整数で入力してください。上限がなければ、空のままにします。',
+      {
+        en: 'Enter the most bookings a day as a whole number of 1 or more. Leave it empty when there is no limit.',
+        ja: '1 日の予約の上限は、1 以上の整数で入力してください。上限がなければ、空のままにします。',
+      },
     ],
     [
       'a picture that is no web address',
       { imageUrl: 'photos.example.com/cut.jpg' },
       'imageUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'a picture of an address of 501 letters',
       { imageUrl: addressOf(501) },
       'imageUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'another picture that is no web address',
       { imageUrls: 'https://photos.example.com/a.jpg\nb.jpg' },
       'imageUrls',
-      '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
+      {
+        en: 'Check line 2. Enter a URL that begins with http:// or https:// and has a domain name (such as example.com).',
+        ja: '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
+      },
     ],
     [
       'an option without a name',
       { 'options.0.name': ' ' },
       'options.0.name',
-      'オプションの名前を、255 文字以内で入力してください。',
+      {
+        en: 'Option name: enter 1 to 255 characters.',
+        ja: 'オプションの名前を、255 文字以内で入力してください。',
+      },
     ],
     [
       'an option of a kind the contract has not',
       { 'options.0.optionType': 'gift' },
       'options.0.optionType',
-      'オプションの種類を選んでください。',
+      {
+        en: 'Choose the type of the option.',
+        ja: 'オプションの種類を選んでください。',
+      },
     ],
     [
       'an option of a time below none',
       { 'options.0.additionalTime': '-5' },
       'options.0.additionalTime',
-      '追加の時間は、0 以上の整数（分）で入力してください。',
+      {
+        en: 'Enter the extra time as a whole number of minutes, 0 or more.',
+        ja: '追加の時間は、0 以上の整数（分）で入力してください。',
+      },
     ],
     [
       'an option without a price',
       { 'options.0.additionalPrice': '' },
       'options.0.additionalPrice',
-      '追加の料金は、0 以上の整数で入力してください。',
+      {
+        en: 'Enter the extra price as a whole number of 0 or more.',
+        ja: '追加の料金は、0 以上の整数で入力してください。',
+      },
     ],
     [
       'an option chosen none at most',
       { 'options.0.maxQuantity': '0' },
       'options.0.maxQuantity',
-      '選べる数は、1 以上の整数で入力してください。',
+      {
+        en: 'Enter the most to choose as a whole number of 1 or more.',
+        ja: '選べる数は、1 以上の整数で入力してください。',
+      },
     ],
   ])('should refuse %s at its control', (_, changes, control, error) => {
     // Act
@@ -377,13 +444,15 @@ describe('readServiceEntry', () => {
     })
   })
 
-  it.each<[string, readonly string[], Record<string, string>]>([
+  it.each<[string, readonly string[], Record<string, LocalizedText>]>([
     [
       'one service',
       [aService().id],
       {
-        isPackage:
-          'パッケージにするときは、構成サービスを 2 件から 20 件まで選んでください。',
+        isPackage: {
+          en: 'Choose 2 to 20 packaged services for a package.',
+          ja: 'パッケージにするときは、構成サービスを 2 件から 20 件まで選んでください。',
+        },
       },
     ],
     [
@@ -394,19 +463,31 @@ describe('readServiceEntry', () => {
           `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
       ),
       {
-        isPackage:
-          'パッケージにするときは、構成サービスを 2 件から 20 件まで選んでください。',
+        isPackage: {
+          en: 'Choose 2 to 20 packaged services for a package.',
+          ja: 'パッケージにするときは、構成サービスを 2 件から 20 件まで選んでください。',
+        },
       },
     ],
     [
       'a row that chose none',
       [aService().id, ''],
-      { 'packageServiceIds.1': 'サービスを選んでください。' },
+      {
+        'packageServiceIds.1': {
+          en: 'Choose a service.',
+          ja: 'サービスを選んでください。',
+        },
+      },
     ],
     [
       'a service chosen twice',
       [aService().id, aDiscountedColour().id, aService().id],
-      { 'packageServiceIds.2': '同じサービスは、1 回だけ入れられます。' },
+      {
+        'packageServiceIds.2': {
+          en: 'A service can be put in only once.',
+          ja: '同じサービスは、1 回だけ入れられます。',
+        },
+      },
     ],
   ])('should refuse a package of %s', (_, ids, errors) => {
     // Act
@@ -574,8 +655,10 @@ describe('readServiceChange', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        duration:
-          '所要時間は、1 から 1440 までの整数（分）で入力してください。',
+        duration: {
+          en: 'Enter the duration as a whole number of minutes from 1 to 1,440.',
+          ja: '所要時間は、1 から 1,440 までの整数（分）で入力してください。',
+        },
       },
     })
   })
@@ -590,78 +673,114 @@ describe('afterServiceWrite', () => {
     values: [{ field, rule }],
   })
 
-  it.each<[string, string, string, string]>([
+  it.each<[string, string, string, LocalizedText]>([
     [
       'name',
       'too_big',
       'name',
-      'サービスの名前を、255 文字以内で入力してください。',
+      {
+        en: 'Service name: enter 1 to 255 characters.',
+        ja: 'サービスの名前を、255 文字以内で入力してください。',
+      },
     ],
     [
       'discountPrice',
       'too_big',
       'discountPrice',
-      '割引後の料金は、料金以下にしてください。',
+      {
+        en: 'The discounted price can be at most the price.',
+        ja: '割引後の料金は、料金以下にしてください。',
+      },
     ],
     [
       'categoryId',
       'not_found',
       'categoryId',
-      'このカテゴリーは、その間に削除されていました。カテゴリーを選び直してください。',
+      {
+        en: 'This category was removed meanwhile. Choose the category again.',
+        ja: 'このカテゴリーは、その間に削除されていました。カテゴリーを選び直してください。',
+      },
     ],
     [
       'packageServiceIds',
       'not_found',
       'isPackage',
-      '構成サービスのどれかが、その間に削除されたか、パッケージになっていました。選び直してください。',
+      {
+        en: 'One of the packaged services was removed or made a package meanwhile. Choose again.',
+        ja: '構成サービスのどれかが、その間に削除されたか、パッケージになっていました。選び直してください。',
+      },
     ],
     [
       'packageServiceIds',
       'nested_package',
       'isPackage',
-      '構成サービスのどれかが、その間に削除されたか、パッケージになっていました。選び直してください。',
+      {
+        en: 'One of the packaged services was removed or made a package meanwhile. Choose again.',
+        ja: '構成サービスのどれかが、その間に削除されたか、パッケージになっていました。選び直してください。',
+      },
     ],
     [
       'packageServiceIds',
       'too_small',
       'isPackage',
-      'パッケージにするときは、構成サービスを 2 件から 20 件まで選んでください。',
+      {
+        en: 'Choose 2 to 20 packaged services for a package.',
+        ja: 'パッケージにするときは、構成サービスを 2 件から 20 件まで選んでください。',
+      },
     ],
     [
       'packageServiceIds',
       'too_big',
       'isPackage',
-      'パッケージにするときは、構成サービスを 2 件から 20 件まで選んでください。',
+      {
+        en: 'Choose 2 to 20 packaged services for a package.',
+        ja: 'パッケージにするときは、構成サービスを 2 件から 20 件まで選んでください。',
+      },
     ],
     [
       'packageServiceIds.1',
       'custom',
       'packageServiceIds.1',
-      '同じサービスは、1 回だけ入れられます。',
+      {
+        en: 'A service can be put in only once.',
+        ja: '同じサービスは、1 回だけ入れられます。',
+      },
     ],
     [
       'isPackage',
       'contained_in_package',
       'isPackage',
-      '別のパッケージに入っているサービスは、パッケージにできません。',
+      {
+        en: 'A service that is in another package cannot be a package.',
+        ja: '別のパッケージに入っているサービスは、パッケージにできません。',
+      },
     ],
     [
       'options.2.maxQuantity',
       'too_small',
       'options.2.maxQuantity',
-      '選べる数は、1 以上の整数で入力してください。',
+      {
+        en: 'Enter the most to choose as a whole number of 1 or more.',
+        ja: '選べる数は、1 以上の整数で入力してください。',
+      },
     ],
     [
       'imageUrl',
       'invalid_format',
       'imageUrl',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+      },
     ],
     [
       'imageUrls.1',
       'invalid_format',
       'imageUrls',
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
+      {
+        en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com).',
+        ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
+      },
     ],
   ])('should say a refused %s (%s) at %s', (field, rule, control, error) => {
     // Act
@@ -680,27 +799,42 @@ describe('afterServiceWrite', () => {
 
     // Assert
     expect(said).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
 
-  it.each<[Parameters<typeof afterServiceWrite>, string]>([
+  it.each<[Parameters<typeof afterServiceWrite>, LocalizedText]>([
     [
       [{ type: 'forbidden' }, 'entry'],
-      'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      {
+        en: 'The menu of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its menu.',
+        ja: 'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      },
     ],
     [
       [{ type: 'tooManyRequests' }, 'change'],
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       [{ type: 'failed' }, 'entry'],
-      'サービスを足せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The service could not be added. Check your connection and try again.',
+        ja: 'サービスを足せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
     [
       [{ type: 'failed' }, 'change'],
-      'サービスを直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The service could not be saved. Check your connection and try again.',
+        ja: 'サービスを直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say what went wrong with an attempt: %j', (given, message) => {
     // Act
@@ -733,7 +867,10 @@ describe('afterServiceRemoval', () => {
       { type: 'removed' },
       {
         type: 'done',
-        message: 'サービス「カット」を、メニューから削除しました。',
+        message: {
+          en: 'Removed the service “カット” from the menu.',
+          ja: 'サービス「カット」を、メニューから削除しました。',
+        },
       },
     ],
     ['a service in use', { type: 'inUse' }, { type: 'inUse' }],
@@ -743,8 +880,10 @@ describe('afterServiceRemoval', () => {
       { type: 'forbidden' },
       {
         type: 'refused',
-        message:
-          'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+        message: {
+          en: 'The menu of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its menu.',
+          ja: 'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+        },
       },
     ],
     [
@@ -752,8 +891,10 @@ describe('afterServiceRemoval', () => {
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
       },
     ],
     [
@@ -761,8 +902,10 @@ describe('afterServiceRemoval', () => {
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          'サービスを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The service could not be removed. Check your connection and try again.',
+          ja: 'サービスを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what came of %s', (_, outcome, says) => {
@@ -774,14 +917,16 @@ describe('inUseMessageOf', () => {
   it('should name the packages a service is one of the services of', () => {
     expect(
       inUseMessageOf('カット', [aPackage(), { name: 'カットとパーマ' }]),
-    ).toBe(
-      'サービス「カット」は、パッケージ「カットとカラー」「カットとパーマ」に入っているので、削除できません。先に、パッケージの構成サービスから外してください。',
-    )
+    ).toEqual({
+      en: 'The service “カット” is in the packages “カットとカラー”, “カットとパーマ”, so it cannot be removed. Take it out of the packaged services first.',
+      ja: 'サービス「カット」は、パッケージ「カットとカラー」「カットとパーマ」に入っているので、削除できません。先に、パッケージの構成サービスから外してください。',
+    })
   })
 
   it('should name the bookings not over yet when no package has the service', () => {
-    expect(inUseMessageOf('カット', [])).toBe(
-      'サービス「カット」は、終わっていない予約の施術明細にあるので、削除できません。その予約を終えるか、キャンセルするか、明細を外してから削除してください。',
-    )
+    expect(inUseMessageOf('カット', [])).toEqual({
+      en: 'The service “カット” is on the lines of bookings that are not finished, so it cannot be removed. Finish or cancel those bookings, or take the lines off them, then remove it.',
+      ja: 'サービス「カット」は、終わっていない予約の施術明細にあるので、削除できません。その予約を終えるか、キャンセルするか、明細を外してから削除してください。',
+    })
   })
 })

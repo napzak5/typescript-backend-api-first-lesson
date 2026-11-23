@@ -1,8 +1,11 @@
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { CATEGORIES_OF_THE_MENU, SERVICES_OF_THE_MENU } from '../examples'
 import { ServicesChangeForm } from './services-change-form'
+
+const { bulk, serviceForm } = adminMenuMessages
 
 const meta: Meta<typeof ServicesChangeForm> = {
   title: 'Admin/Menu/ServicesChangeForm',
@@ -31,9 +34,8 @@ export const Opened: Story = {}
 export const WithErrors: Story = {
   args: {
     errors: {
-      serviceIds: '変えるサービスを、1 件以上選んでください。',
-      categoryId:
-        'このカテゴリーは、その間に削除されていました。カテゴリーを選び直してください。',
+      serviceIds: bulk.errors.services,
+      categoryId: serviceForm.errors.categoryGone,
     },
   },
 }
@@ -41,7 +43,6 @@ export const WithErrors: Story = {
 /** What went wrong with the attempt as a whole */
 export const NotChanged: Story = {
   args: {
-    message:
-      '選んだサービスのどれかが、その間にメニューから削除されていました。どのサービスも変えていません。いまのメニューから、選び直してください。',
+    message: bulk.errors.servicesGone,
   },
 }

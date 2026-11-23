@@ -9,14 +9,15 @@ import { salonKeyOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -40,7 +41,7 @@ import {
 } from '../utils/service-form'
 import { MenuForbidden, useKeepsMenu } from './keeps-menu'
 
-const TITLE = 'サービスを足す'
+const { names, services: WORDS, titles, words } = adminMenuMessages
 
 type ServiceEntryProps = {
   salon: ModelsSalonResponse
@@ -62,10 +63,11 @@ const ServiceEntry = ({
   services,
   onChoiceRefused,
 }: ServiceEntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsServiceCreateRequest) =>
       addService(salon.id, request),
@@ -75,10 +77,7 @@ const ServiceEntry = ({
           const read: ServiceRead = { type: 'found', service }
           queryClient.setQueryData(serviceKeyOf(service.id), read)
           queryClient.removeQueries({ queryKey: servicesKeyOf(salon.id) })
-          notify({
-            tone: 'success',
-            message: `サービス「${service.name}」を、メニューに足しました。`,
-          })
+          notify({ tone: 'success', message: WORDS.added(service.name) })
           void navigate(serviceHrefOf(salon.id, service.id))
         })
         // The salon was removed meanwhile
@@ -115,14 +114,14 @@ const ServiceEntry = ({
       categories={categories}
       services={services}
       sortOrder={nextSortOrderOf(services)}
-      submitLabel='足す'
+      submitLabel={say(words.add)}
       message={said.message}
       errors={said.errors}
       pending={entry.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={menuHrefOf(salon.id)} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -133,6 +132,7 @@ type EntryPartProps = { salon: ModelsSalonResponse }
 
 /** The categories and the services there are, read anew, and the form once both were. */
 const EntryPart = ({ salon }: EntryPartProps) => {
+  const say = useSay()
   const categories = useQuery({
     queryKey: categoriesKeyOf(salon.id),
     queryFn: () => readCategories(salon.id),
@@ -150,7 +150,7 @@ const EntryPart = ({ salon }: EntryPartProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.serviceEntry)} description={salon.name} />
       {match(
         menuOf(
           categories.isFetchedAfterMount ? categories.data : undefined,
@@ -158,15 +158,13 @@ const EntryPart = ({ salon }: EntryPartProps) => {
         ),
       )
         .with(undefined, () => (
-          <LoadingIndicator label='メニューを読み込んでいます' />
+          <LoadingIndicator label={say(words.loadingMenu)} />
         ))
         .with(
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('メニュー'), reason),
-              )}
+              message={say(unreadMessageOf(names.menu, reason))}
               onRetry={readAgain}
               pending={categories.isFetching || services.isFetching}
             />
@@ -187,16 +185,17 @@ const EntryPart = ({ salon }: EntryPartProps) => {
 
 /** Adds a service to the menu of the salon of the address, for the owner, a manager and an administrator. */
 export const ServiceEntryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
   const keeps = useKeepsMenu()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.serviceEntry)}>
       {(salon) =>
         keeps ? (
           <EntryPart key={salon.id} salon={salon} />
         ) : (
-          <MenuForbidden salon={salon} title={TITLE} />
+          <MenuForbidden salon={salon} title={titles.serviceEntry} />
         )
       }
     </WithSalon>

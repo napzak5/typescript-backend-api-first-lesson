@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -5,7 +6,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { aDiscountedColour, aService } from '../examples'
 import * as serviceFormStories from './service-form.stories'
 
@@ -334,5 +335,211 @@ describe('ServiceForm', () => {
 
     // Assert
     expect(text(label)).toHaveAccessibleDescription(description)
+  })
+})
+
+describe('ServiceForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its parts and controls, and say what they take, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.New.run()
+
+    // Assert
+    expect(
+      screen
+        .getAllByRole('group')
+        .map((part) => part.querySelector('legend')?.textContent),
+    ).toEqual([
+      'Service',
+      'Time and price',
+      'Offering',
+      'Booking',
+      'Booking requirements',
+      'Photos',
+      'Package',
+      'Options',
+    ])
+    expect(text('Name')).toHaveAccessibleDescription(
+      'Up to 255 characters. It appears on the menu the customers see.',
+    )
+    expect(text('Short description')).toHaveAccessibleDescription(
+      'Up to 500 characters. It appears in the list of the menu.',
+    )
+    expect(text('Tags')).toHaveAccessibleDescription(
+      'Separate them with “,” or “、”.',
+    )
+    expect(text('Duration (minutes)')).toHaveAccessibleDescription(
+      'A whole number from 1 to 1,440.',
+    )
+    expect(text('Price')).toHaveAccessibleDescription(
+      'A whole number of 0 or more.',
+    )
+    expect(text('Display order')).toHaveAccessibleDescription(
+      'A whole number of 0 or more. Smaller numbers come first.',
+    )
+    expect(text('Most bookings a day')).toHaveAccessibleDescription(
+      'A whole number of 1 or more. Leave it empty when there is no limit.',
+    )
+    expect(text('Photo URL')).toHaveAccessibleDescription(
+      'A URL that begins with http:// or https://. Up to 500 characters.',
+    )
+    expect(text('Other photo URLs')).toHaveAccessibleDescription(
+      'One per line. URLs that begin with http:// or https://.',
+    )
+    expect(box('Active')).toHaveAccessibleDescription(
+      'When cleared, the service no longer appears on the menu the customers see, and cannot be booked.',
+    )
+    expect(text('Discounted price')).toHaveAccessibleDescription(
+      'A whole number no higher than the price. Leave it empty when there is no discount.',
+    )
+    expect(box('Tax included')).toHaveAccessibleDescription(
+      'When cleared, the price is before tax.',
+    )
+    expect(choice('Offering status')).toHaveAccessibleDescription(
+      'Customers can book the services whose status is “Active”.',
+    )
+    expect(box('Accept online bookings')).toHaveAccessibleDescription(
+      'When cleared, the customers can no longer book it themselves. The salon can still put in bookings of it.',
+    )
+    expect(box('Make it a package')).toHaveAccessibleDescription(
+      'Puts 2 to 20 other services together as one service. Only services that are not packages can be put in a package.',
+    )
+    expect(group('Options')).toHaveAccessibleDescription(
+      'What the customers can add when they book. They are offered in this order.',
+    )
+    expect(optionsOf(choice('Category'))).toEqual([
+      'Uncategorized',
+      'カット',
+      'カラー',
+      'カラー › ハイライト',
+    ])
+    expect(optionsOf(choice('Pricing'))).toEqual([
+      'Fixed price',
+      'Variable price',
+      'Tiered price',
+      'Dynamic price',
+      'Price on consultation',
+    ])
+    expect(optionsOf(choice('Offering status'))).toEqual([
+      'Active',
+      'Paused',
+      'Coming soon',
+      'Discontinued',
+    ])
+    expect(optionsOf(choice('Availability'))).toEqual([
+      'Always',
+      'Weekdays only',
+      'Weekends only',
+      'By appointment only',
+      'Seasonal',
+    ])
+    expect(optionsOf(choice('Staff who can do it'))).toEqual([
+      'All staff',
+      'Junior or above',
+      'Stylist or above',
+      'Senior or above',
+      'Expert or above',
+      'Director or above',
+    ])
+    expect(
+      [
+        'Consultation required',
+        'Patch test required',
+        'Advance booking required',
+        'Deposit required',
+        'Needs a consultation',
+      ].map((name) => checkedOf(box(name))),
+    ).toEqual([false, false, false, false, false])
+  })
+
+  it('should name the rows of a package and of the options in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.InAPackage.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'This service is in the package “カットとカラー”, so it cannot be a package.',
+      ),
+    ).toBeInTheDocument()
+    const option = within(group('Option 1'))
+    expect(
+      [
+        option.getByRole('textbox', { name: 'Name' }),
+        option.getByRole('combobox', { name: 'Type' }),
+        option.getByRole('textbox', { name: 'Most to choose' }),
+        option.getByRole('textbox', { name: 'Extra time (minutes)' }),
+        option.getByRole('textbox', { name: 'Extra price' }),
+        option.getByRole('textbox', { name: 'Description' }),
+      ].map(valueIn),
+    ).toEqual(['前髪カット', 'addon', '1', '10', '1100', ''])
+    expect(optionsOf(option.getByRole('combobox', { name: 'Type' }))).toEqual([
+      'Add-on',
+      'Upgrade',
+      'Time extension',
+      'Product choice',
+    ])
+    expect(
+      option.getByRole('checkbox', { name: 'Required' }),
+    ).toHaveAccessibleDescription('It is always added to the booking.')
+    expect(
+      screen.getByRole('button', { name: 'Remove option 1' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Add an option' }),
+    ).toBeInTheDocument()
+
+    // Act
+    await stories.Package.run()
+
+    // Assert
+    expect(optionsOf(group('Packaged service 1'))).toEqual([
+      'Choose',
+      'カット',
+      'フルカラー',
+    ])
+    expect(
+      screen.getByRole('button', { name: 'Remove packaged service 1' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Add a packaged service' }),
+    ).toBeInTheDocument()
+  })
+
+  it('should say in English what is wrong, and what went wrong with the attempt', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(text('Discounted price')).toHaveAccessibleDescription(
+      'A whole number no higher than the price. Leave it empty when there is no discount. The discounted price can be at most the price.',
+    )
+    expect(
+      within(group('Packaged service 2')).getByRole('combobox', {
+        name: 'Service',
+      }),
+    ).toHaveAccessibleDescription('A service can be put in only once.')
+
+    // Act
+    await stories.NotSent.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'The service could not be added. Check your connection and try again.',
+      ),
+    ).toBeInTheDocument()
   })
 })

@@ -3,13 +3,14 @@ import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
+import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import {
@@ -26,22 +27,11 @@ import {
   serviceKeyOf,
 } from '../api/menu-api'
 import { ServiceRecord } from '../components/service-record/service-record'
-import { useKeepsMenu } from './keeps-menu'
+import { MenuPartNotFound, useKeepsMenu } from './keeps-menu'
 
-const TITLE = 'サービスの内容'
+const { names, services: WORDS, titles, words } = adminMenuMessages
 
 type ServicePartProps = { salon: ModelsSalonResponse; serviceId: string }
-
-/** What a screen of a service says when there is none to show. */
-export const ServiceNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
-  <>
-    <PageHeader
-      title='サービスが見つかりません'
-      description='アドレスが正しいか、お確かめください。メニューから削除したサービスは、表示できません。'
-    />
-    <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
-  </>
-)
 
 /**
  * A service of the menu, read whenever the screen opens, with the menu it
@@ -49,6 +39,7 @@ export const ServiceNotFound = ({ salon }: { salon: ModelsSalonResponse }) => (
  * account that changes the menu is offered to change the service.
  */
 const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
+  const say = useSay()
   const keeps = useKeepsMenu()
   const service = useQuery({
     queryKey: serviceKeyOf(serviceId),
@@ -63,7 +54,13 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
     queryKey: servicesKeyOf(salon.id),
     queryFn: () => readServices(salon.id),
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const header = (actions?: ReactNode) => (
+    <PageHeader
+      title={say(titles.service)}
+      description={salon.name}
+      actions={actions}
+    />
+  )
   const retry = (): void => {
     void service.refetch()
     void categories.refetch()
@@ -73,14 +70,14 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
     service.isFetching || categories.isFetching || services.isFetching
 
   return match([service.data, menuOf(categories.data, services.data)])
-    .with([{ type: 'notFound' }, P._], () => <ServiceNotFound salon={salon} />)
+    .with([{ type: 'notFound' }, P._], () => (
+      <MenuPartNotFound salon={salon} said={WORDS.notFound} />
+    ))
     .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
       <>
-        {header}
+        {header()}
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('サービス'), reason),
-          )}
+          message={say(unreadMessageOf(names.service, reason))}
           onRetry={retry}
           pending={retrying}
         />
@@ -90,11 +87,9 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
       [P._, { type: P.union('notFound', 'tooManyRequests', 'failed') }],
       ([, reason]) => (
         <>
-          {header}
+          {header()}
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('メニュー'), reason),
-            )}
+            message={say(unreadMessageOf(names.menu, reason))}
             onRetry={retry}
             pending={retrying}
           />
@@ -103,26 +98,22 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
     )
     .with([undefined, P._], [P._, undefined], () => (
       <>
-        {header}
-        <LoadingIndicator label='サービスを読み込んでいます' />
+        {header()}
+        <LoadingIndicator label={say(WORDS.loading)} />
       </>
     ))
     .with([{ type: 'found' }, { type: 'found' }], ([found, menu]) => (
       <>
-        <PageHeader
-          title={TITLE}
-          description={salon.name}
-          actions={
-            keeps ? (
-              <ButtonLink
-                href={serviceChangeHrefOf(salon.id, found.service.id)}
-                variant='primary'
-              >
-                サービスを直す
-              </ButtonLink>
-            ) : undefined
-          }
-        />
+        {header(
+          keeps ? (
+            <ButtonLink
+              href={serviceChangeHrefOf(salon.id, found.service.id)}
+              variant='primary'
+            >
+              {say(WORDS.change)}
+            </ButtonLink>
+          ) : undefined,
+        )}
         <ServiceRecord
           service={found.service}
           categories={menu.categories}
@@ -130,7 +121,7 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
           currency={salon.currency}
           serviceHref={(id) => serviceHrefOf(salon.id, id)}
         />
-        <ButtonLink href={menuHrefOf(salon.id)}>メニューへ</ButtonLink>
+        <ButtonLink href={menuHrefOf(salon.id)}>{say(words.toMenu)}</ButtonLink>
       </>
     ))
     .exhaustive()
@@ -138,10 +129,11 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
 
 /** A service of the menu of the salon of the address, for everybody who works there and an administrator. */
 export const ServiceScreen = () => {
+  const say = useSay()
   const { salonId = '', serviceId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.service)}>
       {(salon) => (
         <ServicePart key={serviceId} salon={salon} serviceId={serviceId} />
       )}

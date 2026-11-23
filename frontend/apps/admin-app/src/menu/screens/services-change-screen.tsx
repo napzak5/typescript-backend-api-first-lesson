@@ -9,14 +9,15 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -38,7 +39,7 @@ import {
 } from '../utils/services-change'
 import { MenuForbidden, useKeepsMenu } from './keeps-menu'
 
-const TITLE = 'サービスをまとめて変える'
+const { bulk: WORDS, names, titles, words } = adminMenuMessages
 
 type ServicesChangeProps = {
   salon: ModelsSalonResponse
@@ -60,10 +61,11 @@ const ServicesChange = ({
   services,
   readMenuAgain,
 }: ServicesChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const menu = menuHrefOf(salon.id)
   const change = useMutation({
     mutationFn: (request: ModelsServiceBulkUpdateRequest) =>
@@ -105,14 +107,14 @@ const ServicesChange = ({
     <ServicesChangeForm
       categories={categories}
       services={services}
-      submitLabel='変える'
+      submitLabel={say(WORDS.change)}
       message={said.message}
       errors={said.errors}
       pending={change.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={menu} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -123,6 +125,7 @@ type ChangePartProps = { salon: ModelsSalonResponse }
 
 /** The categories and the services there are, read anew, and the form once both were. */
 const ChangePart = ({ salon }: ChangePartProps) => {
+  const say = useSay()
   const categories = useQuery({
     queryKey: categoriesKeyOf(salon.id),
     queryFn: () => readCategories(salon.id),
@@ -140,7 +143,7 @@ const ChangePart = ({ salon }: ChangePartProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.servicesChange)} description={salon.name} />
       {match(
         menuOf(
           categories.isFetchedAfterMount ? categories.data : undefined,
@@ -148,15 +151,13 @@ const ChangePart = ({ salon }: ChangePartProps) => {
         ),
       )
         .with(undefined, () => (
-          <LoadingIndicator label='メニューを読み込んでいます' />
+          <LoadingIndicator label={say(words.loadingMenu)} />
         ))
         .with(
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('メニュー'), reason),
-              )}
+              message={say(unreadMessageOf(names.menu, reason))}
               onRetry={readAgain}
               pending={categories.isFetching || services.isFetching}
             />
@@ -177,16 +178,17 @@ const ChangePart = ({ salon }: ChangePartProps) => {
 
 /** Gives several services of the menu of the salon of the address the same values, for the owner, a manager and an administrator. */
 export const ServicesChangeScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
   const keeps = useKeepsMenu()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.servicesChange)}>
       {(salon) =>
         keeps ? (
           <ChangePart key={salon.id} salon={salon} />
         ) : (
-          <MenuForbidden salon={salon} title={TITLE} />
+          <MenuForbidden salon={salon} title={titles.servicesChange} />
         )
       }
     </WithSalon>

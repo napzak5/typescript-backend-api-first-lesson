@@ -23,15 +23,15 @@ import {
 import {
   aboutTheAttempt,
   errorAt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   same,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { tagsIn } from '../../customers/utils/customer-ledger'
 import { LEVELS } from '../../staff/utils/staff-format'
@@ -58,60 +58,30 @@ import {
 export const LONGEST_NAME = 255
 /** The longest short introduction of a service */
 export const LONGEST_SHORT_DESCRIPTION = 500
-const LONGEST_DURATION = 1440
+export const LONGEST_DURATION = 1440
 
 /** The fewest and the most services a package is made of */
 export const FEWEST_PACKAGED = 2
 export const MOST_PACKAGED = 20
 
-const NAME_ERROR = neededWithin(
-  writtenInJapanese('サービスの名前'),
-  LONGEST_NAME,
-)
+const {
+  services: { removal: REMOVAL },
+  serviceForm: { errors: WORDS, failed: FAILED_WRITES },
+} = adminMenuMessages
+
+const NAME_ERROR = neededWithin(WORDS.name, LONGEST_NAME)
 const SHORT_DESCRIPTION_ERROR = tooLongOf(
-  writtenInJapanese('短い紹介'),
+  WORDS.shortDescription,
   LONGEST_SHORT_DESCRIPTION,
 )
-const DURATION_ERROR = `所要時間は、1 から ${LONGEST_DURATION} までの整数（分）で入力してください。`
-const PRICE_ERROR = '料金は、0 以上の整数で入力してください。'
-const DISCOUNT_ERROR =
-  '割引後の料金は、0 以上の整数で入力してください。割引がなければ、空のままにします。'
-const DISCOUNT_ABOVE_PRICE = '割引後の料金は、料金以下にしてください。'
-const PRICING_ERROR = '価格の決め方を選んでください。'
-const ORDER_ERROR = '表示順は、0 以上の整数で入力してください。'
-const STATUS_ERROR = '提供の状態を選んでください。'
-const AVAILABILITY_ERROR = '提供日を選んでください。'
-const MOST_BOOKINGS_ERROR =
-  '1 日の予約の上限は、1 以上の整数で入力してください。上限がなければ、空のままにします。'
+const DURATION_ERROR = WORDS.duration(LONGEST_DURATION)
 /** What is said of a picture of the list: the API takes one at an address of any length */
 const IMAGES_ERROR = notWebAddress(null)
-const PACKAGED_COUNT_ERROR = `パッケージにするときは、構成サービスを ${FEWEST_PACKAGED} 件から ${MOST_PACKAGED} 件まで選んでください。`
-const PACKAGED_MISSING = 'サービスを選んでください。'
-const PACKAGED_TWICE = '同じサービスは、1 回だけ入れられます。'
-const OPTION_NAME_ERROR = neededWithin(
-  writtenInJapanese('オプションの名前'),
-  LONGEST_NAME,
-)
-const OPTION_TYPE_ERROR = 'オプションの種類を選んでください。'
-const OPTION_TIME_ERROR = '追加の時間は、0 以上の整数（分）で入力してください。'
-const OPTION_PRICE_ERROR = '追加の料金は、0 以上の整数で入力してください。'
-const OPTION_QUANTITY_ERROR = '選べる数は、1 以上の整数で入力してください。'
+const PACKAGED_COUNT_ERROR = WORDS.packagedCount(FEWEST_PACKAGED, MOST_PACKAGED)
+const OPTION_NAME_ERROR = neededWithin(WORDS.optionName, LONGEST_NAME)
 
 /** What is said at the category when it was removed meanwhile */
-export const CATEGORY_GONE =
-  'このカテゴリーは、その間に削除されていました。カテゴリーを選び直してください。'
-
-/** What is said at the package when one of its services cannot be one now */
-const PACKAGED_GONE =
-  '構成サービスのどれかが、その間に削除されたか、パッケージになっていました。選び直してください。'
-
-/** What is said at the package when the service became one of the services of a package meanwhile */
-const CONTAINED =
-  '別のパッケージに入っているサービスは、パッケージにできません。'
-
-/** What is said when the account may not change the menu of the salon */
-export const FORBIDDEN_MESSAGE =
-  'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。'
+export const CATEGORY_GONE: LocalizedText = WORDS.categoryGone
 
 /** The name of a control of the option of the row `index`, counted from 0; what is wrong with it is kept under the same name. */
 export const optionControlOf = (
@@ -158,7 +128,7 @@ const oneOf = <Value extends string>(
 
 type OptionRead =
   | { type: 'valid'; option: ModelsServiceOption }
-  | { type: 'invalid'; errors: [string, string][] }
+  | { type: 'invalid'; errors: [string, LocalizedText][] }
 
 /** The rows of options the form was sent with, from the row `index` on. */
 const optionRowsIn = (values: FormData, index: number): OptionRead[] =>
@@ -178,23 +148,23 @@ const readOption = (values: FormData, index: number): OptionRead => {
   const errors = [
     ...errorAt(
       optionControlOf(index, 'name'),
-      inJapaneseIfAny(neededError(name, LONGEST_NAME, OPTION_NAME_ERROR)),
+      neededError(name, LONGEST_NAME, OPTION_NAME_ERROR),
     ),
     ...errorAt(
       optionControlOf(index, 'optionType'),
-      optionType === undefined ? OPTION_TYPE_ERROR : undefined,
+      optionType === undefined ? WORDS.optionType : undefined,
     ),
     ...errorAt(
       optionControlOf(index, 'additionalTime'),
-      additionalTime === undefined ? OPTION_TIME_ERROR : undefined,
+      additionalTime === undefined ? WORDS.additionalTime : undefined,
     ),
     ...errorAt(
       optionControlOf(index, 'additionalPrice'),
-      additionalPrice === undefined ? OPTION_PRICE_ERROR : undefined,
+      additionalPrice === undefined ? WORDS.additionalPrice : undefined,
     ),
     ...errorAt(
       optionControlOf(index, 'maxQuantity'),
-      maxQuantity === undefined ? OPTION_QUANTITY_ERROR : undefined,
+      maxQuantity === undefined ? WORDS.maxQuantity : undefined,
     ),
   ]
   if (
@@ -240,14 +210,14 @@ const packagedRowsIn = (values: FormData, index: number): string[] =>
 const packagedErrorsOf = (
   isPackage: boolean,
   chosen: readonly string[],
-): [string, string][] => [
+): [string, LocalizedText][] => [
   ...chosen.flatMap((id, index) =>
     errorAt(
       packagedControlOf(index),
       id === ''
-        ? PACKAGED_MISSING
+        ? WORDS.packagedMissing
         : chosen.indexOf(id) < index
-          ? PACKAGED_TWICE
+          ? WORDS.packagedTwice
           : undefined,
     ),
   ),
@@ -267,7 +237,9 @@ const packagedErrorsOf = (
  * values together (a discount above the price, a package of too few
  * services) is refused here first.
  */
-const readWhole = (values: FormData): FormRead<ModelsServiceCreateRequest> => {
+const readWhole = (
+  values: FormData,
+): FormRead<ModelsServiceCreateRequest, FormErrors<LocalizedText>> => {
   const optional = (name: string): string | null =>
     textOrNull(textOf(values, name))
   const name = textOf(values, 'name').trim()
@@ -295,50 +267,48 @@ const readWhole = (values: FormData): FormRead<ModelsServiceCreateRequest> => {
   const isPackage = values.has('isPackage')
   const packaged = isPackage ? packagedRowsIn(values, 0) : []
   const options = optionRowsIn(values, 0)
-  const errors: Record<string, string> = Object.fromEntries([
-    ...errorAt(
-      'name',
-      inJapaneseIfAny(neededError(name, LONGEST_NAME, NAME_ERROR)),
-    ),
+  const errors: FormErrors<LocalizedText> = Object.fromEntries([
+    ...errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
     ...errorAt(
       'shortDescription',
-      inJapaneseIfAny(
-        tooLongError(
-          shortDescription,
-          LONGEST_SHORT_DESCRIPTION,
-          SHORT_DESCRIPTION_ERROR,
-        ),
+      tooLongError(
+        shortDescription,
+        LONGEST_SHORT_DESCRIPTION,
+        SHORT_DESCRIPTION_ERROR,
       ),
     ),
     ...errorAt('duration', duration === undefined ? DURATION_ERROR : undefined),
-    ...errorAt('price', price === undefined ? PRICE_ERROR : undefined),
+    ...errorAt('price', price === undefined ? WORDS.price : undefined),
     ...errorAt(
       'discountPrice',
       discountPrice === undefined
-        ? DISCOUNT_ERROR
+        ? WORDS.discountPrice
         : discountPrice !== null && price !== undefined && discountPrice > price
-          ? DISCOUNT_ABOVE_PRICE
+          ? WORDS.discountAbovePrice
           : undefined,
     ),
     ...errorAt(
       'pricingStrategy',
-      pricingStrategy === undefined ? PRICING_ERROR : undefined,
+      pricingStrategy === undefined ? WORDS.pricing : undefined,
     ),
-    ...errorAt('sortOrder', sortOrder === undefined ? ORDER_ERROR : undefined),
+    ...errorAt(
+      'sortOrder',
+      sortOrder === undefined ? WORDS.displayOrder : undefined,
+    ),
     ...errorAt(
       'serviceStatus',
-      serviceStatus === undefined ? STATUS_ERROR : undefined,
+      serviceStatus === undefined ? WORDS.status : undefined,
     ),
     ...errorAt(
       'availability',
-      availability === undefined ? AVAILABILITY_ERROR : undefined,
+      availability === undefined ? WORDS.availability : undefined,
     ),
     ...errorAt(
       'maxBookingsPerDay',
-      maxBookingsPerDay === undefined ? MOST_BOOKINGS_ERROR : undefined,
+      maxBookingsPerDay === undefined ? WORDS.mostBookings : undefined,
     ),
-    ...errorAt('imageUrl', inJapaneseIfAny(webAddressError(imageUrl))),
-    ...errorAt('imageUrls', inJapaneseIfAny(imagesError)),
+    ...errorAt('imageUrl', webAddressError(imageUrl)),
+    ...errorAt('imageUrls', imagesError),
     ...packagedErrorsOf(isPackage, packaged),
     ...options.flatMap((option) =>
       option.type === 'invalid' ? option.errors : [],
@@ -398,11 +368,12 @@ const readWhole = (values: FormData): FormRead<ModelsServiceCreateRequest> => {
 /** A new service, as the form holds it. */
 export const readServiceEntry = (
   values: FormData,
-): FormRead<ModelsServiceCreateRequest> => readWhole(values)
+): FormRead<ModelsServiceCreateRequest, FormErrors<LocalizedText>> =>
+  readWhole(values)
 
 /** What a change of a service asks for: nothing, when nothing was changed. */
 type ServiceChange =
-  | FormRead<ModelsServiceUpdateRequest>
+  | FormRead<ModelsServiceUpdateRequest, FormErrors<LocalizedText>>
   | { type: 'unchanged' }
 /** The options of a service as the form reads them back: their order is that of the rows. */
 const shownOptionsOf = (
@@ -512,28 +483,28 @@ export const readServiceChange = (
 }
 
 /** The controls the form has outside its rows, by the names of the request */
-const CONTROLS: Readonly<Record<string, string>> = {
-  name: inJapanese(NAME_ERROR),
-  shortDescription: inJapanese(SHORT_DESCRIPTION_ERROR),
+const CONTROLS: Readonly<Record<string, LocalizedText>> = {
+  name: NAME_ERROR,
+  shortDescription: SHORT_DESCRIPTION_ERROR,
   duration: DURATION_ERROR,
-  price: PRICE_ERROR,
-  discountPrice: DISCOUNT_ABOVE_PRICE,
-  pricingStrategy: PRICING_ERROR,
-  sortOrder: ORDER_ERROR,
-  serviceStatus: STATUS_ERROR,
-  availability: AVAILABILITY_ERROR,
-  maxBookingsPerDay: MOST_BOOKINGS_ERROR,
-  imageUrl: inJapanese(WEB_ADDRESS_ERROR),
+  price: WORDS.price,
+  discountPrice: WORDS.discountAbovePrice,
+  pricingStrategy: WORDS.pricing,
+  sortOrder: WORDS.displayOrder,
+  serviceStatus: WORDS.status,
+  availability: WORDS.availability,
+  maxBookingsPerDay: WORDS.mostBookings,
+  imageUrl: WEB_ADDRESS_ERROR,
   categoryId: CATEGORY_GONE,
-  isPackage: CONTAINED,
+  isPackage: WORDS.contained,
 }
 
-const OPTION_ERRORS: Readonly<Record<string, string>> = {
-  name: inJapanese(OPTION_NAME_ERROR),
-  optionType: OPTION_TYPE_ERROR,
-  additionalTime: OPTION_TIME_ERROR,
-  additionalPrice: OPTION_PRICE_ERROR,
-  maxQuantity: OPTION_QUANTITY_ERROR,
+const OPTION_ERRORS: Readonly<Record<string, LocalizedText>> = {
+  name: OPTION_NAME_ERROR,
+  optionType: WORDS.optionType,
+  additionalTime: WORDS.additionalTime,
+  additionalPrice: WORDS.additionalPrice,
+  maxQuantity: WORDS.maxQuantity,
 }
 
 const OPTION_FIELD = /^options\.\d+\.(\w+)$/
@@ -543,20 +514,20 @@ const PACKAGED_FIELD = /^packageServiceIds\.\d+$/
 const saidOf = ({
   field,
   rule,
-}: RefusedValue): [string, string] | undefined => {
+}: RefusedValue): [string, LocalizedText] | undefined => {
   if (field === 'packageServiceIds') {
     return [
       'isPackage',
       rule === 'too_small' || rule === 'too_big'
         ? PACKAGED_COUNT_ERROR
-        : PACKAGED_GONE,
+        : WORDS.packagedGone,
     ]
   }
   if (PACKAGED_FIELD.test(field)) {
-    return [field, PACKAGED_TWICE]
+    return [field, WORDS.packagedTwice]
   }
   if (field === 'imageUrls' || field.startsWith('imageUrls.')) {
-    return ['imageUrls', inJapanese(IMAGES_ERROR)]
+    return ['imageUrls', IMAGES_ERROR]
   }
   const option = OPTION_FIELD.exec(field)?.[1]
   if (option !== undefined) {
@@ -585,14 +556,7 @@ export const refusesChoice = (
   )
 
 /** Which write a form makes: the words of its failure differ. */
-export type ServiceWriteKind = 'entry' | 'change'
-
-const FAILED_WRITES: Record<ServiceWriteKind, string> = {
-  entry:
-    'サービスを足せませんでした。通信の状態を確かめて、もう一度お試しください。',
-  change:
-    'サービスを直せませんでした。通信の状態を確かめて、もう一度お試しください。',
-}
+export type ServiceWriteKind = keyof typeof FAILED_WRITES
 
 /** What the form says after the API did not take it. */
 export const afterServiceWrite = (
@@ -601,9 +565,9 @@ export const afterServiceWrite = (
     | { type: 'tooManyRequests' }
     | { type: 'failed' },
   write: ServiceWriteKind,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.flatMap((value) => {
         const at = saidOf(value)
@@ -612,22 +576,25 @@ export const afterServiceWrite = (
       })
 
       return {
-        message: inJapaneseIfAny(
+        message:
           said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
     })
-    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'forbidden' }, () =>
+      aboutTheAttempt(adminMenuMessages.forbidden),
+    )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()
 
 /** What is said after a service was to be removed; one in use is said with the packages it is in. */
-export type ServiceRemovalSays = TreatmentRemovalSays | { type: 'inUse' }
+export type ServiceRemovalSays =
+  | TreatmentRemovalSays<LocalizedText>
+  | { type: 'inUse' }
 
 /**
  * What is said after a service was to be removed. One that is in use is
@@ -641,22 +608,21 @@ export const afterServiceRemoval = (
     .returnType<ServiceRemovalSays>()
     .with({ type: 'removed' }, () => ({
       type: 'done',
-      message: `サービス「${name}」を、メニューから削除しました。`,
+      message: REMOVAL.done(name),
     }))
     .with({ type: 'inUse' }, () => ({ type: 'inUse' }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
       type: 'refused',
-      message: FORBIDDEN_MESSAGE,
+      message: adminMenuMessages.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message:
-        'サービスを削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: REMOVAL.failed,
     }))
     .exhaustive()
 
@@ -668,7 +634,8 @@ export const afterServiceRemoval = (
 export const inUseMessageOf = (
   name: string,
   packages: readonly Pick<ModelsServiceResponse, 'name'>[],
-): string =>
-  packages.length === 0
-    ? `サービス「${name}」は、終わっていない予約の施術明細にあるので、削除できません。その予約を終えるか、キャンセルするか、明細を外してから削除してください。`
-    : `サービス「${name}」は、パッケージ${packages.map((one) => `「${one.name}」`).join('')}に入っているので、削除できません。先に、パッケージの構成サービスから外してください。`
+): LocalizedText =>
+  REMOVAL.inUse(
+    name,
+    packages.map((one) => one.name),
+  )

@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { ServicesChange } from '../api/menu-api'
 import {
@@ -52,15 +53,30 @@ describe('serviceChoicesOf', () => {
     expect(
       serviceChoicesOf(CATEGORIES_OF_THE_MENU, SERVICES_OF_THE_MENU),
     ).toEqual([
-      { value: aService().id, label: 'カット（カット）' },
-      { value: aDiscountedColour().id, label: 'フルカラー（カラー）' },
-      { value: aPackage().id, label: 'カットとカラー（未分類）' },
+      {
+        value: aService().id,
+        label: { en: 'カット (カット)', ja: 'カット（カット）' },
+      },
+      {
+        value: aDiscountedColour().id,
+        label: { en: 'フルカラー (カラー)', ja: 'フルカラー（カラー）' },
+      },
+      {
+        value: aPackage().id,
+        label: {
+          en: 'カットとカラー (Uncategorized)',
+          ja: 'カットとカラー（未分類）',
+        },
+      },
     ])
   })
 
   it('should name a service of a category that was not read as one of none', () => {
     expect(serviceChoicesOf([], [aService()])).toEqual([
-      { value: aService().id, label: 'カット（未分類）' },
+      {
+        value: aService().id,
+        label: { en: 'カット (Uncategorized)', ja: 'カット（未分類）' },
+      },
     ])
   })
 })
@@ -130,7 +146,12 @@ describe('readServicesChange', () => {
       type: 'invalid',
       says: {
         message: undefined,
-        errors: { serviceIds: '変えるサービスを、1 件以上選んでください。' },
+        errors: {
+          serviceIds: {
+            en: 'Choose at least one service to change.',
+            ja: '変えるサービスを、1 件以上選んでください。',
+          },
+        },
       },
     })
   })
@@ -147,7 +168,12 @@ describe('readServicesChange', () => {
       type: 'invalid',
       says: {
         message: undefined,
-        errors: { serviceIds: '一度に変えられるサービスは、100 件までです。' },
+        errors: {
+          serviceIds: {
+            en: 'Up to 100 services can be changed at once.',
+            ja: '一度に変えられるサービスは、100 件までです。',
+          },
+        },
       },
     })
   })
@@ -167,8 +193,10 @@ describe('readServicesChange', () => {
     expect(readServicesChange(formWith(['a'], {}))).toEqual({
       type: 'invalid',
       says: {
-        message:
-          '変える項目を、1 つ以上選んでください。「変えない」のままでは、何も変わりません。',
+        message: {
+          en: 'Choose at least one value to change. Left at “Keep”, nothing changes.',
+          ja: '変える項目を、1 つ以上選んでください。「変えない」のままでは、何も変わりません。',
+        },
         errors: {},
       },
     })
@@ -201,8 +229,10 @@ describe('afterServicesChange', () => {
     expect(afterServicesChange(refused('updates.categoryId'))).toEqual({
       message: undefined,
       errors: {
-        categoryId:
-          'このカテゴリーは、その間に削除されていました。カテゴリーを選び直してください。',
+        categoryId: {
+          en: 'This category was removed meanwhile. Choose the category again.',
+          ja: 'このカテゴリーは、その間に削除されていました。カテゴリーを選び直してください。',
+        },
       },
     })
   })
@@ -211,34 +241,54 @@ describe('afterServicesChange', () => {
     expect(
       afterServicesChange(refused('updates.categoryId', 'serviceIds')),
     ).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {
-        categoryId:
-          'このカテゴリーは、その間に削除されていました。カテゴリーを選び直してください。',
+        categoryId: {
+          en: 'This category was removed meanwhile. Choose the category again.',
+          ja: 'このカテゴリーは、その間に削除されていました。カテゴリーを選び直してください。',
+        },
       },
     })
     expect(afterServicesChange(refused('serviceIds'))).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
 
-  it.each<[Parameters<typeof afterServicesChange>[0], string]>([
+  it.each<[Parameters<typeof afterServicesChange>[0], LocalizedText]>([
     [
       { type: 'servicesGone' },
-      '選んだサービスのどれかが、その間にメニューから削除されていました。どのサービスも変えていません。いまのメニューから、選び直してください。',
+      {
+        en: 'One of the chosen services was removed from the menu meanwhile. No service was changed. Choose again from the menu as it is now.',
+        ja: '選んだサービスのどれかが、その間にメニューから削除されていました。どのサービスも変えていません。いまのメニューから、選び直してください。',
+      },
     ],
     [
       { type: 'forbidden' },
-      'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      {
+        en: 'The menu of this salon cannot be changed. Only the owners and managers of that salon, and administrators, can change its menu.',
+        ja: 'このサロンのメニューは、変えられません。メニューを変えられるのは、そのサロンのオーナーとマネージャーと、管理者です。',
+      },
     ],
     [
       { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       { type: 'failed' },
-      'サービスを変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The services could not be changed. Check your connection and try again.',
+        ja: 'サービスを変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say what came of %j above the form', (outcome, message) => {
     expect(afterServicesChange(outcome)).toEqual({ message, errors: {} })
@@ -247,8 +297,9 @@ describe('afterServicesChange', () => {
 
 describe('changedMessageOf', () => {
   it('should count the services that were changed', () => {
-    expect(changedMessageOf(['a', 'b', 'c'])).toBe(
-      '3 件のサービスを変えました。',
-    )
+    expect(changedMessageOf(['a', 'b', 'c'])).toEqual({
+      en: 'Changed 3 services.',
+      ja: '3 件のサービスを変えました。',
+    })
   })
 })

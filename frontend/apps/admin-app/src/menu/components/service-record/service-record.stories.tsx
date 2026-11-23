@@ -25,13 +25,27 @@ export default meta
 
 type Story = StoryObj<typeof meta>
 
-/** A cut that customers book online, with an option and more photos */
+/** A cut that customers book online, with an option that may be chosen, one that is always added and is switched off, and more photos */
 export const WithOptions: Story = {
   args: {
     service: aService({
       imageUrls: [
         'https://photos.example.com/menu/cut-2.jpg',
         'https://photos.example.com/menu/cut-3.jpg',
+      ],
+      options: [
+        ...aService().options,
+        {
+          name: '炭酸シャンプー',
+          description: null,
+          optionType: 'upgrade',
+          additionalTime: 0,
+          additionalPrice: 550,
+          maxQuantity: 2,
+          isRequired: true,
+          sortOrder: 2,
+          isActive: false,
+        },
       ],
     }),
   },

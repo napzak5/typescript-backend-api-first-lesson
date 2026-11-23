@@ -9,10 +9,17 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  type NamedChoice,
   NO_ERRORS,
   Select,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import { LEVELS, levelNameOf } from '../../../staff/utils/staff-format'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminMenuMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import { LEVELS } from '../../../staff/utils/staff-format'
 import {
   AVAILABILITY_OPTIONS,
   categoriesById,
@@ -27,26 +34,41 @@ import {
   serviceChoicesOf,
 } from '../../utils/services-change'
 
+const {
+  bulk: WORDS,
+  words: { levelOrAbove },
+} = adminMenuMessages
+
 export type ServicesChangeFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
   /** The categories of the salon, in the order of the menu */
   categories: readonly ModelsServiceCategoryResponse[]
   /** The services of the salon: what may be chosen */
   services: readonly ModelsServiceResponse[]
   /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
 }
 
-const KEEP = '変えない'
-
-const LEVEL_CHOICES = [
-  { value: NONE, label: 'すべてのスタッフ' },
+const LEVEL_CHOICES: readonly NamedChoice[] = [
+  { value: NONE, label: WORDS.everyMember },
   ...LEVELS.map((level) => ({
     value: level,
-    label: `${levelNameOf(level)}以上`,
+    label: levelOrAbove(termMessages.staffLevel[level]),
   })),
+]
+
+const SWITCH_CHOICES: readonly NamedChoice[] = [
+  { value: SWITCH_ON, label: WORDS.switchOn },
+  { value: SWITCH_OFF, label: WORDS.switchOff },
+]
+
+const ONLINE_BOOKING_CHOICES: readonly NamedChoice[] = [
+  { value: SWITCH_ON, label: WORDS.accepted },
+  { value: SWITCH_OFF, label: WORDS.notAccepted },
 ]
 
 /**
@@ -60,89 +82,88 @@ const LEVEL_CHOICES = [
 export const ServicesChangeForm = ({
   categories,
   services,
+  message,
   errors = NO_ERRORS,
   ...form
 }: ServicesChangeFormProps) => {
+  const say = useSay()
+  const choicesOf = useSaidChoices()
+  const said = useSaidForm(message, errors)
   const byId = categoriesById(categories)
+  const keep = say(WORDS.keep)
 
   return (
-    <Form {...form} errors={errors}>
-      <FormPart label='サービス'>
+    <Form {...form} message={said.message} errors={errors}>
+      <FormPart label={say(WORDS.services)}>
         <CheckboxGroup
-          label='変えるサービス'
+          label={say(WORDS.chosen)}
           name='serviceIds'
-          description={`メニューの順。名前のあとは、カテゴリーです。1 件から ${MOST_SERVICES} 件まで。`}
-          options={serviceChoicesOf(categories, services)}
-          error={errors['serviceIds']}
+          description={say(WORDS.chosenDescription(MOST_SERVICES))}
+          options={choicesOf(serviceChoicesOf(categories, services))}
+          error={said.errors['serviceIds']}
         />
       </FormPart>
       <FormPart
-        label='変える項目'
-        description='選んだサービスのすべてを、同じ値にします。「変えない」のままの項目は、サービスごとに今のままです。'
+        label={say(WORDS.values)}
+        description={say(WORDS.valuesDescription)}
       >
         <Select
-          label='カテゴリー'
+          label={say(WORDS.category)}
           name='categoryId'
-          placeholder={KEEP}
+          placeholder={keep}
           options={[
-            { value: NONE, label: '未分類にする' },
+            { value: NONE, label: say(WORDS.uncategorize) },
             ...categories.map((category) => ({
               value: category.id,
               label: categoryPathOf(category, byId),
             })),
           ]}
           defaultValue=''
-          error={errors['categoryId']}
+          error={said.errors['categoryId']}
         />
         <FieldRow>
           <Select
-            label='有効'
+            label={say(WORDS.active)}
             name='isActive'
-            placeholder={KEEP}
-            options={[
-              { value: SWITCH_ON, label: '有効にする' },
-              { value: SWITCH_OFF, label: '無効にする' },
-            ]}
+            placeholder={keep}
+            options={choicesOf(SWITCH_CHOICES)}
             defaultValue=''
-            error={errors['isActive']}
+            error={said.errors['isActive']}
           />
           <Select
-            label='オンライン予約'
+            label={say(WORDS.onlineBooking)}
             name='allowOnlineBooking'
-            placeholder={KEEP}
-            options={[
-              { value: SWITCH_ON, label: '受ける' },
-              { value: SWITCH_OFF, label: '受けない' },
-            ]}
+            placeholder={keep}
+            options={choicesOf(ONLINE_BOOKING_CHOICES)}
             defaultValue=''
-            error={errors['allowOnlineBooking']}
+            error={said.errors['allowOnlineBooking']}
           />
         </FieldRow>
         <FieldRow>
           <Select
-            label='提供の状態'
+            label={say(WORDS.status)}
             name='serviceStatus'
-            placeholder={KEEP}
-            options={SERVICE_STATUS_OPTIONS}
+            placeholder={keep}
+            options={choicesOf(SERVICE_STATUS_OPTIONS)}
             defaultValue=''
-            error={errors['serviceStatus']}
+            error={said.errors['serviceStatus']}
           />
           <Select
-            label='提供日'
+            label={say(WORDS.availability)}
             name='availability'
-            placeholder={KEEP}
-            options={AVAILABILITY_OPTIONS}
+            placeholder={keep}
+            options={choicesOf(AVAILABILITY_OPTIONS)}
             defaultValue=''
-            error={errors['availability']}
+            error={said.errors['availability']}
           />
         </FieldRow>
         <Select
-          label='担当できるスタッフ'
+          label={say(WORDS.staffLevel)}
           name='requiredStaffLevel'
-          placeholder={KEEP}
-          options={LEVEL_CHOICES}
+          placeholder={keep}
+          options={choicesOf(LEVEL_CHOICES)}
           defaultValue=''
-          error={errors['requiredStaffLevel']}
+          error={said.errors['requiredStaffLevel']}
         />
       </FormPart>
     </Form>
