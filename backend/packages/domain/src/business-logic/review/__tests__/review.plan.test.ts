@@ -1,3 +1,4 @@
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { OTHER_SALON_ID, SALON_ID } from '../../../__tests__/fixtures/fixtures'
@@ -112,7 +113,7 @@ describe('planReview', () => {
         {
           field: 'bookingId',
           rule: 'not_found',
-          message: 'Must name a booking of the customer',
+          message: reviewMessages.aBookingOfCustomer,
         },
       ],
     })
@@ -136,7 +137,7 @@ describe('planReview', () => {
         {
           field: 'salonId',
           rule: 'not_found',
-          message: 'Must name the salon of the booking',
+          message: reviewMessages.theSalonOfBooking,
         },
       ],
     })
@@ -160,7 +161,7 @@ describe('planReview', () => {
         {
           field: 'staffId',
           rule: 'not_found',
-          message: 'Must name a staff member who took the booking',
+          message: reviewMessages.aStaffMemberWhoTookBooking,
         },
       ],
     })

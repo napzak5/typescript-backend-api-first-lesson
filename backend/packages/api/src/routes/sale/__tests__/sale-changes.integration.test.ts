@@ -21,6 +21,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { SaleRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { and, asc, eq, not } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -2885,7 +2886,11 @@ describe('Sale changes API', () => {
           {
             type: 'invalid',
             issues: [
-              { field: 'staffId', rule: 'not_found', message: NOT_STAFF },
+              {
+                field: 'staffId',
+                rule: 'not_found',
+                message: ruleMessages.aStaffMemberOfSalon,
+              },
             ],
           },
           { type: 'bookingBilled' },

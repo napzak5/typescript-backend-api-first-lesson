@@ -1,3 +1,8 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  bookingMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   CUSTOMER_ID,
@@ -469,16 +474,19 @@ describe('planCustomerBooking', () => {
   })
 
   describe('what the request refers to', () => {
-    const issue = (field: string, what: string) => ({
+    const issue = (field: string, message: LocalizedText) => ({
       field,
       rule: 'not_found',
-      message: `Must name ${what}`,
+      message,
     })
 
     it('reports a salon that is not there, and nothing of what would be of it', () => {
       expect(
         planAt('10:00', { salon: null, service: null, staff: null }),
-      ).toEqual({ type: 'invalid', issues: [issue('salonId', 'a salon')] })
+      ).toEqual({
+        type: 'invalid',
+        issues: [issue('salonId', ruleMessages.aSalon)],
+      })
     })
 
     it.each<[string, Partial<CustomerBookingReferences>, string[]]>([
@@ -496,8 +504,8 @@ describe('planCustomerBooking', () => {
             issue(
               field,
               field === 'serviceId'
-                ? 'a service of the salon'
-                : 'a staff member of the salon',
+                ? ruleMessages.aServiceOfSalon
+                : ruleMessages.aStaffMemberOfSalon,
             ),
           ),
         })
@@ -515,7 +523,7 @@ describe('planCustomerBooking', () => {
           {
             field: 'serviceId',
             rule: 'too_big',
-            message: 'The amounts of a booking must not exceed 2147483647',
+            message: bookingMessages.amountsWithinLimit(2147483647),
           },
         ],
       })

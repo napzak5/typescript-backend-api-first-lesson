@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerPreferencesMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerPreferencesMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -451,7 +454,7 @@ describe('UpdateCustomerPreferencesUseCase', () => {
       {
         field: 'preferredStaffId',
         rule: 'avoided',
-        message: 'Must not be a staff member the customer avoids',
+        message: customerPreferencesMessages.notAvoidedStaffMember,
       },
     ]
     const dependencies = customerPreferencesDependencies(
@@ -527,7 +530,7 @@ describe('UpdateCustomerPreferencesUseCase', () => {
           {
             field: 'preferredStaffId',
             rule: 'not_found',
-            message: 'Must name a staff member',
+            message: ruleMessages.aStaffMember,
           },
         ]),
       ),
@@ -767,7 +770,7 @@ describe('UpdateOwnCustomerPreferencesUseCase', () => {
           {
             field: 'preferredStaffId',
             rule: 'avoided',
-            message: 'Must not be a staff member the customer avoids',
+            message: customerPreferencesMessages.notAvoidedStaffMember,
           },
         ],
       }),

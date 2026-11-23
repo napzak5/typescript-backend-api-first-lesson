@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { vi } from 'vitest'
 import type {
   ApiSalonCreateRequest,
@@ -10,6 +11,15 @@ import type {
   SalonDeletion,
 } from '../../repositories/salon.repository'
 import type { DomainError } from '../../shared'
+
+/**
+ * What a test says of a rule that it makes up: of an issue that the caller
+ * of a use case found, and of which the use case writes nothing.
+ */
+export const MADE_UP_MESSAGE: LocalizedText = {
+  en: 'Must be a number',
+  ja: '数にしてください',
+}
 
 export const SALON_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
 export const OTHER_SALON_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c'

@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { NOW } from '../../__tests__/fixtures/auth-fixtures'
 import {
@@ -281,12 +282,12 @@ describe('medicalChartRuleIssues', () => {
       {
         field: 'previousTreatments.0.date',
         rule: 'too_big',
-        message: 'Must not be in the future',
+        message: ruleMessages.notInFuture,
       },
       {
         field: 'previousTreatments.2.date',
         rule: 'too_big',
-        message: 'Must not be in the future',
+        message: ruleMessages.notInFuture,
       },
     ])
   })

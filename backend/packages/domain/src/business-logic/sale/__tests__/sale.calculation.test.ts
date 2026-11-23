@@ -1,3 +1,4 @@
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   BOOKING_ID,
@@ -266,7 +267,7 @@ describe('planCalculation', () => {
           {
             field: 'services',
             rule: 'too_small',
-            message: 'Must name a service when the booking has no service line',
+            message: saleMessages.aServiceWithoutServiceLine,
           },
         ],
       })
@@ -348,7 +349,7 @@ describe('planCalculation', () => {
         {
           field: 'services',
           rule: 'too_big',
-          message: `The amounts of a sale must not exceed ${MAX_INTEGER}`,
+          message: saleMessages.amountsWithinLimit(MAX_INTEGER),
         },
       ],
     })

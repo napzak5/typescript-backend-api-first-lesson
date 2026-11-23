@@ -1,3 +1,7 @@
+import {
+  ruleMessages,
+  saleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -340,7 +344,7 @@ describe('planSale', () => {
           {
             field: 'details',
             rule: 'too_big',
-            message: 'The amounts of a sale must not exceed 2147483647',
+            message: saleMessages.amountsWithinLimit(2147483647),
           },
         ],
       })
@@ -469,7 +473,7 @@ describe('planSale', () => {
       expect(plan(saleCreateRequest(), nothing)).toEqual({
         type: 'invalid',
         issues: [
-          { field: 'salonId', rule: 'not_found', message: 'Must name a salon' },
+          { field: 'salonId', rule: 'not_found', message: ruleMessages.aSalon },
         ],
       })
     })

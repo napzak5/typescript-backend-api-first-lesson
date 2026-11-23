@@ -2,6 +2,7 @@ import { Result } from '@beauty-salon-backend/utility'
 import {
   customerAllergyMessages,
   customerMessages,
+  ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
@@ -15,6 +16,7 @@ import {
 } from '../../../__tests__/fixtures/customer-allergy-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
 import type { Actor } from '../../../models/auth'
@@ -173,7 +175,7 @@ describe('AddCustomerAllergyUseCase', () => {
             {
               field: 'confirmedDate',
               rule: 'too_big',
-              message: 'Must not be in the future',
+              message: ruleMessages.notInFuture,
             },
           ],
         ),
@@ -573,7 +575,7 @@ describe('ListCustomerAllergiesUseCase', () => {
           {
             field: 'limit',
             rule: 'invalid_format',
-            message: 'Must be a number',
+            message: MADE_UP_MESSAGE,
           },
         ],
       ),
@@ -625,7 +627,7 @@ describe('ListCustomerAllergiesUseCase', () => {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name an allergy of the customer',
+              message: customerAllergyMessages.anAllergyOfCustomer,
             },
           ],
         ),

@@ -1,3 +1,7 @@
+import {
+  pointMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { BOOKING_ID } from '../../../__tests__/fixtures/booking-fixtures'
@@ -198,7 +202,7 @@ describe('planPoints', () => {
             {
               field: 'referenceId',
               rule: 'not_found',
-              message: 'Must name a sale of the customer',
+              message: pointMessages.aReferenceOfCustomer('sale'),
             },
           ],
         })
@@ -218,7 +222,7 @@ describe('planPoints', () => {
           {
             field: 'referenceId',
             rule: 'not_found',
-            message: 'Must name a booking of the customer',
+            message: pointMessages.aReferenceOfCustomer('booking'),
           },
         ],
       })
@@ -351,7 +355,7 @@ describe('issuesOfExpiry', () => {
       {
         field: 'expiryDate',
         rule: 'too_small',
-        message: 'Must not be earlier than 2026-11-19',
+        message: ruleMessages.notEarlierThan('2026-11-19'),
       },
     ])
   })

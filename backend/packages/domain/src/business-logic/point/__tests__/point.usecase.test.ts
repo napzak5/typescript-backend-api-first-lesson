@@ -1,9 +1,13 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { pointMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  pointMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -311,7 +315,7 @@ describe('ListPointTransactionsUseCase', () => {
     const dependencies = pointDependencies()
     const undecoded = Result.error(
       DomainErrors.validation(pointMessages.invalidPointTransactionSearch, [
-        { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_type', message: MADE_UP_MESSAGE },
       ]),
     )
 
@@ -363,7 +367,7 @@ describe('ListPointTransactionsUseCase', () => {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a point transaction of the customer',
+            message: pointMessages.aPointTransactionOfCustomer,
           },
         ]),
       ),
@@ -527,7 +531,7 @@ describe.each(movements)(
             {
               field: 'customerId',
               rule: 'not_found',
-              message: 'Must name a customer',
+              message: ruleMessages.aCustomer,
             },
           ]),
         ),
@@ -539,7 +543,7 @@ describe.each(movements)(
         {
           field: 'referenceId',
           rule: 'not_found',
-          message: 'Must name a sale of the customer',
+          message: pointMessages.aReferenceOfCustomer('sale'),
         },
       ]
       const dependencies = pointDependencies(
@@ -613,7 +617,7 @@ describe('EarnPointsUseCase', () => {
           {
             field: 'expiryDate',
             rule: 'too_small',
-            message: 'Must not be earlier than 2026-11-19',
+            message: ruleMessages.notEarlierThan('2026-11-19'),
           },
         ]),
       ),
@@ -749,7 +753,7 @@ describe('GetExpiringPointsUseCase', () => {
     const dependencies = pointDependencies()
     const undecoded = Result.error(
       DomainErrors.validation(pointMessages.invalidExpiringPointsSearch, [
-        { field: 'days', rule: 'invalid_format', message: 'Must be a number' },
+        { field: 'days', rule: 'invalid_format', message: MADE_UP_MESSAGE },
       ]),
     )
 
@@ -868,7 +872,7 @@ describe('ExpirePointsUseCase', () => {
           {
             field: 'processBefore',
             rule: 'too_big',
-            message: 'Must not be later than 2026-11-19',
+            message: ruleMessages.notLaterThan('2026-11-19'),
           },
         ]),
       ),
@@ -939,7 +943,7 @@ describe('ExpirePointsUseCase', () => {
           {
             field: 'customerId',
             rule: 'not_found',
-            message: 'Must name a customer',
+            message: ruleMessages.aCustomer,
           },
         ]),
       ),

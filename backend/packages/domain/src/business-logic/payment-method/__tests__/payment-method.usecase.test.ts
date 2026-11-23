@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -377,7 +378,7 @@ describe('ListPaymentMethodsUseCase', () => {
     const undecodable = Result.error(
       DomainErrors.validation(
         paymentMethodMessages.invalidPaymentMethodSearch,
-        [{ field: 'limit', rule: 'invalid_type', message: 'Must be a number' }],
+        [{ field: 'limit', rule: 'invalid_type', message: MADE_UP_MESSAGE }],
       ),
     )
 
@@ -448,7 +449,7 @@ describe('ListPaymentMethodsUseCase', () => {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a payment method of the salon',
+            message: paymentMethodMessages.aPaymentMethodOfSalon,
           },
         ],
       },

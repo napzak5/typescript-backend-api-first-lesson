@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID, NOW } from '../../__tests__/fixtures/auth-fixtures'
 import {
@@ -198,7 +199,7 @@ describe('customerAllergyRuleIssues', () => {
         {
           field: 'confirmedDate',
           rule: 'too_big',
-          message: 'Must not be in the future',
+          message: ruleMessages.notInFuture,
         },
       ])
     },

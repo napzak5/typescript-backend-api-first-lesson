@@ -12,6 +12,7 @@ import {
 } from '../../../__tests__/fixtures/booking-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -162,7 +163,7 @@ describe('CreateTreatmentRecordUseCase', () => {
             {
               field: 'bookingId',
               rule: 'not_found',
-              message: 'Must name a booking of a salon',
+              message: treatmentRecordMessages.aBookingOfASalon,
             },
           ],
         ),
@@ -175,7 +176,7 @@ describe('CreateTreatmentRecordUseCase', () => {
       {
         field: 'services.0',
         rule: 'not_found',
-        message: 'Must name a service of the salon of the booking',
+        message: treatmentRecordMessages.aServiceOfSalonOfBooking,
       },
     ]
 
@@ -445,7 +446,7 @@ describe('ListTreatmentRecordsUseCase', () => {
   it('passes on a query the caller could not decode, and refuses one that breaks a rule', async () => {
     const undecoded = Result.error(
       DomainErrors.validation('Invalid query', [
-        { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_type', message: MADE_UP_MESSAGE },
       ]),
     )
     const dependencies = treatmentRecordDependencies()
@@ -487,7 +488,7 @@ describe('ListTreatmentRecordsUseCase', () => {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name a treatment record of the list',
+              message: treatmentRecordMessages.aTreatmentRecordOfList,
             },
           ],
         ),
@@ -613,7 +614,7 @@ describe('UpdateTreatmentRecordUseCase', () => {
       {
         field: 'materials.0.productId',
         rule: 'not_found',
-        message: 'Must name a product of the salon of the booking',
+        message: treatmentRecordMessages.aProductOfSalonOfBooking,
       },
     ]
 

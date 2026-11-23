@@ -234,7 +234,7 @@ describe('ListReviewsUseCase', () => {
         {
           field: 'cursor',
           rule: 'not_found',
-          message: 'Must name a review that is listed',
+          message: reviewMessages.aListedReview,
         },
       ]),
     })
@@ -424,7 +424,7 @@ describe('CreateReviewUseCase', () => {
       {
         field: 'salonId',
         rule: 'not_found',
-        message: 'Must name the salon of the booking',
+        message: reviewMessages.theSalonOfBooking,
       },
     ]
     const dependencies = reviewDependencies(
@@ -578,7 +578,7 @@ describe('UpdateReviewUseCase', () => {
       {
         field: 'staffRating',
         rule: 'custom',
-        message: 'Must be null when the review names no staff member',
+        message: reviewMessages.nullWithoutStaffMember,
       },
     ]
     const dependencies = reviewDependencies(

@@ -1,6 +1,9 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
-import { salesReportMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  ruleMessages,
+  salesReportMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -243,7 +246,7 @@ describe.each(reports)('$name', (report) => {
           {
             field: 'salonId',
             rule: 'not_found',
-            message: 'Must name a salon',
+            message: ruleMessages.aSalon,
           },
         ],
       },

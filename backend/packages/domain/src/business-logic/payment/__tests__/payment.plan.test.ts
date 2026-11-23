@@ -21,7 +21,7 @@ import {
   planRefund,
   refusalOfPayment,
 } from '..'
-import { NOT_A_CARD, paymentStatusOf } from '../_shared/plan'
+import { paymentStatusOf } from '../_shared/plan'
 
 /** What the sale of the fixtures charges. */
 const TOTAL = 12650
@@ -105,6 +105,10 @@ const plan = (
   paymentMethod: PaymentMethodOfPayment | null = card(),
   payments: readonly MoneyOfPayment[] = [],
 ) => planPayment(sale, payments, paymentMethod, request, origin)
+
+/** What a request is told that says something of a card for a payment by another kind. */
+const NOT_A_CARD =
+  'Must be null unless the payment method is a credit card or a debit card'
 
 /** The broken rules of a plan, as `field:rule`; empty for a planned payment. */
 const rulesOf = (
@@ -437,12 +441,6 @@ describe('planPayment', () => {
       expect(rulesOf(plan(payment({ cardLastFour: null }), cash()))).toEqual([
         'cardBrand:custom',
       ])
-    })
-
-    it('says what is wrong with the card in words', () => {
-      expect(NOT_A_CARD).toBe(
-        'Must be null unless the payment method is a credit card or a debit card',
-      )
     })
   })
 

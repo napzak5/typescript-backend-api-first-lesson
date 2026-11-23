@@ -13,6 +13,7 @@ import {
 } from '../../../__tests__/fixtures/customer-version-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -202,7 +203,7 @@ describe('GetCustomerHistoryUseCase', () => {
             {
               field: 'limit',
               rule: 'invalid_format',
-              message: 'Must be a number',
+              message: MADE_UP_MESSAGE,
             },
           ],
         ),

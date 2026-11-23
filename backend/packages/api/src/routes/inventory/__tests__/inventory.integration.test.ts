@@ -14,6 +14,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { InventoryRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { asc, eq } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -2439,8 +2440,14 @@ describe('Inventory API', () => {
 
       expect(outcomes).toEqual([
         { type: 'productNotFound' },
-        { type: 'lotNumberRefused', message: LOT_REQUIRED },
-        { type: 'lotNumberRefused', message: NO_LOT },
+        {
+          type: 'lotNumberRefused',
+          message: inventoryMessages.lotOfProductKeptByLots,
+        },
+        {
+          type: 'lotNumberRefused',
+          message: inventoryMessages.nullForProductNotKeptByLots,
+        },
       ])
     })
 
@@ -2601,7 +2608,10 @@ describe('Inventory API', () => {
         await repository().update(everySalon, idOf(id), { lotNumber: 'A' }),
       )
 
-      expect(outcome).toEqual({ type: 'lotNumberRefused', message: NO_LOT })
+      expect(outcome).toEqual({
+        type: 'lotNumberRefused',
+        message: inventoryMessages.nullForProductNotKeptByLots,
+      })
     })
 
     it('deletes a row within the reach and without stock, and says why it does not delete another', async () => {

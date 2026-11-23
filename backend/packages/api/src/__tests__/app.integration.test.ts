@@ -462,15 +462,6 @@ describe('the language of an error', () => {
       'Resource not found',
     ],
     [
-      'a mailed token that cannot be used, of which a use case writes in English alone',
-      (app) =>
-        request(app)
-          .post(`${AUTH}/reset-password/verify`)
-          .send({ token: 'no-token-that-was-mailed' }),
-      400,
-      'Validation failed',
-    ],
-    [
       'an address of mail that another salon has',
       (app, authorization) =>
         request(app)
@@ -737,6 +728,43 @@ describe('the language of an error', () => {
           'custom',
           'Must be within 366 days of startDate, both included',
           'startDate から、両端を含めて 366 日以内にしてください',
+        ],
+      ],
+    ],
+    [
+      'a mailed token that cannot be used, which a use case finds',
+      (app) =>
+        request(app)
+          .post(`${AUTH}/reset-password/verify`)
+          .send({ token: 'no-token-that-was-mailed' }),
+      [
+        'Invalid password reset token',
+        'パスワードの再設定のトークンが正しくありません',
+      ],
+      [
+        [
+          'token',
+          'invalid_token',
+          'The token is invalid or has expired',
+          'トークンが正しくないか、期限が切れています',
+        ],
+      ],
+    ],
+    [
+      'a sales report of a salon that is not there, which a use case finds',
+      (app, authorization) =>
+        request(app)
+          .get(
+            `${SALES_REPORTS}?salonId=${UNKNOWN_ID}&startDate=2026-01-01&endDate=2026-01-31`,
+          )
+          .set('Authorization', authorization),
+      ['Invalid sales report', '売上の集計の条件が正しくありません'],
+      [
+        [
+          'salonId',
+          'not_found',
+          'Must name a salon',
+          '存在するサロンを指定してください',
         ],
       ],
     ],

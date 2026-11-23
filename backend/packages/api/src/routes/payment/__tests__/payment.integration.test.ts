@@ -17,6 +17,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { PaymentRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
+import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { asc, eq } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -2829,7 +2830,7 @@ describe('Payments API', () => {
               {
                 field: 'paymentMethodId',
                 rule: 'not_found',
-                message: NOT_A_PAYMENT_METHOD,
+                message: paymentMessages.anActivePaymentMethodOfSalonOfSale,
               },
             ],
           },
@@ -2839,7 +2840,7 @@ describe('Payments API', () => {
               {
                 field: 'amount',
                 rule: 'too_big',
-                message: `Must not be more than what is left to pay (${TOTAL})`,
+                message: paymentMessages.notMoreThanLeftToPay(TOTAL),
               },
             ],
           },
@@ -2952,8 +2953,7 @@ describe('Payments API', () => {
               {
                 field: 'refundAmount',
                 rule: 'too_big',
-                message:
-                  'Must not be more than the amount of the payment (1000)',
+                message: paymentMessages.notMoreThanAmountOfPayment(1000),
               },
             ],
           },

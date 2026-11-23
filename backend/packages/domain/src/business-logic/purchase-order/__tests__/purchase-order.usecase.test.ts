@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -223,7 +224,7 @@ describe('ListPurchaseOrdersUseCase', () => {
   it('passes on a query the caller could not decode, and refuses one that breaks a rule', async () => {
     const undecoded = Result.error(
       DomainErrors.validation('Invalid query', [
-        { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_type', message: MADE_UP_MESSAGE },
       ]),
     )
     const dependencies = purchaseOrderDependencies()

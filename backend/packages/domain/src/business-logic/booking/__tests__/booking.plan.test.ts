@@ -1,3 +1,7 @@
+import {
+  bookingMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   actors,
@@ -554,7 +558,7 @@ describe('planBooking', () => {
           {
             field: 'services',
             rule: 'too_big',
-            message: 'The amounts of a booking must not exceed 2147483647',
+            message: bookingMessages.amountsWithinLimit(2147483647),
           },
         ],
       })
@@ -681,22 +685,22 @@ describe('planBooking', () => {
           {
             field: 'customerId',
             rule: 'not_found',
-            message: 'Must name a customer',
+            message: ruleMessages.aCustomer,
           },
           {
             field: 'staffId',
             rule: 'not_found',
-            message: 'Must name a staff member of the salon',
+            message: ruleMessages.aStaffMemberOfSalon,
           },
           {
             field: 'services.0.serviceId',
             rule: 'not_found',
-            message: 'Must name a service of the salon',
+            message: ruleMessages.aServiceOfSalon,
           },
           {
             field: 'services.0.staffId',
             rule: 'not_found',
-            message: 'Must name a staff member of the salon',
+            message: ruleMessages.aStaffMemberOfSalon,
           },
         ],
       })
@@ -708,7 +712,7 @@ describe('planBooking', () => {
       ).toEqual({
         type: 'invalid',
         issues: [
-          { field: 'salonId', rule: 'not_found', message: 'Must name a salon' },
+          { field: 'salonId', rule: 'not_found', message: ruleMessages.aSalon },
         ],
       })
     })

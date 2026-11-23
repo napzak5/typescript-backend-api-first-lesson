@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   authDependencies,
@@ -119,7 +120,7 @@ describe('the passwords that are refused as too easy to guess', () => {
           {
             field: 'password',
             rule: 'blocklisted',
-            message: expect.any(String),
+            message: authMessages.passwordGuessableWithEmail,
           },
         ],
       },

@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  ruleMessages,
   staffMessages,
   staffProfileMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -249,7 +250,7 @@ describe('ListStaffProfilesUseCase', () => {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a staff member',
+            message: ruleMessages.aStaffMember,
           },
         ],
       },

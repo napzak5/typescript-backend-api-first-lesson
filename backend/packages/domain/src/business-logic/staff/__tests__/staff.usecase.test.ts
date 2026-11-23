@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -263,7 +264,7 @@ describe('ListStaffUseCase', () => {
     const dependencies = staffDependencies()
     const undecodable = Result.error(
       DomainErrors.validation(staffMessages.invalidStaffSearch, [
-        { field: 'limit', rule: 'invalid_format', message: 'Not a number' },
+        { field: 'limit', rule: 'invalid_format', message: MADE_UP_MESSAGE },
       ]),
     )
 

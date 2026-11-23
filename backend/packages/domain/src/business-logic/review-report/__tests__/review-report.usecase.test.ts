@@ -6,7 +6,11 @@ import {
   CUSTOMER_ID,
   USER_ID,
 } from '../../../__tests__/fixtures/auth-fixtures'
-import { brokenRules, SALON_ID } from '../../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_MESSAGE,
+  SALON_ID,
+} from '../../../__tests__/fixtures/fixtures'
 import {
   apiReviewReport,
   dbReviewReport,
@@ -466,7 +470,7 @@ describe('ListReviewReportsUseCase', () => {
     const dependencies = reviewReportDependencies()
     const undecoded = Result.error(
       DomainErrors.validation(reviewReportMessages.invalidReviewReportSearch, [
-        { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_format', message: MADE_UP_MESSAGE },
       ]),
     )
 
@@ -546,7 +550,7 @@ describe('ListReviewReportsUseCase', () => {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a review report that is listed',
+            message: reviewReportMessages.aListedReviewReport,
           },
         ],
       ),

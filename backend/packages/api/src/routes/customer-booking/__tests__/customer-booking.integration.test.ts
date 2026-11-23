@@ -20,6 +20,7 @@ import {
   userIdSchema,
 } from '@beauty-salon-backend/domain'
 import { BookingRepository } from '@beauty-salon-backend/infrastructure'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { asc, eq } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -2704,7 +2705,7 @@ describe('Customer booking API', () => {
                 {
                   field: 'salonId',
                   rule: 'not_found',
-                  message: 'Must name a salon',
+                  message: ruleMessages.aSalon,
                 },
               ],
             },

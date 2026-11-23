@@ -5,6 +5,7 @@ import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
   dbSalon,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -88,7 +89,7 @@ const query = (value: Record<string, unknown> = {}) => Result.success(value)
 /** A query the API could not decode. */
 const undecodable = Result.error(
   DomainErrors.validation(inventoryMessages.invalidInventorySearch, [
-    { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
+    { field: 'limit', rule: 'invalid_format', message: MADE_UP_MESSAGE },
   ]),
 )
 
@@ -369,7 +370,7 @@ describe('CreateInventoryUseCase', () => {
       'a lot number that does not fit the product',
       {
         type: 'lotNumberRefused',
-        message: 'Must be null: the product is not kept by lots',
+        message: inventoryMessages.nullForProductNotKeptByLots,
       },
       { lotNumber: 'Must be null: the product is not kept by lots' },
       ['lotNumber:custom'],
@@ -556,7 +557,7 @@ describe('UpdateInventoryUseCase', () => {
     const result = await update(
       updating({
         type: 'lotNumberRefused',
-        message: 'Must name the lot: the product is kept by lots',
+        message: inventoryMessages.lotOfProductKeptByLots,
       }),
       actors.admin,
       INVENTORY_ID,

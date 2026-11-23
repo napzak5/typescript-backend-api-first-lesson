@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { NOW, USER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -576,7 +577,7 @@ describe('planCustomerMove', () => {
           {
             field: 'staffId',
             rule: 'not_found',
-            message: 'Must name a staff member of the salon',
+            message: ruleMessages.aStaffMemberOfSalon,
           },
         ],
       })

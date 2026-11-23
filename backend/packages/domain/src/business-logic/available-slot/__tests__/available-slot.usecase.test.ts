@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { availableSlotMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  availableSlotMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -20,6 +23,7 @@ import {
 } from '../../../__tests__/fixtures/booking-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -513,7 +517,7 @@ describe('ListAvailableSlotsUseCase', () => {
             {
               field: 'limit',
               rule: 'invalid_format',
-              message: 'Must be a number',
+              message: MADE_UP_MESSAGE,
             },
           ],
         ),
@@ -596,7 +600,7 @@ describe('ListAvailableSlotsUseCase', () => {
       })
       expect(result).toMatchObject({
         error: {
-          issues: [{ message: 'Must name a staff member of the salon' }],
+          issues: [{ message: ruleMessages.aStaffMemberOfSalon }],
         },
       })
     })
@@ -614,8 +618,8 @@ describe('ListAvailableSlotsUseCase', () => {
       expect(result).toMatchObject({
         error: {
           issues: [
-            { message: 'Must name a staff member of the salon' },
-            { message: 'Must name a service of the salon' },
+            { message: ruleMessages.aStaffMemberOfSalon },
+            { message: ruleMessages.aServiceOfSalon },
           ],
         },
       })
@@ -975,8 +979,8 @@ describe('CheckAvailableSlotUseCase', () => {
       expect(result).toMatchObject({
         error: {
           issues: [
-            { message: 'Must name a staff member of the salon' },
-            { message: 'Must name a service of the salon' },
+            { message: ruleMessages.aStaffMemberOfSalon },
+            { message: ruleMessages.aServiceOfSalon },
           ],
         },
       })

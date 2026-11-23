@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import { OTHER_SALON_ID, SALON_ID } from '../../../__tests__/fixtures/fixtures'
@@ -10,23 +12,23 @@ import {
 import { lastExpiringDayOf } from '../_shared/expiry'
 
 describe('lotNumberRefusal', () => {
-  it.each<[string, boolean, string | null, string | null]>([
+  it.each<[string, boolean, string | null, LocalizedText | null]>([
     ['a lot of a product kept by lots', true, 'LOT-1', null],
     ['no lot of a product that is not', false, null, null],
     [
       'no lot of a product kept by lots',
       true,
       null,
-      'Must name the lot: the product is kept by lots',
+      inventoryMessages.lotOfProductKeptByLots,
     ],
     [
       'a lot of a product that is not',
       false,
       'LOT-1',
-      'Must be null: the product is not kept by lots',
+      inventoryMessages.nullForProductNotKeptByLots,
     ],
   ])('answers %s', (_case, requiresLotTracking, lotNumber, refusal) => {
-    expect(lotNumberRefusal(requiresLotTracking, lotNumber)).toBe(refusal)
+    expect(lotNumberRefusal(requiresLotTracking, lotNumber)).toEqual(refusal)
   })
 })
 

@@ -1,10 +1,14 @@
 import type { OrderStatusType } from '@beauty-salon-backend/generated'
 import { Result } from '@beauty-salon-backend/utility'
-import { purchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  purchaseOrderMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -319,12 +323,12 @@ describe('ReceivePurchaseOrderUseCase', () => {
             {
               field: 'items.0.inventoryId',
               rule: 'not_found',
-              message: 'Must name a stock row of an item of the order',
+              message: purchaseOrderMessages.aStockRowOfItemOfOrder,
             },
             {
               field: 'items.2.quantity',
               rule: 'too_big',
-              message: 'Must be at most 2.5, the quantity the item orders',
+              message: purchaseOrderMessages.atMostOrdered(2.5),
             },
           ],
         ),
@@ -456,7 +460,7 @@ describe('ListReorderSuggestionsUseCase', () => {
           {
             field: 'limit',
             rule: 'invalid_format',
-            message: 'Must be a number',
+            message: MADE_UP_MESSAGE,
           },
         ],
       ),
@@ -503,7 +507,7 @@ describe('ListReorderSuggestionsUseCase', () => {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name a product of the salon',
+              message: ruleMessages.aProductOfSalon,
             },
           ],
         ),

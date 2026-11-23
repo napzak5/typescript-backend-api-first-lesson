@@ -1,3 +1,4 @@
+import { serviceMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { nthServiceId } from '../../../__tests__/fixtures/service-fixtures'
 import { serviceRuleIssues } from '..'
@@ -57,7 +58,11 @@ describe('serviceRuleIssues', () => {
     })
 
     expect(issues).toEqual([
-      { field: 'discountPrice', rule: 'too_big', message: expect.any(String) },
+      {
+        field: 'discountPrice',
+        rule: 'too_big',
+        message: serviceMessages.notGreaterThanPrice,
+      },
     ])
   })
 

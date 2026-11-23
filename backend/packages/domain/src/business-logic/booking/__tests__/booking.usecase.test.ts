@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  bookingMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -18,6 +21,7 @@ import {
 } from '../../../__tests__/fixtures/booking-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -269,12 +273,12 @@ describe('CreateBookingUseCase', () => {
       {
         field: 'customerId',
         rule: 'not_found',
-        message: 'Must name a customer',
+        message: ruleMessages.aCustomer,
       },
       {
         field: 'services.0.serviceId',
         rule: 'not_found',
-        message: 'Must name a service of the salon',
+        message: ruleMessages.aServiceOfSalon,
       },
     ]
     const dependencies = bookingDependencies(
@@ -739,7 +743,7 @@ describe('ListBookingsUseCase', () => {
     const dependencies = bookingDependencies()
     const undecodable = Result.error(
       DomainErrors.validation(bookingMessages.invalidBookingSearch, [
-        { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_type', message: MADE_UP_MESSAGE },
       ]),
     )
 
@@ -798,7 +802,7 @@ describe('ListBookingsUseCase', () => {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a booking',
+            message: bookingMessages.aBooking,
           },
         ],
       },

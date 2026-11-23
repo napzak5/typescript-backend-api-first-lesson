@@ -2,7 +2,11 @@ import { Result } from '@beauty-salon-backend/utility'
 import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
-import { brokenRules, SALON_ID } from '../../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_MESSAGE,
+  SALON_ID,
+} from '../../../__tests__/fixtures/fixtures'
 import {
   dbInventoryTransaction,
   INVENTORY_ID,
@@ -223,7 +227,7 @@ describe('RecordInventoryMovementUseCase', () => {
           {
             field: 'inventoryId',
             rule: 'not_found',
-            message: 'Must name a stock row',
+            message: inventoryMessages.aStockRow,
           },
         ]),
       ),
@@ -421,7 +425,7 @@ describe('ListInventoryMovementsUseCase', () => {
     const dependencies = inventoryDependencies()
     const undecodable = Result.error(
       DomainErrors.validation(inventoryMessages.invalidStockMovementSearch, [
-        { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_format', message: MADE_UP_MESSAGE },
       ]),
     )
 
@@ -499,7 +503,7 @@ describe('ListInventoryMovementsUseCase', () => {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a stock movement of the stock row',
+            message: inventoryMessages.aStockMovementOfStockRow,
           },
         ]),
       ),

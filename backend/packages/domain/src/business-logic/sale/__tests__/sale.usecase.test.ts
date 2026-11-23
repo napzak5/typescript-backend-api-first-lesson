@@ -1,10 +1,14 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  ruleMessages,
+  saleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { BOOKING_ID } from '../../../__tests__/fixtures/booking-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -236,12 +240,12 @@ describe('CreateSaleUseCase', () => {
       {
         field: 'customerId',
         rule: 'not_found',
-        message: 'Must name a customer',
+        message: ruleMessages.aCustomer,
       },
       {
         field: 'details.0.itemId',
         rule: 'not_found',
-        message: 'Must name a service of the salon',
+        message: ruleMessages.aServiceOfSalon,
       },
     ]
     const dependencies = saleDependencies(creating({ type: 'invalid', issues }))
@@ -670,7 +674,7 @@ describe('ListSalesUseCase', () => {
     const dependencies = saleDependencies()
     const undecodable = Result.error(
       DomainErrors.validation(saleMessages.invalidSaleSearch, [
-        { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_type', message: MADE_UP_MESSAGE },
       ]),
     )
 
@@ -726,7 +730,7 @@ describe('ListSalesUseCase', () => {
         type: 'validation',
         message: saleMessages.invalidSaleSearch,
         issues: [
-          { field: 'cursor', rule: 'not_found', message: 'Must name a sale' },
+          { field: 'cursor', rule: 'not_found', message: saleMessages.aSale },
         ],
       },
     })
@@ -1038,12 +1042,12 @@ describe('UpdateSaleUseCase', () => {
       {
         field: 'customerId',
         rule: 'not_found',
-        message: 'Must name the customer of the booking of the sale',
+        message: saleMessages.theCustomerOfBookingOfSale,
       },
       {
         field: 'pointsUsed',
         rule: 'custom',
-        message: 'Must be null for a sale without a customer',
+        message: saleMessages.noPointsWithoutCustomer,
       },
     ]
 

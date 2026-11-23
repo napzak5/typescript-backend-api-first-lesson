@@ -1,3 +1,4 @@
+import { customerPreferencesMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   AVOIDED_STAFF_ID,
@@ -13,7 +14,7 @@ const avoided = [
   {
     field: 'preferredStaffId',
     rule: 'avoided',
-    message: 'Must not be a staff member the customer avoids',
+    message: customerPreferencesMessages.notAvoidedStaffMember,
   },
 ]
 

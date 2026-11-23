@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { serviceMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -200,7 +201,7 @@ const changeRefusals: [string, ServiceChangeRefusal, string[]][] = [
         {
           field: 'discountPrice',
           rule: 'too_big',
-          message: 'Must not be greater than the price',
+          message: serviceMessages.notGreaterThanPrice,
         },
       ],
     },
@@ -214,12 +215,12 @@ const changeRefusals: [string, ServiceChangeRefusal, string[]][] = [
         {
           field: 'discountPrice',
           rule: 'too_big',
-          message: 'Must not be greater than the price',
+          message: serviceMessages.notGreaterThanPrice,
         },
         {
           field: 'packageServiceIds',
           rule: 'too_small',
-          message: 'A package must name at least 2 services',
+          message: serviceMessages.atLeastPackageMembers(2),
         },
       ],
     },
@@ -233,7 +234,7 @@ const changeRefusals: [string, ServiceChangeRefusal, string[]][] = [
         {
           field: 'packageServiceIds',
           rule: 'not_allowed',
-          message: 'Must be empty unless the service is a package',
+          message: serviceMessages.emptyUnlessPackage,
         },
       ],
     },
