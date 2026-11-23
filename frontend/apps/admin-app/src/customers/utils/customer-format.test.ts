@@ -146,6 +146,7 @@ describe('contactsNameOf', () => {
 describe('rateNameOf and countNameOf', () => {
   it.each<[number, string]>([
     [12.5, '12.5%'],
+    [33.333, '33.3%'],
     [0, '0%'],
     [100, '100%'],
   ])('should write the share %d as %s', (rate, name) => {

@@ -67,7 +67,7 @@ export const shortAmountOf = (
 export const currencyNameOf = (currency: string): LocalizedText =>
   inEachLanguage(
     (language) =>
-      displayNamesIn(language, { type: 'currency', fallback: 'code' }).of(
+      displayNamesIn(language, { type: 'currency', fallback: 'none' }).of(
         currency,
       ) ?? currency,
   )

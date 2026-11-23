@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hundredthsOf } from './quantity'
+import { hundredthsOf, quantityOf } from './quantity'
 
 describe('hundredthsOf', () => {
   it.each<[number, number]>([
@@ -10,4 +10,19 @@ describe('hundredthsOf', () => {
   ])('should give %d in hundredths as %d', (quantity, hundredths) => {
     expect(hundredthsOf(quantity)).toBe(hundredths)
   })
+})
+
+describe('quantityOf', () => {
+  it.each<[number, string]>([
+    [3, '3'],
+    [0.29, '0.29'],
+    [1234.25, '1,234.25'],
+    [2.125, '2.13'],
+  ])(
+    'should write %d with the separators of the language and two decimals at most',
+    (quantity, written) => {
+      // Act, Assert
+      expect(quantityOf(quantity)).toEqual({ en: written, ja: written })
+    },
+  )
 })
