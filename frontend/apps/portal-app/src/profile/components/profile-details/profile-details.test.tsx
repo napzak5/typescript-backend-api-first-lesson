@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as profileDetailsStories from './profile-details.stories'
 
 const stories = composeStories(profileDetailsStories)
@@ -101,5 +102,52 @@ describe('ProfileDetails', () => {
     expect(shownAs('好みのメニュー')).toHaveTextContent(
       'カット、カラー、パーマ、トリートメント、スパ、スタイリング、エクステンション、その他',
     )
+  })
+})
+
+describe('ProfileDetails on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name what it shows in English, and write the day and the choices so; what the customer wrote stays as written', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Complete.run()
+
+    // Assert
+    expect(details()).toEqual({
+      Name: '山田 花子',
+      'Phonetic name': 'ヤマダ ハナコ',
+      'Email address': 'hanako.yamada@example.com',
+      'Phone number': '090-5550-0199',
+      'Alternative phone number': '03-5550-0142',
+      Address: '150-0001東京都 渋谷区 神宮前 1-2-3こもれびハイツ 302',
+      'Date of birth': 'May 15, 1990',
+      Gender: 'Female',
+      Occupation: 'デザイナー',
+      'Favorite services': 'Cut, Color',
+      'Notes for the salon': 'オーガニックの製品を使ってほしいです。',
+      'Messages you receive': 'Messages by email, Messages by SMS',
+    })
+  })
+
+  it('should say in English that a value is missing, and that no contact is received', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.OnlyWhoTheyAre.run()
+
+    // Assert
+    expect(details()).toMatchObject({
+      'Phonetic name': 'Not recorded',
+      Address: 'Not recorded',
+      'Date of birth': 'Not recorded',
+      'Favorite services': 'None',
+      'Messages you receive': 'None',
+    })
   })
 })

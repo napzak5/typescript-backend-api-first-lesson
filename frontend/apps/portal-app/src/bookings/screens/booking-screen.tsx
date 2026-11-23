@@ -79,7 +79,8 @@ type OfServiceProps = {
 const ProfileStep = () => {
   const say = useSay()
   const queryClient = useQueryClient()
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
+  const said = useSaidForm(says.message, says.errors)
   const creation = useMutation({
     mutationFn: createOwnProfile,
     onSuccess: (outcome) => {
@@ -106,7 +107,7 @@ const ProfileStep = () => {
       <p>{say(portalBookingMessages.profile.description)}</p>
       <Form
         submitLabel={say(portalBookingMessages.profile.submit)}
-        message={says.message}
+        message={said.message}
         errors={says.errors}
         pending={creation.isPending}
         onSubmit={submit}
@@ -116,14 +117,14 @@ const ProfileStep = () => {
           name='lastName'
           autoComplete='family-name'
           required
-          error={says.errors['lastName']}
+          error={said.errors['lastName']}
         />
         <TextField
           label={say(controls.firstName)}
           name='firstName'
           autoComplete='given-name'
           required
-          error={says.errors['firstName']}
+          error={said.errors['firstName']}
         />
         <TextField
           label={say(controls.phoneNumber)}
@@ -132,7 +133,7 @@ const ProfileStep = () => {
           autoComplete='tel'
           required
           description={say(controls.phoneNumberDescription)}
-          error={says.errors['phoneNumber']}
+          error={said.errors['phoneNumber']}
         />
         <Checkbox label={say(controls.allowEmail)} name='allowEmail' />
         <Checkbox label={say(controls.allowSms)} name='allowSms' />

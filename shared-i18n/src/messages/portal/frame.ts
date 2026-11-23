@@ -3,7 +3,8 @@ import { text } from '../../languages/localized-text'
 /**
  * What the frame of the portal says: the links of the header, the ways on
  * under the sign-in form, and the screens of the security of an account,
- * which the portal puts below the page of the customer.
+ * which the portal puts below the page of the customer; and what the
+ * screens below that page share.
  */
 export const portalFrameMessages = {
   /** The links of the header of a customer */
@@ -32,6 +33,9 @@ export const portalFrameMessages = {
       en: 'Sign in to set up two-factor authentication.',
       ja: '2 要素認証を設定するには、サインインしてください。',
     }),
-    backToMyPage: text({ en: 'Back to my page', ja: 'マイページへ戻る' }),
   },
+  /** Beside the title of a screen below the page of the customer: the way back to it */
+  backToMyPage: text({ en: 'Back to my page', ja: 'マイページへ戻る' }),
+  /** The button of a form that changes what there is */
+  saveChanges: text({ en: 'Save the changes', ja: '変更を保存する' }),
 }

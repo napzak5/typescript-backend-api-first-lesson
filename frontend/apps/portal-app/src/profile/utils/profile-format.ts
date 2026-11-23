@@ -3,22 +3,15 @@ import type {
   ModelsCustomerProfileResponse,
   ModelsHairThicknessType,
   ModelsHairType,
-  ModelsMembershipTierType,
   ModelsScalpConditionType,
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
 import { GENDERS, SERVICE_CATEGORIES } from '@beauty-salon-frontend/fields'
-import { type ChoiceOption, inJapanese } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
-import * as formats from '@beauty-salon-shared/i18n/formats'
+import { portalProfileMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 
-const TIER_NAMES: Record<ModelsMembershipTierType, LocalizedText> =
-  termMessages.membershipTier
-
-/** The rank of a member, in a word. */
-export const tierNameOf = (tier: ModelsMembershipTierType): string =>
-  inJapanese(TIER_NAMES[tier])
+const { details, membership } = portalProfileMessages
 
 const GENDER_NAMES: Record<ModelsCustomerGenderType, LocalizedText> =
   termMessages.gender
@@ -26,17 +19,18 @@ const GENDER_NAMES: Record<ModelsCustomerGenderType, LocalizedText> =
 const CATEGORY_NAMES: Record<ModelsServiceCategoryType, LocalizedText> =
   termMessages.serviceCategory
 
+/** A choice of the form: the value it sends, and its name, which the form says */
+export type NamedChoice = { value: string; label: LocalizedText }
+
 /** What the form offers as a gender, in the order of the contract. */
-export const GENDER_OPTIONS: readonly ChoiceOption[] = GENDERS.map(
-  (gender) => ({ value: gender, label: inJapanese(GENDER_NAMES[gender]) }),
-)
+export const GENDER_CHOICES: readonly NamedChoice[] = GENDERS.map((gender) => ({
+  value: gender,
+  label: GENDER_NAMES[gender],
+}))
 
 /** The kinds of service the form offers, in the order of the contract. */
-export const CATEGORY_OPTIONS: readonly ChoiceOption[] = SERVICE_CATEGORIES.map(
-  (category) => ({
-    value: category,
-    label: inJapanese(CATEGORY_NAMES[category]),
-  }),
+export const CATEGORY_CHOICES: readonly NamedChoice[] = SERVICE_CATEGORIES.map(
+  (category) => ({ value: category, label: CATEGORY_NAMES[category] }),
 )
 
 const HAIR_TYPE_NAMES: Record<ModelsHairType, LocalizedText> =
@@ -47,10 +41,6 @@ const HAIR_THICKNESS_NAMES: Record<ModelsHairThicknessType, LocalizedText> =
 
 const SCALP_CONDITION_NAMES: Record<ModelsScalpConditionType, LocalizedText> =
   termMessages.scalpCondition
-
-/** A day of the calendar, as it is written: 「2026年11月9日」. It is read in no time zone. */
-export const calendarDayOf = (date: string): string =>
-  inJapanese(formats.dayOf(date))
 
 /**
  * The calendar date it is where the browser is: `2026-11-19`. It is the
@@ -63,14 +53,6 @@ export const localDateOf = (moment: Date): string =>
     month: '2-digit',
     day: '2-digit',
   }).format(moment)
-
-/** A number of points: 「2,500 ポイント」. */
-export const pointsOf = (points: number): string =>
-  `${inJapanese(formats.numberOf(points))} ポイント`
-
-/** How often a customer came: 「12 回」. */
-export const visitsOf = (count: number): string =>
-  `${inJapanese(formats.numberOf(count))} 回`
 
 /** The name of a customer, the family name first. */
 export const fullNameOf = ({
@@ -105,25 +87,22 @@ export const addressLinesOf = ({
 }: Pick<
   ModelsCustomerProfileResponse,
   'postalCode' | 'prefecture' | 'city' | 'address' | 'building'
->): string[] => {
+>): (string | LocalizedText)[] => {
   const street = [prefecture, city, address].filter((part) => part !== null)
 
   return [
-    ...(postalCode === null ? [] : [`〒${postalCode}`]),
+    ...(postalCode === null ? [] : [details.postalCode(postalCode)]),
     ...(street.length === 0 ? [] : [street.join(' ')]),
     ...(building === null ? [] : [building]),
   ]
 }
 
-export const genderNameOf = (gender: ModelsCustomerGenderType): string =>
-  inJapanese(GENDER_NAMES[gender])
-
 /** The kinds of service a customer likes, in the order the form offers them. */
 export const categoryNamesOf = (
   categories: readonly ModelsServiceCategoryType[],
-): string[] =>
+): LocalizedText[] =>
   SERVICE_CATEGORIES.filter((category) => categories.includes(category)).map(
-    (category) => inJapanese(CATEGORY_NAMES[category]),
+    (category) => CATEGORY_NAMES[category],
   )
 
 /** The ways a customer lets a salon reach them: those that are allowed, by name. */
@@ -134,10 +113,10 @@ export const contactsOf = ({
 }: Pick<
   ModelsCustomerProfileResponse,
   'allowEmail' | 'allowSms' | 'allowMarketing'
->): string[] => [
-  ...(allowEmail ? ['メールでの連絡'] : []),
-  ...(allowSms ? ['SMS での連絡'] : []),
-  ...(allowMarketing ? ['キャンペーンなどのお知らせ'] : []),
+>): LocalizedText[] => [
+  ...(allowEmail ? [details.byEmail] : []),
+  ...(allowSms ? [details.bySms] : []),
+  ...(allowMarketing ? [details.marketing] : []),
 ]
 
 /**
@@ -152,24 +131,19 @@ export const hairOf = ({
 }: Pick<
   ModelsCustomerProfileResponse,
   'hairType' | 'hairThickness' | 'scalpCondition'
->): { term: string; description: string | null }[] => [
+>): { term: LocalizedText; description: LocalizedText | null }[] => [
   {
-    term: '髪質',
-    description:
-      hairType === null ? null : inJapanese(HAIR_TYPE_NAMES[hairType]),
+    term: membership.hairType,
+    description: hairType === null ? null : HAIR_TYPE_NAMES[hairType],
   },
   {
-    term: '髪の太さ',
+    term: membership.hairThickness,
     description:
-      hairThickness === null
-        ? null
-        : inJapanese(HAIR_THICKNESS_NAMES[hairThickness]),
+      hairThickness === null ? null : HAIR_THICKNESS_NAMES[hairThickness],
   },
   {
-    term: '頭皮の状態',
+    term: membership.scalpCondition,
     description:
-      scalpCondition === null
-        ? null
-        : inJapanese(SCALP_CONDITION_NAMES[scalpCondition]),
+      scalpCondition === null ? null : SCALP_CONDITION_NAMES[scalpCondition],
   },
 ]

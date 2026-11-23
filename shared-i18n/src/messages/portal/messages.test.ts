@@ -5,6 +5,7 @@ import * as catalogues from './index'
 import {
   portalAccountMessages,
   portalBookingMessages,
+  portalProfileMessages,
   portalSalonMessages,
 } from './index'
 
@@ -14,6 +15,7 @@ const { invitation, passwordReset, verificationSent } = portalAccountMessages
 const { booking, changes, detail, form, list, summary } = portalBookingMessages
 const { about, hours, menu, results, reviews, searchForm, staff } =
   portalSalonMessages
+const { details, email, membership } = portalProfileMessages
 
 /** An address of mail, which stands in every language as it is */
 const EMAIL = 'hanako@example.com'
@@ -270,6 +272,37 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
       ja: '「丁寧なカット」（11月24日（火） 投稿）のレビューを通報する',
     },
   ],
+  [
+    'portalProfileMessages.email.unchangeable',
+    email.unchangeable(EMAIL),
+    {
+      en: 'Your email address (hanako@example.com) cannot be changed here. To change it, contact the salon.',
+      ja: 'メールアドレス（hanako@example.com）は、ここでは変更できません。変更するときは、サロンにお問い合わせください。',
+    },
+  ],
+  [
+    'portalProfileMessages.details.postalCode',
+    details.postalCode('150-0001'),
+    { en: '150-0001', ja: '〒150-0001' },
+  ],
+  [
+    'portalProfileMessages.details.listed',
+    details.listed([details.byEmail, details.bySms]),
+    {
+      en: 'Messages by email, Messages by SMS',
+      ja: 'メールでの連絡、SMS での連絡',
+    },
+  ],
+  [
+    'portalProfileMessages.membership.pointsOf',
+    membership.pointsOf(2500),
+    { en: '2,500 points', ja: '2,500 ポイント' },
+  ],
+  [
+    'portalProfileMessages.membership.visitsOf',
+    membership.visitsOf(12),
+    { en: '12 visits', ja: '12 回' },
+  ],
 ]
 
 /** A name that stands inside a sentence of another catalogue: it begins as it stands there */
@@ -384,6 +417,8 @@ describe('the messages of the portal', () => {
       { en: '1 salon found', ja: '1 件のサロンが見つかりました' },
     ],
     ['star', reviews.ratingOf(1), { en: '1 star', ja: '評価 1' }],
+    ['point', membership.pointsOf(1), { en: '1 point', ja: '1 ポイント' }],
+    ['visit', membership.visitsOf(1), { en: '1 visit', ja: '1 回' }],
     ['review', reviews.countOf(1), { en: '1 review', ja: '1 件' }],
     [
       'person who found a review helpful',
@@ -424,6 +459,16 @@ describe('the messages of the portal', () => {
       'the reviews',
       reviews.countOf(1234),
       { en: '1,234 reviews', ja: '1,234 件' },
+    ],
+    [
+      'the points',
+      membership.pointsOf(1234567),
+      { en: '1,234,567 points', ja: '1,234,567 ポイント' },
+    ],
+    [
+      'the visits',
+      membership.visitsOf(1024),
+      { en: '1,024 visits', ja: '1,024 回' },
     ],
     [
       'the people who found a review helpful',

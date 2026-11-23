@@ -1,4 +1,5 @@
 import { applications } from '@beauty-salon-frontend/brand'
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import { testApi } from '@beauty-salon-frontend/testing/api'
@@ -979,6 +980,207 @@ describe('the page and the profile of a customer, against the API', () => {
       expect(await text('名')).toHaveValue('華子')
       expect(address()).toBe('/mypage/profile')
       expect(await storedProfile(NEWCOMER)).toMatchObject({ firstName: '花子' })
+    })
+  })
+})
+
+describe('the page and the profile of a customer on a page in English, against the API', () => {
+  /** A day of the calendar, as a page in English writes it. */
+  const dayInEnglish = (date: string | null): string =>
+    date === null
+      ? 'No visits yet'
+      : new Intl.DateTimeFormat('en-US', {
+          dateStyle: 'long',
+          timeZone: 'UTC',
+        }).format(new Date(`${date}T00:00:00Z`))
+
+  const saveInEnglish = () =>
+    screen.getByRole('button', { name: 'Save the changes' })
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it.each([
+    ['/mypage', 'Sign in to see your page.'],
+    ['/mypage/profile', 'Sign in to register or change your details.'],
+  ])(
+    'should ask in English somebody who is not signed in at %s to sign in',
+    async (path, notice) => {
+      // Act
+      renderAt(path)
+
+      // Assert
+      expect(await screen.findByText(notice)).toBeVisible()
+    },
+  )
+
+  it('should say in English what the salons keep of the member and what the customer said, and where the page leads', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    const stored = await storedProfile(CUSTOMER)
+
+    // Act
+    renderAt('/mypage')
+
+    // Assert
+    expect(detailsIn(await region('Membership'))).toEqual({
+      'Membership rank': 'Gold',
+      Points: '2,500 points',
+      Visits: '2 visits',
+      'First visit': dayInEnglish(stored.firstVisitDate),
+      'Last visit': dayInEnglish(stored.lastVisitDate),
+      'Referral code': 'Not issued',
+      'Hair type': 'Not recorded',
+      'Hair thickness': 'Not recorded',
+      'Scalp condition': 'Not recorded',
+    })
+    const details = await region('Your details')
+    expect(detailsIn(details)).toEqual({
+      Name: YUKI.name,
+      'Phonetic name': 'タナカ ユキ',
+      'Email address': CUSTOMER,
+      'Phone number': '+81-90-1234-5678',
+      'Alternative phone number': 'Not recorded',
+      Address: '153-0063Tokyo Meguro-ku 7-8-9 MeguroMeguro Heights 301',
+      'Date of birth': 'May 15, 1990',
+      Gender: 'Female',
+      Occupation: 'Designer',
+      'Favorite services': 'Cut, Color',
+      'Notes for the salon': 'Prefers organic products',
+      'Messages you receive':
+        'Messages by email, Messages by SMS, News such as campaigns',
+    })
+    expect(document.title).toBe(`My page | ${TITLE}`)
+    expect(
+      within(details).getByRole('link', { name: 'Change your details' }),
+    ).toHaveAttribute('href', '/mypage/profile')
+    expect(
+      within(await region('Reviews')).getByRole('link', {
+        name: 'See your reviews',
+      }),
+    ).toHaveAttribute('href', '/mypage/reviews')
+    expect(
+      within(await region('Account security')).getByRole('link', {
+        name: 'Check the security of your account',
+      }),
+    ).toHaveAttribute('href', '/mypage/security')
+  })
+
+  it('should say in English that the details could not be read', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    await takeAway('customers')
+
+    // Act
+    renderAt('/mypage/profile')
+
+    // Assert
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load your details. Check your connection and try again.',
+    )
+    await giveBack('customers')
+  })
+
+  it('should say in English at its control what cannot be right, and that the details were changed', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    renderAt('/mypage/profile')
+    const user = userEvent.setup()
+    await screen.findByRole('button', { name: 'Save the changes' })
+    expect(document.title).toBe(`Your details | ${TITLE}`)
+    expect(
+      screen.getByRole('link', { name: 'Back to my page' }),
+    ).toHaveAttribute('href', '/mypage')
+    await user.clear(await text('First name'))
+    await user.type(await text('Postal code'), '-0000')
+
+    // Act
+    await user.click(saveInEnglish())
+
+    // Assert
+    expect(await text('First name')).toHaveFocus()
+    expect(await text('First name')).toHaveAccessibleDescription(
+      'Enter the first name.',
+    )
+    expect(await text('Postal code')).toHaveAccessibleDescription(
+      'Enter up to 10 characters.',
+    )
+
+    // Act
+    await user.type(await text('First name'), 'Yuki')
+    await user.clear(await text('Postal code'))
+    await user.type(await text('Postal code'), '153-0063')
+    await user.clear(await text('Occupation'))
+    await user.type(await text('Occupation'), 'Illustrator')
+    await user.click(saveInEnglish())
+
+    // Assert
+    expect(await heading('My page')).toHaveFocus()
+    expect(statusMessages()).toContain('Your details were changed.')
+    expect(await storedProfile(CUSTOMER)).toMatchObject({
+      firstName: 'Yuki',
+      occupation: 'Illustrator',
+    })
+  })
+
+  it('should say in English to an account that has no profile that there is none, and register one', async () => {
+    // Arrange
+    await registerNewcomer()
+    await signedInAs(NEWCOMER, NEWCOMER_PASSWORD)
+    renderAt('/mypage')
+    const user = userEvent.setup()
+    expect(
+      await screen.findByText('Your details are not registered yet'),
+    ).toBeVisible()
+    expect(
+      screen.getByText(
+        'Register your name and phone number to book a salon. Your membership is shown here too.',
+      ),
+    ).toBeVisible()
+
+    // Act
+    await user.click(
+      screen.getByRole('link', { name: 'Register your details' }),
+    )
+
+    // Assert
+    expect(await heading('Your details')).toHaveFocus()
+    expect(
+      screen.getByText(
+        'Your name and phone number are needed to book a salon. You can register the rest later.',
+      ),
+    ).toBeVisible()
+
+    // Act
+    await user.click(await screen.findByRole('button', { name: 'Register' }))
+
+    // Assert
+    expect(await text('Last name')).toHaveFocus()
+    expect(await text('Last name')).toHaveAccessibleDescription(
+      'Enter the last name.',
+    )
+
+    // Act
+    await user.type(await text('Last name'), 'Yamada')
+    await user.type(await text('First name'), 'Hanako')
+    await user.type(await text('Phone number'), '090-5550-0199')
+    await user.click(screen.getByRole('button', { name: 'Register' }))
+
+    // Assert
+    expect(
+      await screen.findByText('Your details were registered.'),
+    ).toBeVisible()
+    expect(await storedProfile(NEWCOMER)).toMatchObject({
+      lastName: 'Yamada',
+      phoneNumber: '090-5550-0199',
     })
   })
 })

@@ -27,17 +27,19 @@ import {
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
-  errorsInJapanese,
   type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalProfileMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { match } from 'ts-pattern'
 import type { ProfileCreation, ProfileUpdate } from '../api/profile-api'
+
+/** What a form of a profile read: the value to send, or what to say at its controls */
+type ProfileRead<Value> = FormRead<Value, FormErrors<LocalizedText>>
 
 /** The text of a control, without the spaces around it: a profile is read so, every control of it. */
 const trimmedTextOf = (values: FormData, name: string): string =>
@@ -50,14 +52,14 @@ const trimmedTextOf = (values: FormData, name: string): string =>
  */
 export const readProfile = (
   values: FormData,
-): FormRead<ModelsCustomerProfileCreateRequest> => {
+): ProfileRead<ModelsCustomerProfileCreateRequest> => {
   const lastName = trimmedTextOf(values, 'lastName')
   const firstName = trimmedTextOf(values, 'firstName')
   const phoneNumber = trimmedTextOf(values, 'phoneNumber')
-  const errors: FormErrors = {
-    lastName: inJapaneseIfAny(lastNameError(lastName)),
-    firstName: inJapaneseIfAny(firstNameError(firstName)),
-    phoneNumber: inJapaneseIfAny(phoneError(phoneNumber)),
+  const errors: FormErrors<LocalizedText> = {
+    lastName: lastNameError(lastName),
+    firstName: firstNameError(firstName),
+    phoneNumber: phoneError(phoneNumber),
   }
 
   return Object.values(errors).some((error) => error !== undefined)
@@ -95,7 +97,7 @@ export const readProfile = (
 export const readWholeProfile = (
   values: FormData,
   today: string,
-): FormRead<ModelsCustomerProfileCreateRequest> => {
+): ProfileRead<ModelsCustomerProfileCreateRequest> => {
   const lastName = trimmedTextOf(values, 'lastName')
   const firstName = trimmedTextOf(values, 'firstName')
   const phoneNumber = trimmedTextOf(values, 'phoneNumber')
@@ -104,16 +106,14 @@ export const readWholeProfile = (
   const alternativePhone = optional('alternativePhone')
   const birthDate = optional('birthDate')
   const gender = choiceOf(GENDERS, trimmedTextOf(values, 'gender'))
-  const errors: FormErrors = {
-    lastName: inJapaneseIfAny(lastNameError(lastName)),
-    firstName: inJapaneseIfAny(firstNameError(firstName)),
-    phoneNumber: inJapaneseIfAny(phoneError(phoneNumber)),
-    alternativePhone: inJapaneseIfAny(alternativePhoneError(alternativePhone)),
-    birthDate: inJapaneseIfAny(birthDateError(birthDate, today)),
-    gender: inJapaneseIfAny(
-      gender === undefined ? UNLISTED_MESSAGE : undefined,
-    ),
-    ...errorsInJapanese(lengthErrors(CUSTOMER_LENGTHS, optional)),
+  const errors: FormErrors<LocalizedText> = {
+    lastName: lastNameError(lastName),
+    firstName: firstNameError(firstName),
+    phoneNumber: phoneError(phoneNumber),
+    alternativePhone: alternativePhoneError(alternativePhone),
+    birthDate: birthDateError(birthDate, today),
+    gender: gender === undefined ? UNLISTED_MESSAGE : undefined,
+    ...lengthErrors(CUSTOMER_LENGTHS, optional),
   }
 
   return Object.values(errors).some((error) => error !== undefined)
@@ -203,7 +203,7 @@ const changesOf = (
 
 /** What the form of a profile that there is was sent with: what to change, nothing to change, or what is wrong. */
 export type ProfileChangeRead =
-  | FormRead<ModelsCustomerProfileUpdateRequest>
+  | ProfileRead<ModelsCustomerProfileUpdateRequest>
   /** The form was sent as it was opened: there is nothing to ask the API for */
   | { type: 'unchanged' }
 
@@ -244,7 +244,7 @@ const CONTROLS_OF_WHO = ['lastName', 'firstName', 'phoneNumber']
 const afterRefusedValues = (
   values: readonly RefusedValue[],
   hasControl: (control: string) => boolean,
-): FormSays => {
+): FormSays<LocalizedText> => {
   const said = values.flatMap(({ field, rule }) => {
     const control = customerControlOf(field)
     const message = hasControl(control)
@@ -255,14 +255,17 @@ const afterRefusedValues = (
   })
 
   return said.length === 0
-    ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
+    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
     : {
         message: undefined,
         // The first thing the API says about a value is the one to act on
         errors: Object.fromEntries(
           said
             .toReversed()
-            .map(({ control, message }) => [control, inJapanese(message)]),
+            .map(({ control, message }): [string, LocalizedText] => [
+              control,
+              message,
+            ]),
         ),
       }
 }
@@ -270,23 +273,19 @@ const afterRefusedValues = (
 const afterCreation = (
   outcome: Exclude<ProfileCreation, { type: 'created' }>,
   hasControl: (control: string) => boolean,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) =>
       afterRefusedValues(values, hasControl),
     )
     .with({ type: 'refused' }, () =>
-      aboutTheAttempt(
-        'このアカウントでは、お客様の情報を登録できませんでした。ページを読み込み直しても登録できないときは、サロンにお問い合わせください。',
-      ),
+      aboutTheAttempt(portalProfileMessages.profile.refused),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /**
@@ -295,13 +294,13 @@ const afterCreation = (
  */
 export const afterProfile = (
   outcome: Exclude<ProfileCreation, { type: 'created' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   afterCreation(outcome, (control) => CONTROLS_OF_WHO.includes(control))
 
 /** What the form of a whole profile says after the API did not create the profile. */
 export const afterWholeProfile = (
   outcome: Exclude<ProfileCreation, { type: 'created' }>,
-): FormSays => afterCreation(outcome, () => true)
+): FormSays<LocalizedText> => afterCreation(outcome, () => true)
 
 /**
  * What the form says after the API did not change the profile. A profile
@@ -309,16 +308,14 @@ export const afterWholeProfile = (
  */
 export const afterProfileChange = (
   outcome: Exclude<ProfileUpdate, { type: 'updated' } | { type: 'none' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) =>
       afterRefusedValues(values, () => true),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()

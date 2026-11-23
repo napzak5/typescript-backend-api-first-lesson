@@ -1,5 +1,6 @@
 export { portalAccountMessages } from './account'
 export { portalBookingMessages } from './bookings'
 export { portalFrameMessages } from './frame'
+export { portalPreferenceMessages } from './preferences'
 export { portalProfileMessages } from './profile'
 export { portalSalonMessages } from './salons'

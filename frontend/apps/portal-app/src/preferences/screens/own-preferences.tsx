@@ -6,11 +6,11 @@ import {
 import {
   ButtonLink,
   Card,
-  inJapanese,
   LoadingIndicator,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { portalPreferenceMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
 import { OWN_PREFERENCES, readOwnPreferences } from '../api/preferences-api'
@@ -20,7 +20,10 @@ import { OWN_PREFERENCES, readOwnPreferences } from '../api/preferences-api'
  * to keep in mind, with the way to change it. It reads for itself: when it
  * cannot be read, the rest of the page is there.
  */
+const words = portalPreferenceMessages
+
 export const OwnPreferences = () => {
+  const say = useSay()
   const read = useQuery({
     queryKey: OWN_PREFERENCES,
     queryFn: readOwnPreferences,
@@ -31,11 +34,9 @@ export const OwnPreferences = () => {
   })
 
   return (
-    <Card title='好みの設定'>
+    <Card title={say(words.title)}>
       {match(read.data)
-        .with(undefined, () => (
-          <LoadingIndicator label='好みの設定を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
         .with({ type: 'found' }, ({ preferences, staff }) => (
           <>
             <PreferencesDetails
@@ -43,20 +44,16 @@ export const OwnPreferences = () => {
               staffNames={(ids) => staffNamed(ids, staff)}
             />
             <ButtonLink href='/mypage/preferences'>
-              好みの設定を変更する
+              {say(words.change)}
             </ButtonLink>
           </>
         ))
         // The page shows this part for an account that has a profile. One
         // that lost it since the page was read has no preferences to show
-        .with({ type: 'none' }, () => (
-          <p>好みの設定は、お客様の情報を登録すると使えます。</p>
-        ))
+        .with({ type: 'none' }, () => <p>{say(words.withoutProfile)}</p>)
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('好みの設定'), reason),
-            )}
+            message={say(unreadMessageOf(words.names.preferences, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

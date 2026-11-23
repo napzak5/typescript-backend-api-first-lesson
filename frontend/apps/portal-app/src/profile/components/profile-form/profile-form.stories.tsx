@@ -1,3 +1,5 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
+import { fieldMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { profile, TODAY, wordyProfile } from '../examples'
@@ -30,12 +32,10 @@ export const Empty: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      firstName: '名を入力してください。',
-      alternativePhone:
-        '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
-      birthDate:
-        '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
-      'preferences.preferredServices': '選択肢から選んでください。',
+      firstName: fieldMessages.firstNameMissing,
+      alternativePhone: fieldMessages.phoneMalformed,
+      birthDate: fieldMessages.birthDateOutOfRange,
+      'preferences.preferredServices': fieldMessages.unlisted,
     },
   },
 }
@@ -43,8 +43,7 @@ export const WithErrors: Story = {
 /** Nothing came of the attempt, and no control is to blame */
 export const WithMessage: Story = {
   args: {
-    message:
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: NOT_SENT_MESSAGE,
   },
 }
 
