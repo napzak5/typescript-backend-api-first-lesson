@@ -1,0 +1,86 @@
+import { describe, expect, it } from 'vitest'
+import type { LocalizedText } from '../languages/localized-text'
+import {
+  amountOf,
+  currencyNameOf,
+  type Decimals,
+  numberOf,
+  shortAmountOf,
+} from './numbers'
+
+describe('numberOf', () => {
+  it.each<[number, Decimals | undefined, LocalizedText]>([
+    [1234567, undefined, { en: '1,234,567', ja: '1,234,567' }],
+    [-1234, undefined, { en: '-1,234', ja: '-1,234' }],
+    [0, undefined, { en: '0', ja: '0' }],
+    [12.34567, undefined, { en: '12.346', ja: '12.346' }],
+    [12.345, { most: 2 }, { en: '12.35', ja: '12.35' }],
+    [12, { most: 2 }, { en: '12', ja: '12' }],
+    [72.25, { most: 1 }, { en: '72.3', ja: '72.3' }],
+    [40, { most: 1, least: 1 }, { en: '40.0', ja: '40.0' }],
+    [1234.5, { most: 1, least: 1 }, { en: '1,234.5', ja: '1,234.5' }],
+  ])(
+    'should write %d with %o decimals in each language',
+    (value, decimals, expected) => {
+      // Act
+      const written = numberOf(value, decimals)
+
+      // Assert
+      expect(written).toEqual(expected)
+    },
+  )
+})
+
+describe('amountOf', () => {
+  it.each<[number, string, LocalizedText]>([
+    [5500, 'JPY', { en: '¥5,500', ja: '￥5,500' }],
+    [0, 'JPY', { en: '¥0', ja: '￥0' }],
+    [-1200, 'JPY', { en: '-¥1,200', ja: '-￥1,200' }],
+    [55, 'USD', { en: '$55.00', ja: '$55.00' }],
+    [12.5, 'EUR', { en: '€12.50', ja: '€12.50' }],
+  ])(
+    'should write %d in %s with the sign and the decimals of the currency',
+    (amount, currency, expected) => {
+      // Act
+      const written = amountOf(amount, currency)
+
+      // Assert
+      expect(written).toEqual(expected)
+    },
+  )
+})
+
+describe('shortAmountOf', () => {
+  it.each<[number, LocalizedText]>([
+    [25000, { en: '¥25K', ja: '￥2.5万' }],
+    [1200000, { en: '¥1.2M', ja: '￥120万' }],
+    [300000000, { en: '¥300M', ja: '￥3億' }],
+  ])('should write %d in a few characters', (amount, expected) => {
+    // Act
+    const written = shortAmountOf(amount, 'JPY')
+
+    // Assert
+    expect(written).toEqual(expected)
+  })
+})
+
+describe('currencyNameOf', () => {
+  it.each<[string, LocalizedText]>([
+    ['JPY', { en: 'Japanese Yen', ja: '日本円' }],
+    ['USD', { en: 'US Dollar', ja: '米ドル' }],
+  ])('should name %s in each language', (currency, expected) => {
+    // Act
+    const name = currencyNameOf(currency)
+
+    // Assert
+    expect(name).toEqual(expected)
+  })
+
+  it('should name a currency that no language has a name for by its code', () => {
+    // Act
+    const name = currencyNameOf('XYZ')
+
+    // Assert
+    expect(name).toEqual({ en: 'XYZ', ja: 'XYZ' })
+  })
+})
