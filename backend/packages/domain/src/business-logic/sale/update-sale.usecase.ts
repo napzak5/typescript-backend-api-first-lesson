@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  saleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
 import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
@@ -55,7 +58,7 @@ export class UpdateSaleUseCase {
       .returnType<Result<ApiSaleResponse, DomainError>>()
       .with({ type: 'updated' }, ({ sale }) => SaleReadMapper.toApiSale(sale))
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Sale', saleId.data)),
+        Result.error(DomainErrors.notFound(entityMessages.sale, saleId.data)),
       )
       .with({ type: 'void' }, { type: 'paymentBegun' }, (refusal) =>
         Result.error(toChangeRefusalError(refusal)),

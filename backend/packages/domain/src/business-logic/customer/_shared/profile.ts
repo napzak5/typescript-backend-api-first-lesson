@@ -1,3 +1,4 @@
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import type { Actor } from '../../../models/auth'
 import type { CustomerId } from '../../../models/customer'
@@ -34,4 +35,4 @@ export const profileAccessOf = (actor: Actor): ProfileAccess =>
  * customer. The two are answered alike.
  */
 export const profileNotFound = (actor: Actor): DomainError =>
-  DomainErrors.notFound('Customer profile of user', actor.userId)
+  DomainErrors.notFound(entityMessages.customerProfileOfUser, actor.userId)

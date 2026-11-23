@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import { type BookingId, parseBookingId } from '../../models/booking'
@@ -60,7 +61,9 @@ export class DeleteBookingUseCase {
       .returnType<Result<BookingId, DomainError>>()
       .with({ type: 'deleted' }, () => bookingId)
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Booking', bookingId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.booking, bookingId.data),
+        ),
       )
       .with({ type: 'referredTo' }, ({ by }) =>
         Result.error(

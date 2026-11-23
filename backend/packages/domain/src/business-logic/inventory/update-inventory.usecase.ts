@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  inventoryMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { InventoryReadMapper } from '../../mappers/read/inventory.mapper'
 import { InventoryWriteMapper } from '../../mappers/write/inventory.mapper'
@@ -57,7 +60,9 @@ export class UpdateInventoryUseCase {
         InventoryReadMapper.toApiInventory(row),
       )
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Inventory', inventoryId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.inventory, inventoryId.data),
+        ),
       )
       .with({ type: 'lotNumberRefused' }, ({ message }) =>
         Result.error(

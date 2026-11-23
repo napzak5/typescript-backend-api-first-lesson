@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import { type CustomerId, parseCustomerId } from '../../models/customer'
@@ -40,7 +41,9 @@ export class DeleteCustomerUseCase {
       .returnType<Result<CustomerId, DomainError>>()
       .with({ type: 'deleted' }, () => customerId)
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', customerId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.customer, customerId.data),
+        ),
       )
       .with({ type: 'bookingsUnfinished' }, () =>
         Result.error(unfinishedBookingsReferTo('customer')),

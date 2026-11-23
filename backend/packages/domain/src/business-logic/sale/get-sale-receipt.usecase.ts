@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiSaleReceiptResponse, parseSaleId } from '../../models/sale'
@@ -39,7 +40,9 @@ export class GetSaleReceiptUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Sale', saleId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.sale, saleId.data),
+      )
     }
 
     const refusal = refusalOfReceipt(found.data)

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import {
@@ -43,7 +44,9 @@ export class DeleteTreatmentRecordUseCase {
       .returnType<Result<TreatmentRecordId, DomainError>>()
       .with({ type: 'removed' }, () => Result.success(recordId.data))
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('TreatmentRecord', recordId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.treatmentRecord, recordId.data),
+        ),
       )
       .exhaustive()
   }

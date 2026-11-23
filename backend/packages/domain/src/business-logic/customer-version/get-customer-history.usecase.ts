@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerVersionMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerVersionMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerVersionReadMapper } from '../../mappers/read/customer-version.mapper'
 import { CustomerVersionWriteMapper } from '../../mappers/write/customer-version.mapper'
@@ -68,7 +71,7 @@ export class GetCustomerHistoryUseCase {
         Result<ApiPage<ApiCustomerHistoryEntryResponse>, DomainError>
       >()
       .with({ type: 'customerNotFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', id.data)),
+        Result.error(DomainErrors.notFound(entityMessages.customer, id.data)),
       )
       .with({ type: 'cursorNotFound' }, () =>
         Result.error(

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { Actor } from '../../models/auth'
 import { parseSalonIdOfPath } from '../../models/salon'
 import { type CategoryId, parseCategoryId } from '../../models/service-category'
@@ -49,7 +50,7 @@ export class DeleteServiceCategoryUseCase {
     }
     if (!deleted.data) {
       return Result.error(
-        DomainErrors.notFound('Service category', categoryId.data),
+        DomainErrors.notFound(entityMessages.serviceCategory, categoryId.data),
       )
     }
 

@@ -1,8 +1,9 @@
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { StaffId } from '../../../models/staff'
 import { type DomainError, DomainErrors } from '../../../shared'
 
 export const accountNotFound = (id: StaffId): DomainError =>
-  DomainErrors.notFound('Account of staff member', id)
+  DomainErrors.notFound(entityMessages.accountOfStaffMember, id)
 
 /**
  * An owner who gave their own account another role could not take the

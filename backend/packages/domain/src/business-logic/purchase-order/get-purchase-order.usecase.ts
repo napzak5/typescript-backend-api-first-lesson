@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { PurchaseOrderReadMapper } from '../../mappers/read/purchase-order.mapper'
 import type { Actor } from '../../models/auth'
 import {
@@ -40,7 +41,9 @@ export class GetPurchaseOrderUseCase {
     }
 
     return found.data === null
-      ? Result.error(DomainErrors.notFound('PurchaseOrder', orderId.data))
+      ? Result.error(
+          DomainErrors.notFound(entityMessages.purchaseOrder, orderId.data),
+        )
       : PurchaseOrderReadMapper.toApiPurchaseOrder(found.data)
   }
 }

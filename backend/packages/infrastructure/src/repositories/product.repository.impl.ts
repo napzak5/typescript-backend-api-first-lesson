@@ -16,6 +16,7 @@ import {
   stockLevelsAfter,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { and, asc, count, eq, ilike, isNull, or, sql } from 'drizzle-orm'
 import { match, P } from 'ts-pattern'
 import { CLOCK } from '../database/clock'
@@ -47,7 +48,7 @@ const toDomainError =
         },
         (violation) =>
           DomainErrors.alreadyExists(
-            'Product',
+            entityMessages.product,
             'productCode',
             violation.productCode,
           ),

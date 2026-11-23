@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ReviewReadMapper } from '../../mappers/read/review.mapper'
 import { type ApiReviewResponse, parseReviewId } from '../../models/review'
 import { type DomainError, DomainErrors } from '../../shared'
@@ -24,7 +25,9 @@ export class GetReviewUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Review', reviewId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.review, reviewId.data),
+      )
     }
 
     return ReviewReadMapper.toApiReview(found.data)

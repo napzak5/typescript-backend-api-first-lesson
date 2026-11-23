@@ -38,15 +38,22 @@ export type AuthenticationFailure =
  * `passwordRequired` means that what the request asks for is behind a
  * password of its own, which nobody signs in with, and the request brought
  * none that is accepted: none at all, a wrong one, or any while the
- * password is locked.
+ * password is locked. `notFound` and `alreadyExists` name what it is about
+ * in every language (`entityMessages`); the `id` of `notFound` is null
+ * when what the thing was looked for by is not to be repeated.
  */
 export type DomainError =
   | { type: 'validation'; message: Told; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
-  | { type: 'notFound'; entity: string; id: string }
-  | { type: 'alreadyExists'; entity: string; field: string; value: string }
+  | { type: 'notFound'; entity: LocalizedText; id: string | null }
+  | {
+      type: 'alreadyExists'
+      entity: LocalizedText
+      field: string
+      value: string
+    }
   | { type: 'conflict'; message: string }
   | { type: 'database'; message: string; cause: unknown }
   | { type: 'storage'; message: string; cause: unknown }
@@ -68,11 +75,15 @@ export const DomainErrors = {
     return { type: 'passwordRequired' }
   },
 
-  notFound(entity: string, id: string): DomainError {
+  notFound(entity: LocalizedText, id: string | null): DomainError {
     return { type: 'notFound', entity, id }
   },
 
-  alreadyExists(entity: string, field: string, value: string): DomainError {
+  alreadyExists(
+    entity: LocalizedText,
+    field: string,
+    value: string,
+  ): DomainError {
     return { type: 'alreadyExists', entity, field, value }
   },
 

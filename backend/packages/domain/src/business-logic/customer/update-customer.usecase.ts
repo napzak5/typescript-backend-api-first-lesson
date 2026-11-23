@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
 import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
@@ -71,7 +74,9 @@ export class UpdateCustomerUseCase {
         CustomerReadMapper.toApiCustomer(customer),
       )
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', customerId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.customer, customerId.data),
+        ),
       )
       .with({ type: 'referrerNotFound' }, () =>
         Result.error(referrerNotFound(MESSAGE)),

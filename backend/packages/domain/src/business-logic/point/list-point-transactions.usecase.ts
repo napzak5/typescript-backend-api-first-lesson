@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { pointMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  pointMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PointReadMapper } from '../../mappers/read/point.mapper'
 import { PointWriteMapper } from '../../mappers/write/point.mapper'
@@ -64,7 +67,7 @@ export class ListPointTransactionsUseCase {
     return match(listed.data)
       .returnType<Result<ApiPage<ApiPointTransactionResponse>, DomainError>>()
       .with({ type: 'customerNotFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', id.data)),
+        Result.error(DomainErrors.notFound(entityMessages.customer, id.data)),
       )
       .with({ type: 'cursorNotFound' }, () =>
         Result.error(

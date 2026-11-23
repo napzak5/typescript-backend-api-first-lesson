@@ -30,6 +30,7 @@ import {
   type SalonId,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import {
   and,
   asc,
@@ -79,7 +80,7 @@ const toDomainError =
         },
         (violation) =>
           DomainErrors.alreadyExists(
-            'Inventory',
+            entityMessages.inventory,
             'lotNumber',
             violation.lotNumber ?? 'null',
           ),

@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   availableSlotMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { AvailableSlotReadMapper } from '../../mappers/read/available-slot.mapper'
@@ -64,7 +65,9 @@ export class ListAvailableSlotsUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Salon', salonId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.salon, salonId.data),
+      )
     }
 
     const { salon: stored, service, staff } = found.data

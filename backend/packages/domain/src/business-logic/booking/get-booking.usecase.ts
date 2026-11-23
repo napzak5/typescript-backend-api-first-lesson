@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { BookingReadMapper } from '../../mappers/read/booking.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiBookingResponse, parseBookingId } from '../../models/booking'
@@ -38,7 +39,9 @@ export class GetBookingUseCase {
     }
 
     return found.data === null
-      ? Result.error(DomainErrors.notFound('Booking', bookingId.data))
+      ? Result.error(
+          DomainErrors.notFound(entityMessages.booking, bookingId.data),
+        )
       : BookingReadMapper.toApiBooking(found.data)
   }
 }

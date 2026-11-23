@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import { BookingReadMapper } from '../../../mappers/read/booking.mapper'
 import type { Actor } from '../../../models/auth'
@@ -94,7 +95,9 @@ export const changeBookingStatus = async (
       BookingReadMapper.toApiBooking(booking),
     )
     .with({ type: 'notFound' }, () =>
-      Result.error(DomainErrors.notFound('Booking', bookingId.data)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.booking, bookingId.data),
+      ),
     )
     .with({ type: P.not(P.union('changed', 'notFound')) }, (refusal) =>
       Result.error(toStatusRefusalError(refusal)),

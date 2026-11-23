@@ -17,6 +17,7 @@ import {
   type StaffListCriteria,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { and, asc, count, eq, isNull, sql } from 'drizzle-orm'
 import { match, P } from 'ts-pattern'
 import { attempt } from '../database/attempt'
@@ -62,7 +63,11 @@ const toDomainError =
           cause: P.union(emailTaken, { cause: emailTaken }),
         },
         ({ email }) =>
-          DomainErrors.alreadyExists('Staff member', 'email', email),
+          DomainErrors.alreadyExists(
+            entityMessages.staffMember,
+            'email',
+            email,
+          ),
       )
       .with(
         {
@@ -70,7 +75,11 @@ const toDomainError =
           cause: P.union(staffCodeTaken, { cause: staffCodeTaken }),
         },
         ({ staffCode }) =>
-          DomainErrors.alreadyExists('Staff member', 'staffCode', staffCode),
+          DomainErrors.alreadyExists(
+            entityMessages.staffMember,
+            'staffCode',
+            staffCode,
+          ),
       )
       .otherwise(() =>
         DomainErrors.database(message, describeDatabaseError(cause)),

@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   customerStatisticsMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
@@ -77,7 +78,9 @@ export class GetCustomerStatisticsUseCase {
         ),
       )
       .with({ type: 'customerNotFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', customerId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.customer, customerId.data),
+        ),
       )
       .with({ type: 'found' }, ({ figures }) =>
         CustomerStatisticsReadMapper.toApiStatistics(

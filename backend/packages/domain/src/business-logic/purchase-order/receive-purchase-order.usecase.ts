@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { purchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  purchaseOrderMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PurchaseOrderReadMapper } from '../../mappers/read/purchase-order.mapper'
 import { PurchaseOrderWriteMapper } from '../../mappers/write/purchase-order.mapper'
@@ -68,7 +71,9 @@ export class ReceivePurchaseOrderUseCase {
           PurchaseOrderReadMapper.toApiPurchaseOrder(order),
         )
         .with({ type: 'notFound' }, () =>
-          Result.error(DomainErrors.notFound('PurchaseOrder', orderId.data)),
+          Result.error(
+            DomainErrors.notFound(entityMessages.purchaseOrder, orderId.data),
+          ),
         )
         .with({ type: 'closed' }, { type: 'notFromStatus' }, (refusal) =>
           Result.error(

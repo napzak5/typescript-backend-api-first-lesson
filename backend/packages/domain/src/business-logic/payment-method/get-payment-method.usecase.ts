@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { PaymentMethodReadMapper } from '../../mappers/read/payment-method.mapper'
 import type { Actor } from '../../models/auth'
 import {
@@ -52,7 +53,10 @@ export class GetPaymentMethodUseCase {
     }
     if (found.data === null) {
       return Result.error(
-        DomainErrors.notFound('Payment method', paymentMethodId.data),
+        DomainErrors.notFound(
+          entityMessages.paymentMethod,
+          paymentMethodId.data,
+        ),
       )
     }
 

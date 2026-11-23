@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import {
@@ -44,11 +45,16 @@ export class RemoveCustomerAllergyUseCase {
       .returnType<Result<CustomerAllergyId, DomainError>>()
       .with({ type: 'removed' }, () => Result.success(ids.data.allergyId))
       .with({ type: 'customerNotFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', ids.data.customerId)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.customer, ids.data.customerId),
+        ),
       )
       .with({ type: 'allergyNotFound' }, () =>
         Result.error(
-          DomainErrors.notFound('CustomerAllergy', ids.data.allergyId),
+          DomainErrors.notFound(
+            entityMessages.customerAllergy,
+            ids.data.allergyId,
+          ),
         ),
       )
       .exhaustive()

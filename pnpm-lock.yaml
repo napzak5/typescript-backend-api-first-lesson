@@ -509,6 +509,9 @@ importers:
       '@beauty-salon-backend/utility':
         specifier: workspace:*
         version: link:../utility
+      '@beauty-salon-shared/i18n':
+        specifier: workspace:*
+        version: link:../../../shared-i18n
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(postgres@4.1.1)

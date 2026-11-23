@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { Actor } from '../../models/auth'
 import { parseCustomerId } from '../../models/customer'
 import type { ApiCustomerPreferencesResponse } from '../../models/customer-preferences'
@@ -35,7 +36,7 @@ export class UpdateCustomerPreferencesUseCase {
       this.dependencies.customerPreferencesRepository,
       customerId.data,
       input,
-      () => DomainErrors.notFound('Customer', customerId.data),
+      () => DomainErrors.notFound(entityMessages.customer, customerId.data),
     )
   }
 }

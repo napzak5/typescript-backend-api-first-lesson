@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerDeletionRequestMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerDeletionRequestMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerDeletionRequestReadMapper } from '../../mappers/read/customer-deletion-request.mapper'
 import { CustomerDeletionRequestWriteMapper } from '../../mappers/write/customer-deletion-request.mapper'
@@ -67,7 +70,9 @@ export class RequestCustomerDeletionUseCase {
         CustomerDeletionRequestReadMapper.toApiCustomerDeletionRequest(request),
       )
       .with({ type: 'customerNotFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', customerId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.customer, customerId.data),
+        ),
       )
       .with({ type: 'alreadyRequested' }, ({ request }) =>
         Result.error(

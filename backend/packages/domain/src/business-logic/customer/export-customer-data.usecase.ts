@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
 import type { Actor } from '../../models/auth'
 import { parseCustomerId } from '../../models/customer'
@@ -36,7 +37,9 @@ export class ExportCustomerDataUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Customer', customerId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.customer, customerId.data),
+      )
     }
 
     return Result.map(

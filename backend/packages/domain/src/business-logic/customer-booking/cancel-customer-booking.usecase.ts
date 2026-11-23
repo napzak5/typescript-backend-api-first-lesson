@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  bookingMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import { CustomerBookingReadMapper } from '../../mappers/read/customer-booking.mapper'
 import { CustomerBookingWriteMapper } from '../../mappers/write/customer-booking.mapper'
@@ -71,7 +74,9 @@ export class CancelCustomerBookingUseCase {
         CustomerBookingReadMapper.toApiCustomerBooking(booking),
       )
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Booking', bookingId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.booking, bookingId.data),
+        ),
       )
       .with({ type: P.not(P.union('changed', 'notFound')) }, (refusal) =>
         Result.error(toStatusRefusalError(refusal)),

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import {
@@ -58,7 +59,10 @@ export class DeletePaymentMethodUseCase {
       .with({ type: 'deleted' }, () => paymentMethodId)
       .with({ type: 'notFound' }, () =>
         Result.error(
-          DomainErrors.notFound('Payment method', paymentMethodId.data),
+          DomainErrors.notFound(
+            entityMessages.paymentMethod,
+            paymentMethodId.data,
+          ),
         ),
       )
       .with({ type: 'inUse' }, () =>

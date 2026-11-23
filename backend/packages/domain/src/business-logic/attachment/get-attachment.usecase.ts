@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
 import {
   type ApiAttachmentResponse,
@@ -39,7 +40,9 @@ export class GetAttachmentUseCase {
     }
 
     return found.data === null
-      ? Result.error(DomainErrors.notFound('Attachment', attachmentId.data))
+      ? Result.error(
+          DomainErrors.notFound(entityMessages.attachment, attachmentId.data),
+        )
       : AttachmentReadMapper.toApiAttachment(found.data)
   }
 }

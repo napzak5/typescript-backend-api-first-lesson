@@ -1,3 +1,4 @@
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import {
   type DomainError,
   DomainErrors,
@@ -36,7 +37,8 @@ export const firstAmong = (
 export const customerNotFound = (
   ids: readonly string[],
   missing: readonly string[],
-): DomainError => DomainErrors.notFound('Customer', firstAmong(ids, missing))
+): DomainError =>
+  DomainErrors.notFound(entityMessages.customer, firstAmong(ids, missing))
 
 /**
  * Every part of a request whose referrer is missing, each at its place

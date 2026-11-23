@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserReadMapper } from '../../mappers/read/user.mapper'
 import {
   type Actor,
@@ -45,7 +46,9 @@ export class ResetTwoFactorUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('User', userId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.user, userId.data),
+      )
     }
 
     const disabled = await userRepository.disableTwoFactor(userId.data)
@@ -64,7 +67,9 @@ export class ResetTwoFactorUseCase {
       return changed
     }
     if (changed.data === null) {
-      return Result.error(DomainErrors.notFound('User', userId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.user, userId.data),
+      )
     }
 
     return UserReadMapper.toApiUser(changed.data)

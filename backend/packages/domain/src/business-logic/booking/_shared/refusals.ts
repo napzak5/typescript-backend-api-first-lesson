@@ -1,3 +1,4 @@
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { BookingServiceId, DbBooking } from '../../../models/booking'
 import type { BookingCreationRefusal } from '../../../repositories/booking.repository'
@@ -50,7 +51,7 @@ export const cannotBeRescheduled = ({
   )
 
 export const bookingServiceNotFound = (id: BookingServiceId): DomainError =>
-  DomainErrors.notFound('Booking service', id)
+  DomainErrors.notFound(entityMessages.bookingService, id)
 
 /** A booking that is finished keeps the service lines it has. */
 export const servicesAreSettled = ({

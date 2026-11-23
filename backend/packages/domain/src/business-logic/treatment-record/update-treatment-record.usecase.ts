@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  treatmentRecordMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { TreatmentRecordReadMapper } from '../../mappers/read/treatment-record.mapper'
 import { TreatmentRecordWriteMapper } from '../../mappers/write/treatment-record.mapper'
@@ -64,7 +67,9 @@ export class UpdateTreatmentRecordUseCase {
         TreatmentRecordReadMapper.toApiTreatmentRecord(record),
       )
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('TreatmentRecord', recordId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.treatmentRecord, recordId.data),
+        ),
       )
       .with({ type: 'refused' }, ({ issues }) =>
         Result.error(DomainErrors.validation(MESSAGE, issues)),

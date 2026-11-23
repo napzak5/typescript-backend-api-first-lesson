@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { medicalChartMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  medicalChartMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { MedicalChartReadMapper } from '../../mappers/read/medical-chart.mapper'
 import { MedicalChartWriteMapper } from '../../mappers/write/medical-chart.mapper'
@@ -60,7 +63,9 @@ export class UpdateMedicalChartUseCase {
         MedicalChartReadMapper.toApiMedicalChart(chart),
       )
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('MedicalChart', chartId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.medicalChart, chartId.data),
+        ),
       )
       .exhaustive()
   }

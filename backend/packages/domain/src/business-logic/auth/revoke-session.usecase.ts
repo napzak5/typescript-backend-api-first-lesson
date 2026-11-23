@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { type Actor, parseSessionId } from '../../models/auth'
 import { type DomainError, DomainErrors } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
@@ -29,7 +30,9 @@ export class RevokeSessionUseCase {
       return deleted
     }
     if (!deleted.data) {
-      return Result.error(DomainErrors.notFound('Session', sessionId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.session, sessionId.data),
+      )
     }
 
     return Result.success(null)

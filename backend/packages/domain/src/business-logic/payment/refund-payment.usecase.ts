@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  paymentMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PaymentReadMapper } from '../../mappers/read/payment.mapper'
 import { PaymentWriteMapper } from '../../mappers/write/payment.mapper'
@@ -61,7 +64,9 @@ export class RefundPaymentUseCase {
         PaymentReadMapper.toApiPayment(payment),
       )
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Payment', paymentId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.payment, paymentId.data),
+        ),
       )
       .with({ type: 'notCompleted' }, () => Result.error(NOT_COMPLETED))
       .with({ type: 'invalid' }, ({ issues }) =>

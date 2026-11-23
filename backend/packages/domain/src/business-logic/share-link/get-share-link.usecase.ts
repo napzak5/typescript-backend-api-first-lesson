@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ShareLinkReadMapper } from '../../mappers/read/share-link.mapper'
 import type { Actor } from '../../models/auth'
 import {
@@ -38,7 +39,9 @@ export class GetShareLinkUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Share link', shareLinkId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.shareLink, shareLinkId.data),
+      )
     }
 
     return ShareLinkReadMapper.toApiShareLink(found.data)
