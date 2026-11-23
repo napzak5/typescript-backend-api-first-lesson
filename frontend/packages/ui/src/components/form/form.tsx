@@ -2,11 +2,19 @@ import type { FormEvent, ReactNode } from 'react'
 import { Actions } from '../actions/actions'
 import { Alert } from '../alert/alert'
 import { Button } from '../button/button'
-import { type FormErrors, useErrorFocus } from './error-focus'
+import {
+  type AnyFormErrors,
+  type FormErrors,
+  useErrorFocus,
+} from './error-focus'
 import styles from './form.module.css'
 import { NO_ERRORS } from './form-values'
 
-export type FormProps = {
+/**
+ * What a form takes. `Errors` is what its controls are told: texts, or the
+ * messages of a form whose texts are messages
+ */
+export type FormProps<Errors extends AnyFormErrors = FormErrors> = {
   /** The controls, in the order they are filled in */
   children: ReactNode
   /** What the button that sends the form says */
@@ -17,9 +25,11 @@ export type FormProps = {
    * The errors the controls show. The form shows none of them itself: a
    * control is given its own. A new object is the answer to another attempt,
    * also when it says the same, and the focus goes to the first control that
-   * has an error
+   * has an error. A form whose texts are messages is given them as the
+   * attempt left them, and its controls what `useSaidForm` said of them: the
+   * focus stays where it is when only the language changes
    */
-  errors?: FormErrors | undefined
+  errors?: Errors | undefined
   /** The attempt is on its way */
   pending?: boolean | undefined
   /** What else can be done, beside the button that sends the form */
@@ -39,16 +49,16 @@ export type FormProps = {
  * is moved in the commit that shows the errors, before the browser paints
  * them.
  */
-export const Form = ({
+export const Form = <Errors extends AnyFormErrors = FormErrors>({
   children,
   submitLabel,
   message,
-  errors = NO_ERRORS,
+  errors,
   pending = false,
   actions,
   onSubmit,
-}: FormProps) => {
-  const form = useErrorFocus(errors)
+}: FormProps<Errors>) => {
+  const form = useErrorFocus(errors ?? NO_ERRORS)
 
   const submit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault()

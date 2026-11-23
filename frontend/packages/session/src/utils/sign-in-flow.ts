@@ -1,11 +1,8 @@
 import { CHECK_THE_VALUES_MESSAGE } from '@beauty-salon-frontend/answers'
 import { EMAIL_MALFORMED, emailError } from '@beauty-salon-frontend/fields'
-import {
-  type FormRead,
-  inJapanese,
-  inJapaneseIfAny,
-  textOf,
-} from '@beauty-salon-frontend/ui'
+import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import type { SignInOutcome } from '../api/sign-in'
 import type { SignInFormErrors } from '../components/sign-in-form/sign-in-form'
@@ -29,9 +26,11 @@ export type SignInState = {
     | { type: 'credentials' }
     /** The API took the credentials and asks for the code of the second factor */
     | { type: 'twoFactorCode'; credentials: Credentials }
-  message: string | undefined
+  message: LocalizedText | undefined
   errors: SignInFormErrors
 }
+
+const { signInFlow } = sessionMessages
 
 export const INITIAL_SIGN_IN_STATE: SignInState = {
   step: { type: 'credentials' },
@@ -48,8 +47,8 @@ const readCredentials = (
   const email = textOf(values, 'email').trim()
   const password = textOf(values, 'password')
   const errors: SignInFormErrors = {
-    email: inJapaneseIfAny(emailError(email)),
-    password: password === '' ? 'パスワードを入力してください。' : undefined,
+    email: emailError(email),
+    password: password === '' ? signInFlow.passwordMissing : undefined,
   }
 
   return errors.email === undefined && errors.password === undefined
@@ -69,7 +68,7 @@ const readTwoFactorCode = (
   return code === ''
     ? {
         type: 'invalid',
-        errors: { twoFactorCode: '認証コードを入力してください。' },
+        errors: { twoFactorCode: signInFlow.codeMissing },
       }
     : { type: 'valid', value: code }
 }
@@ -104,10 +103,10 @@ export const readAttempt = (
     .exhaustive()
 
 /** What to say at a control whose value the API does not take. */
-const messageOfField: Record<keyof SignInFormErrors, string> = {
-  email: inJapanese(EMAIL_MALFORMED),
-  password: 'パスワードを確かめて、入力し直してください。',
-  twoFactorCode: '認証コードを確かめて、入力し直してください。',
+const messageOfField: Record<keyof SignInFormErrors, LocalizedText> = {
+  email: EMAIL_MALFORMED,
+  password: signInFlow.passwordRefused,
+  twoFactorCode: signInFlow.codeRefused,
 }
 
 const errorsOf = (fields: string[]): SignInFormErrors => ({
@@ -119,7 +118,7 @@ const errorsOf = (fields: string[]): SignInFormErrors => ({
 })
 
 /** Back at the first step, with what there is to say about the whole attempt. */
-const refused = (message: string): SignInState => ({
+const refused = (message: LocalizedText): SignInState => ({
   step: { type: 'credentials' },
   message,
   errors: {},
@@ -139,9 +138,7 @@ export const afterAttempt = (
     .returnType<SignInState>()
     .with({ type: 'signedIn' }, () => state)
     .with({ type: 'wrongCredentials' }, () =>
-      refused(
-        'メールアドレスまたはパスワードが正しくありません。続けて 5 回誤ると、15 分間サインインできなくなります。',
-      ),
+      refused(signInFlow.wrongCredentials),
     )
     .with({ type: 'twoFactorCodeRequired' }, () => ({
       step: { type: 'twoFactorCode', credentials },
@@ -149,10 +146,7 @@ export const afterAttempt = (
       // Asked for the first time, the code is not wrong: it is missing
       errors:
         state.step.type === 'twoFactorCode'
-          ? {
-              twoFactorCode:
-                'コードが正しくありません。新しいコードを入力してください。',
-            }
+          ? { twoFactorCode: signInFlow.wrongCode }
           : {},
     }))
     .with({ type: 'invalid' }, ({ fields }) => {
@@ -163,28 +157,20 @@ export const afterAttempt = (
       return ofFirstStep || errors.twoFactorCode === undefined
         ? {
             step: { type: 'credentials' },
-            message: inJapaneseIfAny(
-              ofFirstStep ? undefined : CHECK_THE_VALUES_MESSAGE,
-            ),
+            message: ofFirstStep ? undefined : CHECK_THE_VALUES_MESSAGE,
             errors,
           }
         : { step: state.step, message: undefined, errors }
     })
     .with({ type: 'tooManyAttempts' }, () => ({
       ...state,
-      message:
-        '試した回数が多すぎます。しばらくしてから、もう一度お試しください。',
+      message: signInFlow.tooManyAttempts,
       errors: {},
     }))
-    .with({ type: 'notStored' }, () =>
-      refused(
-        'このブラウザーは、サイトのデータを保存しない設定のため、サインインできません。設定を変えてから、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'notStored' }, () => refused(signInFlow.notStored))
     .with({ type: 'failed' }, () => ({
       ...state,
-      message:
-        'サインインできませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: signInFlow.failed,
       errors: {},
     }))
     .exhaustive()

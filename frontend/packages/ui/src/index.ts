@@ -179,7 +179,7 @@ export {
   WrittenText,
   type WrittenTextProps,
 } from './components/written-text/written-text'
-export { useSay } from './hooks/language'
+export { useSaidForm, useSay } from './hooks/language'
 export { useWideScreen } from './hooks/wide-screen'
 export { classNames } from './utils/class-names'
 export {

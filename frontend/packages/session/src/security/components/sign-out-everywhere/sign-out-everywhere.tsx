@@ -1,4 +1,11 @@
-import { Alert, Button, Dialog } from '@beauty-salon-frontend/ui'
+import { Alert, Button, Dialog, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  securityMessages,
+  uiMessages,
+} from '@beauty-salon-shared/i18n/messages/ui'
+
+const { everywhere } = securityMessages
 
 export type SignOutEverywhereProps = {
   /** The dialog that asks first is open */
@@ -11,7 +18,7 @@ export type SignOutEverywhereProps = {
    */
   onClose: () => void
   /** What went wrong with the attempt; it is said in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The sign-out is on its way */
   pending?: boolean | undefined
   /** The person confirmed */
@@ -30,26 +37,30 @@ export const SignOutEverywhere = ({
   message,
   pending = false,
   onConfirm,
-}: SignOutEverywhereProps) => (
-  <>
-    <Button variant='danger' onClick={onOpen}>
-      すべての端末でサインアウトする
-    </Button>
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title='すべての端末でサインアウトしますか？'
-      description='この端末も含めて、このアカウントでサインインしている端末の、すべてのサインインを終わらせます。続けて使うには、もう一度サインインしてください。'
-      actions={
-        <>
-          <Button onClick={onClose}>戻る</Button>
-          <Button variant='danger' pending={pending} onClick={onConfirm}>
-            サインアウトする
-          </Button>
-        </>
-      }
-    >
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
-    </Dialog>
-  </>
-)
+}: SignOutEverywhereProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <Button variant='danger' onClick={onOpen}>
+        {say(everywhere.button)}
+      </Button>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        title={say(everywhere.title)}
+        description={say(everywhere.description)}
+        actions={
+          <>
+            <Button onClick={onClose}>{say(uiMessages.back)}</Button>
+            <Button variant='danger' pending={pending} onClick={onConfirm}>
+              {say(everywhere.confirm)}
+            </Button>
+          </>
+        }
+      >
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
+      </Dialog>
+    </>
+  )
+}

@@ -3,11 +3,21 @@ import { numberOf } from '../../formats/numbers'
 import type { LocalizedText } from '../../languages/localized-text'
 import { JAPANESE, messagesOf } from '../__tests__/found-messages'
 import * as catalogues from './index'
-import { answerMessages, fieldMessages, uiMessages } from './index'
+import {
+  answerMessages,
+  fieldMessages,
+  securityMessages,
+  sessionMessages,
+  uiMessages,
+} from './index'
 
 const FOUND = messagesOf(catalogues, '')
 
 const { counted, filterForm, pagedList, passwordField, rating } = uiMessages
+const { passwordRule, sessions } = securityMessages
+
+/** A moment as the screens of the security write it */
+const MOMENT = { en: 'November 20, 2026 at 09:05', ja: '2026年11月20日 9:05' }
 
 /** A name a screen gives a control, or what it reads */
 const SUPPLIER = { en: 'Supplier', ja: '仕入先' }
@@ -30,6 +40,11 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
     { en: '12 people', ja: '12 人' },
   ],
   ['uiMessages.counted.rows', counted.rows(12), { en: '12 rows', ja: '12 行' }],
+  [
+    'uiMessages.counted.devices',
+    counted.devices(12),
+    { en: '12 devices', ja: '12 台' },
+  ],
   [
     'uiMessages.filterForm.conditions',
     filterForm.conditions(2),
@@ -134,14 +149,83 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
       ja: '予約を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
     },
   ],
+  [
+    'sessionMessages.sessionGate.notForAccountDescription',
+    sessionMessages.sessionGate.notForAccountDescription('hanako@example.com'),
+    {
+      en: 'It is not available to the account hanako@example.com. Sign in again with an account that can use it.',
+      ja: 'hanako@example.com のアカウントでは利用できません。利用できるアカウントでサインインし直してください。',
+    },
+  ],
+  [
+    'securityMessages.passwordRule.rule',
+    passwordRule.rule(15),
+    {
+      en: 'Enter 15 characters or more. A long sentence, or several words together, is safe.',
+      ja: '15 文字以上で入力してください。長い文や、いくつかの単語の組み合わせが安全です。',
+    },
+  ],
+  [
+    'securityMessages.passwordRule.tooShort',
+    passwordRule.tooShort(15),
+    {
+      en: 'The password is too short. Enter 15 characters or more.',
+      ja: 'パスワードが短すぎます。15 文字以上で入力してください。',
+    },
+  ],
+  [
+    'securityMessages.passwordRule.tooLong',
+    passwordRule.tooLong(128),
+    {
+      en: 'The password is too long. Enter 128 characters or fewer.',
+      ja: 'パスワードが長すぎます。128 文字以下で入力してください。',
+    },
+  ],
+  [
+    'securityMessages.sessions.signedInOn',
+    sessions.signedInOn(3),
+    {
+      en: 'Signed in on 3 devices',
+      ja: '3 台の端末でサインインしています',
+    },
+  ],
+  [
+    'securityMessages.sessions.name',
+    sessions.name(MOMENT),
+    {
+      en: 'Device signed in on November 20, 2026 at 09:05',
+      ja: '2026年11月20日 9:05 にサインインした端末',
+    },
+  ],
+  [
+    'securityMessages.sessions.signOutOf',
+    sessions.signOutOf(MOMENT),
+    {
+      en: 'Sign out the device signed in on November 20, 2026 at 09:05',
+      ja: '2026年11月20日 9:05 にサインインした端末をサインアウトさせる',
+    },
+  ],
 ]
 
+/** A name that stands inside a sentence of another catalogue: it begins as it stands there */
+const INSIDE_A_SENTENCE = /\.names\./
+
 describe('the messages of the shared parts of the screens', () => {
-  it.each(FOUND.texts)(
+  it.each(FOUND.texts.filter(([where]) => !INSIDE_A_SENTENCE.test(where)))(
     'should be written in each language: %s',
     (_where, written) => {
       // Assert
       expect(written.en).toMatch(/^[A-Z]/)
+      expect(written.en).not.toMatch(JAPANESE)
+      expect(written.ja).toMatch(JAPANESE)
+    },
+  )
+
+  it.each(FOUND.texts.filter(([where]) => INSIDE_A_SENTENCE.test(where)))(
+    'should be written in each language as it stands inside a sentence: %s',
+    (_where, written) => {
+      // Assert
+      expect(written.en).toMatch(/^[a-z]/)
       expect(written.en).not.toMatch(JAPANESE)
       expect(written.ja).toMatch(JAPANESE)
     },
@@ -166,6 +250,7 @@ describe('the messages of the shared parts of the screens', () => {
     ['items', { en: '1 item', ja: '1 件' }],
     ['people', { en: '1 person', ja: '1 人' }],
     ['rows', { en: '1 row', ja: '1 行' }],
+    ['devices', { en: '1 device', ja: '1 台' }],
   ])(
     'should count one of the %s as one in English, and with the same word in Japanese',
     (word, expected) => {
@@ -219,6 +304,22 @@ describe('the messages of the shared parts of the screens', () => {
       {
         en: 'Supplier: enter up to 2,000 characters.',
         ja: '仕入先は、2,000 文字以内で入力してください。',
+      },
+    ],
+    [
+      'the rule of a password',
+      passwordRule.tooLong(1000),
+      {
+        en: 'The password is too long. Enter 1,000 characters or fewer.',
+        ja: 'パスワードが長すぎます。1,000 文字以下で入力してください。',
+      },
+    ],
+    [
+      'the devices',
+      sessions.signedInOn(1200),
+      {
+        en: 'Signed in on 1,200 devices',
+        ja: '1,200 台の端末でサインインしています',
       },
     ],
     [
@@ -277,6 +378,28 @@ describe('the messages of the shared parts of the screens', () => {
     expect(made).toEqual({
       en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com).',
       ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
+    })
+  })
+
+  it('should count one device as one in English', () => {
+    // Act
+    const made = sessions.signedInOn(1)
+
+    // Assert
+    expect(made).toEqual({
+      en: 'Signed in on 1 device',
+      ja: '1 台の端末でサインインしています',
+    })
+  })
+
+  it('should ask for the least length of a password with the format of numbers', () => {
+    // Act
+    const made = passwordRule.tooShort(1000)
+
+    // Assert
+    expect(made).toEqual({
+      en: 'The password is too short. Enter 1,000 characters or more.',
+      ja: 'パスワードが短すぎます。1,000 文字以上で入力してください。',
     })
   })
 

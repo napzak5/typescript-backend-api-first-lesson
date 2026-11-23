@@ -6,10 +6,16 @@ import {
   NO_ERRORS,
   QrCode,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Ref } from 'react'
 import { CODE, secretGroupsOf } from '../../utils/two-factor-flow'
 import styles from './authenticator-registration.module.css'
+
+const { twoFactor } = securityMessages
 
 export type AuthenticatorRegistrationProps = {
   /** The `otpauth://` address the authenticator app reads: it holds the secret */
@@ -17,9 +23,9 @@ export type AuthenticatorRegistrationProps = {
   /** The secret, for an app that cannot read the code */
   secret: string
   /** What went wrong with the attempt as a whole */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** What is wrong with the code, under the name of its control */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The code is on its way */
   pending?: boolean | undefined
   /** Where the way back leads: the screen of the security of the account */
@@ -44,41 +50,45 @@ export const AuthenticatorRegistration = ({
   cancelHref,
   onSubmit,
   headingRef,
-}: AuthenticatorRegistrationProps) => (
-  <>
-    <Card title='認証アプリに登録する' headingRef={headingRef}>
-      <p>
-        スマートフォンの認証アプリ（TOTP に対応したもの）で、この QR
-        コードを読み取ってください。
-      </p>
-      <QrCode value={qrCodeUrl} label='認証アプリで読み取る QR コード' />
-      <p>
-        QR コードを読み取れないときは、このキーを認証アプリに入力してください。
-      </p>
-      <p className={styles['secret']}>
-        <code>{secretGroupsOf(secret)}</code>
-      </p>
-    </Card>
-    <Card title='コードを確かめる'>
-      <Form
-        submitLabel='2 要素認証を有効にする'
-        message={message}
-        errors={errors}
-        pending={pending}
-        actions={<ButtonLink href={cancelHref}>やめる</ButtonLink>}
-        onSubmit={onSubmit}
-      >
-        <TextField
-          width='short'
-          label='認証アプリのコード'
-          name={CODE}
-          inputMode='numeric'
-          autoComplete='one-time-code'
-          required
-          description='認証アプリに表示されている 6 桁の数字です。バックアップコードは使えません。'
-          error={errors[CODE]}
-        />
-      </Form>
-    </Card>
-  </>
-)
+}: AuthenticatorRegistrationProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <>
+      <Card title={say(twoFactor.register)} headingRef={headingRef}>
+        <p>{say(twoFactor.scan)}</p>
+        <QrCode value={qrCodeUrl} label={say(twoFactor.qrCode)} />
+        <p>{say(twoFactor.key)}</p>
+        <p className={styles['secret']}>
+          <code>{secretGroupsOf(secret)}</code>
+        </p>
+      </Card>
+      <Card title={say(twoFactor.confirmCode)}>
+        <Form
+          submitLabel={say(twoFactor.turnOn)}
+          message={said.message}
+          errors={errors}
+          pending={pending}
+          actions={
+            <ButtonLink href={cancelHref}>
+              {say(securityMessages.cancel)}
+            </ButtonLink>
+          }
+          onSubmit={onSubmit}
+        >
+          <TextField
+            width='short'
+            label={say(twoFactor.appCode)}
+            name={CODE}
+            inputMode='numeric'
+            autoComplete='one-time-code'
+            required
+            description={say(twoFactor.appCodeDescription)}
+            error={said.errors[CODE]}
+          />
+        </Form>
+      </Card>
+    </>
+  )
+}

@@ -3,9 +3,15 @@ import {
   type FormErrors,
   NO_ERRORS,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { CODE } from '../../utils/two-factor-flow'
 import { BackupCodeList } from '../backup-code-list/backup-code-list'
+
+const { issue } = securityMessages
 
 export type BackupCodesDialogProps = {
   open: boolean
@@ -13,9 +19,9 @@ export type BackupCodesDialogProps = {
   /** The codes the API issued: they take the place of the form */
   issued?: readonly string[] | undefined
   /** What went wrong with the attempt as a whole */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** What is wrong with the code, under the name of its control */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The code is on its way */
   pending?: boolean | undefined
   /** The value of the control, under its name */
@@ -34,41 +40,38 @@ export const BackupCodesDialog = ({
   errors = NO_ERRORS,
   pending = false,
   onIssue,
-}: BackupCodesDialogProps) => (
-  <FormDialog
-    open={open}
-    onClose={onClose}
-    title='バックアップコードを発行し直す'
-    description={
-      issued === undefined
-        ? '新しいバックアップコードを 10 個発行します。いまのバックアップコードは、使えなくなります。'
-        : undefined
-    }
-    submitLabel='発行し直す'
-    message={message}
-    errors={errors}
-    pending={pending}
-    onSubmit={onIssue}
-    answer={
-      issued === undefined ? undefined : (
-        <>
-          <p>
-            新しいバックアップコードです。それまでのバックアップコードは、使えなくなりました。それぞれ
-            1
-            回だけ、認証アプリのコードの代わりに使えます。このダイアログを閉じると、二度と表示されません。印刷するか、パスワードマネージャーなどの安全な場所に控えてください。発行し直したことを、メールでお知らせしました。
-          </p>
-          <BackupCodeList codes={issued} />
-        </>
-      )
-    }
-  >
-    <TextField
-      label='認証アプリのコードかバックアップコード'
-      name={CODE}
-      autoComplete='one-time-code'
-      required
-      description='アカウントの持ち主であることを確かめます。認証アプリに表示されている 6 桁のコードか、まだ使っていないバックアップコードを入力してください。'
-      error={errors[CODE]}
-    />
-  </FormDialog>
-)
+}: BackupCodesDialogProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <FormDialog
+      open={open}
+      onClose={onClose}
+      title={say(issue.title)}
+      description={issued === undefined ? say(issue.description) : undefined}
+      submitLabel={say(issue.submit)}
+      message={said.message}
+      errors={errors}
+      pending={pending}
+      onSubmit={onIssue}
+      answer={
+        issued === undefined ? undefined : (
+          <>
+            <p>{say(issue.issued)}</p>
+            <BackupCodeList codes={issued} />
+          </>
+        )
+      }
+    >
+      <TextField
+        label={say(securityMessages.turnOff.code)}
+        name={CODE}
+        autoComplete='one-time-code'
+        required
+        description={say(issue.codeDescription)}
+        error={said.errors[CODE]}
+      />
+    </FormDialog>
+  )
+}

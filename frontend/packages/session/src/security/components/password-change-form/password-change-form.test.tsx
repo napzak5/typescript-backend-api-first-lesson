@@ -1,10 +1,12 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
+import { act } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PASSWORD_RULE } from '../../utils/password-rule'
 import * as passwordChangeFormStories from './password-change-form.stories'
 
@@ -34,7 +36,7 @@ describe('PasswordChangeForm', () => {
     expect(currentPassword()).toBeRequired()
     expect(newPassword()).toHaveAttribute('autocomplete', 'new-password')
     expect(newPassword()).toBeRequired()
-    expect(newPassword()).toHaveAccessibleDescription(PASSWORD_RULE)
+    expect(newPassword()).toHaveAccessibleDescription(PASSWORD_RULE.ja)
     expect(screen.getAllByLabelText(/パスワード$/)).toHaveLength(2)
   })
 
@@ -120,5 +122,64 @@ describe('PasswordChangeForm', () => {
     // Assert
     expect(submitButton()).toHaveAttribute('aria-busy', 'true')
     expect(stories.Sending.args.onSubmit).not.toHaveBeenCalled()
+  })
+})
+
+describe('PasswordChangeForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls, its rule and its buttons in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(screen.getByLabelText('Current password')).toBeRequired()
+    expect(screen.getByLabelText('New password')).toHaveAccessibleDescription(
+      'Enter 15 characters or more. A long sentence, or several words together, is safe.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Change the password' }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Cancel' })).toHaveAttribute(
+      'href',
+      '/account/security',
+    )
+  })
+
+  it('should say in English what went wrong with the attempt', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unsent.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'It could not be sent. Check your connection and try again.',
+    )
+  })
+
+  it('should say the errors anew when the page turns English, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.CurrentPasswordWrong.run()
+    currentPassword().blur()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(
+      screen.getByLabelText('Current password'),
+    ).toHaveAccessibleDescription(
+      'The current password is not correct. After 5 wrong attempts in a row, you cannot sign in either for 15 minutes.',
+    )
+    expect(screen.getByLabelText('Current password')).not.toHaveFocus()
   })
 })

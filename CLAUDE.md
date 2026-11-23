@@ -237,7 +237,8 @@ shared-i18n/              # @beauty-salon-shared/i18n: the languages (en, ja), h
 A text that is told in more than one language is a message of
 `shared-i18n/src/messages/<who says it>/` (`api/`, for what the API says;
 `ui/`, for what the shared parts of the screens say: the components of
-`ui`, the rules of `fields`, the reading of `answers`),
+`ui`, the rules of `fields`, the reading of `answers`, the screens of
+`session`, the frame of `app-frame`),
 written in every language with `text({ en, ja })`: one that lacks a language
 does not compile. The headline of a validation error and the message of a
 rule, of a schema or of a use case, are such messages, in the file of their

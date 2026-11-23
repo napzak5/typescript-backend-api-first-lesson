@@ -1,3 +1,5 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { PasswordChangeForm } from './password-change-form'
@@ -21,8 +23,7 @@ export const Empty: Story = {}
 export const CurrentPasswordWrong: Story = {
   args: {
     errors: {
-      currentPassword:
-        '現在のパスワードが違います。5 回続けて違うと、15 分間、サインインもできなくなります。',
+      currentPassword: securityMessages.password.currentWrong,
     },
   },
 }
@@ -31,8 +32,7 @@ export const CurrentPasswordWrong: Story = {
 export const NewPasswordRefused: Story = {
   args: {
     errors: {
-      newPassword:
-        'このパスワードは推測されやすいため、使えません。別のパスワードを入力してください。',
+      newPassword: securityMessages.passwordRule.guessable,
     },
   },
 }
@@ -44,7 +44,6 @@ export const Sending: Story = {
 /** The change did not reach the API */
 export const Unsent: Story = {
   args: {
-    message:
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: NOT_SENT_MESSAGE,
   },
 }

@@ -1,10 +1,12 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
+import { act } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as twoFactorPasswordFormStories from './two-factor-password-form.stories'
 
 const stories = composeStories(twoFactorPasswordFormStories)
@@ -82,5 +84,47 @@ describe('TwoFactorPasswordForm', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
     )
+  })
+})
+
+describe('TwoFactorPasswordForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should ask for the password in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(
+      'The password of this account. It confirms that it is the owner of the account who sets this up.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Begin the set-up' }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Cancel' })).toBeVisible()
+  })
+
+  it('should say the errors anew when the page turns English, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.PasswordWrong.run()
+    screen.getByLabelText('パスワード').blur()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'The password is not correct. After 5 wrong attempts in a row, you cannot sign in either for 15 minutes.',
+      ),
+    )
+    expect(screen.getByLabelText('Password')).not.toHaveFocus()
   })
 })

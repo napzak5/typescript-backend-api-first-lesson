@@ -1,4 +1,10 @@
-import { Alert, PageHeader, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  Alert,
+  PageHeader,
+  useNotifications,
+  useSay,
+} from '@beauty-salon-frontend/ui'
+import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useMutation } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
 import { signIn } from '../api/sign-in'
@@ -30,6 +36,7 @@ type SignInScreenProps = {
  * in: `RequireSession` shows the screen that was asked for.
  */
 export const SignInScreen = ({ notice, help }: SignInScreenProps) => {
+  const say = useSay()
   const [state, setState] = useState<SignInState>(INITIAL_SIGN_IN_STATE)
   const { notify } = useNotifications()
   const attempt = useMutation({
@@ -38,7 +45,7 @@ export const SignInScreen = ({ notice, help }: SignInScreenProps) => {
     // Runs also when the screen is gone by then, as it is after a success
     onSuccess: (outcome, { credentials }) => {
       if (outcome.type === 'signedIn') {
-        notify({ tone: 'success', message: 'サインインしました。' })
+        notify({ tone: 'success', message: sessionMessages.signedIn })
       }
       setState((current) => afterAttempt(current, credentials, outcome))
     },
@@ -55,7 +62,7 @@ export const SignInScreen = ({ notice, help }: SignInScreenProps) => {
 
   return (
     <>
-      <PageHeader title='サインイン' />
+      <PageHeader title={say(sessionMessages.signIn)} />
       {notice !== undefined && <Alert tone='info'>{notice}</Alert>}
       <SignInForm
         step={state.step.type}

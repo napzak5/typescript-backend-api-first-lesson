@@ -1,7 +1,15 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { type RefObject, useLayoutEffect, useRef } from 'react'
 
-/** What is wrong with a value, under the name of its control. */
-export type FormErrors = Record<string, string | undefined>
+/**
+ * What is wrong with a value, under the name of its control: a text of the
+ * screen, or a message (`FormErrors<LocalizedText>`), which the component
+ * that shows the form says in the language of the page.
+ */
+export type FormErrors<Text = string> = Record<string, Text | undefined>
+
+/** The errors of a form of either kind: what moves the focus does not read them */
+export type AnyFormErrors = FormErrors<string | LocalizedText>
 
 /**
  * The first control that has an error. A group of radio buttons says its
@@ -20,7 +28,7 @@ export const firstInvalidIn = (
 }
 
 /** Whether an answer names an error */
-export const hasErrors = (errors: FormErrors): boolean =>
+export const hasErrors = (errors: AnyFormErrors): boolean =>
   Object.values(errors).some((error) => error !== undefined)
 
 /**
@@ -33,7 +41,7 @@ export const hasErrors = (errors: FormErrors): boolean =>
  * whose button stands somewhere else, as in a dialog.
  */
 export const useErrorFocus = (
-  errors: FormErrors,
+  errors: AnyFormErrors,
 ): RefObject<HTMLFormElement | null> => {
   const form = useRef<HTMLFormElement>(null)
 

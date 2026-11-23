@@ -2,6 +2,7 @@ import { PASSWORD_RULE } from '@beauty-salon-frontend/session'
 import {
   Form,
   type FormSays,
+  inJapanese,
   NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
@@ -73,7 +74,7 @@ export const RegisterScreen = () => {
           name='password'
           autoComplete='new-password'
           required
-          description={PASSWORD_RULE}
+          description={inJapanese(PASSWORD_RULE)}
           error={says.errors['password']}
         />
       </Form>

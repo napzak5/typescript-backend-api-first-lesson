@@ -1,8 +1,16 @@
 import type { ModelsUserRoleType } from '@beauty-salon-frontend/api-client'
-import { Button, LoadingIndicator, PageHeader } from '@beauty-salon-frontend/ui'
+import {
+  Button,
+  LoadingIndicator,
+  PageHeader,
+  useSay,
+} from '@beauty-salon-frontend/ui'
+import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { ReactNode } from 'react'
 import { match } from 'ts-pattern'
 import type { Session } from '../../hooks/use-session'
+
+const { sessionGate } = sessionMessages
 
 export type SessionGateProps = {
   /** Who uses the application now: what `useSession` returns */
@@ -29,19 +37,21 @@ export const SessionGate = ({
   signIn,
   onSignOut,
   children,
-}: SessionGateProps) =>
-  match(session)
+}: SessionGateProps) => {
+  const say = useSay()
+
+  return match(session)
     .with({ type: 'loading' }, () => (
-      <LoadingIndicator label='サインインを確認しています' />
+      <LoadingIndicator label={say(sessionGate.checking)} />
     ))
     .with({ type: 'signedOut' }, () => signIn)
     .with({ type: 'unavailable' }, ({ retry }) => (
       <>
         <PageHeader
-          title='サインインを確認できません'
-          description='通信の状態を確かめて、もう一度お試しください。'
+          title={say(sessionGate.unavailable)}
+          description={say(sessionGate.unavailableDescription)}
         />
-        <Button onClick={retry}>もう一度試す</Button>
+        <Button onClick={retry}>{say(sessionGate.tryAgain)}</Button>
       </>
     ))
     .with({ type: 'signedIn' }, ({ user }) =>
@@ -50,11 +60,12 @@ export const SessionGate = ({
       ) : (
         <>
           <PageHeader
-            title='このアプリケーションは利用できません'
-            description={`${user.email} のアカウントでは利用できません。利用できるアカウントでサインインし直してください。`}
+            title={say(sessionGate.notForAccount)}
+            description={say(sessionGate.notForAccountDescription(user.email))}
           />
-          <Button onClick={onSignOut}>サインアウト</Button>
+          <Button onClick={onSignOut}>{say(sessionMessages.signOut)}</Button>
         </>
       ),
     )
     .exhaustive()
+}

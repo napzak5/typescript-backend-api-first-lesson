@@ -7,14 +7,15 @@ import {
   ButtonLink,
   Card,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { match, P } from 'ts-pattern'
@@ -36,6 +37,8 @@ import {
   withTwoFactorStatus,
 } from '../utils/two-factor-flow'
 
+const { twoFactor } = securityMessages
+
 /**
  * Where the set-up is. The secret and the backup codes are in the answer
  * that issued them and nowhere else, so the steps are held here and not in
@@ -52,10 +55,11 @@ type SetupProps = {
 }
 
 const Setup = ({ user, securityHref }: SetupProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const [step, setStep] = useState<Step>({ type: 'password' })
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const heading = useRef<HTMLHeadingElement>(null)
   /** The second factor was turned on before the set-up began, here or elsewhere */
   const onAlready =
@@ -147,17 +151,14 @@ const Setup = ({ user, securityHref }: SetupProps) => {
   return match(step)
     .with({ type: 'password' }, () =>
       onAlready ? (
-        <Card title='2 要素認証は、すでに有効です' headingRef={heading}>
-          <p>
-            バックアップコードの発行し直しと、2
-            要素認証を無効にすることは、アカウントの安全の画面でできます。
-          </p>
+        <Card title={say(twoFactor.alreadyOn)} headingRef={heading}>
+          <p>{say(twoFactor.alreadyOnDescription)}</p>
           <ButtonLink href={securityHref} variant='primary'>
-            アカウントの安全へ戻る
+            {say(securityMessages.backToSecurity)}
           </ButtonLink>
         </Card>
       ) : (
-        <Card title='パスワードを確かめる' headingRef={heading}>
+        <Card title={say(twoFactor.confirmPassword)} headingRef={heading}>
           <TwoFactorPasswordForm
             message={says.message}
             errors={says.errors}
@@ -181,17 +182,12 @@ const Setup = ({ user, securityHref }: SetupProps) => {
       />
     ))
     .with({ type: 'enabled' }, ({ backupCodes }) => (
-      <Card title='2 要素認証を有効にしました' headingRef={heading}>
-        <p>
-          次のサインインから、パスワードに加えて、認証アプリのコードを確かめます。有効にしたことを、メールでお知らせしました。
-        </p>
-        <p>
-          認証アプリを使えないときのための、バックアップコードです。それぞれ 1
-          回だけ、認証アプリのコードの代わりに使えます。この画面を離れると、二度と表示されません。印刷するか、パスワードマネージャーなどの安全な場所に控えてください。控えをなくしたときは、認証アプリのコードで、アカウントの安全の画面から発行し直せます。
-        </p>
+      <Card title={say(twoFactor.turnedOn)} headingRef={heading}>
+        <p>{say(twoFactor.turnedOnDescription)}</p>
+        <p>{say(twoFactor.backupCodesDescription)}</p>
         <BackupCodeList codes={backupCodes} />
         <ButtonLink href={securityHref} variant='primary'>
-          アカウントの安全へ戻る
+          {say(securityMessages.backToSecurity)}
         </ButtonLink>
       </Card>
     ))
@@ -211,6 +207,7 @@ export type TwoFactorSetupScreenProps = {
 export const TwoFactorSetupScreen = ({
   securityHref,
 }: TwoFactorSetupScreenProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: OWN_ACCOUNT,
     queryFn: readOwnAccount,
@@ -221,20 +218,20 @@ export const TwoFactorSetupScreen = ({
   return (
     <>
       <PageHeader
-        title='2 要素認証を設定する'
-        description='サインインのときに、パスワードに加えて、スマートフォンの認証アプリが表示するコードを確かめるようにします。パスワードが知られても、サインインされません。'
+        title={say(twoFactor.setUp)}
+        description={say(twoFactor.setUpDescription)}
       />
       {match(read.data)
         .with(undefined, () => (
-          <LoadingIndicator label='アカウントを読み込んでいます' />
+          <LoadingIndicator label={say(securityMessages.loadingAccount)} />
         ))
         .with({ type: 'found' }, ({ user }) => (
           <Setup user={user} securityHref={securityHref} />
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('アカウント'), reason),
+            message={say(
+              unreadMessageOf(securityMessages.names.account, reason),
             )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}

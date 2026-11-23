@@ -125,7 +125,7 @@ const CreateAccount = ({ token, invitation, onEnd }: StepProps) => {
           name='password'
           autoComplete='new-password'
           required
-          description={PASSWORD_RULE}
+          description={inJapanese(PASSWORD_RULE)}
           error={says.errors['password']}
         />
       </Form>

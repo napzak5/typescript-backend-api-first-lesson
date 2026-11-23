@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
-import { type ReactNode, useLayoutEffect } from 'react'
+import { act, type ReactNode, useLayoutEffect } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as signInFormStories from './sign-in-form.stories'
 
 const stories = composeStories(signInFormStories)
@@ -291,5 +292,77 @@ describe('SignInForm', () => {
     ).toHaveAccessibleDescription(
       /コードが正しくありません。新しいコードを入力してください。/,
     )
+  })
+})
+
+describe('SignInForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls and its button in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Credentials.run()
+
+    // Assert
+    expect(screen.getByRole('textbox', { name: 'Email address' })).toBeVisible()
+    expect(screen.getByLabelText('Password')).toBeVisible()
+    expect(
+      screen.getByRole('checkbox', { name: 'Keep me signed in for 30 days' }),
+    ).toHaveAccessibleDescription(
+      'Do not choose this on a device that others use too.',
+    )
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeVisible()
+  })
+
+  it('should ask for the code in English at the second step', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.TwoFactorCode.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Authentication code' }),
+    ).toHaveAccessibleDescription(
+      'Enter the 6-digit code shown in your authenticator app, or a backup code.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Back to the email address' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English that the credentials were refused', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'The email address or the password is not correct. After 5 wrong attempts in a row, you cannot sign in for 15 minutes.',
+    )
+  })
+
+  it('should say the errors anew when the page turns English, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.WithFieldErrors.run()
+    const email = screen.getByRole('textbox', { name: 'メールアドレス' })
+    email.blur()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(email).toHaveAccessibleName('Email address')
+    expect(email).toHaveAccessibleDescription('Enter an email address.')
+    expect(email).not.toHaveFocus()
   })
 })

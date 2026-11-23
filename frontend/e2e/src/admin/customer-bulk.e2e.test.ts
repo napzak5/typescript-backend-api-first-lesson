@@ -185,7 +185,7 @@ for (const { language, open } of PAGES) {
       await open(page)
       const salon = await salonId(api)
       await page.goto(`${ADMIN.origin}/salons/${salon}/customers/import`)
-      await enterCredentials(page, OWNER, api.seedPassword)
+      await enterCredentials(page, OWNER, api.seedPassword, language)
       await expect(heading(page, 'CSV から登録する')).toBeFocused()
       await page
         .getByLabel('CSV ファイル')
@@ -235,7 +235,7 @@ for (const { language, open } of PAGES) {
         ]),
       )
       await page.goto(`${ADMIN.origin}/salons/${salon}/customers`)
-      await enterCredentials(page, OWNER, api.seedPassword)
+      await enterCredentials(page, OWNER, api.seedPassword, language)
       await expect(heading(page, '顧客台帳')).toBeFocused()
       await chooseCustomer(page, YUKI.name)
       await page.getByRole('button', { name: '台帳から削除する' }).click()

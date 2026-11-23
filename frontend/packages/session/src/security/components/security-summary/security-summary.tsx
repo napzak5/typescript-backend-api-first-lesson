@@ -6,13 +6,17 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Ref } from 'react'
 import { match } from 'ts-pattern'
 import {
   passwordChangedOf,
   twoFactorStateOf,
 } from '../../utils/security-format'
+
+const { password, twoFactor } = securityMessages
 
 export type SecuritySummaryProps = {
   /** The account of the session, as the API has it now */
@@ -46,48 +50,51 @@ export const SecuritySummary = ({
   twoFactorHeadingRef,
   timeZone,
 }: SecuritySummaryProps) => {
-  const twoFactor = twoFactorStateOf(user.twoFactorStatus)
+  const say = useSay()
+  const state = twoFactorStateOf(user.twoFactorStatus)
 
   return (
     <>
-      <Card title='パスワード'>
+      <Card title={say(password.title)}>
         <DescriptionList
           items={[
             {
-              term: '最後に変更した日時',
-              description: passwordChangedOf(user, timeZone),
+              term: say(password.lastChanged),
+              description: say(passwordChangedOf(user, timeZone)),
             },
           ]}
         />
-        <ButtonLink href={passwordHref}>パスワードを変更する</ButtonLink>
+        <ButtonLink href={passwordHref}>{say(password.change)}</ButtonLink>
       </Card>
-      <Card title='2 要素認証' headingRef={twoFactorHeadingRef}>
+      <Card title={say(twoFactor.title)} headingRef={twoFactorHeadingRef}>
         <DescriptionList
           items={[
             {
-              term: '状態',
-              description: (
-                <Badge tone={twoFactor.tone}>{twoFactor.label}</Badge>
-              ),
+              term: say(twoFactor.state),
+              description: <Badge tone={state.tone}>{say(state.label)}</Badge>,
             },
           ]}
         />
-        <p>{twoFactor.description}</p>
+        <p>{say(state.description)}</p>
         <Actions>
           {match(user.twoFactorStatus)
             .with('disabled', () => (
-              <ButtonLink href={twoFactorHref}>2 要素認証を設定する</ButtonLink>
+              <ButtonLink href={twoFactorHref}>
+                {say(twoFactor.setUp)}
+              </ButtonLink>
             ))
             .with('pending', () => (
-              <ButtonLink href={twoFactorHref}>設定をやり直す</ButtonLink>
+              <ButtonLink href={twoFactorHref}>
+                {say(twoFactor.setUpAgain)}
+              </ButtonLink>
             ))
             .with('enabled', () => (
               <>
                 <Button onClick={onIssueBackupCodes}>
-                  バックアップコードを発行し直す
+                  {say(twoFactor.issueBackupCodes)}
                 </Button>
                 <Button variant='danger' onClick={onStopTwoFactor}>
-                  2 要素認証を無効にする
+                  {say(twoFactor.turnOff)}
                 </Button>
               </>
             ))

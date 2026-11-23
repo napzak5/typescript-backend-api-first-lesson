@@ -1,3 +1,5 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { TwoFactorStopDialog } from './two-factor-stop-dialog'
@@ -26,8 +28,8 @@ export const Asking: Story = {}
 export const BothMissing: Story = {
   args: {
     errors: {
-      password: 'パスワードを入力してください。',
-      code: '認証アプリに表示されている 6 桁のコードか、バックアップコードを入力してください。',
+      password: securityMessages.twoFactorFlow.passwordMissing,
+      code: securityMessages.twoFactorFlow.codeMissing,
     },
   },
 }
@@ -36,8 +38,7 @@ export const BothMissing: Story = {
 export const PasswordWrong: Story = {
   args: {
     errors: {
-      password:
-        'パスワードが違います。5 回続けて違うと、15 分間、サインインもできなくなります。',
+      password: securityMessages.twoFactorFlow.passwordWrong,
     },
   },
 }
@@ -49,7 +50,6 @@ export const Sending: Story = {
 /** The request did not reach the API */
 export const Unsent: Story = {
   args: {
-    message:
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: NOT_SENT_MESSAGE,
   },
 }

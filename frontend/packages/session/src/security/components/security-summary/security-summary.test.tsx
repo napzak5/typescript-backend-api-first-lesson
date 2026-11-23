@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as securitySummaryStories from './security-summary.stories'
 
 const stories = composeStories(securitySummaryStories)
@@ -113,5 +114,53 @@ describe('SecuritySummary', () => {
     expect(onIssueBackupCodes).toHaveBeenCalledTimes(1)
     expect(onStopTwoFactor).toHaveBeenCalledTimes(1)
     expect(within(twoFactor).queryByRole('link')).toBeNull()
+  })
+})
+
+describe('SecuritySummary on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say the password and a second factor that is not set up in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.PasswordOnly.run()
+
+    // Assert
+    const password = part('Password')
+    expect(within(password).getByRole('term')).toHaveTextContent('Last changed')
+    expect(within(password).getByText('October 2, 2026 at 18:30')).toBeVisible()
+    expect(
+      within(password).getByRole('link', { name: 'Change the password' }),
+    ).toBeVisible()
+    const twoFactor = part('Two-factor authentication')
+    expect(within(twoFactor).getByRole('term')).toHaveTextContent('Status')
+    expect(within(twoFactor).getByText('Not set up')).toBeVisible()
+    expect(
+      within(twoFactor).getByRole('link', {
+        name: 'Set up two-factor authentication',
+      }),
+    ).toBeVisible()
+  })
+
+  it.each([
+    [stories.PasswordNeverChanged, 'Not changed since the account was created'],
+    [stories.TwoFactorPending, 'Set-up not finished'],
+    [stories.TwoFactorPending, 'Set up again'],
+    [stories.TwoFactorEnabled, 'On'],
+    [stories.TwoFactorEnabled, 'Issue new backup codes'],
+    [stories.TwoFactorEnabled, 'Turn off two-factor authentication'],
+  ])('should say in English: %#, "%s"', async (story, said) => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await story.run()
+
+    // Assert
+    expect(screen.getByText(said)).toBeVisible()
   })
 })

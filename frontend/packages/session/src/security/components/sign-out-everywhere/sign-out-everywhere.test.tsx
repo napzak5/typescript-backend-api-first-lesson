@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as signOutEverywhereStories from './sign-out-everywhere.stories'
 
 const stories = composeStories(signOutEverywhereStories)
@@ -100,5 +101,38 @@ describe('SignOutEverywhere', () => {
     // Assert
     expect(confirmButton()).toHaveAttribute('aria-busy', 'true')
     expect(stories.Sending.args.onConfirm).not.toHaveBeenCalled()
+  })
+})
+
+describe('SignOutEverywhere on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer, ask and say in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unsent.run()
+
+    // Assert
+    expect(
+      screen.getByRole('button', { name: 'Sign out on every device' }),
+    ).toBeVisible()
+    const question = screen.getByRole('dialog', {
+      name: 'Sign out on every device?',
+    })
+    expect(question).toHaveAccessibleDescription(
+      'This ends every sign-in of this account, on this device too. To go on, sign in again.',
+    )
+    expect(
+      within(question)
+        .getAllByRole('button')
+        .map(({ textContent }) => textContent),
+    ).toEqual(['Back', 'Sign out'])
+    expect(within(question).getByRole('alert')).toHaveTextContent(
+      'It could not be sent. Check your connection and try again.',
+    )
   })
 })

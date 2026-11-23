@@ -175,7 +175,17 @@ describe('Button', () => {
   and `afterEach(() => { localStorage.clear() })` in that `describe`. That
   a component says its texts anew when the language is chosen while it is
   shown, in this tab or in another, is shown once for the hook
-  (`not-recorded.test.tsx`), not for every component.
+  (`not-recorded.test.tsx`), not for every component. A form whose texts
+  are messages is shown to say its errors anew without moving the focus:
+  the test draws a story with an error, takes the focus off the control
+  (`control.blur()`), chooses English in
+  `act(() => { languageStore.choose('en') })`, and asserts that the control
+  says the English sentence and has no focus (`sign-in-form.test.tsx`).
+- A function that reads the values of such a form, or the answer to it,
+  is tested against the sentences in both languages, written out
+  (`{ en: 'Enter an email address.', ja: 'メールアドレスを入力してください。' }`),
+  not against the message it should return: a test that compares the
+  message with itself does not see a wrong sentence.
 
 ### Form controls
 
@@ -1366,7 +1376,8 @@ test.describe('the admin application', () => {
 - Elements are found as a user finds them: `getByRole`, `getByLabel`,
   `getByText`. No class name, no test ID. The locators and the steps that
   tests share are in `src/support/sign-in.ts` (`heading`, `enterCredentials`,
-  `signOutButton`, and `registerNewcomer` for an account the seed data
+  `signOutButton`, which take the language of the page, Japanese unless
+  said, and `registerNewcomer` for an account the seed data
   does not have: registered and confirmed through the API, without a
   profile); the applications, their origins and their titles in
   `src/support/applications.ts`; a file the owner uploads through the API and the

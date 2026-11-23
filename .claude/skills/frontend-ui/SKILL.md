@@ -22,9 +22,9 @@ this one: a component is not done without its stories and its test.
 | The check of the style rules | `frontend/packages/theme/src/style-rules.ts`, run by `style-rules.test.ts` over every package and app |
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
-| The language of the page: where the choice is kept (`languageStore`), the hook that says a message in it (`useSay`), the messages of the shared parts of the screens (`uiMessages` of the components, `fieldMessages` of the rules of `fields`, `answerMessages` of the reading of `answers`), and what a screen that is still written in Japanese takes a message through (`inJapanese`, `inJapaneseIfAny`, `errorsInJapanese`, `writtenInJapanese`) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/`, `frontend/packages/ui/src/utils/japanese.ts` |
+| The language of the page: where the choice is kept (`languageStore`), the hooks that say a message in it (`useSay`) and what a form says (`useSaidForm`), the messages of the shared parts of the screens (`uiMessages` of the components, `fieldMessages` of the rules of `fields`, `answerMessages` of the reading of `answers`, `sessionMessages` and `securityMessages` of the screens of `session`, `frameMessages` of `app-frame`), and what a screen that is still written in Japanese takes a message through (`inJapanese`, `inJapaneseIfAny`, `errorsInJapanese`, `writtenInJapanese`) | `frontend/packages/io/src/libs/language/`, `frontend/packages/ui/src/hooks/language.ts`, `shared-i18n/src/messages/ui/`, `frontend/packages/ui/src/utils/japanese.ts` |
 | How a value is written in each language: numbers, shares, amounts, the names of currencies, the sizes of files, days and months of the calendar, and moments on the clock of a time zone | `shared-i18n/src/formats/` (`@beauty-salon-shared/i18n/formats`) |
-| What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls (`FormSays`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
+| What a form was sent with and what it says, in every application and package: the value to send or the errors (`FormRead`), what is said of the attempt and at the controls, in texts or in messages (`FormSays`, `FormSays<LocalizedText>`, `NOTHING_TO_SAY`, `aboutTheAttempt`), the text of a control and a text or nothing (`textOf`, `textOrNull`), the error of a control (`errorAt`), whether a form is sent as it opened (`same`, `NO_CHANGE_MESSAGE`) | `frontend/packages/ui/src/components/form/form-values.ts` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/screens/`; what they show is in `src/components/` |
 | The start and the frame of an application: what `src/main.tsx` calls (`startApplication`), the frame around the routes (`AppFrame`), an application that is all behind a session, with the screens of the account (`StaffApplication`), the screen of an address that is none (`NotFoundPage`), the change of the password at a route (`PasswordChangePage`), and whether an address is at or below a screen (`isAtOrBelow`) | `frontend/packages/app-frame/src/screens/`, `src/components/not-found-page/`, `src/utils/addresses.ts` (`@beauty-salon-frontend/app-frame`) |
 | The screens of the security of an account (the password, the devices that are signed in, the second factor), which every application puts at an address of its own, and the rule of a password that is chosen | `frontend/packages/session/src/security/` (the rule: `utils/password-rule.ts`) |
@@ -323,8 +323,9 @@ chose none. `languageStore` of `io` keeps the choice (`localStorage`,
 keeps `<html lang>` at it; and a component says its texts in it. The whole
 is in `docs/i18n.md` (「画面の言語」).
 
-The texts become messages a package at a time. `ui` is done, and so are
-`io` and `api-client`, which say nothing. The other packages and the
+The texts become messages a package at a time. `ui`, `fields`,
+`answers`, `session` and `app-frame` are done, and so are `io` and
+`api-client`, which say nothing. `salon-screens`, `preferences` and the
 applications still write their texts in Japanese, in the source, and no
 application shows a control that chooses the language yet.
 
@@ -334,8 +335,10 @@ In a package that is done:
   in every language with `text({ en, ja })`; one whose words depend on a
   value is a function of the value. The messages of the shared parts of
   the screens are in `@beauty-salon-shared/i18n/messages/ui`: `uiMessages`
-  (the components), `fieldMessages` (the rules of `fields`) and
-  `answerMessages` (the reading of `answers`). `fields` and `answers` hand
+  (the components), `fieldMessages` (the rules of `fields`),
+  `answerMessages` (the reading of `answers`), `sessionMessages` and
+  `securityMessages` (the screens of `session`) and `frameMessages`
+  (`app-frame`). `fields` and `answers` hand
   them on under their own names (`TOO_MANY_REQUESTS_MESSAGE`,
   `emailError(email)`), and take as a message the name a sentence speaks
   of: in English a control is named as a label (`Supplier: enter up to 100
@@ -354,9 +357,24 @@ In a package that is done:
   the screen has said. A notification is the exception: `notify` takes a
   message as well as a string, and says the message where it is shown, in
   the language the page has then.
+- A form says messages. The functions that read its values and the answer
+  return them (`FormRead<Value, FormErrors<LocalizedText>>`,
+  `FormSays<LocalizedText>`), and the screen keeps them
+  (`useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)`). The component that
+  shows the form takes them (`message?: LocalizedText`,
+  `errors?: FormErrors<LocalizedText>`), says them with
+  `const said = useSaidForm(message, errors)`, gives each control what was
+  said (`error={said.errors[CODE]}`), and gives `Form` or `FormDialog` the
+  errors as it took them (`errors={errors}`). The form moves the focus to
+  the first control with an error when its `errors` is a new object, which
+  is a new attempt: what was said is a new object at every render, and
+  given to the form it would move the focus whenever the language changes.
+  The errors of `Form` and `FormDialog` are of the type they are given,
+  texts (`FormErrors`) unless said, so the form of an application that is
+  still written in Japanese (`Pick<FormProps, 'errors'>`) keeps its texts.
 - A count is made with the counters of `ui`:
   `countOf(total, shown, COUNTED.people)` is 「12 人（10 人を表示しています）」
-  and "12 people (showing 10)". `COUNTED` has `items`, `people` and `rows`,
+  and "12 people (showing 10)". `COUNTED` has `items`, `people`, `rows` and `devices`,
   and English names one of them in the singular. A list that is counted in
   other words gives a counter of its own.
 - `src/texts.test.ts` of the package fails on a text that is written in
@@ -395,7 +413,9 @@ optional))`). `writtenInJapanese(text)` hands a sentence or a name the
 screen wrote itself to what takes a message: a counter in words of its own
 is `(count) => writtenInJapanese(`${count} 台`)`, the name of a control is
 `tooLongOf(writtenInJapanese('仕入先'), 100)`, and what was not read is
-`unreadMessageOf(writtenInJapanese('予約'), reason)`. A message never goes
+`unreadMessageOf(writtenInJapanese('予約'), reason)`. The screens of the
+portal that show the rule of a password of `session` say it in Japanese
+too (`description={inJapanese(PASSWORD_RULE)}`). A message never goes
 into a template literal, a `+` or a `join`, where it is written
 `[object Object]`: a screen puts the string it said there
 (`` `${inJapanese(charactersOf(500))}以内で書いてください。` ``). The type

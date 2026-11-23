@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   setWindowWidth,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as accountMenuStories from './account-menu.stories'
 
 const stories = composeStories(accountMenuStories)
@@ -122,5 +123,39 @@ describe('AccountMenu', () => {
     // Assert
     expect(screen.queryByRole('link')).not.toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+})
+
+describe('AccountMenu on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should lead to the security of the account and sign out in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithTheSecurityOfTheAccount.run()
+
+    // Assert
+    expect(
+      screen.getByRole('link', { name: 'Account security' }),
+    ).toHaveAttribute('href', '/account/security')
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeVisible()
+  })
+
+  it('should offer to sign in in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.SignedOutWithSignInScreen.run()
+
+    // Assert
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
+      'href',
+      '/sign-in',
+    )
   })
 })

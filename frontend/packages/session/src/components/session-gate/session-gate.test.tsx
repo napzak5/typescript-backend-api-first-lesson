@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as sessionGateStories from './session-gate.stories'
 
 const stories = composeStories(sessionGateStories)
@@ -81,5 +82,60 @@ describe('SessionGate', () => {
     ).toBeVisible()
     expect(screen.queryByText('マイページの内容')).not.toBeInTheDocument()
     expect(stories.AnotherRole.args.onSignOut).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('SessionGate on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say in English that it checks the sign-in', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Loading.run()
+
+    // Assert
+    expect(screen.getByRole('status')).toHaveTextContent('Checking the sign-in')
+  })
+
+  it('should say in English that the sign-in could not be checked', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unavailable.run()
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { name: 'The sign-in could not be checked' }),
+    ).toBeVisible()
+    expect(
+      screen.getByText('Check your connection and try again.'),
+    ).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeVisible()
+  })
+
+  it('should say in English that the account cannot use the application', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.AnotherRole.run()
+
+    // Assert
+    expect(
+      screen.getByRole('heading', {
+        name: 'This application is not available',
+      }),
+    ).toBeVisible()
+    expect(
+      screen.getByText(
+        'It is not available to the account hanako@example.com. Sign in again with an account that can use it.',
+      ),
+    ).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeVisible()
   })
 })

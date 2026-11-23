@@ -4,15 +4,21 @@ import {
   type FormErrors,
   NO_ERRORS,
   PasswordField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { PASSWORD_RULE } from '../../utils/password-rule'
 import { CURRENT_PASSWORD, NEW_PASSWORD } from '../../utils/security-flow'
 
+const { password } = securityMessages
+
 export type PasswordChangeFormProps = {
   /** What went wrong with the attempt as a whole */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** What is wrong with a password, under the name of its control */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The change is on its way */
   pending?: boolean | undefined
   /** Where the way back leads: the screen of the security of the account */
@@ -33,29 +39,38 @@ export const PasswordChangeForm = ({
   pending,
   cancelHref,
   onSubmit,
-}: PasswordChangeFormProps) => (
-  <Form
-    submitLabel='パスワードを変更する'
-    message={message}
-    errors={errors}
-    pending={pending}
-    actions={<ButtonLink href={cancelHref}>やめる</ButtonLink>}
-    onSubmit={onSubmit}
-  >
-    <PasswordField
-      label='現在のパスワード'
-      name={CURRENT_PASSWORD}
-      autoComplete='current-password'
-      required
-      error={errors[CURRENT_PASSWORD]}
-    />
-    <PasswordField
-      label='新しいパスワード'
-      name={NEW_PASSWORD}
-      autoComplete='new-password'
-      required
-      description={PASSWORD_RULE}
-      error={errors[NEW_PASSWORD]}
-    />
-  </Form>
-)
+}: PasswordChangeFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+
+  return (
+    <Form
+      submitLabel={say(password.change)}
+      message={said.message}
+      errors={errors}
+      pending={pending}
+      actions={
+        <ButtonLink href={cancelHref}>
+          {say(securityMessages.cancel)}
+        </ButtonLink>
+      }
+      onSubmit={onSubmit}
+    >
+      <PasswordField
+        label={say(password.current)}
+        name={CURRENT_PASSWORD}
+        autoComplete='current-password'
+        required
+        error={said.errors[CURRENT_PASSWORD]}
+      />
+      <PasswordField
+        label={say(password.new)}
+        name={NEW_PASSWORD}
+        autoComplete='new-password'
+        required
+        description={say(PASSWORD_RULE)}
+        error={said.errors[NEW_PASSWORD]}
+      />
+    </Form>
+  )
+}

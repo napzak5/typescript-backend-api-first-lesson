@@ -5,6 +5,8 @@ import {
   SessionAccount,
   TwoFactorSetupScreen,
 } from '@beauty-salon-frontend/session'
+import { useSay } from '@beauty-salon-frontend/ui'
+import { frameMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { ReactNode } from 'react'
 import { Route, Routes } from 'react-router'
 import { NotFoundPage } from '../components/not-found-page/not-found-page'
@@ -46,42 +48,48 @@ export const StaffApplication = ({
   roles,
   portalUrl,
   children,
-}: StaffApplicationProps) => (
-  <AppFrame
-    title={title}
-    account={<SessionAccount securityHref={SECURITY_PATH} />}
-    navigationFor={navigationFor}
-    environment={environment}
-  >
-    <RequireSession
-      roles={roles}
-      signInHelp={
-        <p>
-          <a href={`${portalUrl}/forgot-password`}>パスワードを忘れた場合</a>
-        </p>
-      }
+}: StaffApplicationProps) => {
+  const say = useSay()
+
+  return (
+    <AppFrame
+      title={title}
+      account={<SessionAccount securityHref={SECURITY_PATH} />}
+      navigationFor={navigationFor}
+      environment={environment}
     >
-      <Routes>
-        {children}
-        <Route
-          path={SECURITY_PATH}
-          element={
-            <AccountSecurityScreen
-              passwordHref={PASSWORD_PATH}
-              twoFactorHref={TWO_FACTOR_PATH}
-            />
-          }
-        />
-        <Route
-          path={PASSWORD_PATH}
-          element={<PasswordChangePage securityHref={SECURITY_PATH} />}
-        />
-        <Route
-          path={TWO_FACTOR_PATH}
-          element={<TwoFactorSetupScreen securityHref={SECURITY_PATH} />}
-        />
-        <Route path='*' element={<NotFoundPage />} />
-      </Routes>
-    </RequireSession>
-  </AppFrame>
-)
+      <RequireSession
+        roles={roles}
+        signInHelp={
+          <p>
+            <a href={`${portalUrl}/forgot-password`}>
+              {say(frameMessages.forgotPassword)}
+            </a>
+          </p>
+        }
+      >
+        <Routes>
+          {children}
+          <Route
+            path={SECURITY_PATH}
+            element={
+              <AccountSecurityScreen
+                passwordHref={PASSWORD_PATH}
+                twoFactorHref={TWO_FACTOR_PATH}
+              />
+            }
+          />
+          <Route
+            path={PASSWORD_PATH}
+            element={<PasswordChangePage securityHref={SECURITY_PATH} />}
+          />
+          <Route
+            path={TWO_FACTOR_PATH}
+            element={<TwoFactorSetupScreen securityHref={SECURITY_PATH} />}
+          />
+          <Route path='*' element={<NotFoundPage />} />
+        </Routes>
+      </RequireSession>
+    </AppFrame>
+  )
+}

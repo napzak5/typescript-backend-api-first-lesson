@@ -1,3 +1,5 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { TwoFactorPasswordForm } from './two-factor-password-form'
@@ -21,8 +23,7 @@ export const Empty: Story = {}
 export const PasswordWrong: Story = {
   args: {
     errors: {
-      password:
-        'パスワードが違います。5 回続けて違うと、15 分間、サインインもできなくなります。',
+      password: securityMessages.twoFactorFlow.passwordWrong,
     },
   },
 }
@@ -34,7 +35,6 @@ export const Sending: Story = {
 /** The password did not reach the API */
 export const Unsent: Story = {
   args: {
-    message:
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: NOT_SENT_MESSAGE,
   },
 }

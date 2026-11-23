@@ -1,10 +1,12 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
+import { act } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as authenticatorRegistrationStories from './authenticator-registration.stories'
 
 const stories = composeStories(authenticatorRegistrationStories)
@@ -91,5 +93,62 @@ describe('AuthenticatorRegistration', () => {
     expect(code()).toHaveAccessibleDescription(
       expect.stringContaining('コードが違います。'),
     )
+  })
+})
+
+describe('AuthenticatorRegistration on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say how to register the app, and ask for its code, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Issued.run()
+
+    // Assert
+    expect(
+      within(part('Register with the authenticator app')).getByRole('img', {
+        name: 'QR code for the authenticator app',
+      }),
+    ).toBeVisible()
+    const confirmation = part('Confirm the code')
+    expect(
+      within(confirmation).getByRole('textbox', {
+        name: 'Code of the authenticator app',
+      }),
+    ).toHaveAccessibleDescription(
+      'The 6 digits the authenticator app shows. A backup code cannot be used here.',
+    )
+    expect(
+      within(confirmation).getByRole('button', {
+        name: 'Turn on two-factor authentication',
+      }),
+    ).toBeVisible()
+    expect(
+      within(confirmation).getByRole('link', { name: 'Cancel' }),
+    ).toBeVisible()
+  })
+
+  it('should say the errors anew when the page turns English, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.CodeWrong.run()
+    const code = screen.getByRole('textbox', { name: '認証アプリのコード' })
+    code.blur()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(code).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'The code is not correct. Enter the code the authenticator app shows now. After 5 wrong attempts in a row, you cannot sign in either for 15 minutes.',
+      ),
+    )
+    expect(code).not.toHaveFocus()
   })
 })

@@ -1,12 +1,17 @@
-import { PageHeader } from '@beauty-salon-frontend/ui'
+import { PageHeader, useSay } from '@beauty-salon-frontend/ui'
+import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
 
 /**
  * The screen of an account of a salon role that no salon reaches: the
  * screens of a salon have nothing to show it until it joins one.
  */
-export const NoSalonNotice = () => (
-  <PageHeader
-    title='どのサロンにも属していません'
-    description='このアカウントは、いま、どのサロンのスタッフにもなっていません。サロンから招待のメールを受け取り、そのリンクから参加すると、サロンの画面を使えるようになります。'
-  />
-)
+export const NoSalonNotice = () => {
+  const say = useSay()
+
+  return (
+    <PageHeader
+      title={say(sessionMessages.noSalon.title)}
+      description={say(sessionMessages.noSalon.description)}
+    />
+  )
+}
