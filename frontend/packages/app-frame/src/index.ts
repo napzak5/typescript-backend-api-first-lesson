@@ -2,6 +2,7 @@ export { NotFoundPage } from './components/not-found-page/not-found-page'
 export {
   AppFrame,
   type AppFrameProps,
+  type FrameLink,
   type NavigationOf,
 } from './screens/app-frame'
 export {

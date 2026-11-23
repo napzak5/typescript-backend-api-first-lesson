@@ -1,13 +1,22 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
+import type { NavigationOf } from '@beauty-salon-frontend/app-frame'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
 import {
   categorySalesHrefOf,
   dailyHrefOf,
-  navigationFor,
+  navigationFor as linksFor,
   reportsHrefOf,
   staffSalesHrefOf,
   trendsHrefOf,
 } from './navigation'
+
+/** The links of the header, named as a page in Japanese names them */
+const navigationFor = (...address: Parameters<NavigationOf>) =>
+  linksFor(...address).map(({ label, ...link }) => ({
+    ...link,
+    label: inJapanese(label),
+  }))
 
 const SALON_ID = '3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60'
 

@@ -1,4 +1,6 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
+import type { NavigationOf } from '@beauty-salon-frontend/app-frame'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { describe, expect, it } from 'vitest'
 import {
   attachmentHrefOf,
@@ -18,9 +20,9 @@ import {
   customerVersionHrefOf,
   hoursChangeHrefOf,
   inventoryHrefOf,
+  navigationFor as linksFor,
   menuHrefOf,
   movementEntryHrefOf,
-  navigationFor,
   OPERATIONS_PATH,
   orderChangeHrefOf,
   orderReceiptHrefOf,
@@ -78,6 +80,13 @@ import {
   treatmentsHrefOf,
   treatmentsOfCustomerHrefOf,
 } from './navigation'
+
+/** The links of the header, named as a page in Japanese names them */
+const navigationFor = (...address: Parameters<NavigationOf>) =>
+  linksFor(...address).map(({ label, ...link }) => ({
+    ...link,
+    label: inJapanese(label),
+  }))
 
 const SALON_ID = '0193a5b2-8a10-7c2e-b1d4-5e6f7a8b9c01'
 const BOOKINGS = `/salons/${SALON_ID}/bookings`

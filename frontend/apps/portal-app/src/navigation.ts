@@ -1,6 +1,8 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
-import { isAtOrBelow } from '@beauty-salon-frontend/app-frame'
-import type { NavigationItem } from '@beauty-salon-frontend/ui'
+import { type FrameLink, isAtOrBelow } from '@beauty-salon-frontend/app-frame'
+import { portalFrameMessages } from '@beauty-salon-shared/i18n/messages/portal'
+
+const { navigation } = portalFrameMessages
 
 /**
  * The links of the header. They are for a customer who is signed in: the
@@ -15,7 +17,7 @@ import type { NavigationItem } from '@beauty-salon-frontend/ui'
 export const navigationFor = (
   role: ModelsUserResponse['role'] | undefined,
   pathname: string,
-): NavigationItem[] => {
+): FrameLink[] => {
   if (role !== 'customer') {
     return []
   }
@@ -23,17 +25,17 @@ export const navigationFor = (
   return [
     {
       href: '/',
-      label: 'サロンを探す',
+      label: navigation.search,
       current: pathname === '/' || pathname.startsWith('/salons/'),
     },
     {
       href: '/bookings',
-      label: '予約の一覧',
+      label: navigation.bookings,
       current: isAtOrBelow(pathname, '/bookings'),
     },
     {
       href: '/mypage',
-      label: 'マイページ',
+      label: navigation.myPage,
       current: isAtOrBelow(pathname, '/mypage'),
     },
   ]

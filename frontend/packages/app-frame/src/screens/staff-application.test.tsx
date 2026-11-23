@@ -17,7 +17,13 @@ const TITLE = 'Kushi Staff'
 const navigationFor: NavigationOf = (role) =>
   role === undefined
     ? []
-    : [{ href: '/', label: 'はじめの画面', current: false }]
+    : [
+        {
+          href: '/',
+          label: { en: 'Start', ja: 'はじめの画面' },
+          current: false,
+        },
+      ]
 
 const renderAt = (
   path: string,

@@ -33,10 +33,14 @@ const navigationFor: NavigationOf = (role, pathname) =>
   role === undefined
     ? []
     : [
-        { href: '/', label: `${role} の${START}`, current: pathname === '/' },
+        {
+          href: '/',
+          label: { en: `Start of ${role}`, ja: `${role} の${START}` },
+          current: pathname === '/',
+        },
         {
           href: '/reports',
-          label: 'レポート',
+          label: { en: 'Reports', ja: 'レポート' },
           current: isAtOrBelow(pathname, '/reports'),
         },
       ]
