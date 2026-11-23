@@ -3,13 +3,14 @@ import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   PeriodSwitch,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useLocation, useParams, useSearchParams } from 'react-router'
@@ -20,10 +21,10 @@ import { DayChoice } from '../components/day-choice/day-choice'
 import { dayIn, dayQueryOf, neighboursOf, readDay } from '../utils/daily-sales'
 import { ReportRefusal } from './report-refusal'
 
-const TITLE = '1 日の売上'
+const { daily: words, names, titles } = dashboardReportMessages
 
 /** What was wrong with the form, and the day the address showed when it was sent */
-type Refused = { asked: string; errors: FormErrors }
+type Refused = { asked: string; errors: FormErrors<LocalizedText> }
 
 /**
  * The sales of the salon on one day: today at the salon, or the day in
@@ -32,6 +33,7 @@ type Refused = { asked: string; errors: FormErrors }
  * screen read is not shown meanwhile.
  */
 const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
   const { pathname } = useLocation()
   // What was wrong with what was sent, while the address shows the day it was sent from
@@ -68,10 +70,10 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.daily)} description={salon.name} />
       {match(shown)
         .with({ type: P.union('forbidden', 'notFound') }, ({ type }) => (
-          <ReportRefusal refusal={type} what='売上' />
+          <ReportRefusal refusal={type} what={names.seen.sales} />
         ))
         .with(
           P.union(undefined, {
@@ -81,7 +83,7 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             <>
               <DayChoice day={day} errors={errors} onSubmit={show} />
               <PeriodSwitch
-                label='ほかの日'
+                label={say(words.otherDays)}
                 unit='day'
                 beforeHref={hrefOf(before)}
                 currentHref={pathname}
@@ -89,16 +91,16 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
               />
               {match(counted)
                 .with(undefined, () => (
-                  <LoadingIndicator label='売上を集計しています' />
+                  <LoadingIndicator
+                    label={say(dashboardReportMessages.counting)}
+                  />
                 ))
                 .with({ type: 'found' }, ({ sales }) => (
                   <DailySales sales={sales} currency={salon.currency} />
                 ))
                 .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                   <UnreadNotice
-                    message={inJapanese(
-                      unreadMessageOf(writtenInJapanese('売上'), reason),
-                    )}
+                    message={say(unreadMessageOf(names.read.sales, reason))}
                     onRetry={() => void read.refetch()}
                     pending={read.isFetching}
                   />
@@ -114,10 +116,11 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The sales of one day of the salon of the address. */
 export const DailySalesScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.daily)}>
       {(salon) => <DayPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

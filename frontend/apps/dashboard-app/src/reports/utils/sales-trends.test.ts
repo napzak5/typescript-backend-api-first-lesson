@@ -1,4 +1,5 @@
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   axisAmountOf,
@@ -59,18 +60,49 @@ describe('twelveMonthsUntil', () => {
 })
 
 describe('the names of the parts', () => {
-  it.each<[string, TrendUnit, string, string]>([
-    ['2026-11-21', 'daily', '2026年11月21日（土）', '2026/11/21'],
-    ['2026-11-16', 'weekly', '2026年11月16日（月）からの週', '2026/11/16'],
-    ['2026-01-05', 'weekly', '2026年1月5日（月）からの週', '2026/1/5'],
-    ['2026-11', 'monthly', '2026年11月', '2026年11月'],
-    ['2026-01', 'monthly', '2026年1月', '2026年1月'],
+  it.each<[string, TrendUnit, LocalizedText, LocalizedText]>([
+    [
+      '2026-11-21',
+      'daily',
+      { en: 'Sat, November 21, 2026', ja: '2026年11月21日（土）' },
+      { en: '11/21/2026', ja: '2026/11/21' },
+    ],
+    [
+      '2026-11-16',
+      'weekly',
+      {
+        en: 'Week from Mon, November 16, 2026',
+        ja: '2026年11月16日（月）からの週',
+      },
+      { en: '11/16/2026', ja: '2026/11/16' },
+    ],
+    [
+      '2026-01-05',
+      'weekly',
+      {
+        en: 'Week from Mon, January 5, 2026',
+        ja: '2026年1月5日（月）からの週',
+      },
+      { en: '1/5/2026', ja: '2026/1/5' },
+    ],
+    [
+      '2026-11',
+      'monthly',
+      { en: 'November 2026', ja: '2026年11月' },
+      { en: 'November 2026', ja: '2026年11月' },
+    ],
+    [
+      '2026-01',
+      'monthly',
+      { en: 'January 2026', ja: '2026年1月' },
+      { en: 'January 2026', ja: '2026年1月' },
+    ],
   ])(
     'should name %s of the parts %s in the table and on the axis',
     (label, unit, name, short) => {
       // Act, Assert
-      expect(partNameOf(label, unit)).toBe(name)
-      expect(shortPartNameOf(label, unit)).toBe(short)
+      expect(partNameOf(label, unit)).toEqual(name)
+      expect(shortPartNameOf(label, unit)).toEqual(short)
     },
   )
 })
@@ -110,15 +142,15 @@ describe('the scale of a chart', () => {
     expect(scaleTopOf(largest)).toBe(top)
   })
 
-  it.each<[number, string]>([
-    [0, '￥0'],
-    [5000, '￥5,000'],
-    [9999, '￥9,999'],
-    [10_000, '￥1万'],
-    [25_000, '￥2.5万'],
-    [1_000_000, '￥100万'],
-  ])('should write %s on an axis as %s', (amount, written) => {
+  it.each<[number, LocalizedText]>([
+    [0, { en: '¥0', ja: '￥0' }],
+    [5000, { en: '¥5,000', ja: '￥5,000' }],
+    [9999, { en: '¥9,999', ja: '￥9,999' }],
+    [10_000, { en: '¥10K', ja: '￥1万' }],
+    [25_000, { en: '¥25K', ja: '￥2.5万' }],
+    [1_000_000, { en: '¥1M', ja: '￥100万' }],
+  ])('should write %s on an axis as %o', (amount, written) => {
     // Act, Assert
-    expect(axisAmountOf(amount, 'JPY')).toBe(written)
+    expect(axisAmountOf(amount, 'JPY')).toEqual(written)
   })
 })

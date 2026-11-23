@@ -1,14 +1,13 @@
 import type { ModelsSalesByCategoryResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, categoryNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, inJapanese, Note, Table } from '@beauty-salon-frontend/ui'
+import { Card, Note, Table, useSay } from '@beauty-salon-frontend/ui'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
 import { perServiceOf } from '../../utils/sales-breakdown'
-import {
-  CATEGORY_SALES_NOTE,
-  countNameOf,
-  percentNameOf,
-} from '../../utils/sales-report'
+import { percentNameOf } from '../../utils/sales-report'
 import { ShareBar } from '../share-bar/share-bar'
 import styles from './category-sales.module.css'
+
+const { categories: words, columns, count, titles } = dashboardReportMessages
 
 export type CategorySalesProps = {
   /** The kinds of service that sold, the most first, as the API answers; at least one */
@@ -23,46 +22,46 @@ export type CategorySalesProps = {
  * with a bar as long as it. How they are counted is said under the table.
  */
 export const CategorySales = ({ categories, currency }: CategorySalesProps) => {
-  const money = (amount: number): string =>
-    inJapanese(amountOf(amount, currency))
+  const say = useSay()
+  const money = (amount: number): string => say(amountOf(amount, currency))
 
   return (
-    <Card title='メニューの区分ごとの売上'>
+    <Card title={say(words.title)}>
       <div className={styles['part']}>
         <Table<ModelsSalesByCategoryResponse>
-          caption='区分別の売上'
+          caption={say(titles.categories)}
           captionHidden
           columns={[
             {
               key: 'category',
-              header: '区分',
-              cell: ({ category }) => inJapanese(categoryNameOf(category)),
+              header: say(words.category),
+              cell: ({ category }) => say(categoryNameOf(category)),
             },
             {
               key: 'amount',
-              header: '売上',
+              header: say(columns.sales),
               align: 'end',
               cell: ({ amount }) => money(amount),
             },
             {
               key: 'count',
-              header: '施術の数',
+              header: say(columns.services),
               align: 'end',
-              cell: ({ count }) => countNameOf(count),
+              cell: (category) => say(count(category.count)),
             },
             {
               key: 'perService',
-              header: '1 件あたり',
+              header: say(words.perService),
               align: 'end',
               cell: ({ amount, count }) => money(perServiceOf(amount, count)),
             },
             {
               key: 'percentage',
-              header: '割合',
+              header: say(columns.share),
               align: 'end',
               cell: ({ percentage }) => (
                 <ShareBar percent={percentage}>
-                  {percentNameOf(percentage)}
+                  {say(percentNameOf(percentage))}
                 </ShareBar>
               ),
             },
@@ -70,11 +69,9 @@ export const CategorySales = ({ categories, currency }: CategorySalesProps) => {
           rowHeader='category'
           rows={categories}
           rowKey={({ category }) => category}
-          emptyMessage='メニューの売上はありません'
+          emptyMessage={say(words.noneInTable)}
         />
-        <Note>
-          {`${CATEGORY_SALES_NOTE}1 件あたりは、売上を施術の数で割った額です（1 円未満は切り捨て）。`}
-        </Note>
+        <Note>{say(words.noteWithPerService)}</Note>
       </div>
     </Card>
   )

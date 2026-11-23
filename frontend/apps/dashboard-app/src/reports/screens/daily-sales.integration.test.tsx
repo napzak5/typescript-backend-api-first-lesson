@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
@@ -17,7 +18,6 @@ import {
   OWNER,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -27,7 +27,12 @@ import {
   removeTokyo,
   voidSale,
 } from '../../__tests__/arrangements'
-import { menuLink, renderAt, TITLE } from '../../__tests__/screens'
+import {
+  dayInEnglish,
+  menuLink,
+  renderAt,
+  TITLE,
+} from '../../__tests__/screens'
 import { dailyHrefOf } from '../../navigation'
 
 /*
@@ -127,7 +132,7 @@ const NOTHING: [string, string][] = [
 ]
 
 /** The card of the sales of a day */
-const salesOf = (day: string): string => `${inJapanese(dayNameOf(day))}の売上`
+const salesOf = (day: string): string => `${dayNameOf(day).ja}の売上`
 
 /** Shows the sales of a day, as the owner types it. */
 const showDay = async (day: string): Promise<void> => {
@@ -410,5 +415,101 @@ describe('the sales of one day, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the sales of one day on a page in English, against the API', () => {
+  /** The card of the sales of a day, as a page in English names it */
+  const salesInEnglishOf = (day: string): string =>
+    `Sales on ${dayInEnglish(day)}`
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should say the sales of today at the salon in English', async () => {
+    // Arrange
+    await sellTwoDays()
+    const today = await dayFromToday(0)
+
+    // Act
+    renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+
+    // Assert
+    expect(await heading('Daily sales')).toHaveFocus()
+    expect(document.title).toBe(`Daily sales | ${TITLE}`)
+    expect(screen.getByLabelText('Date')).toHaveValue(today)
+    expect(await termsOnceThere(salesInEnglishOf(today))).toEqual([
+      ['Sales', '¥14,300'],
+      ['Checkouts', '2'],
+      ['Refunds', '¥800'],
+      ['Net sales', '¥13,500'],
+    ])
+    expect(screen.getByRole('navigation', { name: 'Other days' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Previous day' })).toBeVisible()
+  })
+
+  it('should say in English that a day is needed, and give the field the focus', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellTwoDays()
+    const today = await dayFromToday(0)
+    renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+    await termsOnceThere(salesInEnglishOf(today))
+    const field = screen.getByLabelText('Date')
+    await user.clear(field)
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Show' }))
+
+    // Assert
+    expect(field).toHaveFocus()
+    expect(field).toHaveAccessibleDescription(
+      'Sales are counted by the day of the checkout (the date at the salon). Enter a date.',
+    )
+  })
+
+  it('should tell the owner in English that the sales of another salon are not theirs to see', async () => {
+    // Arrange
+    renderAt(dailyHrefOf(await salonIdOf(OSAKA)))
+
+    // Act
+    await signInAs(OWNER, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'You cannot see the sales of this salon. Only the owner and the managers of the salon and the administrators can.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say in English that a salon removed since it was read has no sales to show any more', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellTwoDays()
+    renderAt(dailyHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OPERATOR, 'en')
+    await termsOnceThere(salesInEnglishOf(await dayFromToday(0)))
+    await removeTokyo()
+
+    // Act
+    await user.click(screen.getByRole('link', { name: 'Previous day' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This salon was removed, so you cannot see its sales.',
+      ),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Back to the top' })).toBeVisible()
   })
 })

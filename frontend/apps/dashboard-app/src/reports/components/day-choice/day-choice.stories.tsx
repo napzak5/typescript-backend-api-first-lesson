@@ -1,3 +1,4 @@
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { DayChoice } from './day-choice'
@@ -17,5 +18,5 @@ export const Chosen: Story = {}
 
 /** A day that is not one, said beside the field */
 export const Wrong: Story = {
-  args: { errors: { date: '日付を入力してください。' } },
+  args: { errors: { date: salonScreenMessages.period.dayMissing } },
 }

@@ -1,5 +1,6 @@
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { classNames, inJapanese } from '@beauty-salon-frontend/ui'
+import { classNames, useSay } from '@beauty-salon-frontend/ui'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
 import {
   axisAmountOf,
   partNameOf,
@@ -9,6 +10,8 @@ import {
   type TrendUnit,
 } from '../../utils/sales-trends'
 import styles from './trend-chart.module.css'
+
+const { trends: words } = dashboardReportMessages
 
 export type TrendChartProps = {
   /** The parts of the period, in their order; at least one */
@@ -30,6 +33,7 @@ const MOST_SPACED = 60
  * last part alone.
  */
 export const TrendChart = ({ parts, unit, currency }: TrendChartProps) => {
+  const say = useSay()
   const top = scaleTopOf(Math.max(...parts.map(({ sales }) => sales)))
   const first = parts[0]
   const last = parts.at(-1)
@@ -37,11 +41,13 @@ export const TrendChart = ({ parts, unit, currency }: TrendChartProps) => {
   return (
     <div className={styles['chart']} aria-hidden='true'>
       <div className={styles['axis']}>
-        <span className={styles['top']}>{axisAmountOf(top, currency)}</span>
-        <span className={styles['half']}>
-          {axisAmountOf(top / 2, currency)}
+        <span className={styles['top']}>
+          {say(axisAmountOf(top, currency))}
         </span>
-        <span className={styles['zero']}>{axisAmountOf(0, currency)}</span>
+        <span className={styles['half']}>
+          {say(axisAmountOf(top / 2, currency))}
+        </span>
+        <span className={styles['zero']}>{say(axisAmountOf(0, currency))}</span>
       </div>
       <div
         className={classNames(
@@ -66,17 +72,19 @@ export const TrendChart = ({ parts, unit, currency }: TrendChartProps) => {
                   : styles['fromEnd'],
               )}
             >
-              {`${partNameOf(label, unit)} ${inJapanese(amountOf(sales, currency))}`}
+              {say(
+                words.tip(partNameOf(label, unit), amountOf(sales, currency)),
+              )}
             </span>
           </div>
         ))}
       </div>
       <div className={styles['labels']}>
         {first !== undefined && (
-          <span>{shortPartNameOf(first.label, unit)}</span>
+          <span>{say(shortPartNameOf(first.label, unit))}</span>
         )}
         {last !== undefined && last !== first && (
-          <span>{shortPartNameOf(last.label, unit)}</span>
+          <span>{say(shortPartNameOf(last.label, unit))}</span>
         )}
       </div>
     </div>

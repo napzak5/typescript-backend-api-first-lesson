@@ -12,13 +12,14 @@ import {
   Alert,
   Button,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams } from 'react-router'
@@ -31,13 +32,13 @@ import {
 } from '../api/sales-report-api'
 import { SalesReport } from '../components/sales-report/sales-report'
 import { usePeriodCount } from '../hooks/use-period-count'
-import { afterReportExport, REPORT_PERIOD } from '../utils/sales-report'
+import { afterReportExport } from '../utils/sales-report'
 import { ReportRefusal } from './report-refusal'
 
-const TITLE = '売上レポート'
+const { names, report: words, titles } = dashboardReportMessages
 
 /** Why the last export saved nothing, for the period it was asked for */
-type ExportSaid = { asked: string; message: string }
+type ExportSaid = { asked: string; message: LocalizedText }
 
 /**
  * The sales of the salon over a period, counted: the month up to today at
@@ -47,6 +48,7 @@ type ExportSaid = { asked: string; message: string }
  * report the account may not see says so instead of the period.
  */
 const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const [exportSaid, setExportSaid] = useState<ExportSaid>()
   const { notify } = useNotifications()
   const { period, asked, errors, count, read, shown } = usePeriodCount(
@@ -75,7 +77,7 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
   const header = (exportable: boolean) => (
     <PageHeader
-      title={TITLE}
+      title={say(titles.report)}
       description={salon.name}
       actions={
         exportable ? (
@@ -83,7 +85,7 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             pending={exporting.isPending}
             onClick={() => exporting.mutate(period)}
           >
-            CSV に出力する
+            {say(words.export)}
           </Button>
         ) : undefined
       }
@@ -94,7 +96,7 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
     .with({ type: P.union('forbidden', 'notFound') }, ({ type }) => (
       <>
         {header(false)}
-        <ReportRefusal refusal={type} what={TITLE} />
+        <ReportRefusal refusal={type} what={names.seen.report} />
       </>
     ))
     .with(
@@ -105,23 +107,23 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             counted?.type === 'found' && counted.report.transactionCount > 0,
           )}
           {exportSaid !== undefined && exportSaid.asked === asked && (
-            <Alert tone='danger'>{exportSaid.message}</Alert>
+            <Alert tone='danger'>{say(exportSaid.message)}</Alert>
           )}
           <StatisticsPeriod
             period={period}
-            description={REPORT_PERIOD}
+            description={say(dashboardReportMessages.period)}
             errors={errors}
             onSubmit={count}
           />
-          <p>{`${inJapanese(periodNameOf(period))}の売上`}</p>
+          <p>{say(words.of(periodNameOf(period)))}</p>
           {match(counted)
             .with(undefined, () => (
-              <LoadingIndicator label='売上を集計しています' />
+              <LoadingIndicator label={say(dashboardReportMessages.counting)} />
             ))
             .with({ type: 'found', report: { transactionCount: 0 } }, () => (
               <EmptyState
-                title='この期間の売上はありません'
-                description='期間を変えて集計してください。'
+                title={say(dashboardReportMessages.noSales)}
+                description={say(dashboardReportMessages.changePeriod)}
               />
             ))
             .with({ type: 'found' }, ({ report }) => (
@@ -134,9 +136,7 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             ))
             .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
               <UnreadNotice
-                message={inJapanese(
-                  unreadMessageOf(writtenInJapanese('売上レポート'), reason),
-                )}
+                message={say(unreadMessageOf(names.read.report, reason))}
                 onRetry={() => void read.refetch()}
                 pending={read.isFetching}
               />
@@ -150,10 +150,11 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The sales report of the salon of the address. */
 export const SalesReportScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.report)}>
       {(salon) => <ReportPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

@@ -7,12 +7,12 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import {
@@ -21,10 +21,9 @@ import {
 } from '../api/sales-report-api'
 import { CategorySales } from '../components/category-sales/category-sales'
 import { usePeriodCount } from '../hooks/use-period-count'
-import { REPORT_PERIOD } from '../utils/sales-report'
 import { ReportRefusal } from './report-refusal'
 
-const TITLE = '区分別の売上'
+const { categories: words, names, titles } = dashboardReportMessages
 
 /**
  * The sales of services of the salon over a period by kind of service:
@@ -33,6 +32,7 @@ const TITLE = '区分別の売上'
  * screen read is not shown meanwhile.
  */
 const CategoriesPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const { period, errors, count, read, shown } = usePeriodCount(
     salon,
     (counted) => salesByCategoryKeyOf(salon.id, counted),
@@ -41,10 +41,10 @@ const CategoriesPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.categories)} description={salon.name} />
       {match(shown)
         .with({ type: P.union('forbidden', 'notFound') }, ({ type }) => (
-          <ReportRefusal refusal={type} what={TITLE} />
+          <ReportRefusal refusal={type} what={names.seen.categories} />
         ))
         .with(
           P.union(undefined, {
@@ -54,19 +54,21 @@ const CategoriesPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             <>
               <StatisticsPeriod
                 period={period}
-                description={REPORT_PERIOD}
+                description={say(dashboardReportMessages.period)}
                 errors={errors}
                 onSubmit={count}
               />
-              <p>{`${inJapanese(periodNameOf(period))}のメニューの区分別の売上`}</p>
+              <p>{say(words.of(periodNameOf(period)))}</p>
               {match(counted)
                 .with(undefined, () => (
-                  <LoadingIndicator label='売上を集計しています' />
+                  <LoadingIndicator
+                    label={say(dashboardReportMessages.counting)}
+                  />
                 ))
                 .with({ type: 'found', categories: [] }, () => (
                   <EmptyState
-                    title='この期間のメニューの売上はありません'
-                    description='期間を変えて集計してください。'
+                    title={say(words.none)}
+                    description={say(dashboardReportMessages.changePeriod)}
                   />
                 ))
                 .with({ type: 'found' }, ({ categories }) => (
@@ -77,8 +79,8 @@ const CategoriesPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 ))
                 .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                   <UnreadNotice
-                    message={inJapanese(
-                      unreadMessageOf(writtenInJapanese(TITLE), reason),
+                    message={say(
+                      unreadMessageOf(names.read.categories, reason),
                     )}
                     onRetry={() => void read.refetch()}
                     pending={read.isFetching}
@@ -95,10 +97,11 @@ const CategoriesPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The sales of every kind of service of the salon of the address. */
 export const CategorySalesScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.categories)}>
       {(salon) => <CategoriesPart key={salon.id} salon={salon} />}
     </WithSalon>
   )

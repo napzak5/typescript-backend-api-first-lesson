@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as staffSalesStories from './staff-sales.stories'
 
 const stories = composeStories(staffSalesStories)
@@ -54,5 +55,35 @@ describe('StaffSales', () => {
       screen.getByText(/商品の売上も入ります。施術の数と施術の平均単価は/),
     ).toBeInTheDocument()
     expect(rowsOf(TABLE)).toHaveLength(1)
+  })
+})
+
+describe('StaffSales on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should rank every member of the staff and say how their sales are counted, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Ranked.run()
+
+    // Assert
+    expect(rowsOf('Sales by staff')).toEqual([
+      ['1st', 'Mika Suzuki', '¥23,100', '3', '¥7,700'],
+      ['2nd', 'Hiroshi Tanaka', '¥12,100', '2', '¥6,050'],
+      ['3rd', 'Yuki Sato', '¥9,900', '2', '¥4,950'],
+      ['4th', 'Kenji Watanabe', '¥5,500', '1', '¥5,500'],
+      ['5th', 'Aoi Ito', '¥3,300', '0', '¥0'],
+    ])
+    expect(
+      screen.getByRole('region', {
+        name: 'Sales per staff member',
+      }),
+    ).toHaveTextContent(
+      /Services and the average per service count service lines only\. Names are the current display names\.$/,
+    )
   })
 })

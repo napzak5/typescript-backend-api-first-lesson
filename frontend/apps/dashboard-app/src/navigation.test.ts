@@ -1,38 +1,44 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
-import type { NavigationOf } from '@beauty-salon-frontend/app-frame'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   categorySalesHrefOf,
   dailyHrefOf,
-  navigationFor as linksFor,
+  navigationFor,
   reportsHrefOf,
   staffSalesHrefOf,
   trendsHrefOf,
 } from './navigation'
 
-/** The links of the header, named as a page in Japanese names them */
-const navigationFor = (...address: Parameters<NavigationOf>) =>
-  linksFor(...address).map(({ label, ...link }) => ({
-    ...link,
-    label: inJapanese(label),
-  }))
-
 const SALON_ID = '3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60'
+
+const CHOICE = { en: 'Choose a salon', ja: 'サロンを選ぶ' }
+const REPORT = { en: 'Sales report', ja: '売上レポート' }
+
+/** The screens of the sales of the salon, by their names */
+const SALES: [string, LocalizedText][] = [
+  [`/salons/${SALON_ID}/reports`, REPORT],
+  [
+    `/salons/${SALON_ID}/reports/trends`,
+    { en: 'Sales trends', ja: '売上の推移' },
+  ],
+  [
+    `/salons/${SALON_ID}/reports/daily`,
+    { en: 'Daily sales', ja: '1 日の売上' },
+  ],
+  [
+    `/salons/${SALON_ID}/reports/staff`,
+    { en: 'Sales by staff', ja: 'スタッフ別の売上' },
+  ],
+  [
+    `/salons/${SALON_ID}/reports/categories`,
+    { en: 'Sales by category', ja: '区分別の売上' },
+  ],
+]
 
 /** The screens of the sales of the salon, the one of `current` marked */
 const salesOf = (current: string) =>
-  [
-    [`/salons/${SALON_ID}/reports`, '売上レポート'],
-    [`/salons/${SALON_ID}/reports/trends`, '売上の推移'],
-    [`/salons/${SALON_ID}/reports/daily`, '1 日の売上'],
-    [`/salons/${SALON_ID}/reports/staff`, 'スタッフ別の売上'],
-    [`/salons/${SALON_ID}/reports/categories`, '区分別の売上'],
-  ].map(([href = '', label = '']) => ({
-    href,
-    label,
-    current: href === current,
-  }))
+  SALES.map(([href, label]) => ({ href, label, current: href === current }))
 
 describe('navigationFor', () => {
   it('should lead an administrator to the choice of a salon and to the screens of the sales of the salon chosen', () => {
@@ -41,7 +47,7 @@ describe('navigationFor', () => {
 
     // Assert
     expect(items).toEqual([
-      { href: '/', label: 'サロンを選ぶ', current: false },
+      { href: '/', label: CHOICE, current: false },
       ...salesOf(reportsHrefOf(SALON_ID)),
     ])
   })
@@ -67,7 +73,7 @@ describe('navigationFor', () => {
   it('should mark the choice of a salon as the screen an administrator is on', () => {
     // Act, Assert
     expect(navigationFor('admin', '/')).toEqual([
-      { href: '/', label: 'サロンを選ぶ', current: true },
+      { href: '/', label: CHOICE, current: true },
     ])
   })
 
@@ -79,7 +85,7 @@ describe('navigationFor', () => {
         salesOf(reportsHrefOf(SALON_ID)),
       )
       expect(navigationFor(role, '/account/security')).toEqual([
-        { href: '/', label: '売上レポート', current: false },
+        { href: '/', label: REPORT, current: false },
       ])
     },
   )

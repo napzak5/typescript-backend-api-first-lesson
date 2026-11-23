@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf, termsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as salesReportStories from './sales-report.stories'
 
 const stories = composeStories(salesReportStories)
@@ -127,6 +128,95 @@ describe('SalesReport', () => {
       within(
         screen.getByRole('region', { name: 'スタッフ別の上位 5 人' }),
       ).getByText('担当したスタッフのいる売上はありません'),
+    ).toBeVisible()
+  })
+})
+
+describe('SalesReport on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say the sums of the period and how they are counted in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Counted.run()
+
+    // Assert
+    expect(termsOf('Totals for the period')).toEqual([
+      ['Sales', '¥41,800'],
+      ['Refunds', '¥3,000'],
+      ['Net sales', '¥38,800'],
+      ['Checkouts', '4'],
+      ['Average per checkout', '¥10,450'],
+      ['Tax', '¥3,800'],
+      ['Discounts', '¥1,000'],
+    ])
+    expect(
+      screen.getByRole('region', { name: 'Totals for the period' }),
+    ).toHaveTextContent(
+      'Sales include tax, less discounts. Net sales are the sales less refunds. A refund is counted on the day of its checkout, not on the day it was made.',
+    )
+  })
+
+  it('should name the kinds of payment and of service, and rank the staff, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Counted.run()
+
+    // Assert
+    expect(rowsOf('Received by payment method')).toEqual([
+      ['Credit card', '¥16,000', '2', '66.7%'],
+      ['Cash', '¥8,000', '1', '33.3%'],
+    ])
+    expect(rowsOf('Sales by menu category')).toEqual([
+      ['Color', '¥17,600', '2', '50.0%'],
+      ['Cut', '¥12,100', '2', '34.4%'],
+      ['Treatment', '¥5,500', '1', '15.6%'],
+    ])
+    expect(rowsOf('Top 5 staff by sales')).toEqual([
+      ['1st', 'Mika Suzuki', '¥23,100', '3', '¥7,700'],
+      ['2nd', 'Hiroshi Tanaka', '¥12,100', '2', '¥6,050'],
+    ])
+    expect(
+      within(
+        screen.getByRole('region', { name: 'By menu category' }),
+      ).getByRole('link', { name: 'See the sales by category' }),
+    ).toBeVisible()
+    expect(
+      within(screen.getByRole('region', { name: 'Top 5 staff' })).getByRole(
+        'link',
+        { name: 'See the sales of all staff' },
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say in English that nothing was received, no service sold and nobody of the staff sold anything', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutBreakdown.run()
+
+    // Assert
+    expect(
+      within(
+        screen.getByRole('region', { name: 'By payment method' }),
+      ).getByText('No payments received'),
+    ).toBeVisible()
+    expect(
+      within(
+        screen.getByRole('region', { name: 'By menu category' }),
+      ).getByText('No menu sales'),
+    ).toBeVisible()
+    expect(
+      within(screen.getByRole('region', { name: 'Top 5 staff' })).getByText(
+        'No sales handled by the staff',
+      ),
     ).toBeVisible()
   })
 })

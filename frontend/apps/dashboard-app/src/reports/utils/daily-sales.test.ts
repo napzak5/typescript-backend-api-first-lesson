@@ -41,7 +41,9 @@ describe('readDay', () => {
       // Act, Assert
       expect(readDay(formOf({ date: date }))).toEqual({
         type: 'invalid',
-        errors: { date: '日付を入力してください。' },
+        errors: {
+          date: { en: 'Enter a date.', ja: '日付を入力してください。' },
+        },
       })
     },
   )

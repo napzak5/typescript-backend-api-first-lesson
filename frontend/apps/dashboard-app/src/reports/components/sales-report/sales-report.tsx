@@ -12,19 +12,24 @@ import {
 import {
   Card,
   DescriptionList,
-  inJapanese,
   Link,
   Note,
   Table,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import {
-  CATEGORY_SALES_NOTE,
-  countNameOf,
-  percentNameOf,
-  rankNameOf,
-  STAFF_SALES_NOTE,
-} from '../../utils/sales-report'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
+import { percentNameOf } from '../../utils/sales-report'
 import styles from './sales-report.module.css'
+
+const {
+  categories,
+  columns,
+  count,
+  report: words,
+  staff,
+} = dashboardReportMessages
+const { payments, topStaff, totals } = words
 
 export type SalesReportProps = {
   /** The sales of a period, as the API counted them; at least one */
@@ -52,148 +57,153 @@ export const SalesReport = ({
   staffHref,
   categoriesHref,
 }: SalesReportProps) => {
-  const money = (amount: number): string =>
-    inJapanese(amountOf(amount, currency))
+  const say = useSay()
+  const money = (amount: number): string => say(amountOf(amount, currency))
 
   return (
     <div className={styles['report']}>
-      <Card title='期間の合計'>
+      <Card title={say(totals.title)}>
         <div className={styles['part']}>
           <DescriptionList
             items={[
-              { term: '売上', description: money(report.totalSales) },
-              { term: '返金', description: money(report.totalRefunds) },
-              { term: '純売上', description: money(report.netSales) },
               {
-                term: '会計の件数',
-                description: countNameOf(report.transactionCount),
+                term: say(columns.sales),
+                description: money(report.totalSales),
               },
               {
-                term: '客単価',
+                term: say(totals.refunds),
+                description: money(report.totalRefunds),
+              },
+              { term: say(totals.net), description: money(report.netSales) },
+              {
+                term: say(columns.transactions),
+                description: say(count(report.transactionCount)),
+              },
+              {
+                term: say(columns.averageTransaction),
                 description: money(report.averageTransactionValue),
               },
-              { term: '消費税', description: money(report.totalTax) },
-              { term: '値引き', description: money(report.totalDiscounts) },
+              { term: say(totals.tax), description: money(report.totalTax) },
+              {
+                term: say(totals.discounts),
+                description: money(report.totalDiscounts),
+              },
             ]}
           />
-          <Note>
-            売上は、消費税を含み、値引きを引いた額です。純売上は、売上から返金を引いた額です。返金は、返金した日ではなく、もとの会計の日で数えます。
-          </Note>
+          <Note>{say(totals.note)}</Note>
         </div>
       </Card>
-      <Card title='支払い方法別'>
+      <Card title={say(payments.title)}>
         <div className={styles['part']}>
           <Table<ModelsSalesByMethodResponse>
-            caption='支払い方法別の入金'
+            caption={say(payments.caption)}
             captionHidden
             columns={[
               {
                 key: 'method',
-                header: '支払い方法',
-                cell: ({ method }) => inJapanese(methodKindNameOf(method)),
+                header: say(payments.method),
+                cell: ({ method }) => say(methodKindNameOf(method)),
               },
               {
                 key: 'amount',
-                header: '入金',
+                header: say(payments.received),
                 align: 'end',
                 cell: ({ amount }) => money(amount),
               },
               {
                 key: 'count',
-                header: '支払いの件数',
+                header: say(payments.payments),
                 align: 'end',
-                cell: ({ count }) => countNameOf(count),
+                cell: (method) => say(count(method.count)),
               },
               {
                 key: 'percentage',
-                header: '割合',
+                header: say(columns.share),
                 align: 'end',
-                cell: ({ percentage }) => percentNameOf(percentage),
+                cell: ({ percentage }) => say(percentNameOf(percentage)),
               },
             ]}
             rowHeader='method'
             rows={report.salesByMethod}
             rowKey={({ method }) => method}
-            emptyMessage='受け取った支払いはありません'
+            emptyMessage={say(payments.none)}
           />
-          <Note>
-            入金は、受け取った支払いから返金を引いた額です。まだ受け取っていない額は入らないので、合わせても売上と同じにならないことがあります。
-          </Note>
+          <Note>{say(payments.note)}</Note>
         </div>
       </Card>
-      <Card title='メニューの区分別'>
+      <Card title={say(words.categories.title)}>
         <div className={styles['part']}>
           <Table<ModelsSalesByCategoryResponse>
-            caption='メニューの区分別の売上'
+            caption={say(words.categories.caption)}
             captionHidden
             columns={[
               {
                 key: 'category',
-                header: 'メニューの区分',
-                cell: ({ category }) => inJapanese(categoryNameOf(category)),
+                header: say(words.categories.category),
+                cell: ({ category }) => say(categoryNameOf(category)),
               },
               {
                 key: 'amount',
-                header: '売上',
+                header: say(columns.sales),
                 align: 'end',
                 cell: ({ amount }) => money(amount),
               },
               {
                 key: 'count',
-                header: '施術の数',
+                header: say(columns.services),
                 align: 'end',
-                cell: ({ count }) => countNameOf(count),
+                cell: (category) => say(count(category.count)),
               },
               {
                 key: 'percentage',
-                header: '割合',
+                header: say(columns.share),
                 align: 'end',
-                cell: ({ percentage }) => percentNameOf(percentage),
+                cell: ({ percentage }) => say(percentNameOf(percentage)),
               },
             ]}
             rowHeader='category'
             rows={report.salesByCategory}
             rowKey={({ category }) => category}
-            emptyMessage='メニューの売上はありません'
+            emptyMessage={say(categories.noneInTable)}
           />
-          <Note>{CATEGORY_SALES_NOTE}</Note>
+          <Note>{say(categories.note)}</Note>
           <p>
-            <Link href={categoriesHref}>区分別の売上へ</Link>
+            <Link href={categoriesHref}>{say(words.categories.all)}</Link>
           </p>
         </div>
       </Card>
-      <Card title='スタッフ別の上位 5 人'>
+      <Card title={say(topStaff.title)}>
         <div className={styles['part']}>
           <Table<Ranked>
-            caption='スタッフ別の売上の上位 5 人'
+            caption={say(topStaff.caption)}
             captionHidden
             columns={[
               {
                 key: 'rank',
-                header: '順位',
+                header: say(columns.rank),
                 align: 'end',
-                cell: ({ rank }) => rankNameOf(rank),
+                cell: ({ rank }) => say(formats.placeOf(rank)),
               },
               {
                 key: 'staff',
-                header: 'スタッフ',
+                header: say(columns.staff),
                 cell: ({ counted }) => counted.displayName,
               },
               {
                 key: 'totalSales',
-                header: '売上',
+                header: say(columns.sales),
                 align: 'end',
                 cell: ({ counted }) => money(counted.totalSales),
               },
               {
                 key: 'serviceCount',
-                header: '施術の数',
+                header: say(columns.services),
                 align: 'end',
-                cell: ({ counted }) => countNameOf(counted.serviceCount),
+                cell: ({ counted }) => say(count(counted.serviceCount)),
               },
               {
                 key: 'averageServiceValue',
-                header: '施術の平均単価',
+                header: say(columns.averageService),
                 align: 'end',
                 cell: ({ counted }) => money(counted.averageServiceValue),
               },
@@ -204,11 +214,11 @@ export const SalesReport = ({
               counted,
             }))}
             rowKey={({ counted }) => counted.staffId}
-            emptyMessage='担当したスタッフのいる売上はありません'
+            emptyMessage={say(staff.noneInTable)}
           />
-          <Note>{STAFF_SALES_NOTE}</Note>
+          <Note>{say(staff.note)}</Note>
           <p>
-            <Link href={staffHref}>すべてのスタッフの売上へ</Link>
+            <Link href={staffHref}>{say(topStaff.all)}</Link>
           </p>
         </div>
       </Card>

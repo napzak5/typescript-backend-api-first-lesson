@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
@@ -17,7 +18,6 @@ import {
   OWNER,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -28,9 +28,15 @@ import {
   removeTokyo,
   voidSale,
 } from '../../__tests__/arrangements'
-import { countOver, menuLink, renderAt, TITLE } from '../../__tests__/screens'
+import {
+  countOver,
+  dayInEnglish,
+  menuLink,
+  periodInEnglish,
+  renderAt,
+  TITLE,
+} from '../../__tests__/screens'
 import { trendsHrefOf } from '../../navigation'
-import { TREND_PARTS, TREND_UNIT_HELP } from '../utils/sales-trends'
 
 /*
  * The seed data has no sales: a test enters those of today and of a day
@@ -166,7 +172,7 @@ describe('the trends of the sales, against the API', () => {
     expect(chosenUnit()).toBe('monthly')
     expect(
       screen.getByRole('radiogroup', { name: '区切り' }),
-    ).toHaveAccessibleDescription(TREND_UNIT_HELP)
+    ).toHaveAccessibleDescription('週は、月曜日から日曜日までです。')
     await screen.findByRole('table', { name: TABLE })
     const rows = rowsOf(TABLE)
     expect(rows).toHaveLength(12)
@@ -203,16 +209,16 @@ describe('the trends of the sales, against the API', () => {
     // Assert
     expect(
       await screen.findByText(
-        `${inJapanese(dayNameOf(weekAgo))}〜${inJapanese(dayNameOf(today))}の売上の推移`,
+        `${dayNameOf(weekAgo).ja}〜${dayNameOf(today).ja}の売上の推移`,
       ),
     ).toBeVisible()
     await screen.findByRole('rowheader', {
-      name: inJapanese(dayNameOf(weekAgo)),
+      name: dayNameOf(weekAgo).ja,
     })
     const rows = rowsOf(TABLE)
     expect(rows).toHaveLength(7)
-    expect(rows[0]).toEqual([inJapanese(dayNameOf(weekAgo)), ...NONE])
-    expect(rows.at(-1)).toEqual([inJapanese(dayNameOf(today)), ...TODAY])
+    expect(rows[0]).toEqual([dayNameOf(weekAgo).ja, ...NONE])
+    expect(rows.at(-1)).toEqual([dayNameOf(today).ja, ...TODAY])
     expect(chosenUnit()).toBe('daily')
   })
 
@@ -237,12 +243,11 @@ describe('the trends of the sales, against the API', () => {
       twoWeeksAgo,
     )
     const rows = rowsOf(TABLE)
-    expect(rows[0]?.[0]).toBe(`${inJapanese(dayNameOf(firstMonday))}からの週`)
-    expect(rows.at(-1)).toEqual([
-      `${inJapanese(dayNameOf(monday))}からの週`,
-      ...TODAY,
-    ])
-    expect(screen.getByText(new RegExp(TREND_PARTS))).toBeVisible()
+    expect(rows[0]?.[0]).toBe(`${dayNameOf(firstMonday).ja}からの週`)
+    expect(rows.at(-1)).toEqual([`${dayNameOf(monday).ja}からの週`, ...TODAY])
+    expect(
+      screen.getByText(/最初と最後の週や月は、期間の中の日だけを数えます。/),
+    ).toBeVisible()
   })
 
   it('should cut into months when the address names no parts the API cuts into', async () => {
@@ -326,9 +331,7 @@ describe('the trends of the sales, against the API', () => {
     await user.click(menuLink('売上の推移'))
 
     // Assert
-    await screen.findByText(
-      new RegExp(`${inJapanese(dayNameOf(today))}の売上の推移$`),
-    )
+    await screen.findByText(new RegExp(`${dayNameOf(today).ja}の売上の推移$`))
     const last = screen.getByLabelText('集計する期間（まで）')
     expect(last).toHaveValue(today)
     expect(last).not.toHaveAttribute('aria-invalid')
@@ -440,5 +443,134 @@ describe('the trends of the sales, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the trends of the sales on a page in English, against the API', () => {
+  const TABLE_IN_ENGLISH =
+    'Sales, checkouts and average per checkout by interval'
+
+  /** A month, as a page in English names it: 「November 2026」 */
+  const monthInEnglish = (day: string): string =>
+    new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'long',
+      timeZone: 'UTC',
+    }).format(new Date(`${day.slice(0, 7)}-01T00:00:00Z`))
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should say the trend of the twelve months up to today in English, month by month', async () => {
+    // Arrange
+    await sellOverTime()
+    const today = await dayFromToday(0)
+    const first = await dayOf(
+      "date_trunc('month', today) - interval '11 months'",
+    )
+
+    // Act
+    renderAt(trendsHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+
+    // Assert
+    expect(await heading('Sales trends')).toHaveFocus()
+    expect(document.title).toBe(`Sales trends | ${TITLE}`)
+    expect(
+      screen.getByRole('radiogroup', { name: 'Interval' }),
+    ).toHaveAccessibleDescription('A week runs from Monday to Sunday.')
+    expect(
+      screen.getByText(`Sales trends for ${periodInEnglish(first, today)}`),
+    ).toBeVisible()
+    await screen.findByRole('table', { name: TABLE_IN_ENGLISH })
+    const rows = rowsOf(TABLE_IN_ENGLISH)
+    expect(rows[0]).toEqual([monthInEnglish(first), '¥0', '0', '¥0'])
+    expect(rows.at(-1)).toEqual([
+      monthInEnglish(today),
+      '¥14,300',
+      '2',
+      '¥7,150',
+    ])
+  })
+
+  it('should cut the days chosen into weeks, each named in English by its Monday', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await sellOverTime()
+    const today = await dayFromToday(0)
+    const twoWeeksAgo = await dayFromToday(-13)
+    const monday = await dayOf("date_trunc('week', today)")
+    const firstMonday = await dayOf("date_trunc('week', today - 13)")
+    renderAt(trendsHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+    await screen.findByRole('table', { name: TABLE_IN_ENGLISH })
+
+    // Act
+    await user.click(screen.getByRole('radio', { name: 'Week' }))
+    await countOver(twoWeeksAgo, today, 'en')
+
+    // Assert
+    expect(
+      await screen.findByRole('rowheader', {
+        name: `Week from ${dayInEnglish(firstMonday)}`,
+      }),
+    ).toBeVisible()
+    expect(rowsOf(TABLE_IN_ENGLISH).at(-1)).toEqual([
+      `Week from ${dayInEnglish(monday)}`,
+      '¥14,300',
+      '2',
+      '¥7,150',
+    ])
+    expect(
+      screen.getByText(
+        /The first and the last week or month count only the days within the period\.$/,
+      ),
+    ).toBeVisible()
+  })
+
+  it('should tell the owner in English that the trend of another salon is not theirs to see', async () => {
+    // Arrange
+    renderAt(trendsHrefOf(await salonIdOf(OSAKA)))
+
+    // Act
+    await signInAs(OWNER, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'You cannot see the sales trends of this salon. Only the owner and the managers of the salon and the administrators can.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', {
+        name: 'Go to the sales report of your salon',
+      }),
+    ).toBeVisible()
+  })
+
+  it('should say in English that a salon removed since it was read has no trend any more', async () => {
+    // Arrange
+    await sellOverTime()
+    renderAt(trendsHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OPERATOR, 'en')
+    await screen.findByRole('table', { name: TABLE_IN_ENGLISH })
+    await removeTokyo()
+
+    // Act
+    await countOver('2020-01-01', '2020-01-31', 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This salon was removed, so you cannot see its sales trends.',
+      ),
+    ).toBeVisible()
   })
 })

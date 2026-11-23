@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
@@ -21,7 +22,13 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { removeTokyo, sellToBreakDown } from '../../__tests__/arrangements'
-import { countOver, menuLink, renderAt, TITLE } from '../../__tests__/screens'
+import {
+  countOver,
+  menuLink,
+  periodInEnglish,
+  renderAt,
+  TITLE,
+} from '../../__tests__/screens'
 import { reportsHrefOf, staffSalesHrefOf } from '../../navigation'
 
 /*
@@ -273,5 +280,72 @@ describe('the sales of the staff, against the API', () => {
 
     // Assert
     expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+})
+
+describe('the sales of the staff on a page in English, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should rank every member of the staff in English, over the month up to today', async () => {
+    // Arrange
+    await sellToBreakDown()
+    const today = await dayFromToday(0)
+    const first = `${today.slice(0, 8)}01`
+
+    // Act
+    renderAt(staffSalesHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+
+    // Assert
+    expect(await heading('Sales by staff')).toHaveFocus()
+    expect(document.title).toBe(`Sales by staff | ${TITLE}`)
+    expect(
+      screen.getByText(`Sales by staff for ${periodInEnglish(first, today)}`),
+    ).toBeVisible()
+    await screen.findByRole('table', { name: 'Sales by staff' })
+    expect(rowsOf('Sales by staff')).toEqual([
+      ['1st', 'Hiroshi Tanaka', '¥22,000', '2', '¥11,000'],
+      ['2nd', 'Mika Suzuki', '¥12,200', '2', '¥4,450'],
+      ['3rd', 'Yui Watanabe', '¥4,400', '1', '¥4,400'],
+    ])
+  })
+
+  it('should say in English when nobody of the staff sold anything on the days chosen', async () => {
+    // Arrange
+    await sellToBreakDown()
+    renderAt(staffSalesHrefOf(await salonIdOf(TOKYO)))
+    await signInAs(OWNER, 'en')
+    await screen.findByRole('table', { name: 'Sales by staff' })
+
+    // Act
+    await countOver('2020-01-01', '2020-01-31', 'en')
+
+    // Assert
+    expect(
+      await screen.findByText('No sales handled by the staff in this period'),
+    ).toBeVisible()
+  })
+
+  it('should tell the owner in English that the staff of another salon are not theirs to see', async () => {
+    // Arrange
+    renderAt(staffSalesHrefOf(await salonIdOf(OSAKA)))
+
+    // Act
+    await signInAs(OWNER, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'You cannot see the sales by staff of this salon. Only the owner and the managers of the salon and the administrators can.',
+      ),
+    ).toBeVisible()
   })
 })

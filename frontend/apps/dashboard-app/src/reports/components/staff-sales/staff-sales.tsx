@@ -1,14 +1,13 @@
 import type { ModelsSalesByStaffResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, inJapanese, Note, Table } from '@beauty-salon-frontend/ui'
+import { Card, Note, Table, useSay } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { dashboardReportMessages } from '@beauty-salon-shared/i18n/messages/dashboard'
 import { percentOfMost } from '../../utils/sales-breakdown'
-import {
-  countNameOf,
-  rankNameOf,
-  STAFF_SALES_NOTE,
-} from '../../utils/sales-report'
 import { ShareBar } from '../share-bar/share-bar'
 import styles from './staff-sales.module.css'
+
+const { columns, count, staff: words, titles } = dashboardReportMessages
 
 export type StaffSalesProps = {
   /** Every member of the staff who had a line of the sales, the most first, as the API answers; at least one */
@@ -27,31 +26,31 @@ type Ranked = { rank: number; counted: ModelsSalesByStaffResponse }
  * counted is said under the table.
  */
 export const StaffSales = ({ staff, currency }: StaffSalesProps) => {
-  const money = (amount: number): string =>
-    inJapanese(amountOf(amount, currency))
+  const say = useSay()
+  const money = (amount: number): string => say(amountOf(amount, currency))
   const most = staff[0]?.totalSales ?? 0
 
   return (
-    <Card title='スタッフごとの売上'>
+    <Card title={say(words.title)}>
       <div className={styles['part']}>
         <Table<Ranked>
-          caption='スタッフ別の売上'
+          caption={say(titles.staff)}
           captionHidden
           columns={[
             {
               key: 'rank',
-              header: '順位',
+              header: say(columns.rank),
               align: 'end',
-              cell: ({ rank }) => rankNameOf(rank),
+              cell: ({ rank }) => say(formats.placeOf(rank)),
             },
             {
               key: 'staff',
-              header: 'スタッフ',
+              header: say(columns.staff),
               cell: ({ counted }) => counted.displayName,
             },
             {
               key: 'totalSales',
-              header: '売上',
+              header: say(columns.sales),
               align: 'end',
               cell: ({ counted }) => (
                 <ShareBar percent={percentOfMost(counted.totalSales, most)}>
@@ -61,13 +60,13 @@ export const StaffSales = ({ staff, currency }: StaffSalesProps) => {
             },
             {
               key: 'serviceCount',
-              header: '施術の数',
+              header: say(columns.services),
               align: 'end',
-              cell: ({ counted }) => countNameOf(counted.serviceCount),
+              cell: ({ counted }) => say(count(counted.serviceCount)),
             },
             {
               key: 'averageServiceValue',
-              header: '施術の平均単価',
+              header: say(columns.averageService),
               align: 'end',
               cell: ({ counted }) => money(counted.averageServiceValue),
             },
@@ -75,9 +74,9 @@ export const StaffSales = ({ staff, currency }: StaffSalesProps) => {
           rowHeader='staff'
           rows={staff.map((counted, index) => ({ rank: index + 1, counted }))}
           rowKey={({ counted }) => counted.staffId}
-          emptyMessage='担当したスタッフのいる売上はありません'
+          emptyMessage={say(words.noneInTable)}
         />
-        <Note>{STAFF_SALES_NOTE}</Note>
+        <Note>{say(words.note)}</Note>
       </div>
     </Card>
   )
