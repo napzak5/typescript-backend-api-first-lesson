@@ -9,6 +9,7 @@ import {
   FieldRow,
   Form,
   type FormProps,
+  inJapanese,
   Select,
   TextField,
 } from '@beauty-salon-frontend/ui'
@@ -103,7 +104,9 @@ export const BookingMoveForm = ({
               autoComplete='off'
               type='time'
               required
-              defaultValue={timeOfDayAt(booking.startTime, timezone)}
+              defaultValue={inJapanese(
+                timeOfDayAt(booking.startTime, timezone),
+              )}
               description='最初の明細が始まる時刻です。すべての明細が、同じ時間だけ動きます。'
               error={errors['startTime']}
             />

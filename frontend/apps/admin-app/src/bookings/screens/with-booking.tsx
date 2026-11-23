@@ -77,7 +77,7 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
           <>
             <PageHeader title={title} description={salon.name} />
             <p>
-              {`予約番号 ${booking.bookingNumber}（${dayNameOf(booking.bookingDate)} ${hoursOf(booking, salon.timezone)}）`}
+              {`予約番号 ${booking.bookingNumber}（${inJapanese(dayNameOf(booking.bookingDate))} ${hoursOf(booking, salon.timezone)}）`}
             </p>
             {children(booking)}
           </>

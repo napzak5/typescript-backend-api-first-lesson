@@ -14,6 +14,7 @@ import {
   STYLIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -456,7 +457,7 @@ describe('the goods that come for a purchase order, and what to order', () => {
         '30 bottle',
         '50 bottle',
         '25 bottle',
-        dayNameOf(ordered),
+        inJapanese(dayNameOf(ordered)),
       ],
     ])
 

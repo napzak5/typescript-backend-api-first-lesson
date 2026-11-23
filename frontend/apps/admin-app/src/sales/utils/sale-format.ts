@@ -7,6 +7,7 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeTone } from '@beauty-salon-frontend/ui'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 
 /*
  * A sale and its payments in the words of the salon, and what follows from
@@ -105,8 +106,10 @@ export const refundNameOf = (
   refundAmount === null
     ? null
     : [
-        amountOf(refundAmount, currency),
-        ...(refundedAt === null ? [] : [momentNameAt(refundedAt, timezone)]),
+        inJapanese(amountOf(refundAmount, currency)),
+        ...(refundedAt === null
+          ? []
+          : [inJapanese(momentNameAt(refundedAt, timezone))]),
       ].join('、')
 
 /** The states of a payment whose amount was received: a refund does not take it back. */

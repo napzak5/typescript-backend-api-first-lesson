@@ -7,13 +7,13 @@ import {
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
@@ -23,6 +23,8 @@ import { KeywordSearch } from '../components/keyword-search/keyword-search'
 import { SalonChoices } from '../components/salon-choices/salon-choices'
 import { keywordIn, keywordOf } from '../utils/keyword'
 import { KEYWORD, queryOfKeyword } from '../utils/salon-choice'
+
+const { names, salonChoice: words } = salonScreenMessages
 
 export type SalonChoiceScreenProps = {
   /** What the salon is chosen for: 「予約台帳を開くサロンを選びます。」 */
@@ -47,6 +49,7 @@ export const SalonChoiceScreen = ({
   salonHref,
   actions,
 }: SalonChoiceScreenProps) => {
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
   const keyword = keywordIn(query, KEYWORD)
   const found = useInfiniteQuery({
@@ -69,37 +72,33 @@ export const SalonChoiceScreen = ({
   return (
     <>
       <PageHeader
-        title='サロンを選ぶ'
+        title={say(words.title)}
         description={description}
         actions={actions}
       />
       <KeywordSearch
-        label='サロンを探す'
-        description='サロンの名前か紹介文にある言葉。空欄のときは、すべてのサロンを並べます。'
+        label={say(words.search)}
+        description={say(words.searchDescription)}
         keyword={keyword}
         clearHref='/'
         onSubmit={search}
       />
       {match(found.data === undefined ? undefined : listingOf(found.data.pages))
-        .with(undefined, () => (
-          <LoadingIndicator label='サロンを読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('サロン'), reason),
-            )}
+            message={say(unreadMessageOf(names.salons, reason))}
             onRetry={() => void found.refetch()}
             pending={found.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () =>
           keyword === undefined ? (
-            <EmptyState title='サロンはまだありません' />
+            <EmptyState title={say(words.noneYet)} />
           ) : (
             <EmptyState
-              title='キーワードに合うサロンが見つかりませんでした'
-              description='キーワードを変えて、もう一度お探しください。'
+              title={say(words.noMatch)}
+              description={say(words.noMatchDescription)}
             />
           ),
         )

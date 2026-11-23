@@ -5,7 +5,7 @@ import {
   dayNameOf,
   momentNameAt,
 } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList } from '@beauty-salon-frontend/ui'
+import { Card, DescriptionList, inJapanese } from '@beauty-salon-frontend/ui'
 import { hoursOf } from '../../utils/booking-format'
 import {
   memberNameOf,
@@ -46,19 +46,25 @@ export const BookingLineRecord = ({
         { term: '担当', description: memberNameOf(line.staffId, staff) },
         {
           term: '時刻',
-          description: `${dayNameOf(dayAt(new Date(line.startTime), timezone))} ${hoursOf(line, timezone)}`,
+          description: `${inJapanese(dayNameOf(dayAt(new Date(line.startTime), timezone)))} ${hoursOf(line, timezone)}`,
         },
         { term: '所要時間', description: `${line.duration} 分` },
-        { term: '料金', description: amountOf(line.price, currency) },
-        { term: '割引', description: amountOf(line.discountAmount, currency) },
+        {
+          term: '料金',
+          description: inJapanese(amountOf(line.price, currency)),
+        },
+        {
+          term: '割引',
+          description: inJapanese(amountOf(line.discountAmount, currency)),
+        },
         {
           term: '支払う額',
-          description: `${amountOf(line.finalPrice, currency)}${line.taxIncluded ? '（税込）' : '（税別）'}`,
+          description: `${inJapanese(amountOf(line.finalPrice, currency))}${line.taxIncluded ? '（税込）' : '（税別）'}`,
         },
         {
           term: '完了',
           description: line.isCompleted
-            ? `済み${line.completedAt === null ? '' : `（${momentNameAt(line.completedAt, timezone)}）`}`
+            ? `済み${line.completedAt === null ? '' : `（${inJapanese(momentNameAt(line.completedAt, timezone))}）`}`
             : '未',
         },
         { term: 'メモ', description: line.notes },

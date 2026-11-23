@@ -82,7 +82,8 @@ export const ChartTable = ({
       {
         key: 'updatedAt',
         header: '最後に書いた日時',
-        cell: ({ chart }) => momentNameAt(chart.updatedAt, timezone),
+        cell: ({ chart }) =>
+          inJapanese(momentNameAt(chart.updatedAt, timezone)),
       },
     ]}
     rows={rows}

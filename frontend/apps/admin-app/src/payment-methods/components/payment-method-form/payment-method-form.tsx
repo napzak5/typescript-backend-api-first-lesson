@@ -59,7 +59,7 @@ export const PaymentMethodForm = ({
       />
     ) : (
       <p>
-        {`種類: ${methodKindNameOf(method.method)}。種類は変えられません。間違えたときは、この支払い方法で受け取った支払いがなければ削除して足し直し、あれば使うのをやめて、新しく足してください。`}
+        {`種類: ${inJapanese(methodKindNameOf(method.method))}。種類は変えられません。間違えたときは、この支払い方法で受け取った支払いがなければ削除して足し直し、あれば使うのをやめて、新しく足してください。`}
       </p>
     )}
     <TextField

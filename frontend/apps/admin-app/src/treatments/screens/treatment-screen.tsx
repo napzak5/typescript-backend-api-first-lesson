@@ -11,6 +11,7 @@ import {
   Button,
   ButtonLink,
   Dialog,
+  inJapanese,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -193,7 +194,7 @@ const RecordPart = ({
       <TreatmentRecord
         record={record}
         timezone={salon.timezone}
-        bookingName={`${booking.bookingNumber}（${dayNameOf(booking.bookingDate)}）`}
+        bookingName={`${booking.bookingNumber}（${inJapanese(dayNameOf(booking.bookingDate))}）`}
         bookingHref={bookingHrefOf(salon.id, booking.id)}
         customer={customer}
         customerHref={customerHrefOf(salon.id, record.customerId)}

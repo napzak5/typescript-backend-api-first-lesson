@@ -147,7 +147,7 @@ const AttachmentsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
     return (
       <>
         <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what='ファイル' />
+        <OtherSalonNotice what={writtenInJapanese('ファイル')} />
       </>
     )
   }

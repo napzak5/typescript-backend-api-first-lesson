@@ -150,7 +150,7 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <LoadingIndicator label='在庫の行を読み込んでいます' />
         ))
         .with([{ type: 'forbidden' }, P._], () => (
-          <OtherSalonNotice what='発注' />
+          <OtherSalonNotice what={writtenInJapanese('発注')} />
         ))
         .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
           <UnreadNotice
@@ -191,7 +191,9 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             .with(undefined, () => (
               <LoadingIndicator label='発注の提案を読み込んでいます' />
             ))
-            .with({ type: 'forbidden' }, () => <OtherSalonNotice what='発注' />)
+            .with({ type: 'forbidden' }, () => (
+              <OtherSalonNotice what={writtenInJapanese('発注')} />
+            ))
             .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
               <UnreadNotice
                 message={inJapanese(

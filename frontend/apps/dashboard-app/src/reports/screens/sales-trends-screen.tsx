@@ -18,6 +18,7 @@ import {
   UnreadNotice,
   writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
@@ -40,7 +41,7 @@ import { ReportRefusal } from './report-refusal'
 const TITLE = '売上の推移'
 
 /** What was wrong with the form, and the days and the parts the address showed when it was sent */
-type Refused = { asked: string; errors: FormErrors }
+type Refused = { asked: string; errors: FormErrors<LocalizedText> }
 
 /**
  * The sales of the salon over a period, part by part: the twelve months up
@@ -117,7 +118,7 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                   }
                 />
               </StatisticsPeriod>
-              <p>{`${periodNameOf(period)}の売上の推移`}</p>
+              <p>{`${inJapanese(periodNameOf(period))}の売上の推移`}</p>
               {match(counted)
                 .with(undefined, () => (
                   <LoadingIndicator label='売上を集計しています' />

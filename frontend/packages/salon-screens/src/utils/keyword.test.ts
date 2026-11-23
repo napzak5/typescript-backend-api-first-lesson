@@ -1,4 +1,5 @@
 import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { keywordError, keywordIn, keywordOf, LONGEST_KEYWORD } from './keyword'
 
@@ -48,27 +49,25 @@ const FILLED_IN: [string, [string, string][], string | undefined][] = [
   ['no field', [], undefined],
 ]
 
+/** What is said of a keyword the API does not take */
+const TOO_LONG = {
+  en: 'Keyword: enter up to 100 characters.',
+  ja: 'キーワードは、100 文字以内で入力してください。',
+}
+
 describe('keywordError', () => {
-  it.each<[string, string, string | undefined]>([
+  it.each<[string, string, LocalizedText | undefined]>([
     ['an empty keyword', '', undefined],
     ['the longest keyword', 'あ'.repeat(100), undefined],
-    [
-      'a keyword one character too long',
-      'あ'.repeat(101),
-      'キーワードは、100 文字以内で入力してください。',
-    ],
+    ['a keyword one character too long', 'あ'.repeat(101), TOO_LONG],
     [
       'the longest keyword of characters outside the basic plane',
       '😀'.repeat(100),
       undefined,
     ],
-    [
-      'a keyword one such character too long',
-      '😀'.repeat(101),
-      'キーワードは、100 文字以内で入力してください。',
-    ],
+    ['a keyword one such character too long', '😀'.repeat(101), TOO_LONG],
   ])('should tell what is wrong with %s', (_case, keyword, said) => {
-    expect(keywordError(keyword)).toBe(said)
+    expect(keywordError(keyword)).toEqual(said)
   })
 })
 

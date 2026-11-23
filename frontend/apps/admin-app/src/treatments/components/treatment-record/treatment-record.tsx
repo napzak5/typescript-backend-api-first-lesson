@@ -10,6 +10,7 @@ import { dayNameOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   Card,
   DescriptionList,
+  inJapanese,
   Link,
   Table,
   TagList,
@@ -125,13 +126,15 @@ export const TreatmentRecord = ({
             },
             {
               term: '書いた日時',
-              description: momentNameAt(record.createdAt, timezone),
+              description: inJapanese(momentNameAt(record.createdAt, timezone)),
             },
             ...(wasChanged(record)
               ? [
                   {
                     term: '最後に直した日時',
-                    description: momentNameAt(record.updatedAt, timezone),
+                    description: inJapanese(
+                      momentNameAt(record.updatedAt, timezone),
+                    ),
                   },
                 ]
               : []),
@@ -223,7 +226,7 @@ export const TreatmentRecord = ({
               description:
                 record.nextRecommendedDate === null
                   ? null
-                  : dayNameOf(record.nextRecommendedDate),
+                  : inJapanese(dayNameOf(record.nextRecommendedDate)),
             },
             {
               term: '次に勧めるサービス',

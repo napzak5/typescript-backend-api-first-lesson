@@ -1,6 +1,6 @@
 import type { ModelsSalesByStaffResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, Note, Table } from '@beauty-salon-frontend/ui'
+import { Card, inJapanese, Note, Table } from '@beauty-salon-frontend/ui'
 import { percentOfMost } from '../../utils/sales-breakdown'
 import {
   countNameOf,
@@ -27,7 +27,8 @@ type Ranked = { rank: number; counted: ModelsSalesByStaffResponse }
  * counted is said under the table.
  */
 export const StaffSales = ({ staff, currency }: StaffSalesProps) => {
-  const money = (amount: number): string => amountOf(amount, currency)
+  const money = (amount: number): string =>
+    inJapanese(amountOf(amount, currency))
   const most = staff[0]?.totalSales ?? 0
 
   return (

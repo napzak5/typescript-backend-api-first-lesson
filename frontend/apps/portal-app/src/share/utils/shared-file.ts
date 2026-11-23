@@ -13,7 +13,9 @@ import {
   type FormSays,
   inJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 
 /*
@@ -21,16 +23,13 @@ import { match } from 'ts-pattern'
  * request, apart from the screen.
  */
 
+const CONTENT_TYPE_NAMES: Record<ModelsAttachmentContentType, LocalizedText> =
+  termMessages.contentType
+
 /** The kind of a file in words. */
 export const contentTypeNameOf = (
   contentType: ModelsAttachmentContentType,
-): string =>
-  match(contentType)
-    .with('image/jpeg', () => 'JPEG 画像')
-    .with('image/png', () => 'PNG 画像')
-    .with('image/webp', () => 'WebP 画像')
-    .with('application/pdf', () => 'PDF')
-    .exhaustive()
+): string => inJapanese(CONTENT_TYPE_NAMES[contentType])
 
 /** Whether a file is an image, which the screen shows: every kind but a PDF. */
 export const isImage = (contentType: ModelsAttachmentContentType): boolean =>

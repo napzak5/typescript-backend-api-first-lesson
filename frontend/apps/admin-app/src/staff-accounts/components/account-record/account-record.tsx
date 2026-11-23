@@ -3,7 +3,12 @@ import type {
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList, Note } from '@beauty-salon-frontend/ui'
+import {
+  Card,
+  DescriptionList,
+  inJapanese,
+  Note,
+} from '@beauty-salon-frontend/ui'
 import type { ReactNode, Ref } from 'react'
 import {
   roleNameOf,
@@ -60,11 +65,11 @@ export const AccountRecord = ({
             description:
               account.lastLoginAt === null
                 ? 'まだログインしていません'
-                : momentNameAt(account.lastLoginAt, timezone),
+                : inJapanese(momentNameAt(account.lastLoginAt, timezone)),
           },
           {
             term: '作った日時',
-            description: momentNameAt(account.createdAt, timezone),
+            description: inJapanese(momentNameAt(account.createdAt, timezone)),
           },
         ]}
       />

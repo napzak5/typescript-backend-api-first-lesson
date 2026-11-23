@@ -9,6 +9,7 @@ import {
   momentNameAt,
 } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { UNLISTED_STAFF } from '../../bookings/utils/booking-format'
 import { quantityNameOf } from '../../inventory/utils/stock-format'
 
@@ -68,7 +69,7 @@ const NO_DELIVERY_DAY = '未定'
 
 /** The day a moment is on at the salon, as a list names it: 「2026年11月21日（土）」. */
 export const orderDayNameOf = (moment: string, timezone: string): string =>
-  dayNameOf(dayAt(new Date(moment), timezone))
+  inJapanese(dayNameOf(dayAt(new Date(moment), timezone)))
 
 /** The day an order is to be delivered on at the salon: 「2026年11月28日（土）」, or 「未定」. */
 export const deliveryDayNameOf = (
@@ -104,5 +105,5 @@ export const doneNameOf = (
       ? undefined
       : (staff.find(({ id }) => id === doneBy)?.displayName ?? UNLISTED_STAFF)
 
-  return `${momentNameAt(moment, timezone)}${who === undefined ? '' : `（${who}）`}`
+  return `${inJapanese(momentNameAt(moment, timezone))}${who === undefined ? '' : `（${who}）`}`
 }

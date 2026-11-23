@@ -3,11 +3,14 @@ import {
   Badge,
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { PagedTable } from '../paged-table/paged-table'
+
+const { salonChoices: words } = salonScreenMessages
 
 export type SalonChoicesProps = {
   /** The salons that were read so far, in the order of the API; at least one */
@@ -45,32 +48,36 @@ export const SalonChoices = ({
   more,
   onMore,
   salonHref,
-}: SalonChoicesProps) => (
-  <PagedTable
-    caption='サロン'
-    columns={[
-      {
-        key: 'name',
-        header: 'サロン',
-        cell: (salon) => <Link href={salonHref(salon)}>{salon.name}</Link>,
-      },
-      { key: 'address', header: '所在地', cell: addressOf },
-      {
-        key: 'isActive',
-        header: '予約の受付',
-        cell: ({ isActive }) =>
-          isActive ? (
-            <Badge tone='success'>受付中</Badge>
-          ) : (
-            <Badge>停止中</Badge>
-          ),
-      },
-    ]}
-    rows={salons}
-    rowKey={({ id }) => id}
-    emptyMessage='サロンはありません'
-    count={inJapanese(countOf(total, salons.length, COUNTED.items))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: SalonChoicesProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={say(words.caption)}
+      columns={[
+        {
+          key: 'name',
+          header: say(words.salon),
+          cell: (salon) => <Link href={salonHref(salon)}>{salon.name}</Link>,
+        },
+        { key: 'address', header: say(words.address), cell: addressOf },
+        {
+          key: 'isActive',
+          header: say(words.bookings),
+          cell: ({ isActive }) =>
+            isActive ? (
+              <Badge tone='success'>{say(words.accepting)}</Badge>
+            ) : (
+              <Badge>{say(words.paused)}</Badge>
+            ),
+        },
+      ]}
+      rows={salons}
+      rowKey={({ id }) => id}
+      emptyMessage={say(words.none)}
+      count={say(countOf(total, salons.length, COUNTED.items))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

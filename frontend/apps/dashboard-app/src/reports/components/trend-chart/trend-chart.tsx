@@ -1,5 +1,5 @@
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { classNames } from '@beauty-salon-frontend/ui'
+import { classNames, inJapanese } from '@beauty-salon-frontend/ui'
 import {
   axisAmountOf,
   partNameOf,
@@ -66,7 +66,7 @@ export const TrendChart = ({ parts, unit, currency }: TrendChartProps) => {
                   : styles['fromEnd'],
               )}
             >
-              {`${partNameOf(label, unit)} ${amountOf(sales, currency)}`}
+              {`${partNameOf(label, unit)} ${inJapanese(amountOf(sales, currency))}`}
             </span>
           </div>
         ))}

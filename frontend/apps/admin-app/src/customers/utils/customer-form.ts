@@ -407,8 +407,11 @@ const DUPLICATES: Record<'email' | 'referralCode', string> = {
 }
 
 /** What a form of the ledger says when the API refuses the account: it no longer belongs to a salon. */
+export const CANNOT_HANDLE_CUSTOMERS_MESSAGE =
+  'このアカウントでは、顧客台帳を扱えません。'
+
 export const CANNOT_HANDLE_CUSTOMERS: FormSays = aboutTheAttempt(
-  'このアカウントでは、顧客台帳を扱えません。',
+  CANNOT_HANDLE_CUSTOMERS_MESSAGE,
 )
 
 /** Which write a form makes: the words of its failure differ. */

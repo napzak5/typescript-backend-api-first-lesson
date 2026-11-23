@@ -1,6 +1,11 @@
 import type { ModelsDailySalesResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, dayNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList, Note } from '@beauty-salon-frontend/ui'
+import {
+  Card,
+  DescriptionList,
+  inJapanese,
+  Note,
+} from '@beauty-salon-frontend/ui'
 import { countNameOf } from '../../utils/sales-report'
 import styles from './daily-sales.module.css'
 
@@ -17,10 +22,11 @@ export type DailySalesProps = {
  * the answer that nothing was sold.
  */
 export const DailySales = ({ sales, currency }: DailySalesProps) => {
-  const money = (amount: number): string => amountOf(amount, currency)
+  const money = (amount: number): string =>
+    inJapanese(amountOf(amount, currency))
 
   return (
-    <Card title={`${dayNameOf(sales.date)}の売上`}>
+    <Card title={`${inJapanese(dayNameOf(sales.date))}の売上`}>
       <div className={styles['part']}>
         <DescriptionList
           items={[

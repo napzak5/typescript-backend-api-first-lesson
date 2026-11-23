@@ -58,7 +58,7 @@ const CategoriesPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 errors={errors}
                 onSubmit={count}
               />
-              <p>{`${periodNameOf(period)}のメニューの区分別の売上`}</p>
+              <p>{`${inJapanese(periodNameOf(period))}のメニューの区分別の売上`}</p>
               {match(counted)
                 .with(undefined, () => (
                   <LoadingIndicator label='売上を集計しています' />

@@ -9,6 +9,7 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import type { ChoiceOption } from '@beauty-salon-frontend/ui'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 
 /*
  * How the menu is named and ordered on the screens: the words of the values
@@ -153,8 +154,8 @@ export const priceLineOf = (
 ): string =>
   [
     service.discountPrice === null
-      ? amountOf(service.price, currency)
-      : `${amountOf(service.discountPrice, currency)}（${amountOf(service.price, currency)} から割引）`,
+      ? inJapanese(amountOf(service.price, currency))
+      : `${inJapanese(amountOf(service.discountPrice, currency))}（${inJapanese(amountOf(service.price, currency))} から割引）`,
     service.taxIncluded ? '税込' : '税別',
     ...(service.pricingStrategy === 'fixed'
       ? []

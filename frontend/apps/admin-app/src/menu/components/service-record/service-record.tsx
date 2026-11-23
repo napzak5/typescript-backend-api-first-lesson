@@ -189,7 +189,8 @@ export const ServiceRecord = ({
           {
             key: 'additionalPrice',
             header: '追加の料金',
-            cell: ({ additionalPrice }) => amountOf(additionalPrice, currency),
+            cell: ({ additionalPrice }) =>
+              inJapanese(amountOf(additionalPrice, currency)),
             align: 'end',
           },
           {

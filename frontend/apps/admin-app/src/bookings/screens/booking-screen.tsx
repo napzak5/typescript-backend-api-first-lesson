@@ -291,7 +291,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
           <StatusActions
             status={booking.status}
             actions={actionsOf(booking, new Date())}
-            when={`${dayNameOf(booking.bookingDate)} ${hoursOf(booking, salon.timezone)}`}
+            when={`${inJapanese(dayNameOf(booking.bookingDate))} ${hoursOf(booking, salon.timezone)}`}
             headingRef={statusHeading}
             pending={change.isPending ? change.variables.type : undefined}
             asking={asking}
@@ -300,7 +300,9 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
             recordedStart={
               booking.actualStartTime === null
                 ? undefined
-                : momentNameAt(booking.actualStartTime, salon.timezone)
+                : inJapanese(
+                    momentNameAt(booking.actualStartTime, salon.timezone),
+                  )
             }
             onAct={(action) => act({ type: action })}
             onAsk={ask}
@@ -368,7 +370,7 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
               session.type === 'signedIn' &&
               REMOVERS.includes(session.user.role)
             }
-            when={`${dayNameOf(booking.bookingDate)} ${hoursOf(booking, salon.timezone)}`}
+            when={`${inJapanese(dayNameOf(booking.bookingDate))} ${hoursOf(booking, salon.timezone)}`}
             open={removing}
             onOpen={() => {
               // What was said about an attempt before is said no longer

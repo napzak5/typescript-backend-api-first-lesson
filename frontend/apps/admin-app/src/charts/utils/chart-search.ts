@@ -2,6 +2,7 @@ import { keywordError, keywordIn } from '@beauty-salon-frontend/salon-screens'
 import {
   type ChoiceOption,
   type FormRead,
+  inJapaneseIfAny,
   textOf,
 } from '@beauty-salon-frontend/ui'
 import type { ChartConditions } from '../api/charts-api'
@@ -41,7 +42,7 @@ export const readChartConditions = (
   values: FormData,
 ): FormRead<ChartConditions> => {
   const search = textOf(values, 'search').trim()
-  const searchError = keywordError(search)
+  const searchError = inJapaneseIfAny(keywordError(search))
   if (searchError !== undefined) {
     return { type: 'invalid', errors: { search: searchError } }
   }

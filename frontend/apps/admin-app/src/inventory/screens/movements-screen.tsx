@@ -142,7 +142,9 @@ const MovementHistory = ({
     .with({ type: 'notFound' }, () => (
       <LoadingIndicator label='在庫の移動を読み込んでいます' />
     ))
-    .with({ type: 'forbidden' }, () => <OtherSalonNotice what='在庫' />)
+    .with({ type: 'forbidden' }, () => (
+      <OtherSalonNotice what={writtenInJapanese('在庫')} />
+    ))
     .otherwise(() => (
       <>
         <p>

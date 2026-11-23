@@ -57,7 +57,7 @@ export const saleMomentOf = (
   timezone: string,
 ): { date: string; time: string } => ({
   date: dayAt(new Date(saleTime), timezone),
-  time: timeOfDayAt(saleTime, timezone),
+  time: inJapanese(timeOfDayAt(saleTime, timezone)),
 })
 
 /** What a change of a sale asks for: nothing, when nothing was changed. */

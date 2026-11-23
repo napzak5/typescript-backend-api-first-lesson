@@ -13,6 +13,7 @@ import {
   STYLIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -190,8 +191,18 @@ describe('the hours of a salon, against the API', () => {
     await screen.findByRole('table', { name: '営業日カレンダー' })
     expect(rowsOf('営業日カレンダー')).toEqual(
       expect.arrayContaining([
-        [dayNameOf(inspection), '終日休業', '臨時休業', '設備の点検'],
-        [dayNameOf(holiday), '10:00〜15:00', '振替休日', '記録なし'],
+        [
+          inJapanese(dayNameOf(inspection)),
+          '終日休業',
+          '臨時休業',
+          '設備の点検',
+        ],
+        [
+          inJapanese(dayNameOf(holiday)),
+          '10:00〜15:00',
+          '振替休日',
+          '記録なし',
+        ],
       ]),
     )
     const stored = await storedCalendarOf(TOKYO)

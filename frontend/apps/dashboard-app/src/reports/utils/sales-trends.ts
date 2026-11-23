@@ -83,8 +83,8 @@ const monthNameOf = (label: string): string =>
  */
 export const partNameOf = (label: string, unit: TrendUnit): string =>
   match(unit)
-    .with('daily', () => dayNameOf(label))
-    .with('weekly', () => `${dayNameOf(label)}からの週`)
+    .with('daily', () => inJapanese(dayNameOf(label)))
+    .with('weekly', () => `${inJapanese(dayNameOf(label))}からの週`)
     .with('monthly', () => monthNameOf(label))
     .exhaustive()
 
@@ -151,4 +151,4 @@ const SHORT_FROM = 10_000
 export const axisAmountOf = (amount: number, currency: string): string =>
   amount >= SHORT_FROM
     ? inJapanese(formats.shortAmountOf(amount, currency))
-    : amountOf(amount, currency)
+    : inJapanese(amountOf(amount, currency))

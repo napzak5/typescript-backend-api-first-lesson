@@ -92,7 +92,7 @@ const SalesLedger = ({ salon }: SalesLedgerProps) => {
     return (
       <>
         <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what='売上' />
+        <OtherSalonNotice what={writtenInJapanese('売上')} />
       </>
     )
   }

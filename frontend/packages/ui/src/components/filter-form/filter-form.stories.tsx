@@ -19,10 +19,12 @@ type GuestConditions = {
 
 type GuestFilterProps = Omit<
   FilterFormProps,
-  'label' | 'children' | 'conditions' | 'conditionCount'
+  'label' | 'children' | 'conditions' | 'conditionCount' | 'errors'
 > & {
   /** The conditions of the address */
   shown: GuestConditions
+  /** What the controls say is wrong with them */
+  errors?: FormErrors | undefined
 }
 
 const STATUS_OPTIONS = [

@@ -151,15 +151,24 @@ describe('staffLabelOf', () => {
         salonId: TOKYO.id,
         salonName: 'みなと美容室',
       }),
-    ).toBe('田中 美咲（みなと美容室）')
+    ).toEqual({
+      en: '田中 美咲 (みなと美容室)',
+      ja: '田中 美咲（みなと美容室）',
+    })
   })
 })
 
 describe('staffNamed', () => {
   it('should name the members in the order of their IDs, each with their salon', () => {
     expect(staffNamed([yui.id, misaki.id], [misaki, kenta, yui])).toEqual([
-      '鈴木 結衣（Hair Studio Osaka）',
-      '田中 美咲（Beauty Salon Tokyo）',
+      {
+        en: '鈴木 結衣 (Hair Studio Osaka)',
+        ja: '鈴木 結衣（Hair Studio Osaka）',
+      },
+      {
+        en: '田中 美咲 (Beauty Salon Tokyo)',
+        ja: '田中 美咲（Beauty Salon Tokyo）',
+      },
     ])
   })
 
@@ -169,7 +178,12 @@ describe('staffNamed', () => {
         ['0f6d3b8a-7e21-4c95-b4a0-6d9e2c5f1a73', kenta.id],
         [misaki, kenta],
       ),
-    ).toEqual(['佐藤 健太（Beauty Salon Tokyo）'])
+    ).toEqual([
+      {
+        en: '佐藤 健太 (Beauty Salon Tokyo)',
+        ja: '佐藤 健太（Beauty Salon Tokyo）',
+      },
+    ])
   })
 
   it('should name nobody for no ID', () => {

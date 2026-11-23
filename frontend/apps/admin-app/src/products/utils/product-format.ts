@@ -13,7 +13,8 @@ import { quantityOf } from './quantity'
 export const priceNameOf = (
   price: number | null,
   currency: string,
-): string | null => (price === null ? null : amountOf(price, currency))
+): string | null =>
+  price === null ? null : inJapanese(amountOf(price, currency))
 
 /** What a product is for: 「店頭販売、施術」, 「店頭販売」, 「施術」, or 「どちらでもない」 (supplies). */
 export const usesNameOf = ({

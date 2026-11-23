@@ -22,6 +22,7 @@ import {
   useScreenHeadingFocus,
   writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -66,7 +67,7 @@ const PreferencesChange = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const update = useMutation({
     mutationFn: updateOwnPreferences,
     onSuccess: (outcome) => {

@@ -1,16 +1,20 @@
 import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/api-client'
-import { charactersOf } from '@beauty-salon-frontend/fields'
 import {
   CheckboxGroup,
   Form,
+  type FormErrors,
   FormPart,
   type FormProps,
-  inJapanese,
+  NO_ERRORS,
   Note,
   Select,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { preferenceMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   AVOIDED_STAFF,
   AVOIDED_STYLES,
@@ -30,8 +34,12 @@ import styles from './preferences-form.module.css'
 
 export type PreferencesFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What went wrong with the attempt as a whole (`afterPreferencesChange`) */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls (`readPreferencesChange`) */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The preferences the form opens with */
   preferences: ModelsCustomerPreferencesResponse
   /**
@@ -41,7 +49,7 @@ export type PreferencesFormProps = Pick<
   staff: readonly StaffChoice[]
 }
 
-const ONE_A_LINE = '1 行に 1 つずつ書いてください。'
+const { form: words } = preferenceMessages
 
 /**
  * What a customer wants the salons to keep in mind, in the parts a person
@@ -58,46 +66,47 @@ const ONE_A_LINE = '1 行に 1 つずつ書いてください。'
 export const PreferencesForm = ({
   preferences,
   staff,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
 }: PreferencesFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const entered = enteredOf(preferences, staff)
   const options = staff.map((member) => ({
     value: member.id,
-    label: staffLabelOf(member),
+    label: say(staffLabelOf(member)),
   }))
 
   return (
-    <Form {...form} errors={errors}>
-      <FormPart label='スタッフ'>
+    <Form {...form} message={said.message} errors={errors}>
+      <FormPart label={say(words.staff)}>
         {entered.preferredStaffId === undefined ||
         entered.avoidStaffIds === undefined ? (
-          <Note size='small'>
-            指名したいスタッフと、避けたいスタッフは、サロンを予約すると選べるようになります。
-          </Note>
+          <Note size='small'>{say(words.staffAfterBooking)}</Note>
         ) : (
           <div className={styles['controls']}>
             <Select
-              label='指名したいスタッフ'
+              label={say(words.preferredStaff)}
               name={PREFERRED_STAFF}
-              placeholder='指名しない'
+              placeholder={say(words.noPreferredStaff)}
               options={options}
               defaultValue={entered.preferredStaffId}
-              error={errors[PREFERRED_STAFF]}
+              error={said.errors[PREFERRED_STAFF]}
             />
             <CheckboxGroup
-              label='避けたいスタッフ'
+              label={say(words.avoidedStaff)}
               name={AVOIDED_STAFF}
               options={options}
               defaultValue={entered.avoidStaffIds}
-              error={errors[AVOIDED_STAFF]}
+              error={said.errors[AVOIDED_STAFF]}
             />
           </div>
         )}
       </FormPart>
       <FormPart
-        label='希望する時間帯'
-        description='来店しやすい時間帯を、いくつでも登録できます。曜日は選べません。'
+        label={say(words.timeSlots)}
+        description={say(words.timeSlotsDescription)}
       >
         <TimeSlotFields
           name={TIME_SLOTS}
@@ -105,51 +114,53 @@ export const PreferencesForm = ({
           errors={errors}
         />
       </FormPart>
-      <FormPart label='スタイルの好み'>
+      <FormPart label={say(words.style)}>
         <TextField
-          label='希望の長さ'
+          label={say(words.preferredLength)}
           name={PREFERRED_LENGTH}
           autoComplete='off'
           defaultValue={entered.preferredLength}
-          error={errors[PREFERRED_LENGTH]}
+          error={said.errors[PREFERRED_LENGTH]}
         />
         <TextArea
-          label='好きな色'
+          label={say(words.preferredColors)}
           name={PREFERRED_COLORS}
-          description={ONE_A_LINE}
+          description={say(words.oneALine)}
           defaultValue={entered.preferredColors}
-          error={errors[PREFERRED_COLORS]}
+          error={said.errors[PREFERRED_COLORS]}
         />
         <TextArea
-          label='避けたいスタイル'
+          label={say(words.avoidedStyles)}
           name={AVOIDED_STYLES}
-          description={ONE_A_LINE}
+          description={say(words.oneALine)}
           defaultValue={entered.avoidStyles}
-          error={errors[AVOIDED_STYLES]}
+          error={said.errors[AVOIDED_STYLES]}
         />
         <TextArea
-          label='参考の画像の URL'
+          label={say(words.inspirationImages)}
           name={INSPIRATION_IMAGES}
-          description='参考にしてほしい画像のアドレスを、1 行に 1 つずつ書いてください。'
+          description={say(words.inspirationImagesDescription)}
           defaultValue={entered.inspirationImages}
-          error={errors[INSPIRATION_IMAGES]}
+          error={said.errors[INSPIRATION_IMAGES]}
         />
       </FormPart>
-      <FormPart label='接客'>
+      <FormPart label={say(words.service)}>
         <TextField
-          label='接客の好み'
+          label={say(words.communicationStyle)}
           name={COMMUNICATION_STYLE}
           autoComplete='off'
-          description={`会話の多さなどを、${inJapanese(charactersOf(MAX_COMMUNICATION_STYLE_LENGTH))}以内で書いてください。`}
+          description={say(
+            words.communicationStyleDescription(MAX_COMMUNICATION_STYLE_LENGTH),
+          )}
           defaultValue={entered.communicationStyle}
-          error={errors[COMMUNICATION_STYLE]}
+          error={said.errors[COMMUNICATION_STYLE]}
         />
         <TextArea
-          label='特別な要望'
+          label={say(words.specialRequests)}
           name={SPECIAL_REQUESTS}
           rows={4}
           defaultValue={entered.specialRequests}
-          error={errors[SPECIAL_REQUESTS]}
+          error={said.errors[SPECIAL_REQUESTS]}
         />
       </FormPart>
     </Form>

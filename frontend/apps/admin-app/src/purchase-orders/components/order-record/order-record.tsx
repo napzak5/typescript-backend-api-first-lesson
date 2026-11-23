@@ -8,6 +8,7 @@ import {
   Card,
   DescriptionList,
   type DescriptionListItem,
+  inJapanese,
   Link,
   Table,
   WrittenText,
@@ -59,7 +60,7 @@ const eventsOf = (
     : [
         {
           term: '納品日時',
-          description: momentNameAt(order.actualDelivery, timezone),
+          description: inJapanese(momentNameAt(order.actualDelivery, timezone)),
         },
       ]),
   ...(order.cancelledAt === null
@@ -67,7 +68,7 @@ const eventsOf = (
     : [
         {
           term: '取り消し',
-          description: momentNameAt(order.cancelledAt, timezone),
+          description: inJapanese(momentNameAt(order.cancelledAt, timezone)),
         },
         {
           term: '取り消した理由',
@@ -163,13 +164,14 @@ export const OrderRecord = ({
             key: 'unitPrice',
             header: '単価',
             align: 'end',
-            cell: ({ unitPrice }) => amountOf(unitPrice, currency),
+            cell: ({ unitPrice }) => inJapanese(amountOf(unitPrice, currency)),
           },
           {
             key: 'totalPrice',
             header: '金額',
             align: 'end',
-            cell: ({ totalPrice }) => amountOf(totalPrice, currency),
+            cell: ({ totalPrice }) =>
+              inJapanese(amountOf(totalPrice, currency)),
           },
           {
             key: 'notes',
@@ -188,16 +190,25 @@ export const OrderRecord = ({
     <Card title='金額'>
       <DescriptionList
         items={[
-          { term: '小計', description: amountOf(order.subtotal, currency) },
-          { term: '税額', description: amountOf(order.taxAmount, currency) },
+          {
+            term: '小計',
+            description: inJapanese(amountOf(order.subtotal, currency)),
+          },
+          {
+            term: '税額',
+            description: inJapanese(amountOf(order.taxAmount, currency)),
+          },
           {
             term: '送料',
             description:
               order.shippingCost === null
                 ? null
-                : amountOf(order.shippingCost, currency),
+                : inJapanese(amountOf(order.shippingCost, currency)),
           },
-          { term: '合計', description: amountOf(order.totalAmount, currency) },
+          {
+            term: '合計',
+            description: inJapanese(amountOf(order.totalAmount, currency)),
+          },
         ]}
       />
     </Card>

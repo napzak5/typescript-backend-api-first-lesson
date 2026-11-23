@@ -1,4 +1,5 @@
 import { Button } from '@beauty-salon-frontend/ui'
+import { preferenceMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { TimeSlotFields, type TimeSlotFieldsProps } from './time-slot-fields'
@@ -35,9 +36,8 @@ const MISTAKEN: Pick<TimeSlotFieldsProps, 'defaultValue' | 'errors'> = {
     { startTime: '09:00', endTime: '11:00' },
   ],
   errors: {
-    'preferredTimeSlots.0.endTime': '終了は、開始より後の時刻にしてください。',
-    'preferredTimeSlots.1.startTime':
-      'ほかの時間帯と重なっています。重ならない時刻にしてください。',
+    'preferredTimeSlots.0.endTime': preferenceMessages.flow.endNotLater,
+    'preferredTimeSlots.1.startTime': preferenceMessages.flow.overlapping,
   },
 }
 

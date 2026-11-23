@@ -21,6 +21,7 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -240,8 +241,8 @@ describe('the points of customers, against the API', () => {
       expect(
         await screen.findByRole('region', { name: '残高' }),
       ).toHaveTextContent('3,600 ポイント')
-      const yesterday = dayNameOf(await dayFromToday(-1))
-      const soon = dayNameOf(await dayFromToday(10))
+      const yesterday = inJapanese(dayNameOf(await dayFromToday(-1)))
+      const soon = inJapanese(dayNameOf(await dayFromToday(10)))
       const expiring = await screen.findByRole('region', {
         name: '期限が近いポイント',
       })
@@ -278,7 +279,7 @@ describe('the points of customers, against the API', () => {
           '付与',
           '+400',
           '3,500 ポイント',
-          dayNameOf(await dayFromToday(90)),
+          inJapanese(dayNameOf(await dayFromToday(90))),
           'ほかのサロンの売上',
           '記録なし',
         ],
@@ -371,7 +372,7 @@ describe('the points of customers, against the API', () => {
         '付与',
         '+500',
         '3,000 ポイント',
-        dayNameOf(day),
+        inJapanese(dayNameOf(day)),
         '',
         '誕生月のポイント',
       ])

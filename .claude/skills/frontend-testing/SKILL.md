@@ -28,7 +28,7 @@ The styling and component rules are in the skill `frontend-ui`.
 | The functions of a screen that call the API, for the answers the real API cannot be made to give | The same | `frontend/apps/portal-app/src/account/api/account-api.test.ts` |
 | Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
 | A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/screens/sign-in.integration.test.tsx`, `frontend/packages/app-frame/src/screens/staff-application.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
-| That a package whose texts are messages writes none in Japanese in its source | One test of the package, which reads its sources (`itShouldWriteItsTextsAsMessages` of `@beauty-salon-frontend/testing/language`) | `frontend/packages/ui/src/texts.test.ts` |
+| That a package whose texts are messages writes none in Japanese in its source | One test of the package, which reads its sources (`itShouldWriteItsTextsAsMessages` of `@beauty-salon-frontend/testing/language`) | `frontend/packages/ui/src/texts.test.ts`, `frontend/packages/preferences/src/texts.test.ts` |
 | A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/admin/sign-in.e2e.test.ts` |
 
 A test is beside the module it tests. In a shared package and in an area of
@@ -181,6 +181,11 @@ describe('Button', () => {
   (`control.blur()`), chooses English in
   `act(() => { languageStore.choose('en') })`, and asserts that the control
   says the English sentence and has no focus (`sign-in-form.test.tsx`).
+  A screen of such a package that has no test of its own (`WithSalon`,
+  `SalonChoiceScreen` of `salon-screens`) is tested in English in the
+  integration test of an application: it signs in on the Japanese page,
+  whose labels `signInAs` looks for, then chooses English inside `act`
+  (`frontend/apps/admin-app/src/App.integration.test.tsx`).
 - A function that reads the values of such a form, or the answer to it,
   is tested against the sentences in both languages, written out
   (`{ en: 'Enter an email address.', ja: 'メールアドレスを入力してください。' }`),

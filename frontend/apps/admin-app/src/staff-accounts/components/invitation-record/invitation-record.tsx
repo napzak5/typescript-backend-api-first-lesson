@@ -3,7 +3,13 @@ import type {
   ModelsStaffResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { Badge, Card, DescriptionList, Note } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  Card,
+  DescriptionList,
+  inJapanese,
+  Note,
+} from '@beauty-salon-frontend/ui'
 import type { ReactNode, Ref } from 'react'
 import { match } from 'ts-pattern'
 import {
@@ -90,11 +96,15 @@ export const InvitationRecord = ({
           { term: 'ロール', description: roleNameOf(invitation.role) },
           {
             term: '期限',
-            description: momentNameAt(invitation.expiresAt, timezone),
+            description: inJapanese(
+              momentNameAt(invitation.expiresAt, timezone),
+            ),
           },
           {
             term: '送った日時',
-            description: momentNameAt(invitation.createdAt, timezone),
+            description: inJapanese(
+              momentNameAt(invitation.createdAt, timezone),
+            ),
           },
         ]}
       />

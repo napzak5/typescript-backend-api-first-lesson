@@ -1,6 +1,11 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
 import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, DescriptionList, WrittenText } from '@beauty-salon-frontend/ui'
+import {
+  Card,
+  DescriptionList,
+  inJapanese,
+  WrittenText,
+} from '@beauty-salon-frontend/ui'
 import {
   amountsNameOf,
   feeNameOf,
@@ -26,7 +31,10 @@ export const PaymentMethodRecord = ({
     <DescriptionList
       items={[
         { term: '表示名', description: method.displayName },
-        { term: '種類', description: methodKindNameOf(method.method) },
+        {
+          term: '種類',
+          description: inJapanese(methodKindNameOf(method.method)),
+        },
         {
           term: '説明',
           description: <WrittenText>{method.description}</WrittenText>,

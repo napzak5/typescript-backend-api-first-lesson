@@ -17,7 +17,9 @@ import {
   inJapanese,
   NONE,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { UNLISTED_STAFF } from '../../bookings/utils/booking-format'
 
 /*
@@ -25,17 +27,12 @@ import { UNLISTED_STAFF } from '../../bookings/utils/booking-format'
  * values of its enums, and what a few properties come to together.
  */
 
-const TIER_NAMES: Record<ModelsMembershipTierType, string> = {
-  regular: 'レギュラー',
-  silver: 'シルバー',
-  gold: 'ゴールド',
-  platinum: 'プラチナ',
-  vip: 'VIP',
-}
+const TIER_NAMES: Record<ModelsMembershipTierType, LocalizedText> =
+  termMessages.membershipTier
 
 /** The rank of a member, in a word. */
 export const tierNameOf = (tier: ModelsMembershipTierType): string =>
-  TIER_NAMES[tier]
+  inJapanese(TIER_NAMES[tier])
 
 /** The ranks, in the order of the contract: from the first to the highest. */
 export const TIERS: readonly ModelsMembershipTierType[] = Object.values(
@@ -70,39 +67,23 @@ export const customerStatusToneOf = (
 export const CUSTOMER_STATUSES: readonly ModelsCustomerStatusType[] =
   Object.values(ModelsCustomerStatusType)
 
-const GENDER_NAMES: Record<ModelsCustomerGenderType, string> = {
-  male: '男性',
-  female: '女性',
-  other: 'その他',
-  prefer_not_to_say: '回答しない',
-}
+const GENDER_NAMES: Record<ModelsCustomerGenderType, LocalizedText> =
+  termMessages.gender
 
-const HAIR_TYPE_NAMES: Record<ModelsHairType, string> = {
-  straight: 'ストレート',
-  wavy: 'ウェーブ',
-  curly: 'カール',
-  coily: '強いカール',
-}
+const HAIR_TYPE_NAMES: Record<ModelsHairType, LocalizedText> =
+  termMessages.hairType
 
 export const HAIR_TYPES: readonly ModelsHairType[] =
   Object.values(ModelsHairType)
 
-const HAIR_THICKNESS_NAMES: Record<ModelsHairThicknessType, string> = {
-  thin: '細い',
-  medium: 'ふつう',
-  thick: '太い',
-}
+const HAIR_THICKNESS_NAMES: Record<ModelsHairThicknessType, LocalizedText> =
+  termMessages.hairThickness
 
 export const HAIR_THICKNESSES: readonly ModelsHairThicknessType[] =
   Object.values(ModelsHairThicknessType)
 
-const SCALP_CONDITION_NAMES: Record<ModelsScalpConditionType, string> = {
-  normal: 'ふつう',
-  dry: '乾燥',
-  oily: '脂性',
-  sensitive: '敏感',
-  dandruff: 'フケが出やすい',
-}
+const SCALP_CONDITION_NAMES: Record<ModelsScalpConditionType, LocalizedText> =
+  termMessages.scalpCondition
 
 export const SCALP_CONDITIONS: readonly ModelsScalpConditionType[] =
   Object.values(ModelsScalpConditionType)
@@ -110,7 +91,7 @@ export const SCALP_CONDITIONS: readonly ModelsScalpConditionType[] =
 /** What the forms offer of each enum, under the names of its values. */
 export const TIER_OPTIONS: readonly ChoiceOption[] = TIERS.map((tier) => ({
   value: tier,
-  label: TIER_NAMES[tier],
+  label: inJapanese(TIER_NAMES[tier]),
 }))
 
 export const STATUS_OPTIONS: readonly ChoiceOption[] = CUSTOMER_STATUSES.map(
@@ -120,34 +101,40 @@ export const STATUS_OPTIONS: readonly ChoiceOption[] = CUSTOMER_STATUSES.map(
 export const GENDER_OPTIONS: readonly ChoiceOption[] = GENDERS.map(
   (gender) => ({
     value: gender,
-    label: GENDER_NAMES[gender],
+    label: inJapanese(GENDER_NAMES[gender]),
   }),
 )
 
 export const CATEGORY_OPTIONS: readonly ChoiceOption[] = SERVICE_CATEGORIES.map(
-  (category) => ({ value: category, label: categoryNameOf(category) }),
+  (category) => ({
+    value: category,
+    label: inJapanese(categoryNameOf(category)),
+  }),
 )
 
 export const HAIR_TYPE_OPTIONS: readonly ChoiceOption[] = HAIR_TYPES.map(
-  (hairType) => ({ value: hairType, label: HAIR_TYPE_NAMES[hairType] }),
+  (hairType) => ({
+    value: hairType,
+    label: inJapanese(HAIR_TYPE_NAMES[hairType]),
+  }),
 )
 
 export const HAIR_THICKNESS_OPTIONS: readonly ChoiceOption[] =
   HAIR_THICKNESSES.map((thickness) => ({
     value: thickness,
-    label: HAIR_THICKNESS_NAMES[thickness],
+    label: inJapanese(HAIR_THICKNESS_NAMES[thickness]),
   }))
 
 export const SCALP_CONDITION_OPTIONS: readonly ChoiceOption[] =
   SCALP_CONDITIONS.map((condition) => ({
     value: condition,
-    label: SCALP_CONDITION_NAMES[condition],
+    label: inJapanese(SCALP_CONDITION_NAMES[condition]),
   }))
 
 /** The gender of a customer, or `null` when they did not give it. */
 export const genderNameOf = (
   gender: ModelsCustomerGenderType | null,
-): string | null => (gender === null ? null : GENDER_NAMES[gender])
+): string | null => (gender === null ? null : inJapanese(GENDER_NAMES[gender]))
 
 /** The kinds of service a customer likes, in the order of the contract. */
 export const categoriesNameOf = (
@@ -156,7 +143,7 @@ export const categoriesNameOf = (
   categories.length === 0
     ? inJapanese(NONE)
     : SERVICE_CATEGORIES.filter((category) => categories.includes(category))
-        .map((category) => categoryNameOf(category))
+        .map((category) => inJapanese(categoryNameOf(category)))
         .join('、')
 
 /** The hair and the scalp of a customer, what of them was recorded: 「ストレート、細い髪、頭皮は乾燥」, or `null` when none was. */
@@ -169,11 +156,13 @@ export const hairNameOf = ({
   'hairType' | 'hairThickness' | 'scalpCondition'
 >): string | null => {
   const parts = [
-    hairType === null ? null : HAIR_TYPE_NAMES[hairType],
-    hairThickness === null ? null : `${HAIR_THICKNESS_NAMES[hairThickness]}髪`,
+    hairType === null ? null : inJapanese(HAIR_TYPE_NAMES[hairType]),
+    hairThickness === null
+      ? null
+      : `${inJapanese(HAIR_THICKNESS_NAMES[hairThickness])}髪`,
     scalpCondition === null
       ? null
-      : `頭皮は${SCALP_CONDITION_NAMES[scalpCondition]}`,
+      : `頭皮は${inJapanese(SCALP_CONDITION_NAMES[scalpCondition])}`,
   ].filter((part) => part !== null)
 
   return parts.length === 0 ? null : parts.join('、')

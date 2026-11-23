@@ -1,4 +1,5 @@
 import { RadioGroup } from '@beauty-salon-frontend/ui'
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { StatisticsPeriod } from './statistics-period'
@@ -23,7 +24,7 @@ export const LastYear: Story = {}
 /** A period longer than the API counts over */
 export const WithErrors: Story = {
   args: {
-    errors: { to: '期間は 366 日までにしてください。' },
+    errors: { to: salonScreenMessages.period.tooLong(366) },
   },
 }
 

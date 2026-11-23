@@ -1,6 +1,6 @@
 import type { ModelsPaymentMethodResponse } from '@beauty-salon-frontend/api-client'
 import { methodKindNameOf } from '@beauty-salon-frontend/salon-screens'
-import { Link, Table } from '@beauty-salon-frontend/ui'
+import { inJapanese, Link, Table } from '@beauty-salon-frontend/ui'
 import {
   amountsNameOf,
   feeNameOf,
@@ -41,7 +41,7 @@ export const PaymentMethodTable = ({
       {
         key: 'method',
         header: '種類',
-        cell: ({ method }) => methodKindNameOf(method),
+        cell: ({ method }) => inJapanese(methodKindNameOf(method)),
       },
       {
         key: 'amounts',

@@ -75,7 +75,7 @@ export const shortDayNameOf = (day: string): string =>
 
 /** A week as a heading names it: 「2026年11月16日（月）〜2026年11月22日（日）」. */
 export const weekNameOf = (monday: string): string =>
-  `${dayNameOf(monday)}〜${dayNameOf(dayAfter(monday, 6))}`
+  `${inJapanese(dayNameOf(monday))}〜${inJapanese(dayNameOf(dayAfter(monday, 6)))}`
 
 /**
  * The row of a schedule that applies on a day, as the API decides it: the

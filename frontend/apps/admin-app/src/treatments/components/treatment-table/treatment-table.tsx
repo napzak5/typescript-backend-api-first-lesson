@@ -71,7 +71,7 @@ export const TreatmentTable = ({
         header: '書いた日時',
         cell: ({ record }) => (
           <Link href={treatmentHref(record.id)}>
-            {momentNameAt(record.createdAt, timezone)}
+            {inJapanese(momentNameAt(record.createdAt, timezone))}
           </Link>
         ),
       },

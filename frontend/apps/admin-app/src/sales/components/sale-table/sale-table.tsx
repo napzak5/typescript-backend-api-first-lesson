@@ -61,12 +61,12 @@ export const SaleTable = ({
       {
         key: 'saleTime',
         header: '会計日時',
-        cell: ({ saleTime }) => momentNameAt(saleTime, timezone),
+        cell: ({ saleTime }) => inJapanese(momentNameAt(saleTime, timezone)),
       },
       {
         key: 'totalAmount',
         header: '合計',
-        cell: ({ totalAmount }) => amountOf(totalAmount, currency),
+        cell: ({ totalAmount }) => inJapanese(amountOf(totalAmount, currency)),
       },
       {
         key: 'paymentStatus',

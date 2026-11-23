@@ -16,7 +16,9 @@ import {
   PasswordField,
   TextField,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -38,11 +40,7 @@ import { CheckingLink, LinkNotChecked, LinkUnusable } from './mailed-link'
 
 const TITLE = 'スタッフアカウントへの招待'
 
-const ROLE: Record<ModelsSalonRoleType, string> = {
-  owner: 'オーナー',
-  manager: 'マネージャー',
-  staff: 'スタッフ',
-}
+const ROLE: Record<ModelsSalonRoleType, LocalizedText> = termMessages.salonRole
 
 /** The salons of the system are in Japan: a moment is said in their time */
 const TIME_ZONE = 'Asia/Tokyo'
@@ -56,7 +54,7 @@ type InvitationProps = { invitation: ModelsStaffInvitationResponse }
 
 /** What the invitation gives, and until when. */
 const termsOf = (invitation: ModelsStaffInvitationResponse) => [
-  { term: '役割', description: ROLE[invitation.role] },
+  { term: '役割', description: inJapanese(ROLE[invitation.role]) },
   {
     term: '招待の期限',
     description: inJapanese(formats.momentAt(invitation.expiresAt, TIME_ZONE)),

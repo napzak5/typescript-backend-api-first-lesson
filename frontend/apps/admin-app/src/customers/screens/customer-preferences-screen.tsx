@@ -17,6 +17,7 @@ import {
 } from '@beauty-salon-frontend/preferences'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
+  aboutTheAttempt,
   ButtonLink,
   type FormSays,
   inJapanese,
@@ -27,6 +28,7 @@ import {
   useNotifications,
   writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -39,7 +41,7 @@ import {
   readPreferencesToChange,
   updatePreferences,
 } from '../api/customers-api'
-import { CANNOT_HANDLE_CUSTOMERS } from '../utils/customer-form'
+import { CANNOT_HANDLE_CUSTOMERS_MESSAGE } from '../utils/customer-form'
 import { WithCustomer } from './with-customer'
 
 const TITLE = '好み設定を直す'
@@ -69,7 +71,7 @@ const PreferencesChange = ({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const back = customerHrefOf(salon.id, customer.id)
   const update = useMutation({
     mutationFn: (request: ModelsCustomerPreferencesUpdateRequest) =>
@@ -90,7 +92,11 @@ const PreferencesChange = ({
         .with({ type: 'notFound' }, () => {
           queryClient.setQueryData(customerKeyOf(customer.id), NOT_FOUND)
         })
-        .with({ type: 'forbidden' }, () => setSaid(CANNOT_HANDLE_CUSTOMERS))
+        .with({ type: 'forbidden' }, () =>
+          setSaid(
+            aboutTheAttempt(writtenInJapanese(CANNOT_HANDLE_CUSTOMERS_MESSAGE)),
+          ),
+        )
         .with(
           { type: P.union('invalid', 'tooManyRequests', 'failed') },
           (refused) => setSaid(afterPreferencesChange(refused)),

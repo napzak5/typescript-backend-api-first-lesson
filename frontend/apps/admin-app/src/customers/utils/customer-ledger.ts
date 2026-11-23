@@ -11,7 +11,13 @@ import {
   keywordIn,
   startOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
-import { errorAt, type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  errorAt,
+  errorsInJapanese,
+  type FormRead,
+  inJapaneseIfAny,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { CUSTOMER_STATUSES, TIERS } from './customer-format'
 
 /**
@@ -95,9 +101,11 @@ export const readCustomerConditions = (
   const search = textOf(values, 'search').trim()
   const from = textOf(values, 'from').trim()
   const to = textOf(values, 'to').trim()
-  const errors: Record<string, string> = {
-    ...Object.fromEntries(errorAt('search', keywordError(search))),
-    ...daysErrorsOf(from, to, 'optional'),
+  const errors = {
+    ...Object.fromEntries(
+      errorAt('search', inJapaneseIfAny(keywordError(search))),
+    ),
+    ...errorsInJapanese(daysErrorsOf(from, to, 'optional')),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }

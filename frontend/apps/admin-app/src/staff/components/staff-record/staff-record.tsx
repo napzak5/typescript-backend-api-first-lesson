@@ -7,6 +7,7 @@ import {
 import {
   Card,
   DescriptionList,
+  inJapanese,
   TagList,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
@@ -60,7 +61,7 @@ export const StaffRecord = ({
           },
           {
             term: '登録した日時',
-            description: momentNameAt(member.createdAt, timezone),
+            description: inJapanese(momentNameAt(member.createdAt, timezone)),
           },
         ]}
       />
@@ -87,14 +88,16 @@ export const StaffRecord = ({
           {
             term: '入社日',
             description:
-              member.hireDate === null ? null : dayNameOf(member.hireDate),
+              member.hireDate === null
+                ? null
+                : inJapanese(dayNameOf(member.hireDate)),
           },
           {
             term: '基本給',
             description:
               member.baseSalary === null
                 ? null
-                : amountOf(member.baseSalary, currency),
+                : inJapanese(amountOf(member.baseSalary, currency)),
           },
           {
             term: '歩合率',

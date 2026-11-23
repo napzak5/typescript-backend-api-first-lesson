@@ -1,6 +1,14 @@
 import { isDay } from '@beauty-salon-frontend/fields'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  type FormErrors,
+  type FormRead,
+  textOf,
+} from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { dayAfter, dayNameOf } from './salon-time'
+
+const { period: words } = salonScreenMessages
 
 /** The days something of a salon is counted over, on its clock; both ends counted. */
 export type Period = { from: string; to: string }
@@ -43,10 +51,6 @@ export const periodIn = (query: URLSearchParams, initial: Period): Period => {
     : initial
 }
 
-const DAY_ERROR = '日付を入力してください。'
-
-const RANGE_ERROR = '終わりの日は、始まりの日と同じか、その後にしてください。'
-
 /**
  * What is wrong with the first and the last day of a period, under the
  * controls `from` and `to`: a day that is none, and an end before the
@@ -57,20 +61,22 @@ export const daysErrorsOf = (
   from: string,
   to: string,
   ends: 'required' | 'optional',
-): Record<string, string> => {
+): FormErrors<LocalizedText> => {
   const wrong = (day: string): boolean =>
     !isDay(day) && (ends === 'required' || day !== '')
 
   return isDay(from) && isDay(to) && to < from
-    ? { to: RANGE_ERROR }
+    ? { to: words.endBeforeStart }
     : {
-        ...(wrong(from) ? { from: DAY_ERROR } : {}),
-        ...(wrong(to) ? { to: DAY_ERROR } : {}),
+        ...(wrong(from) ? { from: words.dayMissing } : {}),
+        ...(wrong(to) ? { to: words.dayMissing } : {}),
       }
 }
 
 /** The days that were filled in: both of them, the end not before the start. */
-export const readDays = (values: FormData): FormRead<Period> => {
+export const readDays = (
+  values: FormData,
+): FormRead<Period, FormErrors<LocalizedText>> => {
   const from = textOf(values, 'from').trim()
   const to = textOf(values, 'to').trim()
   const errors = daysErrorsOf(from, to, 'required')
@@ -81,13 +87,15 @@ export const readDays = (values: FormData): FormRead<Period> => {
 }
 
 /** The period that was filled in: the days, no more of them than the API counts over. */
-export const readPeriod = (values: FormData): FormRead<Period> => {
+export const readPeriod = (
+  values: FormData,
+): FormRead<Period, FormErrors<LocalizedText>> => {
   const days = readDays(values)
 
   return days.type === 'valid' && daysOf(days.value) > MOST_DAYS
     ? {
         type: 'invalid',
-        errors: { to: `期間は ${MOST_DAYS} 日までにしてください。` },
+        errors: { to: words.tooLong(MOST_DAYS) },
       }
     : days
 }
@@ -97,5 +105,5 @@ export const periodQueryOf = ({ from, to }: Period): URLSearchParams =>
   new URLSearchParams({ from, to })
 
 /** A period in words: 「2025年11月21日（金）〜2026年11月20日（金）」. */
-export const periodNameOf = ({ from, to }: Period): string =>
-  from === to ? dayNameOf(from) : `${dayNameOf(from)}〜${dayNameOf(to)}`
+export const periodNameOf = ({ from, to }: Period): LocalizedText =>
+  from === to ? dayNameOf(from) : words.name(dayNameOf(from), dayNameOf(to))

@@ -4,7 +4,9 @@ import type {
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
 import { type BadgeTone, inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   amountOf,
   timeOfDayAt,
@@ -12,19 +14,15 @@ import {
 } from '../../salons/utils/salon-format'
 import { priceOf } from '../../salons/utils/salon-menu'
 
-const STATUS_NAMES: Record<ModelsBookingStatusType, string> = {
-  draft: '下書き',
-  pending: '確定待ち',
-  confirmed: '確定',
-  in_progress: '施術中',
-  completed: '完了',
-  cancelled: 'キャンセル',
-  no_show: '来店なし',
+const STATUS_NAMES: Record<ModelsBookingStatusType, LocalizedText> = {
+  ...termMessages.bookingStatus,
+  // A customer is told of a booking they did not come to without blame
+  no_show: termMessages.notVisited,
 }
 
 /** The state of a booking, in the word a customer reads. */
 export const statusNameOf = (status: ModelsBookingStatusType): string =>
-  STATUS_NAMES[status]
+  inJapanese(STATUS_NAMES[status])
 
 const STATUS_TONES: Record<ModelsBookingStatusType, BadgeTone> = {
   draft: 'neutral',

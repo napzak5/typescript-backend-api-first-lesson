@@ -35,6 +35,7 @@ import {
   useScreenHeadingFocus,
   writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   type QueryClient,
   useMutation,
@@ -185,7 +186,9 @@ const PreferencesPart = ({ salon, customer }: PartProps) => {
         .with({ type: 'found' }, ({ preferences, staff }) => (
           <PreferencesDetails
             preferences={preferences}
-            staffNames={(ids) => staffNamesOf(ids, staff)}
+            staffNames={(ids) =>
+              staffNamesOf(ids, staff).map(writtenInJapanese)
+            }
           />
         ))
         .with({ type: 'notFound' }, () => <p>{GONE}</p>)
@@ -234,7 +237,9 @@ const AccountPart = ({ customer }: Pick<PartProps, 'customer'>) => (
  */
 const UsePart = ({ salon, customer }: PartProps) => {
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
+    undefined,
+  )
   const period = periodIn(
     query,
     lastYearUntil(dayAt(new Date(), salon.timezone)),
@@ -275,7 +280,7 @@ const UsePart = ({ salon, customer }: PartProps) => {
         errors={errors}
         onSubmit={count}
       />
-      <p>{`${periodNameOf(period)}の集計`}</p>
+      <p>{`${inJapanese(periodNameOf(period))}の集計`}</p>
       {match(read.data)
         .with(undefined, () => (
           <LoadingIndicator label='利用を集計しています' />
@@ -289,7 +294,7 @@ const UsePart = ({ salon, customer }: PartProps) => {
         ))
         .with({ type: 'notFound' }, () => <p>{GONE}</p>)
         .with({ type: 'forbidden' }, () => (
-          <OtherSalonNotice what='利用の集計' />
+          <OtherSalonNotice what={writtenInJapanese('利用の集計')} />
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice

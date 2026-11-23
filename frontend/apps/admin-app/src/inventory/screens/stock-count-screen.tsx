@@ -151,7 +151,7 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <LoadingIndicator label='在庫の行を読み込んでいます' />
         ))
         .with([{ type: 'forbidden' }, P._], () => (
-          <OtherSalonNotice what='在庫' />
+          <OtherSalonNotice what={writtenInJapanese('在庫')} />
         ))
         .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
           <UnreadNotice

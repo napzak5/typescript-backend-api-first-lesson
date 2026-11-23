@@ -13,7 +13,11 @@ import { Actions } from '../actions/actions'
 import { Button } from '../button/button'
 import { ButtonLink } from '../button-link/button-link'
 import { Dialog } from '../dialog/dialog'
-import { type FormErrors, firstInvalidIn, hasErrors } from '../form/error-focus'
+import {
+  type AnyFormErrors,
+  firstInvalidIn,
+  hasErrors,
+} from '../form/error-focus'
 import { NO_ERRORS } from '../form/form-values'
 import styles from './filter-form.module.css'
 
@@ -41,9 +45,11 @@ export type FilterFormProps = {
   /**
    * What is wrong with the values that were sent, which the controls show.
    * A new object is the answer to another attempt, and the focus goes to the
-   * first control that has an error
+   * first control that has an error. Of a form whose texts are messages, the
+   * messages as the attempt left them, and not what was said of them: the
+   * focus stays where it is when only the language changes
    */
-  errors?: FormErrors | undefined
+  errors?: AnyFormErrors | undefined
   /** The address of the list without the conditions, while they narrow it */
   clearHref?: string | undefined
   /** Called with the values of the controls, under their names, when it is sent */

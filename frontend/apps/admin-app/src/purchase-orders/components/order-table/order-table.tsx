@@ -78,7 +78,7 @@ export const OrderTable = ({
         key: 'totalAmount',
         header: '合計',
         align: 'end',
-        cell: ({ totalAmount }) => amountOf(totalAmount, currency),
+        cell: ({ totalAmount }) => inJapanese(amountOf(totalAmount, currency)),
       },
       {
         key: 'expectedDelivery',

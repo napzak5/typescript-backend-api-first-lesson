@@ -66,7 +66,7 @@ export const lockNameOf = (lock: Lock, timezone: string): string =>
   match(lock)
     .with(
       { type: 'locked' },
-      ({ until }) => `${momentNameAt(until, timezone)}までロック中`,
+      ({ until }) => `${inJapanese(momentNameAt(until, timezone))}までロック中`,
     )
     .with({ type: 'ranOut' }, () => 'ロックの期限は過ぎています')
     .with({ type: 'none' }, () => 'ロックされていません')
@@ -79,7 +79,7 @@ export const lockNoteOf = (lock: Lock, timezone: string): string | undefined =>
     .with(
       { type: 'locked' },
       ({ until }) =>
-        `パスワードを続けて誤ったため、${momentNameAt(until, timezone)}まで、新しいログインができません。正しいパスワードでも同じです。ログインしている端末は、そのまま使えます。`,
+        `パスワードを続けて誤ったため、${inJapanese(momentNameAt(until, timezone))}まで、新しいログインができません。正しいパスワードでも同じです。ログインしている端末は、そのまま使えます。`,
     )
     .with(
       { type: 'ranOut' },

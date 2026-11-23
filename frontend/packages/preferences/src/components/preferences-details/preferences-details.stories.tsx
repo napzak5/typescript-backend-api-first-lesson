@@ -1,3 +1,4 @@
+import { writtenInJapanese } from '@beauty-salon-frontend/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { staffLabelOf, staffNamed } from '../../utils/staff-choices'
 import {
@@ -49,7 +50,7 @@ export const StaffThatLeftSaidSo: Story = {
         const member = staff.find((choice) => choice.id === id)
 
         return member === undefined
-          ? '一覧にないスタッフ'
+          ? writtenInJapanese('一覧にないスタッフ')
           : staffLabelOf(member)
       }),
   },

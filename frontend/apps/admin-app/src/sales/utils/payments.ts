@@ -59,16 +59,18 @@ export const limitsOf = (
     .with([null, null], () => undefined)
     .with(
       [P.number, null],
-      ([least]) => `1 回 ${amountOf(least, currency)}から受け付けます。`,
+      ([least]) =>
+        `1 回 ${inJapanese(amountOf(least, currency))}から受け付けます。`,
     )
     .with(
       [null, P.number],
-      ([, most]) => `1 回 ${amountOf(most, currency)}まで受け付けます。`,
+      ([, most]) =>
+        `1 回 ${inJapanese(amountOf(most, currency))}まで受け付けます。`,
     )
     .with(
       [P.number, P.number],
       ([least, most]) =>
-        `1 回 ${amountOf(least, currency)}から${amountOf(most, currency)}まで受け付けます。`,
+        `1 回 ${inJapanese(amountOf(least, currency))}から${inJapanese(amountOf(most, currency))}まで受け付けます。`,
     )
     .exhaustive()
 
@@ -85,16 +87,18 @@ export const methodLabelOf = (
     .with([null, null], () => method.displayName)
     .with(
       [P.number, null],
-      ([least]) => `${method.displayName}（${amountOf(least, currency)}から）`,
+      ([least]) =>
+        `${method.displayName}（${inJapanese(amountOf(least, currency))}から）`,
     )
     .with(
       [null, P.number],
-      ([, most]) => `${method.displayName}（${amountOf(most, currency)}まで）`,
+      ([, most]) =>
+        `${method.displayName}（${inJapanese(amountOf(most, currency))}まで）`,
     )
     .with(
       [P.number, P.number],
       ([least, most]) =>
-        `${method.displayName}（${amountOf(least, currency)}〜${amountOf(most, currency)}）`,
+        `${method.displayName}（${inJapanese(amountOf(least, currency))}〜${inJapanese(amountOf(most, currency))}）`,
     )
     .exhaustive()
 
@@ -126,7 +130,7 @@ const amountErrorOf = (
     return AMOUNT_ERROR
   }
   if (amount > owed) {
-    return `金額は、未払い残額（${amountOf(owed, currency)}）以下にしてください。`
+    return `金額は、未払い残額（${inJapanese(amountOf(owed, currency))}）以下にしてください。`
   }
   if (method === undefined) {
     return undefined

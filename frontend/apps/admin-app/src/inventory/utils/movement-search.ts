@@ -8,7 +8,11 @@ import {
   daysErrorsOf,
   startOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  errorsInJapanese,
+  type FormRead,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { movementTypeIn } from './movement-format'
 
 /*
@@ -55,7 +59,7 @@ export const readMovementConditions = (
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
   const errors = {
-    ...daysErrorsOf(from, to, 'optional'),
+    ...errorsInJapanese(daysErrorsOf(from, to, 'optional')),
   }
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }

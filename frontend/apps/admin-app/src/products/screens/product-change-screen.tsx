@@ -233,7 +233,7 @@ const ChangePart = ({ salon, productId }: ChangePartProps) => {
     .with({ type: 'forbidden' }, () => (
       <>
         {header}
-        <OtherSalonNotice what='商品' />
+        <OtherSalonNotice what={writtenInJapanese('商品')} />
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (

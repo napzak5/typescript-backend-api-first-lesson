@@ -120,7 +120,7 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
           <OnScreen>
             <PageHeader title={TITLE} description={salon.name} />
           </OnScreen>
-          <OtherSalonNotice what='売上' />
+          <OtherSalonNotice what={writtenInJapanese('売上')} />
         </>
       ))
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (

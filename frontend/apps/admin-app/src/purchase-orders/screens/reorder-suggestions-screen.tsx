@@ -50,7 +50,7 @@ const SuggestionsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <LoadingIndicator label='発注の提案を読み込んでいます' />
         ))
         .with({ type: 'forbidden' }, () => (
-          <OtherSalonNotice what='発注の提案' />
+          <OtherSalonNotice what={writtenInJapanese('発注の提案')} />
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice

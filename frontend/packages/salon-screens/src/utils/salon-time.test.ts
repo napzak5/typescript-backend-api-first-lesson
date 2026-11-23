@@ -33,7 +33,10 @@ describe('dayAfter', () => {
 
 describe('dayNameOf', () => {
   it('should name a day with its weekday', () => {
-    expect(dayNameOf('2026-11-20')).toBe('2026年11月20日（金）')
+    expect(dayNameOf('2026-11-20')).toEqual({
+      en: 'Fri, November 20, 2026',
+      ja: '2026年11月20日（金）',
+    })
   })
 })
 
@@ -42,15 +45,19 @@ describe('timeOfDayAt', () => {
     ['Asia/Tokyo', '10:30'],
     ['America/New_York', '20:30'],
   ])('should give the time on the clock of a salon in %s', (timezone, time) => {
-    expect(timeOfDayAt('2026-11-20T01:30:00.000Z', timezone)).toBe(time)
+    expect(timeOfDayAt('2026-11-20T01:30:00.000Z', timezone)).toEqual({
+      en: time,
+      ja: time,
+    })
   })
 })
 
 describe('momentNameAt', () => {
   it('should name the day and the time at the salon', () => {
-    expect(momentNameAt('2026-11-20T15:30:00.000Z', 'Asia/Tokyo')).toBe(
-      '2026年11月21日（土） 00:30',
-    )
+    expect(momentNameAt('2026-11-20T15:30:00.000Z', 'Asia/Tokyo')).toEqual({
+      en: 'Sat, November 21, 2026 at 00:30',
+      ja: '2026年11月21日（土） 00:30',
+    })
   })
 })
 

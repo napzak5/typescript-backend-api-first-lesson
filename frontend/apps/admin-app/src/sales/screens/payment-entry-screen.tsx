@@ -9,6 +9,7 @@ import { amountOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
+  inJapanese,
   NOTHING_TO_SAY,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
@@ -153,7 +154,7 @@ export const PaymentEntryScreen = () => {
           {(sale) => (
             <>
               <p>
-                {`合計 ${amountOf(sale.totalAmount, salon.currency)}、未払い残額 ${amountOf(owedOf(sale), salon.currency)}`}
+                {`合計 ${inJapanese(amountOf(sale.totalAmount, salon.currency))}、未払い残額 ${inJapanese(amountOf(owedOf(sale), salon.currency))}`}
               </p>
               {match(whyNoPayment(sale))
                 .with(P.string, (why) => (

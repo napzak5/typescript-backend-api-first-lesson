@@ -23,6 +23,7 @@ import {
   OWNER,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -166,7 +167,9 @@ describe('the sales report, against the API', () => {
       expect(screen.getByLabelText('集計する期間（から）')).toHaveValue(first)
       expect(screen.getByLabelText('集計する期間（まで）')).toHaveValue(today)
       expect(
-        screen.getByText(`${periodNameOf({ from: first, to: today })}の売上`),
+        screen.getByText(
+          `${inJapanese(periodNameOf({ from: first, to: today }))}の売上`,
+        ),
       ).toBeVisible()
       expect(await termsOnceThere('期間の合計')).toEqual(SUMS_OF_TODAY)
       expect(rowsOf('支払い方法別の入金')).toEqual([
@@ -200,7 +203,7 @@ describe('the sales report, against the API', () => {
     expect(await screen.findByText('この期間の売上はありません')).toBeVisible()
     expect(
       screen.getByText(
-        `${periodNameOf({ from: '2020-01-01', to: '2020-12-31' })}の売上`,
+        `${inJapanese(periodNameOf({ from: '2020-01-01', to: '2020-12-31' }))}の売上`,
       ),
     ).toBeVisible()
     // Nothing was sold, so there is nothing to export
@@ -326,7 +329,7 @@ describe('the sales report, against the API', () => {
       ].join('\r\n'),
     )
     expect(notifications()).toContain(
-      `${periodNameOf({ from: yesterday, to: today })}の売上を、${file.name} に出力しました。`,
+      `${inJapanese(periodNameOf({ from: yesterday, to: today }))}の売上を、${file.name} に出力しました。`,
     )
     expect(exporting).toHaveFocus()
     expect(screen.queryByRole('alert')).toBeNull()

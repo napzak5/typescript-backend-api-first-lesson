@@ -15,6 +15,7 @@ import {
   STYLIST,
   TOKYO,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -103,15 +104,15 @@ const seededRows = async (): Promise<string[][]> => {
   return [
     [
       'PO-SEED-0002',
-      dayNameOf(second.ordered),
+      inJapanese(dayNameOf(second.ordered)),
       'Beauty Supply Tokyo',
       '発注済み',
       '￥27,200',
-      dayNameOf(second.delivery ?? ''),
+      inJapanese(dayNameOf(second.delivery ?? '')),
     ],
     [
       'PO-SEED-0001',
-      dayNameOf(first.ordered),
+      inJapanese(dayNameOf(first.ordered)),
       'Beauty Supply Tokyo',
       '承認待ち',
       '￥24,750',
@@ -173,7 +174,9 @@ describe('the screens of the purchase orders', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: '発注 PO-SEED-0001' }),
     ).toHaveFocus()
-    const ordered = dayNameOf((await daysOf('PO-SEED-0001')).ordered)
+    const ordered = inJapanese(
+      dayNameOf((await daysOf('PO-SEED-0001')).ordered),
+    )
     const terms = termsOf('発注')
     // An administrator entered it: nobody is named
     expect(terms[3]?.[1]).toMatch(new RegExp(`^${ordered} \\d{2}:\\d{2}$`))
@@ -233,10 +236,10 @@ describe('the screens of the purchase orders', () => {
       '承認',
       '支払条件',
     ])
-    expect(terms[4]?.[1]).toBe(dayNameOf(delivery ?? ''))
+    expect(terms[4]?.[1]).toBe(inJapanese(dayNameOf(delivery ?? '')))
     // An administrator approved it when the seed ran
     expect(terms[5]?.[1]).toMatch(
-      new RegExp(`^${dayNameOf(ordered)} \\d{2}:\\d{2}$`),
+      new RegExp(`^${inJapanese(dayNameOf(ordered))} \\d{2}:\\d{2}$`),
     )
     expect(rowsOf('明細')).toEqual([
       [
@@ -473,7 +476,10 @@ describe('the screens of the purchase orders', () => {
     await waitFor(() =>
       expect(termsOf('発注')[3]?.[1]).toMatch(new RegExp(`（${stylist}）$`)),
     )
-    expect(termsOf('発注')[4]).toEqual(['納品予定日', dayNameOf(delivery)])
+    expect(termsOf('発注')[4]).toEqual([
+      '納品予定日',
+      inJapanese(dayNameOf(delivery)),
+    ])
     expect(rowsOf('明細').map((row) => row.slice(0, 5))).toEqual([
       ['COLOR001', COLOUR, '2.5 tube', '￥800', '￥2,000'],
       ['SHMP001', SHAMPOO, '10 bottle', '￥1,500', '￥15,000'],
@@ -488,7 +494,7 @@ describe('the screens of the purchase orders', () => {
     await waitFor(() => expect(rowsOf(ORDERS)).toHaveLength(3))
     expect(rowsOf(ORDERS)[0]?.slice(0, 5)).toEqual([
       number,
-      dayNameOf(await dayFromToday(0)),
+      inJapanese(dayNameOf(await dayFromToday(0))),
       'Tokyo Beauty Supply',
       '下書き',
       '￥19,200',

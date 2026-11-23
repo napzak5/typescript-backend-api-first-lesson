@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as timeSlotFieldsStories from './time-slot-fields.stories'
 
 const stories = composeStories(timeSlotFieldsStories)
@@ -246,5 +247,43 @@ describe('TimeSlotFields', () => {
     expect(
       screen.getByLabelText('時間帯 2 の開始'),
     ).toHaveAccessibleDescription(OVERLAPPING)
+  })
+})
+
+describe('TimeSlotFields on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the times of every row and its buttons in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithSlots.run()
+
+    // Assert
+    expect(screen.getByLabelText('Start of time 2')).toHaveValue('18:00')
+    expect(screen.getByLabelText('End of time 2')).toHaveValue('20:30')
+    expect(screen.getByRole('button', { name: 'Remove time 1' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Add a time' })).toBeVisible()
+  })
+
+  it('should say in English what is wrong with a time', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(screen.getByLabelText('End of time 1')).toHaveAccessibleDescription(
+      'Make the end later than the start.',
+    )
+    expect(
+      screen.getByLabelText('Start of time 2'),
+    ).toHaveAccessibleDescription(
+      'This overlaps another time. Choose times that do not overlap.',
+    )
   })
 })

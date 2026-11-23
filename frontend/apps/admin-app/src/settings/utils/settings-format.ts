@@ -106,7 +106,7 @@ export const calendarFrom = (
     .toSorted((one, other) => one.date.localeCompare(other.date))
     .map((entry) => ({
       date: entry.date,
-      day: dayNameOf(entry.date),
+      day: inJapanese(dayNameOf(entry.date)),
       hours:
         entry.openTime === null || entry.closeTime === null
           ? '終日休業'

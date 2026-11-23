@@ -7,6 +7,7 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
+  inJapanese,
   Link,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -55,7 +56,7 @@ export const RemovedRecord = ({
   pending = false,
   onRestore,
 }: RemovedRecordProps) => {
-  const when = momentNameAt(version.changedAt, timezone)
+  const when = inJapanese(momentNameAt(version.changedAt, timezone))
   const why = whyUnrestorable(removal)
   const done = match(removal)
     .with('deleted', () => '台帳から削除しました')

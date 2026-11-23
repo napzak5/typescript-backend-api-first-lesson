@@ -105,13 +105,13 @@ export const CheckoutForm = ({
       key: 'unitPrice',
       header: '料金',
       cell: ({ line }: { line: BillLine }) =>
-        amountOf(line.unitPrice, currency),
+        inJapanese(amountOf(line.unitPrice, currency)),
     },
     {
       key: 'discountAmount',
       header: '割引',
       cell: ({ line }: { line: BillLine }) =>
-        amountOf(line.discountAmount, currency),
+        inJapanese(amountOf(line.discountAmount, currency)),
     },
   ]
 
@@ -168,7 +168,7 @@ export const CheckoutForm = ({
               name={TO_ADD}
               options={offered.map(({ id, name, price }) => ({
                 value: id,
-                label: `${name}（${amountOf(price, currency)}）`,
+                label: `${name}（${inJapanese(amountOf(price, currency))}）`,
               }))}
               description='いまのメニューの料金で数えます。担当は、予約の担当です。'
             />
@@ -206,26 +206,36 @@ export const CheckoutForm = ({
                 items={[
                   {
                     term: '小計',
-                    description: amountOf(breakdown.subtotal, currency),
+                    description: inJapanese(
+                      amountOf(breakdown.subtotal, currency),
+                    ),
                   },
                   {
                     term: '割引',
-                    description: amountOf(breakdown.discountAmount, currency),
+                    description: inJapanese(
+                      amountOf(breakdown.discountAmount, currency),
+                    ),
                   },
                   {
                     term: '消費税',
-                    description: amountOf(breakdown.taxAmount, currency),
+                    description: inJapanese(
+                      amountOf(breakdown.taxAmount, currency),
+                    ),
                   },
                   {
                     term: '合計',
-                    description: amountOf(breakdown.totalAmount, currency),
+                    description: inJapanese(
+                      amountOf(breakdown.totalAmount, currency),
+                    ),
                   },
                   {
                     term: '1 回で受け取れる支払い方法',
                     description:
                       recommendedMethods.length === 0
                         ? inJapanese(NONE)
-                        : recommendedMethods.map(methodKindNameOf).join('、'),
+                        : recommendedMethods
+                            .map((kind) => inJapanese(methodKindNameOf(kind)))
+                            .join('、'),
                   },
                 ]}
               />

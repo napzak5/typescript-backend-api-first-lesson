@@ -1,6 +1,7 @@
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   useNotifications,
@@ -117,7 +118,10 @@ const RunPart = <Result,>({
       result={
         ran === undefined
           ? undefined
-          : ranAtOf(momentNameAt(ran.at, timezone), wordsOf(ran.result))
+          : ranAtOf(
+              inJapanese(momentNameAt(ran.at, timezone)),
+              wordsOf(ran.result),
+            )
       }
       refusal={refusal}
       asking={asking}

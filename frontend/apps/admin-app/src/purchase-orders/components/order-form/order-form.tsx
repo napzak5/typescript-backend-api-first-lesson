@@ -11,6 +11,7 @@ import {
   FormPart,
   type FormProps,
   FormRow,
+  inJapanese,
   NO_ERRORS,
   TextArea,
   TextField,
@@ -153,7 +154,7 @@ export const OrderForm = ({
           )
         })}
         <p className={styles['subtotal']}>
-          {`小計 ${amountOf(subtotal, salon.currency)}`}
+          {`小計 ${inJapanese(amountOf(subtotal, salon.currency))}`}
         </p>
       </FormPart>
       <TextField
@@ -162,7 +163,7 @@ export const OrderForm = ({
         name='taxAmount'
         inputMode='numeric'
         autoComplete='off'
-        description={`仕入先の請求に合わせて入力します。小計の ${salon.taxRate}% は ${amountOf(taxAt(subtotal, salon.taxRate), salon.currency)} です（円未満切り捨て）。`}
+        description={`仕入先の請求に合わせて入力します。小計の ${salon.taxRate}% は ${inJapanese(amountOf(taxAt(subtotal, salon.taxRate), salon.currency))} です（円未満切り捨て）。`}
         error={errors['taxAmount']}
       />
       <TextField

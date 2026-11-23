@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { type RefObject, useLayoutEffect, useRef, useState } from 'react'
 import type { FormErrors } from '../form/error-focus'
 import { NO_ERRORS } from '../form/form-values'
@@ -5,8 +6,15 @@ import { NO_ERRORS } from '../form/form-values'
 /** A row of a form that repeats the same controls: its key, which stays while the row does, and what the row holds */
 export type RepeatedRow<Value> = { key: number; value: Value }
 
-/** The rows of a form that repeats the same controls, and what is done to them */
-export type RepeatedRows<Value> = {
+/**
+ * The rows of a form that repeats the same controls, and what is done to
+ * them. `Text` is what an error is: a text, or a message of a form whose
+ * texts are messages
+ */
+export type RepeatedRows<
+  Value,
+  Text extends string | LocalizedText = string,
+> = {
   /** The rows, in the order of the form */
   rows: readonly RepeatedRow<Value>[]
   /**
@@ -15,7 +23,7 @@ export type RepeatedRows<Value> = {
    * after it: there is none from a row being taken away until the next
    * attempt, which gives a new object
    */
-  errors: FormErrors
+  errors: FormErrors<Text>
   /** Adds a row at the end, whose first control takes the focus */
   add: (value: Value) => void
   /** Adds rows at the end that come along with a choice made elsewhere: the focus stays where it is */
@@ -45,16 +53,21 @@ const CONTROLS = 'input, select, textarea'
  * shows the change: into a row that was added, or to the button that adds
  * one when a row was taken away.
  */
-export const useRepeatedRows = <Value>(
+export const useRepeatedRows = <
+  Value,
+  Text extends string | LocalizedText = string,
+>(
   initial: () => readonly Value[],
-  errors: FormErrors,
-): RepeatedRows<Value> => {
+  errors: FormErrors<Text>,
+): RepeatedRows<Value, Text> => {
   const [rows, setRows] = useState<RepeatedRow<Value>[]>(() =>
     initial().map((value, key) => ({ key, value })),
   )
   const [nextKey, setNextKey] = useState(rows.length)
   const [focus, setFocus] = useState<Focus>()
-  const [outdated, setOutdated] = useState<FormErrors | undefined>(undefined)
+  const [outdated, setOutdated] = useState<FormErrors<Text> | undefined>(
+    undefined,
+  )
   const elements = useRef(new Map<number, HTMLElement>())
   const addRef = useRef<HTMLButtonElement>(null)
 

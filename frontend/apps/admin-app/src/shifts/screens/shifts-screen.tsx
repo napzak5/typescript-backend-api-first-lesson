@@ -172,7 +172,7 @@ const Shifts = ({ salon }: ShiftsProps) => {
                 <LoadingIndicator label='シフトを読み込んでいます' />
               ))
               .with({ type: 'forbidden' }, () => (
-                <OtherSalonNotice what='シフト' />
+                <OtherSalonNotice what={writtenInJapanese('シフト')} />
               ))
               .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                 <UnreadNotice

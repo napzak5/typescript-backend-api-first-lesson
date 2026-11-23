@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as preferencesDetailsStories from './preferences-details.stories'
 
 const stories = composeStories(preferencesDetailsStories)
@@ -121,5 +122,49 @@ describe('PreferencesDetails', () => {
     // Assert
     expect(shownAs('特別な要望')?.firstElementChild).toHaveClass('writtenText')
     expect(shownAs('特別な要望')?.textContent).toContain('\n\n')
+  })
+})
+
+describe('PreferencesDetails on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name every preference in English, and list the entries as English does', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Complete.run()
+
+    // Assert
+    expect(details()).toEqual({
+      'Preferred staff': '田中 美咲 (Beauty Salon Tokyo)',
+      'Staff to avoid':
+        '佐藤 健太 (Beauty Salon Tokyo), 鈴木 結衣 (Hair Studio Osaka)',
+      'Preferred times': '10:00–12:00, 18:00–20:30',
+      'Preferred length': '肩にかかるくらい',
+      'Favorite colors': 'アッシュブラウン, ベージュ',
+      'Styles to avoid': '前髪を短くすること, 強いパーマ',
+      'Reference images':
+        'https://images.example.com/styles/bob-ash-brown.jpg' +
+        'https://images.example.com/styles/layered-medium.jpg',
+      'How you like to be served': '静かに過ごしたい',
+      'Special requests':
+        '首が疲れやすいので、シャンプーのときにタオルを入れてもらえると助かります。',
+    })
+  })
+
+  it('should say in English of every preference that there is none', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Nothing.run()
+
+    // Assert
+    expect(new Set(Object.values(details()))).toEqual(
+      new Set(['Not specified']),
+    )
   })
 })

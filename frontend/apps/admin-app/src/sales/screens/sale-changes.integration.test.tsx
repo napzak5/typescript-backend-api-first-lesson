@@ -13,6 +13,7 @@ import {
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -139,7 +140,7 @@ describe('changing, voiding and giving back a sale, against the API', () => {
       expect(firstSight()[1]).toContain('Mika Suzuki')
       expect(notifications()).toContain('売上を直しました。')
       expect(describedIn('売上')).toMatchObject({
-        会計日: dayNameOf(yesterday),
+        会計日: inJapanese(dayNameOf(yesterday)),
         会計の担当: 'Mika Suzuki',
         メモ: '前日の閉店後に入れ忘れた会計',
       })

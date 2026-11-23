@@ -59,7 +59,7 @@ export const CategoryTable = ({
         {
           key: 'category',
           header: '種類',
-          cell: ({ category }) => categoryNameOf(category),
+          cell: ({ category }) => inJapanese(categoryNameOf(category)),
         },
         {
           key: 'displayOrder',

@@ -1,6 +1,6 @@
 import type { ModelsCustomerDeletionRequestResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { Table, type TableColumn } from '@beauty-salon-frontend/ui'
+import { inJapanese, Table, type TableColumn } from '@beauty-salon-frontend/ui'
 
 export type ExecutedRequestsProps = {
   /** The requests a run carried out, in the order of their dates */
@@ -22,12 +22,14 @@ export const ExecutedRequests = ({
     {
       key: 'requestedAt',
       header: '受け付けた日時',
-      cell: ({ requestedAt }) => momentNameAt(requestedAt, timezone),
+      cell: ({ requestedAt }) =>
+        inJapanese(momentNameAt(requestedAt, timezone)),
     },
     {
       key: 'scheduledAt',
       header: '消去の予定日時',
-      cell: ({ scheduledAt }) => momentNameAt(scheduledAt, timezone),
+      cell: ({ scheduledAt }) =>
+        inJapanese(momentNameAt(scheduledAt, timezone)),
     },
     {
       key: 'reason',

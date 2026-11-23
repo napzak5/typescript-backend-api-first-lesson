@@ -1,5 +1,5 @@
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
-import { Card, Note, Table } from '@beauty-salon-frontend/ui'
+import { Card, inJapanese, Note, Table } from '@beauty-salon-frontend/ui'
 import { countNameOf } from '../../utils/sales-report'
 import {
   partNameOf,
@@ -25,7 +25,8 @@ export type SalesTrendProps = {
  * table is what assistive technology reads; the chart draws its sales.
  */
 export const SalesTrend = ({ parts, unit, currency }: SalesTrendProps) => {
-  const money = (amount: number): string => amountOf(amount, currency)
+  const money = (amount: number): string =>
+    inJapanese(amountOf(amount, currency))
 
   return (
     <Card title='区切りごとの売上'>

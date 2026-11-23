@@ -81,7 +81,7 @@ export const ScheduleRecord = ({ rows, today }: ScheduleRecordProps) => {
           {
             key: 'date',
             header: '日付',
-            cell: ({ date }: Dated) => dayNameOf(date),
+            cell: ({ date }: Dated) => inJapanese(dayNameOf(date)),
           },
           { key: 'work', header: '勤務', cell: ({ shift }) => workOf(shift) },
           { key: 'rest', header: '休憩', cell: ({ shift }) => restOf(shift) },

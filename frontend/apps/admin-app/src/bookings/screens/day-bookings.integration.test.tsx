@@ -24,6 +24,7 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -41,7 +42,11 @@ const navigationItems = () =>
 
 /** The rows of the table of a day, once the table is there. */
 const rowsOfDay = async (day: string): Promise<string[][]> =>
-  rowsOf(await screen.findByRole('table', { name: `${dayNameOf(day)}の予約` }))
+  rowsOf(
+    await screen.findByRole('table', {
+      name: `${inJapanese(dayNameOf(day))}の予約`,
+    }),
+  )
 
 describe('the bookings of a salon, against the API', () => {
   beforeEach(() => {
@@ -488,7 +493,9 @@ describe('the bookings of a salon, against the API', () => {
 
       // Assert
       expect(
-        await screen.findByText(`${dayNameOf(later)}の予約はありません`),
+        await screen.findByText(
+          `${inJapanese(dayNameOf(later))}の予約はありません`,
+        ),
       ).toBeVisible()
       expect(screen.queryByRole('table')).toBeNull()
     })
@@ -506,7 +513,7 @@ describe('the bookings of a salon, against the API', () => {
       // Assert
       expect(
         await screen.findByText(
-          `${dayNameOf(later)}の予約のうち、条件に合うものはありません`,
+          `${inJapanese(dayNameOf(later))}の予約のうち、条件に合うものはありません`,
         ),
       ).toBeVisible()
       expect(screen.getByRole('link', { name: '条件を外す' })).toHaveAttribute(
@@ -561,7 +568,7 @@ describe('the bookings of a salon, against the API', () => {
         ),
       )
       const table = screen.getByRole('table', {
-        name: `${dayNameOf(day)}の予約`,
+        name: `${inJapanese(dayNameOf(day))}の予約`,
       })
       expect(within(table).getAllByRole('link').at(50)).toHaveFocus()
       expect(screen.getByText('55 件')).toBeVisible()
