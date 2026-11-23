@@ -429,9 +429,12 @@ In an area of an application that is done, the same rules hold, and:
   and the test fails on a name that has no source.
 - An area that is still written in Japanese says what it takes of an area
   that is done with `inJapanese` (`inJapanese(whenLineOf(booking,
-  salon.timezone))` in the reviews); an area that is done hands on the
-  strings of one that is not as they are (the profile form of the first
-  booking).
+  salon.timezone))` in the reviews), and so does an area that is done
+  that gives a name to a component of such an area, whose sentence around
+  the name is Japanese (`subject={inJapanese(postedOf(asked.review,
+  salon.timezone))}` of the dialog that reports a review); an area that is
+  done hands on the strings of one that is not as they are (the profile
+  form of the first booking).
 
 A value is written by the formats of `@beauty-salon-shared/i18n/formats`,
 which return it in every language, as a message: a number with its
