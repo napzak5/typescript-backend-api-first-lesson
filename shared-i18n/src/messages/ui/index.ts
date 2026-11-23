@@ -1,5 +1,6 @@
 export { answerMessages } from './answers'
 export { uiMessages } from './components'
+export { customerMessages } from './customers'
 export { fieldMessages } from './fields'
 export { frameMessages } from './frame'
 export { preferenceMessages } from './preferences'

@@ -1,5 +1,6 @@
 import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
+import { customerMessages as record } from '../ui/customers'
 import { countedIn, listed, postalCodeOf } from './written'
 
 const YOUR_DETAILS = text({ en: 'Your details', ja: 'お客様の情報' })
@@ -14,34 +15,31 @@ const YOUR_DETAILS = text({ en: 'Your details', ja: 'お客様の情報' })
 export const portalProfileMessages = {
   /** The controls of the form of a profile, and the terms its record is shown with */
   controls: {
-    lastName: text({ en: 'Last name', ja: '姓' }),
-    firstName: text({ en: 'First name', ja: '名' }),
-    lastNameKana: text({ en: 'Phonetic last name', ja: '姓（フリガナ）' }),
-    firstNameKana: text({ en: 'Phonetic first name', ja: '名（フリガナ）' }),
-    phoneNumber: text({ en: 'Phone number', ja: '電話番号' }),
+    lastName: record.lastName,
+    firstName: record.firstName,
+    lastNameKana: record.lastNameKana,
+    firstNameKana: record.firstNameKana,
+    phoneNumber: record.phoneNumber,
     phoneNumberDescription: text({
       en: 'The salon may contact you about your booking.',
       ja: 'ご予約について、サロンから連絡することがあります。',
     }),
-    alternativePhone: text({
-      en: 'Alternative phone number',
-      ja: '予備の電話番号',
-    }),
+    alternativePhone: record.alternativePhone,
     alternativePhoneDescription: text({
       en: 'The number the salon calls when the one above does not answer.',
       ja: '上の番号につながらないときに、連絡する番号です。',
     }),
-    postalCode: text({ en: 'Postal code', ja: '郵便番号' }),
-    prefecture: text({ en: 'Prefecture', ja: '都道府県' }),
-    city: text({ en: 'City', ja: '市区町村' }),
-    address: text({ en: 'Street address', ja: '番地' }),
-    building: text({ en: 'Building and room', ja: '建物名・部屋番号' }),
-    birthDate: text({ en: 'Date of birth', ja: '生年月日' }),
-    gender: text({ en: 'Gender', ja: '性別' }),
+    postalCode: record.postalCode,
+    prefecture: record.prefecture,
+    city: record.city,
+    address: record.address,
+    building: record.building,
+    birthDate: record.birthDate,
+    gender: record.gender,
     /** The first choice of the gender, which says none */
     noGender: text({ en: 'Not specified', ja: '選択しない' }),
-    occupation: text({ en: 'Occupation', ja: '職業' }),
-    preferredServices: text({ en: 'Favorite services', ja: '好みのメニュー' }),
+    occupation: record.occupation,
+    preferredServices: record.preferredServices,
     notes: text({
       en: 'Notes for the salon',
       ja: 'サロンに伝えておきたいこと',
@@ -65,9 +63,9 @@ export const portalProfileMessages = {
   },
   /** The parts of the form of a profile */
   parts: {
-    name: text({ en: 'Name', ja: 'お名前' }),
-    contact: text({ en: 'Contact', ja: '連絡先' }),
-    address: text({ en: 'Address', ja: '住所' }),
+    name: record.parts.name,
+    contact: record.parts.contact,
+    address: record.parts.address,
     aboutYou: text({ en: 'About you', ja: 'ご本人について' }),
     likes: text({ en: 'What you like', ja: '好み' }),
     contacts: text({ en: 'Messages you receive', ja: '受け取る連絡' }),
@@ -86,31 +84,28 @@ export const portalProfileMessages = {
   },
   /** The record of a profile, as the customer reads it */
   details: {
-    kana: text({ en: 'Phonetic name', ja: 'フリガナ' }),
-    email: text({ en: 'Email address', ja: 'メールアドレス' }),
+    kana: record.kana,
+    email: record.email,
     /** The postal code of the address: 「〒150-0001」 */
     postalCode: postalCodeOf,
     /** The entries of a list (the favorite services, the messages received): 「カット、カラー」 */
     listed: (entries: readonly LocalizedText[]) => listed(entries),
-    byEmail: text({ en: 'Messages by email', ja: 'メールでの連絡' }),
-    bySms: text({ en: 'Messages by SMS', ja: 'SMS での連絡' }),
-    marketing: text({
-      en: 'News such as campaigns',
-      ja: 'キャンペーンなどのお知らせ',
-    }),
+    byEmail: record.byEmail,
+    bySms: record.bySms,
+    marketing: record.marketing,
   },
   /** What the salons keep of a member, which the customer cannot change */
   membership: {
     title: text({ en: 'Membership', ja: '会員の情報' }),
-    tier: text({ en: 'Membership rank', ja: '会員ランク' }),
-    points: text({ en: 'Points', ja: 'ポイント' }),
+    tier: record.membershipTier,
+    points: record.points,
     /** A number of points: 「2,500 ポイント」 */
     pointsOf: (points: number) =>
       text({
         en: countedIn(points, 'point', 'points'),
         ja: `${numberOf(points).ja} ポイント`,
       }),
-    visits: text({ en: 'Visits', ja: '来店回数' }),
+    visits: record.visits,
     /** How often a customer came: 「12 回」 */
     visitsOf: (count: number) =>
       text({
@@ -121,11 +116,11 @@ export const portalProfileMessages = {
     lastVisit: text({ en: 'Last visit', ja: '最後の来店' }),
     /** What stands where a day would, for a customer who has not come yet */
     noVisit: text({ en: 'No visits yet', ja: 'まだ来店がありません' }),
-    referralCode: text({ en: 'Referral code', ja: '紹介コード' }),
-    notIssued: text({ en: 'Not issued', ja: '未発行' }),
-    hairType: text({ en: 'Hair type', ja: '髪質' }),
-    hairThickness: text({ en: 'Hair thickness', ja: '髪の太さ' }),
-    scalpCondition: text({ en: 'Scalp condition', ja: '頭皮の状態' }),
+    referralCode: record.referralCode,
+    notIssued: record.notIssued,
+    hairType: record.hairType,
+    hairThickness: record.hairThickness,
+    scalpCondition: record.scalpCondition,
   },
   /** The page of the customer */
   myPage: {

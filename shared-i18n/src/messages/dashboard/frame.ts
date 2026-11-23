@@ -1,4 +1,5 @@
 import { text } from '../../languages/localized-text'
+import { salonScreenMessages } from '../ui/salon-screens'
 import { dashboardReportMessages } from './reports'
 
 const { titles } = dashboardReportMessages
@@ -10,7 +11,7 @@ const { titles } = dashboardReportMessages
  */
 export const dashboardFrameMessages = {
   navigation: {
-    chooseSalon: text({ en: 'Choose a salon', ja: 'サロンを選ぶ' }),
+    chooseSalon: salonScreenMessages.salonChoice.title,
     report: titles.report,
     trends: titles.trends,
     daily: titles.daily,
