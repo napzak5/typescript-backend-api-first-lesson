@@ -1,8 +1,11 @@
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aSale, salon, staff } from '../examples'
 
 import { SaleChangeForm } from './sale-change-form'
+
+const { errors } = adminSaleMessages.changes.change
 
 const meta: Meta<typeof SaleChangeForm> = {
   title: 'Admin/Sales/SaleChangeForm',
@@ -37,10 +40,6 @@ export const TakenByUnlisted: Story = {
 /** What the form found wrong, or the API refused */
 export const WithErrors: Story = {
   args: {
-    errors: {
-      staffId:
-        'このスタッフは、その間に削除されたため、選べません。選び直してください。',
-      saleTime: '会計日時は、いまより前にしてください。',
-    },
+    errors: { staffId: errors.staffGone, saleTime: errors.later },
   },
 }

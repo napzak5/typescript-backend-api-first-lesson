@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { aSale, salon } from '../examples'
 import * as saleRecordStories from './sale-record.stories'
 
@@ -111,6 +112,101 @@ describe('SaleRecord', () => {
       ['お客様', '記録なし'],
       ['会計の担当', '記録なし'],
       ['予約', 'なし'],
+    ])
+  })
+})
+
+describe('SaleRecord on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show the sale, its lines and what is left to pay in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unpaid.run()
+
+    // Assert
+    expect(describedIn('Sale')).toEqual([
+      ['Sale number', 'SL-2KQM-9F4H'],
+      ['Time of sale', 'Fri, November 20, 2026 at 11:02'],
+      ['Date of sale', 'Fri, November 20, 2026'],
+      ['Customer', '山田 花子'],
+      ['Cashier', '田中 美咲'],
+      ['Booking', 'Booking details'],
+      ['Payment', 'Unpaid'],
+      ['Notes', 'Not recorded'],
+    ])
+    expect(screen.getByRole('link', { name: 'Edit the sale' })).toHaveAttribute(
+      'href',
+      `/salons/${salon.id}/sales/${aSale().id}/edit`,
+    )
+    expect(columnsOf('Line items')).toEqual([
+      'Item',
+      'Staff',
+      'Quantity',
+      'Unit price',
+      'Discount',
+      'Tax',
+      'Amount',
+    ])
+    expect(rowsOf('Line items')).toEqual([
+      ['カット', '田中 美咲', '1', '¥5,500', '¥0', '¥0', '¥5,500'],
+    ])
+    expect(describedIn('Amounts')).toEqual([
+      ['Subtotal', '¥5,500'],
+      ['Discount', '¥0'],
+      ['Tax', '¥0'],
+      ['Total', '¥5,500'],
+      ['Received', '¥0'],
+      ['Left to pay', '¥5,500'],
+    ])
+  })
+
+  it('should say when and why a sale was voided, what was given back, and who is no longer known, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Voided.run()
+
+    // Assert
+    expect(describedIn('Sale').slice(3)).toEqual([
+      ['Customer', 'Removed customer'],
+      ['Cashier', 'Staff member not listed'],
+      ['Booking', 'Booking details'],
+      ['Payment', 'Voided'],
+      ['Time voided', 'Fri, November 20, 2026 at 12:00'],
+      ['Reason for voiding', '金額の入れ間違い'],
+      ['Notes', '次回の来店で使えるクーポンを渡した'],
+    ])
+    expect(describedIn('Amounts').slice(4)).toEqual([
+      ['Received', '¥5,500'],
+      ['Refunded', '¥1,000'],
+      ['Left to pay', '¥0'],
+    ])
+  })
+
+  it('should say a sale that bills no booking and names no customer and no member in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unpaid.run({
+      args: {
+        ...stories.Unpaid.args,
+        sale: aSale({ customerId: null, staffId: null, bookingId: null }),
+        bookingHref: undefined,
+      },
+    })
+
+    // Assert
+    expect(describedIn('Sale').slice(3, 6)).toEqual([
+      ['Customer', 'Not recorded'],
+      ['Cashier', 'Not recorded'],
+      ['Booking', 'None'],
     ])
   })
 })

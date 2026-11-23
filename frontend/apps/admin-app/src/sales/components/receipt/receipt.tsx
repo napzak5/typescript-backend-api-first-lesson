@@ -4,10 +4,15 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { DescriptionList, inJapanese, Table } from '@beauty-salon-frontend/ui'
+import { DescriptionList, Table, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { numberOf } from '@beauty-salon-shared/i18n/formats'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useId } from 'react'
 import { cardNameOf, methodNameOf, refundedOf } from '../../utils/sale-format'
 import styles from './receipt.module.css'
+
+const { receipt: texts, words } = adminSaleMessages
 
 export type ReceiptProps = {
   receipt: ModelsSaleReceiptResponse
@@ -30,7 +35,8 @@ export type ReceiptProps = {
 
 /**
  * Where the salon is, in one line: 「〒150-0001 東京都 渋谷区 神宮前 4-1-1」.
- * The parts are those the salon wrote, set apart as the portal sets them.
+ * The parts are those the salon wrote, set apart as the portal sets them;
+ * a salon that gave no postal code or no building is written without it.
  */
 const placeOf = ({
   postalCode,
@@ -38,22 +44,23 @@ const placeOf = ({
   city,
   address,
   building,
-}: ReceiptProps['salon']): string =>
-  [
-    `〒${postalCode}`,
+}: ReceiptProps['salon']): LocalizedText =>
+  texts.addressOf(postalCode, [
     prefecture,
     city,
     address,
     ...(building === null ? [] : [building]),
-  ].join(' ')
+  ])
 
 /**
  * The receipt of a sale, to hand over printed: the salon, the number and
  * the time of the sale, what was bought at what price, the tax, the total,
  * and how it was paid. What was given back is said below the payments.
- * On paper it stands alone, without the frame of the screen.
+ * On paper it stands alone, without the frame of the screen. It is in the
+ * language of the page, which the one who prints it chose.
  */
 export const Receipt = ({ receipt, salon, methods }: ReceiptProps) => {
+  const say = useSay()
   const name = useId()
   const { sale } = receipt
   const { currency } = salon
@@ -65,96 +72,98 @@ export const Receipt = ({ receipt, salon, methods }: ReceiptProps) => {
         <h2 className={styles['salon']} id={name}>
           {salon.name}
         </h2>
-        <p>{placeOf(salon)}</p>
-        <p>{`電話 ${salon.phoneNumber}`}</p>
+        <p>{say(placeOf(salon))}</p>
+        <p>{say(texts.phoneOf(salon.phoneNumber))}</p>
       </header>
       <DescriptionList
         items={[
-          { term: 'レシート番号', description: receipt.receiptNumber },
           {
-            term: '会計日時',
-            description: inJapanese(
-              momentNameAt(sale.saleTime, salon.timezone),
-            ),
+            term: say(texts.receiptNumber),
+            description: receipt.receiptNumber,
           },
           {
-            term: '発行日時',
-            description: inJapanese(
-              momentNameAt(receipt.issuedAt, salon.timezone),
-            ),
+            term: say(words.saleTime),
+            description: say(momentNameAt(sale.saleTime, salon.timezone)),
+          },
+          {
+            term: say(texts.issuedAt),
+            description: say(momentNameAt(receipt.issuedAt, salon.timezone)),
           },
         ]}
       />
       <Table
-        caption='お買い上げの明細'
+        caption={say(texts.items)}
         columns={[
-          { key: 'itemName', header: '品目', cell: ({ itemName }) => itemName },
+          {
+            key: 'itemName',
+            header: say(words.item),
+            cell: ({ itemName }) => itemName,
+          },
           {
             key: 'quantity',
-            header: '数量',
-            cell: ({ quantity }) => String(quantity),
+            header: say(words.quantity),
+            cell: ({ quantity }) => say(numberOf(quantity)),
           },
           {
             key: 'unitPrice',
-            header: '単価',
-            cell: ({ unitPrice }) => inJapanese(amountOf(unitPrice, currency)),
+            header: say(words.unitPrice),
+            cell: ({ unitPrice }) => say(amountOf(unitPrice, currency)),
           },
           {
             key: 'discountAmount',
-            header: '割引',
+            header: say(words.discount),
             cell: ({ discountAmount }) =>
-              inJapanese(amountOf(discountAmount, currency)),
+              say(amountOf(discountAmount, currency)),
           },
           {
             key: 'totalAmount',
-            header: '金額',
-            cell: ({ totalAmount }) =>
-              inJapanese(amountOf(totalAmount, currency)),
+            header: say(words.amount),
+            cell: ({ totalAmount }) => say(amountOf(totalAmount, currency)),
           },
         ]}
         rows={sale.details}
         rowKey={({ sortOrder }) => String(sortOrder)}
-        emptyMessage='明細はありません'
+        emptyMessage={say(words.noLineItems)}
       />
       <DescriptionList
         className={styles['amounts']}
         items={[
           {
-            term: '小計',
-            description: inJapanese(amountOf(sale.subtotal, currency)),
+            term: say(words.subtotal),
+            description: say(amountOf(sale.subtotal, currency)),
           },
           {
-            term: '割引',
-            description: inJapanese(amountOf(sale.discountAmount, currency)),
+            term: say(words.discount),
+            description: say(amountOf(sale.discountAmount, currency)),
           },
           {
-            term: '消費税',
-            description: inJapanese(amountOf(sale.taxAmount, currency)),
+            term: say(words.tax),
+            description: say(amountOf(sale.taxAmount, currency)),
           },
           {
-            term: '合計',
-            description: inJapanese(amountOf(sale.totalAmount, currency)),
+            term: say(words.total),
+            description: say(amountOf(sale.totalAmount, currency)),
           },
-          ...sale.payments.map((payment) => {
-            const method = methodNameOf(payment.paymentMethodId, methods)
-            const card = cardNameOf(payment)
-
-            return {
-              term: `お支払い（${card === null ? method : `${method} ${card}`}）`,
-              description: inJapanese(amountOf(payment.amount, currency)),
-            }
-          }),
+          ...sale.payments.map((payment) => ({
+            term: say(
+              texts.paidBy(
+                methodNameOf(payment.paymentMethodId, methods),
+                cardNameOf(payment),
+              ),
+            ),
+            description: say(amountOf(payment.amount, currency)),
+          })),
           ...(refunded === 0
             ? []
             : [
                 {
-                  term: 'ご返金',
-                  description: inJapanese(amountOf(refunded, currency)),
+                  term: say(texts.refunded),
+                  description: say(amountOf(refunded, currency)),
                 },
               ]),
         ]}
       />
-      <p className={styles['thanks']}>ご来店ありがとうございました。</p>
+      <p className={styles['thanks']}>{say(texts.thanks)}</p>
     </article>
   )
 }

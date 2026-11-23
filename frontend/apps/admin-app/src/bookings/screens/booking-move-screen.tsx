@@ -178,10 +178,7 @@ export const BookingMoveScreen = () => {
                 />
               ))
               .with(undefined, () => (
-                <WithStaffAndServices
-                  salonId={salon.id}
-                  label='スタッフとメニュー'
-                >
+                <WithStaffAndServices salonId={salon.id}>
                   {(staff, services) => (
                     <Move
                       salon={salon}

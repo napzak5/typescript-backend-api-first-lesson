@@ -10,12 +10,15 @@ import type {
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
+  NO_ERRORS,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match, P } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
 import { whyNoVoid } from './sale-changes'
@@ -26,41 +29,35 @@ import { whyNoVoid } from './sale-changes'
  * a refund records money that was given back at the counter.
  */
 
+const { refund: words } = adminSaleMessages.payments
+
 /** Why a payment is not given back, in a sentence; `undefined` when it is. */
 export const whyNoRefund = ({
   status,
-}: Pick<ModelsPaymentResponse, 'status'>): string | undefined =>
+}: Pick<ModelsPaymentResponse, 'status'>): LocalizedText | undefined =>
   match(status)
-    .returnType<string | undefined>()
+    .returnType<LocalizedText | undefined>()
     .with('completed', () => undefined)
-    .with('refunded', () => 'この支払いは、全額を返金しました。')
-    .with(
-      'partial_refund',
-      () =>
-        'この支払いは、一部を返金しました。1 件の支払いの返金は 1 回で、残りは返金できません。',
-    )
+    .with('refunded', () => words.why.refunded)
+    .with('partial_refund', () => words.why.partlyRefunded)
     .with(
       P.union('pending', 'processing', 'failed'),
-      () => 'この支払いは、受け取っていないため、返金できません。',
+      () => words.why.notReceived,
     )
     .exhaustive()
-
-const AMOUNT_ERROR = '返金する金額は、1 以上の円の整数で入力してください。'
-
-const REASON_ERROR = '返金の理由を入力してください。'
 
 /** What is wrong with the amount of a refund: none, or more than the payment was. */
 const amountErrorOf = (
   amount: number | null | undefined,
   paid: number,
   currency: string,
-): string | undefined => {
+): LocalizedText | undefined => {
   if (amount === null || amount === undefined || amount === 0) {
-    return AMOUNT_ERROR
+    return words.errors.amount
   }
 
   return amount > paid
-    ? `返金する金額は、支払いの金額（${inJapanese(amountOf(paid, currency))}）以下にしてください。`
+    ? words.errors.moreThanPaid(amountOf(paid, currency))
     : undefined
 }
 
@@ -72,13 +69,13 @@ export const readRefund = (
   values: FormData,
   { amount }: Pick<ModelsPaymentResponse, 'amount'>,
   currency: string,
-): FormRead<ModelsPaymentRefundRequest> => {
+): FormRead<ModelsPaymentRefundRequest, FormErrors<LocalizedText>> => {
   const refundAmount = yenOf(textOf(values, 'refundAmount'))
   const refundReason = textOrNull(textOf(values, 'refundReason'))
   const amountError = amountErrorOf(refundAmount, amount, currency)
   const errors = {
     ...(amountError === undefined ? {} : { refundAmount: amountError }),
-    ...(refundReason === null ? { refundReason: REASON_ERROR } : {}),
+    ...(refundReason === null ? { refundReason: words.errors.reason } : {}),
   }
   if (
     refundAmount === null ||
@@ -127,24 +124,20 @@ export type RefundAttempt =
 /** What the screen does after an attempt. */
 export type RefundSays =
   | { type: 'done' }
-  | { type: 'again'; message: string | undefined; errors: FormSays['errors'] }
+  | ({ type: 'again' } & FormSays<LocalizedText>)
   /** The sale changed: it is shown as it is now, with why its payment is not given back */
   | { type: 'refused'; sale: ModelsSaleResponse }
   /** The payment, or its sale, is gone: the screen says that there is none */
   | { type: 'gone' }
 
-const REFUND_AGAIN =
-  '返金を記録できませんでした。通信の状態を確かめて、もう一度お試しください。'
+const REFUND_AGAIN = words.failed
 
 /** What is said at a control of a value the API refused. */
-const messageAt = ({ field, rule }: RefusedValue): string =>
+const messageAt = ({ field, rule }: RefusedValue): LocalizedText =>
   match([field, rule])
-    .with(
-      ['refundAmount', 'too_big'],
-      () => '返金する金額が、支払いの金額を超えています。',
-    )
-    .with(['refundAmount', P._], () => AMOUNT_ERROR)
-    .otherwise(() => REASON_ERROR)
+    .with(['refundAmount', 'too_big'], () => words.errors.tooBig)
+    .with(['refundAmount', P._], () => words.errors.amount)
+    .otherwise(() => words.errors.reason)
 
 const CONTROLS: readonly string[] = ['refundAmount', 'refundReason']
 
@@ -157,7 +150,7 @@ export const afterRefund = (outcome: RefundAttempt): RefundSays =>
       const atControls = values.filter(({ field }) => CONTROLS.includes(field))
 
       return atControls.length === 0
-        ? { type: 'again', message: REFUND_AGAIN, errors: {} }
+        ? { type: 'again', message: REFUND_AGAIN, errors: NO_ERRORS }
         : {
             type: 'again',
             message: undefined,
@@ -172,17 +165,14 @@ export const afterRefund = (outcome: RefundAttempt): RefundSays =>
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message:
-        'このアカウントでは、返金を記録できません。返金は、オーナーとマネージャーができます。',
-      errors: {},
+      ...aboutTheAttempt(words.forbidden),
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      ...aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      ...aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message: REFUND_AGAIN,
-      errors: {},
+      ...aboutTheAttempt(REFUND_AGAIN),
     }))
     .exhaustive()

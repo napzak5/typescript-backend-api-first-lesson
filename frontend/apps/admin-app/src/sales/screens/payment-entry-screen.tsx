@@ -9,10 +9,12 @@ import { amountOf, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -28,9 +30,10 @@ import {
 import { PaymentForm } from '../components/payment-form/payment-form'
 import { afterPayment, methodsInUse, readPayment } from '../utils/payments'
 import { owedOf, whyNoPayment } from '../utils/sale-format'
-import { WithPaymentMethods, WithSale } from './with-sale'
+import { Unwritable, WithPaymentMethods, WithSale } from './with-sale'
 
-const TITLE = '支払いを記録する'
+const { titles, words } = adminSaleMessages
+const { payment: texts, notices } = adminSaleMessages.payments
 
 type PaymentEntryProps = {
   salon: ModelsSalonResponse
@@ -49,10 +52,11 @@ type PaymentEntryProps = {
  * the screen says why.
  */
 const PaymentEntry = ({ salon, sale, methods }: PaymentEntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const key = saleKeyOf(sale.id)
   const back = saleHrefOf(salon.id, sale.id)
   const owed = owedOf(sale)
@@ -76,9 +80,7 @@ const PaymentEntry = ({ salon, sale, methods }: PaymentEntryProps) => {
           notify({
             tone: 'success',
             message:
-              request.amount === owed
-                ? '支払いを記録しました。合計を受け取ったので、レシートを出せます。'
-                : '支払いを記録しました。',
+              request.amount === owed ? notices.paidInFull : notices.recorded,
           })
           void navigate(back)
         })
@@ -109,12 +111,7 @@ const PaymentEntry = ({ salon, sale, methods }: PaymentEntryProps) => {
   }
 
   if (offered.length === 0) {
-    return (
-      <Unpayable
-        why='このサロンには、使っている支払い方法がありません。サロンの設定で、支払い方法を使えるようにしてください。'
-        back={back}
-      />
-    )
+    return <Unwritable why={texts.noMethods} back={back} />
   }
 
   return (
@@ -128,37 +125,36 @@ const PaymentEntry = ({ salon, sale, methods }: PaymentEntryProps) => {
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
   )
 }
 
-/** What the screen says when the sale takes no payment: why, and the way back. */
-const Unpayable = ({ why, back }: { why: string; back: string }) => (
-  <>
-    <p>{why}</p>
-    <ButtonLink href={back}>売上の内容へ</ButtonLink>
-  </>
-)
-
 /** Records a payment of a sale of the salon of the address. */
 export const PaymentEntryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
+  const title = say(titles.payment)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
-        <WithSale key={salon.id} salon={salon} title={TITLE} fresh>
+        <WithSale key={salon.id} salon={salon} title={title} fresh>
           {(sale) => (
             <>
               <p>
-                {`合計 ${inJapanese(amountOf(sale.totalAmount, salon.currency))}、未払い残額 ${inJapanese(amountOf(owedOf(sale), salon.currency))}`}
+                {say(
+                  texts.owed(
+                    amountOf(sale.totalAmount, salon.currency),
+                    amountOf(owedOf(sale), salon.currency),
+                  ),
+                )}
               </p>
               {match(whyNoPayment(sale))
-                .with(P.string, (why) => (
-                  <Unpayable why={why} back={saleHrefOf(salon.id, sale.id)} />
+                .with(P.nonNullable, (why) => (
+                  <Unwritable why={why} back={saleHrefOf(salon.id, sale.id)} />
                 ))
                 .with(undefined, () => (
                   <WithPaymentMethods salonId={salon.id}>

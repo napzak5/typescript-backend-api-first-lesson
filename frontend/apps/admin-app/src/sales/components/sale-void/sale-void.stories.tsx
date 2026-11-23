@@ -1,13 +1,16 @@
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { SaleVoid } from './sale-void'
+
+const { void: texts } = adminSaleMessages.changes
 
 const meta: Meta<typeof SaleVoid> = {
   title: 'Admin/Sales/SaleVoid',
   component: SaleVoid,
   args: {
     why: undefined,
-    subject: '売上番号 SL-2KQM-9F4H',
+    subject: adminSaleMessages.saleNamed('SL-2KQM-9F4H'),
     open: false,
     onOpen: fn(),
     onClose: fn(),
@@ -36,7 +39,7 @@ export const Pending: Story = {
 export const WithError: Story = {
   args: {
     open: true,
-    errors: { voidReason: '取り消しの理由を入力してください。' },
+    errors: { voidReason: texts.reasonMissing },
   },
 }
 
@@ -44,14 +47,13 @@ export const WithError: Story = {
 export const WithMessage: Story = {
   args: {
     open: true,
-    message:
-      '売上を取り消せませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: texts.failed,
   },
 }
 
 /** A sale that is not voided: one with a payment that was received */
 export const NotVoidable: Story = {
   args: {
-    why: '受け取った支払いがあるため、このままでは取り消せません。取り消す前に、支払いをすべて全額返金してください。',
+    why: texts.why.received,
   },
 }

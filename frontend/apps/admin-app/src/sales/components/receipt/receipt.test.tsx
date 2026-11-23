@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as receiptStories from './receipt.stories'
 
 const stories = composeStories(receiptStories)
@@ -60,5 +61,71 @@ describe('Receipt', () => {
       ['お支払い（現金）', '￥5,500'],
       ['ご返金', '￥1,000'],
     ])
+  })
+
+  it('should write the address of a salon that gave no postal code without one', async () => {
+    // Act
+    await stories.WithoutPostalCode.run()
+
+    // Assert
+    expect(
+      within(receipt()).getByText('東京都 渋谷区 神宮前 4-1-1'),
+    ).toBeVisible()
+    expect(within(receipt()).queryByText(/〒/)).toBeNull()
+  })
+})
+
+describe('Receipt on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show the salon, the sale, what was bought and how it was paid in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Paid.run()
+
+    // Assert
+    expect(
+      within(receipt()).getByText('150-0001 東京都 渋谷区 神宮前 4-1-1'),
+    ).toBeVisible()
+    expect(within(receipt()).getByText('Phone 03-1234-5678')).toBeVisible()
+    expect(described()).toEqual([
+      ['Receipt number', 'SL-2KQM-9F4H'],
+      ['Time of sale', 'Fri, November 20, 2026 at 11:02'],
+      ['Issued', 'Fri, November 20, 2026 at 11:10'],
+      ['Subtotal', '¥5,500'],
+      ['Discount', '¥0'],
+      ['Tax', '¥0'],
+      ['Total', '¥5,500'],
+      ['Paid (現金)', '¥3,000'],
+      ['Paid (クレジットカード VISA ending in 4242)', '¥2,500'],
+    ])
+    expect(columnsOf('Items purchased')).toEqual([
+      'Item',
+      'Quantity',
+      'Unit price',
+      'Discount',
+      'Amount',
+    ])
+    expect(rowsOf('Items purchased')).toEqual([
+      ['カット', '1', '¥5,500', '¥0', '¥5,500'],
+    ])
+    expect(
+      within(receipt()).getByText('Thank you for your visit.'),
+    ).toBeVisible()
+  })
+
+  it('should say what was given back in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Refunded.run()
+
+    // Assert
+    expect(described().slice(-1)).toEqual([['Refunded', '¥1,000']])
   })
 })

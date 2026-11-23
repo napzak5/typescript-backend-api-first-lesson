@@ -43,7 +43,10 @@ export const BookingLineRecord = ({
           term: 'メニュー',
           description: serviceNameOf(line.serviceId, services),
         },
-        { term: '担当', description: memberNameOf(line.staffId, staff) },
+        {
+          term: '担当',
+          description: inJapanese(memberNameOf(line.staffId, staff)),
+        },
         {
           term: '時刻',
           description: `${inJapanese(dayNameOf(dayAt(new Date(line.startTime), timezone)))} ${hoursOf(line, timezone)}`,

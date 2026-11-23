@@ -1,8 +1,12 @@
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aPaidSale, aPayment, paymentMethods, salon } from '../examples'
 
 import { RefundForm } from './refund-form'
+
+const { errors } = adminSaleMessages.payments.refund
 
 const meta: Meta<typeof RefundForm> = {
   title: 'Admin/Sales/RefundForm',
@@ -32,9 +36,8 @@ export const ByCard: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      refundAmount:
-        '返金する金額は、支払いの金額（￥3,000）以下にしてください。',
-      refundReason: '返金の理由を入力してください。',
+      refundAmount: errors.moreThanPaid(amountOf(3000, 'JPY')),
+      refundReason: errors.reason,
     },
   },
 }

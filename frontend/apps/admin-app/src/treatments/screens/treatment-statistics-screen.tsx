@@ -131,7 +131,7 @@ export const TreatmentStatisticsScreen = () => {
               </ButtonLink>
             }
           />
-          <WithStaffAndServices salonId={salon.id} label='スタッフとメニュー'>
+          <WithStaffAndServices salonId={salon.id}>
             {(_staff, services) => (
               <StatisticsPart
                 key={salon.id}

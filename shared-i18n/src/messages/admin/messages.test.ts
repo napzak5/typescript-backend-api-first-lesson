@@ -3,7 +3,11 @@ import type { LocalizedText } from '../../languages/localized-text'
 import { JAPANESE, messagesOf } from '../__tests__/found-messages'
 import { termMessages } from '../ui/terms'
 import * as catalogues from './index'
-import { adminCustomerMessages, adminStaffMessages } from './index'
+import {
+  adminBookingMessages,
+  adminCustomerMessages,
+  adminStaffMessages,
+} from './index'
 
 const FOUND = messagesOf(catalogues, '')
 
@@ -76,6 +80,17 @@ const MISSING_EMAIL = {
 
 /** Every message that is made from a value, with the value and what it says */
 const MADE: [string, LocalizedText, LocalizedText][] = [
+  [
+    'adminBookingMessages.frame.bookingOf',
+    adminBookingMessages.frame.bookingOf('BK-2KQM-9F4H', DAY, {
+      en: '10:00–11:00',
+      ja: '10:00〜11:00',
+    }),
+    {
+      en: 'Booking BK-2KQM-9F4H (Tue, December 1, 2026, 10:00–11:00)',
+      ja: '予約番号 BK-2KQM-9F4H（2026年12月1日（火） 10:00〜11:00）',
+    },
+  ],
   [
     'adminStaffMessages.named',
     adminStaffMessages.named('田中 美咲'),
@@ -791,8 +806,8 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
   ],
 ]
 
-/** The catalogues whose messages that are made from a value are tested in a file of their own (`inventory.test.ts`) */
-const TESTED_APART = ['adminInventoryMessages']
+/** The catalogues whose messages that are made from a value are tested in a file of their own (`inventory.test.ts`, `sales.test.ts`) */
+const TESTED_APART = ['adminInventoryMessages', 'adminSaleMessages']
 
 /** A name that stands inside a sentence: it begins as it stands there */
 const INSIDE_A_SENTENCE = /\.names\./

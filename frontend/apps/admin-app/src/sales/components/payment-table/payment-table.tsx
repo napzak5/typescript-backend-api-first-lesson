@@ -5,17 +5,21 @@ import type {
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import {
   DescriptionList,
-  inJapanese,
   Link,
   NONE,
   Table,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   cardNameOf,
   methodNameOf,
   paymentNameOf,
   refundNameOf,
 } from '../../utils/sale-format'
+
+const { words } = adminSaleMessages
+const { table } = adminSaleMessages.payments
 
 export type PaymentTableProps = {
   /** The payments of a sale, in the order they were recorded */
@@ -50,12 +54,13 @@ export const PaymentTable = ({
   currency,
   refundHrefOf = () => undefined,
 }: PaymentTableProps) => {
+  const say = useSay()
   const reasons = payments.flatMap(({ transactionNumber, refundReason }) =>
     refundReason === null
       ? []
       : [
           {
-            term: `${transactionNumber} の返金の理由`,
+            term: say(table.reasonOf(transactionNumber)),
             description: refundReason,
           },
         ],
@@ -64,57 +69,61 @@ export const PaymentTable = ({
   return (
     <>
       <Table
-        caption='支払い'
+        caption={say(words.payments)}
         captionHidden
         columns={[
           {
             key: 'transactionNumber',
-            header: '取引番号',
+            header: say(words.transactionNumber),
             cell: ({ transactionNumber }) => transactionNumber,
           },
           {
             key: 'processedAt',
-            header: '受けた日時',
+            header: say(words.receivedAt),
             cell: ({ processedAt, createdAt }) =>
-              inJapanese(momentNameAt(processedAt ?? createdAt, timezone)),
+              say(momentNameAt(processedAt ?? createdAt, timezone)),
           },
           {
             key: 'method',
-            header: '支払い方法',
+            header: say(words.method),
             cell: ({ paymentMethodId }) =>
-              methodNameOf(paymentMethodId, methods),
+              say(methodNameOf(paymentMethodId, methods)),
           },
           {
             key: 'amount',
-            header: '金額',
-            cell: ({ amount }) => inJapanese(amountOf(amount, currency)),
+            header: say(words.amount),
+            cell: ({ amount }) => say(amountOf(amount, currency)),
           },
           {
             key: 'card',
-            header: 'カード',
-            cell: (payment) => cardNameOf(payment),
+            header: say(words.card),
+            cell: (payment) => {
+              const card = cardNameOf(payment)
+
+              return card === null ? null : say(card)
+            },
           },
           {
             key: 'status',
-            header: '状態',
-            cell: ({ status }) => paymentNameOf(status),
+            header: say(table.status),
+            cell: ({ status }) => say(paymentNameOf(status)),
           },
           {
             key: 'refund',
-            header: '返金',
+            header: say(table.refund),
             cell: (payment) => {
               const refund = refundNameOf(payment, timezone, currency)
               const href = refundHrefOf(payment)
               if (refund !== null || href === undefined) {
-                return refund ?? inJapanese(NONE)
+                return say(refund ?? NONE)
               }
 
               return (
                 <Link
                   href={href}
-                  aria-label={`${payment.transactionNumber} を返金する`}
+                  aria-label={say(table.refundOf(payment.transactionNumber))}
                 >
-                  返金する
+                  {say(table.refundLink)}
                 </Link>
               )
             },
@@ -122,7 +131,7 @@ export const PaymentTable = ({
         ]}
         rows={payments}
         rowKey={({ id }) => id}
-        emptyMessage='まだ支払いはありません'
+        emptyMessage={say(table.empty)}
       />
       {reasons.length > 0 && <DescriptionList items={reasons} />}
     </>

@@ -15,12 +15,13 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
@@ -33,11 +34,12 @@ import {
   staffProfilesKeyOf,
 } from '../../salons/api/salons-api'
 import { bookingKeyOf, readBooking } from '../api/bookings-api'
-import { hoursOf } from '../utils/booking-format'
+
+const { frame, names } = adminBookingMessages
 
 export type WithBookingProps = {
   salon: ModelsSalonResponse
-  /** The title of the screen */
+  /** The title of the screen, in the language of the page */
   title: string
   /** The screen, below its heading, for the booking of the address that was read */
   children: (booking: ModelsBookingResponse) => ReactNode
@@ -54,6 +56,7 @@ export type WithBookingProps = {
  * the way back to its page.
  */
 export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
+  const say = useSay()
   const { bookingId = '' } = useParams()
   const read = useQuery({
     queryKey: bookingKeyOf(bookingId),
@@ -68,7 +71,7 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
       .with(undefined, () => (
         <>
           <PageHeader title={title} description={salon.name} />
-          <LoadingIndicator label='予約を読み込んでいます' />
+          <LoadingIndicator label={say(frame.loading)} />
         </>
       ))
       .with(
@@ -77,7 +80,17 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
           <>
             <PageHeader title={title} description={salon.name} />
             <p>
-              {`予約番号 ${booking.bookingNumber}（${inJapanese(dayNameOf(booking.bookingDate))} ${hoursOf(booking, salon.timezone)}）`}
+              {say(
+                frame.bookingOf(
+                  booking.bookingNumber,
+                  dayNameOf(booking.bookingDate),
+                  formats.timeRangeAt(
+                    booking.startTime,
+                    booking.endTime,
+                    salon.timezone,
+                  ),
+                ),
+              )}
             </p>
             {children(booking)}
           </>
@@ -87,10 +100,12 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
       .with({ type: P.union('found', 'notFound') }, () => (
         <>
           <PageHeader
-            title='予約が見つかりません'
-            description='アドレスが正しいか、お確かめください。削除された予約は、表示できません。'
+            title={say(frame.notFound)}
+            description={say(frame.notFoundDescription)}
           />
-          <ButtonLink href={bookingsHrefOf(salon.id)}>今日の予約へ</ButtonLink>
+          <ButtonLink href={bookingsHrefOf(salon.id)}>
+            {say(frame.toToday)}
+          </ButtonLink>
         </>
       ))
       .with({ type: 'forbidden' }, () => (
@@ -103,9 +118,7 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
         <>
           <PageHeader title={title} description={salon.name} />
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('予約'), reason),
-            )}
+            message={say(unreadMessageOf(names.booking, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -115,18 +128,23 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
   )
 }
 
-/** What a screen that changes a booking says when the booking is not changed so: why, and the way back. */
-export const Unchangeable = ({ why, back }: { why: string; back: string }) => (
-  <>
-    <p>{why}</p>
-    <ButtonLink href={back}>予約の内容へ</ButtonLink>
-  </>
-)
+/**
+ * What a screen that changes a booking says when the booking is not changed
+ * so: why, in the language of the page, and the way back.
+ */
+export const Unchangeable = ({ why, back }: { why: string; back: string }) => {
+  const say = useSay()
+
+  return (
+    <>
+      <p>{why}</p>
+      <ButtonLink href={back}>{say(frame.toBooking)}</ButtonLink>
+    </>
+  )
+}
 
 export type WithStaffAndServicesProps = {
   salonId: string
-  /** What is read, as the screen names it while it is read: 「スタッフとメニュー」 */
-  label: string
   /** The part of the screen that names and offers them */
   children: (
     staff: readonly ModelsStaffProfileResponse[],
@@ -141,9 +159,9 @@ export type WithStaffAndServicesProps = {
  */
 export const WithStaffAndServices = ({
   salonId,
-  label,
   children,
 }: WithStaffAndServicesProps) => {
+  const say = useSay()
   const staff = useQuery({
     queryKey: staffProfilesKeyOf(salonId),
     queryFn: () => readStaffProfiles(salonId),
@@ -157,7 +175,7 @@ export const WithStaffAndServices = ({
 
   return match([staff.data, services.data])
     .with([undefined, P._], [P._, undefined], () => (
-      <LoadingIndicator label={`${label}を読み込んでいます`} />
+      <LoadingIndicator label={say(frame.loadingStaffAndServices)} />
     ))
     .with([{ type: 'found' }, { type: 'found' }], ([ofStaff, ofServices]) =>
       children(ofStaff.items, ofServices.items),
@@ -167,8 +185,8 @@ export const WithStaffAndServices = ({
       [P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese(label), whyUnread(reads)),
+          message={say(
+            unreadMessageOf(names.staffAndServices, whyUnread(reads)),
           )}
           onRetry={() => {
             void staff.refetch()

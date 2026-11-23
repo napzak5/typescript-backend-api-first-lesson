@@ -7,7 +7,12 @@ import {
   Select,
   TextField,
   useFilterValues,
+  useSaidChoices,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { paymentStatusNameOf } from '../../utils/sale-format'
 import {
   type LedgerConditions,
@@ -19,14 +24,16 @@ export type LedgerFilterProps = {
   /** The conditions that are shown: those of the address */
   conditions: LedgerConditions
   /** What is wrong with the values that were sent, under the names of the controls */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The address of today's sales, when the conditions are other */
   clearHref?: string | undefined
   /** Called with the values of the controls when the form is sent */
   onSubmit: (values: FormData) => void
 }
 
-const STATUS_OPTIONS = PAYMENT_STATUSES.map((status) => ({
+const { ledger, words } = adminSaleMessages
+
+const STATUS_CHOICES = PAYMENT_STATUSES.map((status) => ({
   value: status,
   label: paymentStatusNameOf(status),
 }))
@@ -55,6 +62,9 @@ export const LedgerFilter = ({
   clearHref,
   onSubmit,
 }: LedgerFilterProps) => {
+  const say = useSay()
+  const said = useSaidForm(undefined, errors)
+  const options = useSaidChoices()
   const [values, hold] = useFilterValues(
     ledgerQueryOf(conditions).toString(),
     () => valuesOf(conditions),
@@ -62,7 +72,7 @@ export const LedgerFilter = ({
 
   return (
     <FilterForm
-      label='売上を絞り込む'
+      label={say(ledger.filter)}
       purpose='view'
       errors={errors}
       clearHref={clearHref}
@@ -70,17 +80,17 @@ export const LedgerFilter = ({
       conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
       conditions={
         <Select
-          label='支払い'
+          label={say(words.payment)}
           name='paymentStatus'
-          options={STATUS_OPTIONS}
-          placeholder='すべて'
+          options={options(STATUS_CHOICES)}
+          placeholder={say(ledger.all)}
           value={values.paymentStatus}
           onChange={(event) => hold('paymentStatus', event.target.value)}
         />
       }
     >
       <TextField
-        label='会計日（から）'
+        label={say(ledger.from)}
         name='from'
         autoComplete='off'
         type='date'
@@ -88,11 +98,11 @@ export const LedgerFilter = ({
         max={LATEST_DAY}
         required
         value={values.from}
-        error={errors['from']}
+        error={said.errors['from']}
         onChange={(event) => hold('from', event.target.value)}
       />
       <TextField
-        label='会計日（まで）'
+        label={say(ledger.to)}
         name='to'
         autoComplete='off'
         type='date'
@@ -100,7 +110,7 @@ export const LedgerFilter = ({
         max={LATEST_DAY}
         required
         value={values.to}
-        error={errors['to']}
+        error={said.errors['to']}
         onChange={(event) => hold('to', event.target.value)}
       />
     </FilterForm>

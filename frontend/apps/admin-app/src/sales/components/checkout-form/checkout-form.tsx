@@ -11,27 +11,42 @@ import {
   Button,
   DescriptionList,
   Form,
+  type FormErrors,
   FormPart,
   type FormProps,
-  inJapanese,
   LoadingIndicator,
+  NO_ERRORS,
   NONE,
   Note,
   Select,
   Table,
   TextArea,
   UnreadNotice,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminMenuMessages,
+  adminSaleMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { useId, useRef } from 'react'
 import { match } from 'ts-pattern'
 import { memberNameOf } from '../../../bookings/utils/day-bookings'
 import { type Bill, type BillLine, NO_CASHIER } from '../../utils/checkout'
 import styles from './checkout-form.module.css'
 
+const { loading, words } = adminSaleMessages
+const { form: texts } = adminSaleMessages.checkout
+
 export type CheckoutFormProps = Pick<
   FormProps,
-  'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The lines of the booking, at the amounts they took when it was booked */
   booked: readonly BillLine[]
   /** The services added at the counter, at the prices of the menu */
@@ -46,8 +61,8 @@ export type CheckoutFormProps = Pick<
   currency: string
   /** The amounts the API calculated for the lines */
   bill: Bill
-  /** What the last addition or removal did, in a sentence */
-  changed: string
+  /** What the last addition or removal did, in a sentence; `undefined` before either */
+  changed: LocalizedText | undefined
   /** Adds a service of the menu to the bill */
   onAdd: (serviceId: string) => void
   /** Takes the added service at this place off the bill */
@@ -83,94 +98,105 @@ export const CheckoutForm = ({
   onRemove,
   onRecalculate,
   recalculating,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
 }: CheckoutFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const bookedName = useId()
   const addedName = useId()
   const amountsName = useId()
   const toAdd = useRef<HTMLSelectElement>(null)
+  const nameOf = (line: BillLine): string =>
+    line.name ?? say(adminMenuMessages.removedService)
   const columns = [
     {
       key: 'name',
-      header: 'メニュー',
-      cell: ({ line }: { line: BillLine }) => line.name,
+      header: say(texts.service),
+      cell: ({ line }: { line: BillLine }) => nameOf(line),
     },
     {
       key: 'staff',
-      header: '担当',
-      cell: ({ line }: { line: BillLine }) => memberNameOf(line.staffId, staff),
+      header: say(words.staff),
+      cell: ({ line }: { line: BillLine }) =>
+        say(memberNameOf(line.staffId, staff)),
     },
     {
       key: 'unitPrice',
-      header: '料金',
+      header: say(texts.price),
       cell: ({ line }: { line: BillLine }) =>
-        inJapanese(amountOf(line.unitPrice, currency)),
+        say(amountOf(line.unitPrice, currency)),
     },
     {
       key: 'discountAmount',
-      header: '割引',
+      header: say(words.discount),
       cell: ({ line }: { line: BillLine }) =>
-        inJapanese(amountOf(line.discountAmount, currency)),
+        say(amountOf(line.discountAmount, currency)),
     },
   ]
 
   return (
-    <Form {...form} errors={errors} submitLabel='会計を入れる'>
+    <Form
+      {...form}
+      message={said.message}
+      errors={errors}
+      submitLabel={say(texts.submit)}
+    >
       <section className={styles['part']} aria-labelledby={bookedName}>
         <h2 className={styles['name']} id={bookedName}>
-          予約の施術
+          {say(texts.booked)}
         </h2>
         <Table
-          caption='予約の施術'
+          caption={say(texts.booked)}
           captionHidden
           columns={columns}
           rows={booked.map((line, index) => ({ line, index }))}
           rowKey={({ index }) => `booked-${index}`}
-          emptyMessage='予約の施術はありません'
+          emptyMessage={say(texts.noBooked)}
         />
       </section>
       <section className={styles['part']} aria-labelledby={addedName}>
         <h2 className={styles['name']} id={addedName}>
-          足した施術
+          {say(texts.added)}
         </h2>
         <div className={styles['controls']}>
           <Table
-            caption='足した施術'
+            caption={say(texts.added)}
             captionHidden
             columns={[
               ...columns,
               {
                 key: 'remove',
-                header: '外す',
+                header: say(texts.remove),
                 cell: ({ line, index }) => (
                   <Button
                     size='small'
-                    aria-label={`${line.name}（${index + 1} 件目）を外す`}
+                    aria-label={say(texts.removeLine(nameOf(line), index + 1))}
                     onClick={() => {
                       onRemove(index)
                       toAdd.current?.focus()
                     }}
                   >
-                    外す
+                    {say(texts.remove)}
                   </Button>
                 ),
               },
             ]}
             rows={added.map((line, index) => ({ line, index }))}
             rowKey={({ index }) => `added-${index}`}
-            emptyMessage='予約にない施術をしたときは、メニューから足してください'
+            emptyMessage={say(texts.noAdded)}
           />
           <div className={styles['addition']}>
             <Select
               ref={toAdd}
-              label='足す施術'
+              label={say(texts.toAdd)}
               name={TO_ADD}
               options={offered.map(({ id, name, price }) => ({
                 value: id,
-                label: `${name}（${inJapanese(amountOf(price, currency))}）`,
+                label: say(texts.offered(name, amountOf(price, currency))),
               }))}
-              description='いまのメニューの料金で数えます。担当は、予約の担当です。'
+              description={say(texts.toAddDescription)}
             />
             <Button
               onClick={(event) => {
@@ -182,21 +208,21 @@ export const CheckoutForm = ({
                 }
               }}
             >
-              施術を足す
+              {say(texts.add)}
             </Button>
           </div>
           <Note className={styles['changed']} role='status'>
-            {changed}
+            {changed === undefined ? '' : say(changed)}
           </Note>
         </div>
       </section>
       <section className={styles['part']} aria-labelledby={amountsName}>
         <h2 className={styles['name']} id={amountsName}>
-          金額
+          {say(words.amounts)}
         </h2>
         {match(bill)
           .with({ type: 'calculating' }, () => (
-            <LoadingIndicator label='金額を計算しています' />
+            <LoadingIndicator label={say(loading.amounts)} />
           ))
           .with({ type: 'calculated' }, ({ calculation }) => {
             const { breakdown, recommendedMethods } = calculation
@@ -205,79 +231,72 @@ export const CheckoutForm = ({
               <DescriptionList
                 items={[
                   {
-                    term: '小計',
-                    description: inJapanese(
-                      amountOf(breakdown.subtotal, currency),
-                    ),
+                    term: say(words.subtotal),
+                    description: say(amountOf(breakdown.subtotal, currency)),
                   },
                   {
-                    term: '割引',
-                    description: inJapanese(
+                    term: say(words.discount),
+                    description: say(
                       amountOf(breakdown.discountAmount, currency),
                     ),
                   },
                   {
-                    term: '消費税',
-                    description: inJapanese(
-                      amountOf(breakdown.taxAmount, currency),
-                    ),
+                    term: say(words.tax),
+                    description: say(amountOf(breakdown.taxAmount, currency)),
                   },
                   {
-                    term: '合計',
-                    description: inJapanese(
-                      amountOf(breakdown.totalAmount, currency),
-                    ),
+                    term: say(words.total),
+                    description: say(amountOf(breakdown.totalAmount, currency)),
                   },
                   {
-                    term: '1 回で受け取れる支払い方法',
-                    description:
+                    term: say(texts.recommended),
+                    description: say(
                       recommendedMethods.length === 0
-                        ? inJapanese(NONE)
-                        : recommendedMethods
-                            .map((kind) => inJapanese(methodKindNameOf(kind)))
-                            .join('、'),
+                        ? NONE
+                        : texts.kinds(recommendedMethods.map(methodKindNameOf)),
+                    ),
                   },
                 ]}
               />
             )
           })
-          .with({ type: 'uncalculated' }, ({ message }) => (
+          .with({ type: 'uncalculated' }, ({ message: why }) => (
             <div className={styles['controls']}>
-              <Alert tone='warning'>{message}</Alert>
+              <Alert tone='warning'>{say(why)}</Alert>
               <Button onClick={onRecalculate} pending={recalculating}>
-                計算し直す
+                {say(texts.recalculate)}
               </Button>
             </div>
           ))
-          .with({ type: 'unread' }, ({ message }) => (
+          .with({ type: 'unread' }, ({ message: why }) => (
             <UnreadNotice
-              message={message}
+              message={say(why)}
               onRetry={onRecalculate}
               pending={recalculating}
             />
           ))
           .exhaustive()}
       </section>
-      <FormPart label='会計の記録'>
+      <FormPart label={say(texts.record)}>
         <Select
-          label='会計の担当'
+          label={say(words.cashier)}
           name='staffId'
           options={[
             ...staff.map(({ id, displayName }) => ({
               value: id,
               label: displayName,
             })),
-            { value: NO_CASHIER, label: '記録しない' },
+            { value: NO_CASHIER, label: say(words.noCashier) },
           ]}
           defaultValue={cashier}
-          description='支払いを受けたスタッフです。売上の担当として記録します。'
-          error={errors['staffId']}
+          description={say(texts.cashierDescription)}
+          error={said.errors['staffId']}
         />
         <TextArea
-          label='メモ'
+          label={say(words.notes)}
           name='notes'
-          description='サロンの中で見る、この会計のメモです。お客様には見えません。'
-          error={errors['notes']}
+          description={say(words.notesDescription)}
+          error={said.errors['notes']}
         />
       </FormPart>
     </Form>

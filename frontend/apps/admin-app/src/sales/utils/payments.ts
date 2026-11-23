@@ -12,13 +12,14 @@ import { tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
 import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
   errorAt,
+  type FormErrors,
   type FormRead,
-  inJapanese,
-  inJapaneseIfAny,
+  NO_ERRORS,
   textOf,
   textOrNull,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match, P } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
 import { CARD_METHODS, whyNoPayment } from './sale-format'
@@ -27,6 +28,8 @@ import { CARD_METHODS, whyNoPayment } from './sale-format'
  * Recording a payment of a sale: the methods offered, what the form sends,
  * and what is said about the answer.
  */
+
+const { payment: words, errors: wrong, refusals } = adminSaleMessages.payments
 
 /** The methods a payment is received by now: those the salon uses, in its order. */
 export const methodsInUse = (
@@ -46,33 +49,42 @@ export const takesCard = ({
 }: Pick<ModelsPaymentMethodResponse, 'method'>): boolean =>
   CARD_METHODS.includes(method)
 
-/** What a method takes at once, in a sentence: its smallest and largest amount. */
-export const limitsOf = (
+/** What a method takes at once, as the catalogue says it */
+type Limits = Parameters<typeof words.limits>[0]
+
+/**
+ * What a method takes at once, in amounts of the currency of the salon:
+ * its smallest, its largest, or both; `null` when it takes any amount.
+ */
+const limitsIn = (
   {
     minimumAmount,
     maximumAmount,
   }: Pick<ModelsPaymentMethodResponse, 'minimumAmount' | 'maximumAmount'>,
   currency: string,
-): string | undefined =>
+): Limits | null =>
   match([minimumAmount, maximumAmount])
-    .returnType<string | undefined>()
-    .with([null, null], () => undefined)
-    .with(
-      [P.number, null],
-      ([least]) =>
-        `1 回 ${inJapanese(amountOf(least, currency))}から受け付けます。`,
-    )
-    .with(
-      [null, P.number],
-      ([, most]) =>
-        `1 回 ${inJapanese(amountOf(most, currency))}まで受け付けます。`,
-    )
-    .with(
-      [P.number, P.number],
-      ([least, most]) =>
-        `1 回 ${inJapanese(amountOf(least, currency))}から${inJapanese(amountOf(most, currency))}まで受け付けます。`,
-    )
+    .returnType<Limits | null>()
+    .with([null, null], () => null)
+    .with([null, P.number], ([, most]) => ({
+      least: null,
+      most: amountOf(most, currency),
+    }))
+    .with([P.number, P.union(P.number, null)], ([least, most]) => ({
+      least: amountOf(least, currency),
+      most: most === null ? null : amountOf(most, currency),
+    }))
     .exhaustive()
+
+/** What a method takes at once, in a sentence; `undefined` when it takes any amount. */
+export const limitsOf = (
+  method: Pick<ModelsPaymentMethodResponse, 'minimumAmount' | 'maximumAmount'>,
+  currency: string,
+): LocalizedText | undefined => {
+  const limits = limitsIn(method, currency)
+
+  return limits === null ? undefined : words.limits(limits)
+}
 
 /** A method as it is offered: its name, and what it takes at once. */
 export const methodLabelOf = (
@@ -81,40 +93,13 @@ export const methodLabelOf = (
     'displayName' | 'minimumAmount' | 'maximumAmount'
   >,
   currency: string,
-): string =>
-  match([method.minimumAmount, method.maximumAmount])
-    .returnType<string>()
-    .with([null, null], () => method.displayName)
-    .with(
-      [P.number, null],
-      ([least]) =>
-        `${method.displayName}（${inJapanese(amountOf(least, currency))}から）`,
-    )
-    .with(
-      [null, P.number],
-      ([, most]) =>
-        `${method.displayName}（${inJapanese(amountOf(most, currency))}まで）`,
-    )
-    .with(
-      [P.number, P.number],
-      ([least, most]) =>
-        `${method.displayName}（${inJapanese(amountOf(least, currency))}〜${inJapanese(amountOf(most, currency))}）`,
-    )
-    .exhaustive()
-
-const METHOD_ERROR = '支払い方法を選んでください。'
-
-const AMOUNT_ERROR = '金額は、1 以上の円の整数で入力してください。'
-
-const LAST_FOUR_ERROR = 'カードの下 4 桁は、4 桁の数字で入力してください。'
+): LocalizedText =>
+  words.methodLabel(method.displayName, limitsIn(method, currency))
 
 /** The longest brand of a card the API takes */
 const LONGEST_BRAND = 50
 
-const BRAND_ERROR = tooLongOf(
-  writtenInJapanese('カードのブランド'),
-  LONGEST_BRAND,
-)
+const BRAND_ERROR = tooLongOf(words.cardBrand, LONGEST_BRAND)
 
 /**
  * What is wrong with an amount: none, more than is left to pay, or what
@@ -125,21 +110,22 @@ const amountErrorOf = (
   method: ModelsPaymentMethodResponse | undefined,
   owed: number,
   currency: string,
-): string | undefined => {
+): LocalizedText | undefined => {
   if (amount === null || amount === undefined || amount === 0) {
-    return AMOUNT_ERROR
+    return wrong.amount
   }
   if (amount > owed) {
-    return `金額は、未払い残額（${inJapanese(amountOf(owed, currency))}）以下にしてください。`
+    return wrong.moreThanOwed(amountOf(owed, currency))
   }
-  if (method === undefined) {
+  const limits = method === undefined ? null : limitsIn(method, currency)
+  if (method === undefined || limits === null) {
     return undefined
   }
   const least = method.minimumAmount ?? 0
   const most = method.maximumAmount ?? Number.POSITIVE_INFINITY
 
   return amount < least || amount > most
-    ? `${method.displayName}は、${limitsOf(method, currency) ?? ''}`
+    ? wrong.outsideLimits(method.displayName, limits)
     : undefined
 }
 
@@ -153,7 +139,7 @@ export const readPayment = (
   methods: readonly ModelsPaymentMethodResponse[],
   owed: number,
   currency: string,
-): FormRead<ModelsSaleProcessRequest> => {
+): FormRead<ModelsSaleProcessRequest, FormErrors<LocalizedText>> => {
   const method = methods.find(
     ({ id }) => id === textOf(values, 'paymentMethodId'),
   )
@@ -164,17 +150,14 @@ export const readPayment = (
     : null
   const brand = card ? textOrNull(textOf(values, 'cardBrand')) : null
   const amountError = amountErrorOf(amount, method, owed, currency)
-  const errors = {
-    ...(method === undefined ? { paymentMethodId: METHOD_ERROR } : {}),
+  const errors: FormErrors<LocalizedText> = {
+    ...(method === undefined ? { paymentMethodId: wrong.method } : {}),
     ...(amountError === undefined ? {} : { amount: amountError }),
     ...(lastFour === null || /^\d{4}$/.test(lastFour)
       ? {}
-      : { cardLastFour: LAST_FOUR_ERROR }),
+      : { cardLastFour: wrong.lastFour }),
     ...Object.fromEntries(
-      errorAt(
-        'cardBrand',
-        inJapaneseIfAny(tooLongError(brand, LONGEST_BRAND, BRAND_ERROR)),
-      ),
+      errorAt('cardBrand', tooLongError(brand, LONGEST_BRAND, BRAND_ERROR)),
     ),
   }
   if (
@@ -213,34 +196,24 @@ export type PaymentSays =
   | { type: 'done' }
   | {
       type: 'again'
-      message: string | undefined
-      errors: Record<string, string>
+      message: LocalizedText | undefined
+      errors: FormErrors<LocalizedText>
     }
   /** The sale changed: it is shown as it is now, with why it takes no payment */
-  | { type: 'refused'; sale: ModelsSaleResponse; message: string }
+  | { type: 'refused'; sale: ModelsSaleResponse; message: LocalizedText }
   | { type: 'gone' }
 
-const TRY_AGAIN =
-  '支払いを記録できませんでした。通信の状態を確かめて、もう一度お試しください。'
+const TRY_AGAIN = adminSaleMessages.payments.failed
 
 /** What is said at a control of a value the API refused. */
-const messageAt = ({ field, rule }: RefusedValue): string =>
+const messageAt = ({ field, rule }: RefusedValue): LocalizedText =>
   match([field, rule])
-    .with(
-      ['paymentMethodId', P._],
-      () => 'この支払い方法は、もう使えません。選び直してください。',
-    )
-    .with(
-      ['amount', 'too_big'],
-      () => '未払い残額か、支払い方法が 1 回に受け付ける金額を超えています。',
-    )
-    .with(
-      ['amount', 'too_small'],
-      () => '支払い方法が 1 回に受け付ける金額より少ない金額です。',
-    )
-    .with(['cardLastFour', P._], () => LAST_FOUR_ERROR)
-    .with(['cardBrand', P._], () => inJapanese(BRAND_ERROR))
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .with(['paymentMethodId', P._], () => refusals.method)
+    .with(['amount', 'too_big'], () => refusals.tooBig)
+    .with(['amount', 'too_small'], () => refusals.tooSmall)
+    .with(['cardLastFour', P._], () => wrong.lastFour)
+    .with(['cardBrand', P._], () => BRAND_ERROR)
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 const CONTROLS: readonly string[] = [
   'paymentMethodId',
@@ -258,7 +231,7 @@ export const afterPayment = (outcome: PaymentAttempt): PaymentSays =>
       const atControls = values.filter(({ field }) => CONTROLS.includes(field))
 
       return atControls.length === 0
-        ? { type: 'again', message: TRY_AGAIN, errors: {} }
+        ? { type: 'again', message: TRY_AGAIN, errors: NO_ERRORS }
         : {
             type: 'again',
             message: undefined,
@@ -277,12 +250,12 @@ export const afterPayment = (outcome: PaymentAttempt): PaymentSays =>
     .with({ type: P.union('notFound', 'forbidden') }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
-      errors: {},
+      message: TOO_MANY_REQUESTS_MESSAGE,
+      errors: NO_ERRORS,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
       message: TRY_AGAIN,
-      errors: {},
+      errors: NO_ERRORS,
     }))
     .exhaustive()

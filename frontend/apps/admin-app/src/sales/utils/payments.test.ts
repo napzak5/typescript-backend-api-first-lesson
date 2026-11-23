@@ -1,4 +1,5 @@
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { aPayment, aSale, paymentMethods } from '../components/examples'
 import {
@@ -31,25 +32,64 @@ describe('methodsInUse', () => {
 })
 
 describe('limitsOf', () => {
-  it.each<[string, number | null, number | null, string | undefined]>([
+  it.each<[string, number | null, number | null, LocalizedText | undefined]>([
     ['no limits', null, null, undefined],
-    ['the least', 1000, null, '1 回 ￥1,000から受け付けます。'],
-    ['the most', null, 20000, '1 回 ￥20,000まで受け付けます。'],
-    ['both', 1000, 20000, '1 回 ￥1,000から￥20,000まで受け付けます。'],
+    [
+      'the least',
+      1000,
+      null,
+      {
+        en: 'Takes ¥1,000 or more at a time.',
+        ja: '1 回 ￥1,000から受け付けます。',
+      },
+    ],
+    [
+      'the most',
+      null,
+      20000,
+      {
+        en: 'Takes up to ¥20,000 at a time.',
+        ja: '1 回 ￥20,000まで受け付けます。',
+      },
+    ],
+    [
+      'both',
+      1000,
+      20000,
+      {
+        en: 'Takes ¥1,000 to ¥20,000 at a time.',
+        ja: '1 回 ￥1,000から￥20,000まで受け付けます。',
+      },
+    ],
   ])('should say %s a method takes at once', (_case, least, most, said) => {
     // Act, Assert
-    expect(limitsOf({ minimumAmount: least, maximumAmount: most }, 'JPY')).toBe(
-      said,
-    )
+    expect(
+      limitsOf({ minimumAmount: least, maximumAmount: most }, 'JPY'),
+    ).toEqual(said)
   })
 })
 
 describe('methodLabelOf', () => {
-  it.each<[string, number | null, number | null, string]>([
-    ['no limits', null, null, '現金'],
-    ['the least', 1000, null, '現金（￥1,000から）'],
-    ['the most', null, 20000, '現金（￥20,000まで）'],
-    ['both', 1000, 20000, '現金（￥1,000〜￥20,000）'],
+  it.each<[string, number | null, number | null, LocalizedText]>([
+    ['no limits', null, null, { en: '現金', ja: '現金' }],
+    [
+      'the least',
+      1000,
+      null,
+      { en: '現金 (¥1,000 or more)', ja: '現金（￥1,000から）' },
+    ],
+    [
+      'the most',
+      null,
+      20000,
+      { en: '現金 (up to ¥20,000)', ja: '現金（￥20,000まで）' },
+    ],
+    [
+      'both',
+      1000,
+      20000,
+      { en: '現金 (¥1,000–¥20,000)', ja: '現金（￥1,000〜￥20,000）' },
+    ],
   ])(
     'should offer a method with %s it takes at once',
     (_case, least, most, label) => {
@@ -59,7 +99,7 @@ describe('methodLabelOf', () => {
           { displayName: '現金', minimumAmount: least, maximumAmount: most },
           'JPY',
         ),
-      ).toBe(label)
+      ).toEqual(label)
     },
   )
 })
@@ -117,41 +157,70 @@ describe('readPayment', () => {
     })
   })
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
     [
       'nothing',
       {},
       {
-        paymentMethodId: '支払い方法を選んでください。',
-        amount: '金額は、1 以上の円の整数で入力してください。',
+        paymentMethodId: {
+          en: 'Choose a payment method.',
+          ja: '支払い方法を選んでください。',
+        },
+        amount: {
+          en: 'Enter the amount as a whole number of yen, 1 or more.',
+          ja: '金額は、1 以上の円の整数で入力してください。',
+        },
       },
     ],
     [
       'no amount',
       { paymentMethodId: cash?.id ?? '', amount: '0' },
-      { amount: '金額は、1 以上の円の整数で入力してください。' },
+      {
+        amount: {
+          en: 'Enter the amount as a whole number of yen, 1 or more.',
+          ja: '金額は、1 以上の円の整数で入力してください。',
+        },
+      },
     ],
     [
       'an amount that is no whole number',
       { paymentMethodId: cash?.id ?? '', amount: '1.5' },
-      { amount: '金額は、1 以上の円の整数で入力してください。' },
+      {
+        amount: {
+          en: 'Enter the amount as a whole number of yen, 1 or more.',
+          ja: '金額は、1 以上の円の整数で入力してください。',
+        },
+      },
     ],
     [
       'more than is left to pay',
       { paymentMethodId: cash?.id ?? '', amount: '5501' },
-      { amount: '金額は、未払い残額（￥5,500）以下にしてください。' },
+      {
+        amount: {
+          en: 'The amount can be at most what is left to pay (¥5,500).',
+          ja: '金額は、未払い残額（￥5,500）以下にしてください。',
+        },
+      },
     ],
     [
       'less than a card takes at once',
       { paymentMethodId: card?.id ?? '', amount: '999' },
       {
-        amount: 'クレジットカードは、1 回 ￥1,000から受け付けます。',
+        amount: {
+          en: 'クレジットカード takes ¥1,000 or more at a time.',
+          ja: 'クレジットカードは、1 回 ￥1,000から受け付けます。',
+        },
       },
     ],
     [
       'a card number that is not four digits',
       { paymentMethodId: card?.id ?? '', amount: '5500', cardLastFour: '424' },
-      { cardLastFour: 'カードの下 4 桁は、4 桁の数字で入力してください。' },
+      {
+        cardLastFour: {
+          en: 'Enter the last four digits of the card as 4 digits.',
+          ja: 'カードの下 4 桁は、4 桁の数字で入力してください。',
+        },
+      },
     ],
     [
       'a brand too long',
@@ -160,12 +229,22 @@ describe('readPayment', () => {
         amount: '5500',
         cardBrand: 'あ'.repeat(51),
       },
-      { cardBrand: 'カードのブランドは、50 文字以内で入力してください。' },
+      {
+        cardBrand: {
+          en: 'Card brand: enter up to 50 characters.',
+          ja: 'カードのブランドは、50 文字以内で入力してください。',
+        },
+      },
     ],
     [
       'a method the salon uses no more',
       { paymentMethodId: qr?.id ?? '', amount: '5500' },
-      { paymentMethodId: '支払い方法を選んでください。' },
+      {
+        paymentMethodId: {
+          en: 'Choose a payment method.',
+          ja: '支払い方法を選んでください。',
+        },
+      },
     ],
   ])('should refuse %s', (_case, entries, errors) => {
     // Act, Assert
@@ -180,7 +259,12 @@ describe('readPayment', () => {
       read({ paymentMethodId: money?.id ?? '', amount: '20001' }, 30000),
     ).toEqual({
       type: 'invalid',
-      errors: { amount: '交通系 ICは、1 回 ￥20,000まで受け付けます。' },
+      errors: {
+        amount: {
+          en: '交通系 IC takes up to ¥20,000 at a time.',
+          ja: '交通系 ICは、1 回 ￥20,000まで受け付けます。',
+        },
+      },
     })
   })
 })
@@ -209,10 +293,14 @@ describe('afterPayment', () => {
         type: 'again',
         message: undefined,
         errors: {
-          amount:
-            '未払い残額か、支払い方法が 1 回に受け付ける金額を超えています。',
-          paymentMethodId:
-            'この支払い方法は、もう使えません。選び直してください。',
+          amount: {
+            en: 'The amount is more than is left to pay, or more than the payment method takes at a time.',
+            ja: '未払い残額か、支払い方法が 1 回に受け付ける金額を超えています。',
+          },
+          paymentMethodId: {
+            en: 'This payment method can no longer be used. Choose again.',
+            ja: 'この支払い方法は、もう使えません。選び直してください。',
+          },
         },
       },
     ],
@@ -221,8 +309,10 @@ describe('afterPayment', () => {
       { type: 'invalid', values: [{ field: '', rule: 'custom' }] },
       {
         type: 'again',
-        message:
-          '支払いを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The payment could not be recorded. Check your connection and try again.',
+          ja: '支払いを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
         errors: {},
       },
     ],
@@ -232,8 +322,10 @@ describe('afterPayment', () => {
       {
         type: 'refused',
         sale: refunded,
-        message:
-          'この売上には返金があるため、支払いを記録できません。払い直すときは、売上を取り消して、会計を入れ直してください。',
+        message: {
+          en: 'This sale has a refund, so no payment can be recorded. To pay again, void the sale and check out again.',
+          ja: 'この売上には返金があるため、支払いを記録できません。払い直すときは、売上を取り消して、会計を入れ直してください。',
+        },
       },
     ],
     [
@@ -242,8 +334,10 @@ describe('afterPayment', () => {
       {
         type: 'refused',
         sale: aSale(),
-        message:
-          '支払いを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The payment could not be recorded. Check your connection and try again.',
+          ja: '支払いを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
     ['a sale that is gone', { type: 'notFound' }, { type: 'gone' }],

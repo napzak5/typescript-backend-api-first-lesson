@@ -70,5 +70,6 @@ export {
   momentNameAt,
   momentOf,
   startOfDayAt,
+  timeAt,
   timeOfDayAt,
 } from './utils/salon-time'

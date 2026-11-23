@@ -1,10 +1,10 @@
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   type LedgerConditions,
   ledgerConditionsIn,
   ledgerQueryOf,
-  rangeNameOf,
   readLedgerConditions,
 } from './sales-ledger'
 
@@ -59,17 +59,23 @@ describe('readLedgerConditions', () => {
     })
   })
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
     [
       'no days',
       {},
-      { from: '日付を入力してください。', to: '日付を入力してください。' },
+      {
+        from: { en: 'Enter a date.', ja: '日付を入力してください。' },
+        to: { en: 'Enter a date.', ja: '日付を入力してください。' },
+      },
     ],
     [
       'an end before the start',
       { from: '2026-11-10', to: '2026-11-09' },
       {
-        to: '終わりの日は、始まりの日と同じか、その後にしてください。',
+        to: {
+          en: 'Make the last day the same as the first day, or later.',
+          ja: '終わりの日は、始まりの日と同じか、その後にしてください。',
+        },
       },
     ],
   ])('should refuse %s', (_case, entries, errors) => {
@@ -91,19 +97,5 @@ describe('ledgerQueryOf', () => {
         from: '2026-11-01',
       }).toString(),
     ).toBe('from=2026-11-01&to=2026-11-30&paymentStatus=pending')
-  })
-})
-
-describe('rangeNameOf', () => {
-  it.each<[string, LedgerConditions, string]>([
-    ['one day', { from: TODAY, to: TODAY }, '2026年11月20日（金）'],
-    [
-      'a range',
-      { from: '2026-11-01', to: TODAY },
-      '2026年11月1日（日）〜2026年11月20日（金）',
-    ],
-  ])('should name %s', (_case, conditions, name) => {
-    // Act, Assert
-    expect(rangeNameOf(conditions)).toBe(name)
   })
 })

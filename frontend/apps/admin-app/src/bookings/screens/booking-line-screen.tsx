@@ -85,7 +85,7 @@ const Line = ({ salon, booking, line }: LineProps) => {
   })
 
   return (
-    <WithStaffAndServices salonId={salon.id} label='スタッフとメニュー'>
+    <WithStaffAndServices salonId={salon.id}>
       {(staff, services) => (
         <>
           <BookingLineRecord

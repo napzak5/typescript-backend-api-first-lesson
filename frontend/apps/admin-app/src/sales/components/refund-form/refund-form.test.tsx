@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as refundFormStories from './refund-form.stories'
 
 const stories = composeStories(refundFormStories)
@@ -111,5 +112,73 @@ describe('RefundForm', () => {
       expect.stringContaining('返金の理由を入力してください。'),
     )
     expect(amount()).toHaveFocus()
+  })
+})
+
+describe('RefundForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the payment by card, and give back the whole of it at first, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.ByCard.run()
+
+    // Assert
+    const part = screen.getByRole('region', { name: 'Payment to refund' })
+    expect(
+      Object.fromEntries(
+        within(part)
+          .getAllByRole('term')
+          .map((term) => [
+            term.textContent,
+            term.nextElementSibling?.textContent,
+          ]),
+      ),
+    ).toEqual({
+      'Transaction number': 'PT-9F4H-2KQM',
+      'Time received': 'Fri, November 20, 2026 at 11:06',
+      'Payment method': 'クレジットカード',
+      Amount: '¥2,500',
+      Card: 'VISA ending in 4242',
+    })
+    expect(
+      screen.getByRole('textbox', { name: 'Amount to refund' }),
+    ).toHaveAccessibleDescription(
+      'A whole number of yen, from 1 to the amount of the payment (¥2,500). A payment is refunded once: after a partial refund, the rest cannot be refunded and the sale cannot be voided.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Reason for the refund' }),
+    ).toHaveAccessibleDescription(
+      'Kept with the refund. Record it after the money was given back.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Record the refund' }),
+    ).toBeVisible()
+  })
+
+  it('should say what is wrong at the controls in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Amount to refund' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'The refund can be at most the amount of the payment (¥3,000).',
+      ),
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Reason for the refund' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Enter the reason for the refund.'),
+    )
   })
 })

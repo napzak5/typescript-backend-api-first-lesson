@@ -269,7 +269,7 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
         { type: 'found' },
       ],
       ([ofCustomer, , ofProducts]) => (
-        <WithStaffAndServices salonId={salon.id} label='スタッフとメニュー'>
+        <WithStaffAndServices salonId={salon.id}>
           {(staff, services) => (
             <TreatmentEntry
               salon={salon}

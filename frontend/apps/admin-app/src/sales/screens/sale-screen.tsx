@@ -16,13 +16,14 @@ import {
   ButtonLink,
   Card,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
@@ -57,7 +58,6 @@ import {
   afterVoid,
   mayUndoSales,
   readVoid,
-  UNDONE_BY_OTHERS,
   whyNoVoid,
   whyUnchangeable,
 } from '../utils/sale-changes'
@@ -65,7 +65,9 @@ import { whyNoPayment, whyNoReceipt } from '../utils/sale-format'
 import { ledgerQueryOf } from '../utils/sales-ledger'
 import { WithPaymentMethods, WithSale } from './with-sale'
 
-const TITLE = '売上の内容'
+const { ledger, loading, names, record, titles, undoneByOthers, words } =
+  adminSaleMessages
+const { void: voidTexts } = adminSaleMessages.changes
 
 /** A sale names no customer when none was recorded: nothing is read for it */
 const NO_CUSTOMER: { type: 'none' } = { type: 'none' }
@@ -90,11 +92,13 @@ type SaleDetailsProps = {
  * of the part that says why.
  */
 const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const session = useSession()
   const { notify } = useNotifications()
   const [voiding, setVoiding] = useState(false)
-  const [voidSaid, setVoidSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [voidSaid, setVoidSaid] =
+    useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const recordHeading = useRef<HTMLHeadingElement>(null)
   const voidHeading = useRef<HTMLHeadingElement>(null)
   /**
@@ -136,8 +140,8 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
             tone: 'success',
             message:
               voided.bookingId === null
-                ? '売上を取り消しました。'
-                : '売上を取り消しました。予約の会計を、入れ直せます。',
+                ? voidTexts.done
+                : voidTexts.doneOfBooking,
           })
         })
         .with({ type: 'again' }, ({ message, errors }) =>
@@ -169,7 +173,7 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
 
   return match([customerId === null ? NO_CUSTOMER : customer.data, staff.data])
     .with([undefined, P._], [P._, undefined], () => (
-      <LoadingIndicator label='売上の内容を読み込んでいます' />
+      <LoadingIndicator label={say(loading.details)} />
     ))
     .with(
       [{ type: P.union('found', 'notFound', 'none') }, { type: 'found' }],
@@ -194,14 +198,14 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
             headingRef={recordHeading}
           />
           <Card
-            title='支払い'
+            title={say(words.payments)}
             actions={
               noPayment === undefined && (
                 <ButtonLink
                   href={paymentEntryHrefOf(salon.id, sale.id)}
                   variant='primary'
                 >
-                  支払いを記録する
+                  {say(record.recordPayment)}
                 </ButtonLink>
               )
             }
@@ -217,22 +221,19 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
                   : undefined
               }
             />
-            {noPayment !== undefined && <p>{noPayment}</p>}
+            {noPayment !== undefined && <p>{say(noPayment)}</p>}
           </Card>
           <Card
-            title='レシート'
+            title={say(record.receiptTitle)}
             actions={
               noReceipt === undefined && (
                 <ButtonLink href={receiptHrefOf(salon.id, sale.id)}>
-                  レシートを出す
+                  {say(record.issueReceipt)}
                 </ButtonLink>
               )
             }
           >
-            <p>
-              {noReceipt ??
-                'レシートは、印刷してお客様に渡せます。何度でも出し直せます。'}
-            </p>
+            <p>{say(noReceipt ?? record.receiptExplanation)}</p>
           </Card>
           {ofCustomer.type === 'found' && !sale.isVoid && (
             <SalePoints
@@ -247,10 +248,10 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
             />
           )}
           {!sale.isVoid && (
-            <Card title='取り消し' headingRef={voidHeading}>
+            <Card title={say(voidTexts.title)} headingRef={voidHeading}>
               <SaleVoid
-                why={mayUndo ? whyNoVoid(sale) : UNDONE_BY_OTHERS}
-                subject={`売上番号 ${sale.saleNumber}`}
+                why={mayUndo ? whyNoVoid(sale) : undoneByOthers}
+                subject={adminSaleMessages.saleNamed(sale.saleNumber)}
                 open={voiding}
                 onOpen={() => {
                   setVoidSaid(NOTHING_TO_SAY)
@@ -280,9 +281,7 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
       [P._, { type: P.union(...UNREAD_TYPES) }],
       (reads) => (
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('売上の内容'), whyUnread(reads)),
-          )}
+          message={say(unreadMessageOf(names.details, whyUnread(reads)))}
           onRetry={() => {
             void customer.refetch()
             void staff.refetch()
@@ -296,12 +295,14 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
 
 /** A sale of the salon of the address, its payments and its receipt. */
 export const SaleScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
+  const title = say(titles.sale)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
-        <WithSale key={salon.id} salon={salon} title={TITLE} fresh={false}>
+        <WithSale key={salon.id} salon={salon} title={title} fresh={false}>
           {(sale) => (
             <>
               <WithPaymentMethods salonId={salon.id}>
@@ -315,7 +316,7 @@ export const SaleScreen = () => {
                   to: sale.saleDate,
                 }).toString()}`}
               >
-                この日の売上へ
+                {say(ledger.toDay)}
               </ButtonLink>
             </>
           )}

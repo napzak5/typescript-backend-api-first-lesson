@@ -10,22 +10,22 @@ import type {
   ModelsSaleVoidRequest,
 } from '@beauty-salon-frontend/api-client'
 import { isDay } from '@beauty-salon-frontend/fields'
-import {
-  dayAt,
-  momentOf,
-  timeOfDayAt,
-} from '@beauty-salon-frontend/salon-screens'
+import { dayAt, momentOf, timeAt } from '@beauty-salon-frontend/salon-screens'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
+  NO_ERRORS,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminBookingMessages,
+  adminSaleMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
-import { NOT_ON_THE_CLOCK } from '../../bookings/utils/booking-entry'
 import { NO_CASHIER } from './checkout'
 
 /*
@@ -33,23 +33,19 @@ import { NO_CASHIER } from './checkout'
  * changed, what the forms send, and what is said about the answers.
  */
 
+const { change, void: voiding } = adminSaleMessages.changes
+
 /** The roles that may void a sale and give its payments back: money goes out */
 const UNDOERS: readonly string[] = ['owner', 'manager', 'admin']
 
 /** Whether an account of the role may void a sale and give its payments back. */
 export const mayUndoSales = (role: string): boolean => UNDOERS.includes(role)
 
-/** What a member of the staff is told where a sale would be voided or given back. */
-export const UNDONE_BY_OTHERS =
-  '売上の取り消しと返金は、オーナーとマネージャーができます。'
-
 /** Why a sale is not changed, in a sentence; `undefined` when it is. */
 export const whyUnchangeable = ({
   isVoid,
-}: Pick<ModelsSaleResponse, 'isVoid'>): string | undefined =>
-  isVoid
-    ? '取り消した売上は、直せません。取り消しの記録として残ります。'
-    : undefined
+}: Pick<ModelsSaleResponse, 'isVoid'>): LocalizedText | undefined =>
+  isVoid ? change.voided : undefined
 
 /** When a sale was entered, as the form shows it: the day and the time on the clock of the salon. */
 export const saleMomentOf = (
@@ -57,12 +53,12 @@ export const saleMomentOf = (
   timezone: string,
 ): { date: string; time: string } => ({
   date: dayAt(new Date(saleTime), timezone),
-  time: inJapanese(timeOfDayAt(saleTime, timezone)),
+  time: timeAt(saleTime, timezone),
 })
 
 /** What a change of a sale asks for: nothing, when nothing was changed. */
 export type SaleChange =
-  | FormRead<ModelsSaleUpdateRequest>
+  | FormRead<ModelsSaleUpdateRequest, FormErrors<LocalizedText>>
   | { type: 'unchanged' }
 
 /** The sale as the form was opened with it */
@@ -93,18 +89,18 @@ export const readSaleChange = (
     moved && isDay(date) && time !== ''
       ? momentOf(`${date}T${time}`, timezone)
       : undefined
-  const errors: Record<string, string> = moved
+  const errors: FormErrors<LocalizedText> = moved
     ? {
-        ...(isDay(date) ? {} : { saleDate: '会計日を入力してください。' }),
-        ...(time === '' ? { saleTime: '会計の時刻を入力してください。' } : {}),
+        ...(isDay(date) ? {} : { saleDate: change.errors.saleDate }),
+        ...(time === '' ? { saleTime: change.errors.saleTime } : {}),
         ...(isDay(date) && time !== '' && saleTime === undefined
-          ? { saleTime: NOT_ON_THE_CLOCK }
+          ? { saleTime: adminBookingMessages.notOnTheClock }
           : {}),
         ...(saleTime !== undefined && Date.parse(saleTime) > now.getTime()
-          ? { saleTime: '会計日時は、いまより前にしてください。' }
+          ? { saleTime: change.errors.later }
           : {}),
       }
-    : {}
+    : NO_ERRORS
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
   }
@@ -135,14 +131,10 @@ export type SaleChangeAttempt =
 const CHANGE_CONTROLS: readonly string[] = ['staffId', 'saleTime', 'notes']
 
 /** What is said at a control of a value the API refused. */
-const changeMessageAt = ({ field, rule }: RefusedValue): string =>
+const changeMessageAt = ({ field, rule }: RefusedValue): LocalizedText =>
   match([field, rule])
-    .with(
-      ['staffId', 'not_found'],
-      () =>
-        'このスタッフは、その間に削除されたため、選べません。選び直してください。',
-    )
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .with(['staffId', 'not_found'], () => change.errors.staffGone)
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /**
  * What the form that changes a sale says after the API did not change it.
@@ -154,18 +146,16 @@ export const afterSaleChange = (
     SaleChangeAttempt,
     { type: 'updated' } | { type: 'refused' } | { type: 'notFound' }
   >,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const atControls = values.filter(({ field }) =>
         CHANGE_CONTROLS.includes(field),
       )
 
       return {
-        message: inJapaneseIfAny(
-          atControls.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
+        message: atControls.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           atControls
             .toReversed()
@@ -173,22 +163,12 @@ export const afterSaleChange = (
         ),
       }
     })
-    .with({ type: 'undated' }, () =>
-      aboutTheAttempt(
-        'サロンのタイムゾーンが正しくないため、会計日を決められず、会計日時を直せませんでした。サロンの設定を直してください。',
-      ),
-    )
-    .with({ type: 'forbidden' }, () =>
-      aboutTheAttempt('このアカウントでは、この売上を直せません。'),
-    )
+    .with({ type: 'undated' }, () => aboutTheAttempt(change.undated))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(change.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '売上を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(change.failed))
     .exhaustive()
 
 /**
@@ -200,29 +180,30 @@ export const afterSaleChange = (
 export const whyNoVoid = ({
   isVoid,
   payments,
-}: Pick<ModelsSaleResponse, 'isVoid' | 'payments'>): string | undefined => {
+}: Pick<ModelsSaleResponse, 'isVoid' | 'payments'>):
+  | LocalizedText
+  | undefined => {
   if (isVoid) {
-    return 'この売上は、取り消されています。'
+    return voiding.why.voided
   }
   if (payments.some(({ status }) => status === 'partial_refund')) {
-    return '一部を返金した支払いがあるため、この売上は取り消せません。1 件の支払いの返金は 1 回で、残りは返金できません。'
+    return voiding.why.partlyRefunded
   }
   if (payments.some(({ status }) => status === 'completed')) {
-    return '受け取った支払いがあるため、このままでは取り消せません。取り消す前に、支払いをすべて全額返金してください。'
+    return voiding.why.received
   }
 
   return undefined
 }
 
 /** Why a sale is voided, from the form of the dialog: the voided sale stays in the ledger, and says why. */
-export const readVoid = (values: FormData): FormRead<ModelsSaleVoidRequest> => {
+export const readVoid = (
+  values: FormData,
+): FormRead<ModelsSaleVoidRequest, FormErrors<LocalizedText>> => {
   const voidReason = textOrNull(textOf(values, 'voidReason'))
 
   return voidReason === null
-    ? {
-        type: 'invalid',
-        errors: { voidReason: '取り消しの理由を入力してください。' },
-      }
+    ? { type: 'invalid', errors: { voidReason: voiding.reasonMissing } }
     : { type: 'valid', value: { voidReason } }
 }
 
@@ -241,18 +222,13 @@ export type VoidAttempt =
 export type VoidSays =
   | { type: 'done'; sale: ModelsSaleResponse }
   /** Nothing was done, and nothing is known to have changed: said in the dialog */
-  | {
-      type: 'again'
-      message: string | undefined
-      errors: Record<string, string>
-    }
+  | ({ type: 'again' } & FormSays<LocalizedText>)
   /** The sale changed meanwhile: the dialog closes, and the page shows it as it is now */
-  | { type: 'refused'; sale: ModelsSaleResponse; message: string }
+  | { type: 'refused'; sale: ModelsSaleResponse; message: LocalizedText }
   /** The sale is gone: the screen says that there is none */
   | { type: 'gone' }
 
-const VOID_AGAIN =
-  '売上を取り消せませんでした。通信の状態を確かめて、もう一度お試しください。'
+const VOID_AGAIN = voiding.failed
 
 export const afterVoid = (outcome: VoidAttempt): VoidSays =>
   match(outcome)
@@ -263,38 +239,35 @@ export const afterVoid = (outcome: VoidAttempt): VoidSays =>
         ? {
             type: 'again',
             message: undefined,
-            errors: { voidReason: '取り消しの理由を入力してください。' },
+            errors: { voidReason: voiding.reasonMissing },
           }
-        : { type: 'again', message: VOID_AGAIN, errors: {} },
+        : { type: 'again', ...aboutTheAttempt(VOID_AGAIN) },
     )
     .with({ type: 'refused' }, ({ sale }) => {
       const why = whyNoVoid(sale)
       if (why === undefined) {
-        return { type: 'again', message: VOID_AGAIN, errors: {} }
+        return { type: 'again', ...aboutTheAttempt(VOID_AGAIN) }
       }
 
       return {
         type: 'refused',
         sale,
         message: sale.isVoid
-          ? 'この売上は、その間に取り消されていました。'
-          : `その間に、この売上の支払いが変わりました。${why}`,
+          ? voiding.voidedMeanwhile
+          : voiding.paymentsChanged(why),
       }
     })
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message: `このアカウントでは、売上を取り消せません。${UNDONE_BY_OTHERS}`,
-      errors: {},
+      ...aboutTheAttempt(voiding.forbidden),
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
-      errors: {},
+      ...aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message: VOID_AGAIN,
-      errors: {},
+      ...aboutTheAttempt(VOID_AGAIN),
     }))
     .exhaustive()

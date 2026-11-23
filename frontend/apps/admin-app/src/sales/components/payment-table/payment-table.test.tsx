@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as paymentTableStories from './payment-table.stories'
 
 const stories = composeStories(paymentTableStories)
@@ -83,5 +84,98 @@ describe('PaymentTable', () => {
       'href',
       '/payments/7a8b9c0d-1e2f-4a3b-8c5d-6e7f80910213/refund',
     )
+  })
+})
+
+describe('PaymentTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should list the payments with their methods and their cards in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Paid.run()
+
+    // Assert
+    expect(columnsOf('Payments')).toEqual([
+      'Transaction number',
+      'Time received',
+      'Payment method',
+      'Amount',
+      'Card',
+      'Status',
+      'Refund',
+    ])
+    expect(rowsOf('Payments')).toEqual([
+      [
+        'PT-7KQM-4F2H',
+        'Fri, November 20, 2026 at 11:05',
+        '現金',
+        '¥3,000',
+        'Not recorded',
+        'Received',
+        'None',
+      ],
+      [
+        'PT-9F4H-2KQM',
+        'Fri, November 20, 2026 at 11:06',
+        'クレジットカード',
+        '¥2,500',
+        'VISA ending in 4242',
+        'Received',
+        'None',
+      ],
+    ])
+  })
+
+  it('should say that nothing was received yet in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(rowsOf('Payments')).toEqual([['No payments yet']])
+  })
+
+  it('should say what was given back of a payment, when and why, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Refunded.run()
+
+    // Assert
+    expect(rowsOf('Payments')).toEqual([
+      [
+        'PT-7KQM-4F2H',
+        'Fri, November 20, 2026 at 11:05',
+        'Payment method not listed',
+        '¥3,000',
+        'JCB',
+        'Partly refunded',
+        '¥1,000, Fri, November 20, 2026 at 11:30',
+      ],
+    ])
+    expect(screen.getByRole('term')).toHaveTextContent(
+      'Reason for the refund of PT-7KQM-4F2H',
+    )
+  })
+
+  it('should name the link that gives a payment back by its number in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.GivenBackByOwner.run()
+
+    // Assert
+    expect(
+      screen.getByRole('link', { name: 'Refund PT-9F4H-2KQM' }),
+    ).toHaveTextContent('Refund')
   })
 })

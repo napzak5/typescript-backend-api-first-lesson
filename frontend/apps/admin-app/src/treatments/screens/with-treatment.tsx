@@ -150,7 +150,7 @@ export const WithTreatment = ({
         ([{ record: found }, ofBooking, ofCustomer, ofProducts]) => (
           <>
             {header}
-            <WithStaffAndServices salonId={salon.id} label='スタッフとメニュー'>
+            <WithStaffAndServices salonId={salon.id}>
               {(staff, services) =>
                 children({
                   record: found,

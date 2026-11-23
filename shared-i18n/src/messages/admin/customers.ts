@@ -91,6 +91,8 @@ export const adminCustomerMessages = {
   naming: {
     honored,
     full: fullName,
+    /** A customer who was removed from the ledger: one is named, though not by name */
+    removed: text({ en: 'Removed customer', ja: '削除された顧客' }),
     /** The full name below the heading of a screen of a customer: 「山田 花子（ヤマダ ハナコ） 様」 */
     honoredFull: (name: string, kana: string) => {
       const full = fullName(name, kana)

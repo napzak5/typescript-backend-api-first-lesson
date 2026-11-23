@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
@@ -13,11 +14,10 @@ import {
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import { OWNER, STYLIST, TOKYO } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import { arrange, refuse } from '../../bookings/__tests__/arrangements'
 import {
   arrangeSale,
@@ -140,7 +140,7 @@ describe('changing, voiding and giving back a sale, against the API', () => {
       expect(firstSight()[1]).toContain('Mika Suzuki')
       expect(notifications()).toContain('売上を直しました。')
       expect(describedIn('売上')).toMatchObject({
-        会計日: inJapanese(dayNameOf(yesterday)),
+        会計日: dayNameOf(yesterday).ja,
         会計の担当: 'Mika Suzuki',
         メモ: '前日の閉店後に入れ忘れた会計',
       })
@@ -691,5 +691,188 @@ describe('changing, voiding and giving back a sale, against the API', () => {
       ).toBeVisible()
       expect((await storedRefundsOf(saleId))[0]?.status).toBe('completed')
     })
+  })
+})
+
+describe('changing, voiding and giving back a sale on a page in English', () => {
+  /** Waits for the page of a sale in English: its heading, then its parts. */
+  const theSaleInEnglish = async (): Promise<void> => {
+    await heading('Sale details')
+    await screen.findByRole('table', { name: 'Line items' })
+  }
+
+  /** Opens the page of a sale of the salon in Tokyo in English, signed in. */
+  const openSaleInEnglish = async (
+    saleId: string,
+    email = OWNER,
+  ): Promise<void> => {
+    await openAs(
+      `/salons/${await salonIdOf(TOKYO)}/sales/${saleId}`,
+      email,
+      'en',
+    )
+    await theSaleInEnglish()
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should change who took a sale and its note, and say so, in English', async () => {
+    // Arrange
+    const { saleId } = await arrangeVisit('0301')
+    const user = userEvent.setup()
+    await openSaleInEnglish(saleId, STYLIST)
+    await user.click(screen.getByRole('link', { name: 'Edit the sale' }))
+    await heading('Edit the sale')
+    await screen.findByRole('combobox', { name: 'Cashier' })
+    expect(
+      screen.getByText(
+        'The line items and the amounts are not edited here. When they are wrong, an owner or a manager refunds the payments in full, voids the sale and checks the booking out again.',
+      ),
+    ).toBeVisible()
+
+    // Act
+    await user.selectOptions(field('Cashier'), 'Mika Suzuki')
+    await user.type(field('Notes'), 'Entered after closing')
+    await user.click(screen.getByRole('button', { name: 'Save the changes' }))
+
+    // Assert
+    await theSaleInEnglish()
+    expect(notifications()).toContain('Saved the sale.')
+    expect(describedIn('Sale')).toMatchObject({
+      Cashier: 'Mika Suzuki',
+      Notes: 'Entered after closing',
+    })
+  })
+
+  it('should say in English at its control that a sale is not entered at a time to come', async () => {
+    // Arrange
+    const { saleId } = await arrangeVisit('0302')
+    const user = userEvent.setup()
+    await openAs(
+      `/salons/${await salonIdOf(TOKYO)}/sales/${saleId}/edit`,
+      OWNER,
+      'en',
+    )
+    await screen.findByRole('combobox', { name: 'Cashier' })
+    await user.clear(field('Date of sale'))
+    await user.type(field('Date of sale'), await dayFromToday(1))
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Save the changes' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(field('Time of the sale')).toHaveAccessibleDescription(
+        expect.stringContaining('The time of the sale must be before now.'),
+      ),
+    )
+  })
+
+  it('should void a sale entered by mistake, asking why, in English', async () => {
+    // Arrange
+    const { saleId } = await arrangeVisit('0303')
+    const user = userEvent.setup()
+    await openSaleInEnglish(saleId)
+    await user.click(
+      within(part('Voiding')).getByRole('button', { name: 'Void the sale' }),
+    )
+    const dialog = screen.getByRole('dialog', { name: 'Void the sale?' })
+
+    // Act: without a reason
+    await user.click(within(dialog).getByRole('button', { name: 'Void' }))
+
+    // Assert
+    const reason = within(dialog).getByRole('textbox', {
+      name: 'Reason for voiding',
+    })
+    await waitFor(() =>
+      expect(reason).toHaveAccessibleDescription(
+        expect.stringContaining('Enter the reason for voiding.'),
+      ),
+    )
+
+    // Act
+    await user.type(reason, 'Mixed up with another customer')
+    await user.click(within(dialog).getByRole('button', { name: 'Void' }))
+
+    // Assert
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Sale' })).toHaveFocus(),
+    )
+    expect(notifications()).toContain(
+      'Voided the sale. The booking can be checked out again.',
+    )
+    expect(describedIn('Sale')).toMatchObject({
+      Payment: 'Voided',
+      'Reason for voiding': 'Mixed up with another customer',
+    })
+  })
+
+  it('should give a part of a payment back, and say why the sale is not voided after it, in English', async () => {
+    // Arrange
+    const { saleId } = await arrangeVisit('0304')
+    await paySale(saleId)
+    const user = userEvent.setup()
+    await openSaleInEnglish(saleId)
+    expect(
+      within(part('Voiding')).getByText(
+        'This sale has payments that were received, so it cannot be voided as it is. Refund every payment in full first.',
+      ),
+    ).toBeVisible()
+    await user.click(
+      screen.getByRole('link', { name: `Refund ${cashOf(saleId)}` }),
+    )
+    await heading('Refund a payment')
+    await screen.findByRole('textbox', { name: 'Amount to refund' })
+
+    // Act
+    await user.clear(field('Amount to refund'))
+    await user.type(field('Amount to refund'), '1000')
+    await user.type(field('Reason for the refund'), 'Forgot the change')
+    await user.click(screen.getByRole('button', { name: 'Record the refund' }))
+
+    // Assert
+    await theSaleInEnglish()
+    expect(notifications()).toContain('Recorded the refund.')
+    expect(rowsOf('Payments')[0]?.slice(-2)).toEqual([
+      'Partly refunded',
+      expect.stringMatching(
+        /^¥1,000, \w{3}, \w+ \d{1,2}, \d{4} at \d{2}:\d{2}$/,
+      ),
+    ])
+    expect(describedIn('Payments')).toEqual({
+      [`Reason for the refund of ${cashOf(saleId)}`]: 'Forgot the change',
+    })
+    expect(
+      within(part('Voiding')).getByText(
+        'A payment of this sale was partly refunded, so the sale cannot be voided. A payment is refunded once, so the rest cannot be refunded.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should tell a member of the staff in English who voids sales and records refunds', async () => {
+    // Arrange
+    const { saleId } = await arrangeVisit('0305')
+    await paySale(saleId)
+
+    // Act
+    await openSaleInEnglish(saleId, STYLIST)
+
+    // Assert
+    expect(
+      within(part('Voiding')).getByText(
+        'Owners and managers void sales and record refunds.',
+      ),
+    ).toBeVisible()
+    expect(rowsOf('Payments')[0]?.at(-1)).toBe('None')
   })
 })

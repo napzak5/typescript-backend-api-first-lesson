@@ -10,12 +10,13 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
@@ -28,9 +29,11 @@ import {
   saleKeyOf,
 } from '../api/sales-api'
 
+const { loading, names, notFound, words } = adminSaleMessages
+
 export type WithSaleProps = {
   salon: ModelsSalonResponse
-  /** The title of the screen */
+  /** The title of the screen, in the language of the page */
   title: string
   /**
    * Whether the screen shows the sale only once it was read anew: a screen
@@ -52,6 +55,7 @@ export type WithSaleProps = {
  * as it is read: what the screen shows of it besides may need more.
  */
 export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
+  const say = useSay()
   const { saleId = '' } = useParams()
   const read = useQuery({
     queryKey: saleKeyOf(saleId),
@@ -67,14 +71,19 @@ export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
       .with(undefined, () => (
         <>
           <PageHeader title={title} description={salon.name} />
-          <LoadingIndicator label='売上を読み込んでいます' />
+          <LoadingIndicator label={say(loading.sale)} />
         </>
       ))
       .with({ type: 'found', sale: { salonId: salon.id } }, ({ sale }) => (
         <>
           <PageHeader title={title} description={salon.name} />
           <p>
-            {`売上番号 ${sale.saleNumber}（${inJapanese(momentNameAt(sale.saleTime, salon.timezone))}）`}
+            {say(
+              adminSaleMessages.saleOf(
+                sale.saleNumber,
+                momentNameAt(sale.saleTime, salon.timezone),
+              ),
+            )}
           </p>
           {children(sale)}
         </>
@@ -83,31 +92,52 @@ export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
       .with({ type: P.union('found', 'notFound') }, () => (
         <>
           <PageHeader
-            title='売上が見つかりません'
-            description='アドレスが正しいか、お確かめください。'
+            title={say(notFound.title)}
+            description={say(notFound.description)}
           />
-          <ButtonLink href={salesHrefOf(salon.id)}>今日の売上へ</ButtonLink>
+          <ButtonLink href={salesHrefOf(salon.id)}>
+            {say(notFound.toToday)}
+          </ButtonLink>
         </>
       ))
       .with({ type: 'forbidden' }, () => (
         <>
           <PageHeader title={title} description={salon.name} />
-          <OtherSalonNotice what={writtenInJapanese('売上')} />
+          <OtherSalonNotice what={names.salesOfTheSalon} />
         </>
       ))
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <PageHeader title={title} description={salon.name} />
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('売上'), reason),
-            )}
+            message={say(unreadMessageOf(names.sale, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
         </>
       ))
       .exhaustive()
+  )
+}
+
+/**
+ * What a screen that writes a sale says when the sale takes nothing of it
+ * now, or not from this account: why, and the way back to the sale.
+ */
+export const Unwritable = ({
+  why,
+  back,
+}: {
+  why: LocalizedText
+  back: string
+}) => {
+  const say = useSay()
+
+  return (
+    <>
+      <p>{say(why)}</p>
+      <ButtonLink href={back}>{say(words.toSale)}</ButtonLink>
+    </>
   )
 }
 
@@ -126,6 +156,7 @@ export const WithPaymentMethods = ({
   salonId,
   children,
 }: WithPaymentMethodsProps) => {
+  const say = useSay()
   const methods = useQuery({
     queryKey: paymentMethodsKeyOf(salonId),
     queryFn: () => readPaymentMethods(salonId),
@@ -133,18 +164,14 @@ export const WithPaymentMethods = ({
   })
 
   return match(methods.data)
-    .with(undefined, () => (
-      <LoadingIndicator label='支払い方法を読み込んでいます' />
-    ))
+    .with(undefined, () => <LoadingIndicator label={say(loading.methods)} />)
     .with({ type: 'found' }, ({ items }) => children(items))
     .with({ type: 'forbidden' }, () => (
-      <OtherSalonNotice what={writtenInJapanese('売上')} />
+      <OtherSalonNotice what={names.salesOfTheSalon} />
     ))
     .with({ type: P.union(...UNREAD_TYPES, 'notFound') }, (reason) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('支払い方法'), reason),
-        )}
+        message={say(unreadMessageOf(names.methods, reason))}
         onRetry={() => void methods.refetch()}
         pending={methods.isFetching}
       />

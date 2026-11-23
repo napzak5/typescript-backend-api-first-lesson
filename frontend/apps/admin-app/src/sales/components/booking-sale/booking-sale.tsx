@@ -7,12 +7,12 @@ import {
   Card,
   DescriptionList,
   EmptyState,
-  inJapanese,
   Link,
   LoadingIndicator,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match, P } from 'ts-pattern'
 import type { SalesOfBooking } from '../../api/sales-api'
 import { saleOfBooking, whyNoCheckout } from '../../utils/checkout'
@@ -20,6 +20,8 @@ import {
   paymentStatusNameOf,
   paymentStatusToneOf,
 } from '../../utils/sale-format'
+
+const { loading, names, ofBooking, titles, words } = adminSaleMessages
 
 export type BookingSaleProps = {
   booking: Pick<ModelsBookingResponse, 'status'>
@@ -49,69 +51,69 @@ export const BookingSale = ({
   checkoutHref,
   onRetry,
   retrying,
-}: BookingSaleProps) => (
-  <Card title='会計'>
-    {match(sales)
-      .with(undefined, () => (
-        <LoadingIndicator label='会計を読み込んでいます' />
-      ))
-      .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
-        <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('会計'), reason),
-          )}
-          onRetry={onRetry}
-          pending={retrying}
-        />
-      ))
-      .with({ type: 'forbidden' }, () => (
-        <p>この予約の会計は、見られません。</p>
-      ))
-      .with({ type: 'found' }, ({ sales: found }) => {
-        const sale = saleOfBooking(found)
-        if (sale !== undefined) {
-          return (
-            <DescriptionList
-              items={[
-                {
-                  term: '売上番号',
-                  description: (
-                    <Link href={saleHref(sale.id)}>{sale.saleNumber}</Link>
-                  ),
-                },
-                {
-                  term: '合計',
-                  description: inJapanese(amountOf(sale.totalAmount, currency)),
-                },
-                {
-                  term: '支払い',
-                  description: (
-                    <Badge tone={paymentStatusToneOf(sale.paymentStatus)}>
-                      {paymentStatusNameOf(sale.paymentStatus)}
-                    </Badge>
-                  ),
-                },
-              ]}
-            />
-          )
-        }
+}: BookingSaleProps) => {
+  const say = useSay()
 
-        const why = whyNoCheckout(booking)
-
-        return why === undefined ? (
-          <EmptyState
-            kind='part'
-            title='まだ会計を入れていません。'
-            actions={
-              <ButtonLink href={checkoutHref} variant='primary'>
-                会計を入れる
-              </ButtonLink>
-            }
+  return (
+    <Card title={say(ofBooking.title)}>
+      {match(sales)
+        .with(undefined, () => (
+          <LoadingIndicator label={say(loading.checkout)} />
+        ))
+        .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
+          <UnreadNotice
+            message={say(unreadMessageOf(names.checkout, reason))}
+            onRetry={onRetry}
+            pending={retrying}
           />
-        ) : (
-          <p>{why}</p>
-        )
-      })
-      .exhaustive()}
-  </Card>
-)
+        ))
+        .with({ type: 'forbidden' }, () => <p>{say(ofBooking.forbidden)}</p>)
+        .with({ type: 'found' }, ({ sales: found }) => {
+          const sale = saleOfBooking(found)
+          if (sale !== undefined) {
+            return (
+              <DescriptionList
+                items={[
+                  {
+                    term: say(words.saleNumber),
+                    description: (
+                      <Link href={saleHref(sale.id)}>{sale.saleNumber}</Link>
+                    ),
+                  },
+                  {
+                    term: say(words.total),
+                    description: say(amountOf(sale.totalAmount, currency)),
+                  },
+                  {
+                    term: say(words.payment),
+                    description: (
+                      <Badge tone={paymentStatusToneOf(sale.paymentStatus)}>
+                        {say(paymentStatusNameOf(sale.paymentStatus))}
+                      </Badge>
+                    ),
+                  },
+                ]}
+              />
+            )
+          }
+
+          const why = whyNoCheckout(booking)
+
+          return why === undefined ? (
+            <EmptyState
+              kind='part'
+              title={say(ofBooking.notYet)}
+              actions={
+                <ButtonLink href={checkoutHref} variant='primary'>
+                  {say(titles.checkout)}
+                </ButtonLink>
+              }
+            />
+          ) : (
+            <p>{say(why)}</p>
+          )
+        })
+        .exhaustive()}
+    </Card>
+  )
+}

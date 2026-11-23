@@ -1,16 +1,17 @@
 import type { ModelsBookingStatusType } from '@beauty-salon-frontend/api-client'
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { aSale, salon } from '../examples'
 import * as bookingSaleStories from './booking-sale.stories'
 
 const stories = composeStories(bookingSaleStories)
 
-const part = (): HTMLElement => {
+const part = (title = '会計'): HTMLElement => {
   const section = screen
-    .getByRole('heading', { name: '会計' })
+    .getByRole('heading', { name: title })
     .closest('section')
 
   return section ?? document.body
@@ -95,5 +96,100 @@ describe('BookingSale', () => {
 
     // Assert
     expect(onRetry).toHaveBeenCalledOnce()
+  })
+})
+
+describe('BookingSale on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should lead a visit to its checkout in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unbilled.run()
+
+    // Assert
+    expect(
+      within(part('Checkout')).getByText('Not checked out yet.'),
+    ).toBeVisible()
+    expect(
+      within(part('Checkout')).getByRole('link', { name: 'Check out' }),
+    ).toBeVisible()
+  })
+
+  it('should show the sale that bills the visit in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Billed.run()
+
+    // Assert
+    expect(
+      within(part('Checkout'))
+        .getAllByRole('term')
+        .map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent,
+        ]),
+    ).toEqual([
+      ['Sale number', 'SL-2KQM-9F4H'],
+      ['Total', '¥5,500'],
+      ['Payment', 'Partly paid'],
+    ])
+  })
+
+  it.each<['Upcoming' | 'Cancelled', string]>([
+    ['Upcoming', 'A booking can be checked out once its treatment has begun.'],
+    [
+      'Cancelled',
+      'A cancelled booking, or one whose customer did not come, is not checked out.',
+    ],
+  ])(
+    'should say in English why a booking that is %s takes no checkout',
+    async (story, why) => {
+      // Arrange
+      languageStore.choose('en')
+
+      // Act
+      await stories[story].run()
+
+      // Assert
+      expect(within(part('Checkout')).getByText(why)).toBeVisible()
+    },
+  )
+
+  it('should say in English that the sales are on their way', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Loading.run()
+
+    // Assert
+    expect(
+      within(part('Checkout')).getByText('Loading the checkout'),
+    ).toBeVisible()
+  })
+
+  it('should say in English that the sales could not be read', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unread.run()
+
+    // Assert
+    expect(
+      within(part('Checkout')).getByText(
+        'Could not load the checkout. Check your connection and try again.',
+      ),
+    ).toBeVisible()
+    expect(
+      within(part('Checkout')).getByRole('button', { name: 'Load again' }),
+    ).toBeVisible()
   })
 })

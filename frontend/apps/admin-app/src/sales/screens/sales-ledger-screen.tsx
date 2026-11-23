@@ -9,18 +9,20 @@ import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   dayAt,
   OtherSalonNotice,
+  periodNameOf,
   WithSalon,
 } from '@beauty-salon-frontend/salon-screens'
 import {
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
@@ -32,11 +34,10 @@ import { SaleTable } from '../components/sale-table/sale-table'
 import {
   ledgerConditionsIn,
   ledgerQueryOf,
-  rangeNameOf,
   readLedgerConditions,
 } from '../utils/sales-ledger'
 
-const TITLE = '売上台帳'
+const { ledger, loading, names, titles } = adminSaleMessages
 
 type SalesLedgerProps = {
   salon: ModelsSalonResponse
@@ -50,8 +51,10 @@ type SalesLedgerProps = {
  * today at the salon.
  */
 const SalesLedger = ({ salon }: SalesLedgerProps) => {
+  const say = useSay()
+  const title = say(titles.ledger)
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const [errors, setErrors] = useState<FormErrors<LocalizedText>>()
   const today = dayAt(new Date(), salon.timezone)
   const conditions = ledgerConditionsIn(query, today)
   const asked = ledgerQueryOf(conditions).toString()
@@ -86,20 +89,20 @@ const SalesLedger = ({ salon }: SalesLedgerProps) => {
     setQuery(next, { replace: true })
   }
 
-  const heading = `${rangeNameOf(conditions)}の売上`
+  const days = periodNameOf(conditions)
 
   if (pages[0]?.type === 'forbidden') {
     return (
       <>
-        <PageHeader title={TITLE} description={salon.name} />
-        <OtherSalonNotice what={writtenInJapanese('売上')} />
+        <PageHeader title={title} description={salon.name} />
+        <OtherSalonNotice what={names.salesOfTheSalon} />
       </>
     )
   }
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={title} description={salon.name} />
       <LedgerFilter
         conditions={conditions}
         errors={errors}
@@ -115,32 +118,28 @@ const SalesLedger = ({ salon }: SalesLedgerProps) => {
               pages.map((page) => (page.type === 'forbidden' ? FAILED : page)),
             ),
       )
-        .with(undefined, () => (
-          <LoadingIndicator label='売上を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(loading.sales)} />)
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('売上'), reason),
-            )}
+            message={say(unreadMessageOf(names.sales, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
           <EmptyState
-            title={
+            title={say(
               conditions.paymentStatus === undefined
-                ? `${heading}はありません`
-                : `${heading}のうち、条件に合うものはありません`
-            }
+                ? ledger.noSales(days)
+                : ledger.noneMatches(days),
+            )}
           />
         ))
         .with({ type: 'listed' }, ({ items, total, rest }) => (
           <SaleTable
             // Other days, or another state, is another ledger
             key={asked}
-            caption={heading}
+            caption={ledger.salesOf(days)}
             rows={items}
             total={total}
             timezone={salon.timezone}
@@ -162,10 +161,11 @@ const SalesLedger = ({ salon }: SalesLedgerProps) => {
 
 /** The ledger of the sales of the salon of the address. */
 export const SalesLedgerScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.ledger)}>
       {(salon) => <SalesLedger key={salon.id} salon={salon} />}
     </WithSalon>
   )

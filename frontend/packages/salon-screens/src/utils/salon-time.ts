@@ -16,6 +16,18 @@ export const dayAt = (moment: Date, timezone: string): string =>
     day: '2-digit',
   }).format(moment)
 
+/**
+ * The time of day a moment is at a salon, as a control of a time holds it,
+ * in every language: `09:30`.
+ */
+export const timeAt = (moment: string, timezone: string): string =>
+  new Intl.DateTimeFormat('sv-SE', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(moment))
+
 /** The day so many days after another (before it, for a negative number). */
 export const dayAfter = (day: string, days: number): string => {
   const moment = new Date(`${day}T00:00:00Z`)

@@ -150,10 +150,7 @@ export const BookingLineEntryScreen = () => {
                 />
               ))
               .with(undefined, () => (
-                <WithStaffAndServices
-                  salonId={salon.id}
-                  label='スタッフとメニュー'
-                >
+                <WithStaffAndServices salonId={salon.id}>
                   {(staff, services) => (
                     <Addition
                       salon={salon}

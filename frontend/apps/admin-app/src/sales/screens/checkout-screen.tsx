@@ -14,13 +14,17 @@ import {
   aboutTheAttempt,
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminMenuMessages,
+  adminSaleMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -56,11 +60,8 @@ import {
   whyNotCalculated,
 } from '../utils/checkout'
 
-const TITLE = '会計を入れる'
-
-/** What is said of a calculation whose prices are not those of the menu the screen read */
-const OTHER_PRICES =
-  'メニューの料金が、この画面を開いたあとで変わりました。計算し直すと、いまの料金で数えます。'
+const { loading, names, titles, words } = adminSaleMessages
+const { again, bill: billed, notices, ...texts } = adminSaleMessages.checkout
 
 type CheckoutProps = {
   salon: ModelsSalonResponse
@@ -79,12 +80,13 @@ type CheckoutProps = {
  * bills it is shown.
  */
 const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const [added, setAdded] = useState<readonly string[]>([])
-  const [changed, setChanged] = useState('')
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [changed, setChanged] = useState<LocalizedText>()
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const calculation = useQuery({
     queryKey: ['sales', 'calculation', salon.id, booking.id, ...added],
     queryFn: () =>
@@ -103,7 +105,7 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
     .with({ type: 'calculated' }, (calculated) =>
       agreesWith(lines, calculated.calculation.breakdown)
         ? calculated
-        : { type: 'uncalculated', message: OTHER_PRICES },
+        : { type: 'uncalculated', message: billed.otherPrices },
     )
     .with({ type: 'invalid' }, ({ values }) => ({
       type: 'uncalculated',
@@ -111,11 +113,11 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'uncalculated',
-      message: 'このサロンの会計は、入れられません。',
+      message: billed.forbidden,
     }))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
       type: 'unread',
-      message: inJapanese(unreadMessageOf(writtenInJapanese('金額'), reason)),
+      message: unreadMessageOf(names.amounts, reason),
     }))
     .exhaustive()
 
@@ -132,12 +134,8 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
           })
           notify(
             type === 'done'
-              ? { tone: 'success', message: '会計を入れました。' }
-              : {
-                  tone: 'warning',
-                  message:
-                    'この予約には、その間に会計が入っていました。その売上を表示します。',
-                },
+              ? { tone: 'success', message: notices.done }
+              : { tone: 'warning', message: notices.billed },
           )
           void navigate(saleHrefOf(salon.id, sale.id))
         })
@@ -149,7 +147,7 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
 
   const submit = (values: FormData): void => {
     if (bill.type !== 'calculated') {
-      setSaid(aboutTheAttempt('金額が出てから、会計を入れてください。'))
+      setSaid(aboutTheAttempt(again.noBill))
       return
     }
     setSaid(NOTHING_TO_SAY)
@@ -157,7 +155,11 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
       saleRequestOf(
         booking,
         readCheckout(values),
-        saleDetailsOf(lines, bill.calculation.breakdown.taxAmount),
+        saleDetailsOf(
+          lines,
+          bill.calculation.breakdown.taxAmount,
+          say(adminMenuMessages.removedService),
+        ),
         new Date(),
       ),
     )
@@ -182,11 +184,11 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
       changed={changed}
       onAdd={(serviceId) => {
         setAdded([...added, serviceId])
-        setChanged(`${nameOf(serviceId)}を足しました。`)
+        setChanged(notices.added(nameOf(serviceId)))
       }}
       onRemove={(index) => {
         setAdded(added.filter((_id, at) => at !== index))
-        setChanged(`${nameOf(added[index] ?? '')}を外しました。`)
+        setChanged(notices.removed(nameOf(added[index] ?? '')))
       }}
       onRecalculate={() => {
         // A price that changed is read anew with the menu
@@ -202,7 +204,7 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
       onSubmit={submit}
       actions={
         <ButtonLink href={bookingHrefOf(salon.id, booking.id)} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -220,6 +222,7 @@ type CheckoutOfBookingProps = {
  * one leads to it.
  */
 const CheckoutOfBooking = ({ salon, booking }: CheckoutOfBookingProps) => {
+  const say = useSay()
   const sales = useQuery({
     queryKey: salesOfBookingKeyOf(booking.id),
     queryFn: () => readSalesOfBooking(salon.id, booking.id),
@@ -229,22 +232,22 @@ const CheckoutOfBooking = ({ salon, booking }: CheckoutOfBookingProps) => {
   const shown = sales.isFetchedAfterMount ? sales.data : undefined
 
   return match(shown)
-    .with(undefined, () => <LoadingIndicator label='会計を読み込んでいます' />)
+    .with(undefined, () => <LoadingIndicator label={say(loading.checkout)} />)
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={inJapanese(unreadMessageOf(writtenInJapanese('会計'), reason))}
+        message={say(unreadMessageOf(names.checkout, reason))}
         onRetry={() => void sales.refetch()}
         pending={sales.isFetching}
       />
     ))
     .with({ type: 'forbidden' }, () => (
-      <OtherSalonNotice what={writtenInJapanese('会計')} />
+      <OtherSalonNotice what={names.checkoutsOfTheSalon} />
     ))
     .with({ type: 'found' }, ({ sales: found }) => {
       const sale = saleOfBooking(found)
 
       return sale === undefined ? (
-        <WithStaffAndServices salonId={salon.id} label='スタッフとメニュー'>
+        <WithStaffAndServices salonId={salon.id}>
           {(staff, services) => (
             <Checkout
               salon={salon}
@@ -256,12 +259,9 @@ const CheckoutOfBooking = ({ salon, booking }: CheckoutOfBookingProps) => {
         </WithStaffAndServices>
       ) : (
         <>
-          <p>
-            この予約には、会計が入っています。1 件の予約に入れる会計は、1
-            件です。
-          </p>
+          <p>{say(texts.billedAlready)}</p>
           <ButtonLink href={saleHrefOf(salon.id, sale.id)}>
-            売上の内容へ
+            {say(texts.toSale)}
           </ButtonLink>
         </>
       )
@@ -271,17 +271,19 @@ const CheckoutOfBooking = ({ salon, booking }: CheckoutOfBookingProps) => {
 
 /** Enters the sale of a booking of the salon of the address. */
 export const CheckoutScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
+  const title = say(titles.checkout)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
-        <WithBooking key={salon.id} salon={salon} title={TITLE}>
+        <WithBooking key={salon.id} salon={salon} title={title}>
           {(booking) =>
             match(whyNoCheckout(booking))
-              .with(P.string, (why) => (
+              .with(P.nonNullable, (why) => (
                 <Unchangeable
-                  why={why}
+                  why={say(why)}
                   back={bookingHrefOf(salon.id, booking.id)}
                 />
               ))

@@ -3,18 +3,30 @@ import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
   FieldRow,
   Form,
+  type FormErrors,
   type FormProps,
-  inJapanese,
+  NO_ERRORS,
   RadioGroup,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useState } from 'react'
 import { methodLabelOf, takesCard } from '../../utils/payments'
 
+const { words } = adminSaleMessages
+const { payment: texts } = adminSaleMessages.payments
+
 export type PaymentFormProps = Pick<
   FormProps,
-  'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The methods the salon receives a payment by now, in its order */
   methods: readonly ModelsPaymentMethodResponse[]
   /** What is left to pay of the sale: the amount at first */
@@ -33,56 +45,64 @@ export const PaymentForm = ({
   methods,
   owed,
   currency,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
 }: PaymentFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const [chosen, setChosen] = useState('')
   const method = methods.find(({ id }) => id === chosen)
 
   return (
-    <Form {...form} errors={errors} submitLabel='支払いを記録する'>
+    <Form
+      {...form}
+      message={said.message}
+      errors={errors}
+      submitLabel={say(texts.submit)}
+    >
       <RadioGroup
-        label='支払い方法'
+        label={say(words.method)}
         name='paymentMethodId'
         required
         options={methods.map((one) => ({
           value: one.id,
-          label: methodLabelOf(one, currency),
+          label: say(methodLabelOf(one, currency)),
         }))}
         value={chosen}
         onChange={(event) => setChosen(event.target.value)}
-        description='括弧の中は、1 回に受け付ける金額です。'
-        error={errors['paymentMethodId']}
+        description={say(texts.methodDescription)}
+        error={said.errors['paymentMethodId']}
       />
       <TextField
         width='short'
-        label='金額'
+        label={say(words.amount)}
         name='amount'
         inputMode='numeric'
         autoComplete='off'
         required
         defaultValue={String(owed)}
-        description={`円の整数で入れます。未払い残額は${inJapanese(amountOf(owed, currency))}です。分けて受け取るときは、受け取った分を入れます。`}
-        error={errors['amount']}
+        description={say(texts.amountDescription(amountOf(owed, currency)))}
+        error={said.errors['amount']}
       />
       {method !== undefined && takesCard(method) && (
         <FieldRow>
           <TextField
-            label='カードの下 4 桁'
+            label={say(texts.cardLastFour)}
             name='cardLastFour'
             inputMode='numeric'
             autoComplete='off'
             maxLength={4}
-            description='わかるときだけ入れます。カードの番号そのものは入れません。'
-            error={errors['cardLastFour']}
+            description={say(texts.cardLastFourDescription)}
+            error={said.errors['cardLastFour']}
           />
           <TextField
-            label='カードのブランド'
+            label={say(texts.cardBrand)}
             name='cardBrand'
             autoComplete='off'
             maxLength={50}
-            description='わかるときだけ入れます（VISA、Mastercard、JCB など）。'
-            error={errors['cardBrand']}
+            description={say(texts.cardBrandDescription)}
+            error={said.errors['cardBrand']}
           />
         </FieldRow>
       )}
