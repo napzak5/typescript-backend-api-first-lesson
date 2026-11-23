@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as reviewSummaryStories from './review-summary.stories'
 
 const stories = composeStories(reviewSummaryStories)
@@ -70,5 +71,32 @@ describe('ReviewSummary', () => {
     // Assert
     expect(screen.getByText('評価なし')).toBeVisible()
     expect(screen.queryByRole('list')).toBeNull()
+  })
+})
+
+describe('ReviewSummary on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should count the reviews of every rating in English, one as one', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('list', { name: 'Reviews by rating' }))
+        .getAllByRole('listitem')
+        .map((rating) => rating.textContent),
+    ).toEqual([
+      '5 stars76 reviews',
+      '4 stars36 reviews',
+      '3 stars10 reviews',
+      '2 stars4 reviews',
+      '1 star2 reviews',
+    ])
   })
 })

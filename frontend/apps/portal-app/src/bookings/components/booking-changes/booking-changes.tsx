@@ -4,8 +4,13 @@ import {
   FormDialog,
   Note,
   TextArea,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalBookingMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import styles from './booking-changes.module.css'
+
+const { changes: words } = portalBookingMessages
 
 export type BookingChangesProps = {
   /**
@@ -14,7 +19,7 @@ export type BookingChangesProps = {
    */
   moveHref?: string | undefined
   /** When the booking is, as the dialog names it: 「2026年11月24日火曜日 10:30〜11:30」 */
-  when: string
+  when: LocalizedText
   /** The dialog that asks before the booking is cancelled is open */
   open: boolean
   /** The button that cancels was pressed: the dialog is to be opened */
@@ -25,7 +30,7 @@ export type BookingChangesProps = {
    */
   onClose: () => void
   /** What went wrong with the attempt to cancel; it is said in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The cancellation is on its way */
   pending?: boolean | undefined
   /** The customer confirmed, and gave this reason (`cancellationReason`) */
@@ -48,34 +53,34 @@ export const BookingChanges = ({
   pending = false,
   onCancel,
 }: BookingChangesProps) => {
+  const say = useSay()
+
   return (
     <div className={styles['changes']}>
       {moveHref === undefined ? (
-        <Note className={styles['note']}>
-          この予約の日時の変更は、サロンにお問い合わせください。
-        </Note>
+        <Note className={styles['note']}>{say(words.askTheSalon)}</Note>
       ) : (
-        <ButtonLink href={moveHref}>日時を変更する</ButtonLink>
+        <ButtonLink href={moveHref}>{say(words.move)}</ButtonLink>
       )}
       <Button variant='danger' onClick={onOpen}>
-        予約をキャンセルする
+        {say(words.cancel)}
       </Button>
       <FormDialog
         open={open}
         onClose={onClose}
-        title='予約をキャンセルしますか？'
-        description={`${when}の予約をキャンセルします。キャンセルした予約は、元に戻せません。`}
-        submitLabel='キャンセルを確定する'
+        title={say(words.cancelTitle)}
+        description={say(words.cancelDescription(when))}
+        submitLabel={say(words.confirmCancel)}
         submitVariant='danger'
-        message={message}
+        message={message === undefined ? undefined : say(message)}
         pending={pending}
         onSubmit={onCancel}
       >
         <TextArea
-          label='キャンセルの理由'
+          label={say(words.reason)}
           name='cancellationReason'
           rows={4}
-          description='サロンに伝えたいことがあれば、ご記入ください。空欄のままでも、キャンセルできます。'
+          description={say(words.reasonDescription)}
         />
       </FormDialog>
     </div>

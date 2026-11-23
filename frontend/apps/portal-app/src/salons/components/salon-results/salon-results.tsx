@@ -2,18 +2,20 @@ import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
   Note,
   PagedList,
   Rating,
   TagList,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { useId } from 'react'
 import { addressOf } from '../../utils/salon-format'
 import styles from './salon-results.module.css'
+
+const { results: words } = portalSalonMessages
 
 export type SalonResultsProps = {
   /** The salons that were read so far, in the order of the API; at least one */
@@ -43,21 +45,18 @@ export const SalonResults = ({
   onMore,
   salonHref,
 }: SalonResultsProps) => {
+  const say = useSay()
   const headingId = useId()
 
   return (
     <section className={styles['results']} aria-labelledby={headingId}>
       <h2 className={styles['heading']} id={headingId}>
-        検索結果
+        {say(words.title)}
       </h2>
       <PagedList
         items={salons}
         itemKey={({ id }) => id}
-        count={inJapanese(
-          countOf(total, salons.length, COUNTED.items, (count) =>
-            writtenInJapanese(`${count} 件のサロンが見つかりました`),
-          ),
-        )}
+        count={say(countOf(total, salons.length, COUNTED.items, words.found))}
         more={more}
         onMore={onMore}
       >
@@ -75,7 +74,10 @@ export const SalonResults = ({
             </p>
             {salon.description !== null && <p>{salon.description}</p>}
             {salon.features.length > 0 && (
-              <TagList label={`${salon.name}の特徴`} items={salon.features} />
+              <TagList
+                label={say(words.featuresOf(salon.name))}
+                items={salon.features}
+              />
             )}
           </>
         )}

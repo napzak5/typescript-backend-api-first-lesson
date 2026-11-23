@@ -3,12 +3,12 @@ import {
   Badge,
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
   PagedList,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { portalBookingMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { useId } from 'react'
 import {
   statusNameOf,
@@ -37,9 +37,7 @@ export type BookingListProps = {
   bookingHref: (booking: ModelsCustomerBookingResponse) => string
 }
 
-/** What stands where a name would, when what is named is no longer there */
-const NO_SALON = 'サロン（掲載を終えています）'
-const NO_SERVICE = 'メニュー（掲載を終えています）'
+const { list: words } = portalBookingMessages
 
 /**
  * The bookings of a customer: when each is, where, what, and where it
@@ -54,6 +52,7 @@ export const BookingList = ({
   onMore,
   bookingHref,
 }: BookingListProps) => {
+  const say = useSay()
   const headingId = useId()
 
   return (
@@ -64,11 +63,7 @@ export const BookingList = ({
       <PagedList
         items={rows}
         itemKey={({ booking }) => booking.id}
-        count={inJapanese(
-          countOf(total, rows.length, COUNTED.items, (count) =>
-            writtenInJapanese(`${count} 件の予約があります`),
-          ),
-        )}
+        count={say(countOf(total, rows.length, COUNTED.items, words.count))}
         more={more}
         onMore={onMore}
       >
@@ -79,20 +74,20 @@ export const BookingList = ({
             <>
               <h3 className={styles['when']}>
                 <Link href={bookingHref(booking)}>
-                  <span className={styles['whole']}>{when.day}</span>
+                  <span className={styles['whole']}>{say(when.day)}</span>
                   {when.hours !== null && (
                     <>
                       {' '}
-                      <span className={styles['whole']}>{when.hours}</span>
+                      <span className={styles['whole']}>{say(when.hours)}</span>
                     </>
                   )}
                 </Link>
               </h3>
-              <p>{salon?.name ?? NO_SALON}</p>
-              <p>{serviceName ?? NO_SERVICE}</p>
+              <p>{salon?.name ?? say(words.noSalon)}</p>
+              <p>{serviceName ?? say(words.noService)}</p>
               <p>
                 <Badge tone={statusToneOf(booking.status)}>
-                  {statusNameOf(booking.status)}
+                  {say(statusNameOf(booking.status))}
                 </Badge>
               </p>
             </>

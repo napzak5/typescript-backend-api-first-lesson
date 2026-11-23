@@ -1,12 +1,12 @@
 import {
   countNarrowing,
   FilterForm,
-  inJapanese,
   Select,
   TextField,
   useFilterValues,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import * as formats from '@beauty-salon-shared/i18n/formats'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import {
   LONGEST,
   MIN_RATINGS,
@@ -24,10 +24,7 @@ export type SalonSearchFormProps = {
   onSubmit: (values: FormData) => void
 }
 
-const RATINGS = MIN_RATINGS.map((rating) => ({
-  value: String(rating),
-  label: `${inJapanese(formats.numberOf(rating, { most: 1, least: 1 }))} 以上`,
-}))
+const { searchForm: words } = portalSalonMessages
 
 /** What the controls hold, under the names of the conditions */
 type Values = Record<keyof SalonConditions, string>
@@ -58,41 +55,45 @@ export const SalonSearchForm = ({
   clearHref,
   onSubmit,
 }: SalonSearchFormProps) => {
+  const say = useSay()
   const [values, hold] = useFilterValues(queryOf(conditions).toString(), () =>
     valuesOf(conditions),
   )
 
   return (
     <FilterForm
-      label='サロンを探す'
+      label={say(portalSalonMessages.search.title)}
       clearHref={narrows(conditions) ? clearHref : undefined}
       onSubmit={onSubmit}
       conditionCount={countNarrowing(valuesOf(conditions), COUNTED)}
       conditions={
         <>
           <TextField
-            label='都道府県'
+            label={say(words.prefecture)}
             name='prefecture'
             value={values.prefecture}
             onChange={(event) => hold('prefecture', event.target.value)}
             maxLength={LONGEST.prefecture}
             autoComplete='address-level1'
-            description='サロンが登録した表記と同じもの（例: 東京都）'
+            description={say(words.prefectureDescription)}
           />
           <TextField
-            label='市区町村'
+            label={say(words.city)}
             name='city'
             value={values.city}
             onChange={(event) => hold('city', event.target.value)}
             maxLength={LONGEST.city}
             autoComplete='address-level2'
-            description='サロンが登録した表記と同じもの（例: 渋谷区）'
+            description={say(words.cityDescription)}
           />
           <Select
-            label='評価'
+            label={say(words.rating)}
             name='minRating'
-            options={RATINGS}
-            placeholder='指定なし'
+            options={MIN_RATINGS.map((rating) => ({
+              value: String(rating),
+              label: say(words.atLeast(rating)),
+            }))}
+            placeholder={say(words.anyRating)}
             value={values.minRating}
             onChange={(event) => hold('minRating', event.target.value)}
           />
@@ -100,14 +101,14 @@ export const SalonSearchForm = ({
       }
     >
       <TextField
-        label='キーワード'
+        label={say(words.keyword)}
         name='keyword'
         autoComplete='off'
         type='search'
         value={values.keyword}
         onChange={(event) => hold('keyword', event.target.value)}
         maxLength={LONGEST.keyword}
-        description='サロンの名前か紹介文にある言葉'
+        description={say(words.keywordDescription)}
       />
     </FilterForm>
   )

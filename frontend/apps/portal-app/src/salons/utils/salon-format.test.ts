@@ -1,27 +1,26 @@
 import type {
   ModelsBusinessHours,
   ModelsOpeningHours,
-  ModelsStaffLevelType,
 } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { salon } from '../components/examples'
 import {
   addressOf,
-  amountOf,
-  calendarDateOf,
   comingDays,
   dateAt,
   dayOf,
   detailRatingsOf,
-  durationOf,
   hoursOf,
-  levelNameOf,
   postedOf,
   telephoneHrefOf,
-  timeOfDayAt,
   weekdayOf,
   weeklyHoursOf,
 } from './salon-format'
+
+/** A day of the calendar or of the week on which the salon does not open */
+const CLOSED_ON_A_DATE = { en: 'Closed', ja: '休業' }
+const CLOSED_ON_A_WEEKDAY = { en: 'Closed', ja: '定休日' }
 
 const day = (
   date: string,
@@ -56,20 +55,6 @@ const NO_DETAIL = {
   valueRating: null,
 }
 
-describe('levelNameOf', () => {
-  const LEVELS: [ModelsStaffLevelType, string][] = [
-    ['junior', 'ジュニア'],
-    ['stylist', 'スタイリスト'],
-    ['senior', 'シニア'],
-    ['expert', 'エキスパート'],
-    ['director', 'ディレクター'],
-  ]
-
-  it.each(LEVELS)('should name the level %s: %s', (level, name) => {
-    expect(levelNameOf(level)).toBe(name)
-  })
-})
-
 describe('addressOf', () => {
   it('should put the parts of the address in one line, as the salon wrote them', () => {
     expect(addressOf(salon)).toBe(
@@ -82,46 +67,6 @@ describe('addressOf', () => {
       '東京都 渋谷区 神宮前 4-1-1',
     )
   })
-})
-
-describe('amountOf', () => {
-  it.each([
-    [5500, 'JPY', '￥5,500'],
-    [0, 'JPY', '￥0'],
-    [1234567, 'JPY', '￥1,234,567'],
-    [45.5, 'USD', '$45.50'],
-    [30, 'EUR', '€30.00'],
-  ])('should write %d in %s as %s', (amount, currency, written) => {
-    expect(amountOf(amount, currency)).toBe(written)
-  })
-})
-
-describe('durationOf', () => {
-  it.each([
-    [30, '30 分'],
-    [45, '45 分'],
-    [60, '1 時間'],
-    [90, '1 時間 30 分'],
-    [120, '2 時間'],
-    [245, '4 時間 5 分'],
-    [0, '0 分'],
-  ])('should write %d minutes as %s', (minutes, written) => {
-    expect(durationOf(minutes)).toBe(written)
-  })
-})
-
-describe('calendarDateOf', () => {
-  it.each([
-    ['2026-11-23', '11月23日（月）'],
-    ['2026-11-25', '11月25日（水）'],
-    ['2027-01-01', '1月1日（金）'],
-    ['2028-02-29', '2月29日（火）'],
-  ])(
-    'should write the date %s with its day of the week: %s',
-    (date, written) => {
-      expect(calendarDateOf(date)).toBe(written)
-    },
-  )
 })
 
 describe('dateAt', () => {
@@ -143,54 +88,44 @@ describe('dateAt', () => {
 
 describe('dayOf', () => {
   it('should write the day a moment falls on at the salon', () => {
-    expect(dayOf('2026-11-10T14:30:00.000Z', 'Asia/Tokyo')).toBe(
-      '2026年11月10日',
-    )
-    expect(dayOf('2026-11-10T15:00:00.000Z', 'Asia/Tokyo')).toBe(
-      '2026年11月11日',
-    )
-    expect(dayOf('2026-11-10T15:00:00.000Z', 'Europe/London')).toBe(
-      '2026年11月10日',
-    )
+    expect(dayOf('2026-11-10T14:30:00.000Z', 'Asia/Tokyo')).toEqual({
+      en: 'November 10, 2026',
+      ja: '2026年11月10日',
+    })
+    expect(dayOf('2026-11-10T15:00:00.000Z', 'Asia/Tokyo')).toEqual({
+      en: 'November 11, 2026',
+      ja: '2026年11月11日',
+    })
+    expect(dayOf('2026-11-10T15:00:00.000Z', 'Europe/London')).toEqual({
+      en: 'November 10, 2026',
+      ja: '2026年11月10日',
+    })
   })
 })
 
 describe('weekdayOf', () => {
   it('should write the day a moment falls on at the salon, with its day of the week', () => {
-    expect(weekdayOf('2026-11-20T01:00:00.000Z', 'Asia/Tokyo')).toBe(
-      '2026年11月20日金曜日',
-    )
+    expect(weekdayOf('2026-11-20T01:00:00.000Z', 'Asia/Tokyo')).toEqual({
+      en: 'Friday, November 20, 2026',
+      ja: '2026年11月20日金曜日',
+    })
   })
 
-  it.each([
-    ['Asia/Tokyo', '2026年11月21日土曜日'],
-    ['Europe/London', '2026年11月20日金曜日'],
-    ['America/Los_Angeles', '2026年11月20日金曜日'],
+  it.each<[string, LocalizedText]>([
+    [
+      'Asia/Tokyo',
+      { en: 'Saturday, November 21, 2026', ja: '2026年11月21日土曜日' },
+    ],
+    [
+      'Europe/London',
+      { en: 'Friday, November 20, 2026', ja: '2026年11月20日金曜日' },
+    ],
+    [
+      'America/Los_Angeles',
+      { en: 'Friday, November 20, 2026', ja: '2026年11月20日金曜日' },
+    ],
   ])('should be the day it is at a salon in %s', (timezone, day) => {
-    expect(weekdayOf('2026-11-20T15:00:00.000Z', timezone)).toBe(day)
-  })
-})
-
-describe('timeOfDayAt', () => {
-  it.each([
-    ['Asia/Tokyo', '10:00'],
-    ['Asia/Kolkata', '06:30'],
-    ['Europe/London', '01:00'],
-    ['America/Los_Angeles', '17:00'],
-  ])('should be the time of day it is at a salon in %s', (timezone, time) => {
-    expect(timeOfDayAt('2026-11-20T01:00:00.000Z', timezone)).toBe(time)
-  })
-
-  it('should write the hours and the minutes with two digits each', () => {
-    expect(timeOfDayAt('2026-11-20T00:05:00.000Z', 'Asia/Tokyo')).toBe('09:05')
-  })
-
-  it('should write midnight as 00:00, and not as the 24th hour', () => {
-    expect(timeOfDayAt('2026-11-20T15:00:00.000Z', 'Asia/Tokyo')).toBe('00:00')
-  })
-
-  it('should leave out the seconds', () => {
-    expect(timeOfDayAt('2026-11-20T01:00:59.999Z', 'Asia/Tokyo')).toBe('10:00')
+    expect(weekdayOf('2026-11-20T15:00:00.000Z', timezone)).toEqual(day)
   })
 })
 
@@ -229,11 +164,16 @@ describe('comingDays', () => {
 
 describe('hoursOf', () => {
   it('should say from when until when, without the seconds', () => {
-    expect(hoursOf(day('2026-11-23'))).toBe('10:00〜20:00')
+    expect(hoursOf(day('2026-11-23'))).toEqual({
+      en: '10:00–20:00',
+      ja: '10:00〜20:00',
+    })
   })
 
   it('should say that the salon is closed on a holiday, whatever times the day carries', () => {
-    expect(hoursOf(day('2026-11-23', { isHoliday: true }))).toBe('休業')
+    expect(hoursOf(day('2026-11-23', { isHoliday: true }))).toEqual(
+      CLOSED_ON_A_DATE,
+    )
   })
 
   it.each([
@@ -241,7 +181,7 @@ describe('hoursOf', () => {
     ['no closing time', { closeTime: null }],
     ['neither', { openTime: null, closeTime: null }],
   ])('should say that the salon is closed on a day with %s', (_, hours) => {
-    expect(hoursOf(day('2026-11-23', hours))).toBe('休業')
+    expect(hoursOf(day('2026-11-23', hours))).toEqual(CLOSED_ON_A_DATE)
   })
 })
 
@@ -253,21 +193,26 @@ describe('weeklyHoursOf', () => {
         'Asia/Tokyo',
       ).map(({ day: dayOfWeek, name }) => [dayOfWeek, name]),
     ).toEqual([
-      ['monday', '月曜日'],
-      ['tuesday', '火曜日'],
-      ['wednesday', '水曜日'],
-      ['thursday', '木曜日'],
-      ['friday', '金曜日'],
-      ['saturday', '土曜日'],
-      ['sunday', '日曜日'],
+      ['monday', { en: 'Monday', ja: '月曜日' }],
+      ['tuesday', { en: 'Tuesday', ja: '火曜日' }],
+      ['wednesday', { en: 'Wednesday', ja: '水曜日' }],
+      ['thursday', { en: 'Thursday', ja: '木曜日' }],
+      ['friday', { en: 'Friday', ja: '金曜日' }],
+      ['saturday', { en: 'Saturday', ja: '土曜日' }],
+      ['sunday', { en: 'Sunday', ja: '日曜日' }],
     ])
   })
 
-  const hoursOfMonday = (entries: ModelsBusinessHours[]): string | undefined =>
+  const hoursOfMonday = (
+    entries: ModelsBusinessHours[],
+  ): LocalizedText | undefined =>
     weeklyHoursOf(entries, 'Asia/Tokyo').at(0)?.hours
 
   it('should say from when until when the salon is open', () => {
-    expect(hoursOfMonday([weekly()])).toBe('10:00〜20:00')
+    expect(hoursOfMonday([weekly()])).toEqual({
+      en: '10:00–20:00',
+      ja: '10:00〜20:00',
+    })
   })
 
   it('should list several slots of a day, and the breaks', () => {
@@ -284,11 +229,17 @@ describe('weeklyHoursOf', () => {
           ],
         }),
       ]),
-    ).toBe('09:00〜12:00、14:00〜18:30（休憩 10:00〜10:15、16:00〜16:15）')
+    ).toEqual({
+      en: '09:00–12:00, 14:00–18:30 (break 10:00–10:15, 16:00–16:15)',
+      ja: '09:00〜12:00、14:00〜18:30（休憩 10:00〜10:15、16:00〜16:15）',
+    })
   })
 
   it('should name no break for an empty list of breaks', () => {
-    expect(hoursOfMonday([weekly({ breakSlots: [] })])).toBe('10:00〜20:00')
+    expect(hoursOfMonday([weekly({ breakSlots: [] })])).toEqual({
+      en: '10:00–20:00',
+      ja: '10:00〜20:00',
+    })
   })
 
   it('should say the time the hours hold for, in the days of the salon', () => {
@@ -301,7 +252,10 @@ describe('weeklyHoursOf', () => {
           },
         }),
       ]),
-    ).toBe('10:00〜20:00（2026年12月1日〜2026年12月31日）')
+    ).toEqual({
+      en: '10:00–20:00 (December 1, 2026 – December 31, 2026)',
+      ja: '10:00〜20:00（2026年12月1日〜2026年12月31日）',
+    })
   })
 
   it.each([
@@ -309,7 +263,7 @@ describe('weeklyHoursOf', () => {
     ['has no slot', [weekly({ operatingSlots: [] })]],
     ['has no entry', [weekly({ dayOfWeek: 'tuesday' })]],
   ])('should say that the salon is closed on a day that %s', (_, entries) => {
-    expect(hoursOfMonday(entries)).toBe('定休日')
+    expect(hoursOfMonday(entries)).toEqual(CLOSED_ON_A_WEEKDAY)
   })
 
   it('should read the first entry of a day, as the API does', () => {
@@ -318,12 +272,12 @@ describe('weeklyHoursOf', () => {
         weekly({ operatingSlots: [{ startTime: '08:00', endTime: '12:00' }] }),
         weekly({ operatingSlots: [{ startTime: '13:00', endTime: '22:00' }] }),
       ]),
-    ).toBe('08:00〜12:00')
+    ).toEqual({ en: '08:00–12:00', ja: '08:00〜12:00' })
   })
 
   it('should say that every day is closed for a salon without an entry', () => {
     expect(weeklyHoursOf([], 'Asia/Tokyo').map(({ hours }) => hours)).toEqual(
-      Array.from({ length: 7 }, () => '定休日'),
+      Array.from({ length: 7 }, () => CLOSED_ON_A_WEEKDAY),
     )
   })
 })
@@ -335,7 +289,10 @@ describe('postedOf', () => {
         { title: 'また行きます', createdAt: '2026-11-10T05:30:00.000Z' },
         'Asia/Tokyo',
       ),
-    ).toBe('「また行きます」（2026年11月10日 投稿）')
+    ).toEqual({
+      en: '“また行きます” (posted November 10, 2026)',
+      ja: '「また行きます」（2026年11月10日 投稿）',
+    })
   })
 
   it('should name a review without a title by the day alone', () => {
@@ -344,14 +301,20 @@ describe('postedOf', () => {
         { title: null, createdAt: '2026-11-10T05:30:00.000Z' },
         'Asia/Tokyo',
       ),
-    ).toBe('2026年11月10日 投稿')
+    ).toEqual({ en: 'posted November 10, 2026', ja: '2026年11月10日 投稿' })
   })
 
   it('should take the day where the salon is: late in the evening in Tokyo is the next day in Auckland', () => {
     const review = { title: null, createdAt: '2026-11-10T14:30:00.000Z' }
 
-    expect(postedOf(review, 'Asia/Tokyo')).toBe('2026年11月10日 投稿')
-    expect(postedOf(review, 'Pacific/Auckland')).toBe('2026年11月11日 投稿')
+    expect(postedOf(review, 'Asia/Tokyo')).toEqual({
+      en: 'posted November 10, 2026',
+      ja: '2026年11月10日 投稿',
+    })
+    expect(postedOf(review, 'Pacific/Auckland')).toEqual({
+      en: 'posted November 11, 2026',
+      ja: '2026年11月11日 投稿',
+    })
   })
 })
 
@@ -376,13 +339,16 @@ describe('detailRatingsOf', () => {
         staffRating: 2,
         serviceRating: 1,
       }),
-    ).toBe('サービス 1・スタッフ 2・雰囲気 3・清潔さ 5・価格 4')
+    ).toEqual({
+      en: 'Service 1 · Staff 2 · Atmosphere 3 · Cleanliness 5 · Value 4',
+      ja: 'サービス 1・スタッフ 2・雰囲気 3・清潔さ 5・価格 4',
+    })
   })
 
   it('should leave out a rating that was not given', () => {
     expect(
       detailRatingsOf({ ...NO_DETAIL, staffRating: 5, valueRating: 3 }),
-    ).toBe('スタッフ 5・価格 3')
+    ).toEqual({ en: 'Staff 5 · Value 3', ja: 'スタッフ 5・価格 3' })
   })
 
   it('should be nothing when none was given', () => {

@@ -32,7 +32,7 @@ export const times: Time[] = Array.from({ length: 14 }, (_, index) => {
 
   return {
     startTime: moment(minutes),
-    label: timeOfDay(minutes),
+    label: { en: timeOfDay(minutes), ja: timeOfDay(minutes) },
     staffIds: bookableStaff
       .slice(0, minutes < 180 ? 2 : 1)
       .map((member) => member.id),
@@ -85,7 +85,10 @@ export const booking: ModelsCustomerBookingResponse = {
 }
 
 /** When the booking of the stories is, as a sentence names it */
-export const WHEN = '2026年11月24日火曜日 10:30〜11:30'
+export const WHEN = {
+  en: 'Tuesday, November 24, 2026, 10:30–11:30',
+  ja: '2026年11月24日火曜日 10:30〜11:30',
+}
 
 /**
  * The bookings of a list, the earliest visit first: the cut that waits for

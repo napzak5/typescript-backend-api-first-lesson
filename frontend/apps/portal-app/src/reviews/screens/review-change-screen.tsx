@@ -124,11 +124,13 @@ const Change = ({ own, onGone }: ChangeProps) => {
             },
             {
               term: '投稿日',
-              description: dayOf(
-                review.createdAt,
-                timezoneOf(
-                  own,
-                  Intl.DateTimeFormat().resolvedOptions().timeZone,
+              description: inJapanese(
+                dayOf(
+                  review.createdAt,
+                  timezoneOf(
+                    own,
+                    Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  ),
                 ),
               ),
             },

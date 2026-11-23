@@ -8,15 +8,19 @@ import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   moreOfRows,
   Navigation,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  portalBookingMessages,
+  portalSalonMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
 import { useInfiniteQuery, useQueries } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -36,11 +40,14 @@ import {
   whenIn,
 } from '../utils/own-bookings'
 
-const TITLE = '予約の一覧'
+const { list: words } = portalBookingMessages
 
-const LIST_NAMES: Record<When, string> = {
-  upcoming: 'これからの予約',
-  past: 'これまでの予約',
+/** What is read for the lists, as the sentence of a read that came to nothing names it */
+const READ = portalBookingMessages.names.bookings
+
+const LIST_NAMES: Record<When, LocalizedText> = {
+  upcoming: words.upcoming,
+  past: words.past,
 }
 
 const UNREAD_TYPES: readonly string[] = ['tooManyRequests', 'failed']
@@ -55,6 +62,7 @@ type BookingsProps = {
  * booking reads them, and shows a booking when its names are there.
  */
 const Bookings = ({ when }: BookingsProps) => {
+  const say = useSay()
   // A customer books at salons of more than one time zone: the day that
   // parts the visits to come from those that were is the day where the
   // customer is
@@ -109,22 +117,26 @@ const Bookings = ({ when }: BookingsProps) => {
   }
 
   return match(listing)
-    .with(undefined, () => <LoadingIndicator label='予約を読み込んでいます' />)
+    .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
     .with({ type: 'unread' }, ({ reason }) => (
       <UnreadNotice
-        message={inJapanese(unreadMessageOf(writtenInJapanese('予約'), reason))}
+        message={say(unreadMessageOf(READ, reason))}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
     ))
     .with({ type: 'listed', items: [] }, () =>
       when === 'past' ? (
-        <EmptyState title='これまでの予約はありません' />
+        <EmptyState title={say(words.nonePast)} />
       ) : (
         <EmptyState
-          title='これからの予約はありません'
-          description='サロンを探して、メニューから予約できます。'
-          actions={<ButtonLink href='/'>サロンを探す</ButtonLink>}
+          title={say(words.noneUpcoming)}
+          description={say(words.noneUpcomingDescription)}
+          actions={
+            <ButtonLink href='/'>
+              {say(portalSalonMessages.search.title)}
+            </ButtonLink>
+          }
         />
       ),
     )
@@ -132,19 +144,15 @@ const Bookings = ({ when }: BookingsProps) => {
       match([rows, rest])
         .with([[], { type: 'unread' }], ([, { reason }]) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('予約'), reason),
-            )}
+            message={say(unreadMessageOf(READ, reason))}
             onRetry={readNamesAgain}
             pending={readingNamesAgain}
           />
         ))
-        .with([[], P._], () => (
-          <LoadingIndicator label='予約を読み込んでいます' />
-        ))
+        .with([[], P._], () => <LoadingIndicator label={say(words.loading)} />)
         .otherwise(() => (
           <BookingList
-            title={LIST_NAMES[when]}
+            title={say(LIST_NAMES[when])}
             rows={rows}
             total={total}
             more={moreOfRows(
@@ -170,26 +178,27 @@ const Bookings = ({ when }: BookingsProps) => {
 }
 
 const OwnBookings = () => {
+  const say = useSay()
   const [query] = useSearchParams()
   const when = whenIn(query)
 
   return (
     <>
       <PageHeader
-        title={TITLE}
-        description='日時の変更とキャンセルは、それぞれの予約の内容の画面から行えます。'
+        title={say(words.title)}
+        description={say(words.description)}
       />
       <Navigation
-        label='予約の時期'
+        label={say(words.periods)}
         items={[
           {
             href: listHrefOf('upcoming'),
-            label: LIST_NAMES.upcoming,
+            label: say(LIST_NAMES.upcoming),
             current: when === 'upcoming',
           },
           {
             href: listHrefOf('past'),
-            label: LIST_NAMES.past,
+            label: say(LIST_NAMES.past),
             current: when === 'past',
           },
         ]}
@@ -205,12 +214,16 @@ const OwnBookings = () => {
  * behind a link those that were. Which of the two is shown is in the
  * address, so a reload and the way back from a booking show the same list.
  */
-export const OwnBookingsScreen = () => (
-  <RequireSession
-    roles={CUSTOMERS}
-    signInNotice='予約を確認するには、サインインしてください。'
-    signInHelp={<SignInHelp />}
-  >
-    <OwnBookings />
-  </RequireSession>
-)
+export const OwnBookingsScreen = () => {
+  const say = useSay()
+
+  return (
+    <RequireSession
+      roles={CUSTOMERS}
+      signInNotice={say(portalBookingMessages.signInToSee)}
+      signInHelp={<SignInHelp />}
+    >
+      <OwnBookings />
+    </RequireSession>
+  )
+}

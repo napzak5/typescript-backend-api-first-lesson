@@ -1,4 +1,5 @@
 import { applications } from '@beauty-salon-frontend/brand'
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
 import {
@@ -1235,5 +1236,88 @@ describe('the screens of a booking, against the API', () => {
       // Assert
       expect(await findAccessibilityViolations()).toEqual([])
     })
+  })
+})
+
+describe('the screens of a booking on a page in English, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should book a time in English, and show the booking as English writes it', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    const date = await openDay({ [HIROSHI]: '10:00', [MIKA]: '11:00' })
+    renderAt(`${await bookingPathOf()}?date=${date}`)
+    const user = userEvent.setup()
+    expect(await heading('Book')).toBeVisible()
+    expect(
+      detailsIn(await screen.findByRole('region', { name: 'Your booking' })),
+    ).toEqual({
+      Salon: TOKYO,
+      Service: LADIES_CUT,
+      Duration: '1 hr',
+      Price: '¥5,500 (tax included)',
+    })
+    expect(
+      (await screen.findByRole('combobox', { name: 'Staff' })).firstChild
+        ?.textContent,
+    ).toBe('No preference')
+
+    // Act
+    await user.click(await screen.findByRole('radio', { name: '10:00' }))
+    await user.type(
+      screen.getByRole('textbox', { name: 'Requests' }),
+      'A little shorter, please',
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Book with these details' }),
+    )
+
+    // Assert
+    expect(await heading('Booking details')).toHaveFocus()
+    expect(statusMessages()).toContain('Your booking was received.')
+    expect(
+      detailsIn(screen.getByRole('region', { name: /^Booking number BK-/ })),
+    ).toEqual({
+      Status:
+        'Awaiting confirmationThe booking is confirmed once the salon has checked it.',
+      Salon: TOKYO,
+      Service: LADIES_CUT,
+      Staff: HIROSHI,
+      'Date and time': `${new Intl.DateTimeFormat('en-US', {
+        dateStyle: 'full',
+        timeZone: 'Asia/Tokyo',
+      }).format(new Date(momentAt(date, '10:00')))} 10:00–11:00 (1 hr)`,
+      Price: '¥5,500',
+      Requests: 'A little shorter, please',
+    })
+  })
+
+  it('should say in English that a time has to be chosen, and book nothing', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    const date = await openDay({ [HIROSHI]: '10:00' })
+    renderAt(`${await bookingPathOf()}?date=${date}`)
+    await screen.findByRole('radiogroup', { name: 'Start time' })
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Book with these details' }),
+    )
+
+    // Assert
+    expect(
+      screen.getByRole('radiogroup', { name: 'Start time' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Choose a start time.'),
+    )
+    expect(screen.getByRole('radio', { name: '10:00' })).toHaveFocus()
   })
 })

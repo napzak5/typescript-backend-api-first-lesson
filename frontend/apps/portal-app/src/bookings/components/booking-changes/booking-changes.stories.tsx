@@ -1,3 +1,4 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { fn } from 'storybook/test'
@@ -47,8 +48,7 @@ export const Sending: Story = {
 export const Unsent: Story = {
   args: {
     open: true,
-    message:
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: NOT_SENT_MESSAGE,
   },
 }
 

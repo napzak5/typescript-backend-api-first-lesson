@@ -12,14 +12,18 @@ import {
   Alert,
   ButtonLink,
   Card,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  useSay,
   useScreenHeadingFocus,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  portalBookingMessages,
+  portalSalonMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
@@ -46,7 +50,7 @@ import {
   serviceIdOf,
 } from '../utils/own-bookings'
 
-const TITLE = '予約の内容'
+const { detail: words, names } = portalBookingMessages
 
 const GONE_OR_FOUND = P.union('found', 'notFound')
 
@@ -65,6 +69,7 @@ type BookingDetailsProps = {
  * took place has its review there instead, or the way to write one.
  */
 const BookingDetails = ({ booking }: BookingDetailsProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const focusHeading = useScreenHeadingFocus()
@@ -84,9 +89,9 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
   })
   const [asking, setAsking] = useState(false)
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [unsent, setUnsent] = useState<string>()
+  const [unsent, setUnsent] = useState<LocalizedText>()
   /** What the API refused: said on the page, where the booking is read again */
-  const [refusal, setRefusal] = useState<string>()
+  const [refusal, setRefusal] = useState<LocalizedText>()
   const changeable = isChangeable(booking, new Date())
   /** The customer cancelled here, or tried to: the buttons may go with what they did */
   const answered = useRef(false)
@@ -109,7 +114,7 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
         const read: OwnBookingRead = { type: 'found', booking: outcome.booking }
         answered.current = true
         queryClient.setQueryData(own, read)
-        notify({ tone: 'success', message: '予約をキャンセルしました。' })
+        notify({ tone: 'success', message: words.cancelled })
         queryClient.removeQueries({ queryKey: OWN_BOOKING_LISTS })
         return
       }
@@ -147,7 +152,7 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
       [undefined, P._, P._],
       [P._, undefined, P._],
       [P._, P._, undefined],
-      () => <LoadingIndicator label='予約の内容を読み込んでいます' />,
+      () => <LoadingIndicator label={say(words.loadingDetails)} />,
     )
     .with(
       [{ type: GONE_OR_FOUND }, { type: GONE_OR_FOUND }, { type: 'found' }],
@@ -156,8 +161,10 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
 
         return (
           <>
-            {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
-            <Card title={`予約番号 ${booking.bookingNumber}`}>
+            {refusal !== undefined && (
+              <Alert tone='danger'>{say(refusal)}</Alert>
+            )}
+            <Card title={say(words.numbered(booking.bookingNumber))}>
               <BookingSummary
                 booking={booking}
                 salon={found}
@@ -205,9 +212,7 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
       [P._, P._, { type: P.union(...UNREAD_TYPES) }],
       (reads) => (
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('予約の内容'), whyUnread(reads)),
-          )}
+          message={say(unreadMessageOf(names.details, whyUnread(reads)))}
           onRetry={again}
           pending={salon.isFetching || service.isFetching || staff.isFetching}
         />
@@ -217,6 +222,7 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
 }
 
 const OwnBooking = () => {
+  const say = useSay()
   const { bookingId = '' } = useParams()
   const read = useQuery({
     queryKey: ['own', 'bookings', bookingId],
@@ -229,33 +235,33 @@ const OwnBooking = () => {
   return match(read.data)
     .with(undefined, () => (
       <>
-        <PageHeader title={TITLE} />
-        <LoadingIndicator label='予約を読み込んでいます' />
+        <PageHeader title={say(words.title)} />
+        <LoadingIndicator label={say(words.loading)} />
       </>
     ))
     .with({ type: 'found' }, ({ booking }) => (
       <>
-        <PageHeader title={TITLE} />
+        <PageHeader title={say(words.title)} />
         <BookingDetails booking={booking} />
-        <ButtonLink href='/bookings'>予約の一覧へ</ButtonLink>
+        <ButtonLink href='/bookings'>{say(words.toList)}</ButtonLink>
       </>
     ))
     .with({ type: 'notFound' }, () => (
       <>
         <PageHeader
-          title='予約が見つかりません'
-          description='アドレスが正しいか、お確かめください。ほかのアカウントで入れた予約は、表示できません。'
+          title={say(words.notFound)}
+          description={say(words.notFoundDescription)}
         />
-        <ButtonLink href='/'>サロンを探す</ButtonLink>
+        <ButtonLink href='/'>
+          {say(portalSalonMessages.search.title)}
+        </ButtonLink>
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
-        <PageHeader title={TITLE} />
+        <PageHeader title={say(words.title)} />
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('予約'), reason),
-          )}
+          message={say(unreadMessageOf(names.booking, reason))}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />
@@ -269,12 +275,16 @@ const OwnBooking = () => {
  * whom, and where it stands; and, until it begins, the ways to move it or
  * to cancel it.
  */
-export const BookingDetailScreen = () => (
-  <RequireSession
-    roles={CUSTOMERS}
-    signInNotice='予約を確認するには、サインインしてください。'
-    signInHelp={<SignInHelp />}
-  >
-    <OwnBooking />
-  </RequireSession>
-)
+export const BookingDetailScreen = () => {
+  const say = useSay()
+
+  return (
+    <RequireSession
+      roles={CUSTOMERS}
+      signInNotice={say(portalBookingMessages.signInToSee)}
+      signInHelp={<SignInHelp />}
+    >
+      <OwnBooking />
+    </RequireSession>
+  )
+}

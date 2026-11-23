@@ -2,14 +2,13 @@ import type {
   ModelsBusinessHours,
   ModelsOpeningHours,
 } from '@beauty-salon-frontend/api-client'
-import { EmptyState, Note } from '@beauty-salon-frontend/ui'
-import {
-  calendarDateOf,
-  comingDays,
-  hoursOf,
-  weeklyHoursOf,
-} from '../../utils/salon-format'
+import { EmptyState, Note, useSay } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { comingDays, hoursOf, weeklyHoursOf } from '../../utils/salon-format'
 import styles from './salon-hours.module.css'
+
+const { hours: words } = portalSalonMessages
 
 export type SalonHoursProps = {
   /** The hours of every week; `null` when the salon registered none */
@@ -42,41 +41,37 @@ export const SalonHours = ({
   timezone,
   today,
 }: SalonHoursProps) => {
+  const say = useSay()
   const dates = comingDays(openingHours, today, MOST_DATES)
 
   return (
     <div className={styles['hours']}>
       <div className={styles['part']}>
-        <h3 className={styles['title']}>曜日ごとの営業時間</h3>
+        <h3 className={styles['title']}>{say(words.weekly)}</h3>
         {businessHours === null ? (
-          <EmptyState
-            kind='part'
-            title='曜日ごとの営業時間は、登録されていません。'
-          />
+          <EmptyState kind='part' title={say(words.noWeekly)} />
         ) : (
           <dl className={styles['days']}>
             {weeklyHoursOf(businessHours, timezone).map((day) => (
               <div key={day.day} className={styles['day']}>
-                <dt>{day.name}</dt>
-                <dd className={styles['said']}>{day.hours}</dd>
+                <dt>{say(day.name)}</dt>
+                <dd className={styles['said']}>{say(day.hours)}</dd>
               </div>
             ))}
           </dl>
         )}
       </div>
       <div className={styles['part']}>
-        <h3 className={styles['title']}>日付ごとの営業時間</h3>
+        <h3 className={styles['title']}>{say(words.dated)}</h3>
         <Note size='small'>
-          {dates.length === 0
-            ? '日付ごとに決めた営業時間は、ありません。'
-            : '下の日は、曜日ごとの営業時間ではなく、このとおりに営業します。'}
+          {say(dates.length === 0 ? words.noDated : words.datedDescription)}
         </Note>
         {dates.length > 0 && (
           <dl className={styles['days']}>
             {dates.map((day) => (
               <div key={day.date} className={styles['day']}>
-                <dt>{calendarDateOf(day.date)}</dt>
-                <dd className={styles['said']}>{hoursOf(day)}</dd>
+                <dt>{say(formats.monthDayOf(day.date))}</dt>
+                <dd className={styles['said']}>{say(hoursOf(day))}</dd>
                 {remarksOf(day) !== '' && (
                   <dd className={styles['remarks']}>{remarksOf(day)}</dd>
                 )}

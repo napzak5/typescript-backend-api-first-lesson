@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { type ReactNode, useLayoutEffect, useState } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { plainSalon, salon } from '../examples'
 import { SalonResults, type SalonResultsProps } from './salon-results'
 import * as salonResultsStories from './salon-results.stories'
@@ -269,5 +270,40 @@ describe('SalonResults', () => {
 
     // Assert
     expect(document.body).toHaveFocus()
+  })
+})
+
+describe('SalonResults on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should count the salons it found in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Complete.run()
+
+    // Assert
+    const found = screen.getByRole('region', { name: 'Results' })
+    expect(within(found).getByText('2 salons found')).toBeVisible()
+    expect(
+      within(found).getByRole('list', {
+        name: 'Features of ヘアサロン こもれび 表参道',
+      }),
+    ).toBeVisible()
+  })
+
+  it('should say in English how many it shows of a list that was not counted', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotCounted.run()
+
+    // Assert
+    expect(screen.getByText('Showing 2 items')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Show more' })).toBeVisible()
   })
 })

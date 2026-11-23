@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { booking } from '../examples'
 import * as bookingChangesStories from './booking-changes.stories'
 
@@ -251,5 +252,79 @@ describe('BookingChanges', () => {
       // Assert
       expect(reasonControl()).toHaveValue('都合が悪くなりました')
     })
+  })
+})
+
+describe('BookingChanges on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name what can be done with a booking in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Offered.run()
+
+    // Assert
+    expect(
+      screen.getByRole('link', { name: 'Change the time' }),
+    ).toHaveAttribute('href', stories.Offered.args.moveHref)
+    expect(
+      screen.getByRole('button', { name: 'Cancel the booking' }),
+    ).toBeVisible()
+  })
+
+  it('should ask in English before the booking is cancelled, naming when it is', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Confirming.run()
+
+    // Assert
+    const asking = screen.getByRole('dialog', { name: 'Cancel the booking?' })
+    expect(asking).toHaveAccessibleDescription(
+      'This cancels the booking on Tuesday, November 24, 2026, 10:30–11:30. A cancelled booking cannot be restored.',
+    )
+    expect(
+      within(asking).getByRole('textbox', { name: 'Reason for cancelling' }),
+    ).toHaveAccessibleDescription(
+      'If there is anything you would like to tell the salon, write it here. You can cancel without it.',
+    )
+    expect(
+      within(asking).getByRole('button', { name: 'Confirm the cancellation' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English that the salon moves a booking it added to', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutMove.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Please contact the salon to change the time of this booking.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say in English in the dialog that the cancellation was not sent', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unsent.run()
+
+    // Assert
+    expect(
+      within(
+        screen.getByRole('dialog', { name: 'Cancel the booking?' }),
+      ).getByText('It could not be sent. Check your connection and try again.'),
+    ).toBeVisible()
   })
 })

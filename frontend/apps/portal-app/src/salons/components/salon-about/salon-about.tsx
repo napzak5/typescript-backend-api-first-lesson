@@ -4,10 +4,15 @@ import {
   DescriptionList,
   type DescriptionListItem,
   TagList,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { addressOf, telephoneHrefOf } from '../../utils/salon-format'
 import styles from './salon-about.module.css'
+
+const { about: words } = portalSalonMessages
 
 export type SalonAboutProps = {
   salon: ModelsSalonResponse
@@ -31,36 +36,40 @@ const Website = ({ url }: { url: string }) => {
 
 /** What a salon says about itself, and how it is reached. */
 export const SalonAbout = ({ salon }: SalonAboutProps) => {
+  const say = useSay()
   const items: DescriptionListItem[] = [
     {
-      term: '住所',
+      term: say(words.address),
       description: [
-        ...(salon.postalCode === null ? [] : [`〒${salon.postalCode}`]),
+        ...(salon.postalCode === null
+          ? []
+          : [say(words.postalCode(salon.postalCode))]),
         addressOf(salon),
       ].join(' '),
     },
     {
-      term: '電話番号',
+      term: say(words.phoneNumber),
       description: (
         <>
           <Telephone phoneNumber={salon.phoneNumber} />
           {salon.alternativePhone !== null && (
             <>
-              、<Telephone phoneNumber={salon.alternativePhone} />
+              {say(words.betweenPhoneNumbers)}
+              <Telephone phoneNumber={salon.alternativePhone} />
             </>
           )}
         </>
       ),
     },
     {
-      term: 'メールアドレス',
+      term: say(sessionMessages.signInForm.email),
       description: <a href={`mailto:${salon.email}`}>{salon.email}</a>,
     },
     ...(salon.websiteUrl === null
       ? []
       : [
           {
-            term: 'ウェブサイト',
+            term: say(words.website),
             description: <Website url={salon.websiteUrl} />,
           },
         ]),
@@ -68,17 +77,19 @@ export const SalonAbout = ({ salon }: SalonAboutProps) => {
       ? []
       : [
           {
-            term: '特徴',
-            description: <TagList label='特徴' items={salon.features} />,
+            term: say(words.features),
+            description: (
+              <TagList label={say(words.features)} items={salon.features} />
+            ),
           },
         ]),
     ...(salon.amenities.length === 0
       ? []
       : [
           {
-            term: '設備とサービス',
+            term: say(words.amenities),
             description: (
-              <TagList label='設備とサービス' items={salon.amenities} />
+              <TagList label={say(words.amenities)} items={salon.amenities} />
             ),
           },
         ]),

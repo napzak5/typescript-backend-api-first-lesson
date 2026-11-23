@@ -68,9 +68,14 @@
   font-weight: var(--font-weight-bold);
 }
 
+/* The parentheses of Japanese are as wide as a letter, and bring their own room */
 .tax {
   color: var(--color-text-muted);
   font-size: var(--font-size-small);
+}
+
+.tax:lang(en) {
+  margin-inline-start: var(--space-1);
 }
 
 @media (min-width: 40rem) {

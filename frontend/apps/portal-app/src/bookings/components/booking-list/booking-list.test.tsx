@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useLayoutEffect, useState } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { rows, rowWithoutNames } from '../examples'
 import { BookingList, type BookingListProps } from './booking-list'
 import * as bookingListStories from './booking-list.stories'
@@ -313,5 +314,44 @@ describe('BookingList', () => {
       // Assert
       expect(document.body).toHaveFocus()
     })
+  })
+})
+
+describe('BookingList on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should count the bookings, and say when each is and where it stands, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Complete.run()
+
+    // Assert
+    expect(within(list()).getByText('3 bookings')).toBeVisible()
+    expect(lines().at(0)).toEqual([
+      'Tuesday, November 24, 2026 10:30–11:30',
+      'ヘアサロン こもれび 表参道',
+      'レディースカット',
+      'Awaiting confirmation',
+    ])
+  })
+
+  it('should say in English that the salon or the service of a booking is no longer listed', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutNames.run()
+
+    // Assert
+    expect(lines().at(1)).toEqual([
+      'Tuesday, December 22, 2026',
+      'Salon (no longer listed)',
+      'Service (no longer listed)',
+      'Confirmed',
+    ])
   })
 })

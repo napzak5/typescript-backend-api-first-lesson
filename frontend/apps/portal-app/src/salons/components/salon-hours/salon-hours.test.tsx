@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as salonHoursStories from './salon-hours.stories'
 
 const stories = composeStories(salonHoursStories)
@@ -166,5 +167,68 @@ describe('SalonHours', () => {
     expect(dates).toHaveLength(14)
     expect(dates.at(0)).toBe('12月1日（火）')
     expect(dates.at(-1)).toBe('12月14日（月）')
+  })
+})
+
+describe('SalonHours on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the days of the week in English, and write the hours as English does', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(daysUnder('Hours by day of the week')).toEqual([
+      ['Monday', '10:00–20:00'],
+      ['Tuesday', 'Closed'],
+      ['Wednesday', '10:00–20:00'],
+      ['Thursday', '10:00–20:00'],
+      ['Friday', '10:00–20:00'],
+      ['Saturday', '10:00–20:00'],
+      ['Sunday', '10:00–20:00'],
+    ])
+    expect(daysUnder('Hours by date').map(([day]) => day)).toEqual([
+      'Mon, November 23',
+      'Wed, November 25',
+    ])
+  })
+
+  it('should say the breaks and the period of the hours of a week in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.BreaksAndPeriod.run()
+
+    // Assert
+    expect(daysUnder('Hours by day of the week')).toContainEqual([
+      'Monday',
+      '10:00–20:00 (break 13:00–14:00)',
+    ])
+    expect(daysUnder('Hours by day of the week')).toContainEqual([
+      'Sunday',
+      '09:00–12:00, 14:00–17:00 (December 1, 2026 – December 31, 2026)',
+    ])
+  })
+
+  it('should say in English that no hours are registered', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NothingRegistered.run()
+
+    // Assert
+    expect(
+      screen.getByText('No hours by day of the week are registered.'),
+    ).toBeVisible()
+    expect(
+      screen.getByText('No hours are set for particular dates.'),
+    ).toBeVisible()
   })
 })

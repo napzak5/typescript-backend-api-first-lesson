@@ -1,8 +1,17 @@
 import type { ModelsReviewResponse } from '@beauty-salon-frontend/api-client'
 import { webAddressOf } from '@beauty-salon-frontend/fields'
-import { Badge, Note, Rating, WrittenText } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  Note,
+  Rating,
+  useSay,
+  WrittenText,
+} from '@beauty-salon-frontend/ui'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { dayOf, detailRatingsOf } from '../../utils/salon-format'
 import styles from './review-content.module.css'
+
+const { reviews: words } = portalSalonMessages
 
 export type ReviewContentProps = {
   review: ModelsReviewResponse
@@ -20,6 +29,7 @@ export type ReviewContentProps = {
  * engine that it is what a user wrote.
  */
 export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
+  const say = useSay()
   const details = detailRatingsOf(review)
 
   return (
@@ -27,11 +37,11 @@ export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
       <p>
         <Rating value={review.overallRating} />
         <time className={styles['date']} dateTime={review.createdAt}>
-          {dayOf(review.createdAt, timezone)}
+          {say(dayOf(review.createdAt, timezone))}
         </time>
         {review.isVerified && (
           <Badge className={styles['verified']} tone='success'>
-            来店確認済み
+            {say(words.verified)}
           </Badge>
         )}
       </p>
@@ -41,9 +51,9 @@ export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
       {review.comment !== null && (
         <WrittenText className={styles['text']}>{review.comment}</WrittenText>
       )}
-      {details !== null && <Note size='small'>{details}</Note>}
+      {details !== null && <Note size='small'>{say(details)}</Note>}
       {review.imageUrls.length > 0 && (
-        <ul className={styles['pictures']} aria-label='写真'>
+        <ul className={styles['pictures']} aria-label={say(words.pictures)}>
           {review.imageUrls.map((image) => {
             const address = webAddressOf(image)
 
@@ -62,16 +72,16 @@ export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
         </ul>
       )}
       {review.helpfulCount > 0 && (
-        <Note size='small'>
-          {review.helpfulCount} 人が「参考になった」と答えています
-        </Note>
+        <Note size='small'>{say(words.helpfulCount(review.helpfulCount))}</Note>
       )}
       {review.ownerResponse !== null && (
         <div className={styles['response']}>
           <p className={styles['responseHead']}>
-            サロンからの返信
-            {review.ownerRespondedAt !== null &&
-              `（${dayOf(review.ownerRespondedAt, timezone)}）`}
+            {say(
+              review.ownerRespondedAt === null
+                ? words.response
+                : words.responseOn(dayOf(review.ownerRespondedAt, timezone)),
+            )}
           </p>
           <WrittenText className={styles['text']}>
             {review.ownerResponse}

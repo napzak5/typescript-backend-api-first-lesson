@@ -7,9 +7,11 @@ import {
   DescriptionList,
   Link,
   Note,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { durationOf } from '../../../salons/utils/salon-format'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { portalBookingMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import {
   statusNameOf,
   statusNoteOf,
@@ -35,8 +37,7 @@ export type BookingSummaryProps = {
   staffName: string | null
 }
 
-/** What stands where a name would, when the salon no longer shows what is named */
-const NO_LONGER_SHOWN = '（掲載を終えています）'
+const { summary: words } = portalBookingMessages
 
 /**
  * A booking as its customer reads it: where it stands, where and what it
@@ -49,6 +50,7 @@ export const BookingSummary = ({
   serviceName,
   staffName,
 }: BookingSummaryProps) => {
+  const say = useSay()
   const note = statusNoteOf(booking.status)
   const when = whenKnownOf(booking, salon?.timezone ?? null)
 
@@ -56,47 +58,63 @@ export const BookingSummary = ({
     <DescriptionList
       items={[
         {
-          term: '状態',
+          term: say(words.state),
           description: (
             <>
               <Badge tone={statusToneOf(booking.status)}>
-                {statusNameOf(booking.status)}
+                {say(statusNameOf(booking.status))}
               </Badge>
               {note !== undefined && (
                 <Note className={styles['note']} size='small'>
-                  {note}
+                  {say(note)}
                 </Note>
               )}
             </>
           ),
         },
         {
-          term: 'サロン',
+          term: say(words.salon),
           description:
             salon === null ? (
-              NO_LONGER_SHOWN
+              say(words.noLongerShown)
             ) : (
               <Link href={salonHref}>{salon.name}</Link>
             ),
         },
-        { term: 'メニュー', description: serviceName ?? NO_LONGER_SHOWN },
-        { term: '担当', description: staffName ?? NO_LONGER_SHOWN },
         {
-          term: '日時',
+          term: say(words.service),
+          description: serviceName ?? say(words.noLongerShown),
+        },
+        {
+          term: say(words.staff),
+          description: staffName ?? say(words.noLongerShown),
+        },
+        {
+          term: say(words.when),
           description: (
             <>
-              <span className={styles['whole']}>{when.day}</span>{' '}
+              <span className={styles['whole']}>{say(when.day)}</span>{' '}
               <span className={styles['whole']}>
-                {when.hours}（{durationOf(booking.duration)}）
+                {say(
+                  words.withDuration(
+                    when.hours,
+                    formats.durationOf(booking.duration),
+                  ),
+                )}
               </span>
             </>
           ),
         },
         ...(salon === null
           ? []
-          : [{ term: '料金', description: totalOf(booking, salon.currency) }]),
+          : [
+              {
+                term: say(words.price),
+                description: say(totalOf(booking, salon.currency)),
+              },
+            ]),
         {
-          term: 'ご要望',
+          term: say(words.request),
           description: <WrittenText>{booking.customerRequest}</WrittenText>,
         },
       ]}

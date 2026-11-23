@@ -1,4 +1,5 @@
 import { applications } from '@beauty-salon-frontend/brand'
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import {
@@ -1541,6 +1542,124 @@ describe('the bookings of a customer, against the API', () => {
       expect(
         await screen.findByText(/^この予約は確定しています。/),
       ).toBeVisible()
+    })
+  })
+})
+
+describe('the bookings of a customer on a page in English, against the API', () => {
+  const STATUS_NAMES_IN_ENGLISH: Record<string, string> = {
+    pending: 'Awaiting confirmation',
+    confirmed: 'Confirmed',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+  }
+
+  /** When a booking is, as a list on a page in English says it */
+  const whenInEnglishOf = ({
+    startTime,
+    endTime,
+  }: Pick<Stored, 'startTime' | 'endTime'>) =>
+    `${new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'full',
+      timeZone: 'Asia/Tokyo',
+    }).format(
+      new Date(startTime),
+    )} ${timeOfDay(startTime)}–${timeOfDay(endTime)}`
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should list the visits to come in English, and name the lists and where each booking stands', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    const upcoming = await storedBookings(CUSTOMER, 'upcoming')
+
+    // Act
+    renderAt('/bookings')
+
+    // Assert
+    const list = await listNamed('Upcoming bookings')
+    expect(linesIn(list)).toEqual(
+      upcoming.map((booking) => [
+        whenInEnglishOf(booking),
+        booking.salon,
+        booking.service,
+        STATUS_NAMES_IN_ENGLISH[booking.status],
+      ]),
+    )
+    expect(within(list).getByText('2 bookings')).toHaveRole('status')
+    expect(document.title).toBe(`Your bookings | ${TITLE}`)
+    expect(
+      within(screen.getByRole('navigation', { name: 'Period of the bookings' }))
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Upcoming bookings', 'Past bookings'])
+  })
+
+  it('should cancel a booking in English, after the dialog asked', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    const { id, bookingNumber } = await book()
+    renderAt(`/bookings/${id}`)
+    const user = userEvent.setup()
+    await user.click(
+      await screen.findByRole('button', { name: 'Cancel the booking' }),
+    )
+    const asking = screen.getByRole('dialog', { name: 'Cancel the booking?' })
+
+    // Act
+    await user.click(
+      within(asking).getByRole('button', { name: 'Confirm the cancellation' }),
+    )
+
+    // Assert
+    expect(await screen.findByText('The booking was cancelled.')).toBeVisible()
+    expect(await heading('Booking details')).toHaveFocus()
+    expect(statusMessages()).toContain('The booking was cancelled.')
+    expect(
+      detailsIn(
+        screen.getByRole('region', { name: `Booking number ${bookingNumber}` }),
+      ),
+    ).toMatchObject({ Status: 'Cancelled' })
+    expect(await rowOf(id)).toMatchObject({ status: 'cancelled' })
+  })
+
+  it('should move a booking in English to the time that was chosen', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    const { id, bookingNumber, date } = await book()
+    renderAt(
+      `/bookings/${id}/reschedule?staffId=${await staffId(MIKA)}&date=${date}`,
+    )
+    expect(await heading('Change the time')).toBeVisible()
+    await screen.findByRole('radiogroup', { name: 'Start time' })
+
+    // Act
+    await userEvent.click(screen.getByRole('radio', { name: '10:00' }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Change to this time' }),
+    )
+
+    // Assert
+    expect(await heading('Booking details')).toHaveFocus()
+    expect(statusMessages()).toContain('The time of the booking was changed.')
+    expect(
+      detailsIn(
+        screen.getByRole('region', { name: `Booking number ${bookingNumber}` }),
+      ),
+    ).toMatchObject({
+      Staff: MIKA,
+      'Date and time': `${new Intl.DateTimeFormat('en-US', {
+        dateStyle: 'full',
+        timeZone: 'Asia/Tokyo',
+      }).format(new Date(momentAt(date, '10:00')))} 10:00–11:00 (1 hr)`,
     })
   })
 })

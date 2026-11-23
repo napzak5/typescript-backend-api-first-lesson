@@ -1,4 +1,5 @@
 import { TextArea } from '@beauty-salon-frontend/ui'
+import { portalBookingMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { bookableStaff, DAY, TODAY, times } from '../examples'
@@ -84,14 +85,13 @@ export const TooManyRequests: Story = {
 
 /** The form was sent without a time */
 export const WithoutTimeChosen: Story = {
-  args: { errors: { startTime: '開始時刻を選択してください。' } },
+  args: { errors: { startTime: portalBookingMessages.flow.noStartTime } },
 }
 
 /** Somebody else booked the time first: the times were read again */
 export const Refused: Story = {
   args: {
-    message:
-      'この日時では、予約できませんでした。空いている時刻を読み込み直しましたので、選び直してください。予約できない状態が続くときは、サロンにお問い合わせください。',
+    message: portalBookingMessages.flow.notBooked,
     times: { type: 'listed', times: times.slice(1) },
   },
 }

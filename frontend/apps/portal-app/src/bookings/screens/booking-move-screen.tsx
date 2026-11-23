@@ -16,14 +16,15 @@ import {
   ButtonLink,
   Card,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalBookingMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
@@ -59,7 +60,7 @@ import {
   serviceIdOf,
 } from '../utils/own-bookings'
 
-const TITLE = '日時の変更'
+const { move: words, detail, names } = portalBookingMessages
 
 type MoveStepProps = {
   booking: ModelsCustomerBookingResponse
@@ -78,8 +79,9 @@ const MoveStep = ({ booking, salon, service, staff }: MoveStepProps) => {
   const [query, setQuery] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const say = useSay()
   const { notify } = useNotifications()
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const today = dateAt(new Date(), salon.timezone)
   const choice = choiceIn(query, today, staff)
   const slots = useQuery({
@@ -114,7 +116,7 @@ const MoveStep = ({ booking, salon, service, staff }: MoveStepProps) => {
       if (outcome.type === 'moved') {
         const read: OwnBookingRead = { type: 'found', booking: outcome.booking }
         queryClient.setQueryData(['own', 'bookings', booking.id], read)
-        notify({ tone: 'success', message: '予約の日時を変更しました。' })
+        notify({ tone: 'success', message: words.moved })
         queryClient.removeQueries({ queryKey: OWN_BOOKING_LISTS })
         void navigate(`/bookings/${booking.id}`)
         return
@@ -142,15 +144,11 @@ const MoveStep = ({ booking, salon, service, staff }: MoveStepProps) => {
   }
 
   return (
-    <Card title='新しい日時'>
+    <Card title={say(words.newTime)}>
       {booking.status === 'confirmed' && (
-        <Alert tone='info'>
-          この予約は確定しています。日時を変更すると「確定待ち」に戻り、サロンが内容を確認すると、あらためて確定します。
-        </Alert>
+        <Alert tone='info'>{say(words.confirmedNote)}</Alert>
       )}
-      <p>
-        いまの予約の時間と重なる時刻は、空いている時刻に表示されないことがあります。
-      </p>
+      <p>{say(words.overlapNote)}</p>
       <BookingForm
         staff={staff}
         choice={choice}
@@ -167,7 +165,7 @@ const MoveStep = ({ booking, salon, service, staff }: MoveStepProps) => {
           }))
           .exhaustive()}
         onRetry={() => void slots.refetch()}
-        submitLabel='この日時に変更する'
+        submitLabel={say(words.submit)}
         message={says.message}
         errors={says.errors}
         pending={move.isPending}
@@ -187,6 +185,7 @@ type BookingToMoveProps = {
  * is the salon's to move: the screen says so in place of the form.
  */
 const BookingToMove = ({ booking }: BookingToMoveProps) => {
+  const say = useSay()
   const serviceId = serviceIdOf(booking) ?? ''
   const salon = useQuery({
     queryKey: ['salons', booking.salonId, 'salon'],
@@ -207,11 +206,7 @@ const BookingToMove = ({ booking }: BookingToMoveProps) => {
   }
 
   if (!isChangeable(booking, new Date())) {
-    return (
-      <Alert tone='warning'>
-        この予約は、日時を変更できません。キャンセルした予約と、開始時刻を過ぎた予約は、変更できません。
-      </Alert>
-    )
+    return <Alert tone='warning'>{say(words.cannotMove)}</Alert>
   }
 
   return match([salon.data, service.data, staff.data])
@@ -219,13 +214,13 @@ const BookingToMove = ({ booking }: BookingToMoveProps) => {
       [undefined, P._, P._],
       [P._, undefined, P._],
       [P._, P._, undefined],
-      () => <LoadingIndicator label='予約の内容を読み込んでいます' />,
+      () => <LoadingIndicator label={say(detail.loadingDetails)} />,
     )
     .with(
       [{ type: 'found' }, { type: 'found' }, { type: 'found' }],
       ([foundSalon, foundService, foundStaff]) => (
         <>
-          <Card title={`予約番号 ${booking.bookingNumber}`}>
+          <Card title={say(detail.numbered(booking.bookingNumber))}>
             <BookingSummary
               booking={booking}
               salon={foundSalon.salon}
@@ -245,9 +240,7 @@ const BookingToMove = ({ booking }: BookingToMoveProps) => {
               staff={staffFor(foundService.service, foundStaff.staff)}
             />
           ) : (
-            <Alert tone='warning'>
-              この予約は、この画面から日時を変更できません。日時の変更は、サロンにお問い合わせください。
-            </Alert>
+            <Alert tone='warning'>{say(words.askTheSalon)}</Alert>
           )}
         </>
       ),
@@ -255,11 +248,7 @@ const BookingToMove = ({ booking }: BookingToMoveProps) => {
     .with(
       [{ type: 'notFound' }, P._, P._],
       [P._, { type: 'notFound' }, P._],
-      () => (
-        <Alert tone='warning'>
-          この予約は、この画面から日時を変更できません。日時の変更は、サロンにお問い合わせください。
-        </Alert>
-      ),
+      () => <Alert tone='warning'>{say(words.askTheSalon)}</Alert>,
     )
     .with(
       [{ type: P.union(...UNREAD_TYPES) }, P._, P._],
@@ -267,9 +256,7 @@ const BookingToMove = ({ booking }: BookingToMoveProps) => {
       [P._, P._, { type: P.union(...UNREAD_TYPES) }],
       (reads) => (
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('予約の内容'), whyUnread(reads)),
-          )}
+          message={say(unreadMessageOf(names.details, whyUnread(reads)))}
           onRetry={again}
           pending={salon.isFetching || service.isFetching || staff.isFetching}
         />
@@ -279,6 +266,7 @@ const BookingToMove = ({ booking }: BookingToMoveProps) => {
 }
 
 const MovePage = () => {
+  const say = useSay()
   const { bookingId = '' } = useParams()
   const read = useQuery({
     queryKey: ['own', 'bookings', bookingId],
@@ -291,17 +279,17 @@ const MovePage = () => {
   return match(read.data)
     .with(undefined, () => (
       <>
-        <PageHeader title={TITLE} />
-        <LoadingIndicator label='予約を読み込んでいます' />
+        <PageHeader title={say(words.title)} />
+        <LoadingIndicator label={say(detail.loading)} />
       </>
     ))
     .with({ type: 'found' }, ({ booking }) => (
       <>
         <PageHeader
-          title={TITLE}
+          title={say(words.title)}
           actions={
             <ButtonLink href={`/bookings/${booking.id}`}>
-              予約の内容へ戻る
+              {say(words.backToBooking)}
             </ButtonLink>
           }
         />
@@ -311,19 +299,17 @@ const MovePage = () => {
     .with({ type: 'notFound' }, () => (
       <>
         <PageHeader
-          title='予約が見つかりません'
-          description='アドレスが正しいか、お確かめください。ほかのアカウントで入れた予約は、表示できません。'
+          title={say(detail.notFound)}
+          description={say(detail.notFoundDescription)}
         />
-        <ButtonLink href='/bookings'>予約の一覧へ</ButtonLink>
+        <ButtonLink href='/bookings'>{say(detail.toList)}</ButtonLink>
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
-        <PageHeader title={TITLE} />
+        <PageHeader title={say(words.title)} />
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('予約'), reason),
-          )}
+          message={say(unreadMessageOf(names.booking, reason))}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />
@@ -336,12 +322,16 @@ const MovePage = () => {
  * Where a customer moves a booking to another time that is free, with the
  * same member of the staff or with another.
  */
-export const BookingMoveScreen = () => (
-  <RequireSession
-    roles={CUSTOMERS}
-    signInNotice='予約の日時を変更するには、サインインしてください。'
-    signInHelp={<SignInHelp />}
-  >
-    <MovePage />
-  </RequireSession>
-)
+export const BookingMoveScreen = () => {
+  const say = useSay()
+
+  return (
+    <RequireSession
+      roles={CUSTOMERS}
+      signInNotice={say(words.signInNotice)}
+      signInHelp={<SignInHelp />}
+    >
+      <MovePage />
+    </RequireSession>
+  )
+}

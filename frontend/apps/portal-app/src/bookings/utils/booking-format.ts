@@ -3,16 +3,19 @@ import type {
   ModelsCustomerBookingResponse,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import { type BadgeTone, inJapanese } from '@beauty-salon-frontend/ui'
+import type { BadgeTone } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
-import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
-  amountOf,
-  timeOfDayAt,
-  weekdayOf,
-} from '../../salons/utils/salon-format'
+  portalBookingMessages,
+  portalSalonMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import { weekdayOf } from '../../salons/utils/salon-format'
 import { priceOf } from '../../salons/utils/salon-menu'
+
+const { summary: words } = portalBookingMessages
+const { menu } = portalSalonMessages
 
 const STATUS_NAMES: Record<ModelsBookingStatusType, LocalizedText> = {
   ...termMessages.bookingStatus,
@@ -21,8 +24,8 @@ const STATUS_NAMES: Record<ModelsBookingStatusType, LocalizedText> = {
 }
 
 /** The state of a booking, in the word a customer reads. */
-export const statusNameOf = (status: ModelsBookingStatusType): string =>
-  inJapanese(STATUS_NAMES[status])
+export const statusNameOf = (status: ModelsBookingStatusType): LocalizedText =>
+  STATUS_NAMES[status]
 
 const STATUS_TONES: Record<ModelsBookingStatusType, BadgeTone> = {
   draft: 'neutral',
@@ -38,20 +41,21 @@ const STATUS_TONES: Record<ModelsBookingStatusType, BadgeTone> = {
 export const statusToneOf = (status: ModelsBookingStatusType): BadgeTone =>
   STATUS_TONES[status]
 
-const STATUS_NOTES: Record<ModelsBookingStatusType, string | undefined> = {
-  draft: 'サロンが、予約の内容を整えています。',
-  pending: 'サロンが内容を確認すると、予約が確定します。',
-  confirmed: undefined,
-  in_progress: undefined,
-  completed: undefined,
-  cancelled: undefined,
-  no_show: undefined,
-}
+const STATUS_NOTES: Record<ModelsBookingStatusType, LocalizedText | undefined> =
+  {
+    draft: words.draftNote,
+    pending: words.pendingNote,
+    confirmed: undefined,
+    in_progress: undefined,
+    completed: undefined,
+    cancelled: undefined,
+    no_show: undefined,
+  }
 
 /** What comes next, for a state whose word does not say it. */
 export const statusNoteOf = (
   status: ModelsBookingStatusType,
-): string | undefined => STATUS_NOTES[status]
+): LocalizedText | undefined => STATUS_NOTES[status]
 
 /**
  * When a booking is, at the salon: its day (「2026年11月20日金曜日」) and
@@ -64,22 +68,16 @@ export const whenOf = (
     endTime,
   }: Pick<ModelsCustomerBookingResponse, 'startTime' | 'endTime'>,
   timezone: string,
-): { day: string; hours: string } => ({
+): { day: LocalizedText; hours: LocalizedText } => ({
   day: weekdayOf(startTime, timezone),
-  hours: `${timeOfDayAt(startTime, timezone)}〜${timeOfDayAt(endTime, timezone)}`,
+  hours: formats.timeRangeAt(startTime, endTime, timezone),
 })
 
 /**
- * The day of a visit as the booking names it: 「2026年11月24日火曜日」. It
- * is a calendar date at the salon, and is read without a time zone.
- */
-export const visitDayOf = (bookingDate: string): string =>
-  inJapanese(formats.fullDayOf(bookingDate))
-
-/**
  * When a booking is, where its salon may be gone: as `whenOf` says it, or
- * the day alone. Without the time zone of the salon, no time of day can be
- * told.
+ * the day alone (「2026年11月24日火曜日」). Without the time zone of the
+ * salon, no time of day can be told, and the day is the calendar date at
+ * the salon that the booking names, read without a time zone.
  */
 export const whenKnownOf = (
   booking: Pick<
@@ -87,9 +85,9 @@ export const whenKnownOf = (
     'bookingDate' | 'startTime' | 'endTime'
   >,
   timezone: string | null,
-): { day: string; hours: string | null } =>
+): { day: LocalizedText; hours: LocalizedText | null } =>
   timezone === null
-    ? { day: visitDayOf(booking.bookingDate), hours: null }
+    ? { day: formats.fullDayOf(booking.bookingDate), hours: null }
     : whenOf(booking, timezone)
 
 /** The same in one line, for a sentence: 「2026年11月24日火曜日 10:30〜11:30」. */
@@ -99,10 +97,10 @@ export const whenLineOf = (
     'bookingDate' | 'startTime' | 'endTime'
   >,
   timezone: string | null,
-): string => {
+): LocalizedText => {
   const { day, hours } = whenKnownOf(booking, timezone)
 
-  return hours === null ? day : `${day} ${hours}`
+  return hours === null ? day : words.whenLine(day, hours)
 }
 
 /** The price of a service in one line: 「￥5,500（税込）」, 「￥8,000〜（税別）」, 「要相談」. */
@@ -112,12 +110,15 @@ export const priceLineOf = (
     'price' | 'discountPrice' | 'pricingStrategy' | 'taxIncluded'
   >,
   currency: string,
-): string => {
+): LocalizedText => {
   const price = priceOf(service, currency)
 
   return price.type === 'onConsultation'
-    ? '要相談'
-    : `${price.amount}${price.orMore ? '〜' : ''}（${price.tax}）`
+    ? menu.onConsultation
+    : menu.priceLine(
+        price.orMore ? menu.orMore(price.amount) : price.amount,
+        price.tax,
+      )
 }
 
 /**
@@ -130,7 +131,10 @@ export const totalOf = (
     taxAmount,
   }: Pick<ModelsCustomerBookingResponse, 'totalAmount' | 'taxAmount'>,
   currency: string,
-): string =>
+): LocalizedText =>
   taxAmount > 0
-    ? `${amountOf(totalAmount, currency)}（うち消費税 ${amountOf(taxAmount, currency)}）`
-    : amountOf(totalAmount, currency)
+    ? words.totalWithTax(
+        formats.amountOf(totalAmount, currency),
+        formats.amountOf(taxAmount, currency),
+      )
+    : formats.amountOf(totalAmount, currency)

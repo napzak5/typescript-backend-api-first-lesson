@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as serviceMenuStories from './service-menu.stories'
 
 const stories = composeStories(serviceMenuStories)
@@ -153,5 +154,60 @@ describe('ServiceMenu', () => {
         .map((heading) => heading.textContent),
     ).toEqual(['カット'])
     expect(servicesOf('カット')).toHaveLength(2)
+  })
+})
+
+describe('ServiceMenu on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say the length, the price and the tax of a service in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(servicesOf('カラー')).toEqual([
+      [
+        'フルカラー',
+        '根元から毛先まで染めます。',
+        'Book',
+        '1 hr 30 min',
+        'Regularly ¥8,000¥7,200(tax included)',
+      ],
+      [
+        'ハイライト',
+        '髪の長さと本数で、料金が変わります',
+        'Consultation required',
+        'Book',
+        '2 hr',
+        'From ¥12,000(plus tax)',
+      ],
+    ])
+    expect(
+      screen.getByRole('link', { name: 'Book レディースカット' }),
+    ).toHaveTextContent('Book')
+  })
+
+  it('should name the services without a category, and what cannot be booked, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(servicesOf('Other')).toEqual([
+      [
+        'ブライダルヘアセット',
+        '打ち合わせのうえ、内容と料金を決めます。',
+        'No online booking',
+        '2 hr 30 min',
+        'Price on consultation',
+      ],
+    ])
   })
 })

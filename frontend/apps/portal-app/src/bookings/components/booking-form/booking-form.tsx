@@ -6,15 +6,17 @@ import {
   Button,
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   NO_ERRORS,
   RadioGroup,
   Select,
   TextField,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { portalBookingMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import {
   type ChangeEvent,
   type FormEvent,
@@ -23,7 +25,6 @@ import {
   useRef,
 } from 'react'
 import { match } from 'ts-pattern'
-import { calendarDateOf } from '../../../salons/utils/salon-format'
 import {
   type Choice,
   dayAfter,
@@ -31,6 +32,8 @@ import {
   type Time,
 } from '../../utils/booking-choice'
 import styles from './booking-form.module.css'
+
+const { form: words } = portalBookingMessages
 
 /** The times of the chosen day: being read, read, or not read. */
 export type TimesOfDay =
@@ -57,13 +60,14 @@ export type BookingFormProps = {
   /** What the button that sends the form says: 「この内容で予約する」 */
   submitLabel: string
   /** What went wrong with the attempt as a whole */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /**
    * The errors of the controls, under their names (`startTime`). A new
    * object is the answer to another attempt, and the focus goes to the
-   * first control that has an error
+   * first control that has an error; the form says them in the language
+   * of the page, and one that is said in another language moves nothing
    */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The attempt is on its way */
   pending?: boolean | undefined
   /** The time that was chosen (`startTime`), and the values of the controls that were given */
@@ -99,6 +103,7 @@ export const BookingForm = ({
   pending = false,
   onSubmit,
 }: BookingFormProps) => {
+  const say = useSay()
   const form = useRef<HTMLFormElement>(null)
 
   // The focus goes to the first control with an error, in the commit that
@@ -137,11 +142,11 @@ export const BookingForm = ({
 
   return (
     <form className={styles['form']} noValidate onSubmit={submit} ref={form}>
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+      {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       <Select
-        label='スタッフ'
+        label={say(words.staff)}
         options={[
-          { value: ANYBODY, label: '指名しない' },
+          { value: ANYBODY, label: say(words.anybody) },
           ...staff.map((member) => ({
             value: member.id,
             label: member.displayName,
@@ -152,7 +157,7 @@ export const BookingForm = ({
       />
       <div className={styles['day']}>
         <TextField
-          label='日付'
+          label={say(words.day)}
           autoComplete='off'
           type='date'
           width='short'
@@ -169,44 +174,50 @@ export const BookingForm = ({
               onChoose({ ...choice, date: dayBefore(choice.date, today) })
             }
           >
-            前の日
+            {say(words.dayBefore)}
           </Button>
           <Button
             size='small'
             onClick={() => onChoose({ ...choice, date: dayAfter(choice.date) })}
           >
-            次の日
+            {say(words.dayAfter)}
           </Button>
         </Actions>
       </div>
       {match(times)
         .with({ type: 'loading' }, () => (
-          <LoadingIndicator label='空いている時刻を読み込んでいます' />
+          <LoadingIndicator label={say(words.loading)} />
         ))
         .with({ type: 'listed', times: [] }, () => (
           <EmptyState
-            title='この日は、予約できる時刻がありません'
-            description='日付かスタッフを変えて、お探しください。'
+            title={say(words.noTimes)}
+            description={say(words.noTimesDescription)}
           />
         ))
         .with({ type: 'listed' }, (listed) => (
           <RadioGroup
-            label='開始時刻'
+            label={say(words.startTime)}
             name='startTime'
             layout='columns'
             required
             options={listed.times.map(({ startTime, label }) => ({
               value: startTime,
-              label,
+              label: say(label),
             }))}
-            description={`${calendarDateOf(choice.date)}の、空いている時刻です。時刻は、サロンのある地域の時刻です。`}
-            error={errors['startTime']}
+            description={say(
+              words.startTimeDescription(formats.monthDayOf(choice.date)),
+            )}
+            error={
+              errors['startTime'] === undefined
+                ? undefined
+                : say(errors['startTime'])
+            }
           />
         ))
         .with({ type: 'unread' }, ({ reason, retrying }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('空いている時刻'), reason),
+            message={say(
+              unreadMessageOf(portalBookingMessages.names.freeTimes, reason),
             )}
             onRetry={onRetry}
             pending={retrying}

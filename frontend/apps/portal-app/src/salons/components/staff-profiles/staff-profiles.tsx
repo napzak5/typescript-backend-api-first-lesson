@@ -8,10 +8,15 @@ import {
   DescriptionList,
   Rating,
   TagList,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
-import { levelNameOf } from '../../utils/salon-format'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import styles from './staff-profiles.module.css'
+
+const { staff: words } = portalSalonMessages
 
 export type StaffProfilesProps = {
   /** The people of a salon, in the order of the API; at least one */
@@ -25,14 +30,12 @@ export type StaffProfilesProps = {
 }
 
 /** What a person does at the salon, in one line: 「店長・シニア・経験 12 年」. */
-const roleOf = (person: ModelsStaffProfileResponse): string =>
-  [
-    ...(person.position === null ? [] : [person.position]),
-    levelNameOf(person.level),
-    ...(person.yearsOfExperience === null
-      ? []
-      : [`経験 ${person.yearsOfExperience} 年`]),
-  ].join('・')
+const roleOf = (person: ModelsStaffProfileResponse): LocalizedText =>
+  words.role(
+    person.position,
+    termMessages.staffLevel[person.level],
+    person.yearsOfExperience,
+  )
 
 type PersonProps = {
   person: ModelsStaffProfileResponse
@@ -41,15 +44,16 @@ type PersonProps = {
 }
 
 const Person = ({ person, rating }: PersonProps) => {
+  const say = useSay()
   const skills = [
     ...(person.specialties.length === 0
       ? []
       : [
           {
-            term: '得意な施術',
+            term: say(words.specialties),
             description: (
               <TagList
-                label={`${person.displayName}の得意な施術`}
+                label={say(words.specialtiesOf(person.displayName))}
                 items={person.specialties}
               />
             ),
@@ -59,10 +63,10 @@ const Person = ({ person, rating }: PersonProps) => {
       ? []
       : [
           {
-            term: '資格',
+            term: say(words.certifications),
             description: (
               <TagList
-                label={`${person.displayName}の資格`}
+                label={say(words.certificationsOf(person.displayName))}
                 items={person.certifications}
               />
             ),
@@ -73,10 +77,12 @@ const Person = ({ person, rating }: PersonProps) => {
   return (
     <>
       <h3 className={styles['name']}>{person.displayName}</h3>
-      <p className={styles['role']}>{roleOf(person)}</p>
+      <p className={styles['role']}>{say(roleOf(person))}</p>
       {rating !== undefined &&
         (rating.totalReviews === 0 ? (
-          <p className={styles['unrated']}>レビューは、まだありません</p>
+          <p className={styles['unrated']}>
+            {say(portalSalonMessages.reviews.noneYet)}
+          </p>
         ) : (
           <p>
             <Rating value={rating.averageRating} count={rating.totalReviews} />
@@ -84,7 +90,7 @@ const Person = ({ person, rating }: PersonProps) => {
         ))}
       {!person.canReceiveBookings && (
         <p>
-          <Badge>予約の受け付けなし</Badge>
+          <Badge>{say(words.takesNoBookings)}</Badge>
         </p>
       )}
       {person.bio !== null && <WrittenText>{person.bio}</WrittenText>}

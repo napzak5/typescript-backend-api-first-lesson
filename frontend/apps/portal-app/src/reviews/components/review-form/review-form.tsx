@@ -143,7 +143,7 @@ export const ReviewForm = ({
           ).map(({ name, label }) => (
             <Select
               key={name}
-              label={label}
+              label={inJapanese(label)}
               name={name}
               placeholder={NOT_RATED}
               options={RATINGS}

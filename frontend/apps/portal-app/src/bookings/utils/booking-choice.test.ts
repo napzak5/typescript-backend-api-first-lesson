@@ -282,12 +282,12 @@ describe('timesOf', () => {
     ).toEqual([
       {
         startTime: '2026-11-24T01:00:00.000Z',
-        label: '10:00',
+        label: { en: '10:00', ja: '10:00' },
         staffIds: [FIRST, SECOND],
       },
       {
         startTime: '2026-11-24T01:30:00.000Z',
-        label: '10:30',
+        label: { en: '10:30', ja: '10:30' },
         staffIds: [SECOND],
       },
     ])
@@ -303,7 +303,7 @@ describe('timesOf', () => {
           slot(FIRST, '2026-11-24T01:00:00.000Z'),
         ],
         'Asia/Tokyo',
-      ).map(({ label }) => label),
+      ).map(({ label }) => label.ja),
     ).toEqual(['09:30', '10:00', '12:00'])
   })
 
@@ -312,16 +312,16 @@ describe('timesOf', () => {
     ['Europe/Paris', '02:00'],
     ['America/New_York', '20:00'],
     ['UTC', '01:00'],
-  ])('should say the time of day at a salon in %s', (timezone, label) => {
+  ])('should say the time of day at a salon in %s', (timezone, time) => {
     expect(
       timesOf([slot(FIRST, '2026-11-24T01:00:00.000Z')], timezone),
-    ).toMatchObject([{ label }])
+    ).toMatchObject([{ label: { en: time, ja: time } }])
   })
 
   it('should write midnight as 00:00', () => {
     expect(
       timesOf([slot(FIRST, '2026-11-24T15:00:00.000Z')], 'Asia/Tokyo'),
-    ).toMatchObject([{ label: '00:00' }])
+    ).toMatchObject([{ label: { en: '00:00', ja: '00:00' } }])
   })
 
   it('should be no time for a day without a slot', () => {

@@ -27,8 +27,9 @@ import {
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -69,8 +70,13 @@ import { StaffProfiles } from '../components/staff-profiles/staff-profiles'
 import { dateAt, postedOf } from '../utils/salon-format'
 import { menuOf } from '../utils/salon-menu'
 
-/** The title of the screen that could not read the salon, and so not its name */
-const TITLE = 'サロンの詳細'
+const {
+  salon: words,
+  menu,
+  staff,
+  reviews: reviewWords,
+  names,
+} = portalSalonMessages
 
 type OfSalonProps = {
   salon: ModelsSalonResponse
@@ -81,22 +87,21 @@ type OfSalonProps = {
  * read does not take the hours and the reviews with it.
  */
 const MenuSection = ({ salon }: OfSalonProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: ['salons', salon.id, 'menu'],
     queryFn: () => readMenu(salon.id),
   })
 
   return (
-    <Card title='メニュー'>
+    <Card title={say(words.menu)}>
       {match(read.data)
-        .with(undefined, () => (
-          <LoadingIndicator label='メニューを読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(menu.loading)} />)
         .with({ type: 'found' }, ({ categories, services }) => {
           const groups = menuOf(categories, services)
 
           return groups.length === 0 ? (
-            <EmptyState title='掲載中のメニューはありません' />
+            <EmptyState title={say(menu.none)} />
           ) : (
             <ServiceMenu
               groups={groups}
@@ -112,9 +117,7 @@ const MenuSection = ({ salon }: OfSalonProps) => {
         })
         .with({ type: P.union('notFound', ...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('メニュー'), reason),
-            )}
+            message={say(unreadMessageOf(names.menu, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -125,6 +128,7 @@ const MenuSection = ({ salon }: OfSalonProps) => {
 }
 
 const StaffSection = ({ salon }: OfSalonProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: ['salons', salon.id, 'staff'],
     queryFn: () => readStaff(salon.id),
@@ -141,13 +145,11 @@ const StaffSection = ({ salon }: OfSalonProps) => {
   })
 
   return (
-    <Card title='スタッフ'>
+    <Card title={say(words.staff)}>
       {match(read.data)
-        .with(undefined, () => (
-          <LoadingIndicator label='スタッフを読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(staff.loading)} />)
         .with({ type: 'found', staff: [] }, () => (
-          <EmptyState title='掲載中のスタッフはいません' />
+          <EmptyState title={say(staff.none)} />
         ))
         .with({ type: 'found' }, ({ staff }) => (
           <>
@@ -156,12 +158,7 @@ const StaffSection = ({ salon }: OfSalonProps) => {
               .with(undefined, { type: 'found' }, () => null)
               .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                 <UnreadNotice
-                  message={inJapanese(
-                    unreadMessageOf(
-                      writtenInJapanese('スタッフの評価'),
-                      reason,
-                    ),
-                  )}
+                  message={say(unreadMessageOf(names.staffRatings, reason))}
                   onRetry={() => void ratings.refetch()}
                   pending={ratings.isFetching}
                 />
@@ -179,9 +176,7 @@ const StaffSection = ({ salon }: OfSalonProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('スタッフ'), reason),
-            )}
+            message={say(unreadMessageOf(names.staff, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -203,6 +198,7 @@ type Reporting = {
  * changes it.
  */
 const ReviewsSection = ({ salon }: OfSalonProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const { pathname } = useLocation()
@@ -259,11 +255,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
     setAsked(undefined)
     setGone((times) => times + 1)
     afterReviewGone(queryClient, review)
-    notify({
-      tone: 'warning',
-      message:
-        'このレビューは、削除されていました。レビューを読み込み直します。',
-    })
+    notify({ tone: 'warning', message: reviewWords.gone })
   }
 
   const saying = useMutation({
@@ -273,10 +265,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         .with({ type: 'counted' }, ({ helpfulCount }) => {
           setHelpful((said) => new Set([...said, review.id]))
           afterHelpfulCounted(queryClient, review, sortBy, helpfulCount)
-          notify({
-            tone: 'success',
-            message: '「参考になった」と伝えました。',
-          })
+          notify({ tone: 'success', message: reviewWords.saidHelpful })
         })
         .with({ type: 'gone' }, () => reviewIsGone(review))
         .with({ type: 'tooManyRequests' }, { type: 'failed' }, (unsent) =>
@@ -293,11 +282,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
       match(outcome)
         .with({ type: 'reported' }, () => {
           setAsking(false)
-          notify({
-            tone: 'success',
-            message:
-              'レビューを通報しました。運営が内容を確かめます。確かめが済むまで、レビューは掲載されたままです。',
-          })
+          notify({ tone: 'success', message: reviewWords.reported })
         })
         .with({ type: 'reportedBefore' }, () => setReportedBefore(true))
         .with({ type: 'gone' }, () => reviewIsGone(review))
@@ -331,19 +316,17 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
   }
 
   return (
-    <Card title='レビュー' headingRef={heading}>
+    <Card title={say(words.reviews)} headingRef={heading}>
       {match(summary.data)
         .with(undefined, () => (
-          <LoadingIndicator label='評価を読み込んでいます' />
+          <LoadingIndicator label={say(reviewWords.loadingSummary)} />
         ))
         .with({ type: 'found' }, (found) => (
           <ReviewSummary summary={found.summary} />
         ))
         .with({ type: P.union('notFound', ...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('評価'), reason),
-            )}
+            message={say(unreadMessageOf(names.ratings, reason))}
             onRetry={() => void summary.refetch()}
             pending={summary.isFetching}
           />
@@ -353,26 +336,26 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         reviews.data === undefined ? undefined : listingOf(reviews.data.pages),
       )
         .with(undefined, () => (
-          <LoadingIndicator label='レビューを読み込んでいます' />
+          <LoadingIndicator label={say(reviewWords.loading)} />
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('レビュー'), reason),
-            )}
+            message={say(unreadMessageOf(names.reviews, reason))}
             onRetry={() => void reviews.refetch()}
             pending={reviews.isFetching}
           />
         ))
         .with({ type: 'listed', items: [] }, () => (
-          <EmptyState title='レビューは、まだありません' />
+          <EmptyState title={say(reviewWords.noneYet)} />
         ))
         .with({ type: 'listed' }, ({ items, rest }) => (
           <>
             {reader.type === 'visitor' && (
               <p>
-                <Link href={signInHrefFrom(pathname)}>サインイン</Link>
-                すると、レビューが参考になったと伝えたり、問題のあるレビューを通報したりできます。
+                <Link href={signInHrefFrom(pathname)}>
+                  {say(reviewWords.signInToActWithLink.link)}
+                </Link>
+                {say(reviewWords.signInToActWithLink.after)}
               </p>
             )}
             <ReviewList
@@ -411,7 +394,8 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         <ReviewReport
           key={asked.time}
           open={asking}
-          subject={postedOf(asked.review, salon.timezone)}
+          // The dialog of the reviews is said in Japanese until its area is messages
+          subject={inJapanese(postedOf(asked.review, salon.timezone))}
           onClose={() => setAsking(false)}
           reportedBefore={reportedBefore}
           message={says.message}
@@ -424,34 +408,38 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
   )
 }
 
-const SalonPage = ({ salon }: OfSalonProps) => (
-  <>
-    <PageHeader
-      title={salon.name}
-      description={salon.nameKana ?? undefined}
-      actions={<ButtonLink href='/'>サロンを探す</ButtonLink>}
-    />
-    {!salon.isActive && (
-      <Alert tone='warning'>
-        このサロンは、現在、予約を受け付けていません。
-      </Alert>
-    )}
-    <Card title='サロンについて'>
-      <SalonAbout salon={salon} />
-    </Card>
-    <Card title='営業時間'>
-      <SalonHours
-        businessHours={salon.businessHours}
-        openingHours={salon.openingHours}
-        timezone={salon.timezone}
-        today={dateAt(new Date(), salon.timezone)}
+const SalonPage = ({ salon }: OfSalonProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <PageHeader
+        title={salon.name}
+        description={salon.nameKana ?? undefined}
+        actions={
+          <ButtonLink href='/'>
+            {say(portalSalonMessages.search.title)}
+          </ButtonLink>
+        }
       />
-    </Card>
-    <MenuSection salon={salon} />
-    <StaffSection salon={salon} />
-    <ReviewsSection salon={salon} />
-  </>
-)
+      {!salon.isActive && <Alert tone='warning'>{say(words.noBookings)}</Alert>}
+      <Card title={say(words.about)}>
+        <SalonAbout salon={salon} />
+      </Card>
+      <Card title={say(words.hours)}>
+        <SalonHours
+          businessHours={salon.businessHours}
+          openingHours={salon.openingHours}
+          timezone={salon.timezone}
+          today={dateAt(new Date(), salon.timezone)}
+        />
+      </Card>
+      <MenuSection salon={salon} />
+      <StaffSection salon={salon} />
+      <ReviewsSection salon={salon} />
+    </>
+  )
+}
 
 /**
  * The page of a salon: what it says about itself, when it is open, what it
@@ -459,6 +447,7 @@ const SalonPage = ({ salon }: OfSalonProps) => (
  * its address, also when the salon takes no bookings.
  */
 export const SalonScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
   const read = useQuery({
     queryKey: ['salons', salonId, 'salon'],
@@ -469,26 +458,24 @@ export const SalonScreen = () => {
     match(read.data)
       // No heading while the salon is read: the heading is its name, and the
       // focus moves to it when it is there to be read out
-      .with(undefined, () => (
-        <LoadingIndicator label='サロンを読み込んでいます' />
-      ))
+      .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
       .with({ type: 'found' }, ({ salon }) => <SalonPage salon={salon} />)
       .with({ type: 'notFound' }, () => (
         <>
           <PageHeader
-            title='サロンが見つかりません'
-            description='アドレスが正しいか、お確かめください。掲載を終えたサロンかもしれません。'
+            title={say(words.notFound)}
+            description={say(words.notFoundDescription)}
           />
-          <ButtonLink href='/'>サロンを探す</ButtonLink>
+          <ButtonLink href='/'>
+            {say(portalSalonMessages.search.title)}
+          </ButtonLink>
         </>
       ))
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
-          <PageHeader title={TITLE} />
+          <PageHeader title={say(words.title)} />
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('サロン'), reason),
-            )}
+            message={say(unreadMessageOf(names.salon, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

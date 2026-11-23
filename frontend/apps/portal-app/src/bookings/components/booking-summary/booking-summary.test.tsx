@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as bookingSummaryStories from './booking-summary.stories'
 
 const stories = composeStories(bookingSummaryStories)
@@ -117,6 +118,48 @@ describe('BookingSummary', () => {
       メニュー: '（掲載を終えています）',
       担当: '（掲載を終えています）',
       日時: '2026年11月24日火曜日 10:30〜11:30（1 時間）',
+    })
+  })
+})
+
+describe('BookingSummary on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name every part of a booking in English, and say it as English does', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithTaxAdded.run()
+
+    // Assert
+    expect(details()).toEqual({
+      Status:
+        'Awaiting confirmationThe booking is confirmed once the salon has checked it.',
+      Salon: 'ヘアサロン こもれび 表参道',
+      Service: 'レディースカット',
+      Staff: '田中 ひろし',
+      'Date and time': 'Tuesday, November 24, 2026 10:30–11:30 (1 hr)',
+      Price: '¥6,050 (including ¥550 consumption tax)',
+      Requests: '前髪は、眉が隠れるくらいの長さにしたいです。',
+    })
+  })
+
+  it('should say in English what is no longer listed', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutSalon.run()
+
+    // Assert
+    expect(details()).toMatchObject({
+      Salon: '(No longer listed)',
+      Service: '(No longer listed)',
+      Staff: '(No longer listed)',
+      'Date and time': 'Tuesday, November 24, 2026 (1 hr)',
     })
   })
 })

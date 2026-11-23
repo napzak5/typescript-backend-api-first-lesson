@@ -9,14 +9,21 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalBookingMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { match } from 'ts-pattern'
 import type { Booking, Cancellation, Move } from '../api/bookings-api'
 import type { Time } from './booking-choice'
+
+const { flow: words } = portalBookingMessages
+
+/** What a form of a booking read: the value to send, or what to say at its controls */
+type BookingRead<Value> = FormRead<Value, FormErrors<LocalizedText>>
 /** What is booked, as the address of the screen and its choices say it. */
 export type Asked = {
   salonId: string
@@ -35,7 +42,7 @@ export type Asked = {
 export const readBooking = (
   values: FormData,
   { salonId, serviceId, staffId, times }: Asked,
-): FormRead<ModelsCustomerBookingCreateRequest> => {
+): BookingRead<ModelsCustomerBookingCreateRequest> => {
   const time = times.find(
     ({ startTime }) => startTime === textOf(values, 'startTime'),
   )
@@ -45,7 +52,7 @@ export const readBooking = (
   return time === undefined || withWhom === undefined
     ? {
         type: 'invalid',
-        errors: { startTime: '開始時刻を選択してください。' },
+        errors: { startTime: words.noStartTime },
       }
     : {
         type: 'valid',
@@ -66,30 +73,16 @@ export const readBooking = (
  */
 export const afterBooking = (
   outcome: Exclude<Booking, { type: 'booked' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
-    .with({ type: 'refused' }, () =>
-      aboutTheAttempt(
-        'この日時では、予約できませんでした。空いている時刻を読み込み直しましたので、選び直してください。予約できない状態が続くときは、サロンにお問い合わせください。',
-      ),
-    )
-    .with({ type: 'noProfile' }, () =>
-      aboutTheAttempt(
-        'お客様の情報を読み込めませんでした。もう一度、お客様の情報を登録してください。',
-      ),
-    )
-    .with({ type: 'invalid' }, () =>
-      aboutTheAttempt(
-        '予約できませんでした。ページを読み込み直して、もう一度お試しください。',
-      ),
-    )
+    .returnType<FormSays<LocalizedText>>()
+    .with({ type: 'refused' }, () => aboutTheAttempt(words.notBooked))
+    .with({ type: 'noProfile' }, () => aboutTheAttempt(words.noProfile))
+    .with({ type: 'invalid' }, () => aboutTheAttempt(words.bookingRefused))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /**
@@ -107,12 +100,12 @@ export const readCancellation = (
 /** What is said after the API did not cancel a booking, and where. */
 export type CancellationSays =
   /** In the dialog, which stays open: the customer may try again */
-  | { type: 'again'; message: string }
+  | { type: 'again'; message: LocalizedText }
   /**
    * On the page, and the dialog closes: the booking is read again, and may
    * no longer be one that can be cancelled
    */
-  | { type: 'refused'; message: string }
+  | { type: 'refused'; message: LocalizedText }
   /** Nothing: the page reads the booking again, and says that there is none */
   | { type: 'gone' }
 
@@ -128,17 +121,16 @@ export const afterCancellation = (
     .returnType<CancellationSays>()
     .with({ type: 'refused' }, () => ({
       type: 'refused',
-      message:
-        'この予約は、キャンセルできませんでした。サロンが予約の状態を変えたか、開始時刻を過ぎています。予約の内容を読み込み直しましたので、お確かめください。',
+      message: words.notCancelled,
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+      message: TOO_MANY_REQUESTS_MESSAGE,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message: inJapanese(NOT_SENT_MESSAGE),
+      message: NOT_SENT_MESSAGE,
     }))
     .exhaustive()
 
@@ -158,7 +150,7 @@ export type AskedToMove = {
 export const readMove = (
   values: FormData,
   { staffId, times }: AskedToMove,
-): FormRead<ModelsBookingRescheduleRequest> => {
+): BookingRead<ModelsBookingRescheduleRequest> => {
   const time = times.find(
     ({ startTime }) => startTime === textOf(values, 'startTime'),
   )
@@ -167,7 +159,7 @@ export const readMove = (
   return time === undefined || withWhom === undefined
     ? {
         type: 'invalid',
-        errors: { startTime: '開始時刻を選択してください。' },
+        errors: { startTime: words.noStartTime },
       }
     : {
         type: 'valid',
@@ -183,28 +175,14 @@ export const readMove = (
  */
 export const afterMove = (
   outcome: Exclude<Move, { type: 'moved' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
-    .with({ type: 'refused' }, () =>
-      aboutTheAttempt(
-        'この日時には、変更できませんでした。空いている時刻を読み込み直しましたので、選び直してください。変更できない状態が続くときは、サロンにお問い合わせください。',
-      ),
-    )
-    .with({ type: 'notFound' }, () =>
-      aboutTheAttempt(
-        'この予約は、見つかりませんでした。予約の一覧から、お確かめください。',
-      ),
-    )
-    .with({ type: 'invalid' }, () =>
-      aboutTheAttempt(
-        '変更できませんでした。ページを読み込み直して、もう一度お試しください。',
-      ),
-    )
+    .returnType<FormSays<LocalizedText>>()
+    .with({ type: 'refused' }, () => aboutTheAttempt(words.notMoved))
+    .with({ type: 'notFound' }, () => aboutTheAttempt(words.moveNotFound))
+    .with({ type: 'invalid' }, () => aboutTheAttempt(words.moveRefused))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()

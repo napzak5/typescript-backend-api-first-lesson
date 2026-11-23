@@ -1,12 +1,13 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
-import { type ReactNode, useLayoutEffect } from 'react'
+import { act, type ReactNode, useLayoutEffect } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { bookableStaff, DAY, TODAY, times } from '../examples'
 import * as bookingFormStories from './booking-form.stories'
 
@@ -206,7 +207,7 @@ describe('BookingForm', () => {
         within(timeControls())
           .getAllByRole('radio')
           .map((radio) => radio.closest('label')?.textContent),
-      ).toEqual(times.map(({ label }) => label))
+      ).toEqual(times.map(({ label }) => label.ja))
       expect(timeControls()).toBeRequired()
       expect(timeControls()).toHaveAccessibleDescription(
         '11月24日（火）の、空いている時刻です。時刻は、サロンのある地域の時刻です。',
@@ -492,5 +493,95 @@ describe('BookingForm', () => {
       // Assert
       expect(document.body).toHaveFocus()
     })
+  })
+})
+
+describe('BookingForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls in English, and say which day the times are of', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithTimes.run()
+
+    // Assert
+    expect(optionsOf('Staff').at(0)).toBe('No preference')
+    expect(screen.getByLabelText('Date')).toBeRequired()
+    expect(screen.getByRole('button', { name: 'Previous day' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Next day' })).toBeVisible()
+    expect(
+      screen.getByRole('radiogroup', { name: 'Start time' }),
+    ).toHaveAccessibleDescription(
+      'The free times on Tue, November 24. The times are those of the time zone of the salon.',
+    )
+  })
+
+  it('should say in English that a time has to be chosen, and that the time was taken', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutTimeChosen.run()
+
+    // Assert
+    expect(
+      screen.getByRole('radiogroup', { name: 'Start time' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Choose a start time.'),
+    )
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'This time could not be booked. The free times were loaded again: choose one anew. If it still cannot be booked, please contact the salon.',
+    )
+  })
+
+  it('should say in English that a day has no time, or that its times were not read', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutTimes.run()
+
+    // Assert
+    expect(
+      screen.getByText('There is no time to book on this day'),
+    ).toBeVisible()
+
+    // Act
+    await stories.TimesUnread.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Could not load the free times. Check your connection and try again.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say its error again in the language chosen, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.WithoutTimeChosen.run()
+    screen.getByRole('button', { name: '次の日' }).focus()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(
+      screen.getByRole('radiogroup', { name: 'Start time' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Choose a start time.'),
+    )
+    expect(screen.getByRole('button', { name: 'Next day' })).toHaveFocus()
   })
 })

@@ -4,7 +4,11 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { describe, expect, it } from 'vitest'
 import { categories, services } from '../components/examples'
-import { menuOf, priceOf } from './salon-menu'
+import { type MenuGroup, menuOf, priceOf } from './salon-menu'
+
+/** A part of the menu by its name: the category's, or `unsorted` for the others */
+const nameOf = (group: MenuGroup): string =>
+  group.type === 'category' ? group.name : 'unsorted'
 
 const FIXED: Parameters<typeof priceOf>[0] = {
   price: 5500,
@@ -21,30 +25,34 @@ const NOT_ON_OFFER: ModelsServiceStatusType[] = [
 
 const RISING: ModelsPricingStrategyType[] = ['variable', 'tiered', 'dynamic']
 
+/** ￥5,500 as each language writes it */
+const YEN_5500 = { en: '¥5,500', ja: '￥5,500' }
+
 describe('menuOf', () => {
   it('should put the services under their categories, both in the order they are given, and the others last', () => {
     expect(
       menuOf(categories, services).map((group) => [
-        group.name,
+        nameOf(group),
         group.services.map((service) => service.name),
       ]),
     ).toEqual([
       ['カット', ['レディースカット', 'キッズカット（小学生まで）']],
       ['カラー', ['フルカラー', 'ハイライト']],
-      ['その他', ['ブライダルヘアセット']],
+      ['unsorted', ['ブライダルヘアセット']],
     ])
   })
 
   it('should carry the ID and the description of a category, and none for the part of the others', () => {
     expect(
-      menuOf(categories, services).map(({ id, description }) => [
-        id,
-        description,
-      ]),
+      menuOf(categories, services).map((group) =>
+        group.type === 'category'
+          ? [group.id, group.description]
+          : [group.type],
+      ),
     ).toEqual([
       [categories.at(0)?.id, 'シャンプーとブローを含みます。'],
       [categories.at(1)?.id, null],
-      [null, null],
+      ['unsorted'],
     ])
   })
 
@@ -76,8 +84,8 @@ describe('menuOf', () => {
       menuOf(
         categories,
         services.filter((service) => service.categoryId === null),
-      ).map((group) => group.name),
-    ).toEqual(['その他'])
+      ).map(nameOf),
+    ).toEqual(['unsorted'])
   })
 
   it('should have no part for the others when every service has a category that is shown', () => {
@@ -85,19 +93,19 @@ describe('menuOf', () => {
       menuOf(
         categories,
         services.filter((service) => service.categoryId !== null),
-      ).map((group) => group.name),
+      ).map(nameOf),
     ).toEqual(['カット', 'カラー'])
   })
 
   it('should put a service whose category is not among those shown under the others', () => {
     expect(
       menuOf(categories.slice(0, 1), services).map((group) => [
-        group.name,
+        nameOf(group),
         group.services.map((service) => service.name),
       ]),
     ).toEqual([
       ['カット', ['レディースカット', 'キッズカット（小学生まで）']],
-      ['その他', ['フルカラー', 'ハイライト', 'ブライダルヘアセット']],
+      ['unsorted', ['フルカラー', 'ハイライト', 'ブライダルヘアセット']],
     ])
   })
 
@@ -110,29 +118,29 @@ describe('priceOf', () => {
   it('should be the amount for a fixed price, with the tax said', () => {
     expect(priceOf(FIXED, 'JPY')).toEqual({
       type: 'amount',
-      amount: '￥5,500',
+      amount: YEN_5500,
       before: null,
       orMore: false,
-      tax: '税込',
+      tax: { en: '(tax included)', ja: '（税込）' },
     })
   })
 
   it('should say that the tax comes on top when it is not in the price', () => {
     expect(priceOf({ ...FIXED, taxIncluded: false }, 'JPY')).toMatchObject({
-      tax: '税別',
+      tax: { en: '(plus tax)', ja: '（税別）' },
     })
   })
 
   it('should be the discounted amount, with the price before the discount', () => {
     expect(priceOf({ ...FIXED, discountPrice: 4950 }, 'JPY')).toMatchObject({
-      amount: '￥4,950',
-      before: '￥5,500',
+      amount: { en: '¥4,950', ja: '￥4,950' },
+      before: YEN_5500,
     })
   })
 
   it('should name no price before a discount that takes nothing off', () => {
     expect(priceOf({ ...FIXED, discountPrice: 5500 }, 'JPY')).toMatchObject({
-      amount: '￥5,500',
+      amount: YEN_5500,
       before: null,
     })
   })
@@ -141,7 +149,7 @@ describe('priceOf', () => {
     'should be where the price begins for a %s price',
     (pricingStrategy) => {
       expect(priceOf({ ...FIXED, pricingStrategy }, 'JPY')).toMatchObject({
-        amount: '￥5,500',
+        amount: YEN_5500,
         orMore: true,
       })
     },
@@ -158,7 +166,7 @@ describe('priceOf', () => {
 
   it('should write the amount in the currency of the salon', () => {
     expect(priceOf({ ...FIXED, price: 45.5 }, 'USD')).toMatchObject({
-      amount: '$45.50',
+      amount: { en: '$45.50', ja: '$45.50' },
     })
   })
 })

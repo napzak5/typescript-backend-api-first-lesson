@@ -1,10 +1,13 @@
 import type { ModelsServiceResponse } from '@beauty-salon-frontend/api-client'
-import { Badge, Link, Note } from '@beauty-salon-frontend/ui'
+import { Badge, Link, Note, useSay } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { useId } from 'react'
 import { match } from 'ts-pattern'
-import { durationOf } from '../../utils/salon-format'
 import { type MenuGroup, type Price, priceOf } from '../../utils/salon-menu'
 import styles from './service-menu.module.css'
+
+const { menu: words } = portalSalonMessages
 
 export type ServiceMenuProps = {
   /** The parts of the menu, in their order; at least one */
@@ -20,22 +23,26 @@ export type ServiceMenuProps = {
 
 type BookingHref = (service: ModelsServiceResponse) => string
 
-const PriceText = ({ price }: { price: Price }) =>
-  match(price)
-    .with({ type: 'onConsultation' }, () => <>要相談</>)
+const PriceText = ({ price }: { price: Price }) => {
+  const say = useSay()
+
+  return match(price)
+    .with({ type: 'onConsultation' }, () => <>{say(words.onConsultation)}</>)
     .with({ type: 'amount' }, ({ amount, before, orMore, tax }) => (
       <>
         {before !== null && (
-          <span className={styles['before']}>通常 {before}</span>
+          <span className={styles['before']}>
+            {say(words.regularPrice(before))}
+          </span>
         )}
         <span className={styles['amount']}>
-          {amount}
-          {orMore && '〜'}
+          {say(orMore ? words.orMore(amount) : amount)}
         </span>
-        <span className={styles['tax']}>（{tax}）</span>
+        <span className={styles['tax']}>{say(tax)}</span>
       </>
     ))
     .exhaustive()
+}
 
 type ServiceRowProps = {
   service: ModelsServiceResponse
@@ -44,6 +51,7 @@ type ServiceRowProps = {
 }
 
 const ServiceRow = ({ service, currency, bookingHref }: ServiceRowProps) => {
+  const say = useSay()
   const said = service.shortDescription ?? service.description
 
   return (
@@ -55,11 +63,13 @@ const ServiceRow = ({ service, currency, bookingHref }: ServiceRowProps) => {
           <p>
             {service.requiresConsultation && (
               <Badge className={styles['mark']} tone='info'>
-                要カウンセリング
+                {say(words.consultationRequired)}
               </Badge>
             )}
             {!service.allowOnlineBooking && (
-              <Badge className={styles['mark']}>オンライン予約不可</Badge>
+              <Badge className={styles['mark']}>
+                {say(words.noOnlineBooking)}
+              </Badge>
             )}
           </p>
         )}
@@ -68,14 +78,16 @@ const ServiceRow = ({ service, currency, bookingHref }: ServiceRowProps) => {
             {/* Every service has this link: its name says which one it books */}
             <Link
               href={bookingHref(service)}
-              aria-label={`${service.name}を予約する`}
+              aria-label={say(words.bookOf(service.name))}
             >
-              予約する
+              {say(words.book)}
             </Link>
           </p>
         )}
       </div>
-      <p className={styles['duration']}>{durationOf(service.duration)}</p>
+      <p className={styles['duration']}>
+        {say(formats.durationOf(service.duration))}
+      </p>
       <p className={styles['price']}>
         <PriceText price={priceOf(service, currency)} />
       </p>
@@ -90,14 +102,15 @@ type MenuPartProps = {
 }
 
 const MenuPart = ({ group, currency, bookingHref }: MenuPartProps) => {
+  const say = useSay()
   const headingId = useId()
 
   return (
     <div className={styles['part']}>
       <h3 className={styles['category']} id={headingId}>
-        {group.name}
+        {group.type === 'category' ? group.name : say(words.unsorted)}
       </h3>
-      {group.description !== null && (
+      {group.type === 'category' && group.description !== null && (
         <Note size='small'>{group.description}</Note>
       )}
       <ul className={styles['services']} aria-labelledby={headingId}>
@@ -127,7 +140,7 @@ export const ServiceMenu = ({
   <div className={styles['menu']}>
     {groups.map((group) => (
       <MenuPart
-        key={group.id ?? ''}
+        key={group.type === 'category' ? group.id : group.type}
         group={group}
         currency={currency}
         bookingHref={bookingHref}
