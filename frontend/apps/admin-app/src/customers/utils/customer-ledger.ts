@@ -50,13 +50,15 @@ const distinctTags = (tags: readonly string[]): string[] => [
   ...new Set(tags.map((tag) => tag.trim()).filter((tag) => tag !== '')),
 ]
 
+/** What separates tags in a text: a comma, of either width, or the comma of Japanese (「、」) */
+export const TAG_SEPARATORS = /[,\u3001\uff0c]/
+
 /**
- * The tags of a text that holds them: separated by commas, of either
- * width, or by the comma of Japanese (「、」). Nothing between two commas
- * is no tag, and a tag written twice is one.
+ * The tags of a text that holds them, separated by `TAG_SEPARATORS`.
+ * Nothing between two commas is no tag, and a tag written twice is one.
  */
 export const tagsIn = (text: string): string[] =>
-  distinctTags(text.split(/[,\u3001\uff0c]/))
+  distinctTags(text.split(TAG_SEPARATORS))
 
 /** The tags as a person writes them, the way they are read: 「VIP、常連」, "VIP, 常連". */
 export const tagsTextOf = (tags: readonly string[]): LocalizedText =>

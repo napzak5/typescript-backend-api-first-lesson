@@ -6,12 +6,9 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { saveFile } from '@beauty-salon-frontend/io'
 import { useSession } from '@beauty-salon-frontend/session'
-import {
-  type FormErrors,
-  inJapanese,
-  useNotifications,
-  writtenInJapanese,
-} from '@beauty-salon-frontend/ui'
+import { type FormErrors, useNotifications } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { match, P } from 'ts-pattern'
@@ -35,8 +32,10 @@ import {
   type ErasureSays,
   readErasureAsk,
 } from '../utils/customer-erasure'
-import { ANSWERED_BY_OTHERS, afterDataExport } from '../utils/customer-export'
+import { afterDataExport } from '../utils/customer-export'
 import { mayKeepCustomers } from '../utils/customer-history'
+
+const { erasure: words } = adminCustomerMessages
 
 type ErasurePartProps = {
   customerId: string
@@ -73,10 +72,10 @@ const ErasurePart = ({
   })
   const [dialog, setDialog] = useState<ErasureDialog>('none')
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
-  const [errors, setErrors] = useState<FormErrors>()
+  const [message, setMessage] = useState<LocalizedText>()
+  const [errors, setErrors] = useState<FormErrors<LocalizedText>>()
   /** What the API refused, or what changed meanwhile: said under the heading */
-  const [refusal, setRefusal] = useState<string>()
+  const [refusal, setRefusal] = useState<LocalizedText>()
   /** How many times a dialog closed on what it changed: the heading takes the focus each time */
   const [moves, setMoves] = useState(0)
 
@@ -144,14 +143,12 @@ const ErasurePart = ({
     // The role of the account changed meanwhile
     .with({ type: 'forbidden' }, () => ({
       type: 'unread',
-      message: `このアカウントでは、消去の依頼を読み込めません。${ANSWERED_BY_OTHERS}`,
+      message: words.readForbidden,
       retrying: read.isFetching,
     }))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
       type: 'unread',
-      message: inJapanese(
-        unreadMessageOf(writtenInJapanese('消去の依頼'), reason),
-      ),
+      message: unreadMessageOf(words.names.request, reason),
       retrying: read.isFetching,
     }))
     .exhaustive()
@@ -202,7 +199,7 @@ export const RequestsPart = ({
   const session = useSession()
   const { notify } = useNotifications()
   /** Why no file was saved: said above the button */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   const name = customerNameOf(customer)
 
   const exporting = useMutation({

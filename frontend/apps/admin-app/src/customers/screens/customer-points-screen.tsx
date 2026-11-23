@@ -13,13 +13,13 @@ import type {
 import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
-  inJapanese,
   Link,
   LoadingIndicator,
   moreOf,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -45,7 +45,10 @@ import { PointBalance } from '../components/point-balance/point-balance'
 import { PointHistory } from '../components/point-history/point-history'
 import { WithCustomer } from './with-customer'
 
-const TITLE = 'ポイント'
+const { points: words, backToCustomer } = adminCustomerMessages
+const { history, names } = words
+
+const TITLE = words.title
 
 /**
  * The sale a transaction was made for, by its number, leading to its page
@@ -54,6 +57,7 @@ const TITLE = 'ポイント'
  * kind.
  */
 const SaleName = ({ saleId }: { saleId: string }) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: saleKeyOf(saleId),
     queryFn: () => readSale(saleId),
@@ -62,19 +66,21 @@ const SaleName = ({ saleId }: { saleId: string }) => {
   return match(read.data)
     .with({ type: 'found' }, ({ sale }) => (
       <Link href={saleHrefOf(sale.salonId, sale.id)}>
-        {`売上 ${sale.saleNumber}`}
+        {say(history.saleOf(sale.saleNumber))}
       </Link>
     ))
-    .with(
-      { type: P.union('notFound', 'forbidden') },
-      () => 'ほかのサロンの売上',
+    .with({ type: P.union('notFound', 'forbidden') }, () =>
+      say(history.saleOfOtherSalon),
     )
-    .with(P.union(undefined, { type: P.union(...UNREAD_TYPES) }), () => '売上')
+    .with(P.union(undefined, { type: P.union(...UNREAD_TYPES) }), () =>
+      say(history.sale),
+    )
     .exhaustive()
 }
 
 /** The booking a transaction was made for, as the sale is named. */
 const BookingName = ({ bookingId }: { bookingId: string }) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: bookingKeyOf(bookingId),
     queryFn: () => readBooking(bookingId),
@@ -83,14 +89,15 @@ const BookingName = ({ bookingId }: { bookingId: string }) => {
   return match(read.data)
     .with({ type: 'found' }, ({ booking }) => (
       <Link href={bookingHrefOf(booking.salonId, booking.id)}>
-        {`予約 ${booking.bookingNumber}`}
+        {say(history.bookingOf(booking.bookingNumber))}
       </Link>
     ))
-    .with(
-      { type: P.union('notFound', 'forbidden') },
-      () => 'ほかのサロンの予約',
+    .with({ type: P.union('notFound', 'forbidden') }, () =>
+      say(history.bookingOfOtherSalon),
     )
-    .with(P.union(undefined, { type: P.union(...UNREAD_TYPES) }), () => '予約')
+    .with(P.union(undefined, { type: P.union(...UNREAD_TYPES) }), () =>
+      say(history.booking),
+    )
     .exhaustive()
 }
 
@@ -106,6 +113,7 @@ type PointsPartProps = {
  * is shown, and each says its own failure.
  */
 const PointsPart = ({ salon, customer }: PointsPartProps) => {
+  const say = useSay()
   const balance = useQuery({
     queryKey: balanceKeyOf(customer.id),
     queryFn: () => readBalance(customer.id),
@@ -116,7 +124,7 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
     queryFn: () => readExpiring(customer.id),
     staleTime: 0,
   })
-  const history = useInfiniteQuery({
+  const transactions = useInfiniteQuery({
     queryKey: transactionsKeyOf(customer.id),
     queryFn: ({ pageParam }) => readTransactionsPage(customer.id, pageParam),
     initialPageParam: firstCursor(),
@@ -131,7 +139,9 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
       .with(['sale', P.string], ([, id]) => <SaleName saleId={id} />)
       .with(['booking', P.string], ([, id]) => <BookingName bookingId={id} />)
       .with(['customer', P.string], ([, id]) => (
-        <Link href={customerHrefOf(salon.id, id)}>統合したお客様</Link>
+        <Link href={customerHrefOf(salon.id, id)}>
+          {say(history.mergedCustomer)}
+        </Link>
       ))
       .with([P._, null], [null, P._], () => '')
       .exhaustive()
@@ -139,11 +149,11 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
   return (
     <>
       <ButtonLink href={customerHrefOf(salon.id, customer.id)}>
-        お客様の台帳へ
+        {say(backToCustomer)}
       </ButtonLink>
       {match(balance.data)
         .with(undefined, () => (
-          <LoadingIndicator label='残高を読み込んでいます' />
+          <LoadingIndicator label={say(words.balance.loading)} />
         ))
         .with({ type: 'found' }, ({ balance: points }) => (
           <PointBalance
@@ -153,9 +163,7 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('残高'), reason),
-            )}
+            message={say(unreadMessageOf(names.balance, reason))}
             onRetry={() => void balance.refetch()}
             pending={balance.isFetching}
           />
@@ -163,7 +171,7 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
         .exhaustive()}
       {match(expiring.data)
         .with(undefined, () => (
-          <LoadingIndicator label='期限が近いポイントを読み込んでいます' />
+          <LoadingIndicator label={say(words.expiring.loading)} />
         ))
         .with({ type: 'found' }, ({ expiring: soon }) => (
           <ExpiringPoints
@@ -175,27 +183,25 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('期限が近いポイント'), reason),
-            )}
+            message={say(unreadMessageOf(names.expiring, reason))}
             onRetry={() => void expiring.refetch()}
             pending={expiring.isFetching}
           />
         ))
         .exhaustive()}
       {match(
-        history.data === undefined ? undefined : listingOf(history.data.pages),
+        transactions.data === undefined
+          ? undefined
+          : listingOf(transactions.data.pages),
       )
         .with(undefined, () => (
-          <LoadingIndicator label='ポイントの履歴を読み込んでいます' />
+          <LoadingIndicator label={say(history.loading)} />
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('ポイントの履歴'), reason),
-            )}
-            onRetry={() => void history.refetch()}
-            pending={history.isFetching}
+            message={say(unreadMessageOf(names.history, reason))}
+            onRetry={() => void transactions.refetch()}
+            pending={transactions.isFetching}
           />
         ))
         .with({ type: 'listed' }, ({ items, total, rest }) => (
@@ -203,13 +209,13 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
             transactions={items}
             total={total}
             more={moreOf(rest, {
-              nextPage: history.isFetchingNextPage,
-              again: history.isRefetching,
+              nextPage: transactions.isFetchingNextPage,
+              again: transactions.isRefetching,
             })}
             onMore={() =>
               void (rest === 'unread'
-                ? history.refetch()
-                : history.fetchNextPage())
+                ? transactions.refetch()
+                : transactions.fetchNextPage())
             }
             referenceOf={referenceOf}
             timezone={salon.timezone}
@@ -227,11 +233,17 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
  */
 export const CustomerPointsScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh={false}>
+        <WithCustomer
+          key={salon.id}
+          salon={salon}
+          title={say(TITLE)}
+          fresh={false}
+        >
           {(customer) => (
             <PointsPart key={customer.id} salon={salon} customer={customer} />
           )}

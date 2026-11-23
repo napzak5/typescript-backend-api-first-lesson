@@ -1,9 +1,11 @@
 import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { FileToSave } from '@beauty-salon-frontend/io'
-import { inJapanese, writtenInJapanese } from '@beauty-salon-frontend/ui'
-import * as formats from '@beauty-salon-shared/i18n/formats'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type { DataExport, LedgerExport } from '../api/customer-export-api'
+
+const { exports: words, names } = adminCustomerMessages
 
 /*
  * What follows an export: the file that is saved and what is said of it,
@@ -13,15 +15,11 @@ import type { DataExport, LedgerExport } from '../api/customer-export-api'
 /** The largest number of customers the API writes into one file */
 const MOST_EXPORTED = 10_000
 
-/** What a member of the staff is told where the requests of a customer would be answered */
-export const ANSWERED_BY_OTHERS =
-  'ご本人からのデータの開示と消去の請求には、オーナーとマネージャーが応えます。'
-
 export type ExportSays =
   /** The file is saved, and the notification says what it holds */
-  | { type: 'saved'; file: FileToSave; message: string }
+  | { type: 'saved'; file: FileToSave; message: LocalizedText }
   /** No file: said beside the button that exports, which may be pressed again */
-  | { type: 'said'; tone: 'warning' | 'danger'; message: string }
+  | { type: 'said'; tone: 'warning' | 'danger'; message: LocalizedText }
 
 /** What follows an export of the ledger. */
 export const afterLedgerExport = (outcome: LedgerExport): ExportSays =>
@@ -31,36 +29,32 @@ export const afterLedgerExport = (outcome: LedgerExport): ExportSays =>
     .with({ type: 'exported', customers: 0 }, () => ({
       type: 'said',
       tone: 'warning',
-      message: '条件に合うお客様がいないため、出力しませんでした。',
+      message: words.ledger.noneMatch,
     }))
     .with({ type: 'exported' }, ({ file, customers }) => ({
       type: 'saved',
       file,
-      message: `${customers} 人のお客様を、${file.name} に出力しました。`,
+      message: words.ledger.exported(customers, file.name),
     }))
     .with({ type: 'tooMany' }, () => ({
       type: 'said',
       tone: 'danger',
-      message: `条件に合うお客様が ${inJapanese(formats.numberOf(MOST_EXPORTED))} 人を超えるため、出力できません。条件を絞ってから、もう一度出力してください。`,
+      message: words.ledger.tooMany(MOST_EXPORTED),
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'said',
       tone: 'danger',
-      message:
-        'このアカウントでは、顧客台帳を出力できません。台帳の出力は、オーナーとマネージャーができます。',
+      message: words.ledger.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, (reason) => ({
       type: 'said',
       tone: 'danger',
-      message: inJapanese(
-        unreadMessageOf(writtenInJapanese('顧客台帳'), reason),
-      ),
+      message: unreadMessageOf(names.ledger, reason),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'said',
       tone: 'danger',
-      message:
-        '顧客台帳を出力できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: words.ledger.failed,
     }))
     .exhaustive()
 
@@ -79,25 +73,22 @@ export const afterDataExport = (
     .with({ type: 'exported' }, ({ file }) => ({
       type: 'saved',
       file,
-      message: `${name} 様のデータを、${file.name} に出力しました。`,
+      message: words.data.exported(name, file.name),
     }))
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'forbidden' }, () => ({
       type: 'said',
       tone: 'danger',
-      message: `このアカウントでは、お客様のデータを出力できません。${ANSWERED_BY_OTHERS}`,
+      message: words.data.forbidden,
     }))
     .with({ type: 'tooManyRequests' }, (reason) => ({
       type: 'said',
       tone: 'danger',
-      message: inJapanese(
-        unreadMessageOf(writtenInJapanese('お客様のデータ'), reason),
-      ),
+      message: unreadMessageOf(words.names.data, reason),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'said',
       tone: 'danger',
-      message:
-        'お客様のデータを出力できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: words.data.failed,
     }))
     .exhaustive()

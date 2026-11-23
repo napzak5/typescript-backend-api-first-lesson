@@ -3,13 +3,17 @@ import {
   Alert,
   Checkbox,
   Form,
+  type FormErrors,
   type FormProps,
-  inJapanese,
+  NO_ERRORS,
   RadioGroup,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import { customerMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useState } from 'react'
 import {
   kindNameOf,
@@ -18,10 +22,19 @@ import {
 } from '../../utils/points'
 import styles from './point-entry-form.module.css'
 
+const { form: words } = adminCustomerMessages.points
+
 export type PointEntryFormProps = Pick<
   FormProps,
-  'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /**
+   * The errors of the controls, under their names. A new object is a new
+   * attempt: the focus goes to the first control with an error
+   */
+  errors?: FormErrors<LocalizedText> | undefined
   /** What the account may record */
   kinds: readonly PointKind[]
   /** What is chosen at first */
@@ -46,22 +59,32 @@ export const PointEntryForm = ({
   balance,
   today,
   sale,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
 }: PointEntryFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const [kind, setKind] = useState(initialKind)
 
   return (
     <div className={styles['entry']}>
-      {sale?.type === 'unusable' && <Alert tone='warning'>{sale.why}</Alert>}
-      <Form {...form} errors={errors} submitLabel='記録する'>
+      {sale?.type === 'unusable' && (
+        <Alert tone='warning'>{say(sale.why)}</Alert>
+      )}
+      <Form
+        {...form}
+        message={said.message}
+        errors={errors}
+        submitLabel={say(words.record)}
+      >
         <RadioGroup
-          label='記録すること'
+          label={say(words.kind)}
           name='kind'
           required
           options={kinds.map((one) => ({
             value: one,
-            label: kindNameOf(one),
+            label: say(kindNameOf(one)),
           }))}
           value={kind}
           onChange={(event) => {
@@ -70,49 +93,45 @@ export const PointEntryForm = ({
               setKind(chosen)
             }
           }}
-          error={errors['kind']}
+          error={said.errors['kind']}
         />
         <TextField
           width='short'
-          label='ポイント数'
+          label={say(words.points)}
           name='points'
           inputMode='numeric'
           autoComplete='off'
           required
-          description={`1 以上の整数で入れます。減らすときも、減らす数を入れます。${
-            balance === undefined
-              ? ''
-              : `いまの残高は ${inJapanese(customerMessages.pointsOf(balance))}です。`
-          }`}
-          error={errors['points']}
+          description={say(words.pointsDescription(balance))}
+          error={said.errors['points']}
         />
         {kind === 'earned' && (
           <TextField
             width='short'
-            label='有効期限'
+            label={say(words.expiryDate)}
             name='expiryDate'
             autoComplete='off'
             type='date'
             min={today}
             max={LATEST_DAY}
-            description='付与したポイントは、この日まで使えます。空のままなら、期限はありません。'
-            error={errors['expiryDate']}
+            description={say(words.expiryDescription)}
+            error={said.errors['expiryDate']}
           />
         )}
         <TextArea
-          label='説明'
+          label={say(words.description)}
           name='description'
           rows={2}
-          description='ポイントの履歴に残ります。調整では、理由を書いておきます。'
-          error={errors['description']}
+          description={say(words.descriptionDescription)}
+          error={said.errors['description']}
         />
         {sale?.type === 'sale' && (
           <Checkbox
             name='saleId'
             value={sale.id}
             defaultChecked
-            label={`${sale.name}に結びつける`}
-            description='1 つの売上には、ポイントの付与と、使ったポイントの記録を、1 回ずつできます。'
+            label={say(words.forSale(sale.name))}
+            description={say(words.forSaleDescription)}
           />
         )}
       </Form>

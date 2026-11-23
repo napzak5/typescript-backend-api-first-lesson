@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   findAccessibilityViolations,
   type SavedFile,
@@ -13,6 +14,7 @@ import {
   VIP,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -38,10 +40,14 @@ import { customerQueryOf } from '../utils/customer-ledger'
 const part = (name: string): HTMLElement => screen.getByRole('region', { name })
 
 /** Opens a page of the salon in Tokyo at its address, signed in. */
-const openAt = async (path: (tokyo: string) => string, email = OWNER) => {
+const openAt = async (
+  path: (tokyo: string) => string,
+  email = OWNER,
+  language: Locale = 'ja',
+) => {
   const tokyo = await salonIdOf(TOKYO)
   renderAt(path(tokyo))
-  await signInAs(email)
+  await signInAs(email, language)
 
   return tokyo
 }
@@ -323,5 +329,111 @@ describe('exporting customers, against the API', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('exporting customers on a page in English, against the API', () => {
+  /** Waits for the page of a customer in English, down to the part of the requests. */
+  const theCustomerInEnglish = async (): Promise<void> => {
+    await heading('Customer record')
+    await screen.findByRole('region', { name: 'Ledger' })
+    await screen.findByRole('region', { name: 'Requests from the customer' })
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should save the customers who meet the conditions, and say in English how many', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAt(ledgerOf(customerQueryOf({ tags: ['vip'] })), OWNER, 'en')
+    await heading('Customer ledger')
+    await screen.findByRole('table', { name: 'Customers matching the filters' })
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Export as CSV' }))
+
+    // Assert
+    const file = await theSavedFile()
+    expect(columnIn(file, 'email').toSorted()).toEqual(
+      [YUKI.email, VIP.email].toSorted(),
+    )
+    expect(notifications()).toContain(`Exported 2 customers to ${file.name}.`)
+  })
+
+  it('should save no file when nobody meets the conditions, and say so in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAt(
+      ledgerOf(customerQueryOf({ search: 'nobody', tags: [] })),
+      OWNER,
+      'en',
+    )
+    await heading('Customer ledger')
+    await screen.findByText('No customers match these filters')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Export as CSV' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'No customers match the filters, so nothing was exported.',
+      ),
+    ).toBeVisible()
+    expect(await savedFiles()).toEqual([])
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+
+  it('should save everything held of the customer, and say in English whose it is', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const yuki = await customerIdOf(YUKI.email)
+    await openAt((tokyo) => customerHrefOf(tokyo, yuki), OWNER, 'en')
+    await theCustomerInEnglish()
+    expect(
+      within(part('Requests from the customer')).getByRole('heading', {
+        name: 'Disclosure of the data',
+      }),
+    ).toBeVisible()
+
+    // Act
+    await user.click(
+      within(part('Requests from the customer')).getByRole('button', {
+        name: 'Export the data',
+      }),
+    )
+
+    // Assert
+    const file = await theSavedFile()
+    expect(file.name).toBe(`customer-${yuki}.json`)
+    expect(notifications()).toContain(
+      `Exported the data of ${YUKI.name} to customer-${yuki}.json.`,
+    )
+  })
+
+  it('should tell a member of the staff in English who answers, and offer no export', async () => {
+    // Arrange
+    const yuki = await customerIdOf(YUKI.email)
+    await openAt((tokyo) => customerHrefOf(tokyo, yuki), STYLIST, 'en')
+
+    // Act
+    await theCustomerInEnglish()
+
+    // Assert
+    expect(
+      within(part('Requests from the customer')).getByText(
+        'Owners and managers answer the requests of customers to see or erase their data.',
+      ),
+    ).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Export the data' })).toBeNull()
   })
 })

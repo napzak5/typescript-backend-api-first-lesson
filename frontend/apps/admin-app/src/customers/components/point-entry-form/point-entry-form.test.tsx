@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SALE_GIVEN_FOR } from '../examples'
 import * as pointEntryFormStories from './point-entry-form.stories'
 
@@ -151,7 +152,7 @@ describe('PointEntryForm', () => {
 
     // Assert
     expect(screen.getByRole('status')).toHaveTextContent(
-      'この売上は取り消されているため、ポイントを結びつけません。',
+      'アドレスの売上は取り消されています。取り消した売上には、ポイントを付与も利用もできないため、売上に結びつけずに記録します。',
     )
     expect(screen.queryByRole('checkbox')).toBeNull()
   })
@@ -167,5 +168,88 @@ describe('PointEntryForm', () => {
       expect.stringContaining('残高（2,700 ポイント）より多くは減らせません。'),
     )
     expect(screen.getByRole('textbox', { name: 'ポイント数' })).toBeInvalid()
+  })
+})
+
+describe('PointEntryForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer what it records, with the balance, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Adjusting.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('radiogroup', { name: 'What to record' }))
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual([
+      'Give points',
+      'Record points used',
+      'Add by an adjustment',
+      'Take away by an adjustment',
+    ])
+    expect(
+      screen.getByRole('textbox', { name: 'Points' }),
+    ).toHaveAccessibleDescription(
+      'Enter a whole number of 1 or more. To take points away, enter how many to take away. The balance is now 2,700 points.',
+    )
+    expect(screen.getByLabelText('Expiry date')).toHaveAccessibleDescription(
+      'The points given can be used until this day. Leave it empty for no expiry date.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Description' }),
+    ).toHaveAccessibleDescription(
+      'It is kept in the point history. For an adjustment, write the reason.',
+    )
+    expect(screen.getByRole('button', { name: 'Record' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Cancel' })).toBeVisible()
+  })
+
+  it('should offer the sale of the address in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.ForSale.run()
+
+    // Assert
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Link to sale SL-2KQM-9F4H (Fri, November 20, 2026 at 11:02, ¥5,500)',
+      }),
+    ).toHaveAccessibleDescription(
+      'For each sale, points can be given once and points used can be recorded once.',
+    )
+  })
+
+  it('should say in English why the sale is not offered, and what the API refused', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.UnusableSale.run()
+
+    // Assert
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'The sale in the address was voided. Points cannot be given or used for a voided sale, so they will be recorded without a sale.',
+    )
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Points' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'You cannot take away more than the balance (2,700 points).',
+      ),
+    )
   })
 })

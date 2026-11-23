@@ -4,13 +4,17 @@ import {
   BulletList,
   Button,
   FileField,
+  type FormErrors,
   type FormProps,
-  inJapanese,
   LoadingIndicator,
   NO_ERRORS,
   Table,
   useErrorFocus,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { type FormEvent, useId } from 'react'
 import { customerKanaOf, customerNameOf } from '../../api/customers-api'
 import {
@@ -22,6 +26,8 @@ import {
 import { tierNameOf } from '../../utils/customer-format'
 import styles from './customer-import-form.module.css'
 
+const { form: words } = adminCustomerMessages.file
+
 /** The file that was chosen: being read, or read */
 export type ChosenFile =
   | { type: 'reading' }
@@ -32,8 +38,15 @@ export const FILE = 'file'
 
 export type CustomerImportFormProps = Pick<
   FormProps,
-  'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /**
+   * The errors of the controls, under their names. A new object is a new
+   * attempt: the focus goes to the first control with an error
+   */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The file that was chosen; `undefined` before one is */
   chosen: ChosenFile | undefined
   /** What the API refused of the customers of the file, by row */
@@ -64,6 +77,8 @@ export const CustomerImportForm = ({
   actions,
   onSubmit,
 }: CustomerImportFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const formId = useId()
   const form = useErrorFocus(errors)
   const read = chosen?.type === 'read' ? chosen.read : undefined
@@ -87,30 +102,30 @@ export const CustomerImportForm = ({
         onSubmit={submit}
         ref={form}
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {said.message !== undefined && (
+          <Alert tone='danger'>{said.message}</Alert>
+        )}
         <FileField
-          label='CSV ファイル'
+          label={say(words.file)}
           name={FILE}
           accept='.csv,text/csv'
           required
-          description={`UTF-8 か Shift_JIS の、カンマで区切ったファイル。1 行目に列名を、2 行目から 1 行に 1 人ずつ、${MOST_REGISTERED} 人まで書きます。`}
-          error={errors[FILE]}
+          description={say(words.fileDescription(MOST_REGISTERED))}
+          error={said.errors[FILE]}
           onChange={(event) =>
             onChoose(event.currentTarget.files?.item(0) ?? undefined)
           }
         />
         {chosen?.type === 'reading' && (
-          <LoadingIndicator label='ファイルを読んでいます' />
+          <LoadingIndicator label={say(words.reading)} />
         )}
         {problems.length > 0 && (
-          <Alert tone='danger' title='ファイルの誤り'>
+          <Alert tone='danger' title={say(words.problemsTitle)}>
             <div className={styles['problems']}>
-              <p>
-                直したファイルを選び直してください。どのお客様も、まだ登録していません。
-              </p>
+              <p>{say(words.problemsAbout)}</p>
               <BulletList>
                 {problems.map((problem) => {
-                  const text = problemTextOf(problem)
+                  const text = say(problemTextOf(problem))
                   return <li key={text}>{text}</li>
                 })}
               </BulletList>
@@ -120,47 +135,49 @@ export const CustomerImportForm = ({
       </form>
       {customers.length > 0 && (
         <Table
-          caption='登録するお客様'
+          caption={say(words.customers)}
           columns={[
-            { key: 'row', header: '行', align: 'end', cell: ({ row }) => row },
+            {
+              key: 'row',
+              header: say(words.row),
+              align: 'end',
+              cell: ({ row }) => row,
+            },
             {
               key: 'name',
-              header: 'お名前',
+              header: say(words.name),
               cell: ({ request }) => customerNameOf(request),
             },
             {
               key: 'kana',
-              header: 'フリガナ',
+              header: say(words.kana),
               cell: ({ request }) => customerKanaOf(request),
             },
             {
               key: 'email',
-              header: 'メールアドレス',
+              header: say(words.email),
               cell: ({ request }) => request.email,
             },
             {
               key: 'phoneNumber',
-              header: '電話番号',
+              header: say(words.phoneNumber),
               cell: ({ request }) => request.phoneNumber,
             },
             {
               key: 'membershipTier',
-              header: '会員ランク',
-              cell: ({ request }) =>
-                inJapanese(tierNameOf(request.membershipTier)),
+              header: say(words.membershipTier),
+              cell: ({ request }) => say(tierNameOf(request.membershipTier)),
             },
           ]}
           rowHeader='name'
           rows={customers}
           rowKey={({ row }) => String(row)}
-          emptyMessage='登録するお客様はいません'
+          emptyMessage={say(words.noCustomers)}
         />
       )}
       <Actions layout='row'>
         <Button type='submit' form={formId} variant='primary' pending={pending}>
-          {customers.length === 0
-            ? '登録する'
-            : `${customers.length} 人を登録する`}
+          {say(words.register(customers.length))}
         </Button>
         {actions}
       </Actions>

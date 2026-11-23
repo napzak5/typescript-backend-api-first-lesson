@@ -328,9 +328,9 @@ area at a time. `ui`, `fields`, `answers`, `session`, `app-frame`,
 `salon-screens` and `preferences` are done, and so are `io` and
 `api-client`, which say nothing. Every area of the portal and of the
 dashboard is done. Of the admin application, the frame (the links of the
-header) and the first part of the ledger of the customers are done; its
-other areas still write their texts in Japanese, in the source, and no
-application shows a control that chooses the language yet.
+header) and the ledger of the customers are done; its other areas still
+write their texts in Japanese, in the source, and no application shows a
+control that chooses the language yet.
 
 In a package that is done:
 
@@ -451,8 +451,9 @@ In an area of an application that is done, the same rules hold, and:
   (`itShouldWriteItsTextsAsMessages(import.meta.dirname)` of the portal
   and of the dashboard); what the tests share (`__tests__`) is not read.
   An area that is done in parts names the folders and files inside it
-  that are done (`'customers/components/customer-form'`,
-  `'customers/screens/customer-screen.tsx'`), until the whole area is.
+  that are done (`'customers/components/customer-form'`), until the whole
+  area is and its name takes their place (`'customers'` of the admin
+  application).
 - An area that is still written in Japanese says what it takes of an area
   that is done with `inJapanese`, and an area that is done hands on the
   strings of one that is not as they are. The portal and the dashboard

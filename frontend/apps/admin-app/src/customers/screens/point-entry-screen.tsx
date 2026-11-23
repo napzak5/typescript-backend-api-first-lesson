@@ -11,7 +11,10 @@ import {
   LoadingIndicator,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
@@ -42,7 +45,9 @@ import {
 } from '../utils/points'
 import { WithCustomer } from './with-customer'
 
-const TITLE = 'ポイントを記録する'
+const { points: words } = adminCustomerMessages
+
+const TITLE = words.entry
 
 type PointEntryProps = {
   salon: ModelsSalonResponse
@@ -67,7 +72,8 @@ const PointEntry = ({ salon, customer, balance, sale }: PointEntryProps) => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const kinds = pointKindsFor(
     session.type === 'signedIn' ? session.user.role : '',
   )
@@ -125,7 +131,7 @@ const PointEntry = ({ salon, customer, balance, sale }: PointEntryProps) => {
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(words.form.cancel)}
         </ButtonLink>
       }
     />
@@ -143,6 +149,7 @@ type PointsToRecordProps = {
  * opens.
  */
 const PointsToRecord = ({ salon, customer }: PointsToRecordProps) => {
+  const say = useSay()
   const [search] = useSearchParams()
   const saleId = search.get('saleId')
   const balance = useQuery({
@@ -161,7 +168,7 @@ const PointsToRecord = ({ salon, customer }: PointsToRecordProps) => {
     balance.data === undefined ||
     (saleId !== null && sale.data === undefined)
   ) {
-    return <LoadingIndicator label='残高を読み込んでいます' />
+    return <LoadingIndicator label={say(words.form.loading)} />
   }
 
   return (
@@ -186,11 +193,17 @@ const PointsToRecord = ({ salon, customer }: PointsToRecordProps) => {
  */
 export const PointEntryScreen = () => {
   const { salonId = '' } = useParams()
+  const say = useSay()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(TITLE)}>
       {(salon) => (
-        <WithCustomer key={salon.id} salon={salon} title={TITLE} fresh={false}>
+        <WithCustomer
+          key={salon.id}
+          salon={salon}
+          title={say(TITLE)}
+          fresh={false}
+        >
           {(customer) => (
             <PointsToRecord
               key={customer.id}

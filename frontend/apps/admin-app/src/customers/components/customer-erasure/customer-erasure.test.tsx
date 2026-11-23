@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as customerErasureStories from './customer-erasure.stories'
 
 const stories = composeStories(customerErasureStories)
@@ -218,5 +219,123 @@ describe('CustomerErasure', () => {
 
     // Assert
     expect(stories.Unread.args.onRetry).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('CustomerErasure on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  const erasure = (): HTMLElement =>
+    screen.getByRole('region', { name: 'Erasure of the data' })
+
+  it('should say what erasing does, and ask for the reason, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.BlankReason.run()
+
+    // Assert
+    expect(erasure()).toHaveTextContent(
+      'When a customer asks to have the personal data held of them erased, make sure it is the customer, then take the request.',
+    )
+    expect(
+      within(erasure()).getByRole('button', {
+        name: 'Take a request to erase the data',
+      }),
+    ).toBeVisible()
+    const asking = dialog('Take the request to erase the data?')
+    expect(asking).toHaveAccessibleDescription(
+      'The request to erase the data of 田中 優希 will be taken. It can be cancelled for 14 days after it is taken.',
+    )
+    expect(
+      within(asking).getByRole('textbox', { name: 'Reason for the request' }),
+    ).toHaveAccessibleDescription(
+      'Write the reason the customer gave, and how the request was received. It is kept with the request. Enter the reason for the request.',
+    )
+    expect(
+      within(asking).getByRole('button', { name: 'Take the request' }),
+    ).toBeVisible()
+  })
+
+  it('should show a pending request and ask before calling it off, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Cancelling.run()
+
+    // Assert
+    expect(
+      within(erasure())
+        .getAllByRole('term')
+        .map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent,
+        ]),
+    ).toEqual([
+      ['Taken', 'Fri, November 20, 2026 at 10:30'],
+      ['To be erased', 'On or after Fri, December 4, 2026 at 10:30'],
+      [
+        'Reason for the request',
+        '店頭で、ご本人から口頭でお申し出がありました。',
+      ],
+    ])
+    expect(erasure()).toHaveTextContent(
+      'The data is erased after the scheduled time. Until then, the request can be cancelled.',
+    )
+    const cancelling = dialog('Cancel the request to erase the data?')
+    expect(cancelling).toHaveAccessibleDescription(
+      'The data of 田中 優希 will not be erased. Cancel a request when the customer withdraws it, or when it was taken by mistake.',
+    )
+    expect(
+      within(cancelling)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Back', 'Cancel it'])
+  })
+
+  it('should say in English what became of a request', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Cancelled.run()
+
+    // Assert
+    expect(erasure()).toHaveTextContent(
+      'The request taken on Fri, November 20, 2026 at 10:30 was cancelled on Sat, November 21, 2026 at 15:00.',
+    )
+
+    // Act
+    await stories.RemovedWithoutRequest.run()
+
+    // Assert
+    expect(erasure()).toHaveTextContent(
+      'There is no request to erase the data.',
+    )
+  })
+
+  it('should say in English what changed meanwhile, and what could not be read', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.TakenMeanwhile.run()
+
+    // Assert
+    expect(within(erasure()).getByRole('status')).toHaveTextContent(
+      'In the meantime, another account took a request to erase the data of this customer.',
+    )
+
+    // Act
+    await stories.Unread.run()
+
+    // Assert
+    expect(erasure()).toHaveTextContent(
+      'Could not load the request to erase the data. Check your connection and try again.',
+    )
   })
 })

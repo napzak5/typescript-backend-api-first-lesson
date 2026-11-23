@@ -1,4 +1,5 @@
 import { formOfEntries } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { aCustomer, customers } from '../../bookings/components/examples'
 import {
@@ -45,6 +46,16 @@ describe('withoutGone', () => {
   })
 })
 
+const ONE_AT_A_TIME = {
+  en: 'Enter one tag at a time. Commas cannot be used.',
+  ja: 'タグは 1 つずつ入力してください。「、」とカンマは使えません。',
+}
+
+const TOO_MANY_REQUESTS = {
+  en: 'There are too many requests. Wait a while and try again.',
+  ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+}
+
 describe('readTagChange', () => {
   it.each<[string, [string, string][], TagChange]>([
     [
@@ -71,18 +82,10 @@ describe('readTagChange', () => {
     expect(read).toEqual({ type: 'valid', value: change })
   })
 
-  it.each<[string, string, string]>([
-    ['no tag', '  ', 'タグを入力してください。'],
-    [
-      'two tags',
-      'VIP、常連',
-      'タグは 1 つずつ入力してください。「、」とカンマは使えません。',
-    ],
-    [
-      'a comma',
-      'VIP,常連',
-      'タグは 1 つずつ入力してください。「、」とカンマは使えません。',
-    ],
+  it.each<[string, string, LocalizedText]>([
+    ['no tag', '  ', { en: 'Enter a tag.', ja: 'タグを入力してください。' }],
+    ['two tags', 'VIP、常連', ONE_AT_A_TIME],
+    ['a comma', 'VIP,常連', ONE_AT_A_TIME],
   ])('should refuse %s', (_, tag, error) => {
     // Act
     const read = readTagChange(
@@ -137,7 +140,14 @@ describe('afterRetagging', () => {
       'a tag given',
       { type: 'retagged', count: 2 },
       GIVE,
-      { type: 'done', message: '2 人にタグ「秋」を付けました。', clear: false },
+      {
+        type: 'done',
+        message: {
+          en: 'Added the tag “秋” to 2 customers.',
+          ja: '2 人にタグ「秋」を付けました。',
+        },
+        clear: false,
+      },
     ],
     [
       'a tag taken away',
@@ -145,7 +155,10 @@ describe('afterRetagging', () => {
       TAKE,
       {
         type: 'done',
-        message: '1 人からタグ「秋」を外しました。',
+        message: {
+          en: 'Removed the tag “秋” from 1 customer.',
+          ja: '1 人からタグ「秋」を外しました。',
+        },
         clear: false,
       },
     ],
@@ -155,7 +168,10 @@ describe('afterRetagging', () => {
       GIVE,
       {
         type: 'done',
-        message: '選んだお客様には、もうタグ「秋」が付いています。',
+        message: {
+          en: 'The chosen customers already have the tag “秋”.',
+          ja: '選んだお客様には、もうタグ「秋」が付いています。',
+        },
         clear: false,
       },
     ],
@@ -165,7 +181,10 @@ describe('afterRetagging', () => {
       TAKE,
       {
         type: 'done',
-        message: '選んだお客様に、タグ「秋」の付いた人はいません。',
+        message: {
+          en: 'None of the chosen customers has the tag “秋”.',
+          ja: '選んだお客様に、タグ「秋」の付いた人はいません。',
+        },
         clear: false,
       },
     ],
@@ -175,8 +194,10 @@ describe('afterRetagging', () => {
       GIVE,
       {
         type: 'gone',
-        message:
-          '選んだお客様のうち、鈴木 一郎 様は、もう台帳にいません。そのお客様を選ぶのをやめ、台帳を読み直しました。だれのタグも変えていません。',
+        message: {
+          en: 'No longer in the ledger: 鈴木 一郎. They are no longer chosen, and the ledger was loaded again. No tags were changed.',
+          ja: '選んだお客様のうち、鈴木 一郎 様は、もう台帳にいません。そのお客様を選ぶのをやめ、台帳を読み直しました。だれのタグも変えていません。',
+        },
         ids: [ichiro.id],
       },
     ],
@@ -184,7 +205,13 @@ describe('afterRetagging', () => {
       'an account that may not',
       { type: 'forbidden' },
       GIVE,
-      { type: 'again', message: 'このアカウントでは、顧客台帳を扱えません。' },
+      {
+        type: 'again',
+        message: {
+          en: 'This account cannot work with the customer ledger.',
+          ja: 'このアカウントでは、顧客台帳を扱えません。',
+        },
+      },
     ],
     [
       'too many requests',
@@ -192,8 +219,7 @@ describe('afterRetagging', () => {
       GIVE,
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: TOO_MANY_REQUESTS,
       },
     ],
     [
@@ -202,8 +228,10 @@ describe('afterRetagging', () => {
       GIVE,
       {
         type: 'again',
-        message:
-          'タグを変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The tags could not be changed. Check your connection and try again.',
+          ja: 'タグを変えられませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what follows %s', (_, attempt, change, says) => {
@@ -220,15 +248,24 @@ describe('afterRemoval', () => {
     [
       'customers removed',
       { type: 'removed', count: 2 },
-      { type: 'done', message: '2 人を台帳から削除しました。', clear: true },
+      {
+        type: 'done',
+        message: {
+          en: 'Removed 2 customers from the ledger.',
+          ja: '2 人を台帳から削除しました。',
+        },
+        clear: true,
+      },
     ],
     [
       'a chosen customer with bookings that are not finished',
       { type: 'unfinished', id: ichiro.id },
       {
         type: 'again',
-        message:
-          '鈴木 一郎 様には、終わっていない予約があります。予約を完了、キャンセル、または削除してから、もう一度お試しください。だれも削除していません。',
+        message: {
+          en: '鈴木 一郎 has bookings that are not finished. Complete, cancel or delete those bookings, then try again. Nobody was removed.',
+          ja: '鈴木 一郎 様には、終わっていない予約があります。予約を完了、キャンセル、または削除してから、もう一度お試しください。だれも削除していません。',
+        },
       },
     ],
     [
@@ -236,8 +273,10 @@ describe('afterRemoval', () => {
       { type: 'unfinished', id: undefined },
       {
         type: 'again',
-        message:
-          '選んだお客様のなかに、終わっていない予約のあるお客様がいます。予約を完了、キャンセル、または削除してから、もう一度お試しください。だれも削除していません。',
+        message: {
+          en: 'Some of the chosen customers have bookings that are not finished. Complete, cancel or delete those bookings, then try again. Nobody was removed.',
+          ja: '選んだお客様のなかに、終わっていない予約のあるお客様がいます。予約を完了、キャンセル、または削除してから、もう一度お試しください。だれも削除していません。',
+        },
       },
     ],
     [
@@ -245,8 +284,10 @@ describe('afterRemoval', () => {
       { type: 'gone', ids: [hanako.id, ichiro.id] },
       {
         type: 'gone',
-        message:
-          '選んだお客様のうち、山田 花子 様、鈴木 一郎 様は、もう台帳にいません。そのお客様を選ぶのをやめ、台帳を読み直しました。だれも削除していません。',
+        message: {
+          en: 'No longer in the ledger: 山田 花子, 鈴木 一郎. They are no longer chosen, and the ledger was loaded again. Nobody was removed.',
+          ja: '選んだお客様のうち、山田 花子 様、鈴木 一郎 様は、もう台帳にいません。そのお客様を選ぶのをやめ、台帳を読み直しました。だれも削除していません。',
+        },
         ids: [hanako.id, ichiro.id],
       },
     ],
@@ -255,8 +296,10 @@ describe('afterRemoval', () => {
       { type: 'forbidden' },
       {
         type: 'again',
-        message:
-          'このアカウントでは、お客様を台帳から削除できません。台帳からの削除は、オーナーとマネージャーができます。',
+        message: {
+          en: 'This account cannot remove customers from the ledger. Owners and managers remove customers from the ledger.',
+          ja: 'このアカウントでは、お客様を台帳から削除できません。台帳からの削除は、オーナーとマネージャーができます。',
+        },
       },
     ],
     [
@@ -264,8 +307,7 @@ describe('afterRemoval', () => {
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: TOO_MANY_REQUESTS,
       },
     ],
     [
@@ -273,8 +315,10 @@ describe('afterRemoval', () => {
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          '台帳から削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The customers could not be removed from the ledger. Check your connection and try again.',
+          ja: '台帳から削除できませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should say what follows %s', (_, attempt, says) => {

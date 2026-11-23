@@ -1,8 +1,22 @@
-import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { ButtonLink, useSay } from '@beauty-salon-frontend/ui'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { SALE_GIVEN_FOR } from '../examples'
 import { PointEntryForm } from './point-entry-form'
+
+const { points: words } = adminCustomerMessages
+
+/** The way back that the screen puts beside the button that records */
+const Cancel = () => {
+  const say = useSay()
+
+  return (
+    <ButtonLink href='#points' variant='quiet'>
+      {say(words.form.cancel)}
+    </ButtonLink>
+  )
+}
 
 const meta: Meta<typeof PointEntryForm> = {
   title: 'Admin/Customers/PointEntryForm',
@@ -14,11 +28,7 @@ const meta: Meta<typeof PointEntryForm> = {
     today: '2026-11-20',
     sale: undefined,
     onSubmit: fn(),
-    actions: (
-      <ButtonLink href='#points' variant='quiet'>
-        やめる
-      </ButtonLink>
-    ),
+    actions: <Cancel />,
   },
 }
 
@@ -36,7 +46,14 @@ export const ForSale: Story = {
     sale: {
       type: 'sale',
       id: SALE_GIVEN_FOR,
-      name: '売上番号 SL-2KQM-9F4H（2026年11月20日（金） 11:02、￥5,500）',
+      name: words.sale.nameOf(
+        'SL-2KQM-9F4H',
+        {
+          en: 'Fri, November 20, 2026 at 11:02',
+          ja: '2026年11月20日（金） 11:02',
+        },
+        { en: '¥5,500', ja: '￥5,500' },
+      ),
     },
   },
 }
@@ -49,10 +66,7 @@ export const Adjusting: Story = {
 /** The sale of the address cannot be what the points are for */
 export const UnusableSale: Story = {
   args: {
-    sale: {
-      type: 'unusable',
-      why: 'この売上は取り消されているため、ポイントを結びつけません。',
-    },
+    sale: { type: 'unusable', why: words.sale.voided },
   },
 }
 
@@ -60,7 +74,7 @@ export const UnusableSale: Story = {
 export const Refused: Story = {
   args: {
     initialKind: 'used',
-    errors: { points: '残高（2,700 ポイント）より多くは減らせません。' },
+    errors: { points: words.refusals.short(2700) },
   },
 }
 

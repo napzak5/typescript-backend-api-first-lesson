@@ -15,7 +15,9 @@ import {
   PREFERRED_SERVICES,
   SERVICE_CATEGORIES,
 } from '@beauty-salon-frontend/fields'
-import { aboutTheAttempt, inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
+import { customerMessages as record } from '@beauty-salon-shared/i18n/messages/ui'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import {
@@ -43,135 +45,139 @@ type Entry = ModelsCustomerCreateRequest
 
 type Column = keyof Entry
 
+const { file: words, form, items } = adminCustomerMessages
+const { how, problems: wrong, registration } = words
+
 /** A column a file may have: its name, what it holds and how it is written */
 export type ColumnGuide = {
   column: Column
-  label: string
-  how: string
+  label: LocalizedText
+  how: LocalizedText
 }
-
-const AS_THE_FORM = '登録の画面と同じ。空なら、なし'
-
-const SWITCHED_OFF = 'true か false。列がなければ false'
-
-const oneOf = (values: readonly string[]): string =>
-  `${values.join('、')} のどれか`
 
 /** The columns a file may have: every property of a registration, in the order of the export */
 const GUIDES: { [Name in Column]: ColumnGuide & { column: Name } } = {
-  firstName: { column: 'firstName', label: '名', how: '必ず書く' },
-  lastName: { column: 'lastName', label: '姓', how: '必ず書く' },
+  firstName: {
+    column: 'firstName',
+    label: record.firstName,
+    how: how.required,
+  },
+  lastName: { column: 'lastName', label: record.lastName, how: how.required },
   firstNameKana: {
     column: 'firstNameKana',
-    label: '名（フリガナ）',
-    how: AS_THE_FORM,
+    label: record.firstNameKana,
+    how: how.asTheForm,
   },
   lastNameKana: {
     column: 'lastNameKana',
-    label: '姓（フリガナ）',
-    how: AS_THE_FORM,
+    label: record.lastNameKana,
+    how: how.asTheForm,
   },
-  email: {
-    column: 'email',
-    label: 'メールアドレス',
-    how: '必ず書く。ファイルの中でも台帳でも、ほかのお客様と重ならないもの',
-  },
+  email: { column: 'email', label: record.email, how: how.email },
   phoneNumber: {
     column: 'phoneNumber',
-    label: '電話番号',
-    how: '必ず書く。市外局番から',
+    label: record.phoneNumber,
+    how: how.phoneNumber,
   },
   alternativePhone: {
     column: 'alternativePhone',
-    label: '予備の電話番号',
-    how: AS_THE_FORM,
+    label: record.alternativePhone,
+    how: how.asTheForm,
   },
-  postalCode: { column: 'postalCode', label: '郵便番号', how: AS_THE_FORM },
-  prefecture: { column: 'prefecture', label: '都道府県', how: AS_THE_FORM },
-  city: { column: 'city', label: '市区町村', how: AS_THE_FORM },
-  address: { column: 'address', label: '番地', how: AS_THE_FORM },
-  building: {
-    column: 'building',
-    label: '建物名・部屋番号',
-    how: AS_THE_FORM,
+  postalCode: {
+    column: 'postalCode',
+    label: record.postalCode,
+    how: how.asTheForm,
   },
+  prefecture: {
+    column: 'prefecture',
+    label: record.prefecture,
+    how: how.asTheForm,
+  },
+  city: { column: 'city', label: record.city, how: how.asTheForm },
+  address: { column: 'address', label: record.address, how: how.asTheForm },
+  building: { column: 'building', label: record.building, how: how.asTheForm },
   birthDate: {
     column: 'birthDate',
-    label: '生年月日',
-    how: '2001-04-01 の形。空なら、なし',
+    label: record.birthDate,
+    how: how.birthDate,
   },
   gender: {
     column: 'gender',
-    label: '性別',
-    how: `${oneOf(GENDERS)}。空なら、なし`,
+    label: record.gender,
+    how: how.oneOrNone(GENDERS),
   },
-  occupation: { column: 'occupation', label: '職業', how: AS_THE_FORM },
+  occupation: {
+    column: 'occupation',
+    label: record.occupation,
+    how: how.asTheForm,
+  },
   membershipTier: {
     column: 'membershipTier',
-    label: '会員ランク',
-    how: `${oneOf(TIERS)}。列がなければ regular`,
+    label: record.membershipTier,
+    how: how.oneOrElse(TIERS, 'regular'),
   },
   preferences: {
     column: 'preferences',
-    label: '好み',
-    how: '台帳の出力と同じ JSON（{"preferredServices":["cut"],"notes":null}）。空なら、なし',
+    label: form.parts.likes,
+    how: how.preferences,
   },
-  notes: { column: 'notes', label: '備考', how: AS_THE_FORM },
+  notes: { column: 'notes', label: form.notes, how: how.asTheForm },
   internalNotes: {
     column: 'internalNotes',
-    label: 'スタッフ間の申し送り',
-    how: AS_THE_FORM,
+    label: form.internalNotes,
+    how: how.asTheForm,
   },
-  tags: {
-    column: 'tags',
-    label: 'タグ',
-    how: '「、」かカンマで区切るか、台帳の出力と同じ JSON の配列。空なら、なし',
-  },
+  tags: { column: 'tags', label: form.tags, how: how.tags },
   referredBy: {
     column: 'referredBy',
-    label: '紹介元',
-    how: '台帳のお客様の ID（台帳の出力の id）。空なら、なし',
+    label: items.referredBy,
+    how: how.referredBy,
   },
   referralCode: {
     column: 'referralCode',
-    label: '紹介コード',
-    how: `${AS_THE_FORM}。ほかのお客様と重ならないもの`,
+    label: record.referralCode,
+    how: how.referralCode,
   },
   allowMarketing: {
     column: 'allowMarketing',
-    label: 'キャンペーンなどのお知らせ',
-    how: SWITCHED_OFF,
+    label: record.marketing,
+    how: how.switched('false'),
   },
-  allowSms: { column: 'allowSms', label: 'SMS での連絡', how: SWITCHED_OFF },
+  allowSms: {
+    column: 'allowSms',
+    label: record.bySms,
+    how: how.switched('false'),
+  },
   allowEmail: {
     column: 'allowEmail',
-    label: 'メールでの連絡',
-    how: SWITCHED_OFF,
+    label: record.byEmail,
+    how: how.switched('false'),
   },
   isActive: {
     column: 'isActive',
-    label: '有効なお客様',
-    how: 'true か false。列がなければ true',
+    label: form.active,
+    how: how.switched('true'),
   },
   hairType: {
     column: 'hairType',
-    label: '髪質',
-    how: `${oneOf(HAIR_TYPES)}。空なら、なし`,
+    label: record.hairType,
+    how: how.oneOrNone(HAIR_TYPES),
   },
   hairThickness: {
     column: 'hairThickness',
-    label: '髪の太さ',
-    how: `${oneOf(HAIR_THICKNESSES)}。空なら、なし`,
+    label: record.hairThickness,
+    how: how.oneOrNone(HAIR_THICKNESSES),
   },
   scalpCondition: {
     column: 'scalpCondition',
-    label: '頭皮の状態',
-    how: `${oneOf(SCALP_CONDITIONS)}。空なら、なし`,
+    label: record.scalpCondition,
+    how: how.oneOrNone(SCALP_CONDITIONS),
   },
   customerStatus: {
     column: 'customerStatus',
-    label: 'ステータス',
-    how: `${oneOf(CUSTOMER_STATUSES)}。列がなければ active`,
+    label: form.status,
+    how: how.oneOrElse(CUSTOMER_STATUSES, 'active'),
   },
 }
 
@@ -232,7 +238,7 @@ const SWITCHES: readonly Column[] = [
 const guideOf = (name: string): ColumnGuide | undefined =>
   COLUMN_GUIDES.find(({ column }) => column === name)
 
-const labelOf = (column: Column): string => GUIDES[column].label
+const labelOf = (column: Column): LocalizedText => GUIDES[column].label
 
 /**
  * The text of a file: UTF-8, with or without the mark of its byte order,
@@ -310,8 +316,8 @@ export type FileProblem = {
   /** The row, as a spreadsheet numbers it (the names of the columns are row 1); `null` for the whole file */
   row: number | null
   /** The label of the column; `null` for the whole row or file */
-  column: string | null
-  message: string
+  column: LocalizedText | null
+  message: LocalizedText
 }
 
 /** A customer of a file, with the row they are written on */
@@ -325,22 +331,18 @@ export type CustomerFileRead =
   | { type: 'invalid'; problems: FileProblem[] }
 
 /** How a problem is said: 「3 行目 メールアドレス: …」. */
-export const problemTextOf = ({ row, column, message }: FileProblem): string =>
-  match([row, column])
-    .returnType<string>()
-    .with(
-      [P.number, P.string],
-      ([at, label]) => `${at} 行目 ${label}: ${message}`,
-    )
-    .with([P.number, null], ([at]) => `${at} 行目: ${message}`)
-    .otherwise(() => message)
+export const problemTextOf = ({
+  row,
+  column,
+  message,
+}: FileProblem): LocalizedText => words.problemOf(row, column, message)
 
 const invalid = (problems: FileProblem[]): CustomerFileRead => ({
   type: 'invalid',
   problems,
 })
 
-const ofFile = (message: string): FileProblem => ({
+const ofFile = (message: LocalizedText): FileProblem => ({
   row: null,
   column: null,
   message,
@@ -369,10 +371,9 @@ const tagsSchema = z.array(z.string()) satisfies z.ZodMiniType<
   ModelsCustomerCreateRequest['tags']
 >
 
-const PREFERENCES_MALFORMED = `好みは、台帳の出力と同じ JSON（{"preferredServices":["cut"],"notes":null}）で書くか、空にしてください。preferredServices は、${oneOf(SERVICE_CATEGORIES)}です。`
+const PREFERENCES_MALFORMED = wrong.preferences(SERVICE_CATEGORIES)
 
-const TAGS_MALFORMED =
-  'タグは、「、」かカンマで区切るか、台帳の出力と同じ JSON の文字列の配列で書いてください。'
+const TAGS_MALFORMED = wrong.tags
 
 /** The column a control of the form of a registration belongs to */
 const columnOfControl = (control: string): Column | undefined =>
@@ -382,12 +383,15 @@ const columnOfControl = (control: string): Column | undefined =>
     .otherwise((name) => guideOf(name)?.column)
 
 /** What is said of a value the form of a registration does not take, in a file */
-const fileMessageOf = (column: Column, message: string): string => {
+const fileMessageOf = (
+  column: Column,
+  message: LocalizedText,
+): LocalizedText => {
   const choices = CHOICES[column]
 
   return choices === undefined
     ? message
-    : `${labelOf(column)}は、${oneOf(choices)}で書いてください。`
+    : wrong.choice(labelOf(column), choices)
 }
 
 /** The names of the columns, or what is wrong with them */
@@ -403,7 +407,7 @@ const columnsOf = (
         problems.push({
           row: 1,
           column: null,
-          message: `列「${name}」が 2 つあります。`,
+          message: wrong.twice(name),
         })
       }
       return guide.column
@@ -412,13 +416,13 @@ const columnsOf = (
       problems.push({
         row: 1,
         column: null,
-        message: `${index + 1} 列目に、列名がありません。`,
+        message: wrong.unnamed(index + 1),
       })
     } else if (!PASSED_OVER.includes(name)) {
       problems.push({
         row: 1,
         column: null,
-        message: `列「${name}」は、台帳の項目ではありません。列名は、下の表の名前で書いてください。`,
+        message: wrong.unknown(name),
       })
     }
     return undefined
@@ -428,7 +432,7 @@ const columnsOf = (
     problems.push({
       row: 1,
       column: null,
-      message: `列「${column}」（${labelOf(column)}）がありません。`,
+      message: wrong.missing(column, labelOf(column)),
     })
   }
 
@@ -467,7 +471,7 @@ const valuesOf = async (
         problems.push({
           row,
           column: labelOf(column),
-          message: `${labelOf(column)}は、true か false で書いてください。`,
+          message: wrong.switched(labelOf(column)),
         })
       }
       continue
@@ -526,18 +530,13 @@ export const readCustomerFile = async (
       {
         row: csv.row,
         column: null,
-        message:
-          'ダブルクォートで始まった値が、ファイルの終わりまで閉じられていません。',
+        message: wrong.unclosed,
       },
     ])
   }
   const [names, ...rest] = csv.rows
   if (names === undefined || isBlank(names)) {
-    return invalid([
-      ofFile(
-        'ファイルが空です。1 行目に列名を、2 行目から 1 行に 1 人ずつ、お客様を書いてください。',
-      ),
-    ])
+    return invalid([ofFile(wrong.empty)])
   }
   const columns = columnsOf(names)
   if (columns.type !== 'columns') {
@@ -547,18 +546,10 @@ export const readCustomerFile = async (
     .map((cells, index) => ({ cells, row: index + 2 }))
     .filter(({ cells }) => !isBlank(cells))
   if (rows.length === 0) {
-    return invalid([
-      ofFile(
-        'ファイルに、登録するお客様がいません。2 行目から、1 行に 1 人ずつ書いてください。',
-      ),
-    ])
+    return invalid([ofFile(wrong.noCustomers)])
   }
   if (rows.length > MOST_REGISTERED) {
-    return invalid([
-      ofFile(
-        `ファイルには ${rows.length} 人います。一度に登録できるのは ${MOST_REGISTERED} 人までです。ファイルを分けてください。`,
-      ),
-    ])
+    return invalid([ofFile(wrong.tooMany(rows.length, MOST_REGISTERED))])
   }
   const problems: FileProblem[] = []
   const customers: FileCustomer[] = []
@@ -567,7 +558,7 @@ export const readCustomerFile = async (
       problems.push({
         row,
         column: null,
-        message: `値が ${cells.length} 個あり、列の数（${names.length}）と合いません。`,
+        message: wrong.cells(cells.length, names.length),
       })
       continue
     }
@@ -585,9 +576,7 @@ export const readCustomerFile = async (
           row,
           column: column === undefined ? null : labelOf(column),
           message:
-            column === undefined
-              ? inJapanese(message)
-              : fileMessageOf(column, inJapanese(message)),
+            column === undefined ? message : fileMessageOf(column, message),
         })
       }
       continue
@@ -607,14 +596,14 @@ export const readCustomerFile = async (
       problems.push({
         row,
         column: labelOf('email'),
-        message: `${sameEmail.row} 行目と同じメールアドレスです。`,
+        message: wrong.sameEmailAs(sameEmail.row),
       })
     }
     if (sameCode !== undefined) {
       problems.push({
         row,
         column: labelOf('referralCode'),
-        message: `${sameCode.row} 行目と同じ紹介コードです。`,
+        message: wrong.sameCodeAs(sameCode.row),
       })
     }
     customers.push({ row, request: entry.value })
@@ -637,8 +626,12 @@ export type RegistrationAttempt =
 
 /** What the screen says after a registration */
 export type RegistrationSays =
-  | { type: 'done'; message: string }
-  | { type: 'again'; message: string | undefined; problems: FileProblem[] }
+  | { type: 'done'; message: LocalizedText }
+  | {
+      type: 'again'
+      message: LocalizedText | undefined
+      problems: FileProblem[]
+    }
 
 /** `items.3.email` → the customer at 3, and the column of `email`; `items.0.tags.1` → the column of the tags */
 const refusedAt = (
@@ -650,24 +643,15 @@ const refusedAt = (
     : undefined
 }
 
-const refusedMessageOf = (column: Column | undefined, rule: string): string =>
+const refusedMessageOf = (
+  column: Column | undefined,
+  rule: string,
+): LocalizedText =>
   match([column, rule])
-    .returnType<string>()
-    .with(
-      ['referredBy', 'not_found'],
-      () =>
-        '台帳にいないお客様の ID です。台帳の出力の id を書くか、空にしてください。',
-    )
-    .with(
-      ['birthDate', P.string],
-      () => `生年月日は、${EARLIEST_DAY} から今日までの日付を書いてください。`,
-    )
-    .otherwise(
-      () => 'この値は受け付けられませんでした。書き方を確かめてください。',
-    )
-
-const FAILED_REGISTRATION =
-  'お客様を登録できませんでした。通信の状態を確かめて、もう一度お試しください。'
+    .returnType<LocalizedText>()
+    .with(['referredBy', 'not_found'], () => registration.referrerNotFound)
+    .with(['birthDate', P.string], () => registration.birthDate(EARLIEST_DAY))
+    .otherwise(() => registration.refusedValue)
 
 /** What the screen says after the API answered a registration of the customers of a file. */
 export const afterRegistration = (
@@ -678,7 +662,7 @@ export const afterRegistration = (
     .returnType<RegistrationSays>()
     .with({ type: 'registered' }, ({ count }) => ({
       type: 'done',
-      message: `${count} 人を台帳に登録しました。`,
+      message: registration.registered(count),
     }))
     .with({ type: 'invalid' }, ({ values }) => {
       const problems = values.flatMap(({ field, rule }): FileProblem[] => {
@@ -696,10 +680,7 @@ export const afterRegistration = (
       })
       return {
         type: 'again',
-        message:
-          problems.length === 0
-            ? 'ファイルの内容を確かめて、もう一度お試しください。'
-            : undefined,
+        message: problems.length === 0 ? registration.checkTheFile : undefined,
         problems,
       }
     })
@@ -723,8 +704,7 @@ export const afterRegistration = (
             {
               row,
               column: labelOf('email'),
-              message:
-                'このメールアドレスのお客様が、もう台帳にいます。台帳で探して、このお客様の行を外してください。',
+              message: registration.emailTaken,
             },
           ],
         }))
@@ -735,37 +715,34 @@ export const afterRegistration = (
             {
               row,
               column: labelOf('referralCode'),
-              message:
-                'この紹介コードは、ほかのお客様が使っています（台帳から削除したお客様も含みます）。別のコードを書いてください。',
+              message: registration.referralCodeTaken,
             },
           ],
         }))
         .otherwise(() => ({
           type: 'again',
-          message:
-            '台帳のお客様と、メールアドレスか紹介コードが重なっています。ファイルを確かめてください。',
+          message: registration.overlap,
           problems: [],
         }))
     })
     .with({ type: 'tooLarge' }, () => ({
       type: 'again',
-      message:
-        'ファイルが大きすぎて、一度に送れません。ファイルを分けて、登録してください。',
+      message: registration.tooLarge,
       problems: [],
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message: inJapanese(CANNOT_HANDLE_CUSTOMERS_MESSAGE),
+      message: CANNOT_HANDLE_CUSTOMERS_MESSAGE,
       problems: [],
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)).message,
+      message: TOO_MANY_REQUESTS_MESSAGE,
       problems: [],
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message: FAILED_REGISTRATION,
+      message: registration.failed,
       problems: [],
     }))
     .exhaustive()

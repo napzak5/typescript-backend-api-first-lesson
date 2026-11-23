@@ -1,3 +1,4 @@
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { CustomerErasure } from '../customer-erasure/customer-erasure'
@@ -51,8 +52,7 @@ export const Exporting: Story = {
 export const NotSaved: Story = {
   args: {
     dataExport: {
-      message:
-        'お客様のデータを出力できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: adminCustomerMessages.exports.data.failed,
       onExport: fn(),
     },
   },

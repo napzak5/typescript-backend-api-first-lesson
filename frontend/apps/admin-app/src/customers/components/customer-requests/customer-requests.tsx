@@ -1,14 +1,17 @@
-import { Alert, Button, Card } from '@beauty-salon-frontend/ui'
+import { Alert, Button, Card, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { ReactNode } from 'react'
-import { ANSWERED_BY_OTHERS } from '../../utils/customer-export'
 import styles from './customer-requests.module.css'
+
+const { requests: words } = adminCustomerMessages.exports
 
 /** The export of the data held of the customer */
 type DataExportProps = {
   /** The data of the customer is on its way */
   exporting?: boolean | undefined
-  /** Why no file was saved; another press may save one */
-  message?: string | undefined
+  /** Why no file was saved, in the language of the page; another press may save one */
+  message?: LocalizedText | undefined
   /** The button that exports the data was pressed */
   onExport: () => void
 }
@@ -36,33 +39,34 @@ export const CustomerRequests = ({
   answerable,
   dataExport,
   children,
-}: CustomerRequestsProps) => (
-  <Card title='ご本人からの請求'>
-    {answerable ? (
-      <div className={styles['requests']}>
-        {dataExport !== undefined && (
-          <Card title='データの開示' headingLevel={3}>
-            <div className={styles['export']}>
-              <p>
-                お客様ご本人から、保有している個人データの開示を求められたときは、ご本人であることを確かめてから、データを出力してお渡しします。台帳、アカウント、好み設定、カルテとアレルギー、予約、売上、ポイント、レビュー、施術記録、台帳の版を、1
-                つの JSON ファイルにします。
-              </p>
-              {dataExport.message !== undefined && (
-                <Alert tone='danger'>{dataExport.message}</Alert>
-              )}
-              <Button
-                pending={dataExport.exporting ?? false}
-                onClick={dataExport.onExport}
-              >
-                データを出力する
-              </Button>
-            </div>
-          </Card>
-        )}
-        {children}
-      </div>
-    ) : (
-      <p>{ANSWERED_BY_OTHERS}</p>
-    )}
-  </Card>
-)
+}: CustomerRequestsProps) => {
+  const say = useSay()
+
+  return (
+    <Card title={say(words.title)}>
+      {answerable ? (
+        <div className={styles['requests']}>
+          {dataExport !== undefined && (
+            <Card title={say(words.disclosure)} headingLevel={3}>
+              <div className={styles['export']}>
+                <p>{say(words.disclosureAbout)}</p>
+                {dataExport.message !== undefined && (
+                  <Alert tone='danger'>{say(dataExport.message)}</Alert>
+                )}
+                <Button
+                  pending={dataExport.exporting ?? false}
+                  onClick={dataExport.onExport}
+                >
+                  {say(words.exportData)}
+                </Button>
+              </div>
+            </Card>
+          )}
+          {children}
+        </div>
+      ) : (
+        <p>{say(words.answeredByOthers)}</p>
+      )}
+    </Card>
+  )
+}

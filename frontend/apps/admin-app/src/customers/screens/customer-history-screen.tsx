@@ -29,7 +29,7 @@ import {
 import { RemovedCustomer } from './removed-customer'
 import { WithCustomer } from './with-customer'
 
-const { history: words, names, titles } = adminCustomerMessages
+const { history: words, names, titles, backToCustomer } = adminCustomerMessages
 
 const TITLE = titles.history
 
@@ -67,7 +67,7 @@ const HistoryPart = ({
   return (
     <>
       <ButtonLink href={customerHrefOf(salon.id, customerId)}>
-        {say(words.backToCustomer)}
+        {say(backToCustomer)}
       </ButtonLink>
       {keeper ? (
         match(read.data === undefined ? undefined : listingOf(read.data.pages))

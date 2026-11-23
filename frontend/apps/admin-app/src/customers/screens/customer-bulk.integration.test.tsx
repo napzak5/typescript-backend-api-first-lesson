@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
@@ -14,6 +15,7 @@ import {
   VIP,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -53,10 +55,14 @@ const namesInLedger = (): string[] =>
 const part = (name: string): HTMLElement => screen.getByRole('region', { name })
 
 /** Opens a page of the salon in Tokyo at its address, signed in. */
-const openAt = async (path: (tokyo: string) => string, email: string) => {
+const openAt = async (
+  path: (tokyo: string) => string,
+  email: string,
+  language: Locale = 'ja',
+) => {
   const tokyo = await salonIdOf(TOKYO)
   renderAt(path(tokyo))
-  await signInAs(email)
+  await signInAs(email, language)
 
   return tokyo
 }
@@ -67,8 +73,9 @@ const theLedger = async (caption = '顧客台帳'): Promise<void> => {
   await screen.findByRole('table', { name: caption })
 }
 
-/** The control that chooses the file. */
-const fileInput = (): HTMLElement => screen.getByLabelText('CSV ファイル')
+/** The control that chooses the file, as the page names it. */
+const fileInput = (label = 'CSV ファイル'): HTMLElement =>
+  screen.getByLabelText(label)
 
 /** A CSV file as a spreadsheet saves it in UTF-8: the mark of the byte order, CRLF. */
 const fileOf = (rows: string[]): File =>
@@ -78,15 +85,21 @@ const fileOf = (rows: string[]): File =>
 
 const NEEDED = 'lastName,firstName,email,phoneNumber'
 
+/** What the screen of the import says, as a page in Japanese and in English names it */
+const IMPORT_SAYS = {
+  ja: { file: 'CSV ファイル', reading: 'ファイルを読んでいます' },
+  en: { file: 'CSV file', reading: 'Reading the file' },
+} satisfies Record<Locale, { file: string; reading: string }>
+
 /** Chooses a file on the screen of the import, and waits until it is read. */
 const chooseFile = async (
   user: ReturnType<typeof userEvent.setup>,
   rows: string[],
+  language: Locale = 'ja',
 ): Promise<void> => {
-  await user.upload(fileInput(), fileOf(rows))
-  await waitFor(() =>
-    expect(screen.queryByText('ファイルを読んでいます')).toBeNull(),
-  )
+  const says = IMPORT_SAYS[language]
+  await user.upload(fileInput(says.file), fileOf(rows))
+  await waitFor(() => expect(screen.queryByText(says.reading)).toBeNull())
 }
 
 /** What the alert of the file lists. */
@@ -687,5 +700,221 @@ describe('writing customers at once, against the API', () => {
       expect(tagDialog(1)).toBeVisible()
       expect(await findAccessibilityViolations(document.body)).toEqual([])
     })
+  })
+})
+
+describe('writing customers at once on a page in English, against the API', () => {
+  /** Waits for the ledger in English: its heading, then its table. */
+  const theLedgerInEnglish = async (): Promise<void> => {
+    await heading('Customer ledger')
+    await screen.findByRole('table', { name: 'Customer ledger' })
+  }
+
+  /** Chooses customers in the ledger by their names, in English. */
+  const chooseInEnglish = async (
+    user: ReturnType<typeof userEvent.setup>,
+    ...names: string[]
+  ): Promise<void> => {
+    for (const name of names) {
+      await user.click(screen.getByRole('checkbox', { name: `Select ${name}` }))
+    }
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should lead from the ledger to the file and register its customers, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const before = await storedCustomerCount()
+    await openAt(customersHrefOf, STYLIST, 'en')
+    await theLedgerInEnglish()
+    await user.click(
+      screen.getByRole('link', { name: 'Register from a CSV file' }),
+    )
+    await heading('Register from a CSV file')
+    expect(
+      screen.getByRole('table', { name: 'Columns of the file' }),
+    ).toBeVisible()
+
+    // Act
+    await chooseFile(
+      user,
+      [
+        `${NEEDED},membershipTier`,
+        'Yamada,Hanako,hanako.yamada@example.com,090-1234-5678,gold',
+        'Suzuki,Ichiro,ichiro.suzuki@example.com,03-1234-5678,regular',
+      ],
+      'en',
+    )
+    const read = rowsOf('Customers to register')
+    await user.click(
+      screen.getByRole('button', { name: 'Register 2 customers' }),
+    )
+    await theLedgerInEnglish()
+
+    // Assert
+    expect(read.map((row) => row.at(-1))).toEqual(['Gold', 'Regular'])
+    expect(notifications()).toContain('Registered 2 customers in the ledger.')
+    expect(await storedCustomerCount()).toBe(before + 2)
+  })
+
+  it('should say in English what is wrong with a file, row by row, and send nothing', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const before = await storedCustomerCount()
+    await openAt(customerImportHrefOf, STYLIST, 'en')
+    await heading('Register from a CSV file')
+
+    // Act
+    await chooseFile(
+      user,
+      [
+        `${NEEDED},membershipTier`,
+        'Yamada,Hanako,hanako@,090-1234-5678,regular',
+        'Suzuki,Ichiro,ichiro.suzuki@example.com,090-1234-5678,diamond',
+      ],
+      'en',
+    )
+    const problems = problemsShown()
+    await user.click(screen.getByRole('button', { name: 'Register' }))
+
+    // Assert
+    expect(problems).toEqual([
+      'Row 2, Email address: Enter an email address in a form such as hanako@example.com.',
+      'Row 3, Membership rank: Write one of regular, silver, gold, platinum, vip.',
+    ])
+    expect(fileInput('CSV file')).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'The file has errors. Check the list below, then choose the corrected file.',
+      ),
+    )
+    expect(fileInput('CSV file')).toHaveFocus()
+    expect(await storedCustomerCount()).toBe(before)
+  })
+
+  it('should say in English at its row that a customer of the file is in the ledger already', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAt(customerImportHrefOf, STYLIST, 'en')
+    await heading('Register from a CSV file')
+    await chooseFile(
+      user,
+      [
+        NEEDED,
+        'Yamada,Hanako,hanako.yamada@example.com,090-1234-5678',
+        'Tanaka,Yuki,Customer1@Example.com,090-1234-5678',
+      ],
+      'en',
+    )
+
+    // Act
+    await user.click(
+      screen.getByRole('button', { name: 'Register 2 customers' }),
+    )
+
+    // Assert
+    await screen.findByRole('alert')
+    expect(problemsShown()).toEqual([
+      'Row 3, Email address: A customer with this email address is already in the ledger. Find them in the ledger, and take the row of this customer out of the file.',
+    ])
+  })
+
+  it('should give a tag to the chosen customers in English, and keep them chosen', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAt(customersHrefOf, STYLIST, 'en')
+    await theLedgerInEnglish()
+    await chooseInEnglish(user, YUKI.name, KENJI.name)
+    await user.click(
+      screen.getByRole('button', { name: 'Add or remove a tag' }),
+    )
+    const dialog = screen.getByRole('dialog', {
+      name: 'Tag of the chosen customers (2)',
+    })
+    await user.click(within(dialog).getByRole('radio', { name: 'Add' }))
+    await user.type(within(dialog).getByRole('textbox', { name: 'Tag' }), 'vip')
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Apply' }))
+
+    // Assert
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(notifications()).toContain('Added the tag “vip” to 1 customer.')
+    expect((await storedCustomerOf(KENJI.email)).tags).toContain('vip')
+    expect(part('2 customers chosen')).toBeVisible()
+  })
+
+  it('should remove the chosen customers from the ledger in English, once the dialog asked', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await finishBookingsOf(KENJI.email)
+    await arrangeCustomers(1, 'walk-in')
+    const kenji = await customerIdOf(KENJI.email)
+    await openAt(customersHrefOf, OWNER, 'en')
+    await theLedgerInEnglish()
+    await chooseInEnglish(user, KENJI.name, 'Walk In 01')
+    await user.click(
+      screen.getByRole('button', { name: 'Remove from the ledger' }),
+    )
+    const dialog = screen.getByRole('dialog', {
+      name: 'Remove 2 customers from the ledger?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'These customers can no longer be chosen in the customer ledger and in bookings. Their bookings and sales are kept.',
+    )
+    expect(
+      within(within(dialog).getByRole('list', { name: 'Customers to remove' }))
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual(['Yamamoto Kenji', 'Walk In 01'])
+
+    // Act
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(notifications()).toContain('Removed 2 customers from the ledger.')
+    expect(
+      screen.getByRole('heading', { name: 'No customers chosen' }),
+    ).toHaveFocus()
+    expect(await isInLedger(kenji)).toBe(false)
+  })
+
+  it('should remove nobody, and say in English who has bookings that are not finished', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const yuki = await customerIdOf(YUKI.email)
+    await openAt(customersHrefOf, OWNER, 'en')
+    await theLedgerInEnglish()
+    await chooseInEnglish(user, YUKI.name, KENJI.name)
+    await user.click(
+      screen.getByRole('button', { name: 'Remove from the ledger' }),
+    )
+
+    // Act
+    await user.click(
+      within(
+        screen.getByRole('dialog', {
+          name: 'Remove 2 customers from the ledger?',
+        }),
+      ).getByRole('button', { name: 'Remove' }),
+    )
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'Tanaka Yuki has bookings that are not finished. Complete, cancel or delete those bookings, then try again. Nobody was removed.',
+      ),
+    ).toBeVisible()
+    expect(await isInLedger(yuki)).toBe(true)
   })
 })

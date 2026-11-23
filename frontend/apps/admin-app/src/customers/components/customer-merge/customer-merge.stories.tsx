@@ -1,7 +1,11 @@
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aCustomer, salon } from '../../../bookings/components/examples'
+import { whoIs } from '../../utils/customer-merge'
 import { CustomerMerge } from './customer-merge'
+
+const { merge: words } = adminCustomerMessages
 
 const hanako = aCustomer({
   phoneNumber: '090-1234-5678',
@@ -67,7 +71,7 @@ export const InTheWay: Story = {
   args: {
     obstacles: [
       { type: 'accounts' },
-      { type: 'erasureAsked', who: '山田 花子 様（hanako@example.com）' },
+      { type: 'erasureAsked', who: whoIs(hanako) },
     ],
   },
 }
@@ -75,8 +79,7 @@ export const InTheWay: Story = {
 /** The API refused, and the two were read again: said above the choices */
 export const Refused: Story = {
   args: {
-    refusal:
-      'その間に 2 人の記録が変わったため、まとめられませんでした。2 人の記録を読み直しました。',
+    refusal: words.refused,
   },
 }
 
@@ -94,7 +97,6 @@ export const Merging: Story = {
 export const NotSent: Story = {
   args: {
     open: true,
-    message:
-      'お客様をまとめられませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: words.failed,
   },
 }

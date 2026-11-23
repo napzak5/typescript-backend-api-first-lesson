@@ -1,7 +1,11 @@
+import { unreadMessageOf } from '@beauty-salon-frontend/answers'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aDeletionRequest, ME } from '../examples'
 import { CustomerErasure } from './customer-erasure'
+
+const { erasure: words } = adminCustomerMessages
 
 const meta: Meta<typeof CustomerErasure> = {
   title: 'Admin/Customers/CustomerErasure',
@@ -36,7 +40,7 @@ export const Asking: Story = {
 export const BlankReason: Story = {
   args: {
     dialog: 'ask',
-    errors: { reason: '依頼の理由を入力してください。' },
+    errors: { reason: words.asking.blankReason },
   },
 }
 
@@ -44,8 +48,7 @@ export const BlankReason: Story = {
 export const NotAsked: Story = {
   args: {
     dialog: 'ask',
-    message:
-      '消去の依頼を受け付けられませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: words.askFailed,
   },
 }
 
@@ -109,8 +112,7 @@ export const RemovedWithoutRequest: Story = {
 export const TakenMeanwhile: Story = {
   args: {
     shown: { type: 'read', request: aDeletionRequest() },
-    refusal:
-      'その間に、ほかのアカウントがこのお客様の消去の依頼を受け付けていました。',
+    refusal: words.takenMeanwhile,
   },
 }
 
@@ -124,8 +126,7 @@ export const Unread: Story = {
   args: {
     shown: {
       type: 'unread',
-      message:
-        '消去の依頼を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: unreadMessageOf(words.names.request, { type: 'failed' }),
       retrying: false,
     },
   },

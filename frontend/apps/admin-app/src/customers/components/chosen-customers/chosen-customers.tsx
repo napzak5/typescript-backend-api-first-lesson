@@ -9,10 +9,16 @@ import {
   NO_ERRORS,
   RadioGroup,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useId, useLayoutEffect, useRef } from 'react'
 import { MOST_CHOSEN, TAG, TAG_WAY } from '../../utils/customer-bulk'
 import styles from './chosen-customers.module.css'
+
+const { bulk: words, naming } = adminCustomerMessages
 
 /** The dialog that is open: none, the one that changes a tag, or the one that removes */
 export type ChosenDialog = 'none' | 'tag' | 'removal'
@@ -29,10 +35,10 @@ export type ChosenCustomersProps = {
   onClose: () => void
   /** Nobody is to be chosen any more */
   onClear: () => void
-  /** What went wrong with the attempt of the open dialog; it is said there */
-  message?: string | undefined
+  /** What went wrong with the attempt of the open dialog; it is said there, in the language of the page */
+  message?: LocalizedText | undefined
   /** What is wrong with a value of the dialog of the tag, under the name of its control */
-  errors?: FormErrors | undefined
+  errors?: FormErrors<LocalizedText> | undefined
   /** The write of the open dialog is on its way */
   pending?: boolean | undefined
   /** The form of the dialog of the tag was sent: `way` and `tag` */
@@ -66,6 +72,8 @@ export const ChosenCustomers = ({
   onRetag,
   onRemove,
 }: ChosenCustomersProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
   const headingId = useId()
   const count = customers.length
   const tooMany = count > MOST_CHOSEN
@@ -98,24 +106,20 @@ export const ChosenCustomers = ({
         ref={headingRef}
         tabIndex={-1}
       >
-        {count === 0 ? '選んだお客様はいません' : `${count} 人を選んでいます`}
+        {say(count === 0 ? words.chosen.none : words.chosen.count(count))}
       </h2>
       {count === 0 && (
         <p>
-          {mayRemove
-            ? '表でお客様を選ぶと、まとめてタグを付けたり外したり、台帳から削除したりできます。'
-            : '表でお客様を選ぶと、まとめてタグを付けたり外したりできます。'}
+          {say(mayRemove ? words.chosen.aboutWithRemoval : words.chosen.about)}
         </p>
       )}
       {tooMany && (
-        <Alert tone='warning'>
-          {`一度に操作できるのは ${MOST_CHOSEN} 人までです。選ぶお客様を減らしてください。`}
-        </Alert>
+        <Alert tone='warning'>{say(words.chosen.tooMany(MOST_CHOSEN))}</Alert>
       )}
       {count > 0 && (
         <Actions>
           <Button disabled={tooMany} onClick={() => onOpen('tag')}>
-            タグを付ける・外す
+            {say(words.chosen.retag)}
           </Button>
           {mayRemove && (
             <Button
@@ -123,65 +127,65 @@ export const ChosenCustomers = ({
               disabled={tooMany}
               onClick={() => onOpen('removal')}
             >
-              台帳から削除する
+              {say(words.chosen.remove)}
             </Button>
           )}
           <Button variant='quiet' onClick={onClear}>
-            選ぶのをやめる
+            {say(words.chosen.clear)}
           </Button>
         </Actions>
       )}
       <FormDialog
         open={count > 0 && open === 'tag'}
         onClose={onClose}
-        title={`選んだ ${count} 人のタグ`}
-        description='タグを付けるか外すかを選び、タグを 1 つ入力します。お客様のほかのタグは、そのまま残ります。'
-        submitLabel='反映する'
-        message={open === 'tag' ? message : undefined}
+        title={say(words.tag.title(count))}
+        description={say(words.tag.description)}
+        submitLabel={say(words.tag.apply)}
+        message={open === 'tag' ? said.message : undefined}
         errors={errors}
         pending={pending}
         onSubmit={onRetag}
       >
         <RadioGroup
-          label='タグを'
+          label={say(words.tag.way)}
           name={TAG_WAY}
           defaultValue='add'
           required
           options={[
-            { value: 'add', label: '付ける' },
-            { value: 'remove', label: '外す' },
+            { value: 'add', label: say(words.tag.add) },
+            { value: 'remove', label: say(words.tag.remove) },
           ]}
         />
         <TextField
-          label='タグ'
+          label={say(words.tag.tag)}
           name={TAG}
           required
           autoComplete='off'
-          description='例: 秋のキャンペーン'
-          error={errors[TAG]}
+          description={say(words.tag.example)}
+          error={said.errors[TAG]}
         />
       </FormDialog>
       <Dialog
         open={count > 0 && open === 'removal'}
         onClose={onClose}
-        title={`${count} 人のお客様を台帳から削除しますか？`}
-        description='顧客台帳と予約で、これらのお客様を選べなくなります。予約と売上の記録は残ります。'
+        title={say(words.removal.title(count))}
+        description={say(words.removal.description)}
         actions={
           <>
-            <Button onClick={onClose}>戻る</Button>
+            <Button onClick={onClose}>{say(words.removal.back)}</Button>
             <Button variant='danger' pending={pending} onClick={onRemove}>
-              削除する
+              {say(words.removal.confirm)}
             </Button>
           </>
         }
       >
         <div className={styles['removal']}>
-          {open === 'removal' && message !== undefined && (
-            <Alert tone='danger'>{message}</Alert>
+          {open === 'removal' && said.message !== undefined && (
+            <Alert tone='danger'>{said.message}</Alert>
           )}
-          <BulletList aria-label='削除するお客様'>
+          <BulletList aria-label={say(words.removal.list)}>
             {customers.map(({ id, name }) => (
-              <li key={id}>{name} 様</li>
+              <li key={id}>{say(naming.honored(name))}</li>
             ))}
           </BulletList>
         </div>

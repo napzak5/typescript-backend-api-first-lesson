@@ -1,6 +1,9 @@
+import { adminCustomerMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { ChosenCustomers } from './chosen-customers'
+
+const { bulk: words } = adminCustomerMessages
 
 const CHOSEN = [
   { id: '6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b', name: '山田 花子' },
@@ -62,7 +65,7 @@ export const Tagging: Story = {
 
 /** The tag was left out */
 export const TagMissing: Story = {
-  args: { open: 'tag', errors: { tag: 'タグを入力してください。' } },
+  args: { open: 'tag', errors: { tag: words.tag.missing } },
 }
 
 /** The change of the tag is on its way */
@@ -79,7 +82,6 @@ export const Removing: Story = {
 export const RemovalRefused: Story = {
   args: {
     open: 'removal',
-    message:
-      '鈴木 一郎 様には、終わっていない予約があります。予約を完了、キャンセル、または削除してから、もう一度お試しください。だれも削除していません。',
+    message: words.removing.unfinished('鈴木 一郎'),
   },
 }

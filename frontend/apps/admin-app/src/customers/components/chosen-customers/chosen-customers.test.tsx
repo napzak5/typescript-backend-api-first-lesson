@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as chosenCustomersStories from './chosen-customers.stories'
 
 const stories = composeStories(chosenCustomersStories)
@@ -219,5 +220,100 @@ describe('ChosenCustomers', () => {
     expect(
       screen.getAllByText(/^鈴木 一郎 様には、終わっていない予約があります。/),
     ).toHaveLength(1)
+  })
+})
+
+describe('ChosenCustomers on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what choosing is for, and how many are chosen, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+    await stories.Chosen.run({
+      args: { ...stories.Chosen.args, customers: [] },
+    })
+
+    // Assert
+    expect(
+      within(
+        screen.getByRole('region', { name: 'No customers chosen' }),
+      ).getByText(
+        'Choose customers in the table to add or remove a tag, or to remove them from the ledger, all at once.',
+      ),
+    ).toBeVisible()
+
+    // Act
+    await stories.Chosen.run()
+
+    // Assert
+    expect(
+      buttonsOf(screen.getByRole('region', { name: '3 customers chosen' })),
+    ).toEqual([
+      'Add or remove a tag',
+      'Remove from the ledger',
+      'Clear the choice',
+    ])
+
+    // Act
+    await stories.TooMany.run()
+
+    // Assert
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Up to 100 customers can be handled at once. Choose fewer customers.',
+    )
+  })
+
+  it('should ask for the tag in English, and say what is wrong with it', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.TagMissing.run()
+
+    // Assert
+    const dialog = screen.getByRole('dialog', {
+      name: 'Tag of the chosen customers (3)',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'Choose whether to add or remove the tag, and enter one tag. The other tags of the customers stay as they are.',
+    )
+    expect(
+      within(within(dialog).getByRole('radiogroup', { name: 'The tag' }))
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual(['Add', 'Remove'])
+    expect(
+      within(dialog).getByRole('textbox', { name: 'Tag' }),
+    ).toHaveAccessibleDescription('For example: Autumn campaign Enter a tag.')
+    expect(within(dialog).getByRole('button', { name: 'Apply' })).toBeVisible()
+  })
+
+  it('should list who are removed and say why the removal was refused, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.RemovalRefused.run()
+
+    // Assert
+    const dialog = screen.getByRole('dialog', {
+      name: 'Remove 3 customers from the ledger?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'These customers can no longer be chosen in the customer ledger and in bookings. Their bookings and sales are kept.',
+    )
+    expect(
+      within(within(dialog).getByRole('list', { name: 'Customers to remove' }))
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual(['山田 花子', '鈴木 一郎', '山田 花子'])
+    expect(within(dialog).getByRole('alert')).toHaveTextContent(
+      '鈴木 一郎 has bookings that are not finished. Complete, cancel or delete those bookings, then try again. Nobody was removed.',
+    )
+    expect(
+      buttonsOf(dialog).filter((name) => name === 'Back' || name === 'Remove'),
+    ).toEqual(['Back', 'Remove'])
   })
 })

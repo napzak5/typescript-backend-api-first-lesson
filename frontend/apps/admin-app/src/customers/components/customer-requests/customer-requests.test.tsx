@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
-import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { screen, userEvent, within } from 'storybook/test'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as customerRequestsStories from './customer-requests.stories'
 
 const stories = composeStories(customerRequestsStories)
@@ -95,5 +96,51 @@ describe('CustomerRequests', () => {
         .map(({ textContent }) => textContent),
     ).toEqual(['データの消去'])
     expect(screen.getByRole('button', { name: '依頼を取り消す' })).toBeVisible()
+  })
+})
+
+describe('CustomerRequests on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what the data is for, and why no file was saved, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotSaved.run()
+
+    // Assert
+    const disclosure = screen.getByRole('region', {
+      name: 'Disclosure of the data',
+    })
+    expect(
+      screen.getByRole('region', { name: 'Requests from the customer' }),
+    ).toContainElement(disclosure)
+    expect(disclosure).toHaveTextContent(
+      'When a customer asks to see the personal data held of them, make sure it is the customer, then export the data and hand it to them.',
+    )
+    expect(within(disclosure).getByRole('alert')).toHaveTextContent(
+      'The data of the customer could not be exported. Check your connection and try again.',
+    )
+    expect(
+      within(disclosure).getByRole('button', { name: 'Export the data' }),
+    ).toBeVisible()
+  })
+
+  it('should tell a member of the staff in English who answers', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.ByOthers.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Owners and managers answer the requests of customers to see or erase their data.',
+      ),
+    ).toBeVisible()
   })
 })

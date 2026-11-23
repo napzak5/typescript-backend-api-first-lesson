@@ -2,6 +2,7 @@ import type {
   ModelsMedicalChartResponse,
   ModelsPreviousTreatment,
 } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { aCustomer, customers } from '../../bookings/components/examples'
 import {
@@ -23,6 +24,16 @@ const [hanako = aCustomer(), ichiro = aCustomer()] = customers
 
 /** Hanako kept, and Ichiro merged into her: they differ in their names, kana and address of mail */
 const PAIR: MergePair = { primary: hanako, secondary: ichiro }
+
+/** Who the two are, as a merge names them */
+const HANAKO = {
+  en: '山田 花子 (hanako@example.com)',
+  ja: '山田 花子 様（hanako@example.com）',
+}
+const ICHIRO = {
+  en: '鈴木 一郎 (ichiro@example.com)',
+  ja: '鈴木 一郎 様（ichiro@example.com）',
+}
 
 const aChart = (
   changes: Partial<ModelsMedicalChartResponse> = {},
@@ -59,16 +70,28 @@ const treatments = (count: number, start = 0): ModelsPreviousTreatment[] =>
   }))
 
 describe('mergeWayNameOf', () => {
-  it.each<[MergeWay, string]>([
-    ['keep_primary', '残すお客様の値'],
-    ['keep_secondary', 'まとめるお客様の値'],
-    ['keep_newest', 'あとから台帳を直したほうの値'],
-  ])('should offer %s as 「%s」', (way, name) => {
+  it.each<[MergeWay, LocalizedText]>([
+    [
+      'keep_primary',
+      { en: 'The value of the customer kept', ja: '残すお客様の値' },
+    ],
+    [
+      'keep_secondary',
+      { en: 'The value of the customer merged', ja: 'まとめるお客様の値' },
+    ],
+    [
+      'keep_newest',
+      {
+        en: 'The value of the record changed last',
+        ja: 'あとから台帳を直したほうの値',
+      },
+    ],
+  ])('should offer %s by its name', (way, name) => {
     // Act
     const offered = mergeWayNameOf(way)
 
     // Assert
-    expect(offered).toBe(name)
+    expect(offered).toEqual(name)
   })
 })
 
@@ -298,8 +321,8 @@ describe('mergeObstaclesOf', () => {
     // Assert
     expect(obstacles).toEqual<MergeObstacle[]>([
       { type: 'accounts' },
-      { type: 'erasureAsked', who: '山田 花子 様（hanako@example.com）' },
-      { type: 'erasureAsked', who: '鈴木 一郎 様（ichiro@example.com）' },
+      { type: 'erasureAsked', who: HANAKO },
+      { type: 'erasureAsked', who: ICHIRO },
       { type: 'points', total: 2_147_483_648 },
       { type: 'chart', list: 'previousTreatments' },
       { type: 'chart', list: 'preferredProducts' },
@@ -370,33 +393,55 @@ describe('mergeObstaclesOf', () => {
 })
 
 describe('obstacleTextOf', () => {
-  it.each<[MergeObstacle, string]>([
+  it.each<[MergeObstacle, LocalizedText]>([
     [
       { type: 'accounts' },
-      '2 人とも、ご自分のアカウントでサインインしているお客様です。アカウントは 1 つにまとめられないため、まとめられません。',
+      {
+        en: 'Both customers sign in with their own accounts. Accounts cannot be made one, so the two cannot be merged.',
+        ja: '2 人とも、ご自分のアカウントでサインインしているお客様です。アカウントは 1 つにまとめられないため、まとめられません。',
+      },
     ],
     [
-      { type: 'erasureAsked', who: '山田 花子 様（hanako@example.com）' },
-      '山田 花子 様（hanako@example.com）から、データの削除の依頼を受け付けています。依頼を取り消してから、まとめてください。',
+      { type: 'erasureAsked', who: HANAKO },
+      {
+        en: 'A request of 山田 花子 (hanako@example.com) to have their data erased was taken. Cancel the request, then merge them.',
+        ja: '山田 花子 様（hanako@example.com）から、データの削除の依頼を受け付けています。依頼を取り消してから、まとめてください。',
+      },
     ],
     [
       { type: 'points', total: 2_147_483_648 },
-      '2 人のポイントを合わせると 2,147,483,648 ポイントになり、1 人が持てる 2,147,483,647 ポイントを超えます。',
+      {
+        en: 'Together the two have 2,147,483,648 points, more than the 2,147,483,647 points one customer can hold.',
+        ja: '2 人のポイントを合わせると 2,147,483,648 ポイントになり、1 人が持てる 2,147,483,647 ポイントを超えます。',
+      },
     ],
     [
       { type: 'chart', list: 'previousTreatments' },
-      '2 人のカルテを合わせると、施術歴が 50 件を超えます。どちらかのカルテを短くしてから、まとめてください。',
+      {
+        en: 'Together the two charts have more than 50 entries in the treatment history. Shorten one of the charts, then merge them.',
+        ja: '2 人のカルテを合わせると、施術歴が 50 件を超えます。どちらかのカルテを短くしてから、まとめてください。',
+      },
+    ],
+    [
+      { type: 'chart', list: 'preferredProducts' },
+      {
+        en: 'Together the two charts have more than 50 entries in the products to use. Shorten one of the charts, then merge them.',
+        ja: '2 人のカルテを合わせると、使いたい製品が 50 件を超えます。どちらかのカルテを短くしてから、まとめてください。',
+      },
     ],
     [
       { type: 'chart', list: 'avoidProducts' },
-      '2 人のカルテを合わせると、避けたい製品が 50 件を超えます。どちらかのカルテを短くしてから、まとめてください。',
+      {
+        en: 'Together the two charts have more than 50 entries in the products to avoid. Shorten one of the charts, then merge them.',
+        ja: '2 人のカルテを合わせると、避けたい製品が 50 件を超えます。どちらかのカルテを短くしてから、まとめてください。',
+      },
     ],
   ])('should say %j as a sentence', (obstacle, text) => {
     // Act
     const said = obstacleTextOf(obstacle)
 
     // Assert
-    expect(said).toBe(text)
+    expect(said).toEqual(text)
   })
 })
 
@@ -410,7 +455,10 @@ describe('afterMerge', () => {
       {
         type: 'done',
         customer: merged,
-        message: '2 人のお客様を、山田 花子 様にまとめました。',
+        message: {
+          en: 'The two customers were merged into 山田 花子.',
+          ja: '2 人のお客様を、山田 花子 様にまとめました。',
+        },
       },
     ],
     [
@@ -418,8 +466,10 @@ describe('afterMerge', () => {
       { type: 'gone', sides: ['secondary'] },
       {
         type: 'refused',
-        message:
-          '鈴木 一郎 様（ichiro@example.com）は、もう台帳にいません。ほかの画面で、台帳から削除されたか、ほかのお客様にまとめられました。',
+        message: {
+          en: 'No longer in the ledger: 鈴木 一郎 (ichiro@example.com). On another screen, they were removed from the ledger or merged into another customer.',
+          ja: '鈴木 一郎 様（ichiro@example.com）は、もう台帳にいません。ほかの画面で、台帳から削除されたか、ほかのお客様にまとめられました。',
+        },
       },
     ],
     [
@@ -427,8 +477,10 @@ describe('afterMerge', () => {
       { type: 'gone', sides: ['primary', 'secondary'] },
       {
         type: 'refused',
-        message:
-          '山田 花子 様（hanako@example.com）と鈴木 一郎 様（ichiro@example.com）は、もう台帳にいません。ほかの画面で、台帳から削除されたか、ほかのお客様にまとめられました。',
+        message: {
+          en: 'No longer in the ledger: 山田 花子 (hanako@example.com) and 鈴木 一郎 (ichiro@example.com). On another screen, they were removed from the ledger or merged into another customer.',
+          ja: '山田 花子 様（hanako@example.com）と鈴木 一郎 様（ichiro@example.com）は、もう台帳にいません。ほかの画面で、台帳から削除されたか、ほかのお客様にまとめられました。',
+        },
       },
     ],
     [
@@ -436,8 +488,10 @@ describe('afterMerge', () => {
       { type: 'refused' },
       {
         type: 'refused',
-        message:
-          'その間に 2 人の記録が変わったため、まとめられませんでした。2 人の記録を読み直しました。',
+        message: {
+          en: 'The records of the two changed in the meantime, so they could not be merged. The two records were loaded again.',
+          ja: 'その間に 2 人の記録が変わったため、まとめられませんでした。2 人の記録を読み直しました。',
+        },
       },
     ],
     [
@@ -445,8 +499,10 @@ describe('afterMerge', () => {
       { type: 'forbidden' },
       {
         type: 'refused',
-        message:
-          'このアカウントでは、お客様をまとめられません。台帳からの削除と統合、変更履歴は、オーナーとマネージャーができます。',
+        message: {
+          en: 'This account cannot merge customers. Owners and managers remove customers from the ledger, merge them and read the change history.',
+          ja: 'このアカウントでは、お客様をまとめられません。台帳からの削除と統合、変更履歴は、オーナーとマネージャーができます。',
+        },
       },
     ],
     [
@@ -454,8 +510,10 @@ describe('afterMerge', () => {
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
       },
     ],
     [
@@ -463,8 +521,10 @@ describe('afterMerge', () => {
       { type: 'failed' },
       {
         type: 'again',
-        message:
-          'お客様をまとめられませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The customers could not be merged. Check your connection and try again.',
+          ja: 'お客様をまとめられませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
       },
     ],
   ])('should follow %s', (_, outcome, says) => {
