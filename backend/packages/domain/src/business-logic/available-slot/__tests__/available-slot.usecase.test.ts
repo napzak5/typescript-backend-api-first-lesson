@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   availableSlotMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -47,7 +48,7 @@ import {
 const forbidden = Result.error(DomainErrors.forbidden())
 const salonNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+  error: { type: 'notFound', entity: entityMessages.salon, id: SALON_ID },
 }
 const databaseError = Result.error(
   DomainErrors.database('Failed to read', 'connection refused'),

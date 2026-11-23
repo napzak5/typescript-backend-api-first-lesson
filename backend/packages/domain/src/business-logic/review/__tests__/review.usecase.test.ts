@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { reviewMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  reviewMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { BOOKING_ID } from '../../../__tests__/fixtures/booking-fixtures'
@@ -308,7 +311,7 @@ describe('GetReviewUseCase', () => {
 
     expect(await get(dependencies)).toEqual({
       type: 'error',
-      error: DomainErrors.notFound('Review', REVIEW_ID),
+      error: DomainErrors.notFound(entityMessages.review, REVIEW_ID),
     })
   })
 
@@ -605,7 +608,7 @@ describe('UpdateReviewUseCase', () => {
 
     expect(await update(dependencies)).toEqual({
       type: 'error',
-      error: DomainErrors.notFound('Review', REVIEW_ID),
+      error: DomainErrors.notFound(entityMessages.review, REVIEW_ID),
     })
   })
 
@@ -719,7 +722,7 @@ describe('DeleteReviewUseCase', () => {
 
     expect(await remove(dependencies, actors.admin)).toEqual({
       type: 'error',
-      error: DomainErrors.notFound('Review', REVIEW_ID),
+      error: DomainErrors.notFound(entityMessages.review, REVIEW_ID),
     })
   })
 
@@ -807,7 +810,7 @@ describe('MarkReviewHelpfulUseCase', () => {
 
     expect(await mark(dependencies)).toEqual({
       type: 'error',
-      error: DomainErrors.notFound('Review', REVIEW_ID),
+      error: DomainErrors.notFound(entityMessages.review, REVIEW_ID),
     })
   })
 
@@ -864,7 +867,7 @@ const summaries: SummaryCase[] = [
     id: SALON_ID,
     field: 'salonId',
     message: 'Invalid salon ID',
-    notFound: DomainErrors.notFound('Salon', SALON_ID),
+    notFound: DomainErrors.notFound(entityMessages.salon, SALON_ID),
   },
   {
     name: 'GetStaffReviewSummaryUseCase',
@@ -875,7 +878,10 @@ const summaries: SummaryCase[] = [
     id: STAFF_MEMBER_ID,
     field: 'staffId',
     message: 'Invalid staff ID',
-    notFound: DomainErrors.notFound('Staff member', STAFF_MEMBER_ID),
+    notFound: DomainErrors.notFound(
+      entityMessages.staffMember,
+      STAFF_MEMBER_ID,
+    ),
   },
 ]
 

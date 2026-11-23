@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  entityMessages,
   productMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -41,11 +42,11 @@ const databaseDown = Result.error(
 const forbidden = Result.error(DomainErrors.forbidden())
 const salonNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+  error: { type: 'notFound', entity: entityMessages.salon, id: SALON_ID },
 }
 const productNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Product', id: PRODUCT_ID },
+  error: { type: 'notFound', entity: entityMessages.product, id: PRODUCT_ID },
 }
 const storedRowIsCorrupt = {
   type: 'error',

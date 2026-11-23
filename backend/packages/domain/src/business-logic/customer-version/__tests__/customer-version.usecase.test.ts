@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerVersionMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerVersionMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -280,7 +283,9 @@ describe('GetCustomerHistoryUseCase', () => {
       )
 
       expect(result).toEqual(
-        Result.error(DomainErrors.notFound('Customer', CUSTOMER_ID)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID),
+        ),
       )
     })
 
@@ -601,7 +606,7 @@ describe('GetCustomerVersionUseCase', () => {
     )
 
     expect(result).toEqual(
-      Result.error(DomainErrors.notFound('Customer', CUSTOMER_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID)),
     )
   })
 
@@ -616,7 +621,9 @@ describe('GetCustomerVersionUseCase', () => {
     )
 
     expect(result).toEqual(
-      Result.error(DomainErrors.notFound('Version 3 of customer', CUSTOMER_ID)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.versionOfCustomer(3), CUSTOMER_ID),
+      ),
     )
   })
 

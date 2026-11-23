@@ -1,6 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   customerMessages,
+  entityMessages,
   medicalChartMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -250,9 +252,17 @@ describe('GetMedicalChartUseCase', () => {
     expect(untouched(dependencies)).toBe(true)
   })
 
-  it.each<[string, MedicalChartOfCustomer, string]>([
-    ['customer who is not there', { type: 'customerNotFound' }, 'Customer'],
-    ['customer without a chart', { type: 'chartNotFound' }, 'MedicalChart'],
+  it.each<[string, MedicalChartOfCustomer, LocalizedText]>([
+    [
+      'customer who is not there',
+      { type: 'customerNotFound' },
+      entityMessages.customer,
+    ],
+    [
+      'customer without a chart',
+      { type: 'chartNotFound' },
+      entityMessages.medicalChart,
+    ],
   ])('answers a %s as not found', async (_case, outcome, entity) => {
     expect(await get(finding(outcome))).toEqual(
       Result.error(DomainErrors.notFound(entity, CUSTOMER_ID)),
@@ -355,7 +365,9 @@ describe('UpdateMedicalChartUseCase', () => {
     })
 
     expect(await update(dependencies)).toEqual(
-      Result.error(DomainErrors.notFound('MedicalChart', MEDICAL_CHART_ID)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.medicalChart, MEDICAL_CHART_ID),
+      ),
     )
   })
 

@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   customerStatisticsMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -281,7 +282,7 @@ describe('GetCustomerStatisticsUseCase', () => {
       )
 
       expect(result).toEqual(
-        Result.error(DomainErrors.notFound('Customer', CUSTOMER)),
+        Result.error(DomainErrors.notFound(entityMessages.customer, CUSTOMER)),
       )
     })
 

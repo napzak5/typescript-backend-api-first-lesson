@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  treatmentRecordMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -287,7 +290,10 @@ describe('GetTreatmentRecordUseCase', () => {
 
     expect(await get(dependencies)).toEqual(
       Result.error(
-        DomainErrors.notFound('TreatmentRecord', TREATMENT_RECORD_ID),
+        DomainErrors.notFound(
+          entityMessages.treatmentRecord,
+          TREATMENT_RECORD_ID,
+        ),
       ),
     )
   })
@@ -604,7 +610,10 @@ describe('UpdateTreatmentRecordUseCase', () => {
   it('does not find a record that is not there, or not within the reach', async () => {
     expect(await update(changing({ type: 'notFound' }))).toEqual(
       Result.error(
-        DomainErrors.notFound('TreatmentRecord', TREATMENT_RECORD_ID),
+        DomainErrors.notFound(
+          entityMessages.treatmentRecord,
+          TREATMENT_RECORD_ID,
+        ),
       ),
     )
   })
@@ -695,7 +704,10 @@ describe('DeleteTreatmentRecordUseCase', () => {
 
     expect(await remove(dependencies)).toEqual(
       Result.error(
-        DomainErrors.notFound('TreatmentRecord', TREATMENT_RECORD_ID),
+        DomainErrors.notFound(
+          entityMessages.treatmentRecord,
+          TREATMENT_RECORD_ID,
+        ),
       ),
     )
   })

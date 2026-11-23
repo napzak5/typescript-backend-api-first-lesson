@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   bookingMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -43,10 +44,10 @@ const databaseDown = Result.error(
 )
 const forbidden = Result.error(DomainErrors.forbidden())
 const bookingNotFound = Result.error(
-  DomainErrors.notFound('Booking', BOOKING_ID),
+  DomainErrors.notFound(entityMessages.booking, BOOKING_ID),
 )
 const lineNotFound = Result.error(
-  DomainErrors.notFound('Booking service', BOOKING_SERVICE_ID),
+  DomainErrors.notFound(entityMessages.bookingService, BOOKING_SERVICE_ID),
 )
 
 const INVALID_LINE = 'Invalid booking service'

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -32,7 +33,7 @@ const databaseDown = Result.error(
 )
 const forbidden = Result.error(DomainErrors.forbidden())
 const profileNotFound = Result.error(
-  DomainErrors.notFound('Customer profile of user', USER_ID),
+  DomainErrors.notFound(entityMessages.customerProfileOfUser, USER_ID),
 )
 const alreadyHasProfile = Result.error(
   DomainErrors.conflict('This account already has a customer profile'),

@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { inventoryAlertMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  inventoryAlertMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -703,7 +706,7 @@ describe('AcknowledgeInventoryAlertUseCase', () => {
     expect(await acknowledge(answering(outcome), actors.admin, input)).toEqual(
       Result.error(
         DomainErrors.notFound(
-          'InventoryAlert',
+          entityMessages.inventoryAlert,
           `${input.alert}:${input.inventoryId ?? input.productId}`,
         ),
       ),

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import { brokenRules, SALON_ID } from '../../../__tests__/fixtures/fixtures'
@@ -228,7 +229,7 @@ describe('RespondToReviewUseCase', () => {
     [
       'a review that is not there, or of a deleted salon, as not found',
       { type: 'reviewNotFound' },
-      DomainErrors.notFound('Review', REVIEW_ID),
+      DomainErrors.notFound(entityMessages.review, REVIEW_ID),
     ],
     [
       'a salon responding to a review of another salon as forbidden',

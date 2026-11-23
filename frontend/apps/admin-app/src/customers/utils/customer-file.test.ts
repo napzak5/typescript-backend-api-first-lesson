@@ -557,6 +557,57 @@ describe('afterRegistration', () => {
       },
     ],
     [
+      'an address of mail of the ledger, told in Japanese',
+      {
+        type: 'conflict',
+        detail: 'email が ichiro@example.com の顧客は、すでにあります',
+      },
+      {
+        type: 'again',
+        message: undefined,
+        problems: [
+          {
+            row: 4,
+            column: 'メールアドレス',
+            message:
+              'このメールアドレスのお客様が、もう台帳にいます。台帳で探して、このお客様の行を外してください。',
+          },
+        ],
+      },
+    ],
+    [
+      'an address of mail of the ledger that holds one of the file, told in Japanese',
+      {
+        type: 'conflict',
+        detail: 'email が aichiro@example.com の顧客は、すでにあります',
+      },
+      {
+        type: 'again',
+        message:
+          '台帳のお客様と、メールアドレスか紹介コードが重なっています。ファイルを確かめてください。',
+        problems: [],
+      },
+    ],
+    [
+      'a referral code of the ledger, told in Japanese',
+      {
+        type: 'conflict',
+        detail: 'referralCode が HANAKO の顧客は、すでにあります',
+      },
+      {
+        type: 'again',
+        message: undefined,
+        problems: [
+          {
+            row: 2,
+            column: '紹介コード',
+            message:
+              'この紹介コードは、ほかのお客様が使っています（台帳から削除したお客様も含みます）。別のコードを書いてください。',
+          },
+        ],
+      },
+    ],
+    [
       'a conflict that names nothing of the file',
       { type: 'conflict', detail: '' },
       {

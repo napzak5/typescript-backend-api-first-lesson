@@ -29,6 +29,7 @@ import {
 const SALONS = '/api/v1/salons'
 const CUSTOMERS = '/api/v1/customers'
 const SALES_REPORTS = '/api/v1/sales-reports'
+const SHARED_FILE = '/api/v1/share/file'
 const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
 const JSON_UTF8 = 'application/json; charset=utf-8'
 const PROBLEM_JSON = 'application/problem+json; charset=utf-8'
@@ -453,13 +454,33 @@ describe('the language of an error', () => {
   })
 
   it.each<
-    [string, (app: Express, authorization: string) => Test, number, string]
+    [
+      string,
+      (app: Express, authorization: string) => Test,
+      number,
+      [string, string],
+      [string, string],
+    ]
   >([
     [
       'a salon that is not there',
       (app) => request(app).get(`${SALONS}/${UNKNOWN_ID}`),
       404,
-      'Resource not found',
+      ['Resource not found', `Salon ${UNKNOWN_ID} was not found`],
+      [
+        'リソースが見つかりません',
+        `サロンが見つかりません（ID: ${UNKNOWN_ID}）`,
+      ],
+    ],
+    [
+      'a token that opens no shared file, which is not repeated',
+      (app) =>
+        request(app)
+          .post(SHARED_FILE)
+          .send({ token: 'a-token-nobody-issued', password: null }),
+      404,
+      ['Resource not found', 'Share link of the token was not found'],
+      ['リソースが見つかりません', 'このトークンの共有リンクが見つかりません'],
     ],
     [
       'an address of mail that another salon has',
@@ -469,41 +490,70 @@ describe('the language of an error', () => {
           .set('Authorization', authorization)
           .send(salon),
       409,
-      'Resource already exists',
-    ],
-    [
-      'a second factor that is not on',
-      (app, authorization) =>
-        request(app)
-          .post(`${AUTH}/2fa/disable`)
-          .set('Authorization', authorization)
-          .send({ password: PASSWORD, code: '123456' }),
-      409,
-      'Operation not allowed',
+      [
+        'Resource already exists',
+        'Salon with email aoyama@example.com already exists',
+      ],
+      [
+        'リソースがすでにあります',
+        'email が aoyama@example.com のサロンは、すでにあります',
+      ],
     ],
   ])(
-    'should answer %s, which the domain writes of, in English though Japanese is asked for',
-    async (_case, send, status, title) => {
+    'should answer %s in English, and in Japanese when Japanese is asked for',
+    async (_case, send, status, [title, detail], [
+      titleInJapanese,
+      detailInJapanese,
+    ]) => {
       // Arrange
       const app = createTestApp()
       const asAdmin = await signInAsAdmin(app, getTestDb())
       await request(app).post(SALONS).set('Authorization', asAdmin).send(salon)
-      const unasked = await send(app, asAdmin)
 
       // Act
-      const response = await send(app, asAdmin).set('Accept-Language', 'ja')
+      const unasked = await send(app, asAdmin)
+      const asked = await send(app, asAdmin).set('Accept-Language', 'ja')
 
       // Assert
-      expect(response.status).toBe(status)
-      expect(response.headers['content-language']).toBe('en')
-      expect(response.body).toEqual({
+      expect(unasked.status).toBe(status)
+      expect(unasked.headers['content-language']).toBe('en')
+      expect(unasked.body).toMatchObject({ title, detail })
+      expect(asked.status).toBe(status)
+      expect(asked.headers['content-language']).toBe('ja')
+      expect(asked.body).toEqual({
         ...unasked.body,
-        title,
-        correlationId: response.headers['x-request-id'],
+        title: titleInJapanese,
+        detail: detailInJapanese,
+        correlationId: asked.headers['x-request-id'],
         timestamp: expect.any(String),
       })
     },
   )
+
+  it('should answer what cannot be done in the state it is in, which the domain writes of in English alone, in English though Japanese is asked for', async () => {
+    // Arrange
+    const app = createTestApp()
+    const asAdmin = await signInAsAdmin(app, getTestDb())
+    const disable = () =>
+      request(app)
+        .post(`${AUTH}/2fa/disable`)
+        .set('Authorization', asAdmin)
+        .send({ password: PASSWORD, code: '123456' })
+    const unasked = await disable()
+
+    // Act
+    const response = await disable().set('Accept-Language', 'ja')
+
+    // Assert
+    expect(response.status).toBe(409)
+    expect(response.headers['content-language']).toBe('en')
+    expect(response.body).toEqual({
+      ...unasked.body,
+      title: 'Operation not allowed',
+      correlationId: response.headers['x-request-id'],
+      timestamp: expect.any(String),
+    })
+  })
 
   it.each<
     [

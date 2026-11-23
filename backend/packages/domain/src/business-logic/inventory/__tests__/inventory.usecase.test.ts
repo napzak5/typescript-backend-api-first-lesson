@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  entityMessages,
   inventoryMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -389,7 +390,11 @@ describe('CreateInventoryUseCase', () => {
 
   it('hands on a lot that is there already, what could not be done, and a row it cannot show', async () => {
     const taken = Result.error(
-      DomainErrors.alreadyExists('Inventory', 'lotNumber', 'LOT-2026-001'),
+      DomainErrors.alreadyExists(
+        entityMessages.inventory,
+        'lotNumber',
+        'LOT-2026-001',
+      ),
     )
 
     expect(
@@ -435,7 +440,11 @@ describe('GetInventoryUseCase', () => {
 
     expect(result).toEqual({
       type: 'error',
-      error: { type: 'notFound', entity: 'Inventory', id: INVENTORY_ID },
+      error: {
+        type: 'notFound',
+        entity: entityMessages.inventory,
+        id: INVENTORY_ID,
+      },
     })
   })
 
@@ -554,7 +563,11 @@ describe('UpdateInventoryUseCase', () => {
   it('answers that a row it does not find is not found', async () => {
     expect(await update(updating({ type: 'notFound' }))).toEqual({
       type: 'error',
-      error: { type: 'notFound', entity: 'Inventory', id: INVENTORY_ID },
+      error: {
+        type: 'notFound',
+        entity: entityMessages.inventory,
+        id: INVENTORY_ID,
+      },
     })
   })
 
@@ -631,7 +644,11 @@ describe('DeleteInventoryUseCase', () => {
   it('answers that a row it does not find is not found', async () => {
     expect(await remove(removing({ type: 'notFound' }))).toEqual({
       type: 'error',
-      error: { type: 'notFound', entity: 'Inventory', id: INVENTORY_ID },
+      error: {
+        type: 'notFound',
+        entity: entityMessages.inventory,
+        id: INVENTORY_ID,
+      },
     })
   })
 

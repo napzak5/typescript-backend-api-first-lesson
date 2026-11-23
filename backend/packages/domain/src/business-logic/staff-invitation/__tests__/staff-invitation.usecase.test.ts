@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   authMessages,
+  entityMessages,
   staffInvitationMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -53,17 +54,21 @@ const databaseDown = Result.error(
 const forbidden = Result.error(DomainErrors.forbidden())
 const salonNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+  error: { type: 'notFound', entity: entityMessages.salon, id: SALON_ID },
 }
 const staffNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Staff member', id: STAFF_MEMBER_ID },
+  error: {
+    type: 'notFound',
+    entity: entityMessages.staffMember,
+    id: STAFF_MEMBER_ID,
+  },
 }
 const invitationNotFound = {
   type: 'error',
   error: {
     type: 'notFound',
-    entity: 'Invitation of staff member',
+    entity: entityMessages.invitationOfStaffMember,
     id: STAFF_MEMBER_ID,
   },
 }
@@ -86,7 +91,7 @@ const addressHasAccount = {
   type: 'error',
   error: {
     type: 'alreadyExists',
-    entity: 'User',
+    entity: entityMessages.user,
     field: 'email',
     value: INVITED_EMAIL,
   },

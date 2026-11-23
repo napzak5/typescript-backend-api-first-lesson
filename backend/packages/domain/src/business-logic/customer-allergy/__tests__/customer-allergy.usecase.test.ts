@@ -2,6 +2,7 @@ import { Result } from '@beauty-salon-backend/utility'
 import {
   customerAllergyMessages,
   customerMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -186,7 +187,7 @@ describe('AddCustomerAllergyUseCase', () => {
 
   it('answers a customer who is not there as not found', async () => {
     expect(await add(adding({ type: 'customerNotFound' }))).toEqual(
-      Result.error(DomainErrors.notFound('Customer', CUSTOMER_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID)),
     )
   })
 
@@ -332,12 +333,15 @@ describe('UpdateCustomerAllergyUseCase', () => {
     [
       'a customer who is not there',
       { type: 'customerNotFound' },
-      DomainErrors.notFound('Customer', CUSTOMER_ID),
+      DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID),
     ],
     [
       'an allergy the customer does not have',
       { type: 'allergyNotFound' },
-      DomainErrors.notFound('CustomerAllergy', CUSTOMER_ALLERGY_ID),
+      DomainErrors.notFound(
+        entityMessages.customerAllergy,
+        CUSTOMER_ALLERGY_ID,
+      ),
     ],
   ])('answers %s as not found', async (_case, outcome, error) => {
     expect(await update(changing(outcome))).toEqual(Result.error(error))
@@ -427,12 +431,15 @@ describe('RemoveCustomerAllergyUseCase', () => {
     [
       'a customer who is not there',
       { type: 'customerNotFound' },
-      DomainErrors.notFound('Customer', CUSTOMER_ID),
+      DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID),
     ],
     [
       'an allergy the customer does not have',
       { type: 'allergyNotFound' },
-      DomainErrors.notFound('CustomerAllergy', CUSTOMER_ALLERGY_ID),
+      DomainErrors.notFound(
+        entityMessages.customerAllergy,
+        CUSTOMER_ALLERGY_ID,
+      ),
     ],
   ])('answers %s as not found', async (_case, outcome, error) => {
     expect(await remove(removing(outcome))).toEqual(Result.error(error))
@@ -607,7 +614,7 @@ describe('ListCustomerAllergiesUseCase', () => {
 
   it('answers a customer who is not there as not found', async () => {
     expect(await list(listing({ type: 'customerNotFound' }))).toEqual(
-      Result.error(DomainErrors.notFound('Customer', CUSTOMER_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID)),
     )
   })
 

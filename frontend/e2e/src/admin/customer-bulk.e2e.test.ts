@@ -1,4 +1,4 @@
-import { OWNER } from '@beauty-salon-frontend/testing/seed'
+import { OWNER, YUKI } from '@beauty-salon-frontend/testing/seed'
 import type { Page } from '@playwright/test'
 import * as z from 'zod'
 import { ADMIN } from '../support/applications'
@@ -144,6 +144,52 @@ test.describe('writing customers at once, in a browser', () => {
       },
       { email: ICHIRO.email, tags: ['秋のキャンペーン'], present: false },
     ])
+  })
+})
+
+test.describe('a file with a customer of the ledger, in a browser that asks for Japanese', () => {
+  test.use({ locale: 'ja-JP' })
+
+  test('should find the address of mail that is taken in what the API says in Japanese, and say so at its row', async ({
+    page,
+    api,
+  }) => {
+    // Arrange
+    const salon = await salonId(api)
+    await page.goto(`${ADMIN.origin}/salons/${salon}/customers/import`)
+    await enterCredentials(page, OWNER, api.seedPassword)
+    await expect(heading(page, 'CSV から登録する')).toBeFocused()
+    await page
+      .getByLabel('CSV ファイル')
+      .setInputFiles(
+        fileOf([
+          'lastName,firstName,email,phoneNumber',
+          `山田,花子,${HANAKO.email},090-1234-5678`,
+          `田中,由紀,${YUKI.email},090-1234-5678`,
+        ]),
+      )
+    const answered = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        response.url().endsWith('/customers/bulk'),
+    )
+
+    // Act
+    await page.getByRole('button', { name: '2 人を登録する' }).click()
+
+    // Assert
+    const answer = await answered
+    expect(answer.status()).toBe(409)
+    expect(answer.headers()['content-language']).toBe('ja')
+    expect(await answer.json()).toMatchObject({
+      detail: `email が ${YUKI.email} の顧客は、すでにあります`,
+    })
+    const refusal = page.getByRole('alert')
+    await expect(refusal).toContainText('3 行目 メールアドレス')
+    await expect(refusal).toContainText(
+      'このメールアドレスのお客様が、もう台帳にいます。',
+    )
+    expect(await storedCustomers(api)).toEqual([])
   })
 })
 

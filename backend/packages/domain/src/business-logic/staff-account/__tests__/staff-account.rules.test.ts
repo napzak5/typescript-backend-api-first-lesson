@@ -1,3 +1,4 @@
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { actors, dataOf } from '../../../__tests__/fixtures/auth-fixtures'
 import { OTHER_SALON_ID, SALON_ID } from '../../../__tests__/fixtures/fixtures'
@@ -39,7 +40,7 @@ describe('the refusals of the accounts of staff members', () => {
   it('names the staff member whose account was not found', () => {
     expect(accountNotFound(dataOf(parseStaffId(STAFF_MEMBER_ID)))).toEqual({
       type: 'notFound',
-      entity: 'Account of staff member',
+      entity: entityMessages.accountOfStaffMember,
       id: STAFF_MEMBER_ID,
     })
   })

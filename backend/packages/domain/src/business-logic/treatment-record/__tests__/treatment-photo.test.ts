@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  treatmentRecordMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import { brokenRules, SALON_ID } from '../../../__tests__/fixtures/fixtures'
@@ -189,7 +192,10 @@ describe('AddTreatmentPhotosUseCase', () => {
   it('does not find a record that is not there, or not within the reach', async () => {
     expect(await add(adding({ type: 'notFound' }))).toEqual(
       Result.error(
-        DomainErrors.notFound('TreatmentRecord', TREATMENT_RECORD_ID),
+        DomainErrors.notFound(
+          entityMessages.treatmentRecord,
+          TREATMENT_RECORD_ID,
+        ),
       ),
     )
   })
@@ -312,11 +318,16 @@ describe('RemoveTreatmentPhotoUseCase', () => {
   it('does not find a record that is not there or not within the reach, nor a photo the record does not hold', async () => {
     expect(await remove(removing({ type: 'recordNotFound' }))).toEqual(
       Result.error(
-        DomainErrors.notFound('TreatmentRecord', TREATMENT_RECORD_ID),
+        DomainErrors.notFound(
+          entityMessages.treatmentRecord,
+          TREATMENT_RECORD_ID,
+        ),
       ),
     )
     expect(await remove(removing({ type: 'photoNotFound' }))).toEqual(
-      Result.error(DomainErrors.notFound('TreatmentPhoto', PHOTO_ID)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.treatmentPhoto, PHOTO_ID),
+      ),
     )
   })
 

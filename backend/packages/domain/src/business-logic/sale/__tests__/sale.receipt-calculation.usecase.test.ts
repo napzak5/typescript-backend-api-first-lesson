@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -183,7 +184,9 @@ describe('GetSaleReceiptUseCase', () => {
   it('answers a sale that is not there, or not within the reach, as not found', async () => {
     const result = await receipt(saleDependencies(finding(null)))
 
-    expect(result).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+    expect(result).toEqual(
+      Result.error(DomainErrors.notFound(entityMessages.sale, SALE_ID)),
+    )
   })
 
   it('refuses a void sale', async () => {

@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  entityMessages,
   purchaseOrderMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -338,7 +339,9 @@ describe('GetPurchaseOrderUseCase', () => {
     })
 
     expect(await get(dependencies)).toEqual(
-      Result.error(DomainErrors.notFound('PurchaseOrder', PURCHASE_ORDER_ID)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.purchaseOrder, PURCHASE_ORDER_ID),
+      ),
     )
   })
 
@@ -606,7 +609,9 @@ describe('UpdatePurchaseOrderUseCase', () => {
     })
 
     expect(await update(dependencies)).toEqual(
-      Result.error(DomainErrors.notFound('PurchaseOrder', PURCHASE_ORDER_ID)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.purchaseOrder, PURCHASE_ORDER_ID),
+      ),
     )
   })
 
@@ -717,7 +722,9 @@ describe('ApprovePurchaseOrderUseCase', () => {
         purchaseOrderDependencies({ approve: refused({ type: 'notFound' }) }),
       ),
     ).toEqual(
-      Result.error(DomainErrors.notFound('PurchaseOrder', PURCHASE_ORDER_ID)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.purchaseOrder, PURCHASE_ORDER_ID),
+      ),
     )
     expect(
       await approve(
@@ -830,7 +837,9 @@ describe('CancelPurchaseOrderUseCase', () => {
         purchaseOrderDependencies({ cancel: refused({ type: 'notFound' }) }),
       ),
     ).toEqual(
-      Result.error(DomainErrors.notFound('PurchaseOrder', PURCHASE_ORDER_ID)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.purchaseOrder, PURCHASE_ORDER_ID),
+      ),
     )
     expect(
       await cancel(

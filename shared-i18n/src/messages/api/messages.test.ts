@@ -4,6 +4,7 @@ import * as catalogues from './index'
 import {
   attachmentMessages,
   bookingMessages,
+  entityMessages,
   inventoryAlertMessages,
   inventoryMessages,
   paymentMessages,
@@ -72,6 +73,37 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
     {
       en: 'The request body exceeds 100000 bytes',
       ja: 'リクエストの本文が 100000 バイトを超えています',
+    },
+  ],
+  [
+    'problemMessages.notFound.detail',
+    problemMessages.notFound.detail(
+      entityMessages.salon,
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ),
+    {
+      en: 'Salon 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c was not found',
+      ja: 'サロンが見つかりません（ID: 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c）',
+    },
+  ],
+  [
+    'problemMessages.alreadyExists.detail',
+    problemMessages.alreadyExists.detail(
+      entityMessages.customer,
+      'referralCode',
+      'HANAKO',
+    ),
+    {
+      en: 'Customer with referralCode HANAKO already exists',
+      ja: 'referralCode が HANAKO の顧客は、すでにあります',
+    },
+  ],
+  [
+    'entityMessages.versionOfCustomer',
+    entityMessages.versionOfCustomer(3),
+    {
+      en: 'Version 3 of customer',
+      ja: 'この ID の顧客の第 3 版',
     },
   ],
   [
@@ -356,5 +388,46 @@ describe('the messages of the API', () => {
     expect(MADE.map(([where]) => where).toSorted()).toEqual(
       FOUND.made.toSorted(),
     )
+  })
+
+  it('should say that a thing was not found without an ID, where what it was looked for by is not repeated', () => {
+    // Act
+    const made = problemMessages.notFound.detail(
+      entityMessages.shareLinkOfToken,
+      null,
+    )
+
+    // Assert
+    expect(made).toEqual({
+      en: 'Share link of the token was not found',
+      ja: 'このトークンの共有リンクが見つかりません',
+    })
+  })
+
+  it('should put the value that is taken between spaces in every language, where a screen looks for it', () => {
+    // Act
+    const made = problemMessages.alreadyExists.detail(
+      entityMessages.customer,
+      'email',
+      'ichiro@example.com',
+    )
+
+    // Assert
+    expect(` ${made.en} `).toContain(' ichiro@example.com ')
+    expect(` ${made.ja} `).toContain(' ichiro@example.com ')
+  })
+
+  it('should say whose ID a thing is looked for by, where the name says an owner, in Japanese too', () => {
+    // Act
+    const made = problemMessages.notFound.detail(
+      entityMessages.accountOfStaffMember,
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    )
+
+    // Assert
+    expect(made).toEqual({
+      en: 'Account of staff member 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c was not found',
+      ja: 'この ID のスタッフのアカウントが見つかりません（ID: 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c）',
+    })
   })
 })

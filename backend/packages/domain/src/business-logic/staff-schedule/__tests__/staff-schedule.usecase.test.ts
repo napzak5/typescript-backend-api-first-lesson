@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { staffScheduleMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  staffScheduleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -33,11 +36,15 @@ const databaseDown = Result.error(
 const forbidden = Result.error(DomainErrors.forbidden())
 const salonNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+  error: { type: 'notFound', entity: entityMessages.salon, id: SALON_ID },
 }
 const staffNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Staff member', id: STAFF_MEMBER_ID },
+  error: {
+    type: 'notFound',
+    entity: entityMessages.staffMember,
+    id: STAFF_MEMBER_ID,
+  },
 }
 
 /** The broken rules of a failed result, as `field:rule`; empty for a success. */

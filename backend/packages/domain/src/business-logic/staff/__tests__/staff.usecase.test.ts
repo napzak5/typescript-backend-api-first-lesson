@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  entityMessages,
   ruleMessages,
   staffMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -39,11 +40,15 @@ const databaseDown = Result.error(
 const forbidden = Result.error(DomainErrors.forbidden())
 const salonNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+  error: { type: 'notFound', entity: entityMessages.salon, id: SALON_ID },
 }
 const staffNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Staff member', id: STAFF_MEMBER_ID },
+  error: {
+    type: 'notFound',
+    entity: entityMessages.staffMember,
+    id: STAFF_MEMBER_ID,
+  },
 }
 const storedRowIsCorrupt = {
   type: 'error',
@@ -698,7 +703,7 @@ describe('CreateStaffUseCase', () => {
     ['staffCode', 'STF-001'],
   ])('returns the refusal of a %s that is taken', async (field, value) => {
     const taken = Result.error(
-      DomainErrors.alreadyExists('Staff member', field, value),
+      DomainErrors.alreadyExists(entityMessages.staffMember, field, value),
     )
     const dependencies = staffDependencies({ create: vi.fn(async () => taken) })
 
@@ -1009,7 +1014,7 @@ describe('UpdateStaffUseCase', () => {
     ['staffCode', 'STF-002'],
   ])('returns the refusal of a %s that is taken', async (field, value) => {
     const taken = Result.error(
-      DomainErrors.alreadyExists('Staff member', field, value),
+      DomainErrors.alreadyExists(entityMessages.staffMember, field, value),
     )
     const dependencies = staffDependencies({ update: vi.fn(async () => taken) })
 

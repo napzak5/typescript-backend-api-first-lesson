@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   attachmentMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -50,7 +51,9 @@ const rulesOf = (result: Result<unknown, DomainError>): string[] =>
   result.type === 'error' ? brokenRules(result.error) : []
 
 const forbidden = Result.error(DomainErrors.forbidden())
-const gone = Result.error(DomainErrors.notFound('Attachment', ATTACHMENT_ID))
+const gone = Result.error(
+  DomainErrors.notFound(entityMessages.attachment, ATTACHMENT_ID),
+)
 const databaseDown = Result.error(
   DomainErrors.database('Connection lost', null),
 )
