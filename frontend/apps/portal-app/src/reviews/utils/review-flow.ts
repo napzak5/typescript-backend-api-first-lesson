@@ -22,12 +22,12 @@ import {
   type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   same,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalReviewMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { match } from 'ts-pattern'
 import { DETAIL_RATINGS } from '../../salons/utils/salon-format'
 import type { ReviewChange, ReviewWriting, Visit } from '../api/reviews-api'
@@ -168,26 +168,28 @@ const saidOf = (entered: Entered): Said => ({
   imageUrls: linesOf(entered.imageUrls),
 })
 
-const OVERALL_RATING_MISSING = '総合の評価を選んでください。'
+const { form: words } = portalReviewMessages
+
 const TITLE_TOO_LONG = tooLong(MAX_TITLE_LENGTH)
-const TOO_MANY_IMAGES = `画像は ${MAX_IMAGES} 個までです。行を減らしてください。`
+const TOO_MANY_IMAGES = words.tooManyImages(MAX_IMAGES)
+
+/** What a form of a review read: the value to send, or what to say at its controls */
+type ReviewRead<Value> = FormRead<Value, FormErrors<LocalizedText>>
 
 /** What cannot be right of what the form was sent with, under the names of the controls. */
-const errorsOf = (entered: Entered): FormErrors => {
+const errorsOf = (entered: Entered): FormErrors<LocalizedText> => {
   const images =
-    inJapaneseIfAny(
-      webAddressLinesError(entered.imageUrls, LONGEST_WEB_ADDRESS),
-    ) ??
+    webAddressLinesError(entered.imageUrls, LONGEST_WEB_ADDRESS) ??
     (linesOf(entered.imageUrls).length > MAX_IMAGES
       ? TOO_MANY_IMAGES
       : undefined)
 
   return Object.fromEntries([
     ...(ratingOf(entered.overallRating) === null
-      ? [[OVERALL_RATING, OVERALL_RATING_MISSING]]
+      ? [[OVERALL_RATING, words.overallRatingMissing]]
       : []),
     ...(lengthOf(entered.title.trim()) > MAX_TITLE_LENGTH
-      ? [[TITLE, inJapanese(TITLE_TOO_LONG)]]
+      ? [[TITLE, TITLE_TOO_LONG]]
       : []),
     ...(images === undefined ? [] : [[IMAGES, images]]),
   ])
@@ -201,7 +203,7 @@ const errorsOf = (entered: Entered): FormErrors => {
 export const readNewReview = (
   values: FormData,
   { booking, customerId }: Visit,
-): FormRead<ModelsReviewCreateRequest> => {
+): ReviewRead<ModelsReviewCreateRequest> => {
   const entered = enteredIn(values)
   const errors = errorsOf(entered)
   const said = saidOf(entered)
@@ -264,7 +266,7 @@ const changesOf = (
 
 /** What the form was sent with: what to change, nothing to change, or what is wrong. */
 export type ReviewChangeRead =
-  | FormRead<ModelsReviewUpdateRequest>
+  | ReviewRead<ModelsReviewUpdateRequest>
   /** The form was sent as it was opened: there is nothing to ask the API for */
   | { type: 'unchanged' }
 
@@ -293,9 +295,6 @@ export const readReviewChange = (
     : { type: 'valid', value: changes }
 }
 
-const STAFF_GONE =
-  'このスタッフは、選べなくなりました。ほかのスタッフか、「スタッフを評価しない」を選んでください。'
-
 /** The values of the request that say which visit a review is of: the form has no control for them. */
 const OF_THE_VISIT = ['bookingId', 'salonId', 'customerId']
 
@@ -318,22 +317,24 @@ const controlOf = (field: string): string | undefined =>
   (field.startsWith(`${IMAGES}.`) ? IMAGES : undefined)
 
 /** What to say at a control whose value the API did not take, for the rule the value broke. */
-const messageOf = (control: string, rule: string): string =>
+const messageOf = (control: string, rule: string): LocalizedText =>
   match(control)
-    .with(STAFF, () => STAFF_GONE)
+    .with(STAFF, () => words.staffGone)
     .with(TITLE, () =>
-      inJapanese(rule === 'too_big' ? TITLE_TOO_LONG : REFUSED_VALUE_MESSAGE),
+      rule === 'too_big' ? TITLE_TOO_LONG : REFUSED_VALUE_MESSAGE,
     )
     .with(IMAGES, () =>
-      rule === 'too_big' ? TOO_MANY_IMAGES : inJapanese(REFUSED_VALUE_MESSAGE),
+      rule === 'too_big' ? TOO_MANY_IMAGES : REFUSED_VALUE_MESSAGE,
     )
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /**
  * What the form says about the values the API did not take: at the control
  * of each, and about the attempt when the form has no control for them.
  */
-const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
+const afterRefusedValues = (
+  values: readonly RefusedValue[],
+): FormSays<LocalizedText> => {
   const said = values.flatMap(({ field, rule }) => {
     const control = controlOf(field)
 
@@ -343,18 +344,23 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
   })
 
   return said.length === 0
-    ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
+    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
     : {
         message: undefined,
         // The first thing the API says about a value is the one to act on
         errors: Object.fromEntries(
-          said.toReversed().map(({ control, message }) => [control, message]),
+          said
+            .toReversed()
+            .map(({ control, message }): [string, LocalizedText] => [
+              control,
+              message,
+            ]),
         ),
       }
 }
 
-const VISIT_READ_AGAIN: FormSays = aboutTheAttempt(
-  'このレビューは、投稿できませんでした。来店の内容を読み込み直しましたので、お確かめください。',
+const VISIT_READ_AGAIN: FormSays<LocalizedText> = aboutTheAttempt(
+  words.visitReadAgain,
 )
 
 const namesTheVisit = (values: readonly RefusedValue[]): boolean =>
@@ -374,19 +380,17 @@ export const isOfTheVisit = (
 /** What the form says after the API did not write the review. */
 export const afterReviewWriting = (
   outcome: Exclude<ReviewWriting, { type: 'written' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'refused' }, () => VISIT_READ_AGAIN)
     .with({ type: 'invalid' }, ({ values }) =>
       namesTheVisit(values) ? VISIT_READ_AGAIN : afterRefusedValues(values),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /**
@@ -395,14 +399,12 @@ export const afterReviewWriting = (
  */
 export const afterReviewChange = (
   outcome: Exclude<ReviewChange, { type: 'changed' } | { type: 'gone' }>,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()

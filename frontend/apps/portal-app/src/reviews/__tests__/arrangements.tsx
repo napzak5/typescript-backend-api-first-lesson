@@ -156,6 +156,8 @@ const listedSchema = z.array(
     salon: z.string(),
     title: z.string().nullable(),
     posted: z.string(),
+    /** The day it was posted on at its salon, as the formats are given it: `2026-11-10` */
+    postedOn: z.iso.date(),
   }),
 )
 
@@ -167,7 +169,8 @@ export const storedReviewsOf = async (email = KENJI.email) =>
   listedSchema.parse(
     await testApi().query(
       `select reviews.id::text, salons.name as salon, reviews.title,
-              to_char(reviews."createdAt" at time zone salons.timezone, 'YYYY"年"FMMM"月"FMDD"日"') as posted
+              to_char(reviews."createdAt" at time zone salons.timezone, 'YYYY"年"FMMM"月"FMDD"日"') as posted,
+              to_char(reviews."createdAt" at time zone salons.timezone, 'YYYY-MM-DD') as "postedOn"
        from reviews
        join customers on customers.id = reviews."customerId"
        join salons on salons.id = reviews."salonId"
@@ -403,6 +406,13 @@ const timeOfDay = (moment: string): string =>
     hourCycle: 'h23',
     timeZone: 'Asia/Tokyo',
   }).format(new Date(moment))
+
+/** A day of the calendar (`2026-11-10`), as a page in English writes it: 「November 10, 2026」. */
+export const dayInEnglish = (date: string): string =>
+  new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'long',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T00:00:00Z`))
 
 /** When a visit was, as a screen says it. */
 export const whenOf = ({

@@ -8,7 +8,6 @@ import {
   DescriptionList,
   EmptyState,
   type FormSays,
-  inJapanese,
   Link,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
@@ -16,9 +15,15 @@ import {
   PageHeader,
   UnreadNotice,
   useNotifications,
+  useSay,
   useScreenHeadingFocus,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  portalFrameMessages,
+  portalProfileMessages,
+  portalReviewMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -40,18 +45,22 @@ import {
   enteredOf,
   readReviewChange,
 } from '../utils/review-flow'
-import { NO_SALON, timezoneOf } from '../utils/review-format'
+import { timezoneOf } from '../utils/review-format'
 
-const TITLE = 'レビューを変更する'
+const { change: words, write, names, noSalon } = portalReviewMessages
 
 /** Where what the customer wrote is listed, and where the form leads */
 const OWN_REVIEWS = '/mypage/reviews'
 
-const BACK = (
-  <ButtonLink href={OWN_REVIEWS} variant='quiet'>
-    自分のレビューへ戻る
-  </ButtonLink>
-)
+const Back = () => {
+  const say = useSay()
+
+  return (
+    <ButtonLink href={OWN_REVIEWS} variant='quiet'>
+      {say(words.back)}
+    </ButtonLink>
+  )
+}
 
 const NOT_FOUND: ReviewToChangeRead = { type: 'notFound' }
 
@@ -69,17 +78,18 @@ type ChangeProps = {
  */
 const Change = ({ own, onGone }: ChangeProps) => {
   const { review, salon, staffName } = own
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const change = useMutation({
     mutationFn: (request: ModelsReviewUpdateRequest) =>
       changeReview(review.id, request),
     onSuccess: (outcome) => {
       if (outcome.type === 'changed') {
         afterReviewWrite(queryClient, outcome.review, outcome.review)
-        notify({ tone: 'success', message: 'レビューを変更しました。' })
+        notify({ tone: 'success', message: words.changed })
         void navigate(OWN_REVIEWS)
         return
       }
@@ -110,21 +120,21 @@ const Change = ({ own, onGone }: ChangeProps) => {
 
   return (
     <>
-      <Card title='変更するレビュー'>
+      <Card title={say(words.reviewed)}>
         <DescriptionList
           items={[
             {
-              term: 'サロン',
+              term: say(write.salon),
               description:
                 salon === null ? (
-                  NO_SALON
+                  say(noSalon)
                 ) : (
                   <Link href={`/salons/${salon.id}`}>{salon.name}</Link>
                 ),
             },
             {
-              term: '投稿日',
-              description: inJapanese(
+              term: say(words.postedOn),
+              description: say(
                 dayOf(
                   review.createdAt,
                   timezoneOf(
@@ -144,11 +154,11 @@ const Change = ({ own, onGone }: ChangeProps) => {
             ? { type: 'nobody' }
             : { type: 'fixed', name: staffName }
         }
-        submitLabel='変更を保存する'
+        submitLabel={say(portalFrameMessages.saveChanges)}
         message={says.message}
         errors={says.errors}
         pending={change.isPending}
-        actions={BACK}
+        actions={<Back />}
         onSubmit={submit}
       />
     </>
@@ -156,6 +166,7 @@ const Change = ({ own, onGone }: ChangeProps) => {
 }
 
 const ReviewToChange = () => {
+  const say = useSay()
   const { reviewId = '' } = useParams()
   const read = useQuery({
     queryKey: reviewToChangeKey(reviewId),
@@ -181,36 +192,30 @@ const ReviewToChange = () => {
 
   return (
     <>
-      <PageHeader title={TITLE} />
+      <PageHeader title={say(words.title)} />
       {/* What the form was opened with a while ago is not what it opens with */}
       {match(read.isFetchedAfterMount ? read.data : undefined)
-        .with(undefined, () => (
-          <LoadingIndicator label='レビューを読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
         .with({ type: 'found' }, (own) => (
           <Change own={own} onGone={() => setGone(true)} />
         ))
         .with({ type: 'notFound' }, () => (
           <>
-            {gone && (
-              <Alert tone='warning'>
-                このレビューは、すでに削除されていたため、変更を保存できませんでした。
-              </Alert>
-            )}
+            {gone && <Alert tone='warning'>{say(words.gone)}</Alert>}
             <EmptyState
-              title='レビューが見つかりません'
-              description='アドレスが正しいか、お確かめください。ほかのアカウントで書いたレビューは、変更できません。'
+              title={say(words.notFound)}
+              description={say(words.notFoundDescription)}
               actions={
-                <ButtonLink href={OWN_REVIEWS}>自分のレビューを見る</ButtonLink>
+                <ButtonLink href={OWN_REVIEWS}>
+                  {say(portalProfileMessages.myPage.toReviews)}
+                </ButtonLink>
               }
             />
           </>
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('レビュー'), reason),
-            )}
+            message={say(unreadMessageOf(names.review, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -224,12 +229,16 @@ const ReviewToChange = () => {
  * The form in which the customer who is signed in changes what they wrote
  * about a visit: the ratings, the words and the pictures.
  */
-export const ReviewChangeScreen = () => (
-  <RequireSession
-    roles={CUSTOMERS}
-    signInNotice='レビューを変更するには、サインインしてください。'
-    signInHelp={<SignInHelp />}
-  >
-    <ReviewToChange />
-  </RequireSession>
-)
+export const ReviewChangeScreen = () => {
+  const say = useSay()
+
+  return (
+    <RequireSession
+      roles={CUSTOMERS}
+      signInNotice={say(words.signInNotice)}
+      signInHelp={<SignInHelp />}
+    >
+      <ReviewToChange />
+    </RequireSession>
+  )
+}

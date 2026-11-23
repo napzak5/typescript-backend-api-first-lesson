@@ -34,7 +34,9 @@ export const OwnSecurityScreen = () => {
         passwordHref={PASSWORD_PATH}
         twoFactorHref={TWO_FACTOR_PATH}
         actions={
-          <ButtonLink href={MY_PAGE}>{say(security.backToMyPage)}</ButtonLink>
+          <ButtonLink href={MY_PAGE}>
+            {say(portalFrameMessages.backToMyPage)}
+          </ButtonLink>
         }
       />
     </RequireSession>

@@ -1,26 +1,6 @@
 import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
-
-/** How many there are, as English names one and many: 「1 review」, 「2 reviews」 */
-const countedIn = (count: number, one: string, many: string): string =>
-  `${numberOf(count).en} ${count === 1 ? one : many}`
-
-/**
- * The parts of a sentence that are joined with `join`, each as its
- * language writes it: what a salon wrote stands as it is in both
- */
-const joined = (
-  parts: readonly (string | LocalizedText)[],
-  join: LocalizedText,
-): LocalizedText =>
-  text({
-    en: parts
-      .map((part) => (typeof part === 'string' ? part : part.en))
-      .join(join.en),
-    ja: parts
-      .map((part) => (typeof part === 'string' ? part : part.ja))
-      .join(join.ja),
-  })
+import { countedIn, joined, postalCodeOf } from './written'
 
 /** The mark between the parts of a line of short values: 「・」 */
 const BETWEEN_VALUES = { en: ' · ', ja: '・' }
@@ -116,7 +96,7 @@ export const portalSalonMessages = {
   about: {
     address: text({ en: 'Address', ja: '住所' }),
     /** The postal code of the address: 「〒150-0001」 */
-    postalCode: (code: string) => text({ en: code, ja: `〒${code}` }),
+    postalCode: postalCodeOf,
     phoneNumber: text({ en: 'Phone number', ja: '電話番号' }),
     /** What stands between the telephone numbers of a salon, which are links */
     betweenPhoneNumbers: text({ en: ', ', ja: '、' }),

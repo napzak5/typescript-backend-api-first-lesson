@@ -167,6 +167,7 @@ describe('sourcesBelow', () => {
     ['the tests', 'ui/src', /\.test\.tsx?$/],
     ['the stories', 'ui/src', /\.stories\.tsx$/],
     ['what the stories share', 'ui/src', /__stories__/],
+    ['what the tests share', '../apps/portal-app/src', /__tests__/],
     ['the examples of the stories', 'session/src', /examples\.ts$/],
     ['what is generated from the contract', 'api-client/src', /generated/],
     ['the stylesheets', 'ui/src', /\.css$/],

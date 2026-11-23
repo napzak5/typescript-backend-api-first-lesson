@@ -15,8 +15,56 @@ import {
   readWholeProfile,
 } from './profile-flow'
 
-const PHONE_MALFORMED =
-  '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。'
+const PHONE_MALFORMED = {
+  en: 'Enter a phone number in digits and hyphens, with the area code (for example 03-1234-5678).',
+  ja: '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+}
+const LAST_NAME_MISSING = {
+  en: 'Enter the last name.',
+  ja: '姓を入力してください。',
+}
+const FIRST_NAME_MISSING = {
+  en: 'Enter the first name.',
+  ja: '名を入力してください。',
+}
+const PHONE_MISSING = {
+  en: 'Enter a phone number.',
+  ja: '電話番号を入力してください。',
+}
+const BIRTH_DATE_OUT_OF_RANGE = {
+  en: 'Enter a date of birth from January 1, 1900 to today.',
+  ja: '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
+}
+const UNLISTED = {
+  en: 'Choose one of the options.',
+  ja: '選択肢から選んでください。',
+}
+const REFUSED_VALUE = {
+  en: 'This value was not accepted. Check what you entered.',
+  ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+}
+const CHECK_THE_VALUES = {
+  en: 'Check what you entered and try again.',
+  ja: '入力した内容を確かめて、もう一度お試しください。',
+}
+const PROFILE_REFUSED = {
+  en: 'Your details could not be registered with this account. If reloading the page does not help, contact the salon.',
+  ja: 'このアカウントでは、お客様の情報を登録できませんでした。ページを読み込み直しても登録できないときは、サロンにお問い合わせください。',
+}
+const TOO_MANY_REQUESTS = {
+  en: 'There are too many requests. Wait a while and try again.',
+  ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+}
+const NOT_SENT = {
+  en: 'It could not be sent. Check your connection and try again.',
+  ja: '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+}
+
+/** What is said of a text that is longer than `most` characters */
+const tooLong = (most: number) => ({
+  en: `Enter up to ${most} characters.`,
+  ja: `${most} 文字以内で入力してください。`,
+})
 
 const FILLED = {
   lastName: '山田',
@@ -85,9 +133,9 @@ describe('readProfile', () => {
 
   it('should ask for everything that is missing, each at its control', () => {
     expect(errorsOf({})).toEqual({
-      lastName: '姓を入力してください。',
-      firstName: '名を入力してください。',
-      phoneNumber: '電話番号を入力してください。',
+      lastName: LAST_NAME_MISSING,
+      firstName: FIRST_NAME_MISSING,
+      phoneNumber: PHONE_MISSING,
     })
   })
 
@@ -95,16 +143,16 @@ describe('readProfile', () => {
     expect(
       errorsOf({ lastName: ' ', firstName: '　', phoneNumber: '\t' }),
     ).toEqual({
-      lastName: '姓を入力してください。',
-      firstName: '名を入力してください。',
-      phoneNumber: '電話番号を入力してください。',
+      lastName: LAST_NAME_MISSING,
+      firstName: FIRST_NAME_MISSING,
+      phoneNumber: PHONE_MISSING,
     })
   })
 
   it('should say at one control what is wrong with its value, and nothing at the others', () => {
     expect(errorsOf({ ...FILLED, firstName: '' })).toEqual({
       lastName: undefined,
-      firstName: '名を入力してください。',
+      firstName: FIRST_NAME_MISSING,
       phoneNumber: undefined,
     })
   })
@@ -129,8 +177,8 @@ describe('readProfile', () => {
         firstName: '花'.repeat(101),
       }),
     ).toMatchObject({
-      lastName: '100 文字以内で入力してください。',
-      firstName: '100 文字以内で入力してください。',
+      lastName: tooLong(100),
+      firstName: tooLong(100),
     })
   })
 
@@ -174,10 +222,10 @@ describe('afterProfile', () => {
   })
 
   it.each([
-    ['lastName', 'too_big', '100 文字以内で入力してください。'],
-    ['lastName', 'too_small', '姓を入力してください。'],
-    ['firstName', 'too_big', '100 文字以内で入力してください。'],
-    ['firstName', 'custom', '名を入力してください。'],
+    ['lastName', 'too_big', tooLong(100)],
+    ['lastName', 'too_small', LAST_NAME_MISSING],
+    ['firstName', 'too_big', tooLong(100)],
+    ['firstName', 'custom', FIRST_NAME_MISSING],
     ['phoneNumber', 'too_big', PHONE_MALFORMED],
   ])(
     'should say of %s that broke the rule %s what to do',
@@ -201,7 +249,7 @@ describe('afterProfile', () => {
     ).toEqual({
       message: undefined,
       errors: {
-        lastName: '100 文字以内で入力してください。',
+        lastName: tooLong(100),
         phoneNumber: PHONE_MALFORMED,
       },
     })
@@ -217,7 +265,7 @@ describe('afterProfile', () => {
     'should say that the values are to be looked at when the API names %s',
     (_case, values) => {
       expect(afterProfile({ type: 'invalid', values })).toEqual({
-        message: '入力した内容を確かめて、もう一度お試しください。',
+        message: CHECK_THE_VALUES,
         errors: {},
       })
     },
@@ -234,42 +282,33 @@ describe('afterProfile', () => {
       }),
     ).toEqual({
       message: undefined,
-      errors: { firstName: '名を入力してください。' },
+      errors: { firstName: FIRST_NAME_MISSING },
     })
   })
 
   it('should say that the account cannot have the profile, without saying why', () => {
     expect(afterProfile({ type: 'refused' })).toEqual({
-      message:
-        'このアカウントでは、お客様の情報を登録できませんでした。ページを読み込み直しても登録できないときは、サロンにお問い合わせください。',
+      message: PROFILE_REFUSED,
       errors: {},
     })
   })
 
   it('should ask to wait after too many requests', () => {
     expect(afterProfile({ type: 'tooManyRequests' })).toEqual({
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS,
       errors: {},
     })
   })
 
   it('should say that nothing was sent when there was no answer to act on', () => {
     expect(afterProfile({ type: 'failed' })).toEqual({
-      message:
-        '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: NOT_SENT,
       errors: {},
     })
   })
 })
 
 const TODAY = '2026-11-19'
-
-const BIRTH_DATE_OUT_OF_RANGE =
-  '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。'
-const UNLISTED = '選択肢から選んでください。'
-const UNACCEPTABLE =
-  'この値は受け付けられませんでした。入力を確かめてください。'
 
 /** A box hands its name over when it is ticked, and nothing when it is not. */
 const ticked = (name: string, allowed: boolean): [string, string][] =>
@@ -428,9 +467,9 @@ describe('readWholeProfile', () => {
     expect(read).toEqual({
       type: 'invalid',
       errors: {
-        lastName: '姓を入力してください。',
-        firstName: '名を入力してください。',
-        phoneNumber: '電話番号を入力してください。',
+        lastName: LAST_NAME_MISSING,
+        firstName: FIRST_NAME_MISSING,
+        phoneNumber: PHONE_MISSING,
       },
     })
   })
@@ -442,7 +481,7 @@ describe('readWholeProfile', () => {
         phoneNumber: ['090-5550-019a'],
       }),
     ).toEqual({
-      lastName: '100 文字以内で入力してください。',
+      lastName: tooLong(100),
       phoneNumber: PHONE_MALFORMED,
     })
   })
@@ -457,7 +496,7 @@ describe('readWholeProfile', () => {
         ),
       ).toMatchObject({ type: 'valid', value: { [name]: 'あ'.repeat(most) } })
       expect(wholeErrorsOf({ [name]: ['あ'.repeat(most + 1)] })).toEqual({
-        [name]: `${most} 文字以内で入力してください。`,
+        [name]: tooLong(most),
       })
     },
   )
@@ -798,7 +837,7 @@ describe('readProfileChange', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        firstName: '名を入力してください。',
+        firstName: FIRST_NAME_MISSING,
         birthDate: BIRTH_DATE_OUT_OF_RANGE,
       },
     })
@@ -830,24 +869,24 @@ describe.each<[string, (values: { field: string; rule: string }[]) => unknown]>(
   ],
 )('%s, of values the API did not take', (_name, saysAfter) => {
   it.each([
-    ['lastName', 'too_big', '100 文字以内で入力してください。'],
-    ['firstName', 'invalid_format', '名を入力してください。'],
+    ['lastName', 'too_big', tooLong(100)],
+    ['firstName', 'invalid_format', FIRST_NAME_MISSING],
     ['phoneNumber', 'custom', PHONE_MALFORMED],
     ['alternativePhone', 'custom', PHONE_MALFORMED],
-    ['lastNameKana', 'too_big', '100 文字以内で入力してください。'],
-    ['firstNameKana', 'too_big', '100 文字以内で入力してください。'],
-    ['postalCode', 'too_big', '10 文字以内で入力してください。'],
-    ['prefecture', 'too_big', '50 文字以内で入力してください。'],
-    ['city', 'too_big', '100 文字以内で入力してください。'],
-    ['address', 'too_big', '255 文字以内で入力してください。'],
-    ['building', 'too_big', '255 文字以内で入力してください。'],
-    ['occupation', 'too_big', '100 文字以内で入力してください。'],
-    ['occupation', 'invalid_format', UNACCEPTABLE],
+    ['lastNameKana', 'too_big', tooLong(100)],
+    ['firstNameKana', 'too_big', tooLong(100)],
+    ['postalCode', 'too_big', tooLong(10)],
+    ['prefecture', 'too_big', tooLong(50)],
+    ['city', 'too_big', tooLong(100)],
+    ['address', 'too_big', tooLong(255)],
+    ['building', 'too_big', tooLong(255)],
+    ['occupation', 'too_big', tooLong(100)],
+    ['occupation', 'invalid_format', REFUSED_VALUE],
     ['birthDate', 'too_big', BIRTH_DATE_OUT_OF_RANGE],
     ['birthDate', 'too_small', BIRTH_DATE_OUT_OF_RANGE],
     ['birthDate', 'invalid_format', BIRTH_DATE_OUT_OF_RANGE],
     ['gender', 'invalid_value', UNLISTED],
-    [PREFERENCE_NOTES, 'invalid_format', UNACCEPTABLE],
+    [PREFERENCE_NOTES, 'invalid_format', REFUSED_VALUE],
   ])(
     'should say of %s that broke the rule %s what to do, at its control',
     (field, rule, message) => {
@@ -882,7 +921,7 @@ describe.each<[string, (values: { field: string; rule: string }[]) => unknown]>(
     'should say that the values are to be looked at when the API names %s',
     (_case, values) => {
       expect(saysAfter(values)).toEqual({
-        message: '入力した内容を確かめて、もう一度お試しください。',
+        message: CHECK_THE_VALUES,
         errors: {},
       })
     },
@@ -901,7 +940,7 @@ describe.each<[string, (values: { field: string; rule: string }[]) => unknown]>(
     ).toEqual({
       message: undefined,
       errors: {
-        city: '100 文字以内で入力してください。',
+        city: tooLong(100),
         [PREFERRED_SERVICES]: UNLISTED,
         birthDate: BIRTH_DATE_OUT_OF_RANGE,
       },
@@ -912,8 +951,7 @@ describe.each<[string, (values: { field: string; rule: string }[]) => unknown]>(
 describe('afterWholeProfile', () => {
   it('should say that the account cannot have the profile, without saying why', () => {
     expect(afterWholeProfile({ type: 'refused' })).toEqual({
-      message:
-        'このアカウントでは、お客様の情報を登録できませんでした。ページを読み込み直しても登録できないときは、サロンにお問い合わせください。',
+      message: PROFILE_REFUSED,
       errors: {},
     })
   })
@@ -925,16 +963,14 @@ describe.each([
 ])('%s, of an attempt that can be made again', (_name, saysAfter) => {
   it('should ask to wait after too many requests', () => {
     expect(saysAfter({ type: 'tooManyRequests' })).toEqual({
-      message:
-        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      message: TOO_MANY_REQUESTS,
       errors: {},
     })
   })
 
   it('should say that nothing was sent when there was no answer to act on', () => {
     expect(saysAfter({ type: 'failed' })).toEqual({
-      message:
-        '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: NOT_SENT,
       errors: {},
     })
   })

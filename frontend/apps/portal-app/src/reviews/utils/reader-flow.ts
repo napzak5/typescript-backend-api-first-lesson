@@ -12,10 +12,13 @@ import { lengthOf, tooLong } from '@beauty-salon-frontend/fields'
 import type { Session } from '@beauty-salon-frontend/session'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalReviewMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import type { ProfileRead } from '../../profile/api/profile-api'
 import type { ReviewReporting } from '../api/reviews-api'
@@ -76,26 +79,26 @@ export const DETAILS = 'details'
 /** How many characters the column of the details takes */
 export const MAX_DETAILS_LENGTH = 2000
 
+const REASON_NAMES: Record<ModelsReviewReportReasonType, LocalizedText> =
+  termMessages.reviewReportReason
+
+/** The reasons of a report, in the order the form offers them */
+const REASON_ORDER: readonly ModelsReviewReportReasonType[] = [
+  'inappropriate',
+  'false_information',
+  'personal_information',
+  'spam',
+  'other',
+]
+
 /** Why a review is reported, in the order the form offers the reasons. */
 export const REASONS: readonly {
   value: ModelsReviewReportReasonType
-  label: string
-}[] = [
-  { value: 'inappropriate', label: '不適切な表現（暴言、差別的な表現など）' },
-  { value: 'false_information', label: '事実と違う内容' },
-  {
-    value: 'personal_information',
-    label: '個人情報（氏名や連絡先など）',
-  },
-  { value: 'spam', label: '宣伝や、来店と関係のない内容' },
-  { value: 'other', label: 'その他' },
-]
+  label: LocalizedText
+}[] = REASON_ORDER.map((value) => ({ value, label: REASON_NAMES[value] }))
 
-const REASON_MISSING = '通報の理由を選んでください。'
-const DETAILS_MISSING =
-  '「その他」を選んだときは、何が問題かを入力してください。'
+const { report: words } = portalReviewMessages
 const DETAILS_TOO_LONG = tooLong(MAX_DETAILS_LENGTH)
-const UNACCEPTABLE = 'この内容は送信できません。入力し直してください。'
 
 /**
  * Reads the form of a report into the request, or into what is wrong with
@@ -105,23 +108,20 @@ const UNACCEPTABLE = 'この内容は送信できません。入力し直して�
  */
 export const readReport = (
   values: FormData,
-): FormRead<ModelsReviewReportRequest> => {
+): FormRead<ModelsReviewReportRequest, FormErrors<LocalizedText>> => {
   const chosen = values.get(REASON)
   const reason = REASONS.find(({ value }) => value === chosen)?.value
   const entered = values.get(DETAILS)
   const details = typeof entered === 'string' ? entered.trim() : ''
 
   if (reason === undefined) {
-    return { type: 'invalid', errors: { [REASON]: REASON_MISSING } }
+    return { type: 'invalid', errors: { [REASON]: words.reasonMissing } }
   }
   if (lengthOf(details) > MAX_DETAILS_LENGTH) {
-    return {
-      type: 'invalid',
-      errors: { [DETAILS]: inJapanese(DETAILS_TOO_LONG) },
-    }
+    return { type: 'invalid', errors: { [DETAILS]: DETAILS_TOO_LONG } }
   }
   if (reason === 'other' && details === '') {
-    return { type: 'invalid', errors: { [DETAILS]: DETAILS_MISSING } }
+    return { type: 'invalid', errors: { [DETAILS]: words.detailsMissing } }
   }
 
   return {
@@ -131,26 +131,28 @@ export const readReport = (
 }
 
 /** What to say at the details, for the rule the value broke. */
-const detailsMessageOf = (rule: string): string =>
+const detailsMessageOf = (rule: string): LocalizedText =>
   match(rule)
-    .with('custom', () => DETAILS_MISSING)
-    .with('too_big', () => inJapanese(DETAILS_TOO_LONG))
-    .otherwise(() => UNACCEPTABLE)
+    .with('custom', () => words.detailsMissing)
+    .with('too_big', () => DETAILS_TOO_LONG)
+    .otherwise(() => words.unacceptable)
 
 /**
  * What the form says about the values the API did not take: at the control
  * of each, and about the attempt when the form has no control for them.
  */
-const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
+const afterRefusedValues = (
+  values: readonly RefusedValue[],
+): FormSays<LocalizedText> => {
   const reason = values.find(({ field }) => field === REASON)
   const details = values.find(({ field }) => field === DETAILS)
 
   return reason === undefined && details === undefined
-    ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
+    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
     : {
         message: undefined,
         errors: {
-          ...(reason === undefined ? {} : { [REASON]: REASON_MISSING }),
+          ...(reason === undefined ? {} : { [REASON]: words.reasonMissing }),
           ...(details === undefined
             ? {}
             : { [DETAILS]: detailsMessageOf(details.rule) }),
@@ -168,14 +170,12 @@ export const afterReport = (
     ReviewReporting,
     { type: 'reported' } | { type: 'reportedBefore' } | { type: 'gone' }
   >,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()

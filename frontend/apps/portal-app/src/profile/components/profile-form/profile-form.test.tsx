@@ -1,7 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
+import { act } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TODAY } from '../examples'
 import * as profileFormStories from './profile-form.stories'
 
@@ -249,5 +251,144 @@ describe('ProfileForm', () => {
     // Assert
     expect(button).toHaveAttribute('aria-busy', 'true')
     expect(stories.Pending.args.onSubmit).not.toHaveBeenCalled()
+  })
+})
+
+describe('ProfileForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its parts, its controls and its choices in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(
+      screen
+        .getAllByRole('group')
+        .map((group) => group.querySelector('legend')?.textContent),
+    ).toEqual([
+      'Name',
+      'Contact',
+      'Address',
+      'About you',
+      'What you like',
+      'Favorite services',
+      'Messages you receive',
+    ])
+    expect(text('Last name')).toBeRequired()
+    expect(text('Phonetic first name')).not.toBeRequired()
+    expect(text('Phone number')).toHaveAccessibleDescription(
+      'The salon may contact you about your booking.',
+    )
+    expect(text('Alternative phone number')).toHaveAccessibleDescription(
+      'The number the salon calls when the one above does not answer.',
+    )
+    expect(text('Street address')).not.toBeRequired()
+    expect(text('Building and room')).not.toBeRequired()
+    expect(screen.getByLabelText('Date of birth')).toHaveAttribute(
+      'type',
+      'date',
+    )
+    expect(
+      within(screen.getByRole('combobox', { name: 'Gender' }))
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['Not specified', 'Male', 'Female', 'Other', 'Prefer not to say'])
+    expect(
+      within(part('Favorite services'))
+        .getAllByRole('checkbox')
+        .map((box) => box.closest('label')?.textContent),
+    ).toEqual([
+      'Cut',
+      'Color',
+      'Perm',
+      'Treatment',
+      'Spa',
+      'Styling',
+      'Extensions',
+      'Other',
+    ])
+    expect(text('Notes for the salon')).toHaveAccessibleDescription(
+      'For example, the products you would like used, or what you do not like.',
+    )
+    expect(
+      screen.getByRole('checkbox', { name: 'Receive news such as campaigns' }),
+    ).not.toBeChecked()
+    expect(
+      within(part('Contact')).getByText(
+        'The email address you sign in with is registered.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say in English that the address of the profile there is is not changed here', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Filled.run()
+
+    // Assert
+    expect(
+      within(part('Contact')).getByText(
+        'Your email address (hanako.yamada@example.com) cannot be changed here. To change it, contact the salon.',
+      ),
+    ).toBeVisible()
+    expect(screen.getByRole('combobox', { name: 'Gender' })).toHaveValue(
+      'female',
+    )
+  })
+
+  it('should say in English what is wrong at each control, and what went wrong with the attempt', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(text('First name')).toHaveFocus()
+    expect(text('First name')).toHaveAccessibleDescription(
+      'Enter the first name.',
+    )
+    expect(text('Alternative phone number')).toHaveAccessibleDescription(
+      'The number the salon calls when the one above does not answer. Enter a phone number in digits and hyphens, with the area code (for example 03-1234-5678).',
+    )
+    expect(screen.getByLabelText('Date of birth')).toHaveAccessibleDescription(
+      'Enter a date of birth from January 1, 1900 to today.',
+    )
+    expect(part('Favorite services')).toHaveAccessibleDescription(
+      'Choose one of the options.',
+    )
+
+    // Act
+    await stories.WithMessage.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'It could not be sent. Check your connection and try again.',
+    )
+  })
+
+  it('should say its errors again in the language chosen, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.WithErrors.run()
+    text('職業').focus()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(text('First name')).toHaveAccessibleDescription(
+      'Enter the first name.',
+    )
+    expect(text('Occupation')).toHaveFocus()
   })
 })

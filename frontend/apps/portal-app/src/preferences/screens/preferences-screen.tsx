@@ -12,17 +12,21 @@ import {
   ButtonLink,
   EmptyState,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  useSay,
   useScreenHeadingFocus,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  portalFrameMessages,
+  portalPreferenceMessages,
+  portalProfileMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -39,7 +43,7 @@ import {
   updateOwnPreferences,
 } from '../api/preferences-api'
 
-const TITLE = '好みの設定'
+const words = portalPreferenceMessages
 
 /** What the API says of an account that is no customer */
 const NO_PREFERENCES: PreferencesRead = { type: 'none' }
@@ -64,6 +68,7 @@ const PreferencesChange = ({
   staff,
   onGone,
 }: PreferencesChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
@@ -80,7 +85,7 @@ const PreferencesChange = ({
           staff: [...staff],
         }
         queryClient.setQueryData(OWN_PREFERENCES, read)
-        notify({ tone: 'success', message: '好みの設定を変更しました。' })
+        notify({ tone: 'success', message: words.changed })
         void navigate(MY_PAGE)
         return
       }
@@ -114,7 +119,7 @@ const PreferencesChange = ({
     <PreferencesForm
       preferences={preferences}
       staff={staff}
-      submitLabel='変更を保存する'
+      submitLabel={say(portalFrameMessages.saveChanges)}
       message={says.message}
       errors={says.errors}
       pending={update.isPending}
@@ -125,6 +130,7 @@ const PreferencesChange = ({
 }
 
 const OwnPreferencesToChange = () => {
+  const say = useSay()
   const read = useQuery({
     queryKey: OWN_PREFERENCES_TO_CHANGE,
     queryFn: readOwnPreferencesToChange,
@@ -149,12 +155,10 @@ const OwnPreferencesToChange = () => {
 
   return (
     <>
-      <PageHeader title={TITLE} />
+      <PageHeader title={say(words.title)} />
       {/* What the form was opened with a while ago is not what it opens with */}
       {match(read.isFetchedAfterMount ? read.data : undefined)
-        .with(undefined, () => (
-          <LoadingIndicator label='好みの設定を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
         .with({ type: 'found' }, ({ preferences, staff }) => (
           <PreferencesChange
             preferences={preferences}
@@ -164,17 +168,13 @@ const OwnPreferencesToChange = () => {
         ))
         .with({ type: 'none' }, () => (
           <>
-            {gone && (
-              <Alert tone='warning'>
-                お客様の情報が見つからなかったため、変更を保存できませんでした。
-              </Alert>
-            )}
+            {gone && <Alert tone='warning'>{say(words.gone)}</Alert>}
             <EmptyState
-              title='好みの設定は、お客様の情報を登録すると使えます'
-              description='お名前と電話番号を登録してから、もう一度お試しください。'
+              title={say(words.withoutProfileTitle)}
+              description={say(words.withoutProfileDescription)}
               actions={
                 <ButtonLink href='/mypage/profile'>
-                  お客様の情報を登録する
+                  {say(portalProfileMessages.myPage.register)}
                 </ButtonLink>
               }
             />
@@ -182,9 +182,7 @@ const OwnPreferencesToChange = () => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('好みの設定'), reason),
-            )}
+            message={say(unreadMessageOf(words.names.preferences, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -199,12 +197,16 @@ const OwnPreferencesToChange = () => {
  * should keep in mind: whom they wish for and whom they avoid, when they
  * like to come, what they like of a style, and how they like to be served.
  */
-export const PreferencesScreen = () => (
-  <RequireSession
-    roles={CUSTOMERS}
-    signInNotice='好みの設定を変更するには、サインインしてください。'
-    signInHelp={<SignInHelp />}
-  >
-    <OwnPreferencesToChange />
-  </RequireSession>
-)
+export const PreferencesScreen = () => {
+  const say = useSay()
+
+  return (
+    <RequireSession
+      roles={CUSTOMERS}
+      signInNotice={say(words.signInNotice)}
+      signInHelp={<SignInHelp />}
+    >
+      <OwnPreferencesToChange />
+    </RequireSession>
+  )
+}

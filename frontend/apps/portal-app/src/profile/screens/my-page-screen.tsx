@@ -4,12 +4,16 @@ import {
   ButtonLink,
   Card,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import {
+  portalFrameMessages,
+  portalProfileMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
+import { securityMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
 import { OwnPreferences } from '../../preferences/screens/own-preferences'
@@ -20,9 +24,15 @@ import { OWN_PROFILE, readOwnProfile } from '../api/profile-api'
 import { MembershipDetails } from '../components/membership-details/membership-details'
 import { ProfileDetails } from '../components/profile-details/profile-details'
 
-const TITLE = 'マイページ'
+const {
+  myPage: words,
+  membership,
+  profile: profileWords,
+  names,
+} = portalProfileMessages
 
 const OwnPage = () => {
+  const say = useSay()
   const read = useQuery({
     queryKey: OWN_PROFILE,
     queryFn: readOwnProfile,
@@ -33,60 +43,54 @@ const OwnPage = () => {
 
   return (
     <>
-      <PageHeader title={TITLE} />
+      <PageHeader title={say(portalFrameMessages.navigation.myPage)} />
       {match(read.data)
         .with(undefined, () => (
-          <LoadingIndicator label='お客様の情報を読み込んでいます' />
+          <LoadingIndicator label={say(profileWords.loading)} />
         ))
         .with({ type: 'found' }, ({ profile }) => (
           <>
-            <Card title='会員の情報'>
+            <Card title={say(membership.title)}>
               <MembershipDetails profile={profile} />
             </Card>
-            <Card title='お客様の情報'>
+            <Card title={say(words.profile)}>
               <ProfileDetails profile={profile} />
               <ButtonLink href='/mypage/profile'>
-                お客様の情報を変更する
+                {say(words.change)}
               </ButtonLink>
             </Card>
             <OwnPreferences />
-            <Card title='レビュー'>
-              <p>
-                来店したサロンに書いたレビューを確かめ、変更し、削除できます。
-              </p>
+            <Card title={say(words.reviews)}>
+              <p>{say(words.reviewsDescription)}</p>
               <ButtonLink href='/mypage/reviews'>
-                自分のレビューを見る
+                {say(words.toReviews)}
               </ButtonLink>
             </Card>
           </>
         ))
         .with({ type: 'none' }, () => (
           <EmptyState
-            title='お客様の情報は、まだ登録されていません'
-            description='お名前と電話番号を登録すると、サロンを予約できます。会員の情報も、ここに表示されます。'
+            title={say(words.none)}
+            description={say(words.noneDescription)}
             actions={
               <ButtonLink href='/mypage/profile'>
-                お客様の情報を登録する
+                {say(words.register)}
               </ButtonLink>
             }
           />
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('お客様の情報'), reason),
-            )}
+            message={say(unreadMessageOf(names.profile, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
         ))
         .exhaustive()}
       {/* The account is there whether or not the customer said who they are */}
-      <Card title='アカウントの安全'>
-        <p>
-          パスワードの変更と、このアカウントでサインインしている端末の確認ができます。
-        </p>
-        <ButtonLink href={SECURITY_PATH}>アカウントの安全を確かめる</ButtonLink>
+      <Card title={say(securityMessages.accountSecurity)}>
+        <p>{say(words.securityDescription)}</p>
+        <ButtonLink href={SECURITY_PATH}>{say(words.toSecurity)}</ButtonLink>
       </Card>
     </>
   )
@@ -99,12 +103,16 @@ const OwnPage = () => {
  * what the customer wrote about the salons; and the way to the security of
  * the account.
  */
-export const MyPageScreen = () => (
-  <RequireSession
-    roles={CUSTOMERS}
-    signInNotice='マイページを見るには、サインインしてください。'
-    signInHelp={<SignInHelp />}
-  >
-    <OwnPage />
-  </RequireSession>
-)
+export const MyPageScreen = () => {
+  const say = useSay()
+
+  return (
+    <RequireSession
+      roles={CUSTOMERS}
+      signInNotice={say(words.signInNotice)}
+      signInHelp={<SignInHelp />}
+    >
+      <OwnPage />
+    </RequireSession>
+  )
+}

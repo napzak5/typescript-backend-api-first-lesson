@@ -1,20 +1,23 @@
 import type { ModelsCustomerProfileResponse } from '@beauty-salon-frontend/api-client'
 import {
   DescriptionList,
-  inJapanese,
   NONE,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import { portalProfileMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   addressLinesOf,
-  calendarDayOf,
   categoryNamesOf,
   contactsOf,
   fullNameOf,
-  genderNameOf,
   kanaOf,
 } from '../../utils/profile-format'
 import styles from './profile-details.module.css'
+
+const { controls, parts, details } = portalProfileMessages
 
 export type ProfileDetailsProps = {
   profile: ModelsCustomerProfileResponse
@@ -26,7 +29,10 @@ export type ProfileDetailsProps = {
  * was not said is said to be missing.
  */
 export const ProfileDetails = ({ profile }: ProfileDetailsProps) => {
-  const address = addressLinesOf(profile)
+  const say = useSay()
+  const address = addressLinesOf(profile).map((line) =>
+    typeof line === 'string' ? line : say(line),
+  )
   const liked = categoryNamesOf(profile.preferences?.preferredServices ?? [])
   const notes = profile.preferences?.notes ?? null
   const contacts = contactsOf(profile)
@@ -34,16 +40,16 @@ export const ProfileDetails = ({ profile }: ProfileDetailsProps) => {
   return (
     <DescriptionList
       items={[
-        { term: 'お名前', description: fullNameOf(profile) },
-        { term: 'フリガナ', description: kanaOf(profile) },
-        { term: 'メールアドレス', description: profile.email },
-        { term: '電話番号', description: profile.phoneNumber },
+        { term: say(parts.name), description: fullNameOf(profile) },
+        { term: say(details.kana), description: kanaOf(profile) },
+        { term: say(details.email), description: profile.email },
+        { term: say(controls.phoneNumber), description: profile.phoneNumber },
         {
-          term: '予備の電話番号',
+          term: say(controls.alternativePhone),
           description: profile.alternativePhone,
         },
         {
-          term: '住所',
+          term: say(parts.address),
           description:
             address.length === 0
               ? null
@@ -54,30 +60,33 @@ export const ProfileDetails = ({ profile }: ProfileDetailsProps) => {
                 )),
         },
         {
-          term: '生年月日',
+          term: say(controls.birthDate),
           description:
             profile.birthDate === null
               ? null
-              : calendarDayOf(profile.birthDate),
+              : say(formats.dayOf(profile.birthDate)),
         },
         {
-          term: '性別',
+          term: say(controls.gender),
           description:
-            profile.gender === null ? null : genderNameOf(profile.gender),
+            profile.gender === null
+              ? null
+              : say(termMessages.gender[profile.gender]),
         },
-        { term: '職業', description: profile.occupation },
+        { term: say(controls.occupation), description: profile.occupation },
         {
-          term: '好みのメニュー',
-          description: liked.length === 0 ? inJapanese(NONE) : liked.join('、'),
+          term: say(controls.preferredServices),
+          description: say(liked.length === 0 ? NONE : details.listed(liked)),
         },
         {
-          term: 'サロンに伝えておきたいこと',
+          term: say(controls.notes),
           description: <WrittenText>{notes}</WrittenText>,
         },
         {
-          term: '受け取る連絡',
-          description:
-            contacts.length === 0 ? inJapanese(NONE) : contacts.join('、'),
+          term: say(parts.contacts),
+          description: say(
+            contacts.length === 0 ? NONE : details.listed(contacts),
+          ),
         },
       ]}
     />

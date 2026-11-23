@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import {
@@ -942,5 +943,81 @@ describe('the review of a visit, against the API', () => {
         screen.getByRole('link', { name: 'レビューを変更する' }),
       ).toHaveAttribute('href', `/mypage/reviews/${elsewhere}`)
     })
+  })
+})
+
+describe('the review of a visit on a page in English, against the API', () => {
+  beforeEach(async () => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+    await signedInAs(KENJI.email)
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  const overallInEnglish = () =>
+    screen.findByRole('radiogroup', { name: 'Overall rating' })
+
+  it('should say in English on the page of a booking that the visit has no review, and lead to the form', async () => {
+    // Arrange
+    const visit = await visitToReview()
+
+    // Act
+    renderAt(`/bookings/${visit.id}`)
+
+    // Assert
+    const part = await region('Review')
+    expect(
+      await within(part).findByText(
+        'No review of this visit has been written yet.',
+      ),
+    ).toBeVisible()
+    expect(
+      within(part).getByRole('link', { name: 'Write a review' }),
+    ).toHaveAttribute('href', writePathOf(visit.id))
+  })
+
+  it('should open the form in English, say what is missing, write the review and say so', async () => {
+    // Arrange
+    const visit = await visitToReview()
+    const user = userEvent.setup()
+
+    // Act
+    renderAt(writePathOf(visit.id))
+
+    // Assert
+    const group = await overallInEnglish()
+    expect(await heading('Write a review')).toBeVisible()
+    expect(
+      Object.keys(
+        detailsIn(screen.getByRole('region', { name: 'The visit to review' })),
+      ),
+    ).toEqual(['Salon', 'Date and time of the visit'])
+    expect(optionsOf(select('Staff to rate'))).toEqual([
+      'Do not rate the staff',
+      TAKESHI,
+    ])
+    expect(
+      screen.getByRole('link', { name: 'Back to the booking' }),
+    ).toHaveAttribute('href', `/bookings/${visit.id}`)
+
+    // Act
+    await user.click(button('Post the review'))
+
+    // Assert
+    expect(group).toHaveAccessibleDescription('Choose an overall rating.')
+
+    // Act
+    await user.click(ratingOf('4 (satisfied)'))
+    await user.click(button('Post the review'))
+
+    // Assert
+    expect(await heading('Your reviews')).toHaveFocus()
+    expect(statusMessages()).toContain('Your review was posted.')
+    expect(await storedReviewOf(visit.id)).toMatchObject({ overallRating: 4 })
   })
 })

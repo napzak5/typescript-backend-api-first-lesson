@@ -19,15 +19,19 @@ describe('timezoneOf', () => {
 
 describe('subjectOf', () => {
   it('should name a review by its salon and by the day it was posted on, at the salon', () => {
-    expect(subjectOf({ review: LATE, salon }, 'Pacific/Auckland')).toBe(
-      'ヘアサロン こもれび 表参道（2026年11月10日 投稿）',
-    )
+    expect(subjectOf({ review: LATE, salon }, 'Pacific/Auckland')).toEqual({
+      en: 'ヘアサロン こもれび 表参道 (posted November 10, 2026)',
+      ja: 'ヘアサロン こもれび 表参道（2026年11月10日 投稿）',
+    })
   })
 
   it('should say that the salon is no longer shown, and give the day where the reader is', () => {
-    expect(subjectOf({ review: LATE, salon: null }, 'Pacific/Auckland')).toBe(
-      'サロン（掲載を終えています）（2026年11月11日 投稿）',
-    )
+    expect(
+      subjectOf({ review: LATE, salon: null }, 'Pacific/Auckland'),
+    ).toEqual({
+      en: 'Salon (no longer listed) (posted November 11, 2026)',
+      ja: 'サロン（掲載を終えています）（2026年11月11日 投稿）',
+    })
   })
 })
 
@@ -38,15 +42,17 @@ describe('ratedStaffOf', () => {
   }
 
   it('should name the member of the staff a review rates', () => {
-    expect(ratedStaffOf({ review: rated, staffName: '田中 ひろし' })).toBe(
-      '田中 ひろし',
-    )
+    expect(ratedStaffOf({ review: rated, staffName: '田中 ひろし' })).toEqual({
+      en: 'Staff rated: 田中 ひろし',
+      ja: '評価したスタッフ: 田中 ひろし',
+    })
   })
 
   it('should say that the member is no longer shown when their salon does not name them', () => {
-    expect(ratedStaffOf({ review: rated, staffName: null })).toBe(
-      'スタッフ（掲載を終えています）',
-    )
+    expect(ratedStaffOf({ review: rated, staffName: null })).toEqual({
+      en: 'Staff rated: Staff member (no longer listed)',
+      ja: '評価したスタッフ: スタッフ（掲載を終えています）',
+    })
   })
 
   it('should name nobody for a review that rates nobody', () => {

@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as reviewRemovalStories from './review-removal.stories'
 
 const stories = composeStories(reviewRemovalStories)
@@ -105,5 +106,43 @@ describe('ReviewRemoval', () => {
       '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
     )
     expect(removeButton()).toBeEnabled()
+  })
+})
+
+describe('ReviewRemoval on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should ask in English whether to remove, and name the review', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    const asking = screen.getByRole('dialog', { name: 'Delete the review?' })
+    expect(asking).toHaveAccessibleDescription(
+      'This deletes your review of Beauty Salon Tokyo (posted November 10, 2026). A deleted review is gone for good, together with the reply of the salon. You can write a review of this visit again.',
+    )
+    expect(
+      within(asking)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Back', 'Delete'])
+  })
+
+  it('should say in English what went wrong', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithMessage.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'It could not be sent. Check your connection and try again.',
+    )
   })
 })

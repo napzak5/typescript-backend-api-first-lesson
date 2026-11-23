@@ -1,3 +1,6 @@
+import { NOT_SENT_MESSAGE } from '@beauty-salon-frontend/answers'
+import { dayOf } from '@beauty-salon-shared/i18n/formats'
+import { portalReviewMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { ReviewRemoval } from './review-removal'
@@ -7,7 +10,10 @@ const meta: Meta<typeof ReviewRemoval> = {
   component: ReviewRemoval,
   args: {
     open: true,
-    subject: 'Beauty Salon Tokyo（2026年11月10日 投稿）',
+    subject: portalReviewMessages.subject(
+      'Beauty Salon Tokyo',
+      dayOf('2026-11-10'),
+    ),
     onClose: fn(),
     onRemove: fn(),
   },
@@ -28,8 +34,7 @@ export const Pending: Story = {
 /** Nothing came of the attempt, which can be made again */
 export const WithMessage: Story = {
   args: {
-    message:
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    message: NOT_SENT_MESSAGE,
   },
 }
 

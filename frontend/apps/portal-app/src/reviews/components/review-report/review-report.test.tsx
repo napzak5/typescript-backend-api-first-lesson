@@ -1,7 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
+import { act } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as reviewReportStories from './review-report.stories'
 
 const stories = composeStories(reviewReportStories)
@@ -254,5 +256,105 @@ describe('ReviewReport', () => {
     // Assert: the form was sent once, by the story
     expect(stories.ReportedBefore.args.onClose).toHaveBeenCalledTimes(1)
     expect(stories.ReportedBefore.args.onReport).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('ReviewReport on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  const reporting = () =>
+    screen.getByRole('dialog', { name: 'Report the review' })
+
+  const reasonsInEnglish = () =>
+    within(reporting()).getByRole('radiogroup', {
+      name: 'Reason for the report',
+    })
+
+  const detailsInEnglish = () =>
+    within(reporting()).getByRole('textbox', { name: 'Details' })
+
+  it('should name the review, the reasons and the details in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    expect(reporting()).toHaveAccessibleDescription(
+      'This reports the review “思ったとおりの色になりました” (posted November 10, 2026) to the team that runs the site. The team checks it, and deletes a review that breaks the rules. Until then, the review stays listed.',
+    )
+    expect(
+      within(reasonsInEnglish())
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual([
+      'Inappropriate language (abuse, discrimination and the like)',
+      'Something that is not true',
+      'Personal information (names, contact details and the like)',
+      'Advertising, or something that has nothing to do with a visit',
+      'Other',
+    ])
+    expect(detailsInEnglish()).toHaveAccessibleDescription(
+      'Say what the problem is, in up to 2,000 characters. When the reason is “Other”, this is required.',
+    )
+    expect(
+      within(reporting())
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Back', 'Report'])
+  })
+
+  // The stories send the form by the name its button has in Japanese: the language is chosen once it was sent
+  it('should say in English that a reason is missing, and that the review was reported before', async () => {
+    // Arrange
+    await stories.WithoutReason.run()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(reasonsInEnglish()).toHaveAccessibleDescription(
+      'Choose the reason for the report.',
+    )
+
+    // Arrange
+    localStorage.clear()
+    await stories.ReportedBefore.run()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(
+      within(reporting()).getByText(
+        'You have reported this review already. A review can be reported once.',
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say its errors again in the language chosen, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.WithoutDetails.run()
+    reason('その他').focus()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(detailsInEnglish()).toHaveAccessibleDescription(
+      'Say what the problem is, in up to 2,000 characters. When the reason is “Other”, this is required. When you choose “Other”, say what the problem is.',
+    )
+    expect(
+      within(reporting()).getByRole('radio', { name: 'Other' }),
+    ).toHaveFocus()
   })
 })

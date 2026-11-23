@@ -4,16 +4,20 @@ import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  useSay,
   useScreenHeadingFocus,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  portalFrameMessages,
+  portalProfileMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
@@ -37,12 +41,14 @@ import {
 import { localDateOf } from '../utils/profile-format'
 import { BACK_TO_MY_PAGE, MY_PAGE } from './my-page'
 
+const { profile: words, names } = portalProfileMessages
+
 /**
  * The heading of the screen, whichever of its two forms it shows: which
  * one that is, is known when the profile is read, and a screen that
  * changed its name then would be taken for another screen.
  */
-const TITLE = 'お客様の情報'
+const TITLE = words.title
 
 type ProfileChangeProps = {
   profile: ModelsCustomerProfileResponse
@@ -57,10 +63,11 @@ type ProfileChangeProps = {
  * salon changed it while the form was open.
  */
 const ProfileChange = ({ profile, onGone }: ProfileChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const today = localDateOf(new Date())
   const update = useMutation({
     mutationFn: updateOwnProfile,
@@ -68,7 +75,7 @@ const ProfileChange = ({ profile, onGone }: ProfileChangeProps) => {
       if (outcome.type === 'updated') {
         const read: ProfileRead = { type: 'found', profile: outcome.profile }
         queryClient.setQueryData(OWN_PROFILE, read)
-        notify({ tone: 'success', message: 'お客様の情報を変更しました。' })
+        notify({ tone: 'success', message: words.changed })
         void navigate(MY_PAGE)
         return
       }
@@ -101,7 +108,7 @@ const ProfileChange = ({ profile, onGone }: ProfileChangeProps) => {
     <ProfileForm
       profile={profile}
       today={today}
-      submitLabel='変更を保存する'
+      submitLabel={say(portalFrameMessages.saveChanges)}
       message={says.message}
       errors={says.errors}
       pending={update.isPending}
@@ -113,10 +120,11 @@ const ProfileChange = ({ profile, onGone }: ProfileChangeProps) => {
 
 /** The form of an account that has no profile: what it is sent with makes one. */
 const ProfileRegistration = () => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const today = localDateOf(new Date())
   const creation = useMutation({
     mutationFn: createOwnProfile,
@@ -124,7 +132,7 @@ const ProfileRegistration = () => {
       if (outcome.type === 'created') {
         const read: ProfileRead = { type: 'found', profile: outcome.profile }
         queryClient.setQueryData(OWN_PROFILE, read)
-        notify({ tone: 'success', message: 'お客様の情報を登録しました。' })
+        notify({ tone: 'success', message: words.registered })
         void navigate(MY_PAGE)
         return
       }
@@ -145,7 +153,7 @@ const ProfileRegistration = () => {
     <ProfileForm
       profile={null}
       today={today}
-      submitLabel='登録する'
+      submitLabel={say(words.register)}
       message={says.message}
       errors={says.errors}
       pending={creation.isPending}
@@ -156,6 +164,7 @@ const ProfileRegistration = () => {
 }
 
 const OwnProfile = () => {
+  const say = useSay()
   const read = useQuery({
     queryKey: OWN_PROFILE,
     queryFn: readOwnProfile,
@@ -183,37 +192,31 @@ const OwnProfile = () => {
   return match(read.isFetchedAfterMount ? read.data : undefined)
     .with(undefined, () => (
       <>
-        <PageHeader title={TITLE} />
-        <LoadingIndicator label='お客様の情報を読み込んでいます' />
+        <PageHeader title={say(TITLE)} />
+        <LoadingIndicator label={say(words.loading)} />
       </>
     ))
     .with({ type: 'found' }, ({ profile }) => (
       <>
-        <PageHeader title={TITLE} />
+        <PageHeader title={say(TITLE)} />
         <ProfileChange profile={profile} onGone={() => setGone(true)} />
       </>
     ))
     .with({ type: 'none' }, () => (
       <>
         <PageHeader
-          title={TITLE}
-          description='お名前と電話番号は、サロンを予約するために必要です。そのほかの項目は、あとからでも登録できます。'
+          title={say(TITLE)}
+          description={say(words.newDescription)}
         />
-        {gone && (
-          <Alert tone='warning'>
-            お客様の情報が見つからなかったため、変更を保存できませんでした。お手数ですが、もう一度登録してください。
-          </Alert>
-        )}
+        {gone && <Alert tone='warning'>{say(words.gone)}</Alert>}
         <ProfileRegistration />
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
-        <PageHeader title={TITLE} />
+        <PageHeader title={say(TITLE)} />
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('お客様の情報'), reason),
-          )}
+          message={say(unreadMessageOf(names.profile, reason))}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />
@@ -227,12 +230,16 @@ const OwnProfile = () => {
  * an account that has a profile it changes it, for one that has none it
  * makes it.
  */
-export const ProfileScreen = () => (
-  <RequireSession
-    roles={CUSTOMERS}
-    signInNotice='お客様の情報を登録、変更するには、サインインしてください。'
-    signInHelp={<SignInHelp />}
-  >
-    <OwnProfile />
-  </RequireSession>
-)
+export const ProfileScreen = () => {
+  const say = useSay()
+
+  return (
+    <RequireSession
+      roles={CUSTOMERS}
+      signInNotice={say(words.signInNotice)}
+      signInHelp={<SignInHelp />}
+    >
+      <OwnProfile />
+    </RequireSession>
+  )
+}

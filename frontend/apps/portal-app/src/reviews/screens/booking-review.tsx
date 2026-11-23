@@ -4,15 +4,17 @@ import {
   ButtonLink,
   Card,
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { portalReviewMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
 import { ReviewContent } from '../../salons/components/review-content/review-content'
 import { readReviewOfBooking, reviewOfBookingKey } from '../api/reviews-api'
+
+const { ofBooking: words, names } = portalReviewMessages
 
 type BookingReviewProps = {
   bookingId: string
@@ -28,6 +30,7 @@ type BookingReviewProps = {
  * none: the part says so.
  */
 export const BookingReview = ({ bookingId, salon }: BookingReviewProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: reviewOfBookingKey(bookingId),
     queryFn: () => readReviewOfBooking(bookingId),
@@ -39,38 +42,36 @@ export const BookingReview = ({ bookingId, salon }: BookingReviewProps) => {
   })
 
   return (
-    <Card title='レビュー'>
+    <Card title={say(words.title)}>
       {salon === null ? (
-        <p>掲載を終えたサロンのレビューは、書けません。</p>
+        <p>{say(words.salonGone)}</p>
       ) : (
         match(read.data)
           .with(undefined, () => (
-            <LoadingIndicator label='レビューを読み込んでいます' />
+            <LoadingIndicator label={say(words.loading)} />
           ))
           .with({ type: 'found' }, ({ review }) => (
             <>
               <ReviewContent review={review} timezone={salon.timezone} />
               <ButtonLink href={`/mypage/reviews/${review.id}`}>
-                レビューを変更する
+                {say(words.change)}
               </ButtonLink>
             </>
           ))
           .with({ type: 'none' }, () => (
             <EmptyState
               kind='part'
-              title='この来店のレビューは、まだ書かれていません。'
+              title={say(words.none)}
               actions={
                 <ButtonLink href={`/bookings/${bookingId}/review`}>
-                  レビューを書く
+                  {say(words.write)}
                 </ButtonLink>
               }
             />
           ))
           .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('レビュー'), reason),
-              )}
+              message={say(unreadMessageOf(names.review, reason))}
               onRetry={() => void read.refetch()}
               pending={read.isFetching}
             />

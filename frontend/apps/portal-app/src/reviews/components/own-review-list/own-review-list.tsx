@@ -4,22 +4,19 @@ import {
   ButtonLink,
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
   Note,
   PagedList,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { portalReviewMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { ReviewContent } from '../../../salons/components/review-content/review-content'
 import type { OwnReview } from '../../api/reviews-api'
-import {
-  NO_SALON,
-  ratedStaffOf,
-  subjectOf,
-  timezoneOf,
-} from '../../utils/review-format'
+import { ratedStaffOf, subjectOf, timezoneOf } from '../../utils/review-format'
 import styles from './own-review-list.module.css'
+
+const { own: words, noSalon } = portalReviewMessages
 
 export type OwnReviewListProps = {
   /** What the customer wrote and was read so far, the latest first; at least one review */
@@ -49,7 +46,7 @@ export type OwnReviewListProps = {
  * it rates, what it says as the page of the salon shows it, and the ways to
  * change it and to remove it. Every review has those two, so each is named
  * after its review. The name of the salon is the link to its page, and
- * takes the focus when 「さらに表示」 added the review.
+ * takes the focus when the button that shows more added the review.
  */
 export const OwnReviewList = ({
   reviews,
@@ -60,59 +57,57 @@ export const OwnReviewList = ({
   salonHref,
   changeHref,
   onRemove,
-}: OwnReviewListProps) => (
-  <PagedList
-    items={reviews}
-    itemKey={({ review }) => review.id}
-    label='自分のレビュー'
-    count={inJapanese(
-      countOf(total, reviews.length, COUNTED.items, (count) =>
-        writtenInJapanese(`${count} 件のレビューがあります`),
-      ),
-    )}
-    more={more}
-    onMore={onMore}
-  >
-    {(own) => {
-      const { review, salon } = own
-      const subject = subjectOf(own, timezoneOfReader)
-      const staff = ratedStaffOf(own)
+}: OwnReviewListProps) => {
+  const say = useSay()
 
-      return (
-        <>
-          <h2 className={styles['salon']}>
-            {salon === null ? (
-              NO_SALON
-            ) : (
-              <Link href={salonHref(salon.id)}>{salon.name}</Link>
-            )}
-          </h2>
-          {staff !== null && (
-            <Note size='small'>評価したスタッフ: {staff}</Note>
-          )}
-          <ReviewContent
-            review={review}
-            timezone={timezoneOf(own, timezoneOfReader)}
-          />
-          <Actions>
-            <ButtonLink
-              href={changeHref(review.id)}
-              size='small'
-              aria-label={`${subject}のレビューを変更する`}
-            >
-              変更する
-            </ButtonLink>
-            <Button
-              variant='danger'
-              size='small'
-              aria-label={`${subject}のレビューを削除する`}
-              onClick={() => onRemove(own)}
-            >
-              削除する
-            </Button>
-          </Actions>
-        </>
-      )
-    }}
-  </PagedList>
-)
+  return (
+    <PagedList
+      items={reviews}
+      itemKey={({ review }) => review.id}
+      label={say(words.title)}
+      count={say(countOf(total, reviews.length, COUNTED.items, words.count))}
+      more={more}
+      onMore={onMore}
+    >
+      {(own) => {
+        const { review, salon } = own
+        const subject = subjectOf(own, timezoneOfReader)
+        const staff = ratedStaffOf(own)
+
+        return (
+          <>
+            <h2 className={styles['salon']}>
+              {salon === null ? (
+                say(noSalon)
+              ) : (
+                <Link href={salonHref(salon.id)}>{salon.name}</Link>
+              )}
+            </h2>
+            {staff !== null && <Note size='small'>{say(staff)}</Note>}
+            <ReviewContent
+              review={review}
+              timezone={timezoneOf(own, timezoneOfReader)}
+            />
+            <Actions>
+              <ButtonLink
+                href={changeHref(review.id)}
+                size='small'
+                aria-label={say(words.changeOf(subject))}
+              >
+                {say(words.change)}
+              </ButtonLink>
+              <Button
+                variant='danger'
+                size='small'
+                aria-label={say(words.deleteOf(subject))}
+                onClick={() => onRemove(own)}
+              >
+                {say(words.delete)}
+              </Button>
+            </Actions>
+          </>
+        )
+      }}
+    </PagedList>
+  )
+}

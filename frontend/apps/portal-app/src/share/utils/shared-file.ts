@@ -9,12 +9,13 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   aboutTheAttempt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
-import * as formats from '@beauty-salon-shared/i18n/formats'
+import { bytesOf, fileSizeOf } from '@beauty-salon-shared/i18n/formats'
+import { portalShareMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 
@@ -23,13 +24,10 @@ import { match } from 'ts-pattern'
  * request, apart from the screen.
  */
 
+const { file: words, password: passwordWords } = portalShareMessages
+
 const CONTENT_TYPE_NAMES: Record<ModelsAttachmentContentType, LocalizedText> =
   termMessages.contentType
-
-/** The kind of a file in words. */
-export const contentTypeNameOf = (
-  contentType: ModelsAttachmentContentType,
-): string => inJapanese(CONTENT_TYPE_NAMES[contentType])
 
 /** Whether a file is an image, which the screen shows: every kind but a PDF. */
 export const isImage = (contentType: ModelsAttachmentContentType): boolean =>
@@ -41,88 +39,56 @@ const KILOBYTE = 1024
  * The size of a file in words, and in bytes when the words round it:
  * 「512 バイト」, 「340 KB（348,160 バイト）」, 「1.2 MB（1,258,291 バイト）」.
  */
-export const sizeNameOf = (size: number): string =>
+export const sizeNameOf = (size: number): LocalizedText =>
   size < KILOBYTE
-    ? inJapanese(formats.bytesOf(size))
-    : `${inJapanese(formats.fileSizeOf(size))}（${inJapanese(formats.bytesOf(size))}）`
+    ? bytesOf(size)
+    : words.sizeOf(fileSizeOf(size), bytesOf(size))
 
 /** What is said of the file before it is loaded */
 export const factsOf = (
   file: ModelsSharedFileResponse,
-): { term: string; description: string }[] => [
-  { term: '種類', description: contentTypeNameOf(file.contentType) },
-  { term: 'サイズ', description: sizeNameOf(file.size) },
+): { term: LocalizedText; description: LocalizedText }[] => [
+  { term: words.kind, description: CONTENT_TYPE_NAMES[file.contentType] },
+  { term: words.size, description: sizeNameOf(file.size) },
 ]
-
-/** Said where the file is loaded: the link counts every load */
-export const LOAD_NOTE =
-  'ファイルを読み込むたびに、ダウンロードを 1 回と数えます。共有リンクにダウンロードの回数の上限があるときは、残りの回数が 1 回減ります。読み込んだファイルは、このページを開いているあいだ、何度でも見て、保存できます。'
-
-/** Said at the password when the API did not take it */
-const PASSWORD_REFUSED_SAID =
-  'パスワードが違うか、5 回続けて間違えたために、15 分のあいだ使えなくなっています。確かめて、もう一度入力してください。'
-
-/** Said when the password is asked for again, after the API refused the one that opened the file */
-export const PASSWORD_AGAIN_SAID =
-  'パスワードを、もう一度入力してください。ほかの人が続けて間違えたために、しばらく使えなくなっていることがあります。'
-
-/** Said at the password when it is sent empty */
-const PASSWORD_MISSING_SAID = 'パスワードを入力してください。'
 
 /**
  * The password the form was sent with. It is held to no rule but that there
  * is one: whoever opens the link does not know those the link was made
  * with, and the API says whether it is the one.
  */
-export const readPassword = (values: FormData): FormRead<string> => {
+export const readPassword = (
+  values: FormData,
+): FormRead<string, FormErrors<LocalizedText>> => {
   const password = values.get('password')
 
   return typeof password === 'string' && password !== ''
     ? { type: 'valid', value: password }
-    : { type: 'invalid', errors: { password: PASSWORD_MISSING_SAID } }
+    : { type: 'invalid', errors: { password: passwordWords.missing } }
 }
 
 /** What the form of the password says when the API did not open the file with it */
 export const afterPassword = (
   refusal: { type: 'passwordRefused' } | Unread,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(refusal)
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'passwordRefused' }, () => ({
       message: undefined,
-      errors: { password: PASSWORD_REFUSED_SAID },
+      errors: { password: passwordWords.refused },
     }))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
     .exhaustive()
 
 /** What is said when a request was not answered, or the file not fetched */
 export const loadMessageOf = (
   reason: Unread | { type: 'notFetched' },
-): string =>
+): LocalizedText =>
   match(reason)
-    .with({ type: 'tooManyRequests' }, () =>
-      inJapanese(TOO_MANY_REQUESTS_MESSAGE),
-    )
-    .with(
-      { type: 'failed' },
-      () =>
-        'ファイルを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-    )
-    .with(
-      { type: 'notFetched' },
-      () =>
-        'ファイルを読み込めませんでした。ダウンロードの回数は 1 回と数えられています。もう一度読み込むと、もう 1 回と数えます。',
-    )
+    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
+    .with({ type: 'failed' }, () => words.notLoaded)
+    .with({ type: 'notFetched' }, () => words.notFetched)
     .exhaustive()
-
-/** Why a share link may work no more: the API does not say which */
-export const UNUSABLE_SAID =
-  '有効期限が過ぎたか、ダウンロードの回数の上限に達したか、共有が取り消されたか、ファイルが削除されています。必要なときは、共有したサロンにお問い合わせください。'
-
-/** Said on a page that has no token: it was loaded again, or typed */
-export const NO_TOKEN_SAID =
-  'このページは、受け取った共有リンクから開いてください。ページを読み込み直したときも、受け取ったリンクから、もう一度開いてください。'

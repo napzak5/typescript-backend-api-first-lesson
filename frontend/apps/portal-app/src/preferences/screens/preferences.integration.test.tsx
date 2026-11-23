@@ -1,5 +1,6 @@
 import type { ModelsCustomerPreferencesUpdateRequest } from '@beauty-salon-frontend/api-client'
 import { applications } from '@beauty-salon-frontend/brand'
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
 import { idOf, testApi } from '@beauty-salon-frontend/testing/api'
@@ -1152,5 +1153,131 @@ describe('the preferences of a customer, against the API', () => {
           .map((each) => each.closest('label')?.textContent),
       ).toEqual([named(HIROSHI)])
     })
+  })
+})
+
+describe('the preferences of a customer on a page in English, against the API', () => {
+  const saveInEnglish = () => button('Save the changes')
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should ask in English somebody who is not signed in to sign in', async () => {
+    // Act
+    renderAt('/mypage/preferences')
+
+    // Assert
+    expect(
+      await screen.findByText('Sign in to change your preferences.'),
+    ).toBeVisible()
+  })
+
+  it('should say in English what the customer wishes for on the page, and lead to the form', async () => {
+    // Arrange
+    await prefers(await everything())
+    await signedInAs(CUSTOMER)
+    renderAt('/mypage')
+    const user = userEvent.setup()
+    const part = await region('Preferences')
+    const link = await within(part).findByRole('link', {
+      name: 'Change your preferences',
+    })
+    expect(detailsIn(part)).toMatchObject({
+      'Preferred staff': `${HIROSHI} (${TOKYO})`,
+      'Favorite colors': 'Ash brown, Beige',
+      'Special requests': 'A towel under the neck, please.',
+    })
+
+    // Act
+    await user.click(link)
+
+    // Assert
+    expect(await heading('Preferences')).toHaveFocus()
+    expect(document.title).toBe(`Preferences | ${TITLE}`)
+    expect(
+      await screen.findByRole('button', { name: 'Save the changes' }),
+    ).toBeEnabled()
+    expect(
+      screen.getByRole('link', { name: 'Back to my page' }),
+    ).toHaveAttribute('href', '/mypage')
+  })
+
+  it('should say in English that nothing was changed, and that the preferences were changed', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    renderAt('/mypage/preferences')
+    const user = userEvent.setup()
+    await screen.findByRole('button', { name: 'Save the changes' })
+
+    // Act
+    await user.click(saveInEnglish())
+
+    // Assert
+    expect(await heading('My page')).toHaveFocus()
+    expect(statusMessages()).toContain('Nothing was changed.')
+
+    // Act
+    await user.click(
+      await within(await region('Preferences')).findByRole('link', {
+        name: 'Change your preferences',
+      }),
+    )
+    await screen.findByRole('button', { name: 'Save the changes' })
+    await user.type(text('Special requests'), 'A towel under the neck, please.')
+    await user.click(saveInEnglish())
+
+    // Assert
+    expect(await heading('My page')).toHaveFocus()
+    expect(statusMessages()).toContain('Your preferences were changed.')
+    expect(await storedPreferences()).toMatchObject({
+      specialRequests: 'A towel under the neck, please.',
+    })
+  })
+
+  it('should say in English that the preferences could not be read', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    await takeAway('customer_preferences')
+
+    // Act
+    renderAt('/mypage/preferences')
+
+    // Assert
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load your preferences. Check your connection and try again.',
+    )
+    await giveBack('customer_preferences')
+  })
+
+  it('should say in English to an account that has no profile that preferences need one', async () => {
+    // Arrange
+    await registerNewcomer()
+    await signedInAs(NEWCOMER, NEWCOMER_PASSWORD)
+
+    // Act
+    renderAt('/mypage/preferences')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'You can set your preferences once your details are registered',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByText('Register your name and phone number, then try again.'),
+    ).toBeVisible()
+    expect(
+      within(screen.getByRole('main')).getByRole('link', {
+        name: 'Register your details',
+      }),
+    ).toHaveAttribute('href', '/mypage/profile')
   })
 })

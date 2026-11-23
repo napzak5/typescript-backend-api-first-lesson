@@ -1,5 +1,6 @@
 import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
+import { countedIn } from './written'
 
 /**
  * What the screens of a booking in the portal say: the booking of a
@@ -159,7 +160,7 @@ export const portalBookingMessages = {
     /** How many bookings the list has */
     count: (count: number) =>
       text({
-        en: `${numberOf(count).en} ${count === 1 ? 'booking' : 'bookings'}`,
+        en: countedIn(count, 'booking', 'bookings'),
         ja: `${numberOf(count).ja} 件の予約があります`,
       }),
     /** What stands where a name would, when the salon is no longer listed */

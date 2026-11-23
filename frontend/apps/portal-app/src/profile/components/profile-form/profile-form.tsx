@@ -9,18 +9,30 @@ import {
   CheckboxGroup,
   FieldRow,
   Form,
+  type FormErrors,
   FormPart,
   type FormProps,
+  NO_ERRORS,
   Note,
   Select,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
-import { CATEGORY_OPTIONS, GENDER_OPTIONS } from '../../utils/profile-format'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalProfileMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import {
+  CATEGORY_CHOICES,
+  GENDER_CHOICES,
+  type NamedChoice,
+} from '../../utils/profile-format'
+
+const { controls, parts, email } = portalProfileMessages
 
 export type ProfileFormProps = Pick<
   FormProps,
-  'submitLabel' | 'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'submitLabel' | 'pending' | 'actions' | 'onSubmit'
 > & {
   /**
    * The profile the form opens with. `null` for an account that has none:
@@ -29,6 +41,13 @@ export type ProfileFormProps = Pick<
   profile: ModelsCustomerProfileResponse | null
   /** The last day somebody can have been born on: `2026-11-19` */
   today: string
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /**
+   * The errors of the controls, under their names. A new object is a new
+   * attempt: the focus goes to the first control with an error
+   */
+  errors?: FormErrors<LocalizedText> | undefined
 }
 
 /**
@@ -45,175 +64,185 @@ export type ProfileFormProps = Pick<
 export const ProfileForm = ({
   profile,
   today,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
-}: ProfileFormProps) => (
-  <Form {...form} errors={errors}>
-    <FormPart label='お名前'>
-      <FieldRow>
+}: ProfileFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+  const options = (choices: readonly NamedChoice[]) =>
+    choices.map(({ value, label }) => ({ value, label: say(label) }))
+
+  return (
+    <Form {...form} message={said.message} errors={errors}>
+      <FormPart label={say(parts.name)}>
+        <FieldRow>
+          <TextField
+            label={say(controls.lastName)}
+            name='lastName'
+            autoComplete='family-name'
+            required
+            defaultValue={profile?.lastName}
+            error={said.errors['lastName']}
+          />
+          <TextField
+            label={say(controls.firstName)}
+            name='firstName'
+            autoComplete='given-name'
+            required
+            defaultValue={profile?.firstName}
+            error={said.errors['firstName']}
+          />
+        </FieldRow>
+        <FieldRow>
+          <TextField
+            label={say(controls.lastNameKana)}
+            name='lastNameKana'
+            autoComplete='off'
+            defaultValue={profile?.lastNameKana ?? undefined}
+            error={said.errors['lastNameKana']}
+          />
+          <TextField
+            label={say(controls.firstNameKana)}
+            name='firstNameKana'
+            autoComplete='off'
+            defaultValue={profile?.firstNameKana ?? undefined}
+            error={said.errors['firstNameKana']}
+          />
+        </FieldRow>
+      </FormPart>
+      <FormPart label={say(parts.contact)}>
         <TextField
-          label='姓'
-          name='lastName'
-          autoComplete='family-name'
+          label={say(controls.phoneNumber)}
+          name='phoneNumber'
+          type='tel'
+          autoComplete='tel'
           required
-          defaultValue={profile?.lastName}
-          error={errors['lastName']}
+          description={say(controls.phoneNumberDescription)}
+          defaultValue={profile?.phoneNumber}
+          error={said.errors['phoneNumber']}
         />
         <TextField
-          label='名'
-          name='firstName'
-          autoComplete='given-name'
-          required
-          defaultValue={profile?.firstName}
-          error={errors['firstName']}
-        />
-      </FieldRow>
-      <FieldRow>
-        <TextField
-          label='姓（フリガナ）'
-          name='lastNameKana'
+          label={say(controls.alternativePhone)}
+          name='alternativePhone'
           autoComplete='off'
-          defaultValue={profile?.lastNameKana ?? undefined}
-          error={errors['lastNameKana']}
+          type='tel'
+          description={say(controls.alternativePhoneDescription)}
+          defaultValue={profile?.alternativePhone ?? undefined}
+          error={said.errors['alternativePhone']}
+        />
+        <Note size='small'>
+          {say(
+            profile === null
+              ? email.ofNewProfile
+              : email.unchangeable(profile.email),
+          )}
+        </Note>
+      </FormPart>
+      <FormPart label={say(parts.address)}>
+        <TextField
+          label={say(controls.postalCode)}
+          name='postalCode'
+          autoComplete='postal-code'
+          defaultValue={profile?.postalCode ?? undefined}
+          error={said.errors['postalCode']}
+        />
+        <FieldRow>
+          <TextField
+            label={say(controls.prefecture)}
+            name='prefecture'
+            autoComplete='address-level1'
+            defaultValue={profile?.prefecture ?? undefined}
+            error={said.errors['prefecture']}
+          />
+          <TextField
+            label={say(controls.city)}
+            name='city'
+            autoComplete='address-level2'
+            defaultValue={profile?.city ?? undefined}
+            error={said.errors['city']}
+          />
+        </FieldRow>
+        <TextField
+          label={say(controls.address)}
+          name='address'
+          autoComplete='address-line1'
+          defaultValue={profile?.address ?? undefined}
+          error={said.errors['address']}
         />
         <TextField
-          label='名（フリガナ）'
-          name='firstNameKana'
-          autoComplete='off'
-          defaultValue={profile?.firstNameKana ?? undefined}
-          error={errors['firstNameKana']}
+          label={say(controls.building)}
+          name='building'
+          autoComplete='address-line2'
+          defaultValue={profile?.building ?? undefined}
+          error={said.errors['building']}
         />
-      </FieldRow>
-    </FormPart>
-    <FormPart label='連絡先'>
-      <TextField
-        label='電話番号'
-        name='phoneNumber'
-        type='tel'
-        autoComplete='tel'
-        required
-        description='ご予約について、サロンから連絡することがあります。'
-        defaultValue={profile?.phoneNumber}
-        error={errors['phoneNumber']}
-      />
-      <TextField
-        label='予備の電話番号'
-        name='alternativePhone'
-        autoComplete='off'
-        type='tel'
-        description='上の番号につながらないときに、連絡する番号です。'
-        defaultValue={profile?.alternativePhone ?? undefined}
-        error={errors['alternativePhone']}
-      />
-      <Note size='small'>
-        {profile === null
-          ? 'メールアドレスは、サインインに使っているものを登録します。'
-          : `メールアドレス（${profile.email}）は、ここでは変更できません。変更するときは、サロンにお問い合わせください。`}
-      </Note>
-    </FormPart>
-    <FormPart label='住所'>
-      <TextField
-        label='郵便番号'
-        name='postalCode'
-        autoComplete='postal-code'
-        defaultValue={profile?.postalCode ?? undefined}
-        error={errors['postalCode']}
-      />
-      <FieldRow>
+      </FormPart>
+      <FormPart label={say(parts.aboutYou)}>
+        <FieldRow>
+          <TextField
+            label={say(controls.birthDate)}
+            name='birthDate'
+            type='date'
+            autoComplete='bday'
+            min={EARLIEST_DAY}
+            max={today}
+            defaultValue={profile?.birthDate ?? undefined}
+            error={said.errors['birthDate']}
+          />
+          <Select
+            label={say(controls.gender)}
+            name='gender'
+            autoComplete='sex'
+            placeholder={say(controls.noGender)}
+            options={options(GENDER_CHOICES)}
+            defaultValue={profile?.gender ?? ''}
+            error={said.errors['gender']}
+          />
+        </FieldRow>
         <TextField
-          label='都道府県'
-          name='prefecture'
-          autoComplete='address-level1'
-          defaultValue={profile?.prefecture ?? undefined}
-          error={errors['prefecture']}
+          label={say(controls.occupation)}
+          name='occupation'
+          autoComplete='organization-title'
+          defaultValue={profile?.occupation ?? undefined}
+          error={said.errors['occupation']}
         />
-        <TextField
-          label='市区町村'
-          name='city'
-          autoComplete='address-level2'
-          defaultValue={profile?.city ?? undefined}
-          error={errors['city']}
+      </FormPart>
+      <FormPart label={say(parts.likes)}>
+        <CheckboxGroup
+          label={say(controls.preferredServices)}
+          name={PREFERRED_SERVICES}
+          layout='columns'
+          options={options(CATEGORY_CHOICES)}
+          defaultValue={profile?.preferences?.preferredServices}
+          error={said.errors[PREFERRED_SERVICES]}
         />
-      </FieldRow>
-      <TextField
-        label='番地'
-        name='address'
-        autoComplete='address-line1'
-        defaultValue={profile?.address ?? undefined}
-        error={errors['address']}
-      />
-      <TextField
-        label='建物名・部屋番号'
-        name='building'
-        autoComplete='address-line2'
-        defaultValue={profile?.building ?? undefined}
-        error={errors['building']}
-      />
-    </FormPart>
-    <FormPart label='ご本人について'>
-      <FieldRow>
-        <TextField
-          label='生年月日'
-          name='birthDate'
-          type='date'
-          autoComplete='bday'
-          min={EARLIEST_DAY}
-          max={today}
-          defaultValue={profile?.birthDate ?? undefined}
-          error={errors['birthDate']}
+        <TextArea
+          label={say(controls.notes)}
+          name={PREFERENCE_NOTES}
+          rows={4}
+          description={say(controls.notesDescription)}
+          defaultValue={profile?.preferences?.notes ?? undefined}
+          error={said.errors[PREFERENCE_NOTES]}
         />
-        <Select
-          label='性別'
-          name='gender'
-          autoComplete='sex'
-          placeholder='選択しない'
-          options={GENDER_OPTIONS}
-          defaultValue={profile?.gender ?? ''}
-          error={errors['gender']}
+      </FormPart>
+      <FormPart label={say(parts.contacts)}>
+        <Checkbox
+          label={say(controls.allowEmail)}
+          name='allowEmail'
+          defaultChecked={profile?.allowEmail}
         />
-      </FieldRow>
-      <TextField
-        label='職業'
-        name='occupation'
-        autoComplete='organization-title'
-        defaultValue={profile?.occupation ?? undefined}
-        error={errors['occupation']}
-      />
-    </FormPart>
-    <FormPart label='好み'>
-      <CheckboxGroup
-        label='好みのメニュー'
-        name={PREFERRED_SERVICES}
-        layout='columns'
-        options={CATEGORY_OPTIONS}
-        defaultValue={profile?.preferences?.preferredServices}
-        error={errors[PREFERRED_SERVICES]}
-      />
-      <TextArea
-        label='サロンに伝えておきたいこと'
-        name={PREFERENCE_NOTES}
-        rows={4}
-        description='使ってほしい製品や、苦手なことなどを書いてください。'
-        defaultValue={profile?.preferences?.notes ?? undefined}
-        error={errors[PREFERENCE_NOTES]}
-      />
-    </FormPart>
-    <FormPart label='受け取る連絡'>
-      <Checkbox
-        label='メールでの連絡を受け取る'
-        name='allowEmail'
-        defaultChecked={profile?.allowEmail}
-      />
-      <Checkbox
-        label='SMS での連絡を受け取る'
-        name='allowSms'
-        defaultChecked={profile?.allowSms}
-      />
-      <Checkbox
-        label='キャンペーンなどのお知らせを受け取る'
-        name='allowMarketing'
-        defaultChecked={profile?.allowMarketing}
-      />
-    </FormPart>
-  </Form>
-)
+        <Checkbox
+          label={say(controls.allowSms)}
+          name='allowSms'
+          defaultChecked={profile?.allowSms}
+        />
+        <Checkbox
+          label={say(controls.allowMarketing)}
+          name='allowMarketing'
+          defaultChecked={profile?.allowMarketing}
+        />
+      </FormPart>
+    </Form>
+  )
+}

@@ -129,8 +129,8 @@ export const linesWrittenInJapanese = (
       ),
   )
 
-/** What is no source of a package below its `src`: what is generated from the contract, and what the stories share */
-const SKIPPED_DIRECTORIES = new Set(['generated', '__stories__'])
+/** What is no source of a package below its `src`: what is generated from the contract, what the stories share, and what the tests share */
+const SKIPPED_DIRECTORIES = new Set(['generated', '__stories__', '__tests__'])
 
 /** A module that a screen is made of: no test, no story, and no file of examples for the stories */
 const isSource = (name: string): boolean =>
@@ -154,9 +154,9 @@ const filesBelow = (directory: string, relative = ''): string[] =>
 
 /**
  * The modules below `directory`, the `src` of a package, that a screen is
- * made of, with paths relative to it: the TypeScript files but the tests,
- * the stories and the examples of the stories, which are written in the
- * language their subject is shown in.
+ * made of, with paths relative to it: the TypeScript files but the tests
+ * with what they share, the stories and the examples of the stories, which
+ * are written in the language their subject is shown in.
  */
 export const sourcesBelow = (directory: string): SourceFile[] =>
   filesBelow(directory)

@@ -19,7 +19,6 @@ import {
   Card,
   EmptyState,
   type FormSays,
-  inJapanese,
   Link,
   LoadingIndicator,
   moreOf,
@@ -29,6 +28,7 @@ import {
   useNotifications,
   useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import {
   keepPreviousData,
@@ -219,7 +219,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
     time: number
   }>()
   const [asking, setAsking] = useState(false)
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [reportedBefore, setReportedBefore] = useState(false)
   /** How many times the customer learned here that a review was gone */
   const [gone, setGone] = useState(0)
@@ -394,8 +394,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         <ReviewReport
           key={asked.time}
           open={asking}
-          // The dialog of the reviews is said in Japanese until its area is messages
-          subject={inJapanese(postedOf(asked.review, salon.timezone))}
+          subject={postedOf(asked.review, salon.timezone)}
           onClose={() => setAsking(false)}
           reportedBefore={reportedBefore}
           message={says.message}

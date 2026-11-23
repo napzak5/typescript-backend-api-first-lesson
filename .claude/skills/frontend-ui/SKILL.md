@@ -405,12 +405,22 @@ In an area of an application that is done, the same rules hold, and:
   `portalBookingMessages`), read from
   `@beauty-salon-shared/i18n/messages/portal`; the frame of the portal
   (the links of the header, the ways on under the sign-in form, the screens
-  of the security) is `portalFrameMessages`.
-- What it writes (`booking-format.ts`, `salon-format.ts`) and what its forms
-  read (`booking-flow.ts`, `account-flow.ts`) are messages, and so is what a
-  component of the area takes of a form: `BookingForm` takes its `message`
-  and its `errors` as messages and says them itself, so the focus it moves
-  on an attempt stays where it is when the language changes.
+  of the security, the way back to the page of the customer and the button
+  that saves a change) is `portalFrameMessages`, and how the catalogues of
+  the portal write a count, a list and a postal code is in `written.ts`.
+  Every area of the portal is done.
+- What it writes (`booking-format.ts`, `salon-format.ts`,
+  `review-format.ts`) and what its forms read (`booking-flow.ts`,
+  `account-flow.ts`, `profile-flow.ts`, `review-flow.ts`) are messages, and
+  so is what a component of the area takes of a form: `BookingForm`,
+  `ProfileForm`, `ReviewForm` and `ReviewReport` take their `message` and
+  their `errors` as messages and say them themselves, so the focus they
+  move on an attempt stays where it is when the language changes.
+- A function that does no more than name a word of the business
+  (the name of a membership tier, of a gender) goes: the component says
+  `termMessages` itself. A sentence another catalogue has already is that
+  message (`portalBookingMessages.move.backToBooking` on the screen that
+  writes a review).
 - A sentence with a link in it is a message of its parts
   (`signInWithLink`: `before`, `link` and `after`; `…WithLinks` names a
   part for every link), which the component says one after the other, the
@@ -426,15 +436,14 @@ In an area of an application that is done, the same rules hold, and:
   values (`portalSalonMessages.about.betweenPhoneNumbers`) is a message too.
 - The application names its areas that are done in `src/texts.test.ts`
   (`itShouldWriteItsTextsAsMessages(import.meta.dirname, ['account', …])`),
-  and the test fails on a name that has no source.
+  and the test fails on a name that has no source. An application whose
+  areas are all done checks the whole of its source, as a package does
+  (`itShouldWriteItsTextsAsMessages(import.meta.dirname)` of the portal);
+  what the tests share (`__tests__`) is not read.
 - An area that is still written in Japanese says what it takes of an area
-  that is done with `inJapanese` (`inJapanese(whenLineOf(booking,
-  salon.timezone))` in the reviews), and so does an area that is done
-  that gives a name to a component of such an area, whose sentence around
-  the name is Japanese (`subject={inJapanese(postedOf(asked.review,
-  salon.timezone))}` of the dialog that reports a review); an area that is
-  done hands on the strings of one that is not as they are (the profile
-  form of the first booking).
+  that is done with `inJapanese`, and an area that is done hands on the
+  strings of one that is not as they are. The portal has neither any
+  more.
 
 A value is written by the formats of `@beauty-salon-shared/i18n/formats`,
 which return it in every language, as a message: a number with its

@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useLayoutEffect, useState } from 'react'
 import { fireEvent, screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { plainSalon, salon } from '../../../salons/components/examples'
 import { ownReviews, ratedReview } from '../examples'
 import { OwnReviewList, type OwnReviewListProps } from './own-review-list'
@@ -10,9 +11,9 @@ import * as ownReviewListStories from './own-review-list.stories'
 
 const stories = composeStories(ownReviewListStories)
 
-/** The reviews of the list. A review may hold a list of its own: its pictures. */
-const listed = (): HTMLElement[] => {
-  const list = screen.getByRole('list', { name: '自分のレビュー' })
+/** The reviews of the list, by its name. A review may hold a list of its own: its pictures. */
+const listed = (name = '自分のレビュー'): HTMLElement[] => {
+  const list = screen.getByRole('list', { name })
 
   return within(list)
     .getAllByRole('listitem')
@@ -20,8 +21,8 @@ const listed = (): HTMLElement[] => {
 }
 
 /** The review at a place of the list. */
-const reviewAt = (index: number): HTMLElement => {
-  const review = listed().at(index)
+const reviewAt = (index: number, name?: string): HTMLElement => {
+  const review = listed(name).at(index)
   if (review === undefined) {
     throw new Error(`The list has no review at ${index}`)
   }
@@ -357,5 +358,70 @@ describe('OwnReviewList', () => {
       // Assert
       expect(document.body).toHaveFocus()
     })
+  })
+})
+
+describe('OwnReviewList on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  const reviewInEnglishAt = (index: number): HTMLElement =>
+    reviewAt(index, 'Your reviews')
+
+  it('should count the reviews, and name whom each rates and its buttons, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Complete.run()
+
+    // Assert
+    expect(screen.getByRole('list', { name: 'Your reviews' })).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent(/^3 reviews$/)
+    expect(
+      within(reviewInEnglishAt(0)).getByText('Staff rated: 田中 ひろし'),
+    ).toBeVisible()
+    expect(
+      within(reviewInEnglishAt(0)).getByRole('link', {
+        name: 'Change the review of ヘアサロン こもれび 表参道 (posted November 10, 2026)',
+      }),
+    ).toHaveTextContent(/^Change$/)
+    expect(
+      within(reviewInEnglishAt(0)).getByRole('button', {
+        name: 'Delete the review of ヘアサロン こもれび 表参道 (posted November 10, 2026)',
+      }),
+    ).toHaveTextContent(/^Delete$/)
+  })
+
+  it('should say how many are shown in English when the list goes on', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithMore.run()
+
+    // Assert
+    expect(screen.getByRole('status')).toHaveTextContent(
+      /^12 reviews \(showing 3\)$/,
+    )
+  })
+
+  it('should say in English that the salon and the member of the staff are no longer listed', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutNames.run()
+
+    // Assert
+    expect(heading(reviewInEnglishAt(0))).toHaveTextContent(
+      /^Salon \(no longer listed\)$/,
+    )
+    expect(
+      within(reviewInEnglishAt(0)).getByText(
+        'Staff rated: Staff member (no longer listed)',
+      ),
+    ).toBeVisible()
   })
 })
