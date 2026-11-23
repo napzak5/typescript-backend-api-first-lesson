@@ -1,6 +1,6 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -68,6 +68,9 @@ describe('SalesTrend on a page in English', () => {
     await stories.Days.run()
 
     // Assert
+    expect(
+      columnsOf('Sales, checkouts and average per checkout by interval'),
+    ).toEqual(['Interval', 'Sales', 'Checkouts', 'Average per checkout'])
     expect(
       rowsOf('Sales, checkouts and average per checkout by interval'),
     ).toEqual([

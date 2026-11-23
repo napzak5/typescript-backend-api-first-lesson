@@ -1,6 +1,10 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf, termsOf } from '@beauty-salon-frontend/testing/screens'
+import {
+  columnsOf,
+  rowsOf,
+  termsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -169,14 +173,33 @@ describe('SalesReport on a page in English', () => {
     await stories.Counted.run()
 
     // Assert
+    expect(columnsOf('Received by payment method')).toEqual([
+      'Payment method',
+      'Received',
+      'Payments',
+      'Share',
+    ])
     expect(rowsOf('Received by payment method')).toEqual([
       ['Credit card', '¥16,000', '2', '66.7%'],
       ['Cash', '¥8,000', '1', '33.3%'],
+    ])
+    expect(columnsOf('Sales by menu category')).toEqual([
+      'Menu category',
+      'Sales',
+      'Services',
+      'Share',
     ])
     expect(rowsOf('Sales by menu category')).toEqual([
       ['Color', '¥17,600', '2', '50.0%'],
       ['Cut', '¥12,100', '2', '34.4%'],
       ['Treatment', '¥5,500', '1', '15.6%'],
+    ])
+    expect(columnsOf('Top 5 staff by sales')).toEqual([
+      'Rank',
+      'Staff',
+      'Sales',
+      'Services',
+      'Average per service',
     ])
     expect(rowsOf('Top 5 staff by sales')).toEqual([
       ['1st', 'Mika Suzuki', '¥23,100', '3', '¥7,700'],

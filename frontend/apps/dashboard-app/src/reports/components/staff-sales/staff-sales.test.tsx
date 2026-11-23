@@ -1,6 +1,6 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -71,6 +71,13 @@ describe('StaffSales on a page in English', () => {
     await stories.Ranked.run()
 
     // Assert
+    expect(columnsOf('Sales by staff')).toEqual([
+      'Rank',
+      'Staff',
+      'Sales',
+      'Services',
+      'Average per service',
+    ])
     expect(rowsOf('Sales by staff')).toEqual([
       ['1st', 'Mika Suzuki', '¥23,100', '3', '¥7,700'],
       ['2nd', 'Hiroshi Tanaka', '¥12,100', '2', '¥6,050'],

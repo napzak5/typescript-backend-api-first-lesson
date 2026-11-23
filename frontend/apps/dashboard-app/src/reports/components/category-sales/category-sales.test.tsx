@@ -1,6 +1,6 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { rowsOf } from '@beauty-salon-frontend/testing/screens'
+import { columnsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -72,6 +72,13 @@ describe('CategorySales on a page in English', () => {
     await stories.Counted.run()
 
     // Assert
+    expect(columnsOf('Sales by category')).toEqual([
+      'Category',
+      'Sales',
+      'Services',
+      'Per service',
+      'Share',
+    ])
     expect(rowsOf('Sales by category')).toEqual([
       ['Color', '¥17,600', '2', '¥8,800', '50.0%'],
       ['Cut', '¥12,100', '2', '¥6,050', '34.4%'],

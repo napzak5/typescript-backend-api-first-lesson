@@ -1,7 +1,7 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
-import { useState } from 'react'
+import { act, useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DayChoice, type DayChoiceProps } from './day-choice'
@@ -118,5 +118,22 @@ describe('DayChoice on a page in English', () => {
       'Sales are counted by the day of the checkout (the date at the salon). Enter a date.',
     )
     expect(screen.getByRole('button', { name: 'Show' })).toBeInTheDocument()
+  })
+
+  it('should say its error again in the language chosen, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.Wrong.run()
+    screen.getByRole('button', { name: '表示する' }).focus()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(screen.getByLabelText('Date')).toHaveAccessibleDescription(
+      'Sales are counted by the day of the checkout (the date at the salon). Enter a date.',
+    )
+    expect(screen.getByRole('button', { name: 'Show' })).toHaveFocus()
   })
 })
