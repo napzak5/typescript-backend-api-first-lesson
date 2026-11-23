@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import {
   STAFF_MEMBER_ID,
   staffCreateRequest,
@@ -15,7 +19,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -338,7 +342,7 @@ describe('staffCreateRequestSchema', () => {
     const result = parseWith(
       staffCreateRequestSchema,
       staffCreateRequest(),
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: staffCreateRequest() })
@@ -350,7 +354,11 @@ describe('staffCreateRequestSchema', () => {
     )
     const request = { ...staffCreateRequest(), ...unset }
 
-    const result = parseWith(staffCreateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      staffCreateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(NULLABLE_PROPERTIES).toHaveLength(12)
     expect(result).toEqual({ type: 'success', data: request })
@@ -360,7 +368,7 @@ describe('staffCreateRequestSchema', () => {
     const result = parseWith(
       staffCreateRequestSchema,
       { ...staffCreateRequest(), email: 'Hanako@Aoyama.Example.COM' },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toMatchObject({
@@ -381,7 +389,11 @@ describe('staffCreateRequestSchema', () => {
   it.each(accepted)('accepts %s and keeps it as it is', (_case, change) => {
     const request = { ...staffCreateRequest(), ...change }
 
-    const result = parseWith(staffCreateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      staffCreateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -468,7 +480,7 @@ describe('staffUpdateRequestSchema', () => {
       const result = parseWith(
         staffUpdateRequestSchema,
         { [property]: value },
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: { [property]: value } })
@@ -479,7 +491,7 @@ describe('staffUpdateRequestSchema', () => {
     const result = parseWith(
       staffUpdateRequestSchema,
       staffCreateRequest(),
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: staffCreateRequest() })
@@ -489,7 +501,7 @@ describe('staffUpdateRequestSchema', () => {
     const result = parseWith(
       staffUpdateRequestSchema,
       { email: 'Hanako@Aoyama.Example.COM' },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -504,7 +516,7 @@ describe('staffUpdateRequestSchema', () => {
       const result = parseWith(
         staffUpdateRequestSchema,
         { [property]: null },
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: { [property]: null } })
@@ -521,7 +533,7 @@ describe('staffUpdateRequestSchema', () => {
   )
 
   it.each(accepted)('accepts %s', (_case, change) => {
-    const result = parseWith(staffUpdateRequestSchema, change, 'Invalid')
+    const result = parseWith(staffUpdateRequestSchema, change, MADE_UP_HEADLINE)
 
     expect(result).toEqual({ type: 'success', data: change })
   })
@@ -565,7 +577,7 @@ describe('staffUpdateRequestSchema', () => {
 
 describe('staffSearchRequestSchema', () => {
   it('accepts a request without any parameter', () => {
-    const result = parseWith(staffSearchRequestSchema, {}, 'Invalid')
+    const result = parseWith(staffSearchRequestSchema, {}, MADE_UP_HEADLINE)
 
     expect(result).toEqual({ type: 'success', data: {} })
   })
@@ -576,7 +588,11 @@ describe('staffSearchRequestSchema', () => {
     ['a cursor', { cursor: STAFF_MEMBER_ID }],
     ['a limit and a cursor', { limit: 20, cursor: STAFF_MEMBER_ID }],
   ])('accepts %s', (_case, request) => {
-    const result = parseWith(staffSearchRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      staffSearchRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -585,7 +601,7 @@ describe('staffSearchRequestSchema', () => {
     const result = parseWith(
       staffSearchRequestSchema,
       { cursor: STAFF_MEMBER_ID.toUpperCase() },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({

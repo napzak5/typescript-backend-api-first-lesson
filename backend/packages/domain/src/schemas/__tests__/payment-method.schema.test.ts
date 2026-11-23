@@ -1,10 +1,15 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
-import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import {
   PAYMENT_METHOD_ID,
   paymentMethodCreateRequest,
 } from '../../__tests__/fixtures/payment-method-fixtures'
-import { parseWith, toldIn } from '../../shared'
+import { parseWith } from '../../shared'
 import {
   paymentMethodCreateRequestSchema,
   paymentMethodSearchRequestSchema,
@@ -15,7 +20,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -24,12 +29,12 @@ const messagesOf = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): Record<string, string> => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' && result.error.type === 'validation'
     ? Object.fromEntries(
         result.error.issues.map(({ field, message }) => [
           field,
-          toldIn(message, 'en'),
+          textIn(message, 'en'),
         ]),
       )
     : {}
@@ -262,7 +267,7 @@ describe('paymentMethodCreateRequestSchema', () => {
     const result = parseWith(
       paymentMethodCreateRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: request })
@@ -281,7 +286,7 @@ describe('paymentMethodCreateRequestSchema', () => {
     const result = parseWith(
       paymentMethodCreateRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: request })
@@ -324,7 +329,7 @@ describe('paymentMethodCreateRequestSchema', () => {
     const result = parseWith(
       paymentMethodCreateRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: request })
@@ -488,7 +493,7 @@ describe('paymentMethodUpdateRequestSchema', () => {
     const result = parseWith(
       paymentMethodUpdateRequestSchema,
       everything,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: everything })
@@ -502,7 +507,7 @@ describe('paymentMethodUpdateRequestSchema', () => {
       const result = parseWith(
         paymentMethodUpdateRequestSchema,
         request,
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: request })
@@ -521,7 +526,7 @@ describe('paymentMethodUpdateRequestSchema', () => {
     const result = parseWith(
       paymentMethodUpdateRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: request })
@@ -531,7 +536,7 @@ describe('paymentMethodUpdateRequestSchema', () => {
     const result = parseWith(
       paymentMethodUpdateRequestSchema,
       change,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: change })
@@ -668,7 +673,9 @@ describe('paymentMethodUpdateRequestSchema', () => {
 
 describe('paymentMethodSearchRequestSchema', () => {
   it('accepts a request without any parameter', () => {
-    expect(parseWith(paymentMethodSearchRequestSchema, {}, 'Invalid')).toEqual({
+    expect(
+      parseWith(paymentMethodSearchRequestSchema, {}, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: {},
     })
@@ -692,7 +699,7 @@ describe('paymentMethodSearchRequestSchema', () => {
     ],
   ])('accepts %s and returns the request unchanged', (_case, request) => {
     expect(
-      parseWith(paymentMethodSearchRequestSchema, request, 'Invalid'),
+      parseWith(paymentMethodSearchRequestSchema, request, MADE_UP_HEADLINE),
     ).toEqual({ type: 'success', data: request })
   })
 
@@ -701,7 +708,7 @@ describe('paymentMethodSearchRequestSchema', () => {
       parseWith(
         paymentMethodSearchRequestSchema,
         { cursor: PAYMENT_METHOD_ID.toUpperCase() },
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({ type: 'success', data: { cursor: PAYMENT_METHOD_ID } })
   })

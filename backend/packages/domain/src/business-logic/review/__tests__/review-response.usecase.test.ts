@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { textIn } from '@beauty-salon-shared/i18n'
 import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
@@ -12,7 +13,7 @@ import {
 } from '../../../__tests__/fixtures/review-fixtures'
 import type { Actor } from '../../../models/auth'
 import type { ReviewResponding } from '../../../repositories/review.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import { RespondToReviewUseCase, type ReviewUseCaseDependencies } from '..'
 
 const databaseDown = Result.error(
@@ -28,7 +29,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? toldIn(result.error.message, 'en')
+    ? textIn(result.error.message, 'en')
     : null
 
 const response = { ownerResponse: OWNER_RESPONSE }

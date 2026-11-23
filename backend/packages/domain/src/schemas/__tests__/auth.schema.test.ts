@@ -4,7 +4,10 @@ import {
   SESSION_ID,
   USER_ID,
 } from '../../__tests__/fixtures/auth-fixtures'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import { parseSessionId, parseUserId } from '../../models/auth'
 import { parseWith } from '../../shared'
 import {
@@ -31,7 +34,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -57,7 +60,7 @@ describe('authLoginRequestSchema', () => {
   it('accepts a request that satisfies every rule and returns it unchanged', () => {
     const request = loginRequest()
 
-    const result = parseWith(authLoginRequestSchema, request, 'Invalid')
+    const result = parseWith(authLoginRequestSchema, request, MADE_UP_HEADLINE)
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -66,7 +69,7 @@ describe('authLoginRequestSchema', () => {
     const result = parseWith(
       authLoginRequestSchema,
       loginRequest({ email: 'Hanako.Yamada@Example.COM' }),
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toMatchObject({
@@ -99,7 +102,7 @@ describe('authLoginRequestSchema', () => {
       const result = parseWith(
         authLoginRequestSchema,
         loginRequest({ twoFactorCode }),
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toMatchObject({
@@ -113,7 +116,7 @@ describe('authLoginRequestSchema', () => {
     const result = parseWith(
       authLoginRequestSchema,
       loginRequest({ password: DECOMPOSED }),
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toMatchObject({
@@ -228,7 +231,7 @@ describe('authTokenRefreshRequestSchema', () => {
     const result = parseWith(
       authTokenRefreshRequestSchema,
       { refreshToken },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: { refreshToken } })
@@ -270,7 +273,11 @@ describe('authRegisterRequestSchema', () => {
   it('accepts a request that satisfies every rule and returns it unchanged', () => {
     const request = registration()
 
-    const result = parseWith(authRegisterRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      authRegisterRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -282,7 +289,7 @@ describe('authRegisterRequestSchema', () => {
         email: 'Hanako.Yamada@Example.COM',
         password: DECOMPOSED,
       }),
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -376,7 +383,11 @@ describe.each([
   ['authPasswordForgotRequestSchema', authPasswordForgotRequestSchema],
 ])('%s', (_name, schema) => {
   it('turns the email into lower case', () => {
-    const result = parseWith(schema, { email: 'Hanako@Example.COM' }, 'Invalid')
+    const result = parseWith(
+      schema,
+      { email: 'Hanako@Example.COM' },
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({
       type: 'success',
@@ -430,7 +441,7 @@ describe.each([
     ],
     ['a token of 255 characters', 't'.repeat(255)],
   ])('accepts %s and returns it unchanged', (_case, token) => {
-    expect(parseWith(schema, { token }, 'Invalid')).toEqual({
+    expect(parseWith(schema, { token }, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: { token },
     })
@@ -468,7 +479,7 @@ describe('authPasswordResetConfirmRequestSchema', () => {
       parseWith(
         authPasswordResetConfirmRequestSchema,
         reset({ newPassword: DECOMPOSED }),
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({
       type: 'success',
@@ -528,7 +539,7 @@ describe('authStaffInvitationAcceptRequestSchema', () => {
       parseWith(
         authStaffInvitationAcceptRequestSchema,
         acceptance({ password: DECOMPOSED }),
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({
       type: 'success',
@@ -555,7 +566,7 @@ describe('authStaffInvitationAcceptRequestSchema', () => {
       parseWith(
         authStaffInvitationAcceptRequestSchema,
         acceptance(change),
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({ type: 'success', data: acceptance(change) })
   })
@@ -621,7 +632,7 @@ describe('authPasswordChangeRequestSchema', () => {
       parseWith(
         authPasswordChangeRequestSchema,
         change({ currentPassword: DECOMPOSED, newPassword: `${DECOMPOSED}!` }),
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({
       type: 'success',
@@ -689,7 +700,7 @@ describe('authTwoFactorEnableRequestSchema', () => {
       parseWith(
         authTwoFactorEnableRequestSchema,
         { password: DECOMPOSED },
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({ type: 'success', data: { password: COMPOSED } })
   })
@@ -739,7 +750,7 @@ describe('authTwoFactorVerifyRequestSchema', () => {
     ['six nines', '999999'],
   ])('accepts %s and returns them unchanged', (_case, code) => {
     expect(
-      parseWith(authTwoFactorVerifyRequestSchema, { code }, 'Invalid'),
+      parseWith(authTwoFactorVerifyRequestSchema, { code }, MADE_UP_HEADLINE),
     ).toEqual({ type: 'success', data: { code } })
   })
 
@@ -800,7 +811,7 @@ describe('authTwoFactorDisableRequestSchema', () => {
       parseWith(
         authTwoFactorDisableRequestSchema,
         disableRequest({ password: DECOMPOSED }),
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({ type: 'success', data: { password: COMPOSED, code: '492039' } })
   })
@@ -815,7 +826,7 @@ describe('authTwoFactorDisableRequestSchema', () => {
       parseWith(
         authTwoFactorDisableRequestSchema,
         disableRequest({ code }),
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({ type: 'success', data: { password: PASSWORD, code } })
   })
@@ -868,7 +879,11 @@ describe('authTwoFactorBackupCodesRequestSchema', () => {
     ['a backup code in lower case with spaces', ' abcd efgh ijkl mnop '],
   ])('accepts %s and returns it unchanged', (_case, code) => {
     expect(
-      parseWith(authTwoFactorBackupCodesRequestSchema, { code }, 'Invalid'),
+      parseWith(
+        authTwoFactorBackupCodesRequestSchema,
+        { code },
+        MADE_UP_HEADLINE,
+      ),
     ).toEqual({ type: 'success', data: { code } })
   })
 
@@ -900,7 +915,9 @@ describe('sessionSearchRequestSchema', () => {
     ['a cursor that is the ID of a session', { cursor: SESSION_ID }],
     ['a limit and a cursor', { limit: 20, cursor: SESSION_ID }],
   ])('accepts %s and returns it unchanged', (_case, query) => {
-    expect(parseWith(sessionSearchRequestSchema, query, 'Invalid')).toEqual({
+    expect(
+      parseWith(sessionSearchRequestSchema, query, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: query,
     })

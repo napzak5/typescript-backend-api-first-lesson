@@ -1000,6 +1000,52 @@ describe('a failing database', () => {
     expect(JSON.stringify(logs)).not.toContain(salon.email)
     expect(JSON.stringify(logs)).not.toContain(salon.phoneNumber)
   })
+
+  it('should answer a stored value that breaks the model with 500 in the language asked for, and log the property and the rule without the value', async () => {
+    // Arrange
+    const logs: unknown[] = []
+    const app = createTestApp({ logs })
+    const asAdmin = await signInAsAdmin(app, getTestDb())
+    const created = await request(app)
+      .post(SALONS)
+      .set('Authorization', asAdmin)
+      .send(salon)
+    const salonId: string = created.body.data.id
+    await getTestDb().execute(
+      sql`UPDATE salons SET "businessHours" = '{"dayOfWeek": "someday"}'::jsonb WHERE id = ${salonId}`,
+    )
+
+    // Act
+    const response = await request(app)
+      .get(`${SALONS}/${salonId}`)
+      .set('Accept-Language', 'ja')
+
+    // Assert
+    expect(response.status).toBe(500)
+    expect(response.headers['content-language']).toBe('ja')
+    expect(response.body).toMatchObject({
+      type: 'urn:beauty-salon:problem:database',
+      title: 'サーバーでエラーが起きました',
+      detail: null,
+      errors: null,
+    })
+    expect(logs).toContainEqual(
+      expect.objectContaining({
+        level: 'error',
+        msg: `Stored salon ${salonId} does not match the API model`,
+        cause: {
+          issues: [
+            {
+              field: 'businessHours',
+              rule: 'invalid_type',
+              message: 'Invalid input: expected array, received object',
+            },
+          ],
+        },
+      }),
+    )
+    expect(JSON.stringify(logs)).not.toContain('someday')
+  })
 })
 
 describe('cross-origin requests', () => {

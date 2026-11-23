@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import { parseWith } from '../../shared'
 import { staffInvitationCreateRequestSchema } from '../staff-invitation.schema'
 
 const rulesBrokenBy = (input: unknown): string[] => {
-  const result = parseWith(staffInvitationCreateRequestSchema, input, 'Invalid')
+  const result = parseWith(
+    staffInvitationCreateRequestSchema,
+    input,
+    MADE_UP_HEADLINE,
+  )
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -13,7 +20,11 @@ describe('staffInvitationCreateRequestSchema', () => {
     'accepts the role %s and returns the request unchanged',
     (role) => {
       expect(
-        parseWith(staffInvitationCreateRequestSchema, { role }, 'Invalid'),
+        parseWith(
+          staffInvitationCreateRequestSchema,
+          { role },
+          MADE_UP_HEADLINE,
+        ),
       ).toEqual({ type: 'success', data: { role } })
     },
   )

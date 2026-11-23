@@ -1,6 +1,10 @@
 import { serviceCategoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
-import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import {
   CATEGORY_ID,
   OTHER_CATEGORY_ID,
@@ -17,7 +21,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -195,7 +199,7 @@ describe('serviceCategoryCreateRequestSchema', () => {
     const result = parseWith(
       serviceCategoryCreateRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: request })
@@ -208,7 +212,7 @@ describe('serviceCategoryCreateRequestSchema', () => {
         ...serviceCategoryCreateRequest(),
         parentId: OTHER_CATEGORY_ID.toUpperCase(),
       },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -229,7 +233,7 @@ describe('serviceCategoryCreateRequestSchema', () => {
     const result = parseWith(
       serviceCategoryCreateRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: request })
@@ -259,7 +263,7 @@ describe('serviceCategoryCreateRequestSchema', () => {
     const result = parseWith(
       serviceCategoryCreateRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: request })
@@ -292,7 +296,7 @@ describe('serviceCategoryCreateRequestSchema', () => {
     const result = parseWith(
       serviceCategoryCreateRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     // Assert
@@ -367,7 +371,7 @@ describe('serviceCategoryUpdateRequestSchema', () => {
       const result = parseWith(
         serviceCategoryUpdateRequestSchema,
         request,
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: request })
@@ -378,7 +382,7 @@ describe('serviceCategoryUpdateRequestSchema', () => {
     const result = parseWith(
       serviceCategoryUpdateRequestSchema,
       { parentId: OTHER_CATEGORY_ID.toUpperCase() },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -396,7 +400,7 @@ describe('serviceCategoryUpdateRequestSchema', () => {
     const result = parseWith(
       serviceCategoryUpdateRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: request })
@@ -410,7 +414,7 @@ describe('serviceCategoryUpdateRequestSchema', () => {
       const result = parseWith(
         serviceCategoryUpdateRequestSchema,
         request,
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: request })
@@ -434,7 +438,7 @@ describe('serviceCategoryUpdateRequestSchema', () => {
     const result = parseWith(
       serviceCategoryUpdateRequestSchema,
       change,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: change })
@@ -492,7 +496,7 @@ describe('serviceCategoryUpdateRequestSchema', () => {
 describe('serviceCategorySearchRequestSchema', () => {
   it('accepts a request without any parameter', () => {
     expect(
-      parseWith(serviceCategorySearchRequestSchema, {}, 'Invalid'),
+      parseWith(serviceCategorySearchRequestSchema, {}, MADE_UP_HEADLINE),
     ).toEqual({ type: 'success', data: {} })
   })
 
@@ -508,7 +512,7 @@ describe('serviceCategorySearchRequestSchema', () => {
     ],
   ])('accepts %s and returns the request unchanged', (_case, request) => {
     expect(
-      parseWith(serviceCategorySearchRequestSchema, request, 'Invalid'),
+      parseWith(serviceCategorySearchRequestSchema, request, MADE_UP_HEADLINE),
     ).toEqual({ type: 'success', data: request })
   })
 
@@ -517,7 +521,7 @@ describe('serviceCategorySearchRequestSchema', () => {
       parseWith(
         serviceCategorySearchRequestSchema,
         { cursor: CATEGORY_ID.toUpperCase() },
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({ type: 'success', data: { cursor: CATEGORY_ID } })
   })

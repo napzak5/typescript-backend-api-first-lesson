@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import {
   STAFF_MEMBER_ID,
   staffCreateRequest,
@@ -11,13 +15,21 @@ import {
 } from '../staff-profile.schema'
 
 const rulesBrokenBy = (input: unknown): string[] => {
-  const result = parseWith(staffProfileSearchRequestSchema, input, 'Invalid')
+  const result = parseWith(
+    staffProfileSearchRequestSchema,
+    input,
+    MADE_UP_HEADLINE,
+  )
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
 describe('staffProfileSearchRequestSchema', () => {
   it('accepts a request without any parameter', () => {
-    const result = parseWith(staffProfileSearchRequestSchema, {}, 'Invalid')
+    const result = parseWith(
+      staffProfileSearchRequestSchema,
+      {},
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: {} })
   })
@@ -47,7 +59,7 @@ describe('staffProfileSearchRequestSchema', () => {
     const result = parseWith(
       staffProfileSearchRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: request })
@@ -62,7 +74,7 @@ describe('staffProfileSearchRequestSchema', () => {
       const result = parseWith(
         staffProfileSearchRequestSchema,
         { [parameter]: id.toUpperCase() },
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: { [parameter]: id } })
@@ -128,7 +140,11 @@ describe('staffProfileSearchRequestSchema', () => {
 })
 
 const updateRulesBrokenBy = (input: unknown): string[] => {
-  const result = parseWith(staffProfileUpdateRequestSchema, input, 'Invalid')
+  const result = parseWith(
+    staffProfileUpdateRequestSchema,
+    input,
+    MADE_UP_HEADLINE,
+  )
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -156,7 +172,7 @@ describe('staffProfileUpdateRequestSchema', () => {
       const result = parseWith(
         staffProfileUpdateRequestSchema,
         { [property]: value },
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: { [property]: value } })
@@ -164,7 +180,11 @@ describe('staffProfileUpdateRequestSchema', () => {
   )
 
   it('accepts the five properties together and returns the request unchanged', () => {
-    const result = parseWith(staffProfileUpdateRequestSchema, OWN, 'Invalid')
+    const result = parseWith(
+      staffProfileUpdateRequestSchema,
+      OWN,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: OWN })
   })
@@ -175,7 +195,7 @@ describe('staffProfileUpdateRequestSchema', () => {
       const result = parseWith(
         staffProfileUpdateRequestSchema,
         { [property]: null },
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: { [property]: null } })
@@ -210,7 +230,11 @@ describe('staffProfileUpdateRequestSchema', () => {
     ['no experience', { yearsOfExperience: 0 }],
     ['100 years of experience', { yearsOfExperience: 100 }],
   ])('accepts %s', (_case, change) => {
-    const result = parseWith(staffProfileUpdateRequestSchema, change, 'Invalid')
+    const result = parseWith(
+      staffProfileUpdateRequestSchema,
+      change,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: change })
   })

@@ -6,7 +6,10 @@ import {
   PREFERRED_STAFF_ID,
   UNNAMED_STAFF_ID,
 } from '../../__tests__/fixtures/customer-preferences-fixtures'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import { parseWith } from '../../shared'
 import {
   customerPreferencesUpdateRequestSchema,
@@ -18,7 +21,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -26,7 +29,7 @@ const rulesOfUpdate = (input: unknown): string[] =>
   rulesBrokenBy(customerPreferencesUpdateRequestSchema, input)
 
 const parseUpdate = (input: unknown) =>
-  parseWith(customerPreferencesUpdateRequestSchema, input, 'Invalid')
+  parseWith(customerPreferencesUpdateRequestSchema, input, MADE_UP_HEADLINE)
 
 /** A style preference that keeps every rule. */
 const style = (overrides: Record<string, unknown> = {}) => ({
@@ -331,7 +334,7 @@ describe('customerPreferencesUpdateRequestSchema', () => {
         type: 'error',
         error: {
           type: 'validation',
-          message: 'Invalid',
+          message: MADE_UP_HEADLINE,
           issues: [
             {
               field: 'preferredTimeSlots.1',
@@ -638,7 +641,7 @@ describe('storedTimeSlotsSchema', () => {
     ['a slot that ends before it begins', [slot('12:00', '10:00')]],
     ['slots that overlap', [slot('10:00', '12:00'), slot('11:00', '13:00')]],
   ])('reads %s: only the shape is checked', (_case, stored) => {
-    expect(parseWith(storedTimeSlotsSchema, stored, 'Invalid')).toEqual({
+    expect(parseWith(storedTimeSlotsSchema, stored, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: stored,
     })
@@ -689,7 +692,9 @@ describe('storedStylePreferenceSchema', () => {
       }),
     ],
   ])('reads %s: only the shape is checked', (_case, stored) => {
-    expect(parseWith(storedStylePreferenceSchema, stored, 'Invalid')).toEqual({
+    expect(
+      parseWith(storedStylePreferenceSchema, stored, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: stored,
     })

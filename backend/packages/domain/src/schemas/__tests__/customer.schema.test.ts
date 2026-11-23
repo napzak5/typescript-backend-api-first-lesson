@@ -6,7 +6,10 @@ import {
   OTHER_CUSTOMER_ID,
   REFERRER_ID,
 } from '../../__tests__/fixtures/customer-fixtures'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import { parseWith } from '../../shared'
 import {
   customerCreateRequestSchema,
@@ -18,7 +21,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -438,7 +441,11 @@ describe('customerCreateRequestSchema', () => {
   it('accepts a request that satisfies every rule and returns it unchanged', () => {
     const request = customerCreateRequest()
 
-    const result = parseWith(customerCreateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      customerCreateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -451,7 +458,11 @@ describe('customerCreateRequestSchema', () => {
       ),
     }
 
-    const result = parseWith(customerCreateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      customerCreateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -460,7 +471,7 @@ describe('customerCreateRequestSchema', () => {
     const result = parseWith(
       customerCreateRequestSchema,
       { ...customerCreateRequest(), email: 'Hanako.Yamada@Example.COM' },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -473,7 +484,7 @@ describe('customerCreateRequestSchema', () => {
     const result = parseWith(
       customerCreateRequestSchema,
       { ...customerCreateRequest(), referredBy: REFERRER_ID.toUpperCase() },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -494,7 +505,11 @@ describe('customerCreateRequestSchema', () => {
   it.each(accepted)('accepts %s and keeps it as it is', (_case, change) => {
     const request = { ...customerCreateRequest(), ...change }
 
-    const result = parseWith(customerCreateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      customerCreateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -621,7 +636,11 @@ describe('customerUpdateRequestSchema', () => {
     (property, value) => {
       const request = { [property]: value }
 
-      const result = parseWith(customerUpdateRequestSchema, request, 'Invalid')
+      const result = parseWith(
+        customerUpdateRequestSchema,
+        request,
+        MADE_UP_HEADLINE,
+      )
 
       expect(result).toEqual({ type: 'success', data: request })
     },
@@ -630,7 +649,11 @@ describe('customerUpdateRequestSchema', () => {
   it('accepts every property together and returns the request unchanged', () => {
     const request = customerCreateRequest()
 
-    const result = parseWith(customerUpdateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      customerUpdateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -642,7 +665,7 @@ describe('customerUpdateRequestSchema', () => {
         email: 'Hanako.Yamada@Example.COM',
         referredBy: REFERRER_ID.toUpperCase(),
       },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -656,7 +679,11 @@ describe('customerUpdateRequestSchema', () => {
     (property) => {
       const request = { [property]: null }
 
-      const result = parseWith(customerUpdateRequestSchema, request, 'Invalid')
+      const result = parseWith(
+        customerUpdateRequestSchema,
+        request,
+        MADE_UP_HEADLINE,
+      )
 
       expect(result).toEqual({ type: 'success', data: request })
     },
@@ -674,14 +701,18 @@ describe('customerUpdateRequestSchema', () => {
   )
 
   it.each(accepted)('accepts %s', (_case, change) => {
-    const result = parseWith(customerUpdateRequestSchema, change, 'Invalid')
+    const result = parseWith(
+      customerUpdateRequestSchema,
+      change,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: change })
   })
 
   it('accepts an empty list of tags, which removes every tag', () => {
     expect(
-      parseWith(customerUpdateRequestSchema, { tags: [] }, 'Invalid'),
+      parseWith(customerUpdateRequestSchema, { tags: [] }, MADE_UP_HEADLINE),
     ).toEqual({ type: 'success', data: { tags: [] } })
   })
 
@@ -750,7 +781,9 @@ describe('customerUpdateRequestSchema', () => {
 
 describe('customerSearchRequestSchema', () => {
   it('accepts a request without any parameter', () => {
-    expect(parseWith(customerSearchRequestSchema, {}, 'Invalid')).toEqual({
+    expect(
+      parseWith(customerSearchRequestSchema, {}, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: {},
     })
@@ -807,7 +840,9 @@ describe('customerSearchRequestSchema', () => {
       },
     ],
   ])('accepts %s and returns the request unchanged', (_case, request) => {
-    expect(parseWith(customerSearchRequestSchema, request, 'Invalid')).toEqual({
+    expect(
+      parseWith(customerSearchRequestSchema, request, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: request,
     })
@@ -818,7 +853,7 @@ describe('customerSearchRequestSchema', () => {
       parseWith(
         customerSearchRequestSchema,
         { cursor: CUSTOMER_ID.toUpperCase() },
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({ type: 'success', data: { cursor: CUSTOMER_ID } })
   })
@@ -922,7 +957,11 @@ describe('customerSearchRequestSchema', () => {
     }
 
     // Act
-    const result = parseWith(customerSearchRequestSchema, search, 'Invalid')
+    const result = parseWith(
+      customerSearchRequestSchema,
+      search,
+      MADE_UP_HEADLINE,
+    )
 
     // Assert
     expect(result).toMatchObject({

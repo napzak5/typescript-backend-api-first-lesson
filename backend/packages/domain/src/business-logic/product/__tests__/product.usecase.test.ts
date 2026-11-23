@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   entityMessages,
   productMessages,
@@ -8,6 +9,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_HEADLINE,
   MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
@@ -25,7 +27,7 @@ import type {
   ProductRemoval,
   ProductUpdate,
 } from '../../../repositories/product.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   CreateProductUseCase,
   DeleteProductUseCase,
@@ -108,7 +110,7 @@ const messagesOf = (
     ? Object.fromEntries(
         result.error.issues.map(({ field, message }) => [
           field,
-          toldIn(message, 'en'),
+          textIn(message, 'en'),
         ]),
       )
     : {}
@@ -385,7 +387,7 @@ describe('ListProductsUseCase', () => {
       const undecodable = await new ListProductsUseCase(dependencies).execute(
         actor,
         SALON_ID,
-        Result.error(DomainErrors.validation('Invalid', [])),
+        Result.error(DomainErrors.validation(MADE_UP_HEADLINE, [])),
       )
 
       expect(refused).toEqual(forbidden)

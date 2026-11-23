@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   bookingMessages,
   entityMessages,
@@ -30,7 +31,7 @@ import type {
   BookingReschedule,
   IBookingRepository,
 } from '../../../repositories/booking.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   type BookingUseCaseDependencies,
   DeleteBookingUseCase,
@@ -59,7 +60,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? toldIn(result.error.message, 'en')
+    ? textIn(result.error.message, 'en')
     : null
 
 type Reach = { type: string; salonId?: string }

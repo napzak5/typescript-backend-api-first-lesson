@@ -1,14 +1,18 @@
+import { textIn } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import { BOOKING_ID } from '../../__tests__/fixtures/booking-fixtures'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import {
   POINT_TRANSACTION_ID,
   pointAdjustRequest,
   pointEarnRequest,
   pointUseRequest,
 } from '../../__tests__/fixtures/point-fixtures'
-import { parseWith, toldIn } from '../../shared'
+import { parseWith } from '../../shared'
 import {
   pointAdjustRequestSchema,
   pointEarnRequestSchema,
@@ -22,7 +26,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -31,12 +35,12 @@ const messagesOf = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): Record<string, string> => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' && result.error.type === 'validation'
     ? Object.fromEntries(
         result.error.issues.map(({ field, message }) => [
           field,
-          toldIn(message, 'en'),
+          textIn(message, 'en'),
         ]),
       )
     : {}
@@ -75,7 +79,7 @@ describe.each(movements)('%s', (_, schema, request) => {
   })
 
   it('accepts the request and hands it on as it is', () => {
-    expect(parseWith(schema, request(), 'Invalid')).toEqual({
+    expect(parseWith(schema, request(), MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: request(),
     })
@@ -86,7 +90,7 @@ describe.each(movements)('%s', (_, schema, request) => {
       { referenceType: null, referenceId: null },
       { referenceType: 'booking', referenceId: BOOKING_ID },
     ]) {
-      expect(parseWith(schema, moving(overrides), 'Invalid')).toEqual({
+      expect(parseWith(schema, moving(overrides), MADE_UP_HEADLINE)).toEqual({
         type: 'success',
         data: moving(overrides),
       })
@@ -267,7 +271,7 @@ describe('pointTransactionSearchRequestSchema', () => {
   const schema = pointTransactionSearchRequestSchema
 
   it('accepts no parameter', () => {
-    expect(parseWith(schema, {}, 'Invalid')).toEqual({
+    expect(parseWith(schema, {}, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: {},
     })
@@ -283,7 +287,7 @@ describe('pointTransactionSearchRequestSchema', () => {
           startDate: '2026-11-01T00:00:00Z',
           endDate: '2026-11-30T15:00:00.5Z',
         },
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({
       type: 'success',
@@ -368,14 +372,14 @@ describe('pointExpiringSearchRequestSchema', () => {
   const schema = pointExpiringSearchRequestSchema
 
   it('accepts no parameter', () => {
-    expect(parseWith(schema, {}, 'Invalid')).toEqual({
+    expect(parseWith(schema, {}, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: {},
     })
   })
 
   it('takes a number of days from 1 to 365', () => {
-    expect(parseWith(schema, { days: 7 }, 'Invalid')).toEqual({
+    expect(parseWith(schema, { days: 7 }, MADE_UP_HEADLINE)).toEqual({
       type: 'success',
       data: { days: 7 },
     })
@@ -407,14 +411,18 @@ describe('pointExpireRequestSchema', () => {
       parseWith(
         schema,
         { customerId: CUSTOMER_ID, processBefore: '2026-11-01' },
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({
       type: 'success',
       data: { customerId: CUSTOMER_ID, processBefore: '2026-11-01' },
     })
     expect(
-      parseWith(schema, { customerId: null, processBefore: null }, 'Invalid'),
+      parseWith(
+        schema,
+        { customerId: null, processBefore: null },
+        MADE_UP_HEADLINE,
+      ),
     ).toEqual({
       type: 'success',
       data: { customerId: null, processBefore: null },

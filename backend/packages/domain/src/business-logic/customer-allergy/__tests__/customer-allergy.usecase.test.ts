@@ -17,6 +17,7 @@ import {
 } from '../../../__tests__/fixtures/customer-allergy-fixtures'
 import {
   brokenRules,
+  MADE_UP_HEADLINE,
   MADE_UP_MESSAGE,
   OTHER_SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -542,7 +543,7 @@ describe('ListCustomerAllergiesUseCase', () => {
           dependencies,
           actor,
           'customer-1',
-          Result.error(DomainErrors.validation('Invalid query', [])),
+          Result.error(DomainErrors.validation(MADE_UP_HEADLINE, [])),
         ),
       ).toEqual(forbidden)
       expect(untouched(dependencies)).toBe(true)
@@ -556,7 +557,7 @@ describe('ListCustomerAllergiesUseCase', () => {
       dependencies,
       actors.admin,
       'customer-1',
-      Result.error(DomainErrors.validation('Invalid query', [])),
+      Result.error(DomainErrors.validation(MADE_UP_HEADLINE, [])),
     )
 
     expect(result).toMatchObject({

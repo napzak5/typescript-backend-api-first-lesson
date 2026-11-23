@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import {
   CATEGORY_ID,
   OTHER_CATEGORY_ID,
@@ -24,7 +28,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -551,7 +555,11 @@ describe('serviceCreateRequestSchema', () => {
   it('accepts a request that satisfies every rule and returns it unchanged', () => {
     const request = serviceCreateRequest()
 
-    const result = parseWith(serviceCreateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      serviceCreateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -568,7 +576,7 @@ describe('serviceCreateRequestSchema', () => {
           OTHER_SERVICE_ID.toUpperCase(),
         ],
       },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -594,7 +602,11 @@ describe('serviceCreateRequestSchema', () => {
       maxBookingsPerDay: null,
     }
 
-    const result = parseWith(serviceCreateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      serviceCreateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -643,7 +655,11 @@ describe('serviceCreateRequestSchema', () => {
   it.each(accepted)('accepts %s and keeps it as it is', (_case, change) => {
     const request = { ...serviceCreateRequest(), ...change }
 
-    const result = parseWith(serviceCreateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      serviceCreateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -663,7 +679,11 @@ describe('serviceCreateRequestSchema', () => {
     (_case, change) => {
       const request = { ...serviceCreateRequest(), ...change }
 
-      const result = parseWith(serviceCreateRequestSchema, request, 'Invalid')
+      const result = parseWith(
+        serviceCreateRequestSchema,
+        request,
+        MADE_UP_HEADLINE,
+      )
 
       expect(result).toEqual({ type: 'success', data: request })
     },
@@ -777,7 +797,11 @@ describe('serviceUpdateRequestSchema', () => {
     (property, value) => {
       const request = { [property]: value }
 
-      const result = parseWith(serviceUpdateRequestSchema, request, 'Invalid')
+      const result = parseWith(
+        serviceUpdateRequestSchema,
+        request,
+        MADE_UP_HEADLINE,
+      )
 
       expect(result).toEqual({ type: 'success', data: request })
     },
@@ -786,7 +810,11 @@ describe('serviceUpdateRequestSchema', () => {
   it('accepts every property together and returns the request unchanged', () => {
     const request = serviceCreateRequest()
 
-    const result = parseWith(serviceUpdateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      serviceUpdateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -798,7 +826,7 @@ describe('serviceUpdateRequestSchema', () => {
         categoryId: OTHER_CATEGORY_ID.toUpperCase(),
         packageServiceIds: [OTHER_SERVICE_ID.toUpperCase(), THIRD_SERVICE_ID],
       },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -821,7 +849,11 @@ describe('serviceUpdateRequestSchema', () => {
   ])('accepts null for %s, which unsets it', (property) => {
     const request = { [property]: null }
 
-    const result = parseWith(serviceUpdateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      serviceUpdateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -853,7 +885,11 @@ describe('serviceUpdateRequestSchema', () => {
   })
 
   it.each(accepted)('accepts %s', (_case, change) => {
-    const result = parseWith(serviceUpdateRequestSchema, change, 'Invalid')
+    const result = parseWith(
+      serviceUpdateRequestSchema,
+      change,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: change })
   })
@@ -866,7 +902,11 @@ describe('serviceUpdateRequestSchema', () => {
   ])(
     'leaves %s to the rules that tie properties together, which hold for the service as it will be stored',
     (_case, change) => {
-      const result = parseWith(serviceUpdateRequestSchema, change, 'Invalid')
+      const result = parseWith(
+        serviceUpdateRequestSchema,
+        change,
+        MADE_UP_HEADLINE,
+      )
 
       expect(result).toEqual({ type: 'success', data: change })
     },
@@ -887,7 +927,7 @@ describe('serviceUpdateRequestSchema', () => {
 
   it('accepts no options alone, which removes them', () => {
     expect(
-      parseWith(serviceUpdateRequestSchema, { options: [] }, 'Invalid'),
+      parseWith(serviceUpdateRequestSchema, { options: [] }, MADE_UP_HEADLINE),
     ).toEqual({ type: 'success', data: { options: [] } })
   })
 
@@ -929,10 +969,12 @@ describe('serviceUpdateRequestSchema', () => {
 
 describe('serviceSearchRequestSchema', () => {
   it('accepts a request without any parameter', () => {
-    expect(parseWith(serviceSearchRequestSchema, {}, 'Invalid')).toEqual({
-      type: 'success',
-      data: {},
-    })
+    expect(parseWith(serviceSearchRequestSchema, {}, MADE_UP_HEADLINE)).toEqual(
+      {
+        type: 'success',
+        data: {},
+      },
+    )
   })
 
   it.each([
@@ -952,7 +994,9 @@ describe('serviceSearchRequestSchema', () => {
       },
     ],
   ])('accepts %s and returns the request unchanged', (_case, request) => {
-    expect(parseWith(serviceSearchRequestSchema, request, 'Invalid')).toEqual({
+    expect(
+      parseWith(serviceSearchRequestSchema, request, MADE_UP_HEADLINE),
+    ).toEqual({
       type: 'success',
       data: request,
     })
@@ -966,7 +1010,7 @@ describe('serviceSearchRequestSchema', () => {
           cursor: SERVICE_ID.toUpperCase(),
           categoryId: CATEGORY_ID.toUpperCase(),
         },
-        'Invalid',
+        MADE_UP_HEADLINE,
       ),
     ).toEqual({
       type: 'success',
@@ -1028,7 +1072,7 @@ describe('serviceBulkUpdateRequestSchema', () => {
       const result = parseWith(
         serviceBulkUpdateRequestSchema,
         request,
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: request })
@@ -1041,7 +1085,11 @@ describe('serviceBulkUpdateRequestSchema', () => {
       updates: serviceCreateRequest(),
     }
 
-    const result = parseWith(serviceBulkUpdateRequestSchema, request, 'Invalid')
+    const result = parseWith(
+      serviceBulkUpdateRequestSchema,
+      request,
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toEqual({ type: 'success', data: request })
   })
@@ -1056,7 +1104,7 @@ describe('serviceBulkUpdateRequestSchema', () => {
           packageServiceIds: [THIRD_SERVICE_ID.toUpperCase()],
         },
       },
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({

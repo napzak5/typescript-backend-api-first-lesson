@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   entityMessages,
   paymentMessages,
@@ -34,7 +35,7 @@ import type {
   PaymentRecording,
   PaymentRefunding,
 } from '../../../repositories/payment.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   type PaymentUseCaseDependencies,
   RecordPaymentUseCase,
@@ -62,7 +63,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? toldIn(result.error.message, 'en')
+    ? textIn(result.error.message, 'en')
     : null
 
 /** A payment whose time cannot be turned into a response. */

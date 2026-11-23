@@ -6,6 +6,7 @@ import {
   dbCustomerPreferences,
   emptyCustomerPreferences,
 } from '../../__tests__/fixtures/customer-preferences-fixtures'
+import { RULES_BROKEN_BY_STORED } from '../../__tests__/fixtures/fixtures'
 import { customerIdSchema } from '../../models/customer'
 import type { DbCustomerPreferencesChanges } from '../../models/customer-preferences'
 import { CustomerPreferencesReadMapper } from '../read/customer-preferences.mapper'
@@ -34,7 +35,7 @@ const storedRowIsCorrupt = {
   error: {
     type: 'database',
     message: `Stored preferences of customer ${CUSTOMER_ID} do not match the API model`,
-    cause: expect.objectContaining({ type: 'validation' }),
+    cause: RULES_BROKEN_BY_STORED,
   },
 }
 

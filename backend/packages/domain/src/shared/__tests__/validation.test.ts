@@ -1,9 +1,10 @@
+import { Result } from '@beauty-salon-backend/utility'
 import { asOneString, type LocalizedText } from '@beauty-salon-shared/i18n'
 import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { passwordOf } from '../../schemas/rules'
-import { parseWith, type Told, type ValidationIssue } from '..'
+import { DomainErrors, parseStored, parseWith, type ValidationIssue } from '..'
 
 const HEADLINE: LocalizedText = {
   en: 'Invalid visit',
@@ -53,17 +54,14 @@ describe('parseWith', () => {
     expect(result).toEqual({ type: 'success', data: visit })
   })
 
-  it.each<[string, Told]>([
-    ['a headline in every language', HEADLINE],
-    ['a headline in English alone', 'Invalid visit'],
-  ])('should report a broken rule under %s', (_what, headline) => {
+  it('should report a broken rule under the headline it was given', () => {
     // Act
-    const result = parseWith(visitSchema, { ...visit, guests: 0 }, headline)
+    const result = parseWith(visitSchema, { ...visit, guests: 0 }, HEADLINE)
 
     // Assert
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: headline },
+      error: { type: 'validation', message: HEADLINE },
     })
   })
 
@@ -250,4 +248,114 @@ describe('parseWith', () => {
       expect(issues).toEqual([issue])
     },
   )
+})
+
+describe('parseStored', () => {
+  const DESCRIPTION = 'Stored visit 7 does not match the API model'
+
+  it('should give the value of what is stored and breaks no rule', () => {
+    // Act
+    const result = parseStored(orderedVisitSchema, visit, DESCRIPTION)
+
+    // Assert
+    expect(result).toEqual({ type: 'success', data: visit })
+  })
+
+  it('should give the value as the schema converts it', () => {
+    // Arrange
+    const schema = z.object({ guests: z.string().transform(Number) })
+
+    // Act
+    const result = parseStored(schema, { guests: '2' }, DESCRIPTION)
+
+    // Assert
+    expect(result).toEqual({ type: 'success', data: { guests: 2 } })
+  })
+
+  it('should answer what breaks a rule with a database error, which says what does not match and names the property and the rule', () => {
+    // Act
+    const result = parseStored(
+      visitSchema,
+      { ...visit, guests: 0 },
+      DESCRIPTION,
+    )
+
+    // Assert
+    expect(result).toEqual(
+      Result.error(
+        DomainErrors.database(DESCRIPTION, {
+          issues: [
+            {
+              field: 'guests',
+              rule: 'too_small',
+              message: 'Too small: expected number to be >=1',
+            },
+          ],
+        }),
+      ),
+    )
+  })
+
+  it('should say the message of a rule that a schema wrote in every language in English', () => {
+    // Act
+    const result = parseStored(
+      orderedVisitSchema,
+      { ...visit, to: '08:00' },
+      DESCRIPTION,
+    )
+
+    // Assert
+    expect(result).toEqual(
+      Result.error(
+        DomainErrors.database(DESCRIPTION, {
+          issues: [{ field: 'to', rule: 'custom', message: LATER.en }],
+        }),
+      ),
+    )
+  })
+
+  it('should name every property that breaks a rule, one inside a list by its place', () => {
+    // Act
+    const result = parseStored(
+      z.object({ visits: z.array(visitSchema) }),
+      { visits: [{ ...visit, name: 42 }, visit, { ...visit, guests: 0 }] },
+      DESCRIPTION,
+    )
+
+    // Assert
+    expect(result).toEqual(
+      Result.error(
+        DomainErrors.database(DESCRIPTION, {
+          issues: [
+            {
+              field: 'visits.0.name',
+              rule: 'invalid_type',
+              message: 'Invalid input: expected string, received number',
+            },
+            {
+              field: 'visits.2.guests',
+              rule: 'too_small',
+              message: 'Too small: expected number to be >=1',
+            },
+          ],
+        }),
+      ),
+    )
+  })
+
+  it('should keep the value that is stored out of the cause', () => {
+    // Arrange
+    const schema = z.object({ email: z.email(), plan: z.enum(['basic']) })
+
+    // Act
+    const result = parseStored(
+      schema,
+      { email: 'hanako at example', plan: 'gold' },
+      DESCRIPTION,
+    )
+
+    // Assert
+    expect(result).toMatchObject({ type: 'error', error: { type: 'database' } })
+    expect(JSON.stringify(result)).not.toMatch(/hanako|gold/)
+  })
 })

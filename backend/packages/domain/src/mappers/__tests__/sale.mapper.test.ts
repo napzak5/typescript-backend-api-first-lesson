@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import { BOOKING_ID } from '../../__tests__/fixtures/booking-fixtures'
-import { SALON_ID } from '../../__tests__/fixtures/fixtures'
+import {
+  RULES_BROKEN_BY_STORED,
+  SALON_ID,
+} from '../../__tests__/fixtures/fixtures'
 import {
   apiPayment,
   apiSale,
@@ -131,7 +134,7 @@ const storedRowIsCorrupt = (id: string = SALE_ID) => ({
   error: {
     type: 'database',
     message: `Stored sale ${id} does not match the API model`,
-    cause: expect.objectContaining({ type: 'validation' }),
+    cause: RULES_BROKEN_BY_STORED,
   },
 })
 

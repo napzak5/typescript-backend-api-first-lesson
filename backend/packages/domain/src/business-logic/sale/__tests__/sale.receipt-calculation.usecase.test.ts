@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   entityMessages,
   saleMessages,
@@ -31,7 +32,7 @@ import {
 import type { Actor } from '../../../models/auth'
 import type { SaleWithDetails } from '../../../models/sale'
 import type { ISaleRepository } from '../../../repositories/sale.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   CalculateSaleUseCase,
   type CalculationReferences,
@@ -53,7 +54,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? toldIn(result.error.message, 'en')
+    ? textIn(result.error.message, 'en')
     : null
 
 /** Those who keep the sales ledger of the salon of the fixtures. */

@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { textIn } from '@beauty-salon-shared/i18n'
 import {
   entityMessages,
   pointMessages,
@@ -9,6 +10,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_HEADLINE,
   MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
@@ -31,7 +33,7 @@ import type {
   PointListing,
   PointRecording,
 } from '../../../repositories/point.repository'
-import { type DomainError, DomainErrors, toldIn } from '../../../shared'
+import { type DomainError, DomainErrors } from '../../../shared'
 import {
   AdjustPointsUseCase,
   EarnPointsUseCase,
@@ -64,7 +66,7 @@ const validationMessageOf = (
   result: Result<unknown, DomainError>,
 ): string | null =>
   result.type === 'error' && result.error.type === 'validation'
-    ? toldIn(result.error.message, 'en')
+    ? textIn(result.error.message, 'en')
     : null
 
 /** Those the points ledger is closed to. */
@@ -293,7 +295,7 @@ describe('ListPointTransactionsUseCase', () => {
           dependencies,
           actor,
           'mine',
-          Result.error(DomainErrors.validation('Invalid', [])),
+          Result.error(DomainErrors.validation(MADE_UP_HEADLINE, [])),
         ),
       ).toEqual(forbidden)
       repositoryWasNotCalled(dependencies)
@@ -306,7 +308,7 @@ describe('ListPointTransactionsUseCase', () => {
       dependencies,
       actors.admin,
       'mine',
-      Result.error(DomainErrors.validation('Invalid query', [])),
+      Result.error(DomainErrors.validation(MADE_UP_HEADLINE, [])),
     )
 
     expect(rulesOf(result)).toEqual(['id:invalid_format'])
@@ -722,7 +724,7 @@ describe('GetExpiringPointsUseCase', () => {
           dependencies,
           actor,
           'mine',
-          Result.error(DomainErrors.validation('Invalid', [])),
+          Result.error(DomainErrors.validation(MADE_UP_HEADLINE, [])),
         ),
       ).toEqual(forbidden)
       repositoryWasNotCalled(dependencies)
@@ -735,7 +737,7 @@ describe('GetExpiringPointsUseCase', () => {
       dependencies,
       actors.admin,
       'mine',
-      Result.error(DomainErrors.validation('Invalid query', [])),
+      Result.error(DomainErrors.validation(MADE_UP_HEADLINE, [])),
     )
 
     expect(rulesOf(result)).toEqual(['id:invalid_format'])

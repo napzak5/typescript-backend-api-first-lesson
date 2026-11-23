@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_HEADLINE,
   MADE_UP_MESSAGE,
   OTHER_SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -469,7 +470,7 @@ describe('ListMedicalChartsUseCase', () => {
         await list(
           dependencies,
           actor,
-          Result.error(DomainErrors.validation('Invalid query', [])),
+          Result.error(DomainErrors.validation(MADE_UP_HEADLINE, [])),
         ),
       ).toEqual(forbidden)
       expect(untouched(dependencies)).toBe(true)

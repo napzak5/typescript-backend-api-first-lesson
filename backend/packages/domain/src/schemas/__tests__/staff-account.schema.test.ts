@@ -1,11 +1,18 @@
 import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import { parseWith } from '../../shared'
 import { staffAccountUpdateRequestSchema } from '../staff-account.schema'
 
 const rulesBrokenBy = (input: unknown): string[] => {
-  const result = parseWith(staffAccountUpdateRequestSchema, input, 'Invalid')
+  const result = parseWith(
+    staffAccountUpdateRequestSchema,
+    input,
+    MADE_UP_HEADLINE,
+  )
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -14,13 +21,17 @@ describe('staffAccountUpdateRequestSchema', () => {
     'accepts the role %s and returns the request unchanged',
     (role) => {
       expect(
-        parseWith(staffAccountUpdateRequestSchema, { role }, 'Invalid'),
+        parseWith(staffAccountUpdateRequestSchema, { role }, MADE_UP_HEADLINE),
       ).toEqual({ type: 'success', data: { role } })
     },
   )
 
   it('rejects a request that names no property: it would change nothing', () => {
-    const result = parseWith(staffAccountUpdateRequestSchema, {}, 'Invalid')
+    const result = parseWith(
+      staffAccountUpdateRequestSchema,
+      {},
+      MADE_UP_HEADLINE,
+    )
 
     expect(result).toMatchObject({
       type: 'error',

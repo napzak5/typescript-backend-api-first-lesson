@@ -4,7 +4,10 @@ import {
   customerProfileCreateRequest,
   REFERRER_ID,
 } from '../../__tests__/fixtures/customer-fixtures'
-import { brokenRules } from '../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_HEADLINE,
+} from '../../__tests__/fixtures/fixtures'
 import { parseWith } from '../../shared'
 import {
   customerProfileCreateRequestSchema,
@@ -15,7 +18,7 @@ const rulesBrokenBy = (
   schema: Parameters<typeof parseWith>[0],
   input: unknown,
 ): string[] => {
-  const result = parseWith(schema, input, 'Invalid')
+  const result = parseWith(schema, input, MADE_UP_HEADLINE)
   return result.type === 'error' ? brokenRules(result.error) : []
 }
 
@@ -128,7 +131,7 @@ describe('customerProfileCreateRequestSchema', () => {
     const result = parseWith(
       customerProfileCreateRequestSchema,
       customerProfileCreateRequest(),
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -148,7 +151,7 @@ describe('customerProfileCreateRequestSchema', () => {
     const result = parseWith(
       customerProfileCreateRequestSchema,
       request,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({ type: 'success', data: request })
@@ -220,7 +223,7 @@ describe('customerProfileCreateRequestSchema', () => {
     const result = parseWith(
       customerProfileCreateRequestSchema,
       input,
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result.type).toBe('error')
@@ -236,7 +239,7 @@ describe('customerProfileUpdateRequestSchema', () => {
       const result = parseWith(
         customerProfileUpdateRequestSchema,
         request,
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: request })
@@ -247,7 +250,7 @@ describe('customerProfileUpdateRequestSchema', () => {
     const result = parseWith(
       customerProfileUpdateRequestSchema,
       customerProfileCreateRequest(),
-      'Invalid',
+      MADE_UP_HEADLINE,
     )
 
     expect(result).toEqual({
@@ -264,7 +267,7 @@ describe('customerProfileUpdateRequestSchema', () => {
       const result = parseWith(
         customerProfileUpdateRequestSchema,
         request,
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result).toEqual({ type: 'success', data: request })
@@ -283,7 +286,11 @@ describe('customerProfileUpdateRequestSchema', () => {
   )
 
   it('rejects a request that changes nothing', () => {
-    const result = parseWith(customerProfileUpdateRequestSchema, {}, 'Invalid')
+    const result = parseWith(
+      customerProfileUpdateRequestSchema,
+      {},
+      MADE_UP_HEADLINE,
+    )
 
     expect(result.type).toBe('error')
   })
@@ -314,7 +321,7 @@ describe('customerProfileUpdateRequestSchema', () => {
       const result = parseWith(
         customerProfileUpdateRequestSchema,
         { [property]: value },
-        'Invalid',
+        MADE_UP_HEADLINE,
       )
 
       expect(result.type).toBe('error')
