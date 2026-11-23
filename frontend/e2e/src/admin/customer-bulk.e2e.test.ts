@@ -5,6 +5,7 @@ import { ADMIN } from '../support/applications'
 import { salonId } from '../support/bookings'
 import { expectSoundPage } from '../support/checks'
 import { expect, type TestApi, test } from '../support/fixtures'
+import { type Language, openInLanguage } from '../support/language'
 import {
   chooseWithTheKeyboard,
   part,
@@ -149,98 +150,123 @@ test.describe('writing customers at once, in a browser', () => {
   })
 })
 
-test.describe('a file with a customer of the ledger, in a browser that asks for Japanese', () => {
-  test.use({ locale: 'ja-JP' })
+/**
+ * The pages a screen reads a sentence of the API on: the API answers in
+ * the language of the page, and the screen finds what it looks for in the
+ * sentence of either. The screen itself is written in Japanese alone.
+ */
+const PAGES: { language: Language; open: (page: Page) => Promise<void> }[] = [
+  // Japanese is the language of a page whose visitor chose none
+  { language: 'ja', open: async () => {} },
+  { language: 'en', open: (page) => openInLanguage(page, 'en') },
+]
 
-  test('should find the address of mail that is taken in what the API says in Japanese, and say so at its row', async ({
-    page,
-    api,
-  }) => {
-    // Arrange
-    const salon = await salonId(api)
-    await page.goto(`${ADMIN.origin}/salons/${salon}/customers/import`)
-    await enterCredentials(page, OWNER, api.seedPassword)
-    await expect(heading(page, 'CSV から登録する')).toBeFocused()
-    await page
-      .getByLabel('CSV ファイル')
-      .setInputFiles(
-        fileOf([
-          'lastName,firstName,email,phoneNumber',
-          `山田,花子,${HANAKO.email},090-1234-5678`,
-          `田中,由紀,${YUKI.email},090-1234-5678`,
+/** What the API says of an address of mail that a customer of the ledger has */
+const TAKEN: Record<Language, (email: string) => string> = {
+  ja: (email) => `email が ${email} の顧客は、すでにあります`,
+  en: (email) => `Customer with email ${email} already exists`,
+}
+
+/** What the API says of a customer whose booking is not finished */
+const UNFINISHED: Record<Language, (customerId: string) => string> = {
+  ja: (customerId) =>
+    `顧客 ${customerId} は削除できません。終わっていない予約が参照しています`,
+  en: (customerId) =>
+    `Customer ${customerId} cannot be deleted: bookings that are not finished refer to it`,
+}
+
+for (const { language, open } of PAGES) {
+  test.describe(`a file with a customer of the ledger, on a page whose language is ${language}`, () => {
+    test('should find the address of mail that is taken in what the API says in that language, and say so at its row', async ({
+      page,
+      api,
+    }) => {
+      // Arrange
+      await open(page)
+      const salon = await salonId(api)
+      await page.goto(`${ADMIN.origin}/salons/${salon}/customers/import`)
+      await enterCredentials(page, OWNER, api.seedPassword)
+      await expect(heading(page, 'CSV から登録する')).toBeFocused()
+      await page
+        .getByLabel('CSV ファイル')
+        .setInputFiles(
+          fileOf([
+            'lastName,firstName,email,phoneNumber',
+            `山田,花子,${HANAKO.email},090-1234-5678`,
+            `田中,由紀,${YUKI.email},090-1234-5678`,
+          ]),
+        )
+      const answered = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          response.url().endsWith('/customers/bulk'),
+      )
+
+      // Act
+      await page.getByRole('button', { name: '2 人を登録する' }).click()
+
+      // Assert
+      const answer = await answered
+      expect(answer.status()).toBe(409)
+      expect(answer.headers()['content-language']).toBe(language)
+      expect(await answer.json()).toMatchObject({
+        detail: TAKEN[language](YUKI.email),
+      })
+      const refusal = page.getByRole('alert')
+      await expect(refusal).toContainText('3 行目 メールアドレス')
+      await expect(refusal).toContainText(
+        'このメールアドレスのお客様が、もう台帳にいます。',
+      )
+      expect(await storedCustomers(api)).toEqual([])
+    })
+  })
+
+  test.describe(`a customer of the ledger whose booking is not finished, on a page whose language is ${language}`, () => {
+    test('should find the customer in what the API says in that language, and say who it is', async ({
+      page,
+      api,
+    }) => {
+      // Arrange
+      await open(page)
+      const salon = await salonId(api)
+      const [yuki] = idsSchema.parse(
+        await api.query('select id from customers where email = $1', [
+          YUKI.email,
         ]),
       )
-    const answered = page.waitForResponse(
-      (response) =>
-        response.request().method() === 'POST' &&
-        response.url().endsWith('/customers/bulk'),
-    )
+      await page.goto(`${ADMIN.origin}/salons/${salon}/customers`)
+      await enterCredentials(page, OWNER, api.seedPassword)
+      await expect(heading(page, '顧客台帳')).toBeFocused()
+      await chooseCustomer(page, YUKI.name)
+      await page.getByRole('button', { name: '台帳から削除する' }).click()
+      const removal = page.getByRole('dialog', {
+        name: '1 人のお客様を台帳から削除しますか？',
+      })
+      const answered = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'DELETE' &&
+          response.url().endsWith('/customers/bulk'),
+      )
 
-    // Act
-    await page.getByRole('button', { name: '2 人を登録する' }).click()
+      // Act
+      await removal.getByRole('button', { name: '削除する' }).click()
 
-    // Assert
-    const answer = await answered
-    expect(answer.status()).toBe(409)
-    expect(answer.headers()['content-language']).toBe('ja')
-    expect(await answer.json()).toMatchObject({
-      detail: `email が ${YUKI.email} の顧客は、すでにあります`,
+      // Assert
+      const answer = await answered
+      expect(answer.status()).toBe(409)
+      expect(answer.headers()['content-language']).toBe(language)
+      expect(await answer.json()).toMatchObject({
+        detail: UNFINISHED[language](yuki?.id ?? ''),
+      })
+      await expect(removal).toContainText(
+        `${YUKI.name} 様には、終わっていない予約があります。`,
+      )
+      await expect(
+        page.getByRole('checkbox', { name: `${YUKI.name} 様を選ぶ` }),
+      ).toBeChecked()
     })
-    const refusal = page.getByRole('alert')
-    await expect(refusal).toContainText('3 行目 メールアドレス')
-    await expect(refusal).toContainText(
-      'このメールアドレスのお客様が、もう台帳にいます。',
-    )
-    expect(await storedCustomers(api)).toEqual([])
   })
-})
-
-test.describe('a customer of the ledger whose booking is not finished, in a browser that asks for Japanese', () => {
-  test.use({ locale: 'ja-JP' })
-
-  test('should find the customer in what the API says in Japanese, and say who it is', async ({
-    page,
-    api,
-  }) => {
-    // Arrange
-    const salon = await salonId(api)
-    const [yuki] = idsSchema.parse(
-      await api.query('select id from customers where email = $1', [
-        YUKI.email,
-      ]),
-    )
-    await page.goto(`${ADMIN.origin}/salons/${salon}/customers`)
-    await enterCredentials(page, OWNER, api.seedPassword)
-    await expect(heading(page, '顧客台帳')).toBeFocused()
-    await chooseCustomer(page, YUKI.name)
-    await page.getByRole('button', { name: '台帳から削除する' }).click()
-    const removal = page.getByRole('dialog', {
-      name: '1 人のお客様を台帳から削除しますか？',
-    })
-    const answered = page.waitForResponse(
-      (response) =>
-        response.request().method() === 'DELETE' &&
-        response.url().endsWith('/customers/bulk'),
-    )
-
-    // Act
-    await removal.getByRole('button', { name: '削除する' }).click()
-
-    // Assert
-    const answer = await answered
-    expect(answer.status()).toBe(409)
-    expect(answer.headers()['content-language']).toBe('ja')
-    expect(await answer.json()).toMatchObject({
-      detail: `顧客 ${yuki?.id} は削除できません。終わっていない予約が参照しています`,
-    })
-    await expect(removal).toContainText(
-      `${YUKI.name} 様には、終わっていない予約があります。`,
-    )
-    await expect(
-      page.getByRole('checkbox', { name: `${YUKI.name} 様を選ぶ` }),
-    ).toBeChecked()
-  })
-})
+}
 
 test.describe('writing customers at once, on a screen as narrow as a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } })
