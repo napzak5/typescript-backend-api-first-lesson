@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -36,7 +39,7 @@ const profileNotFound = Result.error(
   DomainErrors.notFound(entityMessages.customerProfileOfUser, USER_ID),
 )
 const alreadyHasProfile = Result.error(
-  DomainErrors.conflict('This account already has a customer profile'),
+  DomainErrors.conflict(customerMessages.alreadyHasProfile),
 )
 const storedRowIsCorrupt = {
   type: 'error',
@@ -365,11 +368,7 @@ describe('CreateCustomerProfileUseCase', () => {
     const result = await create(dependencies, customerProfileCreateRequest())
 
     expect(result).toEqual(
-      Result.error(
-        DomainErrors.conflict(
-          'Confirm the email address of the account before creating a customer profile',
-        ),
-      ),
+      Result.error(DomainErrors.conflict(customerMessages.confirmEmailFirst)),
     )
   })
 
@@ -382,9 +381,7 @@ describe('CreateCustomerProfileUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.conflict(
-          'The customer with the email address of this account belongs to another account',
-        ),
+        DomainErrors.conflict(customerMessages.entryOfAnotherAccount),
       ),
     )
   })
@@ -393,7 +390,9 @@ describe('CreateCustomerProfileUseCase', () => {
     ['a database error', databaseDown],
     [
       'a conflict',
-      Result.error(DomainErrors.conflict('Registered at the same moment')),
+      Result.error(
+        DomainErrors.conflict(customerMessages.registeredAtSameMoment),
+      ),
     ],
   ])('passes on %s of the repository', async (_case, error) => {
     const dependencies = customerDependencies(failing('createProfile', error))

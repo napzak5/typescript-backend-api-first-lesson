@@ -194,9 +194,7 @@ describe('AddCustomerAllergyUseCase', () => {
   it('refuses a second allergy of one allergen as a conflict', async () => {
     expect(await add(adding({ type: 'allergenExists' }))).toEqual(
       Result.error(
-        DomainErrors.conflict(
-          'The customer has an allergy of that allergen already; an allergen is recorded once',
-        ),
+        DomainErrors.conflict(customerAllergyMessages.allergenRecordedAlready),
       ),
     )
   })
@@ -350,9 +348,7 @@ describe('UpdateCustomerAllergyUseCase', () => {
   it('refuses the allergen of another allergy of the customer as a conflict', async () => {
     expect(await update(changing({ type: 'allergenExists' }))).toEqual(
       Result.error(
-        DomainErrors.conflict(
-          'Another allergy of the customer has that allergen; an allergen is recorded once',
-        ),
+        DomainErrors.conflict(customerAllergyMessages.allergenOfAnotherAllergy),
       ),
     )
   })

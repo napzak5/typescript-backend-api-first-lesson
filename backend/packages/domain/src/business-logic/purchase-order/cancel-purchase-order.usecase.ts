@@ -53,7 +53,7 @@ export class CancelPurchaseOrderUseCase {
         orderId.data,
         cancellationReason,
       ),
-      'an order is cancelled until it is delivered',
+      'cancellation',
     )
   }
 }

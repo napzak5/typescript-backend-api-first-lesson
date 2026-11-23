@@ -84,4 +84,22 @@ export const inventoryMessages = {
     en: 'Must be null: the product is not kept by lots',
     ja: 'null にしてください。この商品は、在庫をロット番号で分けません',
   }),
+  rowCountsStock: text({
+    en: 'The stock row cannot be deleted: it counts stock; bring it to zero with a stock movement first',
+    ja: 'この在庫の行は削除できません。在庫が残っています。先に、在庫の移動で 0 にしてください',
+  }),
+  /** `inventoryId` is the stock row. */
+  countedBelowReserved: (inventoryId: string) =>
+    text({
+      en: `What was counted of stock row ${inventoryId} is below its reserved stock`,
+      ja: `在庫の行 ${inventoryId} の数えた数量が、引当済みの在庫を下回っています`,
+    }),
+  stockBelowReserved: text({
+    en: 'The stock of the row would fall below its reserved stock',
+    ja: 'この行の在庫が、引当済みの在庫を下回ります',
+  }),
+  stockAboveLimit: text({
+    en: 'The stock of the row would go above 99999999.99',
+    ja: 'この行の在庫が、99999999.99 を超えます',
+  }),
 }

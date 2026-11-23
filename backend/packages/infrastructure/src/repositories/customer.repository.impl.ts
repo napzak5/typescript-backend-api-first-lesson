@@ -32,7 +32,10 @@ import {
   type UserId,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import {
   and,
   arrayContains,
@@ -132,9 +135,7 @@ const attemptWrite = async <T>(
 const toProfileError = (cause: unknown): DomainError =>
   match(cause)
     .with(P.union(emailTaken, { cause: emailTaken }), () =>
-      DomainErrors.conflict(
-        'A customer with the email address of this account was registered at the same moment; try again',
-      ),
+      DomainErrors.conflict(customerMessages.registeredAtSameMoment),
     )
     .otherwise(() =>
       DomainErrors.database(

@@ -76,17 +76,11 @@ export class RecordInventoryMovementUseCase {
       )
       .with({ type: 'belowReserved' }, () =>
         Result.error(
-          DomainErrors.conflict(
-            'The stock of the row would fall below its reserved stock',
-          ),
+          DomainErrors.conflict(inventoryMessages.stockBelowReserved),
         ),
       )
       .with({ type: 'overLimit' }, () =>
-        Result.error(
-          DomainErrors.conflict(
-            'The stock of the row would go above 99999999.99',
-          ),
-        ),
+        Result.error(DomainErrors.conflict(inventoryMessages.stockAboveLimit)),
       )
       .exhaustive()
   }

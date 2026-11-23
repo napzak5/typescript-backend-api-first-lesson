@@ -1749,7 +1749,10 @@ ledger and a customer saved as files).
   which is a row of the file; a value another customer has is in the
   `detail`, and is found among the values of the file as a whole word.
   The API says that sentence in the language of the browser, and puts
-  the value between spaces in every language.
+  the value between spaces in every language. The removal of the chosen
+  (`removeCustomers`) finds who has a booking that is not finished the
+  same way: the 409 names the customer by the ID, which the API writes
+  as it is in every language.
 - **Rows are chosen for a write in the table that lists them**
   (`CustomerTable` with `choice`, `ChosenCustomers`). A `Checkbox` with a
   hidden label in a first column, the name heading the row (`rowHeader`).

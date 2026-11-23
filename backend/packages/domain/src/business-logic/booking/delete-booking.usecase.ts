@@ -1,25 +1,14 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  bookingMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import { type BookingId, parseBookingId } from '../../models/booking'
-import type { BookingReference } from '../../repositories/booking.repository'
 import { type DomainError, DomainErrors } from '../../shared'
 import { bookingRemovalReachOf } from './_shared/authorization'
 import type { BookingUseCaseDependencies } from './_shared/dependencies'
-
-/** What refers to a booking, as a refusal says it. */
-const NAMED: Record<BookingReference, string> = {
-  sale: 'a sale',
-  treatmentRecord: 'a treatment record',
-  review: 'a review',
-}
-
-/** Names in a sentence: `a`, `a and b`, `a, b and c`. */
-const inASentence = (names: string[]): string =>
-  names.length <= 1
-    ? names.join('')
-    : `${names.slice(0, -1).join(', ')} and ${names.slice(-1).join('')}`
 
 export class DeleteBookingUseCase {
   constructor(private readonly dependencies: BookingUseCaseDependencies) {}
@@ -66,11 +55,7 @@ export class DeleteBookingUseCase {
         ),
       )
       .with({ type: 'referredTo' }, ({ by }) =>
-        Result.error(
-          DomainErrors.conflict(
-            `The booking cannot be deleted: ${inASentence(by.map((reference) => NAMED[reference]))} ${by.length === 1 ? 'refers' : 'refer'} to it`,
-          ),
-        ),
+        Result.error(DomainErrors.conflict(bookingMessages.referredTo(by))),
       )
       .exhaustive()
   }

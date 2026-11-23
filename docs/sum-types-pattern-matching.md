@@ -169,14 +169,14 @@ export type DomainError =
       field: string
       value: string
     }
-  | { type: 'conflict'; message: string }
+  | { type: 'conflict'; message: LocalizedText }
   | { type: 'database'; message: string; cause: unknown }
   | { type: 'storage'; message: string; cause: unknown }
 ```
 
 値は同じファイルの `DomainErrors.validation(...)`、`DomainErrors.notFound(...)` などで作ります。
 
-`Told`（`backend/packages/domain/src/shared/told.ts`）は、エラーの文の型です。すべての言語で書いた文（`LocalizedText`）か、英語だけの文字列です。ドメインが書く文をすべての言語で書き終えるまでの間だけ、文字列も受け付けます。検証のエラーの見出しが、この型です。決まりごとの `message` は、すべての言語で書いた文（`LocalizedText`）で、文字列はコンパイルできません。`notFound` と `alreadyExists` の `entity`（対象の名前）も同じです。`notFound` の `id` は、探すのに使った ID で、繰り返さないもの（共有リンクのトークン）で探したときは `null` です（[多言語](./i18n.md)）。
+`Told`（`backend/packages/domain/src/shared/told.ts`）は、エラーの文の型です。すべての言語で書いた文（`LocalizedText`）か、英語だけの文字列です。ドメインが書く文をすべての言語で書き終えるまでの間だけ、文字列も受け付けます。検証のエラーの見出しが、この型です。決まりごとの `message` は、すべての言語で書いた文（`LocalizedText`）で、文字列はコンパイルできません。`notFound` と `alreadyExists` の `entity`（対象の名前）と、`conflict` の `message`（できない理由の文）も同じです。`notFound` の `id` は、探すのに使った ID で、繰り返さないもの（共有リンクのトークン）で探したときは `null` です（[多言語](./i18n.md)）。
 
 | ケース | 作られる場所 | HTTP ステータス |
 |--------|--------------|-----------------|

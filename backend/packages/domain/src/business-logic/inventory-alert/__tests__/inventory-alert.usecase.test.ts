@@ -719,7 +719,7 @@ describe('AcknowledgeInventoryAlertUseCase', () => {
     ).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `Inventory alert low_stock:${PRODUCT_ID} is acknowledged already: an acknowledgement holds while what it was given for lasts`,
+          inventoryAlertMessages.alreadyAcknowledged(`low_stock:${PRODUCT_ID}`),
         ),
       ),
     )

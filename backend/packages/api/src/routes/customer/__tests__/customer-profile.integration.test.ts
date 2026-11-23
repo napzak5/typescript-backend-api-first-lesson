@@ -7,6 +7,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { CustomerRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { and, asc, eq, isNull, sql } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -1632,8 +1633,7 @@ describe('Customer profile API', () => {
         type: 'error',
         error: {
           type: 'conflict',
-          message:
-            'A customer with the email address of this account was registered at the same moment; try again',
+          message: customerMessages.registeredAtSameMoment,
         },
       })
       expect(

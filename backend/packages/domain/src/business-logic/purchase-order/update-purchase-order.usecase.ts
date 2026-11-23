@@ -50,7 +50,7 @@ export class UpdatePurchaseOrderUseCase {
         orderId.data,
         PurchaseOrderWriteMapper.fromUpdateRequest(request.data),
       ),
-      'an update moves a draft to pending, an approved order to ordered and an ordered one to shipped',
+      'update',
     )
   }
 }

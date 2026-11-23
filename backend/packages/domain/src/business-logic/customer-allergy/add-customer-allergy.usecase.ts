@@ -74,7 +74,7 @@ export class AddCustomerAllergyUseCase {
       .with({ type: 'allergenExists' }, () =>
         Result.error(
           DomainErrors.conflict(
-            'The customer has an allergy of that allergen already; an allergen is recorded once',
+            customerAllergyMessages.allergenRecordedAlready,
           ),
         ),
       )

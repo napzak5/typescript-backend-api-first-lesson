@@ -214,7 +214,9 @@ describe('AddTreatmentPhotosUseCase', () => {
     ).toEqual(
       Result.error(
         DomainErrors.conflict(
-          'The record holds a photo at https://images.example.com/0.jpg already; a record holds one photo of an address',
+          treatmentRecordMessages.photoExists(
+            'https://images.example.com/0.jpg',
+          ),
         ),
       ),
     )
@@ -230,9 +232,7 @@ describe('AddTreatmentPhotosUseCase', () => {
       ),
     ).toEqual(
       Result.error(
-        DomainErrors.conflict(
-          'The record holds 19 photos; a record holds at most 20',
-        ),
+        DomainErrors.conflict(treatmentRecordMessages.tooManyPhotos(19, 20)),
       ),
     )
   })

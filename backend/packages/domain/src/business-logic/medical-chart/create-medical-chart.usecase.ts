@@ -66,9 +66,7 @@ export class CreateMedicalChartUseCase {
       )
       .with({ type: 'chartExists' }, () =>
         Result.error(
-          DomainErrors.conflict(
-            'The customer has a medical chart already; a customer has one',
-          ),
+          DomainErrors.conflict(medicalChartMessages.customerHasChart),
         ),
       )
       .exhaustive()

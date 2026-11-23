@@ -657,8 +657,7 @@ describe('DeleteInventoryUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The stock row cannot be deleted: it counts stock; bring it to zero with a stock movement first',
+        message: inventoryMessages.rowCountsStock,
       },
     })
   })

@@ -8,17 +8,17 @@ import type {
 } from '../../../models/purchase-order'
 import type { PurchaseOrderChange } from '../../../repositories/purchase-order.repository'
 import { type DomainError, DomainErrors } from '../../../shared'
-import { toStatusConflict } from './refusals'
+import { type OrderOperation, toStatusConflict } from './refusals'
 
 /**
  * What an update, an approval or a cancellation of an order resolves to:
  * the order as it is now, none (404), or a conflict with where it stands
- * (409). `takes` says which orders the operation takes.
+ * (409). `operation` is what was asked for.
  */
 export const resultOfChange = (
   id: PurchaseOrderId,
   change: Result<PurchaseOrderChange, DomainError>,
-  takes: string,
+  operation: OrderOperation,
 ): Result<ApiPurchaseOrderResponse, DomainError> =>
   Result.flatMap(change, (changed) =>
     match(changed)
@@ -30,7 +30,7 @@ export const resultOfChange = (
         Result.error(DomainErrors.notFound(entityMessages.purchaseOrder, id)),
       )
       .with({ type: 'closed' }, { type: 'notFromStatus' }, (refusal) =>
-        Result.error(toStatusConflict(id, refusal, takes)),
+        Result.error(toStatusConflict(id, refusal, operation)),
       )
       .exhaustive(),
   )

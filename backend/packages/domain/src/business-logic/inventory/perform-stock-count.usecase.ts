@@ -89,7 +89,7 @@ export class PerformStockCountUseCase {
       .with({ type: 'belowReserved' }, ({ inventoryId }) =>
         Result.error(
           DomainErrors.conflict(
-            `What was counted of stock row ${inventoryId} is below its reserved stock`,
+            inventoryMessages.countedBelowReserved(inventoryId),
           ),
         ),
       )

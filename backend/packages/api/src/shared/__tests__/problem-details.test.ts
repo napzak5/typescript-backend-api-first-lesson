@@ -1,6 +1,9 @@
 import { type DomainError, DomainErrors } from '@beauty-salon-backend/domain'
 import type { Locale, LocalizedText } from '@beauty-salon-shared/i18n'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  authMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   type ApiError,
@@ -325,7 +328,7 @@ describe('toProblemDetails for authentication and authorization', () => {
 describe('toProblemDetails for an operation that the state does not allow', () => {
   it('presents a conflict as 409 with the code 3003 and its message as the detail', () => {
     const problem = toProblemDetails(
-      DomainErrors.conflict('Two-factor authentication is already enabled'),
+      DomainErrors.conflict(authMessages.twoFactorAlreadyEnabled),
       context,
       'en',
     )
@@ -341,26 +344,45 @@ describe('toProblemDetails for an operation that the state does not allow', () =
     })
   })
 
-  it.each([
-    'Two-factor authentication is not being set up',
-    'Two-factor authentication is not enabled',
-    '',
+  it.each<[Locale, LocalizedText, string]>([
+    [
+      'en',
+      authMessages.twoFactorNotEnabled,
+      'Two-factor authentication is not enabled',
+    ],
+    [
+      'ja',
+      authMessages.twoFactorNotEnabled,
+      '2 要素認証は、有効になっていません',
+    ],
+    [
+      'en',
+      authMessages.noTwoFactorSetupUnderWay,
+      'No setup of two-factor authentication is under way',
+    ],
+    [
+      'ja',
+      authMessages.noTwoFactorSetupUnderWay,
+      '2 要素認証の設定は、始まっていません',
+    ],
   ])(
-    'gives the message %j of a conflict as the detail, unchanged',
-    (message) => {
+    'should give the message of a conflict as the detail, as it is written in %s',
+    (language, message, detail) => {
+      // Act
       const problem = toProblemDetails(
         DomainErrors.conflict(message),
         context,
-        'en',
+        language,
       )
 
-      expect(problem.detail).toBe(message)
+      // Assert
+      expect(problem.detail).toBe(detail)
     },
   )
 
   it('does not present a conflict as a duplicate, which is the other 409', () => {
     const conflict = toProblemDetails(
-      DomainErrors.conflict('No'),
+      DomainErrors.conflict(authMessages.twoFactorNotEnabled),
       context,
       'en',
     )
@@ -383,7 +405,7 @@ describe('toProblemDetails for an operation that the state does not allow', () =
 /** What a problem reads: its title and its detail. */
 type Told = Pick<ProblemDetails, 'title' | 'detail'>
 
-/** The errors whose title and detail the HTTP layer writes, in each language. */
+/** The errors that are told in the language asked for, with what they read in each language. */
 const TOLD_BY_THE_API: [string, ApiError, Told, Told][] = [
   [
     'a request without credentials',
@@ -516,6 +538,18 @@ const TOLD_BY_THE_API: [string, ApiError, Told, Told][] = [
     },
   ],
   [
+    'a conflict',
+    DomainErrors.conflict(authMessages.twoFactorAlreadyEnabled),
+    {
+      title: 'Operation not allowed',
+      detail: 'Two-factor authentication is already enabled',
+    },
+    {
+      title: 'この操作はできません',
+      detail: '2 要素認証は、すでに有効になっています',
+    },
+  ],
+  [
     'a database error',
     DomainErrors.database('Failed to create salon', null),
     { title: 'Internal server error', detail: null },
@@ -602,20 +636,12 @@ const TOLD_BY_THE_API: [string, ApiError, Told, Told][] = [
   ],
 ]
 
-/** The errors whose detail the domain writes, with what they read. */
+/** The errors of which the domain writes a text in English alone, with what they read. */
 const TOLD_BY_THE_DOMAIN: [string, DomainError, Told][] = [
   [
-    'a validation error',
+    'a validation error with a headline in English alone',
     DomainErrors.validation('Invalid salon', []),
     { title: 'Validation failed', detail: 'Invalid salon' },
-  ],
-  [
-    'a conflict',
-    DomainErrors.conflict('Two-factor authentication is already enabled'),
-    {
-      title: 'Operation not allowed',
-      detail: 'Two-factor authentication is already enabled',
-    },
   ],
 ]
 
@@ -670,7 +696,7 @@ describe('toProblemDetails in the language that is asked for', () => {
       ]),
     ),
   )(
-    'should tell %s, whose detail the domain writes, in English when %s is asked for',
+    'should tell %s in English when %s is asked for',
     (_case, asked, error, english) => {
       // Act
       const problem = toProblemDetails(error, context, asked)
@@ -905,7 +931,7 @@ describe('toBearerChallenge', () => {
       'a duplicate',
       DomainErrors.alreadyExists(entityMessages.salon, 'email', 'a@b.jp'),
     ],
-    ['a conflict', DomainErrors.conflict('Not allowed in this state')],
+    ['a conflict', DomainErrors.conflict(authMessages.twoFactorNotEnabled)],
     ['a database error', DomainErrors.database('Failed', null)],
     ['an unknown route', { type: 'routeNotFound', method: 'GET', path: '/' }],
     ['a malformed body', { type: 'malformedBody' }],

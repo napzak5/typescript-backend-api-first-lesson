@@ -237,7 +237,7 @@ describe('PerformStockCountUseCase', () => {
     expect(await count(dependencies)).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `What was counted of stock row ${OTHER_INVENTORY_ID} is below its reserved stock`,
+          inventoryMessages.countedBelowReserved(OTHER_INVENTORY_ID),
         ),
       ),
     )

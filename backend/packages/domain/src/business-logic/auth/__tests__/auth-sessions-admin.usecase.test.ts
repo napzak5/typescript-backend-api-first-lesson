@@ -61,10 +61,10 @@ const databaseDown = Result.error(
 const forbidden = Result.error(DomainErrors.forbidden())
 
 /** The request is fine; the state of the account does not allow it. */
-const conflict = {
+const conflict = (message: LocalizedText) => ({
   type: 'error',
-  error: { type: 'conflict', message: expect.any(String) },
-}
+  error: { type: 'conflict', message },
+})
 
 const notFound = (entity: LocalizedText, id: string) => ({
   type: 'error',
@@ -766,7 +766,7 @@ describe('UnlockAccountUseCase', () => {
 
     const result = await unlock(dependencies, OTHER_USER_ID)
 
-    expect(result).toEqual(conflict)
+    expect(result).toEqual(conflict(authMessages.accountNotLocked))
     expect(mails).toEqual([])
   })
 
@@ -985,7 +985,7 @@ describe('ResetTwoFactorUseCase', () => {
 
       const result = await reset(dependencies, OTHER_USER_ID)
 
-      expect(result).toEqual(conflict)
+      expect(result).toEqual(conflict(authMessages.twoFactorNotEnabled))
       expect(mails).toEqual([])
     },
   )

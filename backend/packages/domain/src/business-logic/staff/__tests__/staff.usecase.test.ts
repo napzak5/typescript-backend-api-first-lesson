@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  bookingMessages,
   entityMessages,
   ruleMessages,
   staffMessages,
@@ -741,7 +742,7 @@ describe('UpdateStaffUseCase', () => {
   ) => new UpdateStaffUseCase(dependencies).execute(actor, salon, id, input)
 
   const ownRecordStaysActive = Result.error(
-    DomainErrors.conflict('You cannot deactivate your own staff record'),
+    DomainErrors.conflict(staffMessages.ownRecordStaysActive),
   )
 
   it('changes the properties of the request and returns the staff member', async () => {
@@ -1051,7 +1052,7 @@ describe('DeleteStaffUseCase', () => {
   ) => new DeleteStaffUseCase(dependencies).execute(actor, salon, id)
 
   const ownRecordStays = Result.error(
-    DomainErrors.conflict('You cannot delete your own staff record'),
+    DomainErrors.conflict(staffMessages.ownRecordStays),
   )
 
   it('deletes the staff member of the salon and returns the ID', async () => {
@@ -1219,8 +1220,7 @@ describe('DeleteStaffUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The staff member cannot be deleted: bookings that are not finished refer to it',
+        message: bookingMessages.unfinishedBookingsReferTo.staffMember,
       },
     })
   })

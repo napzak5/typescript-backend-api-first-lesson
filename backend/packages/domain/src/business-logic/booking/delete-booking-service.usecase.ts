@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  bookingMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import {
@@ -76,9 +79,7 @@ export class DeleteBookingServiceUseCase {
       )
       .with({ type: 'lastService' }, () =>
         Result.error(
-          DomainErrors.conflict(
-            'A booking keeps at least one service; cancel a booking that will not take place',
-          ),
+          DomainErrors.conflict(bookingMessages.keepsAtLeastOneService),
         ),
       )
       .with({ type: 'timeZoneUnknown' }, () => Result.error(timeZoneUnknown()))

@@ -36,4 +36,24 @@ export const pointMessages = {
       en: `Must name a ${referenceType} of the customer`,
       ja: `この顧客の ${referenceType} を指定してください`,
     }),
+  saleIsVoid: text({
+    en: 'The sale is void; points are not earned on or used for a void sale',
+    ja: 'この売上は取り消されています。取り消された売上では、ポイントの付与も利用もできません',
+  }),
+  bookingNotHeld: text({
+    en: 'The booking is a draft, cancelled or a no-show; points are not earned on or used for it',
+    ja: 'この予約は、下書き、キャンセル、無断キャンセルのどれかです。この予約では、ポイントの付与も利用もできません',
+  }),
+  recordHasTransaction: text({
+    en: 'The record has a point transaction of this kind already; a record is earned on once and used for once',
+    ja: 'この記録には、この種類のポイント取引が、すでにあります。1 つの記録での付与と利用は、それぞれ 1 回だけです',
+  }),
+  balanceBelowZero: text({
+    en: 'The balance of the customer would fall below 0',
+    ja: '顧客の残高が、0 を下回ります',
+  }),
+  balanceAboveLimit: text({
+    en: 'The balance of the customer would go above 2147483647',
+    ja: '顧客の残高が、2147483647 を超えます',
+  }),
 }

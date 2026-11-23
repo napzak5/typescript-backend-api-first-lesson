@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   entityMessages,
   inventoryMessages,
@@ -237,12 +238,9 @@ describe('RecordInventoryMovementUseCase', () => {
     )
   })
 
-  it.each<[InventoryMovementRecording, string]>([
-    [
-      { type: 'belowReserved' },
-      'The stock of the row would fall below its reserved stock',
-    ],
-    [{ type: 'overLimit' }, 'The stock of the row would go above 99999999.99'],
+  it.each<[InventoryMovementRecording, LocalizedText]>([
+    [{ type: 'belowReserved' }, inventoryMessages.stockBelowReserved],
+    [{ type: 'overLimit' }, inventoryMessages.stockAboveLimit],
   ])(
     'refuses a movement the stock cannot take: %j',
     async (refusal, message) => {

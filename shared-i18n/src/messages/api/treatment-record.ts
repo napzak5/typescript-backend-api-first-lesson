@@ -68,4 +68,26 @@ export const treatmentRecordMessages = {
       en: `Must not be before the date of the booking, ${bookingDate}`,
       ja: `予約の日（${bookingDate}）より前にはできません`,
     }),
+  /** `photoUrl` is the address of the photo. */
+  photoExists: (photoUrl: string) =>
+    text({
+      en: `The record holds a photo at ${photoUrl} already; a record holds one photo of an address`,
+      ja: `この施術記録には、${photoUrl} の写真が、すでにあります。同じアドレスの写真は、施術記録に 1 つです`,
+    }),
+  /** `held` is how many photos the record holds and `most` how many it may. */
+  tooManyPhotos: (held: number, most: number) =>
+    text({
+      en: `The record holds ${held} photos; a record holds at most ${most}`,
+      ja: `この施術記録には、写真が ${held} 枚あります。施術記録の写真は、${most} 枚までです`,
+    }),
+  /** `status` is the status of the booking. */
+  bookingNotTreated: (status: string) =>
+    text({
+      en: `The booking is ${status}; a treatment is recorded once it has begun`,
+      ja: `予約の状態は ${status} です。施術は、予約が始まってから記録します`,
+    }),
+  bookingHasRecord: text({
+    en: 'The booking has a treatment record already; a booking has one',
+    ja: 'この予約には、すでに施術記録があります。施術記録は、予約に 1 つです',
+  }),
 }

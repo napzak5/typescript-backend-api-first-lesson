@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  attachmentMessages,
   entityMessages,
   shareLinkMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -76,9 +77,7 @@ export class CreateShareLinkUseCase {
       )
     }
     if (attachment.status !== 'uploaded') {
-      return Result.error(
-        DomainErrors.conflict('The attachment has not been uploaded'),
-      )
+      return Result.error(DomainErrors.conflict(attachmentMessages.notUploaded))
     }
 
     const passwordHash =

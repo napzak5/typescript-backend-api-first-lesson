@@ -77,7 +77,10 @@ export class RequestCustomerDeletionUseCase {
       .with({ type: 'alreadyRequested' }, ({ request }) =>
         Result.error(
           DomainErrors.conflict(
-            `Customer ${customerId.data} has a pending deletion request, ${request.id}`,
+            customerDeletionRequestMessages.alreadyRequested(
+              customerId.data,
+              request.id,
+            ),
           ),
         ),
       )

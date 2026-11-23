@@ -54,7 +54,9 @@ export class BulkDeleteCustomersUseCase {
       .with({ type: 'bookingsUnfinished' }, ({ customers }) =>
         Result.error(
           DomainErrors.conflict(
-            `Customer ${firstAmong(ids, customers)} cannot be deleted: bookings that are not finished refer to it`,
+            customerMessages.unfinishedBookingsReferTo(
+              firstAmong(ids, customers),
+            ),
           ),
         ),
       )

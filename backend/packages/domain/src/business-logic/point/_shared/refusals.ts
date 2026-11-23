@@ -1,3 +1,4 @@
+import { pointMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { type DomainError, DomainErrors } from '../../../shared'
 import type { PointRefusal } from './plan'
@@ -6,26 +7,18 @@ import type { PointRefusal } from './plan'
 export const toPointRefusalError = (refusal: PointRefusal): DomainError =>
   match(refusal)
     .with({ type: 'referenceClosed', reference: 'sale' }, () =>
-      DomainErrors.conflict(
-        'The sale is void; points are not earned on or used for a void sale',
-      ),
+      DomainErrors.conflict(pointMessages.saleIsVoid),
     )
     .with({ type: 'referenceClosed', reference: 'booking' }, () =>
-      DomainErrors.conflict(
-        'The booking is a draft, cancelled or a no-show; points are not earned on or used for it',
-      ),
+      DomainErrors.conflict(pointMessages.bookingNotHeld),
     )
     .with({ type: 'referenceTaken' }, () =>
-      DomainErrors.conflict(
-        'The record has a point transaction of this kind already; a record is earned on once and used for once',
-      ),
+      DomainErrors.conflict(pointMessages.recordHasTransaction),
     )
     .with({ type: 'balanceShort' }, () =>
-      DomainErrors.conflict('The balance of the customer would fall below 0'),
+      DomainErrors.conflict(pointMessages.balanceBelowZero),
     )
     .with({ type: 'balanceOverLimit' }, () =>
-      DomainErrors.conflict(
-        'The balance of the customer would go above 2147483647',
-      ),
+      DomainErrors.conflict(pointMessages.balanceAboveLimit),
     )
     .exhaustive()

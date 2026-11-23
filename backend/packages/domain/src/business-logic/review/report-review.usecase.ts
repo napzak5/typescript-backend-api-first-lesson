@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { reviewReportMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  reviewMessages,
+  reviewReportMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { ReviewReportReadMapper } from '../../mappers/read/review-report.mapper'
 import { ReviewReportWriteMapper } from '../../mappers/write/review-report.mapper'
@@ -57,11 +60,7 @@ export class ReportReviewUseCase {
         ReviewReportReadMapper.toApiReviewReport(report),
       )
       .with({ type: 'reportedAlready' }, () =>
-        Result.error(
-          DomainErrors.conflict(
-            'The account has reported the review already; an account reports a review once',
-          ),
-        ),
+        Result.error(DomainErrors.conflict(reviewMessages.alreadyReported)),
       )
       .with(
         { type: 'reviewNotFound' },

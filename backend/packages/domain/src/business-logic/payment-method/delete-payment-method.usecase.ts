@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  paymentMethodMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import {
@@ -67,9 +70,7 @@ export class DeletePaymentMethodUseCase {
       )
       .with({ type: 'inUse' }, () =>
         Result.error(
-          DomainErrors.conflict(
-            'The payment method cannot be deleted: a payment refers to it; set isActive to false instead',
-          ),
+          DomainErrors.conflict(paymentMethodMessages.referredToByPayment),
         ),
       )
       .exhaustive()

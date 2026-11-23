@@ -1,3 +1,4 @@
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { type DomainError, DomainErrors } from '../../shared'
 
 /**
@@ -7,8 +8,6 @@ import { type DomainError, DomainErrors } from '../../shared'
  * removed first.
  */
 export const unfinishedBookingsReferTo = (
-  referred: 'customer' | 'salon' | 'service' | 'staff member',
+  referred: keyof typeof bookingMessages.unfinishedBookingsReferTo,
 ): DomainError =>
-  DomainErrors.conflict(
-    `The ${referred} cannot be deleted: bookings that are not finished refer to it`,
-  )
+  DomainErrors.conflict(bookingMessages.unfinishedBookingsReferTo[referred])

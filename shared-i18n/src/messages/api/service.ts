@@ -52,4 +52,8 @@ export const serviceMessages = {
       en: `A package must name at least ${minimum} services`,
       ja: `パッケージには、サービスを ${minimum} つ以上指定してください`,
     }),
+  partOfPackage: text({
+    en: 'The service is part of a package and has to leave it first',
+    ja: 'このサービスは、パッケージに含まれています。先に、パッケージから外してください',
+  }),
 }

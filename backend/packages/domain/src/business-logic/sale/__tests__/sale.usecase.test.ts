@@ -269,8 +269,7 @@ describe('CreateSaleUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The booking has a sale that is not void; a booking is billed once',
+        message: saleMessages.bookingBilled,
       },
     })
   })
@@ -284,8 +283,7 @@ describe('CreateSaleUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The time zone of the salon is not one that is known, so the day of the sale cannot be told; correct the time zone of the salon first',
+        message: saleMessages.timeZoneUnknown,
       },
     })
   })
@@ -1024,7 +1022,7 @@ describe('UpdateSaleUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message: 'The sale is void; a void sale is not changed',
+        message: saleMessages.voidIsNotChanged,
       },
     })
   })
@@ -1036,8 +1034,7 @@ describe('UpdateSaleUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The lines of a sale are replaced only while its payment status is pending',
+        message: saleMessages.linesWhilePending,
       },
     })
   })
@@ -1077,8 +1074,7 @@ describe('UpdateSaleUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The booking has a sale that is not void; a booking is billed once',
+        message: saleMessages.bookingBilled,
       },
     })
   })
@@ -1090,8 +1086,7 @@ describe('UpdateSaleUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The time zone of the salon is not one that is known, so the day of the sale cannot be told; correct the time zone of the salon first',
+        message: saleMessages.timeZoneUnknown,
       },
     })
   })
@@ -1312,7 +1307,7 @@ describe('VoidSaleUseCase', () => {
     expect(await voidSale(saleDependencies(voiding({ type: 'void' })))).toEqual(
       {
         type: 'error',
-        error: { type: 'conflict', message: 'The sale is void already' },
+        error: { type: 'conflict', message: saleMessages.alreadyVoid },
       },
     )
   })
@@ -1323,8 +1318,7 @@ describe('VoidSaleUseCase', () => {
         type: 'error',
         error: {
           type: 'conflict',
-          message:
-            'The sale has a payment that was not refunded; refund it before the sale is voided',
+          message: saleMessages.paymentNotRefunded,
         },
       },
     )

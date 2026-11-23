@@ -17,7 +17,7 @@ import { hashBackupCodes } from './_shared/two-factor-setup'
 const MESSAGE = authMessages.invalidRequestForNewBackupCodes
 
 const notEnabled = Result.error(
-  DomainErrors.conflict('Two-factor authentication is not enabled'),
+  DomainErrors.conflict(authMessages.twoFactorNotEnabled),
 )
 
 export class GenerateBackupCodesUseCase {

@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  saleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -197,9 +200,7 @@ describe('GetSaleReceiptUseCase', () => {
     )
 
     expect(result).toEqual(
-      Result.error(
-        DomainErrors.conflict('The sale is void; a void sale has no receipt'),
-      ),
+      Result.error(DomainErrors.conflict(saleMessages.voidHasNoReceipt)),
     )
   })
 
@@ -215,11 +216,7 @@ describe('GetSaleReceiptUseCase', () => {
     )
 
     expect(result).toEqual(
-      Result.error(
-        DomainErrors.conflict(
-          'The sale is not paid in full; a receipt is made once what was received comes to its total',
-        ),
-      ),
+      Result.error(DomainErrors.conflict(saleMessages.notPaidInFull)),
     )
   })
 
@@ -229,9 +226,7 @@ describe('GetSaleReceiptUseCase', () => {
     )
 
     expect(result).toEqual(
-      Result.error(
-        DomainErrors.conflict('The sale is void; a void sale has no receipt'),
-      ),
+      Result.error(DomainErrors.conflict(saleMessages.voidHasNoReceipt)),
     )
   })
 

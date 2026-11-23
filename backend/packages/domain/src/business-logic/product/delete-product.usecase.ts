@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  productMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import { type ProductId, parseProductId } from '../../models/product'
@@ -56,11 +59,7 @@ export class DeleteProductUseCase {
         ),
       )
       .with({ type: 'inStock' }, () =>
-        Result.error(
-          DomainErrors.conflict(
-            'The product cannot be deleted: it has stock; delete its stock first or set isActive to false',
-          ),
-        ),
+        Result.error(DomainErrors.conflict(productMessages.hasStock)),
       )
       .exhaustive()
   }

@@ -75,15 +75,13 @@ export class CreateTreatmentRecordUseCase {
       .with({ type: 'bookingNotTreated' }, ({ status }) =>
         Result.error(
           DomainErrors.conflict(
-            `The booking is ${status}; a treatment is recorded once it has begun`,
+            treatmentRecordMessages.bookingNotTreated(status),
           ),
         ),
       )
       .with({ type: 'recordExists' }, () =>
         Result.error(
-          DomainErrors.conflict(
-            'The booking has a treatment record already; a booking has one',
-          ),
+          DomainErrors.conflict(treatmentRecordMessages.bookingHasRecord),
         ),
       )
       .exhaustive()

@@ -1,5 +1,9 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  bookingMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, USER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -256,11 +260,7 @@ describe.each(ACTIONS)('the use case of %s', (_name, take, request, action) => {
     const dependencies = bookingDependencies(answering({ type: 'notBegunYet' }))
 
     expect(await take(dependencies, staff, BOOKING_ID, request)).toEqual(
-      Result.error(
-        DomainErrors.conflict(
-          'The booking has not begun yet, so nobody failed to come to it; a booking that will not take place is cancelled',
-        ),
-      ),
+      Result.error(DomainErrors.conflict(bookingMessages.notBegunYet)),
     )
   })
 
@@ -271,9 +271,24 @@ describe.each(ACTIONS)('the use case of %s', (_name, take, request, action) => {
 
     expect(await take(dependencies, staff, BOOKING_ID, request)).toEqual(
       Result.error(
-        DomainErrors.conflict(
-          'The actual end has to be after the actual start, and one of the two is a time the booking already has; send both times',
-        ),
+        DomainErrors.conflict(bookingMessages.actualTimesOutOfOrder),
+      ),
+    )
+  })
+
+  it('should report a visit that has begun as a conflict that says until when a customer cancels', async () => {
+    // Arrange
+    const dependencies = bookingDependencies(
+      answering({ type: 'alreadyBegun' }),
+    )
+
+    // Act
+    const result = await take(dependencies, staff, BOOKING_ID, request)
+
+    // Assert
+    expect(result).toEqual(
+      Result.error(
+        DomainErrors.conflict(bookingMessages.customerCancelsUntilTime),
       ),
     )
   })
@@ -303,7 +318,7 @@ describe.each(ACTIONS)('the use case of %s', (_name, take, request, action) => {
 })
 
 describe('a status that does not allow the action', () => {
-  it.each<[string, Take, unknown, BookingStatusChange, string]>([
+  it.each<[string, Take, unknown, BookingStatusChange, LocalizedText]>([
     [
       'confirm',
       confirm,
@@ -314,7 +329,10 @@ describe('a status that does not allow the action', () => {
         status: 'completed',
         allowed: ['draft', 'pending'],
       },
-      'A booking that is completed cannot be confirmed; its status has to be draft or pending',
+      bookingMessages.statusDoesNotAllow('confirm', 'completed', [
+        'draft',
+        'pending',
+      ]),
     ],
     [
       'cancel',
@@ -326,7 +344,11 @@ describe('a status that does not allow the action', () => {
         status: 'in_progress',
         allowed: ['draft', 'pending', 'confirmed'],
       },
-      'A booking that is in_progress cannot be cancelled; its status has to be draft or pending or confirmed',
+      bookingMessages.statusDoesNotAllow('cancel', 'in_progress', [
+        'draft',
+        'pending',
+        'confirmed',
+      ]),
     ],
     [
       'start',
@@ -338,7 +360,7 @@ describe('a status that does not allow the action', () => {
         status: 'pending',
         allowed: ['confirmed'],
       },
-      'A booking that is pending cannot be started; its status has to be confirmed',
+      bookingMessages.statusDoesNotAllow('start', 'pending', ['confirmed']),
     ],
     [
       'complete',
@@ -350,7 +372,10 @@ describe('a status that does not allow the action', () => {
         status: 'cancelled',
         allowed: ['confirmed', 'in_progress'],
       },
-      'A booking that is cancelled cannot be completed; its status has to be confirmed or in_progress',
+      bookingMessages.statusDoesNotAllow('complete', 'cancelled', [
+        'confirmed',
+        'in_progress',
+      ]),
     ],
     [
       'noShow',
@@ -362,7 +387,10 @@ describe('a status that does not allow the action', () => {
         status: 'no_show',
         allowed: ['pending', 'confirmed'],
       },
-      'A booking that is no_show cannot be noted as one the customer did not come to; its status has to be pending or confirmed',
+      bookingMessages.statusDoesNotAllow('noShow', 'no_show', [
+        'pending',
+        'confirmed',
+      ]),
     ],
   ])(
     'is reported for %s as a conflict that names the status and those the action leads on from',
@@ -388,7 +416,7 @@ describe('a status that does not allow the action', () => {
     expect(await confirm(dependencies, staff, BOOKING_ID, undefined)).toEqual(
       Result.error(
         DomainErrors.conflict(
-          'A booking that is draft cannot be started; its status has to be confirmed',
+          bookingMessages.statusDoesNotAllow('start', 'draft', ['confirmed']),
         ),
       ),
     )

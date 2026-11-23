@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  authMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { UserReadMapper } from '../../mappers/read/user.mapper'
 import {
   type Actor,
@@ -54,7 +57,7 @@ export class UnlockAccountUseCase {
       return unlocked
     }
     if (unlocked.data === null) {
-      return Result.error(DomainErrors.conflict('The account is not locked'))
+      return Result.error(DomainErrors.conflict(authMessages.accountNotLocked))
     }
 
     return UserReadMapper.toApiUser(unlocked.data)

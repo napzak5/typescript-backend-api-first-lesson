@@ -98,4 +98,20 @@ export const authMessages = {
     en: 'The session this cursor names is not there any more',
     ja: 'このカーソルが指すセッションは、もうありません',
   }),
+  twoFactorNotEnabled: text({
+    en: 'Two-factor authentication is not enabled',
+    ja: '2 要素認証は、有効になっていません',
+  }),
+  twoFactorAlreadyEnabled: text({
+    en: 'Two-factor authentication is already enabled',
+    ja: '2 要素認証は、すでに有効になっています',
+  }),
+  accountNotLocked: text({
+    en: 'The account is not locked',
+    ja: 'このアカウントは、ロックされていません',
+  }),
+  noTwoFactorSetupUnderWay: text({
+    en: 'No setup of two-factor authentication is under way',
+    ja: '2 要素認証の設定は、始まっていません',
+  }),
 }

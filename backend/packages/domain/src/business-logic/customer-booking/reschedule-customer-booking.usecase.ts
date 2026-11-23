@@ -87,17 +87,11 @@ export class RescheduleCustomerBookingUseCase {
       )
       .with({ type: 'alreadyBegun' }, () =>
         Result.error(
-          DomainErrors.conflict(
-            'The time of the booking has come, so the customer cannot move it any more; the salon notes what became of the visit',
-          ),
+          DomainErrors.conflict(bookingMessages.customerMovesUntilTime),
         ),
       )
       .with({ type: 'notOneSlot' }, () =>
-        Result.error(
-          DomainErrors.conflict(
-            'The booking has several services, or a service with another staff member than the one in charge, so the customer cannot move it; contact the salon to move it',
-          ),
-        ),
+        Result.error(DomainErrors.conflict(bookingMessages.notMovedByCustomer)),
       )
       .with(
         {

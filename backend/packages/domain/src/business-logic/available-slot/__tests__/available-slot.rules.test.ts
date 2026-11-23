@@ -1,3 +1,4 @@
+import { availableSlotMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -861,8 +862,7 @@ describe('timeZoneUnknown', () => {
   it('is a conflict that says what to correct', () => {
     expect(timeZoneUnknown()).toEqual({
       type: 'conflict',
-      message:
-        'The time zone of the salon is not one that is known, so the times of its hours cannot be told; correct the time zone of the salon first',
+      message: availableSlotMessages.timeZoneUnknown,
     })
   })
 })

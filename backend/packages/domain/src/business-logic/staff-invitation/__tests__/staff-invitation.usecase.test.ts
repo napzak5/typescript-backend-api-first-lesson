@@ -98,10 +98,10 @@ const addressHasAccount = {
 }
 
 const belongsToStaff = Result.error(
-  DomainErrors.conflict('Your account already belongs to a staff member'),
+  DomainErrors.conflict(staffInvitationMessages.accountBelongsToStaff),
 )
 const sentToAnotherAddress = Result.error(
-  DomainErrors.conflict('The invitation was sent to another address'),
+  DomainErrors.conflict(staffInvitationMessages.sentToAnotherAddress),
 )
 
 /** A password that is long enough and on no blocklist. */
@@ -695,7 +695,7 @@ describe('CreateStaffInvitationUseCase', () => {
       { type: 'linked' },
       Result.error(
         DomainErrors.conflict(
-          `Staff member ${STAFF_MEMBER_ID} already has an account`,
+          staffInvitationMessages.alreadyHasAccount(STAFF_MEMBER_ID),
         ),
       ),
     ],
@@ -703,7 +703,9 @@ describe('CreateStaffInvitationUseCase', () => {
       'the staff member is inactive',
       { type: 'inactive' },
       Result.error(
-        DomainErrors.conflict(`Staff member ${STAFF_MEMBER_ID} is inactive`),
+        DomainErrors.conflict(
+          staffInvitationMessages.staffInactive(STAFF_MEMBER_ID),
+        ),
       ),
     ],
     [
@@ -711,7 +713,7 @@ describe('CreateStaffInvitationUseCase', () => {
       { type: 'mailedMomentsAgo' },
       Result.error(
         DomainErrors.conflict(
-          `An invitation was mailed to staff member ${STAFF_MEMBER_ID} moments ago`,
+          staffInvitationMessages.mailedMomentsAgo(STAFF_MEMBER_ID),
         ),
       ),
     ],

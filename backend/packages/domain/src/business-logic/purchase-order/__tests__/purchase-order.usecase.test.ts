@@ -626,7 +626,7 @@ describe('UpdatePurchaseOrderUseCase', () => {
     expect(await update(closed)).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `Purchase order ${PURCHASE_ORDER_ID} is delivered: a delivered or cancelled order does not change`,
+          purchaseOrderMessages.closed(PURCHASE_ORDER_ID, 'delivered'),
         ),
       ),
     )
@@ -637,7 +637,11 @@ describe('UpdatePurchaseOrderUseCase', () => {
     ).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `Purchase order ${PURCHASE_ORDER_ID} is pending: an update moves a draft to pending, an approved order to ordered and an ordered one to shipped`,
+          purchaseOrderMessages.notFromStatus(
+            PURCHASE_ORDER_ID,
+            'pending',
+            'update',
+          ),
         ),
       ),
     )
@@ -735,7 +739,11 @@ describe('ApprovePurchaseOrderUseCase', () => {
     ).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `Purchase order ${PURCHASE_ORDER_ID} is approved: only a pending order is approved`,
+          purchaseOrderMessages.notFromStatus(
+            PURCHASE_ORDER_ID,
+            'approved',
+            'approval',
+          ),
         ),
       ),
     )
@@ -748,7 +756,7 @@ describe('ApprovePurchaseOrderUseCase', () => {
     ).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `Purchase order ${PURCHASE_ORDER_ID} is cancelled: a delivered or cancelled order does not change`,
+          purchaseOrderMessages.closed(PURCHASE_ORDER_ID, 'cancelled'),
         ),
       ),
     )
@@ -850,7 +858,7 @@ describe('CancelPurchaseOrderUseCase', () => {
     ).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `Purchase order ${PURCHASE_ORDER_ID} is delivered: a delivered or cancelled order does not change`,
+          purchaseOrderMessages.closed(PURCHASE_ORDER_ID, 'delivered'),
         ),
       ),
     )

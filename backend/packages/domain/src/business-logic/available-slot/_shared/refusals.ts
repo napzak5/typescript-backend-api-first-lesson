@@ -1,3 +1,4 @@
+import { availableSlotMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { type DomainError, DomainErrors } from '../../../shared'
 
 /**
@@ -5,6 +6,4 @@ import { type DomainError, DomainErrors } from '../../../shared'
  * the runtime does not know has no time they could be told in.
  */
 export const timeZoneUnknown = (): DomainError =>
-  DomainErrors.conflict(
-    'The time zone of the salon is not one that is known, so the times of its hours cannot be told; correct the time zone of the salon first',
-  )
+  DomainErrors.conflict(availableSlotMessages.timeZoneUnknown)

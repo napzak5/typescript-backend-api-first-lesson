@@ -59,7 +59,7 @@ export class DeleteStaffUseCase {
         Result.error(staffNotFound(staffId.data)),
       )
       .with({ type: 'bookingsUnfinished' }, () =>
-        Result.error(unfinishedBookingsReferTo('staff member')),
+        Result.error(unfinishedBookingsReferTo('staffMember')),
       )
       .exhaustive()
   }

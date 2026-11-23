@@ -2367,9 +2367,9 @@ writes the messages of its rules in both languages, `parseWith` has Zod say
 its own sentences in both, and a use case says a rule that a schema cannot
 check with a message too. A `notFound` and an `alreadyExists` error name
 what they are about with a message (`entityMessages`), and the API layer
-makes the sentence from it in the language asked for. The error of which
-the domain still writes a text in English alone (`conflict`) is told in
-English as a whole, whatever was asked for. `Content-Language` names the
+makes the sentence from it in the language asked for. A `conflict` error
+says why the state does not allow the operation with a message of its
+domain, and the API layer tells it as it is. `Content-Language` names the
 language of the answer. How a
 language is chosen and where a message goes is in [i18n](./i18n.md).
 

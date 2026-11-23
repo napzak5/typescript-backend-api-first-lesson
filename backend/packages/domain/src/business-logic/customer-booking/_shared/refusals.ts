@@ -1,3 +1,4 @@
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../../models/auth'
 import type { CustomerBookingCreation } from '../../../repositories/booking.repository'
@@ -29,18 +30,12 @@ export const toBookingRefusalError = (
     .with({ type: 'timeZoneUnknown' }, () => timeZoneUnknown())
     .with({ type: 'hoursUnreadable' }, ({ error }) => error)
     .with({ type: 'customerNotAccepted' }, () =>
-      DomainErrors.conflict(
-        'This customer profile does not take bookings online; contact the salon to book',
-      ),
+      DomainErrors.conflict(bookingMessages.noOnlineBooking),
     )
     .with({ type: 'notASlot' }, () =>
-      DomainErrors.conflict(
-        'The staff member has no available slot for the service at that time; choose one of the available slots of the salon',
-      ),
+      DomainErrors.conflict(bookingMessages.noAvailableSlot),
     )
     .with({ type: 'customerOccupied' }, () =>
-      DomainErrors.conflict(
-        'The customer has another booking at that time; cancel it first or choose another time',
-      ),
+      DomainErrors.conflict(bookingMessages.customerHasAnotherBooking),
     )
     .exhaustive()

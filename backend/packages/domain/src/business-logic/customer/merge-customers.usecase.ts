@@ -61,30 +61,22 @@ export class MergeCustomersUseCase {
       )
       .with({ type: 'accountsDiffer' }, () =>
         Result.error(
-          DomainErrors.conflict(
-            'Both customers are the profiles of accounts, which a merge cannot make one',
-          ),
+          DomainErrors.conflict(customerMessages.bothAreProfilesOfAccounts),
         ),
       )
       .with({ type: 'pointsBeyondLimit' }, () =>
         Result.error(
-          DomainErrors.conflict(
-            'The points of both customers are more than a balance can hold',
-          ),
+          DomainErrors.conflict(customerMessages.pointsBeyondBalance),
         ),
       )
       .with({ type: 'chartTooLong' }, ({ list }) =>
         Result.error(
-          DomainErrors.conflict(
-            `The medical charts of both customers list more ${list} than a chart can; shorten one first`,
-          ),
+          DomainErrors.conflict(customerMessages.chartListsTooLong(list)),
         ),
       )
       .with({ type: 'deletionRequested' }, ({ customers }) =>
         Result.error(
-          DomainErrors.conflict(
-            `Customer ${customers.join(' and customer ')} asked for their data to be erased; cancel the deletion request first`,
-          ),
+          DomainErrors.conflict(customerMessages.deletionRequested(customers)),
         ),
       )
       .exhaustive()

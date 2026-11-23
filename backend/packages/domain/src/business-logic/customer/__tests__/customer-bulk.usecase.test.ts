@@ -734,7 +734,7 @@ describe('BulkDeleteCustomersUseCase', () => {
     expect(result).toEqual(
       Result.error(
         DomainErrors.conflict(
-          `Customer ${OTHER_CUSTOMER_ID} cannot be deleted: bookings that are not finished refer to it`,
+          customerMessages.unfinishedBookingsReferTo(OTHER_CUSTOMER_ID),
         ),
       ),
     )

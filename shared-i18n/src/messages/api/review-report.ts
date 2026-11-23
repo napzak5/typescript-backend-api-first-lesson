@@ -22,4 +22,8 @@ export const reviewReportMessages = {
     en: 'Must name a review report that is listed',
     ja: '一覧にある通報を指定してください',
   }),
+  alreadyDismissed: text({
+    en: 'The report is dismissed already; a report is dismissed once',
+    ja: 'この通報は、すでに却下されています。通報の却下は、1 回だけです',
+  }),
 }

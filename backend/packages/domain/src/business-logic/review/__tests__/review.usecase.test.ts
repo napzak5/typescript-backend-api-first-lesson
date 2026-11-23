@@ -453,9 +453,7 @@ describe('CreateReviewUseCase', () => {
 
     expect(await create(dependencies)).toEqual({
       type: 'error',
-      error: DomainErrors.conflict(
-        'The booking is not completed; a booking is reviewed once the visit took place',
-      ),
+      error: DomainErrors.conflict(reviewMessages.bookingNotCompleted),
     })
   })
 
@@ -466,9 +464,7 @@ describe('CreateReviewUseCase', () => {
 
     expect(await create(dependencies)).toEqual({
       type: 'error',
-      error: DomainErrors.conflict(
-        'The booking has a review already; a booking is reviewed once',
-      ),
+      error: DomainErrors.conflict(reviewMessages.bookingHasReview),
     })
   })
 

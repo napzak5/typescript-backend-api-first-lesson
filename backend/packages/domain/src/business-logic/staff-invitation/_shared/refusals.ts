@@ -10,16 +10,14 @@ export const invitationNotFound = (id: StaffId): DomainError =>
   DomainErrors.notFound(entityMessages.invitationOfStaffMember, id)
 
 export const alreadyHasAccount = (id: StaffId): DomainError =>
-  DomainErrors.conflict(`Staff member ${id} already has an account`)
+  DomainErrors.conflict(staffInvitationMessages.alreadyHasAccount(id))
 
 /** An invitation gives the salon, and an inactive staff member has none. */
 export const inactiveStaffStaysOut = (id: StaffId): DomainError =>
-  DomainErrors.conflict(`Staff member ${id} is inactive`)
+  DomainErrors.conflict(staffInvitationMessages.staffInactive(id))
 
 export const mailedMomentsAgo = (id: StaffId): DomainError =>
-  DomainErrors.conflict(
-    `An invitation was mailed to staff member ${id} moments ago`,
-  )
+  DomainErrors.conflict(staffInvitationMessages.mailedMomentsAgo(id))
 
 /** One answer for an invitation that cannot be used, whatever the reason. */
 export const invitationRefused = (): DomainError =>
@@ -34,7 +32,7 @@ export const addressHasAccount = (email: string): DomainError =>
 
 /** Told to the account itself, which is signed in. */
 export const accountBelongsToStaff = (): DomainError =>
-  DomainErrors.conflict('Your account already belongs to a staff member')
+  DomainErrors.conflict(staffInvitationMessages.accountBelongsToStaff)
 
 /**
  * Told to whoever holds the token and is signed in to another account: the
@@ -42,4 +40,4 @@ export const accountBelongsToStaff = (): DomainError =>
  * can already ask.
  */
 export const sentToAnotherAddress = (): DomainError =>
-  DomainErrors.conflict('The invitation was sent to another address')
+  DomainErrors.conflict(staffInvitationMessages.sentToAnotherAddress)

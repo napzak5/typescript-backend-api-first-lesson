@@ -1154,8 +1154,7 @@ describe('DeletePaymentMethodUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The payment method cannot be deleted: a payment refers to it; set isActive to false instead',
+        message: paymentMethodMessages.referredToByPayment,
       },
     })
   })

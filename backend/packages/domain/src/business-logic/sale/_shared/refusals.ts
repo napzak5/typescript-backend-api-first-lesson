@@ -1,3 +1,4 @@
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { type DomainError, DomainErrors, type Told } from '../../../shared'
 import type { SaleChangeRefusal, SaleVoidRefusal } from './change'
@@ -21,14 +22,10 @@ export const toRefusalError = (
       DomainErrors.validation(message, issues),
     )
     .with({ type: 'timeZoneUnknown' }, () =>
-      DomainErrors.conflict(
-        'The time zone of the salon is not one that is known, so the day of the sale cannot be told; correct the time zone of the salon first',
-      ),
+      DomainErrors.conflict(saleMessages.timeZoneUnknown),
     )
     .with({ type: 'bookingBilled' }, () =>
-      DomainErrors.conflict(
-        'The booking has a sale that is not void; a booking is billed once',
-      ),
+      DomainErrors.conflict(saleMessages.bookingBilled),
     )
     .exhaustive()
 
@@ -36,12 +33,10 @@ export const toRefusalError = (
 export const toChangeRefusalError = (refusal: SaleChangeRefusal): DomainError =>
   match(refusal)
     .with({ type: 'void' }, () =>
-      DomainErrors.conflict('The sale is void; a void sale is not changed'),
+      DomainErrors.conflict(saleMessages.voidIsNotChanged),
     )
     .with({ type: 'paymentBegun' }, () =>
-      DomainErrors.conflict(
-        'The lines of a sale are replaced only while its payment status is pending',
-      ),
+      DomainErrors.conflict(saleMessages.linesWhilePending),
     )
     .exhaustive()
 
@@ -49,12 +44,10 @@ export const toChangeRefusalError = (refusal: SaleChangeRefusal): DomainError =>
 export const toReceiptRefusalError = (refusal: ReceiptRefusal): DomainError =>
   match(refusal)
     .with({ type: 'void' }, () =>
-      DomainErrors.conflict('The sale is void; a void sale has no receipt'),
+      DomainErrors.conflict(saleMessages.voidHasNoReceipt),
     )
     .with({ type: 'notPaidInFull' }, () =>
-      DomainErrors.conflict(
-        'The sale is not paid in full; a receipt is made once what was received comes to its total',
-      ),
+      DomainErrors.conflict(saleMessages.notPaidInFull),
     )
     .exhaustive()
 
@@ -62,11 +55,9 @@ export const toReceiptRefusalError = (refusal: ReceiptRefusal): DomainError =>
 export const toVoidRefusalError = (refusal: SaleVoidRefusal): DomainError =>
   match(refusal)
     .with({ type: 'void' }, () =>
-      DomainErrors.conflict('The sale is void already'),
+      DomainErrors.conflict(saleMessages.alreadyVoid),
     )
     .with({ type: 'paid' }, () =>
-      DomainErrors.conflict(
-        'The sale has a payment that was not refunded; refund it before the sale is voided',
-      ),
+      DomainErrors.conflict(saleMessages.paymentNotRefunded),
     )
     .exhaustive()

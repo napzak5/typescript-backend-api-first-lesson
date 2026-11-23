@@ -13,7 +13,7 @@ import { sessionGone } from './_shared/session-gone'
 const MESSAGE = authMessages.invalidRequestToDisableTwoFactorAuthentication
 
 const notEnabled = Result.error(
-  DomainErrors.conflict('Two-factor authentication is not enabled'),
+  DomainErrors.conflict(authMessages.twoFactorNotEnabled),
 )
 
 export class DisableTwoFactorUseCase {

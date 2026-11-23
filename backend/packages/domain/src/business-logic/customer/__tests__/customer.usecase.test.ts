@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  bookingMessages,
   customerMessages,
   entityMessages,
   ruleMessages,
@@ -1117,8 +1118,7 @@ describe('DeleteCustomerUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message:
-          'The customer cannot be deleted: bookings that are not finished refer to it',
+        message: bookingMessages.unfinishedBookingsReferTo.customer,
       },
     })
   })
@@ -1197,7 +1197,7 @@ describe('RestoreCustomerUseCase', () => {
       type: 'error',
       error: {
         type: 'conflict',
-        message: `Customer ${CUSTOMER_ID} is not deleted, so there is nothing to restore`,
+        message: customerMessages.notDeleted(CUSTOMER_ID),
       },
     })
   })
