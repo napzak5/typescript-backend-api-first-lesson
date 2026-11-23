@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, signInAs } from '@beauty-salon-frontend/testing/api'
 import {
@@ -16,10 +17,11 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import { refuse } from '../../bookings/__tests__/arrangements'
 import {
   arrangePreferences,
@@ -62,10 +64,10 @@ const avoided = (): (string | null)[] =>
     .queryAllByRole('checkbox', { checked: true })
     .map((checked) => checked.closest('label')?.textContent ?? null)
 
-/** What the part of the preferences on the page of a customer describes, term by term. */
-const preferencesShown = (): Record<string, string> =>
+/** What the part of the preferences on the page of a customer describes, term by term, under the name of the page. */
+const preferencesShown = (part = '好み設定'): Record<string, string> =>
   Object.fromEntries(
-    within(screen.getByRole('region', { name: '好み設定' }))
+    within(screen.getByRole('region', { name: part }))
       .getAllByRole('term')
       .map((term) => [
         term.textContent ?? '',
@@ -73,16 +75,29 @@ const preferencesShown = (): Record<string, string> =>
       ]),
   )
 
+/** The heading and the button of the form, as a page in each language names them */
+const FORM = {
+  ja: { title: '好み設定を直す', save: '変更を保存する' },
+  en: { title: 'Edit the preferences', save: 'Save changes' },
+}
+
 /** Opens the form of the preferences of a customer at the salon in Tokyo, signed in, and waits for it. */
-const openForm = async (email = YUKI.email, account = STYLIST) => {
+const openForm = async (
+  email = YUKI.email,
+  account = STYLIST,
+  language: Locale = 'ja',
+) => {
   const [tokyo, customer] = await Promise.all([
     salonIdOf(TOKYO),
     customerIdOf(email),
   ])
-  renderAt(`/salons/${tokyo}/customers/${customer}/preferences`)
-  await signInAs(account)
-  await heading('好み設定を直す')
-  await screen.findByRole('button', { name: '変更を保存する' })
+  await openAs(
+    `/salons/${tokyo}/customers/${customer}/preferences`,
+    account,
+    language,
+  )
+  await heading(FORM[language].title)
+  await screen.findByRole('button', { name: FORM[language].save })
 
   return { tokyo, customer }
 }
@@ -353,5 +368,78 @@ describe('the preferences of a customer, changed by a salon against the API', ()
     await heading('お客様の台帳')
     expect(address()).toBe(`/salons/${tokyo}/customers/${customer}`)
     expect(await storedPreferencesOf(YUKI.email)).toBeNull()
+  })
+})
+
+describe('the preferences of a customer, changed by a salon on a page in English, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should lead in English from the page of the customer to the form, write what was changed, and say so', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await arrangeWishes(YUKI.email)
+    const [tokyo, yuki] = await Promise.all([
+      salonIdOf(TOKYO),
+      customerIdOf(YUKI.email),
+    ])
+    await openAs(`/salons/${tokyo}/customers/${yuki}`, STYLIST, 'en')
+    await heading('Customer record')
+    await user.click(
+      await within(
+        await screen.findByRole('region', { name: 'Preferences' }),
+      ).findByRole('link', { name: 'Edit the preferences' }),
+    )
+    await heading('Edit the preferences')
+    await screen.findByRole('button', { name: 'Save changes' })
+    expect(screen.getByText('Tanaka Yuki (タナカ ユキ)')).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Cancel' })).toHaveAttribute(
+      'href',
+      `/salons/${tokyo}/customers/${yuki}`,
+    )
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+
+    // Act
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Preferred staff' }),
+      `Hiroshi Tanaka (${TOKYO})`,
+    )
+    await user.clear(text('How you like to be served'))
+    await user.type(text('How you like to be served'), '話すのが好き')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    await heading('Customer record')
+    expect(notifications()).toContain('The preferences were changed.')
+    await waitFor(() =>
+      expect(preferencesShown('Preferences')).toMatchObject({
+        'Preferred staff': 'Hiroshi Tanaka',
+        'How you like to be served': '話すのが好き',
+      }),
+    )
+  })
+
+  it('should say in English that the customer is gone when they were removed while the form was open', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openForm(SAKURA.email, OWNER, 'en')
+    await removeMeanwhile(SAKURA.email)
+    await user.type(text('Special requests'), 'シャンプーはぬるめで')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    // Assert
+    await heading('Customer not found')
+    expect(
+      screen.getByRole('link', { name: 'Back to the customer ledger' }),
+    ).toBeVisible()
   })
 })

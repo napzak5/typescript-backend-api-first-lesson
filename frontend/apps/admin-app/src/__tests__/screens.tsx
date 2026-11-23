@@ -3,6 +3,7 @@ import {
   type ApplicationAt,
   renderApplicationAt,
 } from '@beauty-salon-frontend/testing/screens'
+import type { Locale } from '@beauty-salon-shared/i18n'
 import type { RenderResult } from '@testing-library/react'
 import { App } from '../App'
 
@@ -15,13 +16,18 @@ import { App } from '../App'
 export const renderAt = (path: string, options?: ApplicationAt): RenderResult =>
   renderApplicationAt(<App />, path, options)
 
-/** The application at an address, with an account of the seed data signed in on its screen. */
+/**
+ * The application at an address, with an account of the seed data signed
+ * in on its screen, which is in the language of the page: Japanese unless
+ * the test chose another.
+ */
 export const openAs = async (
   path: string,
   email: string,
+  language: Locale = 'ja',
 ): Promise<RenderResult> => {
   const rendered = renderAt(path)
-  await signInAs(email)
+  await signInAs(email, language)
 
   return rendered
 }
