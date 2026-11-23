@@ -26,7 +26,7 @@ export type PagedListProps<Item> = Omit<CardListProps<Item>, 'ref'> & {
 /** How many there are of something, in the words of each language: `12 items`, 「12 件」. */
 export type Counted = (count: number) => LocalizedText
 
-/** The words a list is counted with: its items (件), its people (人), its rows (行). */
+/** The words a list is counted with: its items (件), its people (人), its rows (行), its devices (台). */
 export const COUNTED = uiMessages.counted
 
 /**

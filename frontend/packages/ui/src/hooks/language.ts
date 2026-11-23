@@ -1,6 +1,8 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { type LocalizedText, textIn } from '@beauty-salon-shared/i18n'
 import { useCallback, useSyncExternalStore } from 'react'
+import type { FormErrors } from '../components/form/error-focus'
+import type { FormSays } from '../components/form/form-values'
 
 /**
  * How a component says a text: `const say = useSay()`, then
@@ -24,4 +26,33 @@ export const useSay = (): ((message: LocalizedText) => string) => {
     (message: LocalizedText) => textIn(message, language),
     [language],
   )
+}
+
+/**
+ * What a form whose texts are messages says, in the language of the page:
+ * the message about the attempt, for the form, and the errors, for its
+ * controls (`error={said.errors['email']}`), said anew whenever the form
+ * is drawn.
+ *
+ * The form itself is given the errors as the attempt left them (`errors`
+ * of `Form` and `FormDialog`): it moves the focus for another attempt, and
+ * not when only the language changes.
+ */
+export const useSaidForm = (
+  message: LocalizedText | undefined,
+  errors: FormErrors<LocalizedText>,
+): FormSays => {
+  const say = useSay()
+
+  return {
+    message: message === undefined ? undefined : say(message),
+    errors: Object.fromEntries(
+      Object.entries(errors).map(
+        ([control, error]): [string, string | undefined] => [
+          control,
+          error === undefined ? undefined : say(error),
+        ],
+      ),
+    ),
+  }
 }

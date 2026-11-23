@@ -1,3 +1,4 @@
+import { fieldMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { describe, expect, it } from 'vitest'
 import {
   aboutTheAttempt,
@@ -51,6 +52,12 @@ describe('errorAt', () => {
   it('should name no control when nothing is wrong', () => {
     expect(errorAt('lines.0.date', undefined)).toEqual([])
   })
+
+  it('should name the control with a message, as a form whose texts are messages says it', () => {
+    expect(errorAt('email', fieldMessages.emailMissing)).toEqual([
+      ['email', fieldMessages.emailMissing],
+    ])
+  })
 })
 
 describe('same', () => {
@@ -89,6 +96,13 @@ describe('what a form says', () => {
   it('should say something about the attempt, and nothing at its controls', () => {
     expect(aboutTheAttempt('保存できませんでした。')).toEqual({
       message: '保存できませんでした。',
+      errors: {},
+    })
+  })
+
+  it('should say a message about the attempt as it is, for a form whose texts are messages', () => {
+    expect(aboutTheAttempt(fieldMessages.emailMissing)).toEqual({
+      message: fieldMessages.emailMissing,
       errors: {},
     })
   })

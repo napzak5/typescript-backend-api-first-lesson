@@ -39,6 +39,7 @@ export const uiMessages = {
     items: (count: number) => counted(count, 'item', 'items', '件'),
     people: (count: number) => counted(count, 'person', 'people', '人'),
     rows: (count: number) => counted(count, 'row', 'rows', '行'),
+    devices: (count: number) => counted(count, 'device', 'devices', '台'),
   },
   appShell: {
     mainMenu: text({ en: 'Main menu', ja: 'メインメニュー' }),

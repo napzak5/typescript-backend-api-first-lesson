@@ -10,11 +10,16 @@ import { useSay } from '../../hooks/language'
 import { Alert } from '../alert/alert'
 import { Button } from '../button/button'
 import { Dialog, type DialogProps } from '../dialog/dialog'
-import { type FormErrors, useErrorFocus } from '../form/error-focus'
+import {
+  type AnyFormErrors,
+  type FormErrors,
+  useErrorFocus,
+} from '../form/error-focus'
 import { NO_ERRORS } from '../form/form-values'
 import styles from './form-dialog.module.css'
 
-export type FormDialogProps = Pick<
+/** What a form in a dialog takes: `Errors` as `Form` takes them */
+export type FormDialogProps<Errors extends AnyFormErrors = FormErrors> = Pick<
   DialogProps,
   'open' | 'onClose' | 'title' | 'description' | 'size'
 > & {
@@ -32,9 +37,10 @@ export type FormDialogProps = Pick<
   message?: string | undefined
   /**
    * The errors the controls show: a new object is the answer to another
-   * attempt, and the focus goes to the first control that has an error
+   * attempt, and the focus goes to the first control that has an error. Of
+   * a form whose texts are messages, the messages, as `Form` takes them
    */
-  errors?: FormErrors | undefined
+  errors?: Errors | undefined
   /** The attempt is on its way */
   pending?: boolean | undefined
   /** The values of the controls, under their names */
@@ -60,7 +66,7 @@ export type FormDialogProps = Pick<
  * the focus goes to it in the commit that shows it: the button that sent
  * the form went with the form.
  */
-export const FormDialog = ({
+export const FormDialog = <Errors extends AnyFormErrors = FormErrors>({
   open,
   onClose,
   title,
@@ -70,14 +76,14 @@ export const FormDialog = ({
   submitLabel,
   submitVariant = 'primary',
   message,
-  errors = NO_ERRORS,
+  errors,
   pending = false,
   onSubmit,
   answer,
-}: FormDialogProps) => {
+}: FormDialogProps<Errors>) => {
   const say = useSay()
   const formId = useId()
-  const form = useErrorFocus(errors)
+  const form = useErrorFocus(errors ?? NO_ERRORS)
   const answerRef = useRef<HTMLDivElement>(null)
   const answered = answer !== undefined
 
