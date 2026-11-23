@@ -7,18 +7,30 @@ import {
   Card,
   DescriptionList,
   Form,
+  type FormErrors,
   type FormProps,
-  inJapanese,
+  NO_ERRORS,
   TextArea,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { cardNameOf, methodNameOf } from '../../utils/sale-format'
 import styles from './refund-form.module.css'
 
+const { words } = adminSaleMessages
+const { refund: texts } = adminSaleMessages.payments
+
 export type RefundFormProps = Pick<
   FormProps,
-  'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+  'pending' | 'actions' | 'onSubmit'
 > & {
+  /** What is said about the whole attempt, in the language of the page */
+  message?: LocalizedText | undefined
+  /** What is wrong with the values, under the names of the controls. A new object is the answer to another attempt */
+  errors?: FormErrors<LocalizedText> | undefined
   /** The payment that is given back */
   payment: ModelsPaymentResponse
   /** The payment methods of the salon, those it uses no more as well */
@@ -39,51 +51,74 @@ export const RefundForm = ({
   methods,
   timezone,
   currency,
-  errors = {},
+  message,
+  errors = NO_ERRORS,
   ...form
-}: RefundFormProps) => (
-  <div className={styles['refund']}>
-    <Card title='返金する支払い'>
-      <DescriptionList
-        items={[
-          { term: '取引番号', description: payment.transactionNumber },
-          {
-            term: '受けた日時',
-            description: inJapanese(
-              momentNameAt(payment.processedAt ?? payment.createdAt, timezone),
-            ),
-          },
-          {
-            term: '支払い方法',
-            description: methodNameOf(payment.paymentMethodId, methods),
-          },
-          {
-            term: '金額',
-            description: inJapanese(amountOf(payment.amount, currency)),
-          },
-          { term: 'カード', description: cardNameOf(payment) },
-        ]}
-      />
-    </Card>
-    <Form {...form} errors={errors} submitLabel='返金を記録する'>
-      <TextField
-        width='short'
-        label='返金する金額'
-        name='refundAmount'
-        inputMode='numeric'
-        autoComplete='off'
-        required
-        defaultValue={String(payment.amount)}
-        description={`円の整数で、1 円から支払いの金額（${inJapanese(amountOf(payment.amount, currency))}）まで入れます。1 件の支払いの返金は 1 回です。一部だけ返金すると、残りは返金できず、売上も取り消せなくなります。`}
-        error={errors['refundAmount']}
-      />
-      <TextArea
-        label='返金の理由'
-        name='refundReason'
-        required
-        description='返金の記録に残ります。お金を返してから記録します。'
-        error={errors['refundReason']}
-      />
-    </Form>
-  </div>
-)
+}: RefundFormProps) => {
+  const say = useSay()
+  const said = useSaidForm(message, errors)
+  const card = cardNameOf(payment)
+
+  return (
+    <div className={styles['refund']}>
+      <Card title={say(texts.payment)}>
+        <DescriptionList
+          items={[
+            {
+              term: say(words.transactionNumber),
+              description: payment.transactionNumber,
+            },
+            {
+              term: say(words.receivedAt),
+              description: say(
+                momentNameAt(
+                  payment.processedAt ?? payment.createdAt,
+                  timezone,
+                ),
+              ),
+            },
+            {
+              term: say(words.method),
+              description: say(methodNameOf(payment.paymentMethodId, methods)),
+            },
+            {
+              term: say(words.amount),
+              description: say(amountOf(payment.amount, currency)),
+            },
+            {
+              term: say(words.card),
+              description: card === null ? null : say(card),
+            },
+          ]}
+        />
+      </Card>
+      <Form
+        {...form}
+        message={said.message}
+        errors={errors}
+        submitLabel={say(texts.submit)}
+      >
+        <TextField
+          width='short'
+          label={say(texts.amount)}
+          name='refundAmount'
+          inputMode='numeric'
+          autoComplete='off'
+          required
+          defaultValue={String(payment.amount)}
+          description={say(
+            texts.amountDescription(amountOf(payment.amount, currency)),
+          )}
+          error={said.errors['refundAmount']}
+        />
+        <TextArea
+          label={say(texts.reason)}
+          name='refundReason'
+          required
+          description={say(texts.reasonDescription)}
+          error={said.errors['refundReason']}
+        />
+      </Form>
+    </div>
+  )
+}

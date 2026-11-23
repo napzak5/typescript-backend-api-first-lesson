@@ -1,3 +1,5 @@
+import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { aPaidSale, aPayment, aSale, moment, salon } from '../examples'
@@ -27,7 +29,7 @@ const meta: Meta<typeof SaleTable> = {
   title: 'Admin/Sales/SaleTable',
   component: SaleTable,
   args: {
-    caption: '2026年11月20日（金）の売上',
+    caption: adminSaleMessages.ledger.salesOf(dayNameOf('2026-11-20')),
     rows: ROWS,
     total: 3,
     timezone: salon.timezone,

@@ -13,7 +13,10 @@ import {
   type FormSays,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -33,10 +36,11 @@ import {
   voidableAfter,
   whyNoRefund,
 } from '../utils/refunds'
-import { mayUndoSales, UNDONE_BY_OTHERS } from '../utils/sale-changes'
-import { WithPaymentMethods, WithSale } from './with-sale'
+import { mayUndoSales } from '../utils/sale-changes'
+import { Unwritable, WithPaymentMethods, WithSale } from './with-sale'
 
-const TITLE = '返金する'
+const { titles, undoneByOthers, words } = adminSaleMessages
+const { refund: texts } = adminSaleMessages.payments
 
 type RefundProps = {
   salon: ModelsSalonResponse
@@ -56,10 +60,11 @@ type RefundProps = {
  * screen says why it is not given back again.
  */
 const Refund = ({ salon, sale, payment, methods }: RefundProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const key = saleKeyOf(sale.id)
   const back = saleHrefOf(salon.id, sale.id)
   const forgetLists = (): void => {
@@ -81,8 +86,8 @@ const Refund = ({ salon, sale, payment, methods }: RefundProps) => {
           notify({
             tone: 'success',
             message: voidableAfter(sale, payment.id, request)
-              ? '返金を記録しました。すべての支払いを全額返金したので、売上を取り消せます。'
-              : '返金を記録しました。',
+              ? texts.notices.voidable
+              : texts.notices.recorded,
           })
           void navigate(back)
         })
@@ -124,53 +129,44 @@ const Refund = ({ salon, sale, payment, methods }: RefundProps) => {
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
   )
 }
 
-/** What the screen says when the payment is not given back: why, and the way back. */
-const Unrefundable = ({ why, back }: { why: string; back: string }) => (
-  <>
-    <p>{why}</p>
-    <ButtonLink href={back}>売上の内容へ</ButtonLink>
-  </>
-)
-
 /**
  * Gives back a payment of a sale of the salon of the address: one that was
  * received, by an account that may give money back.
  */
 export const RefundScreen = () => {
+  const say = useSay()
   const { salonId = '', paymentId = '' } = useParams()
   const session = useSession()
   const mayRefund =
     session.type === 'signedIn' && mayUndoSales(session.user.role)
+  const title = say(titles.refund)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
-        <WithSale key={salon.id} salon={salon} title={TITLE} fresh>
+        <WithSale key={salon.id} salon={salon} title={title} fresh>
           {(sale) => {
             const back = saleHrefOf(salon.id, sale.id)
             const payment = sale.payments.find(({ id }) => id === paymentId)
 
             return match([payment, mayRefund])
               .with([P._, false], () => (
-                <Unrefundable why={UNDONE_BY_OTHERS} back={back} />
+                <Unwritable why={undoneByOthers} back={back} />
               ))
               .with([undefined, true], () => (
-                <Unrefundable
-                  why='この売上に、この支払いはありません。アドレスが正しいか、お確かめください。'
-                  back={back}
-                />
+                <Unwritable why={texts.why.noSuchPayment} back={back} />
               ))
               .with([P.nonNullable, true], ([received]) =>
                 match(whyNoRefund(received))
-                  .with(P.string, (why) => (
-                    <Unrefundable why={why} back={back} />
+                  .with(P.nonNullable, (why) => (
+                    <Unwritable why={why} back={back} />
                   ))
                   .with(undefined, () => (
                     <WithPaymentMethods salonId={salon.id}>

@@ -1,12 +1,12 @@
 import type { ModelsPaymentStatusType } from '@beauty-salon-frontend/api-client'
 import { isDay } from '@beauty-salon-frontend/fields'
-import { dayNameOf, daysErrorsOf } from '@beauty-salon-frontend/salon-screens'
+import { daysErrorsOf } from '@beauty-salon-frontend/salon-screens'
 import {
-  errorsInJapanese,
+  type FormErrors,
   type FormRead,
-  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 
 /**
  * Which sales of a salon the ledger shows: those whose day (at the salon)
@@ -62,11 +62,11 @@ export const ledgerConditionsIn = (
 /** The conditions that were filled in: both days, the end not before the start. */
 export const readLedgerConditions = (
   values: FormData,
-): FormRead<LedgerConditions> => {
+): FormRead<LedgerConditions, FormErrors<LocalizedText>> => {
   const from = textOf(values, 'from')
   const to = textOf(values, 'to')
   const paymentStatus = paymentStatusFrom(textOf(values, 'paymentStatus'))
-  const errors = errorsInJapanese(daysErrorsOf(from, to, 'required'))
+  const errors = daysErrorsOf(from, to, 'required')
   if (Object.keys(errors).length > 0) {
     return { type: 'invalid', errors }
   }
@@ -93,9 +93,3 @@ export const ledgerQueryOf = (conditions: LedgerConditions): URLSearchParams =>
       paymentStatus: conditions.paymentStatus,
     }).flatMap(([name, value]) => (value === undefined ? [] : [[name, value]])),
   )
-
-/** The days of a range, in words: one day, or from one to another. */
-export const rangeNameOf = ({ from, to }: LedgerConditions): string =>
-  from === to
-    ? inJapanese(dayNameOf(from))
-    : `${inJapanese(dayNameOf(from))}〜${inJapanese(dayNameOf(to))}`

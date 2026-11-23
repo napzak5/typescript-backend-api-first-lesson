@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as saleVoidStories from './sale-void.stories'
 
 const stories = composeStories(saleVoidStories)
@@ -121,6 +122,92 @@ describe('SaleVoid', () => {
     expect(
       screen.getByText(
         '受け取った支払いがあるため、このままでは取り消せません。取り消す前に、支払いをすべて全額返金してください。',
+      ),
+    ).toBeVisible()
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+})
+
+describe('SaleVoid on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what a voiding is for, and name its button, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Voidable.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Void a sale that was entered by mistake, or one whose payments were refunded in full to be paid again.',
+      ),
+    ).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Void the sale' })).toBeVisible()
+  })
+
+  it('should name the sale, say what follows, and ask why, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Asking.run()
+
+    // Assert
+    const asking = screen.getByRole('dialog', { name: 'Void the sale?' })
+    expect(asking).toHaveAccessibleDescription(
+      'Sale SL-2KQM-9F4H will be voided. A voided sale stays in the sales ledger as a record of the voiding, and can be neither edited nor paid. The booking can be checked out again. Voiding cannot be undone.',
+    )
+    expect(
+      within(asking).getByRole('textbox', { name: 'Reason for voiding' }),
+    ).toHaveAccessibleDescription(
+      'Kept with the voided sale. Write it so that whoever reads it later understands.',
+    )
+    expect(
+      within(asking)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Back', 'Void'])
+  })
+
+  it('should say in English what is wrong with the reason, and what went wrong with the attempt', async () => {
+    // Arrange
+    languageStore.choose('en')
+    await stories.WithError.run()
+    const reasonOf = within(
+      screen.getByRole('dialog', { name: 'Void the sale?' }),
+    ).getByRole('textbox', { name: 'Reason for voiding' })
+    expect(reasonOf).toHaveAccessibleDescription(
+      expect.stringContaining('Enter the reason for voiding.'),
+    )
+
+    // Act
+    await stories.WithMessage.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('dialog', { name: 'Void the sale?' })).getByRole(
+        'alert',
+      ),
+    ).toHaveTextContent(
+      'The sale could not be voided. Check your connection and try again.',
+    )
+  })
+
+  it('should say in English why a sale is not voided in place of the button', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NotVoidable.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'This sale has payments that were received, so it cannot be voided as it is. Refund every payment in full first.',
       ),
     ).toBeVisible()
     expect(screen.queryByRole('button')).toBeNull()

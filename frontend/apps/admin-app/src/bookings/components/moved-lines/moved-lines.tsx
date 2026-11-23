@@ -1,4 +1,5 @@
 import type { ModelsBookingServiceResponse } from '@beauty-salon-frontend/api-client'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import type { LineCheck } from '../../api/bookings-api'
 import { hoursOf } from '../../utils/booking-format'
 import {
@@ -42,7 +43,7 @@ export const MovedLines = ({
             {`明細 ${index + 1} ${serviceNameOf(line.serviceId, services)}`}
           </p>
           <p>
-            {`${hoursOf(line, timezone)} 担当 ${memberNameOf(line.staffId, staff)}`}
+            {`${hoursOf(line, timezone)} 担当 ${inJapanese(memberNameOf(line.staffId, staff))}`}
           </p>
           {check !== undefined && (
             <LineCheckNote

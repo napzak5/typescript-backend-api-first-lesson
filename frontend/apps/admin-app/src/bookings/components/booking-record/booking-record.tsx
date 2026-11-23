@@ -185,7 +185,7 @@ export const BookingRecord = ({
             {
               key: 'staff',
               header: '担当',
-              cell: ({ staffId }) => memberNameOf(staffId, staff),
+              cell: ({ staffId }) => inJapanese(memberNameOf(staffId, staff)),
             },
             {
               key: 'hours',

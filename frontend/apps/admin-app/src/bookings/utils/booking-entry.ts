@@ -19,6 +19,7 @@ import {
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import { adminBookingMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import type {
   BookingCreation,
@@ -140,8 +141,7 @@ export const readNotes = (values: FormData): FormRead<Notes> => {
 /** Who a booking is for and when, as the form has it: the member of the booking and the lines. */
 export type Lines = Pick<ModelsBookingCreateRequest, 'staffId' | 'services'>
 
-export const NOT_ON_THE_CLOCK =
-  'サロンの時計で、この日にない時刻です（夏時間の始まり）。別の時刻を入力してください。'
+export const NOT_ON_THE_CLOCK = inJapanese(adminBookingMessages.notOnTheClock)
 
 /** The day of the visit, the member of the booking, and the clock the times are read on. */
 export type LineDay = {

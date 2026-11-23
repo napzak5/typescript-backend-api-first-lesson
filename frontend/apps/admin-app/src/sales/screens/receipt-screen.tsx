@@ -7,12 +7,12 @@ import {
 import {
   Button,
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { useParams } from 'react-router'
@@ -24,7 +24,15 @@ import { whyNoReceipt } from '../utils/sale-format'
 import styles from './receipt-screen.module.css'
 import { WithPaymentMethods } from './with-sale'
 
-const TITLE = 'レシート'
+const {
+  loading,
+  names,
+  noReceipt,
+  notFound,
+  receipt: texts,
+  titles,
+  words,
+} = adminSaleMessages
 
 /**
  * What is on the screen and not on paper: the heading and the ways on. The
@@ -47,6 +55,8 @@ type ReceiptOfSaleProps = {
  * none, and the screen says why.
  */
 const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
+  const say = useSay()
+  const title = say(titles.receipt)
   const { saleId = '' } = useParams()
   const read = useQuery({
     queryKey: [...saleKeyOf(saleId), 'receipt'],
@@ -56,7 +66,9 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
     refetchOnReconnect: false,
   })
   const toTheSale = (
-    <ButtonLink href={saleHrefOf(salon.id, saleId)}>売上の内容へ</ButtonLink>
+    <ButtonLink href={saleHrefOf(salon.id, saleId)}>
+      {say(words.toSale)}
+    </ButtonLink>
   )
 
   return (
@@ -64,9 +76,9 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
       .with(undefined, () => (
         <>
           <OnScreen>
-            <PageHeader title={TITLE} description={salon.name} />
+            <PageHeader title={title} description={salon.name} />
           </OnScreen>
-          <LoadingIndicator label='レシートを読み込んでいます' />
+          <LoadingIndicator label={say(loading.receipt)} />
         </>
       ))
       .with(
@@ -75,11 +87,11 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
           <>
             <OnScreen>
               <PageHeader
-                title={TITLE}
+                title={title}
                 description={salon.name}
                 actions={
                   <Button variant='primary' onClick={() => window.print()}>
-                    印刷する
+                    {say(texts.print)}
                   </Button>
                 }
               />
@@ -96,12 +108,9 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
       .with({ type: 'unissued', sale: { salonId: salon.id } }, ({ sale }) => (
         <>
           <OnScreen>
-            <PageHeader title={TITLE} description={salon.name} />
+            <PageHeader title={title} description={salon.name} />
           </OnScreen>
-          <p>
-            {whyNoReceipt(sale) ??
-              'この売上のレシートは、いまは出せません。売上の内容を確かめてください。'}
-          </p>
+          <p>{say(whyNoReceipt(sale) ?? noReceipt.unissued)}</p>
           {toTheSale}
         </>
       ))
@@ -109,29 +118,29 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
       .with({ type: P.union('found', 'unissued', 'notFound') }, () => (
         <>
           <PageHeader
-            title='売上が見つかりません'
-            description='アドレスが正しいか、お確かめください。'
+            title={say(notFound.title)}
+            description={say(notFound.description)}
           />
-          <ButtonLink href={salesHrefOf(salon.id)}>今日の売上へ</ButtonLink>
+          <ButtonLink href={salesHrefOf(salon.id)}>
+            {say(notFound.toToday)}
+          </ButtonLink>
         </>
       ))
       .with({ type: 'forbidden' }, () => (
         <>
           <OnScreen>
-            <PageHeader title={TITLE} description={salon.name} />
+            <PageHeader title={title} description={salon.name} />
           </OnScreen>
-          <OtherSalonNotice what={writtenInJapanese('売上')} />
+          <OtherSalonNotice what={names.salesOfTheSalon} />
         </>
       ))
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <>
           <OnScreen>
-            <PageHeader title={TITLE} description={salon.name} />
+            <PageHeader title={title} description={salon.name} />
           </OnScreen>
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('レシート'), reason),
-            )}
+            message={say(unreadMessageOf(names.receipt, reason))}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -143,10 +152,11 @@ const ReceiptOfSale = ({ salon }: ReceiptOfSaleProps) => {
 
 /** The receipt of a sale of the salon of the address, to print. */
 export const ReceiptScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.receipt)}>
       {(salon) => <ReceiptOfSale key={salon.id} salon={salon} />}
     </WithSalon>
   )

@@ -13,14 +13,15 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -43,9 +44,10 @@ import {
   readSaleChange,
   whyUnchangeable,
 } from '../utils/sale-changes'
-import { WithSale } from './with-sale'
+import { Unwritable, WithSale } from './with-sale'
 
-const TITLE = '売上を直す'
+const { loading, names, titles, words } = adminSaleMessages
+const { change: texts } = adminSaleMessages.changes
 
 type SaleChangeProps = {
   salon: ModelsSalonResponse
@@ -64,10 +66,11 @@ type SaleChangeProps = {
  * says why it is not changed.
  */
 const SaleChange = ({ salon, sale, staff }: SaleChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const key = saleKeyOf(sale.id)
   const back = saleHrefOf(salon.id, sale.id)
   const show = (now: ModelsSaleResponse): void => {
@@ -87,7 +90,7 @@ const SaleChange = ({ salon, sale, staff }: SaleChangeProps) => {
       match(outcome)
         .with({ type: 'updated' }, ({ sale: updated }) => {
           show(updated)
-          notify({ tone: 'success', message: '売上を直しました。' })
+          notify({ tone: 'success', message: texts.done })
           void navigate(back)
         })
         // The sale was voided meanwhile: the screen shows it as it is now
@@ -136,7 +139,7 @@ const SaleChange = ({ salon, sale, staff }: SaleChangeProps) => {
       onSubmit={submit}
       actions={
         <ButtonLink href={back} variant='quiet'>
-          やめる
+          {say(words.cancel)}
         </ButtonLink>
       }
     />
@@ -145,6 +148,7 @@ const SaleChange = ({ salon, sale, staff }: SaleChangeProps) => {
 
 /** The form, once the members of the staff it offers were read. */
 const WithStaff = ({ salon, sale }: Omit<SaleChangeProps, 'staff'>) => {
+  const say = useSay()
   const staff = useQuery({
     queryKey: staffProfilesKeyOf(salon.id),
     queryFn: () => readStaffProfiles(salon.id),
@@ -152,17 +156,13 @@ const WithStaff = ({ salon, sale }: Omit<SaleChangeProps, 'staff'>) => {
   })
 
   return match(staff.data)
-    .with(undefined, () => (
-      <LoadingIndicator label='スタッフを読み込んでいます' />
-    ))
+    .with(undefined, () => <LoadingIndicator label={say(loading.staff)} />)
     .with({ type: 'found' }, ({ items }) => (
       <SaleChange salon={salon} sale={sale} staff={items} />
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={inJapanese(
-          unreadMessageOf(writtenInJapanese('スタッフ'), reason),
-        )}
+        message={say(unreadMessageOf(names.staff, reason))}
         onRetry={() => void staff.refetch()}
         pending={staff.isFetching}
       />
@@ -176,27 +176,22 @@ const WithStaff = ({ salon, sale }: Omit<SaleChangeProps, 'staff'>) => {
  * changed here: the screen says how it is put right.
  */
 export const SaleChangeScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
+  const title = say(titles.change)
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={title}>
       {(salon) => (
-        <WithSale key={salon.id} salon={salon} title={TITLE} fresh>
+        <WithSale key={salon.id} salon={salon} title={title} fresh>
           {(sale) =>
             match(whyUnchangeable(sale))
-              .with(P.string, (why) => (
-                <>
-                  <p>{why}</p>
-                  <ButtonLink href={saleHrefOf(salon.id, sale.id)}>
-                    売上の内容へ
-                  </ButtonLink>
-                </>
+              .with(P.nonNullable, (why) => (
+                <Unwritable why={why} back={saleHrefOf(salon.id, sale.id)} />
               ))
               .with(undefined, () => (
                 <>
-                  <p>
-                    明細と金額は、ここでは直せません。誤りがあるときは、オーナーかマネージャーが、支払いを全額返金して売上を取り消し、予約から会計を入れ直します。
-                  </p>
+                  <p>{say(texts.notHere)}</p>
                   <WithStaff salon={salon} sale={sale} />
                 </>
               ))

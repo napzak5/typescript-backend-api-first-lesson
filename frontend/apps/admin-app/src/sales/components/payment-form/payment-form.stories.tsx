@@ -1,9 +1,13 @@
+import { amountOf } from '@beauty-salon-frontend/salon-screens'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { methodsInUse } from '../../utils/payments'
 import { paymentMethods } from '../examples'
 
 import { PaymentForm } from './payment-form'
+
+const { errors } = adminSaleMessages.payments
 
 const meta: Meta<typeof PaymentForm> = {
   title: 'Admin/Sales/PaymentForm',
@@ -32,8 +36,8 @@ export const Rest: Story = {
 export const WithErrors: Story = {
   args: {
     errors: {
-      paymentMethodId: '支払い方法を選んでください。',
-      amount: '金額は、未払い残額（￥5,500）以下にしてください。',
+      paymentMethodId: errors.method,
+      amount: errors.moreThanOwed(amountOf(5500, 'JPY')),
     },
   },
 }

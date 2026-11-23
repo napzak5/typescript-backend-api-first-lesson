@@ -1,7 +1,7 @@
 import type { ModelsSaleUpdateRequest } from '@beauty-salon-frontend/api-client'
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
-import { NOT_ON_THE_CLOCK } from '../../bookings/utils/booking-entry'
 import {
   aPaidSale,
   aPayment,
@@ -17,7 +17,6 @@ import {
   readVoid,
   type SaleChangeAttempt,
   saleMomentOf,
-  UNDONE_BY_OTHERS,
   type VoidAttempt,
   whyNoVoid,
   whyUnchangeable,
@@ -63,9 +62,10 @@ describe('whyUnchangeable', () => {
 
   it('should say that a voided sale is not changed', () => {
     // Act, Assert
-    expect(whyUnchangeable(aSale({ isVoid: true }))).toBe(
-      '取り消した売上は、直せません。取り消しの記録として残ります。',
-    )
+    expect(whyUnchangeable(aSale({ isVoid: true }))).toEqual({
+      en: 'A voided sale cannot be edited. It stays as a record of the voiding.',
+      ja: '取り消した売上は、直せません。取り消しの記録として残ります。',
+    })
   })
 })
 
@@ -172,27 +172,56 @@ describe('readSaleChange', () => {
     expect(read).toEqual({ type: 'unchanged' })
   })
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
-    ['no day', { saleDate: '' }, { saleDate: '会計日を入力してください。' }],
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
+    [
+      'no day',
+      { saleDate: '' },
+      {
+        saleDate: {
+          en: 'Enter the date of the sale.',
+          ja: '会計日を入力してください。',
+        },
+      },
+    ],
     [
       'a day the API does not take',
       { saleDate: '1899-12-31' },
-      { saleDate: '会計日を入力してください。' },
+      {
+        saleDate: {
+          en: 'Enter the date of the sale.',
+          ja: '会計日を入力してください。',
+        },
+      },
     ],
     [
       'no time',
       { saleTime: '' },
-      { saleTime: '会計の時刻を入力してください。' },
+      {
+        saleTime: {
+          en: 'Enter the time of the sale.',
+          ja: '会計の時刻を入力してください。',
+        },
+      },
     ],
     [
       'a time to come',
       { saleTime: '12:30' },
-      { saleTime: '会計日時は、いまより前にしてください。' },
+      {
+        saleTime: {
+          en: 'The time of the sale must be before now.',
+          ja: '会計日時は、いまより前にしてください。',
+        },
+      },
     ],
     [
       'a day to come',
       { saleDate: '2026-11-21', saleTime: '09:00' },
-      { saleTime: '会計日時は、いまより前にしてください。' },
+      {
+        saleTime: {
+          en: 'The time of the sale must be before now.',
+          ja: '会計日時は、いまより前にしてください。',
+        },
+      },
     ],
   ])('should refuse %s', (_case, changed, errors) => {
     // Act
@@ -224,7 +253,12 @@ describe('readSaleChange', () => {
     expect([date, time]).toEqual(['2026-11-19', '21:02'])
     expect(read).toEqual({
       type: 'invalid',
-      errors: { saleTime: NOT_ON_THE_CLOCK },
+      errors: {
+        saleTime: {
+          en: 'The clock of the salon skips this time on this day (daylight saving time begins). Enter another time.',
+          ja: 'サロンの時計で、この日にない時刻です（夏時間の始まり）。別の時刻を入力してください。',
+        },
+      },
     })
   })
 })
@@ -246,8 +280,10 @@ describe('afterSaleChange', () => {
       {
         message: undefined,
         errors: {
-          staffId:
-            'このスタッフは、その間に削除されたため、選べません。選び直してください。',
+          staffId: {
+            en: 'This staff member was removed meanwhile and cannot be chosen. Choose again.',
+            ja: 'このスタッフは、その間に削除されたため、選べません。選び直してください。',
+          },
         },
       },
     ],
@@ -260,8 +296,10 @@ describe('afterSaleChange', () => {
       {
         message: undefined,
         errors: {
-          saleTime:
-            'この値は受け付けられませんでした。入力を確かめてください。',
+          saleTime: {
+            en: 'This value was not accepted. Check what you entered.',
+            ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+          },
         },
       },
     ],
@@ -269,7 +307,10 @@ describe('afterSaleChange', () => {
       'a value the form has no control for',
       { type: 'invalid', values: [{ field: 'customerId', rule: 'not_found' }] },
       {
-        message: '入力した内容を確かめて、もう一度お試しください。',
+        message: {
+          en: 'Check what you entered and try again.',
+          ja: '入力した内容を確かめて、もう一度お試しください。',
+        },
         errors: {},
       },
     ],
@@ -277,22 +318,32 @@ describe('afterSaleChange', () => {
       'a time zone of the salon that is no name',
       { type: 'undated' },
       {
-        message:
-          'サロンのタイムゾーンが正しくないため、会計日を決められず、会計日時を直せませんでした。サロンの設定を直してください。',
+        message: {
+          en: 'The time zone of the salon is not valid, so the date of the sale could not be set and its time was not changed. Correct the settings of the salon.',
+          ja: 'サロンのタイムゾーンが正しくないため、会計日を決められず、会計日時を直せませんでした。サロンの設定を直してください。',
+        },
         errors: {},
       },
     ],
     [
       'an account that may not',
       { type: 'forbidden' },
-      { message: 'このアカウントでは、この売上を直せません。', errors: {} },
+      {
+        message: {
+          en: 'This account cannot edit this sale.',
+          ja: 'このアカウントでは、この売上を直せません。',
+        },
+        errors: {},
+      },
     ],
     [
       'too many requests',
       { type: 'tooManyRequests' },
       {
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
         errors: {},
       },
     ],
@@ -300,8 +351,10 @@ describe('afterSaleChange', () => {
       'no answer',
       { type: 'failed' },
       {
-        message:
-          '売上を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The sale could not be saved. Check your connection and try again.',
+          ja: '売上を直せませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
         errors: {},
       },
     ],
@@ -312,43 +365,51 @@ describe('afterSaleChange', () => {
 })
 
 describe('whyNoVoid', () => {
-  it.each<[string, Parameters<typeof whyNoVoid>[0], string | undefined]>([
-    ['a sale with nothing received', aSale(), undefined],
+  it.each<[string, Parameters<typeof whyNoVoid>[0], LocalizedText | undefined]>(
     [
-      'a sale whose payments were given back whole',
-      aSale({
-        payments: [aPayment({ status: 'refunded', refundAmount: 3000 })],
-      }),
-      undefined,
+      ['a sale with nothing received', aSale(), undefined],
+      [
+        'a sale whose payments were given back whole',
+        aSale({
+          payments: [aPayment({ status: 'refunded', refundAmount: 3000 })],
+        }),
+        undefined,
+      ],
+      [
+        'a sale with a payment the API does not write',
+        aSale({ payments: [aPayment({ status: 'failed' })] }),
+        undefined,
+      ],
+      [
+        'a sale that was voided',
+        aSale({ isVoid: true }),
+        { en: 'This sale was voided.', ja: 'この売上は、取り消されています。' },
+      ],
+      [
+        'a sale with a payment received',
+        aPaidSale(),
+        {
+          en: 'This sale has payments that were received, so it cannot be voided as it is. Refund every payment in full first.',
+          ja: '受け取った支払いがあるため、このままでは取り消せません。取り消す前に、支払いをすべて全額返金してください。',
+        },
+      ],
+      [
+        'a sale with a payment given back in part, beside one that was received',
+        aSale({
+          payments: [
+            aPayment(),
+            aPayment({ status: 'partial_refund', refundAmount: 500 }),
+          ],
+        }),
+        {
+          en: 'A payment of this sale was partly refunded, so the sale cannot be voided. A payment is refunded once, so the rest cannot be refunded.',
+          ja: '一部を返金した支払いがあるため、この売上は取り消せません。1 件の支払いの返金は 1 回で、残りは返金できません。',
+        },
+      ],
     ],
-    [
-      'a sale with a payment the API does not write',
-      aSale({ payments: [aPayment({ status: 'failed' })] }),
-      undefined,
-    ],
-    [
-      'a sale that was voided',
-      aSale({ isVoid: true }),
-      'この売上は、取り消されています。',
-    ],
-    [
-      'a sale with a payment received',
-      aPaidSale(),
-      '受け取った支払いがあるため、このままでは取り消せません。取り消す前に、支払いをすべて全額返金してください。',
-    ],
-    [
-      'a sale with a payment given back in part, beside one that was received',
-      aSale({
-        payments: [
-          aPayment(),
-          aPayment({ status: 'partial_refund', refundAmount: 500 }),
-        ],
-      }),
-      '一部を返金した支払いがあるため、この売上は取り消せません。1 件の支払いの返金は 1 回で、残りは返金できません。',
-    ],
-  ])('should say whether %s is voided', (_case, voided, why) => {
+  )('should say whether %s is voided', (_case, voided, why) => {
     // Act, Assert
-    expect(whyNoVoid(voided)).toBe(why)
+    expect(whyNoVoid(voided)).toEqual(why)
   })
 })
 
@@ -368,7 +429,12 @@ describe('readVoid', () => {
     // Act, Assert
     expect(readVoid(formOf(entries))).toEqual({
       type: 'invalid',
-      errors: { voidReason: '取り消しの理由を入力してください。' },
+      errors: {
+        voidReason: {
+          en: 'Enter the reason for voiding.',
+          ja: '取り消しの理由を入力してください。',
+        },
+      },
     })
   })
 })
@@ -376,8 +442,10 @@ describe('readVoid', () => {
 describe('afterVoid', () => {
   const voided = aSale({ isVoid: true })
   const paid = aPaidSale()
-  const AGAIN =
-    '売上を取り消せませんでした。通信の状態を確かめて、もう一度お試しください。'
+  const AGAIN = {
+    en: 'The sale could not be voided. Check your connection and try again.',
+    ja: '売上を取り消せませんでした。通信の状態を確かめて、もう一度お試しください。',
+  }
 
   it.each<[string, VoidAttempt, ReturnType<typeof afterVoid>]>([
     [
@@ -391,7 +459,12 @@ describe('afterVoid', () => {
       {
         type: 'again',
         message: undefined,
-        errors: { voidReason: '取り消しの理由を入力してください。' },
+        errors: {
+          voidReason: {
+            en: 'Enter the reason for voiding.',
+            ja: '取り消しの理由を入力してください。',
+          },
+        },
       },
     ],
     [
@@ -405,7 +478,10 @@ describe('afterVoid', () => {
       {
         type: 'refused',
         sale: voided,
-        message: 'この売上は、その間に取り消されていました。',
+        message: {
+          en: 'This sale was voided meanwhile.',
+          ja: 'この売上は、その間に取り消されていました。',
+        },
       },
     ],
     [
@@ -414,8 +490,10 @@ describe('afterVoid', () => {
       {
         type: 'refused',
         sale: paid,
-        message:
-          'その間に、この売上の支払いが変わりました。受け取った支払いがあるため、このままでは取り消せません。取り消す前に、支払いをすべて全額返金してください。',
+        message: {
+          en: 'The payments of this sale changed meanwhile. This sale has payments that were received, so it cannot be voided as it is. Refund every payment in full first.',
+          ja: 'その間に、この売上の支払いが変わりました。受け取った支払いがあるため、このままでは取り消せません。取り消す前に、支払いをすべて全額返金してください。',
+        },
       },
     ],
     [
@@ -429,7 +507,10 @@ describe('afterVoid', () => {
       { type: 'forbidden' },
       {
         type: 'again',
-        message: `このアカウントでは、売上を取り消せません。${UNDONE_BY_OTHERS}`,
+        message: {
+          en: 'This account cannot void sales. Owners and managers void sales and record refunds.',
+          ja: 'このアカウントでは、売上を取り消せません。売上の取り消しと返金は、オーナーとマネージャーができます。',
+        },
         errors: {},
       },
     ],
@@ -438,8 +519,10 @@ describe('afterVoid', () => {
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
         errors: {},
       },
     ],

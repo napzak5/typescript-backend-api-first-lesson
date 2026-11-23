@@ -1,9 +1,17 @@
+import {
+  CHECK_THE_VALUES_MESSAGE,
+  FAILED,
+  unreadMessageOf,
+} from '@beauty-salon-frontend/answers'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import type { BillLine } from '../../utils/checkout'
 import { aCalculation, services, staff } from '../examples'
 
 import { CheckoutForm } from './checkout-form'
+
+const { bill, notices, refusals } = adminSaleMessages.checkout
 
 const [cut, colour] = services
 const [misaki, ken] = staff
@@ -41,7 +49,7 @@ const meta: Meta<typeof CheckoutForm> = {
     cashier: misaki?.id ?? '',
     currency: 'JPY',
     bill: { type: 'calculated', calculation: aCalculation() },
-    changed: '',
+    changed: undefined,
     onAdd: fn(),
     onRemove: fn(),
     onRecalculate: fn(),
@@ -61,7 +69,7 @@ export const AsBooked: Story = {}
 export const WithAddition: Story = {
   args: {
     added: ADDED,
-    changed: 'カラーを足しました。',
+    changed: notices.added('カラー'),
     bill: {
       type: 'calculated',
       calculation: aCalculation({
@@ -77,6 +85,13 @@ export const WithAddition: Story = {
   },
 }
 
+/** A service of the booking that was removed from the menu since, billed at its price */
+export const WithRemovedService: Story = {
+  args: {
+    booked: BOOKED.map((line) => ({ ...line, serviceId: null, name: null })),
+  },
+}
+
 /** The amounts are on their way */
 export const Calculating: Story = {
   args: { bill: { type: 'calculating' } },
@@ -88,7 +103,7 @@ export const Uncalculated: Story = {
     added: ADDED,
     bill: {
       type: 'uncalculated',
-      message: 'カラーは、メニューから削除されていました。外してください。',
+      message: bill.gone(['カラー']),
     },
   },
 }
@@ -98,8 +113,7 @@ export const Unread: Story = {
   args: {
     bill: {
       type: 'unread',
-      message:
-        '金額を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      message: unreadMessageOf(adminSaleMessages.names.amounts, FAILED),
     },
   },
 }
@@ -108,9 +122,7 @@ export const Unread: Story = {
 export const WithErrors: Story = {
   args: {
     cashier: 'none',
-    message: '入力した内容を確かめて、もう一度お試しください。',
-    errors: {
-      staffId: 'このスタッフは、もう選べません。選び直してください。',
-    },
+    message: CHECK_THE_VALUES_MESSAGE,
+    errors: { staffId: refusals.staffGone },
   },
 }

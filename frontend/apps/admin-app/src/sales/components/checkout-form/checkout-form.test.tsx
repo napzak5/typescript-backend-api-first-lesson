@@ -1,8 +1,13 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { optionsOf, rowsOf } from '@beauty-salon-frontend/testing/screens'
+import {
+  columnsOf,
+  optionsOf,
+  rowsOf,
+} from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { services, staff } from '../examples'
 import * as checkoutFormStories from './checkout-form.stories'
 
@@ -97,6 +102,16 @@ describe('CheckoutForm', () => {
     expect(toAdd()).toHaveFocus()
   })
 
+  it('should name a service that was removed from the menu as such', async () => {
+    // Act
+    await stories.WithRemovedService.run()
+
+    // Assert
+    expect(rowsOf('予約の施術')).toEqual([
+      ['削除されたメニュー', '田中 美咲', '￥5,500', '￥0'],
+    ])
+  })
+
   it('should say the amounts are on their way', async () => {
     // Act
     await stories.Calculating.run()
@@ -181,5 +196,131 @@ describe('CheckoutForm', () => {
     )
     expect(cashier()).toHaveFocus()
     expect(cashier()).toHaveValue('none')
+  })
+})
+
+describe('CheckoutForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should bill what the booking was booked for, with the amounts, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.AsBooked.run()
+
+    // Assert
+    expect(columnsOf('Booked services')).toEqual([
+      'Service',
+      'Staff',
+      'Price',
+      'Discount',
+    ])
+    expect(rowsOf('Booked services')).toEqual([
+      ['カット', '田中 美咲', '¥5,500', '¥0'],
+    ])
+    expect(rowsOf('Added services')).toEqual([
+      ['Add the services that were done beyond the booking from the menu'],
+    ])
+    const amounts = screen
+      .getByRole('heading', { name: 'Amounts' })
+      .closest('section')
+    expect(
+      within(amounts ?? document.body)
+        .getAllByRole('term')
+        .map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent,
+        ]),
+    ).toEqual([
+      ['Subtotal', '¥5,500'],
+      ['Discount', '¥0'],
+      ['Tax', '¥0'],
+      ['Total', '¥5,500'],
+      [
+        'Payment methods that take the total at once',
+        'Cash, Credit card, E-money',
+      ],
+    ])
+    expect(
+      screen.getByRole('combobox', { name: 'Service to add' }),
+    ).toHaveAccessibleDescription(
+      'Counted at the price of the menu now, done by the staff member of the booking.',
+    )
+    expect(
+      optionsOf(screen.getByRole('combobox', { name: 'Service to add' })),
+    ).toEqual(['カット (¥5,500)', 'カラー (¥8,800)'])
+    expect(
+      optionsOf(screen.getByRole('combobox', { name: 'Cashier' })),
+    ).toEqual(['田中 美咲', '佐藤 健', 'Not recorded'])
+    expect(screen.getByRole('button', { name: 'Check out' })).toBeEnabled()
+  })
+
+  it('should list what was added, say so, and name its button in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithAddition.run()
+
+    // Assert
+    expect(rowsOf('Added services')).toEqual([
+      ['カラー', '佐藤 健', '¥8,800', '¥800', 'Remove'],
+    ])
+    expect(screen.getByRole('status').textContent).toBe('Added カラー.')
+    expect(
+      screen.getByRole('button', { name: 'Remove カラー (line 1)' }),
+    ).toBeVisible()
+  })
+
+  it('should name a service that was removed from the menu as such in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithRemovedService.run()
+
+    // Assert
+    expect(rowsOf('Booked services')).toEqual([
+      ['Removed service', '田中 美咲', '¥5,500', '¥0'],
+    ])
+  })
+
+  it('should say why there are no amounts, and ask again, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Uncalculated.run()
+
+    // Assert
+    expect(
+      screen.getByText('カラー was removed from the menu. Take it off.'),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('button', { name: 'Calculate again' }),
+    ).toBeVisible()
+  })
+
+  it('should say what the API refused at its control in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByText('Check what you entered and try again.'),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('combobox', { name: 'Cashier' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'This staff member can no longer be chosen. Choose again.',
+      ),
+    )
   })
 })

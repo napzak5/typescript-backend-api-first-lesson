@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
@@ -12,6 +13,7 @@ import {
   firstSight,
   heading,
   notifications,
+  optionsOf,
   rowsOf,
 } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -21,11 +23,10 @@ import {
   TOKYO,
   YUKI,
 } from '@beauty-salon-frontend/testing/seed'
-import { inJapanese } from '@beauty-salon-frontend/ui'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { renderAt } from '../../__tests__/screens'
+import { openAs, renderAt } from '../../__tests__/screens'
 import { arrange, refuse } from '../../bookings/__tests__/arrangements'
 import {
   arrangeSale,
@@ -840,7 +841,7 @@ describe('the sales of a salon, against the API', () => {
       })
       await paySale(paid)
       const today = await dayFromToday(0)
-      const caption = `${inJapanese(dayNameOf(today))}の売上`
+      const caption = `${dayNameOf(today).ja}の売上`
       const user = userEvent.setup()
       const tokyo = await openAt((salon) => `/salons/${salon}/bookings`)
       await heading('予約台帳')
@@ -854,16 +855,11 @@ describe('the sales of a salon, against the API', () => {
       expect(rowsOf(caption)).toEqual([
         [
           'SL-TEST-0202',
-          `${inJapanese(dayNameOf(today))} 11:05`,
+          `${dayNameOf(today).ja} 11:05`,
           '￥4,000',
           '支払い済み',
         ],
-        [
-          'SL-TEST-0201',
-          `${inJapanese(dayNameOf(today))} 10:05`,
-          '￥5,500',
-          '未払い',
-        ],
+        ['SL-TEST-0201', `${dayNameOf(today).ja} 10:05`, '￥5,500', '未払い'],
       ])
       expect(screen.getByRole('link', { name: '売上' })).toHaveAttribute(
         'aria-current',
@@ -881,12 +877,7 @@ describe('the sales of a salon, against the API', () => {
       // Assert
       await waitFor(() =>
         expect(rowsOf(caption)).toEqual([
-          [
-            'SL-TEST-0201',
-            `${inJapanese(dayNameOf(today))} 10:05`,
-            '￥5,500',
-            '未払い',
-          ],
+          ['SL-TEST-0201', `${dayNameOf(today).ja} 10:05`, '￥5,500', '未払い'],
         ]),
       )
       const narrowed = `/salons/${tokyo}/sales?from=${today}&to=${today}&paymentStatus=pending`
@@ -942,5 +933,199 @@ describe('the sales of a salon, against the API', () => {
         screen.getByRole('link', { name: '自分のサロンの予約へ' }),
       ).toBeVisible()
     })
+  })
+})
+
+describe('the sales of a salon on a page in English', () => {
+  /** The kinds of payment of the seed data that take a total between 100 and 10,000 yen at once, in English */
+  const ONE_PAYMENT_IN_ENGLISH =
+    'Cash, Credit card, Debit card, E-money, QR code payment, Points'
+
+  /** Waits for the page of a sale in English: its heading, then its parts. */
+  const theSaleInEnglish = async (): Promise<void> => {
+    await heading('Sale details')
+    await screen.findByRole('table', { name: 'Line items' })
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should check a visit out with a service added, and show its sale, in English', async () => {
+    // Arrange
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0301',
+      day: 0,
+      at: '10:00',
+      status: 'completed',
+    })
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(`/salons/${tokyo}/bookings/${id}/checkout`, OWNER, 'en')
+    await heading('Check out')
+    await screen.findByRole('table', { name: 'Booked services' })
+    expect(rowsOf('Booked services')).toEqual([
+      ['Ladies Cut', 'Hiroshi Tanaka', '¥5,500', '¥0'],
+    ])
+    await within(part('Amounts')).findByText(ONE_PAYMENT_IN_ENGLISH)
+    expect(describedIn('Amounts')).toEqual({
+      Subtotal: '¥5,500',
+      Discount: '¥0',
+      Tax: '¥0',
+      Total: '¥5,500',
+      'Payment methods that take the total at once': ONE_PAYMENT_IN_ENGLISH,
+    })
+
+    // Act
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Service to add' }),
+      'Mens Cut (¥4,000)',
+    )
+    await user.click(screen.getByRole('button', { name: 'Add the service' }))
+
+    // Assert
+    expect(screen.getByText('Added Mens Cut.')).toBeVisible()
+    await waitFor(() => expect(describedIn('Amounts')['Total']).toBe('¥9,500'))
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Check out' }))
+
+    // Assert
+    await theSaleInEnglish()
+    expect(notifications()).toContain('Checked out.')
+    expect(rowsOf('Line items').map((row) => row[0])).toEqual([
+      'Ladies Cut',
+      'Mens Cut',
+    ])
+    expect(describedIn('Sale')['Payment']).toBe('Unpaid')
+    expect(screen.getByText('No payments yet')).toBeVisible()
+    expect(await findAccessibilityViolations(document.body)).toEqual([])
+  })
+
+  it('should say in English what a method does not take, record a payment and issue the receipt', async () => {
+    // Arrange
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0302',
+      day: 0,
+      at: '10:00',
+      status: 'completed',
+    })
+    const saleId = await arrangeSale({
+      saleNumber: 'SL-TEST-0302',
+      bookingId: id,
+      at: '11:00',
+    })
+    const user = userEvent.setup()
+    const tokyo = await salonIdOf(TOKYO)
+    await openAs(`/salons/${tokyo}/sales/${saleId}/payments/new`, OWNER, 'en')
+    await heading('Record a payment')
+    await user.click(
+      await screen.findByRole('radio', {
+        name: 'Credit Card (¥1,000 or more)',
+      }),
+    )
+    await user.clear(screen.getByRole('textbox', { name: 'Amount' }))
+    await user.type(screen.getByRole('textbox', { name: 'Amount' }), '999')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Record the payment' }))
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Amount' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Credit Card takes ¥1,000 or more at a time.'),
+    )
+
+    // Act
+    await user.click(screen.getByRole('radio', { name: 'Cash' }))
+    await user.clear(screen.getByRole('textbox', { name: 'Amount' }))
+    await user.type(screen.getByRole('textbox', { name: 'Amount' }), '5500')
+    await user.click(screen.getByRole('button', { name: 'Record the payment' }))
+
+    // Assert
+    await theSaleInEnglish()
+    expect(notifications()).toContain(
+      'Recorded the payment. The total was received, so a receipt can be issued.',
+    )
+    expect(await within(part('Sale')).findByText('Paid')).toBeVisible()
+    expect(rowsOf('Payments').map((row) => row.slice(2, 6))).toEqual([
+      ['Cash', '¥5,500', 'Not recorded', 'Received'],
+    ])
+
+    // Act
+    await user.click(screen.getByRole('link', { name: 'Issue a receipt' }))
+
+    // Assert
+    await heading('Receipt')
+    const receipt = await screen.findByRole('article', { name: TOKYO })
+    expect(
+      within(receipt)
+        .getAllByRole('term')
+        .map((term) => term.textContent),
+    ).toEqual([
+      'Receipt number',
+      'Time of sale',
+      'Issued',
+      'Subtotal',
+      'Discount',
+      'Tax',
+      'Total',
+      'Paid (Cash)',
+    ])
+    expect(screen.getByRole('button', { name: 'Print' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Back to the sale' })).toBeVisible()
+  })
+
+  it('should list the sales of today in English', async () => {
+    // Arrange
+    const id = await arrange({
+      bookingNumber: 'BK-TEST-0303',
+      day: 0,
+      at: '09:00',
+      status: 'completed',
+    })
+    await arrangeSale({
+      saleNumber: 'SL-TEST-0303',
+      bookingId: id,
+      at: '10:05',
+    })
+    const today = dayNameOf(await dayFromToday(0)).en
+    const caption = `Sales of ${today}`
+
+    // Act
+    await openAs(`/salons/${await salonIdOf(TOKYO)}/sales`, OWNER, 'en')
+
+    // Assert
+    await heading('Sales ledger')
+    await screen.findByRole('table', { name: caption })
+    expect(rowsOf(caption)).toEqual([
+      ['SL-TEST-0303', `${today} at 10:05`, '¥5,500', 'Unpaid'],
+    ])
+    expect(
+      optionsOf(screen.getByRole('combobox', { name: 'Payment' }))[0],
+    ).toBe('All')
+  })
+
+  it('should tell a member of another salon in English that its sales are not theirs to see', async () => {
+    // Act
+    await openAs(`/salons/${await salonIdOf(TOKYO)}/sales`, THERAPIST, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'You cannot see the sales of this salon. Only the staff of the salon and the administrators can.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Go to the bookings of your salon' }),
+    ).toBeVisible()
   })
 })

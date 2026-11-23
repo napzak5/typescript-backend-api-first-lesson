@@ -6,6 +6,7 @@ import {
   momentNameAt,
   momentOf,
   startOfDayAt,
+  timeAt,
   timeOfDayAt,
 } from './salon-time'
 
@@ -16,6 +17,31 @@ describe('dayAt', () => {
     ['UTC', 'UTC', '2026-11-20'],
   ])('should give the day at a salon in %s', (_case, timezone, day) => {
     expect(dayAt(new Date('2026-11-20T15:30:00Z'), timezone)).toBe(day)
+  })
+})
+
+describe('timeAt', () => {
+  it.each([
+    ['Tokyo', 'Asia/Tokyo', '00:30'],
+    ['New York', 'America/New_York', '10:30'],
+    ['UTC', 'UTC', '15:30'],
+  ])(
+    'should give the time of day at a salon in %s as a control of a time holds it',
+    (_case, timezone, time) => {
+      // Act
+      const shown = timeAt('2026-11-20T15:30:00Z', timezone)
+
+      // Assert
+      expect(shown).toBe(time)
+    },
+  )
+
+  it('should give the hour of a morning with two figures', () => {
+    // Act
+    const shown = timeAt('2026-11-20T00:05:00Z', 'Asia/Tokyo')
+
+    // Assert
+    expect(shown).toBe('09:05')
   })
 })
 

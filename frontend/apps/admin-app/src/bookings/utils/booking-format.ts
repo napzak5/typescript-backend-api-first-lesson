@@ -5,6 +5,11 @@ import type {
 import { timeOfDayAt } from '@beauty-salon-frontend/salon-screens'
 import { type BadgeTone, inJapanese } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminCustomerMessages,
+  adminMenuMessages,
+  adminStaffMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
 
 const STATUS_NAMES: Record<ModelsBookingStatusType, LocalizedText> =
@@ -36,13 +41,10 @@ export const hoursOf = (
   `${inJapanese(timeOfDayAt(startTime, timezone))}〜${inJapanese(timeOfDayAt(endTime, timezone))}`
 
 /** What is said of a customer who was removed. */
-export const GONE_CUSTOMER = '削除された顧客'
+export const GONE_CUSTOMER = inJapanese(adminCustomerMessages.naming.removed)
 
 /** What is said of a member of the staff the salon no longer shows. */
-export const UNLISTED_STAFF = '一覧にないスタッフ'
-
-/** What is said of a line that has no member: it takes nobody's time */
-export const NO_MEMBER = '未定'
+export const UNLISTED_STAFF = inJapanese(adminStaffMessages.unlisted)
 
 /** What is said of a service that was removed. */
-export const GONE_SERVICE = '削除されたメニュー'
+export const GONE_SERVICE = inJapanese(adminMenuMessages.removedService)

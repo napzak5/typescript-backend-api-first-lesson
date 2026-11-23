@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -7,7 +8,7 @@ import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LedgerConditions } from '../../utils/sales-ledger'
 import { LedgerFilter, type LedgerFilterProps } from './ledger-filter'
 import * as ledgerFilterStories from './ledger-filter.stories'
@@ -164,6 +165,56 @@ describe('LedgerFilter', () => {
     expect(screen.getByRole('button', { name: '条件（1）' })).toHaveAttribute(
       'aria-haspopup',
       'dialog',
+    )
+  })
+})
+
+describe('LedgerFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should show the days and every state of payment in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Today.run()
+
+    // Assert
+    const first = screen.getByLabelText('Date of sale (from)')
+    expect(first.closest('search')).toHaveAttribute(
+      'aria-label',
+      'Filter the sales',
+    )
+    expect(screen.getByLabelText('Date of sale (to)')).toHaveValue('2026-11-20')
+    expect(
+      optionsOf(screen.getByRole('combobox', { name: 'Payment' })),
+    ).toEqual([
+      'All',
+      'Unpaid',
+      'Partly paid',
+      'Paid',
+      'Partly refunded',
+      'Refunded',
+    ])
+    expect(screen.getByRole('button', { name: 'Show' })).toBeVisible()
+  })
+
+  it('should say what is wrong at the control in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByLabelText('Date of sale (to)'),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'Make the last day the same as the first day, or later.',
+      ),
     )
   })
 })

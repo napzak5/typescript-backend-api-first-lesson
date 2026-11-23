@@ -7,7 +7,8 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { amountOf, momentNameAt } from '@beauty-salon-frontend/salon-screens'
 import type { BadgeTone } from '@beauty-salon-frontend/ui'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 
 /*
  * A sale and its payments in the words of the salon, and what follows from
@@ -15,18 +16,15 @@ import { inJapanese } from '@beauty-salon-frontend/ui'
  * payment or a receipt can be had.
  */
 
-const PAYMENT_STATUS_NAMES: Record<ModelsPaymentStatusType, string> = {
-  pending: '未払い',
-  processing: '一部受け取り',
-  completed: '支払い済み',
-  failed: '失敗',
-  refunded: '返金済み',
-  partial_refund: '一部返金',
-}
+const { payments, words } = adminSaleMessages
+
+const PAYMENT_STATUS_NAMES: Record<ModelsPaymentStatusType, LocalizedText> =
+  adminSaleMessages.statuses
 
 /** The state of the payment of a sale, in the word the salon uses. */
-export const paymentStatusNameOf = (status: ModelsPaymentStatusType): string =>
-  PAYMENT_STATUS_NAMES[status]
+export const paymentStatusNameOf = (
+  status: ModelsPaymentStatusType,
+): LocalizedText => PAYMENT_STATUS_NAMES[status]
 
 const PAYMENT_STATUS_TONES: Record<ModelsPaymentStatusType, BadgeTone> = {
   pending: 'warning',
@@ -42,17 +40,11 @@ export const paymentStatusToneOf = (
   status: ModelsPaymentStatusType,
 ): BadgeTone => PAYMENT_STATUS_TONES[status]
 
-const PAYMENT_NAMES: Record<ModelsPaymentStatusType, string> = {
-  pending: '処理待ち',
-  processing: '処理中',
-  completed: '受け取り',
-  failed: '失敗',
-  refunded: '返金済み',
-  partial_refund: '一部返金',
-}
+const PAYMENT_NAMES: Record<ModelsPaymentStatusType, LocalizedText> =
+  adminSaleMessages.paymentStatuses
 
 /** The state of one payment of a sale, in the word the salon uses. */
-export const paymentNameOf = (status: ModelsPaymentStatusType): string =>
+export const paymentNameOf = (status: ModelsPaymentStatusType): LocalizedText =>
   PAYMENT_NAMES[status]
 
 /** The kinds of payment that record the card: its last four digits and its brand. */
@@ -61,34 +53,31 @@ export const CARD_METHODS: readonly ModelsPaymentMethodType[] = [
   'debit_card',
 ]
 
-/** What is said of a payment method the salon removed. */
-const UNLISTED_METHOD = '一覧にない支払い方法'
-
-/** The name a payment was received by: that of its method. */
+/**
+ * The name a payment was received by: that of its method, as the salon
+ * wrote it, or that the salon removed it.
+ */
 export const methodNameOf = (
   paymentMethodId: string,
   methods: readonly Pick<ModelsPaymentMethodResponse, 'id' | 'displayName'>[],
-): string =>
-  methods.find(({ id }) => id === paymentMethodId)?.displayName ??
-  UNLISTED_METHOD
+): LocalizedText => {
+  const name = methods.find(({ id }) => id === paymentMethodId)?.displayName
+
+  return name === undefined ? words.unlistedMethod : { en: name, ja: name }
+}
 
 /**
  * The card a payment was made with: its brand and its last four digits, as
- * far as they were recorded (「VISA 下 4 桁 4242」); null when neither was.
+ * far as they were recorded (「VISA 下 4 桁 4242」, "VISA ending in 4242");
+ * null when neither was.
  */
 export const cardNameOf = ({
   cardBrand,
   cardLastFour,
-}: Pick<ModelsPaymentResponse, 'cardBrand' | 'cardLastFour'>):
-  | string
-  | null => {
-  const parts = [
-    ...(cardBrand === null ? [] : [cardBrand]),
-    ...(cardLastFour === null ? [] : [`下 4 桁 ${cardLastFour}`]),
-  ]
-
-  return parts.length === 0 ? null : parts.join(' ')
-}
+}: Pick<
+  ModelsPaymentResponse,
+  'cardBrand' | 'cardLastFour'
+>): LocalizedText | null => payments.cardOf(cardBrand, cardLastFour)
 
 /**
  * What was given back of a payment, and when, as far as it was recorded
@@ -102,15 +91,13 @@ export const refundNameOf = (
   }: Pick<ModelsPaymentResponse, 'refundAmount' | 'refundedAt'>,
   timezone: string,
   currency: string,
-): string | null =>
+): LocalizedText | null =>
   refundAmount === null
     ? null
-    : [
-        inJapanese(amountOf(refundAmount, currency)),
-        ...(refundedAt === null
-          ? []
-          : [inJapanese(momentNameAt(refundedAt, timezone))]),
-      ].join('、')
+    : payments.table.refunded(
+        amountOf(refundAmount, currency),
+        refundedAt === null ? null : momentNameAt(refundedAt, timezone),
+      )
 
 /** The states of a payment whose amount was received: a refund does not take it back. */
 const RECEIVED: readonly ModelsPaymentStatusType[] = [
@@ -161,17 +148,17 @@ type Payable = Pick<ModelsSaleResponse, 'isVoid' | 'payments' | 'totalAmount'>
  * Why a sale takes no payment, in a sentence; `undefined` when it takes
  * one. These are the reasons the API refuses one for, in its order.
  */
-export const whyNoPayment = (sale: Payable): string | undefined => {
+export const whyNoPayment = (sale: Payable): LocalizedText | undefined => {
   if (sale.isVoid) {
-    return 'この売上は取り消されているため、支払いを記録できません。'
+    return payments.why.voided
   }
   if (hasRefund(sale)) {
-    return 'この売上には返金があるため、支払いを記録できません。払い直すときは、売上を取り消して、会計を入れ直してください。'
+    return payments.why.refunded
   }
   if (owedOf(sale) === 0) {
     return sale.totalAmount === 0
-      ? '合計が 0 円の売上は、受け取る支払いがありません。'
-      : 'この売上は、合計を受け取りました。'
+      ? payments.why.nothingToPay
+      : payments.why.paid
   }
 
   return undefined
@@ -181,12 +168,12 @@ export const whyNoPayment = (sale: Payable): string | undefined => {
  * Why a sale has no receipt, in a sentence; `undefined` when it has one:
  * one that is not void, whose total was received.
  */
-export const whyNoReceipt = (sale: Payable): string | undefined => {
+export const whyNoReceipt = (sale: Payable): LocalizedText | undefined => {
   if (sale.isVoid) {
-    return '取り消された売上の、レシートは出せません。'
+    return adminSaleMessages.noReceipt.voided
   }
   if (receivedOf(sale) < sale.totalAmount) {
-    return 'レシートは、合計を受け取ってから出せます。'
+    return adminSaleMessages.noReceipt.unpaid
   }
 
   return undefined

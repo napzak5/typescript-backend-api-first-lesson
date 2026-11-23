@@ -417,8 +417,12 @@ In an area of an application that is done, the same rules hold, and:
   that saves a change) is `portalFrameMessages`. The admin application has
   `admin/`: its frame (`adminFrameMessages`), the ledger of the customers
   (`adminCustomerMessages`), the inventory (`adminInventoryMessages`, its
-  movements, its count and its alerts in files of their own) and the words
-  a screen names a member of the staff with (`adminStaffMessages`). How the catalogues write a count, a
+  movements, its count and its alerts in files of their own), the sales
+  (`adminSaleMessages`, its checkout, its payments and refunds, and its
+  change and voiding in files of their own), the frame of a screen of a
+  booking that the checkout opens in (`adminBookingMessages`) and the
+  words a screen names a service of the menu and a member of the staff
+  with (`adminMenuMessages`, `adminStaffMessages`). How the catalogues write a count, a
   list, sentences one after the other and a postal code is in
   `messages/written.ts`, which every catalogue shares.
 - What it writes (`booking-format.ts`, `salon-format.ts`,
@@ -453,11 +457,15 @@ In an area of an application that is done, the same rules hold, and:
   and of the dashboard); what the tests share (`__tests__`) is not read.
   An area that is done in parts names the folders and files inside it
   that are done (`'customers/components/customer-form'`), until the whole
-  area is and its name takes their place (`'customers'` and
-  `'inventory'` of the admin application).
+  area is and its name takes their place (`'customers'`, `'inventory'`
+  and `'sales'` of the admin application; the frame of a screen of a
+  booking, which the sales open in, is `'bookings/screens/with-booking.tsx'`
+  until the bookings are done).
 - An area that is still written in Japanese says what it takes of an area
   that is done with `inJapanese` (the purchase orders say
-  `quantityNameOf` and `stockRowNameOf` of the inventory so), and an area
+  `quantityNameOf` and `stockRowNameOf` of the inventory so, and the
+  bookings say `memberNameOf` and the names of a removed customer, of a
+  member not listed and of a removed service), and an area
   that is done hands on the strings of one that is not as they are. A type
   of an area that is not done takes the type of its texts as a parameter
   where one that is done uses it (`TreatmentRemovalSays<Text = string>` of
@@ -1734,7 +1742,8 @@ page of a booking (`components/booking-sale/`).
   the sales of the booking, shows the one it finds, and says so in a
   `warning` notification. When it refuses a payment, the sale is read
   again and the screen says why from it (`whyNoPayment`: voided, given
-  back, paid).
+  back, paid), with the way back to the sale (`Unwritable` of
+  `screens/with-sale.tsx`, which the screens that write to a sale share).
 - **A choice says what it takes.** The payment methods are those the salon
   uses (`isActive`), in its order, each labelled with what it takes at once
   (「Credit Card（￥1,000から）」), in a `RadioGroup` one below the other. The
@@ -1758,7 +1767,7 @@ page of a booking (`components/booking-sale/`).
   back whole, the sale voided, the booking billed again.
 - **An operation that is not for every role** is offered by the role
   (`mayUndoSales` of `sale-changes.ts`), and where it would be, the
-  screen says who may (`UNDONE_BY_OTHERS`). Its address, opened by
+  screen says who may (`adminSaleMessages.undoneByOthers`). Its address, opened by
   another role, says the same before it reads anything more.
 - **A way of several steps says the next one after each.** The refund
   that gives back the last payment whole says that the sale can be

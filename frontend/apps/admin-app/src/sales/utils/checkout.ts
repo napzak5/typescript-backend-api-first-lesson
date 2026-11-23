@@ -12,9 +12,17 @@ import type {
   ModelsSalesDetail,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import { inJapanese, textOf, textOrNull } from '@beauty-salon-frontend/ui'
+import {
+  type FormSays,
+  NO_ERRORS,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match, P } from 'ts-pattern'
-import { GONE_SERVICE } from '../../bookings/utils/booking-format'
+
+const { again, bill, refusals, why } = adminSaleMessages.checkout
 
 /*
  * Entering the sale of a booking: what it bills, how the tax that the API
@@ -28,19 +36,13 @@ import { GONE_SERVICE } from '../../bookings/utils/booking-format'
  */
 export const whyNoCheckout = ({
   status,
-}: Pick<ModelsBookingResponse, 'status'>): string | undefined =>
+}: Pick<ModelsBookingResponse, 'status'>): LocalizedText | undefined =>
   match(status)
-    .returnType<string | undefined>()
+    .returnType<LocalizedText | undefined>()
     // The visit took place: it is billed
     .with(P.union('in_progress', 'completed'), () => undefined)
-    .with(
-      P.union('cancelled', 'no_show'),
-      () => 'キャンセルした予約には、会計を入れません。',
-    )
-    .with(
-      P.union('draft', 'pending', 'confirmed'),
-      () => '会計は、施術を始めると入れられます。',
-    )
+    .with(P.union('cancelled', 'no_show'), () => why.cancelled)
+    .with(P.union('draft', 'pending', 'confirmed'), () => why.notBegun)
     .exhaustive()
 
 /** The sale of a booking that is not void: a booking is billed once. */
@@ -52,7 +54,8 @@ export const saleOfBooking = (
 export type BillLine = {
   /** `null` for a service that was removed from the menu */
   serviceId: string | null
-  name: string
+  /** As the menu names it; `null` for a service that was removed from it */
+  name: string | null
   unitPrice: number
   discountAmount: number
   taxIncluded: boolean
@@ -77,7 +80,7 @@ export const billLinesOf = (
 
       return {
         serviceId: service === undefined ? null : service.id,
-        name: service?.name ?? GONE_SERVICE,
+        name: service?.name ?? null,
         unitPrice: line.price,
         discountAmount: line.discountAmount,
         taxIncluded: line.taxIncluded,
@@ -134,10 +137,15 @@ export const taxSharesOf = (
   })
 }
 
-/** The details of the sale: a line each, the tax shared among them. */
+/**
+ * The details of the sale: a line each, the tax shared among them. A line
+ * of a service that was removed from the menu is recorded under the name
+ * the screen says of such a service, in the language of the page.
+ */
 export const saleDetailsOf = (
   lines: readonly BillLine[],
   taxAmount: number,
+  removedService: string,
 ): ModelsSalesDetail[] => {
   const shares = taxSharesOf(lines, taxAmount)
 
@@ -147,7 +155,7 @@ export const saleDetailsOf = (
     return {
       itemType: 'service',
       itemId: line.serviceId,
-      itemName: line.name,
+      itemName: line.name ?? removedService,
       quantity: 1,
       unitPrice: line.unitPrice,
       discountAmount: line.discountAmount,
@@ -167,9 +175,9 @@ export type Bill =
   | { type: 'calculating' }
   | { type: 'calculated'; calculation: ModelsSaleCalculateResponse }
   /** The API would not calculate it, or calculated other prices: why, in a sentence */
-  | { type: 'uncalculated'; message: string }
+  | { type: 'uncalculated'; message: LocalizedText }
   /** The calculation could not be asked for: why, in a sentence */
-  | { type: 'unread'; message: string }
+  | { type: 'unread'; message: LocalizedText }
 
 /**
  * Whether the bill the screen shows is the one the API calculated: the
@@ -195,7 +203,7 @@ export const whyNotCalculated = (
   values: readonly RefusedValue[],
   added: readonly string[],
   services: readonly Pick<ModelsServiceResponse, 'id' | 'name'>[],
-): string => {
+): LocalizedText => {
   const gone = values.flatMap(({ field }) => {
     const place = ADDED_AT.exec(field)?.[1]
     const id = place === undefined ? undefined : added[Number(place)]
@@ -204,16 +212,16 @@ export const whyNotCalculated = (
     return name === undefined ? [] : [name]
   })
   if (gone.length > 0) {
-    return `${[...new Set(gone)].join('、')}は、メニューから削除されていました。外してください。`
+    return bill.gone([...new Set(gone)])
   }
   if (values.some(({ field }) => field === 'bookingId')) {
-    return 'この予約は、削除されていました。'
+    return bill.bookingRemoved
   }
   if (values.some(({ rule }) => rule === 'too_big')) {
-    return '金額の合計が、1 件の売上で扱える上限を超えます。足した施術を減らしてください。'
+    return bill.tooBig
   }
 
-  return '金額を計算できませんでした。'
+  return bill.uncalculated
 }
 
 /** Nobody is recorded as the member of the staff who took the payment */
@@ -269,40 +277,21 @@ export type CheckoutAttempt =
 export type CheckoutSays =
   | { type: 'done'; sale: ModelsSaleResponse }
   | { type: 'billed'; sale: ModelsSaleResponse }
-  | { type: 'again'; message: string; errors: Record<string, string> }
-
-const TRY_AGAIN =
-  '会計を入れられませんでした。通信の状態を確かめて、もう一度お試しください。'
+  | ({ type: 'again' } & FormSays<LocalizedText>)
 
 /** What is said of a value the API refused. */
-const refusalMessageOf = ({ field, rule }: RefusedValue): string =>
+const refusalMessageOf = ({ field, rule }: RefusedValue): LocalizedText =>
   match([field, rule])
-    .with(
-      ['staffId', 'not_found'],
-      () => 'このスタッフは、もう選べません。選び直してください。',
-    )
-    .with(
-      ['customerId', P._],
-      () =>
-        'この予約のお客様は、台帳から削除されていたため、会計を入れられませんでした。',
-    )
-    .with(
-      ['bookingId', P._],
-      () =>
-        'この予約は、会計を入れられる予約ではなくなっていました。予約を確かめてください。',
-    )
+    .with(['staffId', 'not_found'], () => refusals.staffGone)
+    .with(['customerId', P._], () => refusals.customerRemoved)
+    .with(['bookingId', P._], () => refusals.notBillable)
     .when(
       ([refused, broken]) =>
         refused.startsWith('details.') && broken === 'not_found',
-      () =>
-        'メニューか担当のスタッフが、その間に削除されていたため、会計を入れられませんでした。予約の内容から開き直してください。',
+      () => refusals.detailsGone,
     )
-    .with(
-      ['details', 'too_big'],
-      () =>
-        '金額の合計が、1 件の売上で扱える上限を超えます。足した施術を減らしてください。',
-    )
-    .otherwise(() => TRY_AGAIN)
+    .with(['details', 'too_big'], () => refusals.tooBig)
+    .otherwise(() => again.failed)
 
 /** What the screen says and does after an attempt to enter a sale. */
 export const afterCheckout = (outcome: CheckoutAttempt): CheckoutSays =>
@@ -317,35 +306,34 @@ export const afterCheckout = (outcome: CheckoutAttempt): CheckoutSays =>
       return atStaff === undefined
         ? {
             type: 'again',
-            message: first === undefined ? TRY_AGAIN : refusalMessageOf(first),
-            errors: {},
+            message:
+              first === undefined ? again.failed : refusalMessageOf(first),
+            errors: NO_ERRORS,
           }
         : {
             type: 'again',
-            message: inJapanese(CHECK_THE_VALUES_MESSAGE),
+            message: CHECK_THE_VALUES_MESSAGE,
             errors: { staffId: refusalMessageOf(atStaff) },
           }
     })
     .with({ type: 'unbillable' }, () => ({
       type: 'again',
-      message:
-        'サロンのタイムゾーンが正しくないため、会計日を決められず、会計を入れられませんでした。サロンの設定を直してください。',
-      errors: {},
+      message: again.unbillable,
+      errors: NO_ERRORS,
     }))
     .with({ type: 'forbidden' }, () => ({
       type: 'again',
-      message:
-        'このサロンの会計は、入れられません。会計を入れられるのは、そのサロンのスタッフと、管理者です。',
-      errors: {},
+      message: again.forbidden,
+      errors: NO_ERRORS,
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
-      errors: {},
+      message: TOO_MANY_REQUESTS_MESSAGE,
+      errors: NO_ERRORS,
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
-      message: TRY_AGAIN,
-      errors: {},
+      message: again.failed,
+      errors: NO_ERRORS,
     }))
     .exhaustive()

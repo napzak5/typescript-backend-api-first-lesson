@@ -1,10 +1,12 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
+import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { staff } from '../examples'
 import * as saleChangeFormStories from './sale-change-form.stories'
 
@@ -102,5 +104,73 @@ describe('SaleChangeForm', () => {
       expect.stringContaining('会計日時は、いまより前にしてください。'),
     )
     expect(cashier()).toHaveFocus()
+  })
+})
+
+describe('SaleChangeForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should open with what the sale has, and say what each control records, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Taken.run()
+
+    // Assert
+    expect(
+      screen.getByRole('combobox', { name: 'Cashier' }),
+    ).toHaveAccessibleDescription('The staff member who took the payment.')
+    expect(screen.getByLabelText('Date of sale')).toHaveAccessibleDescription(
+      'The date on the clock of the salon. The sales ledger finds the sale by this date.',
+    )
+    expect(
+      screen.getByLabelText('Time of the sale'),
+    ).toHaveAccessibleDescription(
+      'When the payment was taken. It cannot be later than now.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Notes' }),
+    ).toHaveAccessibleDescription(
+      'A note on this sale for the salon. Customers do not see it. Leave it empty to remove the note.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Save the changes' }),
+    ).toBeVisible()
+  })
+
+  it('should offer the member who is among the staff no more, and nobody, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.TakenByUnlisted.run()
+
+    // Assert
+    expect(
+      optionsOf(screen.getByRole('combobox', { name: 'Cashier' })),
+    ).toEqual([
+      '田中 美咲',
+      '佐藤 健',
+      'Staff member not listed (the cashier now)',
+      'Not recorded',
+    ])
+  })
+
+  it('should say what is wrong at the controls in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByLabelText('Time of the sale'),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('The time of the sale must be before now.'),
+    )
   })
 })

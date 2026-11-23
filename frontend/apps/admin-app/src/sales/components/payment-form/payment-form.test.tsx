@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { paymentMethods } from '../examples'
 import * as paymentFormStories from './payment-form.stories'
 
@@ -125,5 +126,87 @@ describe('PaymentForm', () => {
       ),
     )
     expect(screen.getByRole('radio', { name: '現金' })).toHaveFocus()
+  })
+})
+
+describe('PaymentForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the methods with what they take at once, and the whole of what is left to pay, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Owed.run()
+
+    // Assert
+    const offered = screen.getByRole('radiogroup', { name: 'Payment method' })
+    expect(offered).toHaveAccessibleDescription(
+      'In brackets: what the method takes at a time.',
+    )
+    expect(
+      within(offered)
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual([
+      '現金',
+      'クレジットカード (¥1,000 or more)',
+      '交通系 IC (up to ¥20,000)',
+    ])
+    expect(
+      screen.getByRole('textbox', { name: 'Amount' }),
+    ).toHaveAccessibleDescription(
+      'A whole number of yen. ¥5,500 is left to pay. To take it in parts, enter what was received.',
+    )
+    expect(
+      screen.getByRole('button', { name: 'Record the payment' }),
+    ).toBeVisible()
+  })
+
+  it('should ask for the card in English while a card is chosen', async () => {
+    // Arrange
+    languageStore.choose('en')
+    await stories.Owed.run()
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('radio', { name: 'クレジットカード (¥1,000 or more)' }),
+    )
+
+    // Assert
+    expect(
+      screen.getByRole('textbox', { name: 'Last four digits of the card' }),
+    ).toHaveAccessibleDescription(
+      'Only when known. Never the number of the card itself.',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Card brand' }),
+    ).toHaveAccessibleDescription(
+      'Only when known (VISA, Mastercard, JCB and so on).',
+    )
+  })
+
+  it('should say what is wrong at the controls in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('radiogroup', { name: 'Payment method' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining('Choose a payment method.'),
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Amount' }),
+    ).toHaveAccessibleDescription(
+      expect.stringContaining(
+        'The amount can be at most what is left to pay (¥5,500).',
+      ),
+    )
   })
 })

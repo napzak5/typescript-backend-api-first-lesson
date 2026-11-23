@@ -6,7 +6,9 @@ describe('the texts of the parts of the admin application that are done', () => 
     'App.tsx',
     'main.tsx',
     'navigation.ts',
+    'bookings/screens/with-booking.tsx',
     'customers',
     'inventory',
+    'sales',
   ])
 })

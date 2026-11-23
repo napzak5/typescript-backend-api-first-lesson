@@ -51,3 +51,8 @@ export const Refunded: Story = {
     salon: { ...salon, building: '表参道ビル 2F' },
   },
 }
+
+/** Paid, at a salon that gave no postal code */
+export const WithoutPostalCode: Story = {
+  args: { salon: { ...salon, postalCode: null } },
+}

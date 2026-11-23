@@ -4,6 +4,7 @@ import type {
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { service } from '../../bookings/components/examples'
 import { aBooking, aSale, services, staff } from '../components/examples'
@@ -36,17 +37,47 @@ const line = (net: number, taxIncluded = false): BillLine => ({
 })
 
 describe('whyNoCheckout', () => {
-  it.each<[ModelsBookingStatusType, string | undefined]>([
-    ['draft', '会計は、施術を始めると入れられます。'],
-    ['pending', '会計は、施術を始めると入れられます。'],
-    ['confirmed', '会計は、施術を始めると入れられます。'],
+  it.each<[ModelsBookingStatusType, LocalizedText | undefined]>([
+    [
+      'draft',
+      {
+        en: 'A booking can be checked out once its treatment has begun.',
+        ja: '会計は、施術を始めると入れられます。',
+      },
+    ],
+    [
+      'pending',
+      {
+        en: 'A booking can be checked out once its treatment has begun.',
+        ja: '会計は、施術を始めると入れられます。',
+      },
+    ],
+    [
+      'confirmed',
+      {
+        en: 'A booking can be checked out once its treatment has begun.',
+        ja: '会計は、施術を始めると入れられます。',
+      },
+    ],
     ['in_progress', undefined],
     ['completed', undefined],
-    ['cancelled', 'キャンセルした予約には、会計を入れません。'],
-    ['no_show', 'キャンセルした予約には、会計を入れません。'],
+    [
+      'cancelled',
+      {
+        en: 'A cancelled booking, or one whose customer did not come, is not checked out.',
+        ja: 'キャンセルした予約には、会計を入れません。',
+      },
+    ],
+    [
+      'no_show',
+      {
+        en: 'A cancelled booking, or one whose customer did not come, is not checked out.',
+        ja: 'キャンセルした予約には、会計を入れません。',
+      },
+    ],
   ])('should say why a booking that is %s takes no checkout', (status, why) => {
     // Act, Assert
-    expect(whyNoCheckout({ status })).toBe(why)
+    expect(whyNoCheckout({ status })).toEqual(why)
   })
 })
 
@@ -138,7 +169,7 @@ describe('billLinesOf', () => {
     ])
   })
 
-  it('should bill a line whose service was removed under no service, and leave out an added service that is not on the menu', () => {
+  it('should bill a line whose service was removed under no service and no name, and leave out an added service that is not on the menu', () => {
     // Act
     const lines = billLinesOf(aBooking(), ['not-on-the-menu'], [])
 
@@ -146,7 +177,7 @@ describe('billLinesOf', () => {
     expect(lines).toEqual([
       {
         serviceId: null,
-        name: '削除されたメニュー',
+        name: null,
         unitPrice: 5500,
         discountAmount: 0,
         taxIncluded: true,
@@ -208,7 +239,7 @@ describe('saleDetailsOf', () => {
     ]
 
     // Act
-    const details = saleDetailsOf(lines, 800)
+    const details = saleDetailsOf(lines, 800, 'Removed service')
 
     // Assert
     expect(details).toEqual([
@@ -244,6 +275,17 @@ describe('saleDetailsOf', () => {
       },
     ])
   })
+
+  it('should record a line of a service removed from the menu under the name the screen says of one', () => {
+    // Arrange
+    const lines: BillLine[] = [{ ...line(5500, true), name: null }]
+
+    // Act
+    const [detail] = saleDetailsOf(lines, 0, 'Removed service')
+
+    // Assert
+    expect(detail).toMatchObject({ itemId: null, itemName: 'Removed service' })
+  })
 })
 
 describe('readCheckout', () => {
@@ -269,7 +311,11 @@ describe('saleRequestOf', () => {
   it('should bill the customer of the booking, at the moment it is sent, without points', () => {
     // Arrange
     const booking = aBooking()
-    const details = saleDetailsOf(billLinesOf(booking, [], services), 0)
+    const details = saleDetailsOf(
+      billLinesOf(booking, [], services),
+      0,
+      'Removed service',
+    )
 
     // Act
     const request = saleRequestOf(
@@ -312,9 +358,15 @@ describe('afterCheckout', () => {
       },
       {
         type: 'again',
-        message: '入力した内容を確かめて、もう一度お試しください。',
+        message: {
+          en: 'Check what you entered and try again.',
+          ja: '入力した内容を確かめて、もう一度お試しください。',
+        },
         errors: {
-          staffId: 'このスタッフは、もう選べません。選び直してください。',
+          staffId: {
+            en: 'This staff member can no longer be chosen. Choose again.',
+            ja: 'このスタッフは、もう選べません。選び直してください。',
+          },
         },
       },
     ],
@@ -326,8 +378,10 @@ describe('afterCheckout', () => {
       },
       {
         type: 'again',
-        message:
-          'メニューか担当のスタッフが、その間に削除されていたため、会計を入れられませんでした。予約の内容から開き直してください。',
+        message: {
+          en: 'A service or a staff member was removed meanwhile, so the sale could not be entered. Open the checkout again from the booking.',
+          ja: 'メニューか担当のスタッフが、その間に削除されていたため、会計を入れられませんでした。予約の内容から開き直してください。',
+        },
         errors: {},
       },
     ],
@@ -339,8 +393,10 @@ describe('afterCheckout', () => {
       },
       {
         type: 'again',
-        message:
-          'この予約のお客様は、台帳から削除されていたため、会計を入れられませんでした。',
+        message: {
+          en: 'The customer of this booking was removed from the ledger, so the sale could not be entered.',
+          ja: 'この予約のお客様は、台帳から削除されていたため、会計を入れられませんでした。',
+        },
         errors: {},
       },
     ],
@@ -349,8 +405,10 @@ describe('afterCheckout', () => {
       { type: 'invalid', values: [{ field: 'details', rule: 'too_big' }] },
       {
         type: 'again',
-        message:
-          '金額の合計が、1 件の売上で扱える上限を超えます。足した施術を減らしてください。',
+        message: {
+          en: 'The total is more than one sale can hold. Take off some of the added services.',
+          ja: '金額の合計が、1 件の売上で扱える上限を超えます。足した施術を減らしてください。',
+        },
         errors: {},
       },
     ],
@@ -359,8 +417,10 @@ describe('afterCheckout', () => {
       { type: 'invalid', values: [] },
       {
         type: 'again',
-        message:
-          '会計を入れられませんでした。通信の状態を確かめて、もう一度お試しください。',
+        message: {
+          en: 'The sale could not be entered. Check your connection and try again.',
+          ja: '会計を入れられませんでした。通信の状態を確かめて、もう一度お試しください。',
+        },
         errors: {},
       },
     ],
@@ -369,8 +429,10 @@ describe('afterCheckout', () => {
       { type: 'unbillable' },
       {
         type: 'again',
-        message:
-          'サロンのタイムゾーンが正しくないため、会計日を決められず、会計を入れられませんでした。サロンの設定を直してください。',
+        message: {
+          en: 'The time zone of the salon is not valid, so the date of the sale could not be set and the sale was not entered. Correct the settings of the salon.',
+          ja: 'サロンのタイムゾーンが正しくないため、会計日を決められず、会計を入れられませんでした。サロンの設定を直してください。',
+        },
         errors: {},
       },
     ],
@@ -379,8 +441,10 @@ describe('afterCheckout', () => {
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
         errors: {},
       },
     ],
@@ -416,7 +480,7 @@ describe('agreesWith', () => {
 describe('whyNotCalculated', () => {
   const added = [colour?.id ?? '', cut?.id ?? '', colour?.id ?? '']
 
-  it.each<[string, { field: string; rule: string }[], string]>([
+  it.each<[string, { field: string; rule: string }[], LocalizedText]>([
     [
       'services removed from the menu, each named once',
       [
@@ -424,25 +488,37 @@ describe('whyNotCalculated', () => {
         { field: 'services.2', rule: 'not_found' },
         { field: 'services.1', rule: 'not_found' },
       ],
-      'カラー、カットは、メニューから削除されていました。外してください。',
+      {
+        en: 'カラー, カット were removed from the menu. Take them off.',
+        ja: 'カラー、カットは、メニューから削除されていました。外してください。',
+      },
     ],
     [
       'a booking that was removed',
       [{ field: 'bookingId', rule: 'not_found' }],
-      'この予約は、削除されていました。',
+      {
+        en: 'This booking was removed.',
+        ja: 'この予約は、削除されていました。',
+      },
     ],
     [
       'a bill too large',
       [{ field: 'services', rule: 'too_big' }],
-      '金額の合計が、1 件の売上で扱える上限を超えます。足した施術を減らしてください。',
+      {
+        en: 'The total is more than one sale can hold. Take off some of the added services.',
+        ja: '金額の合計が、1 件の売上で扱える上限を超えます。足した施術を減らしてください。',
+      },
     ],
     [
       'what names nothing that was added',
       [{ field: 'services.7', rule: 'not_found' }],
-      '金額を計算できませんでした。',
+      {
+        en: 'The amounts could not be calculated.',
+        ja: '金額を計算できませんでした。',
+      },
     ],
   ])('should say why the bill was not calculated: %s', (_case, values, why) => {
     // Act, Assert
-    expect(whyNotCalculated(values, added, services)).toBe(why)
+    expect(whyNotCalculated(values, added, services)).toEqual(why)
   })
 })

@@ -3,6 +3,7 @@ import type {
   ModelsSaleResponse,
 } from '@beauty-salon-frontend/api-client'
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { aPaidSale, aPayment, aSale, salon } from '../components/examples'
 import {
@@ -17,19 +18,46 @@ import {
 const payment = aPayment()
 
 describe('whyNoRefund', () => {
-  it.each<[ModelsPaymentStatusType, string | undefined]>([
+  it.each<[ModelsPaymentStatusType, LocalizedText | undefined]>([
     ['completed', undefined],
-    ['refunded', 'この支払いは、全額を返金しました。'],
+    [
+      'refunded',
+      {
+        en: 'This payment was refunded in full.',
+        ja: 'この支払いは、全額を返金しました。',
+      },
+    ],
     [
       'partial_refund',
-      'この支払いは、一部を返金しました。1 件の支払いの返金は 1 回で、残りは返金できません。',
+      {
+        en: 'Part of this payment was refunded. A payment is refunded once, so the rest cannot be refunded.',
+        ja: 'この支払いは、一部を返金しました。1 件の支払いの返金は 1 回で、残りは返金できません。',
+      },
     ],
-    ['pending', 'この支払いは、受け取っていないため、返金できません。'],
-    ['processing', 'この支払いは、受け取っていないため、返金できません。'],
-    ['failed', 'この支払いは、受け取っていないため、返金できません。'],
+    [
+      'pending',
+      {
+        en: 'This payment was not received, so it cannot be refunded.',
+        ja: 'この支払いは、受け取っていないため、返金できません。',
+      },
+    ],
+    [
+      'processing',
+      {
+        en: 'This payment was not received, so it cannot be refunded.',
+        ja: 'この支払いは、受け取っていないため、返金できません。',
+      },
+    ],
+    [
+      'failed',
+      {
+        en: 'This payment was not received, so it cannot be refunded.',
+        ja: 'この支払いは、受け取っていないため、返金できません。',
+      },
+    ],
   ])('should say whether a payment that is %s is given back', (status, why) => {
     // Act, Assert
-    expect(whyNoRefund({ status })).toBe(why)
+    expect(whyNoRefund({ status })).toEqual(why)
   })
 })
 
@@ -56,37 +84,60 @@ describe('readRefund', () => {
     })
   })
 
-  it.each<[string, Record<string, string>, Record<string, string>]>([
+  it.each<[string, Record<string, string>, Record<string, LocalizedText>]>([
     [
       'no amount and no reason',
       { refundAmount: '', refundReason: '' },
       {
-        refundAmount: '返金する金額は、1 以上の円の整数で入力してください。',
-        refundReason: '返金の理由を入力してください。',
+        refundAmount: {
+          en: 'Enter the refund as a whole number of yen, 1 or more.',
+          ja: '返金する金額は、1 以上の円の整数で入力してください。',
+        },
+        refundReason: {
+          en: 'Enter the reason for the refund.',
+          ja: '返金の理由を入力してください。',
+        },
       },
     ],
     [
       'nothing given back',
       { refundAmount: '0', refundReason: '取り違え' },
-      { refundAmount: '返金する金額は、1 以上の円の整数で入力してください。' },
+      {
+        refundAmount: {
+          en: 'Enter the refund as a whole number of yen, 1 or more.',
+          ja: '返金する金額は、1 以上の円の整数で入力してください。',
+        },
+      },
     ],
     [
       'what is no whole number of yen',
       { refundAmount: '500.5', refundReason: '取り違え' },
-      { refundAmount: '返金する金額は、1 以上の円の整数で入力してください。' },
+      {
+        refundAmount: {
+          en: 'Enter the refund as a whole number of yen, 1 or more.',
+          ja: '返金する金額は、1 以上の円の整数で入力してください。',
+        },
+      },
     ],
     [
       'more than the payment was',
       { refundAmount: '3001', refundReason: '取り違え' },
       {
-        refundAmount:
-          '返金する金額は、支払いの金額（￥3,000）以下にしてください。',
+        refundAmount: {
+          en: 'The refund can be at most the amount of the payment (¥3,000).',
+          ja: '返金する金額は、支払いの金額（￥3,000）以下にしてください。',
+        },
       },
     ],
     [
       'a reason of blanks',
       { refundAmount: '3000', refundReason: '   ' },
-      { refundReason: '返金の理由を入力してください。' },
+      {
+        refundReason: {
+          en: 'Enter the reason for the refund.',
+          ja: '返金の理由を入力してください。',
+        },
+      },
     ],
   ])('should refuse %s', (_case, entries, errors) => {
     // Act, Assert
@@ -143,8 +194,10 @@ describe('afterRefund', () => {
   const now = aSale({
     payments: [aPayment({ status: 'refunded', refundAmount: 3000 })],
   })
-  const AGAIN =
-    '返金を記録できませんでした。通信の状態を確かめて、もう一度お試しください。'
+  const AGAIN = {
+    en: 'The refund could not be recorded. Check your connection and try again.',
+    ja: '返金を記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+  }
 
   it.each<[string, RefundAttempt, ReturnType<typeof afterRefund>]>([
     ['a refund', { type: 'refunded' }, { type: 'done' }],
@@ -155,7 +208,10 @@ describe('afterRefund', () => {
         type: 'again',
         message: undefined,
         errors: {
-          refundAmount: '返金する金額が、支払いの金額を超えています。',
+          refundAmount: {
+            en: 'The refund is more than the payment.',
+            ja: '返金する金額が、支払いの金額を超えています。',
+          },
         },
       },
     ],
@@ -169,7 +225,10 @@ describe('afterRefund', () => {
         type: 'again',
         message: undefined,
         errors: {
-          refundAmount: '返金する金額は、1 以上の円の整数で入力してください。',
+          refundAmount: {
+            en: 'Enter the refund as a whole number of yen, 1 or more.',
+            ja: '返金する金額は、1 以上の円の整数で入力してください。',
+          },
         },
       },
     ],
@@ -179,7 +238,12 @@ describe('afterRefund', () => {
       {
         type: 'again',
         message: undefined,
-        errors: { refundReason: '返金の理由を入力してください。' },
+        errors: {
+          refundReason: {
+            en: 'Enter the reason for the refund.',
+            ja: '返金の理由を入力してください。',
+          },
+        },
       },
     ],
     [
@@ -198,8 +262,10 @@ describe('afterRefund', () => {
       { type: 'forbidden' },
       {
         type: 'again',
-        message:
-          'このアカウントでは、返金を記録できません。返金は、オーナーとマネージャーができます。',
+        message: {
+          en: 'This account cannot record refunds. Owners and managers can.',
+          ja: 'このアカウントでは、返金を記録できません。返金は、オーナーとマネージャーができます。',
+        },
         errors: {},
       },
     ],
@@ -208,8 +274,10 @@ describe('afterRefund', () => {
       { type: 'tooManyRequests' },
       {
         type: 'again',
-        message:
-          'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        message: {
+          en: 'There are too many requests. Wait a while and try again.',
+          ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+        },
         errors: {},
       },
     ],

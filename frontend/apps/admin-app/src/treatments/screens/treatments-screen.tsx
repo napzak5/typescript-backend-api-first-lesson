@@ -199,7 +199,7 @@ export const TreatmentsScreen = () => {
               </ButtonLink>
             }
           />
-          <WithStaffAndServices salonId={salon.id} label='スタッフとメニュー'>
+          <WithStaffAndServices salonId={salon.id}>
             {(staff, services) => (
               <TreatmentList
                 key={salon.id}

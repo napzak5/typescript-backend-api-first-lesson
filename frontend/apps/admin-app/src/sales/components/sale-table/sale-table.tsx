@@ -8,18 +8,22 @@ import {
   Badge,
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminSaleMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   paymentStatusNameOf,
   paymentStatusToneOf,
 } from '../../utils/sale-format'
 
+const { ledger, words } = adminSaleMessages
+
 export type SaleTableProps = {
   /** What the table lists: 「2026年11月20日（金）の売上」 */
-  caption: string
+  caption: LocalizedText
   /** The sales that were read so far, the latest first; at least one */
   rows: readonly ModelsSaleResponse[]
   /** How many sales there are; `null` when the API did not count them */
@@ -49,43 +53,47 @@ export const SaleTable = ({
   more,
   onMore,
   saleHref,
-}: SaleTableProps) => (
-  <PagedTable
-    caption={caption}
-    columns={[
-      {
-        key: 'saleNumber',
-        header: '売上番号',
-        cell: (sale) => <Link href={saleHref(sale)}>{sale.saleNumber}</Link>,
-      },
-      {
-        key: 'saleTime',
-        header: '会計日時',
-        cell: ({ saleTime }) => inJapanese(momentNameAt(saleTime, timezone)),
-      },
-      {
-        key: 'totalAmount',
-        header: '合計',
-        cell: ({ totalAmount }) => inJapanese(amountOf(totalAmount, currency)),
-      },
-      {
-        key: 'paymentStatus',
-        header: '支払い',
-        cell: ({ isVoid, paymentStatus }) =>
-          isVoid ? (
-            <Badge>取り消し</Badge>
-          ) : (
-            <Badge tone={paymentStatusToneOf(paymentStatus)}>
-              {paymentStatusNameOf(paymentStatus)}
-            </Badge>
-          ),
-      },
-    ]}
-    rows={rows}
-    rowKey={({ id }) => id}
-    emptyMessage='売上はありません'
-    count={inJapanese(countOf(total, rows.length, COUNTED.items))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: SaleTableProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={say(caption)}
+      columns={[
+        {
+          key: 'saleNumber',
+          header: say(words.saleNumber),
+          cell: (sale) => <Link href={saleHref(sale)}>{sale.saleNumber}</Link>,
+        },
+        {
+          key: 'saleTime',
+          header: say(words.saleTime),
+          cell: ({ saleTime }) => say(momentNameAt(saleTime, timezone)),
+        },
+        {
+          key: 'totalAmount',
+          header: say(words.total),
+          cell: ({ totalAmount }) => say(amountOf(totalAmount, currency)),
+        },
+        {
+          key: 'paymentStatus',
+          header: say(words.payment),
+          cell: ({ isVoid, paymentStatus }) =>
+            isVoid ? (
+              <Badge>{say(words.voided)}</Badge>
+            ) : (
+              <Badge tone={paymentStatusToneOf(paymentStatus)}>
+                {say(paymentStatusNameOf(paymentStatus))}
+              </Badge>
+            ),
+        },
+      ]}
+      rows={rows}
+      rowKey={({ id }) => id}
+      emptyMessage={say(ledger.empty)}
+      count={say(countOf(total, rows.length, COUNTED.items))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}
