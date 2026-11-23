@@ -65,6 +65,16 @@ export const termMessages = {
     expert: text({ en: 'Expert', ja: 'エキスパート' }),
     director: text({ en: 'Director', ja: 'ディレクター' }),
   },
+  /** A day of the week, as a timetable names it: 「月曜日」 */
+  dayOfWeek: {
+    monday: text({ en: 'Monday', ja: '月曜日' }),
+    tuesday: text({ en: 'Tuesday', ja: '火曜日' }),
+    wednesday: text({ en: 'Wednesday', ja: '水曜日' }),
+    thursday: text({ en: 'Thursday', ja: '木曜日' }),
+    friday: text({ en: 'Friday', ja: '金曜日' }),
+    saturday: text({ en: 'Saturday', ja: '土曜日' }),
+    sunday: text({ en: 'Sunday', ja: '日曜日' }),
+  },
   /** The kind of a service: 「カラー」 */
   serviceCategory: {
     cut: text({ en: 'Cut', ja: 'カット' }),

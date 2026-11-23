@@ -275,14 +275,6 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
     { en: 'ベージュ, アッシュ', ja: 'ベージュ、アッシュ' },
   ],
   [
-    'preferenceMessages.details.timeSlots',
-    details.timeSlots([
-      { startTime: '10:00', endTime: '12:00' },
-      { startTime: '14:00', endTime: '16:00' },
-    ]),
-    { en: '10:00–12:00, 14:00–16:00', ja: '10:00〜12:00、14:00〜16:00' },
-  ],
-  [
     'preferenceMessages.staffOfSalon',
     preferenceMessages.staffOfSalon('田中 美咲', 'Beauty Salon Tokyo'),
     {

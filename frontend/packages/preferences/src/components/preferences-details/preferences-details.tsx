@@ -5,6 +5,7 @@ import type {
 import { webAddressOf } from '@beauty-salon-frontend/fields'
 import { DescriptionList, useSay, WrittenText } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import { preferenceMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import styles from './preferences-details.module.css'
 
@@ -27,7 +28,7 @@ const listed = (entries: readonly string[]): LocalizedText =>
 
 /** The time slots, as they are read: 「10:00〜12:00、14:00〜16:00」; the word for none when there is none. */
 const timeSlotsOf = (slots: readonly ModelsTimeSlot[]): LocalizedText =>
-  slots.length === 0 ? details.unset : details.timeSlots(slots)
+  slots.length === 0 ? details.unset : formats.timeSlotsOf(slots)
 
 /**
  * What a customer wants the salons to keep in mind, as it is read: whom

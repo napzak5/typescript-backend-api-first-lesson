@@ -6,7 +6,12 @@ export {
   monthOf,
   shortDayOf,
 } from './days'
-export { momentAt, momentWithWeekdayAt, timeOfDayAt } from './moments'
+export {
+  momentAt,
+  momentWithWeekdayAt,
+  timeOfDayAt,
+  timeRangeAt,
+} from './moments'
 export {
   amountOf,
   bytesOf,
@@ -17,3 +22,4 @@ export {
   percentOf,
   shortAmountOf,
 } from './numbers'
+export { durationOf, timeSlotsOf } from './times'
