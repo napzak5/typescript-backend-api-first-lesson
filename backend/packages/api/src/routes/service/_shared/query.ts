@@ -1,4 +1,5 @@
 import type { ApiServiceSearchRequest } from '@beauty-salon-backend/domain'
+import { serviceMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   booleanParameter,
@@ -12,5 +13,5 @@ export const decodeServiceSearchQuery = queryDecoder(
     limit: numberParameter.exactOptional(),
     isActive: booleanParameter.exactOptional(),
   }) satisfies z.ZodType<Pick<ApiServiceSearchRequest, 'limit' | 'isActive'>>,
-  'Invalid service search',
+  serviceMessages.invalidServiceSearch,
 )

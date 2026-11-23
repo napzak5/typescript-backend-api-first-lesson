@@ -176,7 +176,7 @@ export const atLeastOneProperty = (
 ```
 
 - スキーマの末尾に `satisfies z.ZodType<生成された API 型>` を付けます。スキーマと API 契約がずれるとコンパイルエラーになります。
-- 決まりの文は、`@beauty-salon-shared/i18n/messages/api` のメッセージ（共通の決まりは `ruleMessages`、サロンは `salonMessages`）です。英語と日本語の文を `asOneString` で 1 つの文字列にして Zod に渡し、`parseWith` が読み戻します。Zod が自分で言う文（長さ、型など）は、`parseWith` が両方の言語で取り出します（[多言語](./i18n.md)）。
+- 決まりの文は、`@beauty-salon-shared/i18n/messages/api` のメッセージ（共通の決まりは `ruleMessages`、領域の決まりはその領域のメッセージで、サロンは `salonMessages`）です。スキーマに文を文字列で書くと、`schemas/__tests__/schema-messages.test.ts` が失敗します。英語と日本語の文を `asOneString` で 1 つの文字列にして Zod に渡し、`parseWith` が読み戻します。Zod が自分で言う文（長さ、型など）は、`parseWith` が両方の言語で取り出します（[多言語](./i18n.md)）。
 - オブジェクトは `z.strictObject` で定義し、未知のプロパティを拒否します。
 - 文字数の上限は DB の列の長さに、`.nullable()` は DB の NULL 許可に合わせます。
 - Create は全プロパティ必須です（値は `null` でもよい）。Update は Create のスキーマに `.exactPartial()` を付けて全プロパティを省略可能にし、`.check(atLeastOneProperty)` でプロパティが 1 つもないリクエストを拒否します。Search の絞り込み条件は `.exactOptional()` で省略可能にします。
@@ -881,7 +881,7 @@ async execute(
 - ユースケースの外で起きる失敗（存在しないルート、読めない本文、レート制限、想定外の例外）は API 層の `HttpError` です。
 - どちらも `sendProblem` を通り、RFC 9457 の problem details になります。エラーの種類と HTTP ステータス・エラーコードの対応は、`backend/packages/api/src/shared/problem-details.ts` の `toProblemDetails` の1か所にあります。
 - `database` エラーの `cause` と想定外の例外の内容は、レスポンスに含めません。ログに記録します。
-- problem details の `title` と `detail` は、リクエストの `Accept-Language` に合う言語（英語か日本語。ヘッダーがなければ英語）で返します。文は、`@beauty-salon-shared/i18n/messages/api` に、両方の言語で書きます。検証のエラー（`validation`）は、見出しと、決まりごとの文が、すべて両方の言語で書いてあれば、頼まれた言語で返します（いまは、サロンのリクエスト）。ドメインが英語だけで文を書くエラー（`notFound`・`alreadyExists`・`conflict` と、まだ移していない領域の `validation`）は、全体を英語で返します。`sendProblem` が、返した言語を `Content-Language` に書きます（[多言語](./i18n.md)）。
+- problem details の `title` と `detail` は、リクエストの `Accept-Language` に合う言語（英語か日本語。ヘッダーがなければ英語）で返します。文は、`@beauty-salon-shared/i18n/messages/api` に、両方の言語で書きます。検証のエラー（`validation`）は、見出しと、決まりごとの文が、すべて両方の言語で書いてあれば、頼まれた言語で返します（スキーマが確かめる決まりは、どの領域でも、そうです）。ドメインが英語だけで文を書くエラー（`notFound`・`alreadyExists`・`conflict` と、スキーマでは確かめられない決まりをユースケースが言う `validation`）は、全体を英語で返します。`sendProblem` が、返した言語を `Content-Language` に書きます（[多言語](./i18n.md)）。
 
 エラーの種類を増やすときは、`DomainError`（または `HttpError`）に追加し、`shared-i18n/src/messages/api/problems.ts` に `title` を両方の言語で書いて、`problem-details.ts` の `match` に分岐を足します。`exhaustive()` なので、足し忘れるとコンパイルエラーになります。
 

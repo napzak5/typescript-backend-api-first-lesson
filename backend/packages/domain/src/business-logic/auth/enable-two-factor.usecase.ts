@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserReadMapper } from '../../mappers/read/user.mapper'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type { Actor, ApiAuthTwoFactorSetupResponse } from '../../models/auth'
@@ -9,7 +10,7 @@ import { checkPassword } from './_shared/password-check'
 import { sessionGone } from './_shared/session-gone'
 import { hashBackupCodes } from './_shared/two-factor-setup'
 
-const MESSAGE = 'Invalid two-factor authentication setup'
+const MESSAGE = authMessages.invalidTwoFactorAuthenticationSetup
 
 const alreadyEnabled = Result.error(
   DomainErrors.conflict('Two-factor authentication is already enabled'),

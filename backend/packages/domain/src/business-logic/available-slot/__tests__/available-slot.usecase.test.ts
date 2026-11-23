@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { availableSlotMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -506,13 +507,16 @@ describe('ListAvailableSlotsUseCase', () => {
     it('returns the refusal of the caller that decoded the query', async () => {
       const dependencies = availableSlotDependencies()
       const undecoded = Result.error(
-        DomainErrors.validation('Invalid available slot search', [
-          {
-            field: 'limit',
-            rule: 'invalid_format',
-            message: 'Must be a number',
-          },
-        ]),
+        DomainErrors.validation(
+          availableSlotMessages.invalidAvailableSlotSearch,
+          [
+            {
+              field: 'limit',
+              rule: 'invalid_format',
+              message: 'Must be a number',
+            },
+          ],
+        ),
       )
 
       const result = await new ListAvailableSlotsUseCase(dependencies).execute(
@@ -532,7 +536,10 @@ describe('ListAvailableSlotsUseCase', () => {
       ).execute(
         'aoyama',
         Result.error(
-          DomainErrors.validation('Invalid available slot search', []),
+          DomainErrors.validation(
+            availableSlotMessages.invalidAvailableSlotSearch,
+            [],
+          ),
         ),
       )
 

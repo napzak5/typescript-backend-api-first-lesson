@@ -2,6 +2,11 @@ import {
   type InventoryTransactionType,
   InventoryTransactionTypeSchema,
 } from '@beauty-salon-backend/generated'
+import { asOneString, type LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  inventoryMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import {
@@ -137,21 +142,21 @@ const brokenAlready = (
  */
 const quantityOfType = (context: z.core.ParsePayload<StatedMovement>): void => {
   const { transactionType, quantity } = context.value
-  const message = match(directionOf(transactionType))
-    .returnType<string | null>()
+  const written = match(directionOf(transactionType))
+    .returnType<LocalizedText | null>()
     .with('in', () =>
-      quantity > 0 ? null : `Must be above 0 for a ${transactionType}`,
+      quantity > 0 ? null : inventoryMessages.aboveZeroFor(transactionType),
     )
     .with('out', () =>
-      quantity < 0 ? null : `Must be below 0 for a ${transactionType}`,
+      quantity < 0 ? null : inventoryMessages.belowZeroFor(transactionType),
     )
-    .with('either', () => (quantity !== 0 ? null : 'Must not be 0'))
+    .with('either', () => (quantity !== 0 ? null : ruleMessages.notZero))
     .exhaustive()
-  if (message !== null) {
+  if (written !== null) {
     context.issues.push({
       code: 'custom',
       path: ['quantity'],
-      message,
+      message: asOneString(written),
       input: quantity,
       continue: true,
     })
@@ -165,7 +170,7 @@ const reasonOfType = (context: z.core.ParsePayload<StatedMovement>): void => {
     context.issues.push({
       code: 'custom',
       path: ['reason'],
-      message: 'Must not be null: an adjustment and a disposal state why',
+      message: asOneString(inventoryMessages.reasonRequired),
       input: reason,
       continue: true,
     })
@@ -196,7 +201,9 @@ const totalCostWithinInteger = (
     maximum,
     inclusive: true,
     path: ['unitCost'],
-    message: `Must be at most ${maximum}: the total cost, unitCost × |quantity| rounded, has to be at most ${MAX_INTEGER}`,
+    message: asOneString(
+      inventoryMessages.unitCostWithinTotal(maximum, MAX_INTEGER),
+    ),
     input: unitCost,
     continue: true,
   })
@@ -236,7 +243,10 @@ export const inventoryTransactionSearchRequestSchema = z
   .refine(
     ({ startDate, endDate }) =>
       startDate === undefined || endDate === undefined || startDate <= endDate,
-    { path: ['endDate'], message: 'Must not be earlier than startDate' },
+    {
+      path: ['endDate'],
+      message: asOneString(ruleMessages.notEarlierThan('startDate')),
+    },
   ) satisfies z.ZodType<ApiInventoryTransactionSearchRequest>
 
 /** A search of stock movements that passed the rules of its own. */
@@ -264,7 +274,7 @@ const noRowCountedTwice = (
       context.issues.push({
         code: 'custom',
         path: ['items', index, 'inventoryId'],
-        message: 'Must not repeat a stock row counted earlier',
+        message: asOneString(inventoryMessages.noRepeatedCountedRow),
         input: inventoryId,
         continue: true,
       })

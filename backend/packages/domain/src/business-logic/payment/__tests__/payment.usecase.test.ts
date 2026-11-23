@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -333,7 +334,11 @@ describe('RecordPaymentUseCase', () => {
       await record(paymentDependencies(recording({ type: 'invalid', issues }))),
     ).toEqual({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid payment', issues },
+      error: {
+        type: 'validation',
+        message: paymentMessages.invalidPayment,
+        issues,
+      },
     })
   })
 
@@ -656,7 +661,11 @@ describe('RefundPaymentUseCase', () => {
       await refund(paymentDependencies(refunding({ type: 'invalid', issues }))),
     ).toEqual({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid refund', issues },
+      error: {
+        type: 'validation',
+        message: paymentMessages.invalidRefund,
+        issues,
+      },
     })
   })
 

@@ -1055,6 +1055,7 @@ The rows down to `storage` are the eight `DomainError` kinds a use case returns 
 | `routes/salon/_shared/__tests__/links.test.ts`, `query.test.ts` | the links of a salon and query decoding |
 | `routes/service-category/_shared/__tests__/links.test.ts`, `query.test.ts` | the links of a service category and query decoding |
 | `routes/service/_shared/__tests__/links.test.ts`, `query.test.ts` | the links of a service and query decoding |
+| `routes/__tests__/query-headlines.test.ts` | every decoder of a query, of every domain: what it says is wrong with a query it cannot decode. It fails for a decoder it has no row for |
 | `shared/__tests__/` | the error mapping, the links of a page, the converters of query parameters, the signed-in user of a request |
 | `middleware/__tests__/middleware.test.ts` | the middleware |
 | `routes/salon/__tests__/salon.integration.test.ts` | every salon endpoint against PostgreSQL, including who may call it |

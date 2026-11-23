@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -587,7 +588,11 @@ describe('CreateBookingServiceUseCase', () => {
 
     expect(
       await add(dependencies, staff, BOOKING_ID, undefined, lineRequest),
-    ).toEqual(Result.error(DomainErrors.validation(INVALID_LINE, issues)))
+    ).toEqual(
+      Result.error(
+        DomainErrors.validation(bookingMessages.invalidBookingService, issues),
+      ),
+    )
   })
 
   it('reports a line that was added and cannot be presented as a fault of the database', async () => {

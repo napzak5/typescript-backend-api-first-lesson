@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
 import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
@@ -9,7 +10,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayDeleteCustomers } from './_shared/authorization'
 import type { CustomerUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid customer merge'
+const MESSAGE = customerMessages.invalidCustomerMerge
 
 export class MergeCustomersUseCase {
   constructor(private readonly dependencies: CustomerUseCaseDependencies) {}

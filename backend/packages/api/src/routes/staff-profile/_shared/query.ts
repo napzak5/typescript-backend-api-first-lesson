@@ -1,4 +1,5 @@
 import type { ApiStaffProfileSearchRequest } from '@beauty-salon-backend/domain'
+import { staffProfileMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
@@ -7,5 +8,5 @@ export const decodeStaffProfileSearchQuery = queryDecoder(
   z.looseObject({
     limit: numberParameter.exactOptional(),
   }) satisfies z.ZodType<Pick<ApiStaffProfileSearchRequest, 'limit'>>,
-  'Invalid staff profile search',
+  staffProfileMessages.invalidStaffProfileSearch,
 )

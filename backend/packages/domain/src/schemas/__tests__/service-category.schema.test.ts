@@ -1,3 +1,4 @@
+import { serviceCategoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
 import {
@@ -281,6 +282,24 @@ describe('serviceCategoryCreateRequestSchema', () => {
     })
 
     expect(rules).toEqual(expected)
+  })
+
+  it('should say how a colour is written, of a colour by its name', () => {
+    // Arrange
+    const request = { ...serviceCategoryCreateRequest(), color: 'red' }
+
+    // Act
+    const result = parseWith(
+      serviceCategoryCreateRequestSchema,
+      request,
+      'Invalid',
+    )
+
+    // Assert
+    expect(result).toMatchObject({
+      type: 'error',
+      error: { issues: [{ message: serviceCategoryMessages.colour }] },
+    })
   })
 
   it.each(Object.keys(serviceCategoryCreateRequest()))(

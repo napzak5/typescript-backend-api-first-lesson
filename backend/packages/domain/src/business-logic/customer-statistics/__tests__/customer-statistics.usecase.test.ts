@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerStatisticsMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, dataOf } from '../../../__tests__/fixtures/auth-fixtures'
 import { customerStatisticsFigures } from '../../../__tests__/fixtures/customer-statistics-fixtures'
@@ -216,7 +217,10 @@ describe('GetCustomerStatisticsUseCase', () => {
 
       expect(result).toMatchObject({
         type: 'error',
-        error: { type: 'validation', message: 'Invalid customer statistics' },
+        error: {
+          type: 'validation',
+          message: customerStatisticsMessages.invalidCustomerStatistics,
+        },
       })
       expect(rulesOf(result)).toEqual([rule])
       expect(findStatisticsOf(dependencies)).not.toHaveBeenCalled()
@@ -258,7 +262,10 @@ describe('GetCustomerStatisticsUseCase', () => {
 
       expect(result).toMatchObject({
         type: 'error',
-        error: { type: 'validation', message: 'Invalid customer statistics' },
+        error: {
+          type: 'validation',
+          message: customerStatisticsMessages.invalidCustomerStatistics,
+        },
       })
       expect(rulesOf(result)).toEqual(['salonId:not_found'])
     })

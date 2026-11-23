@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -582,7 +583,10 @@ describe('RescheduleBookingUseCase', () => {
       await reschedule(dependencies, staff, BOOKING_ID, rescheduleRequest),
     ).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid booking reschedule', issues),
+        DomainErrors.validation(
+          bookingMessages.invalidBookingReschedule,
+          issues,
+        ),
       ),
     )
   })

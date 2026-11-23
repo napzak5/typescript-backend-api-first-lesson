@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -339,7 +340,7 @@ describe('ListCustomerBookingsUseCase', () => {
 
   it('answers with the error of a query the caller could not decode, once the account is known to have bookings', async () => {
     const undecodable = Result.error(
-      DomainErrors.validation('Invalid booking search', [
+      DomainErrors.validation(bookingMessages.invalidBookingSearch, [
         { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
       ]),
     )
@@ -364,7 +365,7 @@ describe('ListCustomerBookingsUseCase', () => {
 
     expect(await result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid booking search', [
+        DomainErrors.validation(bookingMessages.invalidBookingSearch, [
           {
             field: 'cursor',
             rule: 'not_found',
@@ -571,7 +572,9 @@ describe('CreateCustomerBookingUseCase', () => {
     const { result } = book(wanting(), answering({ type: 'invalid', issues }))
 
     expect(await result).toEqual(
-      Result.error(DomainErrors.validation('Invalid booking', issues)),
+      Result.error(
+        DomainErrors.validation(bookingMessages.invalidBooking, issues),
+      ),
     )
   })
 

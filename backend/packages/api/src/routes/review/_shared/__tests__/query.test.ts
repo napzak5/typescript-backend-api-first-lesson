@@ -1,3 +1,4 @@
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { decodeReviewSearchQuery } from '../query'
 
@@ -90,7 +91,7 @@ describe('decodeReviewSearchQuery', () => {
         type: 'error',
         error: {
           type: 'validation',
-          message: 'Invalid review search',
+          message: reviewMessages.invalidReviewSearch,
           issues: [{ field, rule }],
         },
       })

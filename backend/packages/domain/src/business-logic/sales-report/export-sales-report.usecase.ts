@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { salesReportMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SalesReportWriteMapper } from '../../mappers/write/sales-report.mapper'
 import type { Actor } from '../../models/auth'
 import { salesReportGetRequestSchema } from '../../schemas/sales-report.schema'
@@ -8,7 +9,7 @@ import type { SalesReportUseCaseDependencies } from './_shared/dependencies'
 import { exportOf, type SalesReportFile } from './_shared/export'
 import { figuresOf } from './_shared/figures'
 
-const MESSAGE = 'Invalid sales report'
+const MESSAGE = salesReportMessages.invalidSalesReport
 
 export class ExportSalesReportUseCase {
   constructor(private readonly dependencies: SalesReportUseCaseDependencies) {}

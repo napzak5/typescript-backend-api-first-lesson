@@ -1,4 +1,7 @@
-import { salonMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerMessages,
+  salonMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import { brokenRules, SALON_ID } from '../../__tests__/fixtures/fixtures'
@@ -195,7 +198,10 @@ describe('parseCustomerId', () => {
   it('reports the failure as a validation error', () => {
     expect(parseCustomerId('latest')).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: expect.any(String) },
+      error: {
+        type: 'validation',
+        message: customerMessages.invalidCustomerId,
+      },
     })
   })
 })

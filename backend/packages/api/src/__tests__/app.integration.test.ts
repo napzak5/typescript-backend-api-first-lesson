@@ -27,6 +27,8 @@ import {
 } from './_shared/test-helpers'
 
 const SALONS = '/api/v1/salons'
+const CUSTOMERS = '/api/v1/customers'
+const SALES_REPORTS = '/api/v1/sales-reports'
 const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
 const JSON_UTF8 = 'application/json; charset=utf-8'
 const PROBLEM_JSON = 'application/problem+json; charset=utf-8'
@@ -56,6 +58,20 @@ const salon = {
   taxRate: 10,
   isActive: true,
   openingHours: [],
+}
+
+const cash = {
+  method: 'cash',
+  displayName: '現金',
+  description: null,
+  processorName: null,
+  fee: null,
+  minimumAmount: null,
+  maximumAmount: null,
+  isOnlineEnabled: false,
+  isOfflineEnabled: true,
+  sortOrder: 0,
+  isActive: true,
 }
 
 describe('request identification', () => {
@@ -446,8 +462,11 @@ describe('the language of an error', () => {
       'Resource not found',
     ],
     [
-      'a value that breaks a rule of a request whose headline is in English alone',
-      (app) => request(app).post(`${AUTH}/login`).send({}),
+      'a mailed token that cannot be used, of which a use case writes in English alone',
+      (app) =>
+        request(app)
+          .post(`${AUTH}/reset-password/verify`)
+          .send({ token: 'no-token-that-was-mailed' }),
       400,
       'Validation failed',
     ],
@@ -643,6 +662,101 @@ describe('the language of an error', () => {
       ['Invalid salon ID', 'サロンの ID が正しくありません'],
       [['salonId', 'invalid_format', 'Invalid UUID', '無効なUUID']],
     ],
+    [
+      'a login with what is no address of mail',
+      (app) => request(app).post(`${AUTH}/login`).send(loginBody('nobody')),
+      ['Invalid login', 'サインインの内容が正しくありません'],
+      [
+        [
+          'email',
+          'invalid_format',
+          'Invalid email address',
+          '無効なメールアドレス',
+        ],
+      ],
+    ],
+    [
+      'what is no ID of a customer',
+      (app, authorization) =>
+        request(app)
+          .get(`${CUSTOMERS}/latest`)
+          .set('Authorization', authorization),
+      ['Invalid customer ID', '顧客の ID が正しくありません'],
+      [['id', 'invalid_format', 'Invalid UUID', '無効なUUID']],
+    ],
+    [
+      'a search for customers whose limit is no number',
+      (app, authorization, salonId) =>
+        request(app)
+          .get(`${CUSTOMERS}?salonId=${salonId}&limit=ten`)
+          .set('Authorization', authorization),
+      ['Invalid customer search', '顧客の検索の条件が正しくありません'],
+      [['limit', 'invalid_format', 'Must be a number', '数にしてください']],
+    ],
+    [
+      'a service category whose colour is none',
+      (app, authorization, salonId) =>
+        request(app)
+          .post(`${SALONS}/${salonId}/service-categories`)
+          .set('Authorization', authorization)
+          .send({
+            name: 'カット',
+            description: null,
+            parentId: null,
+            category: 'cut',
+            displayOrder: 0,
+            iconUrl: null,
+            color: 'red',
+            isActive: true,
+          }),
+      [
+        'Invalid service category',
+        'サービスのカテゴリーの内容が正しくありません',
+      ],
+      [
+        [
+          'color',
+          'invalid_format',
+          'Must be a colour in #RRGGBB format',
+          '#RRGGBB の形式の色にしてください',
+        ],
+      ],
+    ],
+    [
+      'a sales report of more days than a report covers',
+      (app, authorization, salonId) =>
+        request(app)
+          .get(
+            `${SALES_REPORTS}?salonId=${salonId}&startDate=2025-01-01&endDate=2026-01-02`,
+          )
+          .set('Authorization', authorization),
+      ['Invalid sales report', '売上の集計の条件が正しくありません'],
+      [
+        [
+          'endDate',
+          'custom',
+          'Must be within 366 days of startDate, both included',
+          'startDate から、両端を含めて 366 日以内にしてください',
+        ],
+      ],
+    ],
+    [
+      'a payment method whose limits are out of order',
+      (app, authorization, salonId) =>
+        request(app)
+          .post(`${SALONS}/${salonId}/payment-methods`)
+          .set('Authorization', authorization)
+          .send({ ...cash, minimumAmount: 2000, maximumAmount: 1000 }),
+      ['Invalid payment method', '支払い方法の内容が正しくありません'],
+      [
+        [
+          'maximumAmount',
+          'custom',
+          'Must not be less than minimumAmount',
+          'minimumAmount より小さくはできません',
+        ],
+      ],
+    ],
   ])(
     'should tell %s in English to who asks for no language, and in Japanese to who asks for Japanese',
     async (_case, send, [detail, detailInJapanese], broken) => {
@@ -694,6 +808,56 @@ describe('the language of an error', () => {
       })
     },
   )
+
+  it('should tell a rule that only the stored row breaks in Japanese too, where the use case says what the schema says', async () => {
+    // Arrange
+    const app = createTestApp()
+    const asAdmin = await signInAsAdmin(app, getTestDb())
+    const created = await request(app)
+      .post(SALONS)
+      .set('Authorization', asAdmin)
+      .send(salon)
+    const paymentMethods = `${SALONS}/${created.body.data.id}/payment-methods`
+    const stored = await request(app)
+      .post(paymentMethods)
+      .set('Authorization', asAdmin)
+      .send({ ...cash, maximumAmount: 1000 })
+    const change = () =>
+      request(app)
+        .patch(`${paymentMethods}/${stored.body.data.id}`)
+        .set('Authorization', asAdmin)
+        .send({ minimumAmount: 2000 })
+
+    // Act
+    const unasked = await change()
+    const asked = await change().set('Accept-Language', 'ja')
+
+    // Assert
+    expect(unasked.status).toBe(400)
+    expect(unasked.headers['content-language']).toBe('en')
+    expect(unasked.body).toMatchObject({
+      detail: 'Invalid payment method update',
+      errors: [
+        {
+          field: 'minimumAmount',
+          rule: 'custom',
+          message: 'Must not be more than maximumAmount',
+        },
+      ],
+    })
+    expect(asked.status).toBe(400)
+    expect(asked.headers['content-language']).toBe('ja')
+    expect(asked.body).toMatchObject({
+      detail: '支払い方法の変更の内容が正しくありません',
+      errors: [
+        {
+          field: 'minimumAmount',
+          rule: 'custom',
+          message: 'maximumAmount より大きくはできません',
+        },
+      ],
+    })
+  })
 
   it('should say that an error depends on the language asked for, and that a success does not', async () => {
     // Arrange

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { attachmentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
 import { AttachmentWriteMapper } from '../../mappers/write/attachment.mapper'
 import type { ApiAttachmentResponse } from '../../models/attachment'
@@ -9,7 +10,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { attachmentReachOf, reachesFilesOf } from './_shared/authorization'
 import type { AttachmentUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid attachment search'
+const MESSAGE = attachmentMessages.invalidAttachmentSearch
 
 export class ListAttachmentsUseCase {
   constructor(private readonly dependencies: AttachmentUseCaseDependencies) {}

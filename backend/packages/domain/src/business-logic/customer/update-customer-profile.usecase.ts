@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerProfileReadMapper } from '../../mappers/read/customer-profile.mapper'
 import { CustomerProfileWriteMapper } from '../../mappers/write/customer-profile.mapper'
@@ -13,7 +14,7 @@ import type { CustomerUseCaseDependencies } from './_shared/dependencies'
 import { profileAccessOf, profileNotFound } from './_shared/profile'
 import { customerRuleIssues, referrerNotFound } from './_shared/rules'
 
-const MESSAGE = 'Invalid customer profile update'
+const MESSAGE = customerMessages.invalidCustomerProfileUpdate
 
 export class UpdateCustomerProfileUseCase {
   constructor(private readonly dependencies: CustomerUseCaseDependencies) {}

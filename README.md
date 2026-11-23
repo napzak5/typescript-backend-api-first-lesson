@@ -325,11 +325,12 @@ An error is told in English or in Japanese: the `title` and the `detail` of
 the problem follow the `Accept-Language` header of the request, and
 `Content-Language` names the language of the answer. Without the header the
 answer is in English. A value that breaks a rule is told in the language
-asked for where every text of the error is written in it: so far in the
-requests of the salons, with the rules that the requests of every domain
-share. The other errors that say what was wrong with a request or with what
-it acts on (something that is not there or is there already, a state that
-does not allow the operation) are in English alone as yet. See
+asked for where every text of the error is written in it: the rules that
+the schema of a request checks, in every domain. A rule that only a use case
+can check (a reference that names nothing, a value that the stored row does
+not allow) and the other errors that say what was wrong with a request or
+with what it acts on (something that is not there or is there already, a
+state that does not allow the operation) are in English alone as yet. See
 [docs/i18n.md](docs/i18n.md).
 
 ### Probes and Shutdown

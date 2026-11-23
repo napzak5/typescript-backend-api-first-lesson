@@ -1,6 +1,6 @@
 import { addMinutes, isAfter, parseISO, subSeconds } from 'date-fns'
 import type { DbUser } from '../../../models/auth'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, type Told } from '../../../shared'
 
 /**
  * The single-use tokens that are mailed to confirm an address, to reset a
@@ -72,7 +72,7 @@ export const mayResetPassword = (user: DbUser): boolean =>
   (user.status === 'locked' && user.lockedUntil !== null)
 
 /** One answer for a mailed token that cannot be used, whatever the reason. */
-export const mailedTokenRefused = (message: string): DomainError =>
+export const mailedTokenRefused = (message: Told): DomainError =>
   DomainErrors.validation(message, [
     {
       field: 'token',

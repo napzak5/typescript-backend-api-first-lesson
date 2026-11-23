@@ -1,4 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { salesReportMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -44,7 +46,7 @@ const findFiguresOf = ({
 
 type Report = {
   name: string
-  message: string
+  message: LocalizedText
   /** A query the report takes, for the salon of the fixtures. */
   query: (overrides?: Record<string, unknown>) => Record<string, unknown>
   /** A query the report refuses for itself, with the rule it breaks. */
@@ -65,7 +67,7 @@ const dayQuery = (overrides: Record<string, unknown> = {}) => ({
 const reports: Report[] = [
   {
     name: 'the report of a period',
-    message: 'Invalid sales report',
+    message: salesReportMessages.invalidSalesReport,
     query: periodQuery,
     wrongQuery: [
       periodQuery({ startDate: '2026-11-20', endDate: '2026-11-19' }),
@@ -76,7 +78,7 @@ const reports: Report[] = [
   },
   {
     name: 'the sales of a day',
-    message: 'Invalid daily sales',
+    message: salesReportMessages.invalidDailySales,
     query: dayQuery,
     wrongQuery: [dayQuery({ date: '2026-11-31' }), 'date:invalid_format'],
     run: (dependencies, actor, query) =>
@@ -84,7 +86,7 @@ const reports: Report[] = [
   },
   {
     name: 'the sales by staff member',
-    message: 'Invalid sales report',
+    message: salesReportMessages.invalidSalesReport,
     query: periodQuery,
     wrongQuery: [
       periodQuery({ startDate: '2025-11-17', endDate: '2026-11-18' }),
@@ -95,7 +97,7 @@ const reports: Report[] = [
   },
   {
     name: 'the sales by category',
-    message: 'Invalid sales report',
+    message: salesReportMessages.invalidSalesReport,
     query: periodQuery,
     wrongQuery: [periodQuery({ endDate: undefined }), 'endDate:invalid_type'],
     run: (dependencies, actor, query) =>
@@ -103,7 +105,7 @@ const reports: Report[] = [
   },
   {
     name: 'the trends of the sales',
-    message: 'Invalid sales trends',
+    message: salesReportMessages.invalidSalesTrends,
     query: (overrides = {}) => periodQuery({ period: 'weekly', ...overrides }),
     wrongQuery: [periodQuery({ period: 'yearly' }), 'period:invalid_value'],
     run: (dependencies, actor, query) =>
@@ -111,7 +113,7 @@ const reports: Report[] = [
   },
   {
     name: 'the export of a period',
-    message: 'Invalid sales report',
+    message: salesReportMessages.invalidSalesReport,
     query: periodQuery,
     wrongQuery: [periodQuery({ salonId: 'mine' }), 'salonId:invalid_format'],
     run: (dependencies, actor, query) =>

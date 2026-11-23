@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -398,7 +399,7 @@ describe('BulkCreateCustomersUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid customers' },
+      error: { type: 'validation', message: customerMessages.invalidCustomers },
     })
     expect(rulesOf(result)).toEqual([
       'items.0.referredBy:not_found',
@@ -531,6 +532,30 @@ describe('BulkUpdateCustomersUseCase', () => {
 
     expect(rulesOf(result)).toEqual(rules)
     expect(callsOf(dependencies.customerRepository, 'updateMany')).toEqual([])
+  })
+
+  it('should say that an item names the customer of an earlier one', async () => {
+    // Arrange
+    const items = [
+      { id: CUSTOMER_ID, updates: { notes: null } },
+      { id: CUSTOMER_ID, updates: { tags: [] } },
+    ]
+
+    // Act
+    const result = await new BulkUpdateCustomersUseCase(updated).execute(
+      actors.admin,
+      { items },
+    )
+
+    // Assert
+    expect(result).toMatchObject({
+      type: 'error',
+      error: {
+        issues: [
+          { field: 'items.1.id', message: customerMessages.noRepeatedCustomer },
+        ],
+      },
+    })
   })
 
   it('refuses a customer referred by themselves and a birth date in the future, at their items', async () => {

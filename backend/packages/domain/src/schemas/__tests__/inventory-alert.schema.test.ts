@@ -1,3 +1,5 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { inventoryAlertMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import type { z } from 'zod'
 import { SALON_ID } from '../../__tests__/fixtures/fixtures'
@@ -136,7 +138,7 @@ describe('inventoryAlertAcknowledgeRequestSchema', () => {
       {
         code: 'custom',
         path: ['inventoryId'],
-        message: `Must be null for an alert of a product (${alert})`,
+        message: asOneString(inventoryAlertMessages.nullForProductAlert(alert)),
       },
     ])
   })
@@ -159,7 +161,9 @@ describe('inventoryAlertAcknowledgeRequestSchema', () => {
       {
         code: 'custom',
         path: ['inventoryId'],
-        message: `Must name a stock row for an alert of a stock row (${alert})`,
+        message: asOneString(
+          inventoryAlertMessages.stockRowForStockRowAlert(alert),
+        ),
       },
     ])
   })

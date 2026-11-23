@@ -22,6 +22,10 @@ export const ruleMessages = {
     en: 'Must be a number',
     ja: '数にしてください',
   }),
+  notZero: text({
+    en: 'Must not be 0',
+    ja: '0 にはできません',
+  }),
   trueOrFalse: text({
     en: 'Must be true or false',
     ja: 'true か false にしてください',
@@ -60,6 +64,18 @@ export const ruleMessages = {
     text({
       en: `Must not be later than ${latest}`,
       ja: `${latest} より後にはできません`,
+    }),
+  /** `least` is a property of the request. */
+  notLessThan: (least: string) =>
+    text({
+      en: `Must not be less than ${least}`,
+      ja: `${least} より小さくはできません`,
+    }),
+  /** `most` is a property of the request. */
+  notMoreThan: (most: string) =>
+    text({
+      en: `Must not be more than ${most}`,
+      ja: `${most} より大きくはできません`,
     }),
   /** `other` is a property of the request. */
   notNullWhenGiven: (other: string) =>

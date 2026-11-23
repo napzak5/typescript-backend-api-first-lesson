@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authPasswordResetConfirmRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -7,7 +8,7 @@ import { mailedTokenRefused, mayResetPassword } from './_shared/mailed-token'
 import { passwordChangedMail } from './_shared/mails'
 import { blocklistIssue } from './_shared/password-blocklist'
 
-const MESSAGE = 'Invalid password reset'
+const MESSAGE = authMessages.invalidPasswordReset
 
 export class ResetPasswordUseCase {
   constructor(private readonly dependencies: AuthUseCaseDependencies) {}

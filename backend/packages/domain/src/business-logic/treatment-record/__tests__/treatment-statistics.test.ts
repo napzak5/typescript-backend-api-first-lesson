@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -108,7 +109,10 @@ describe('GetTreatmentStatisticsUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid treatment statistics' },
+      error: {
+        type: 'validation',
+        message: treatmentRecordMessages.invalidTreatmentStatistics,
+      },
     })
     expect(rulesOf(result)).toEqual(['startDate:invalid_format'])
     expect(untouched(dependencies)).toBe(true)
@@ -140,13 +144,16 @@ describe('GetTreatmentStatisticsUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid treatment statistics', [
-          {
-            field: 'salonId',
-            rule: 'not_found',
-            message: 'Must name a salon',
-          },
-        ]),
+        DomainErrors.validation(
+          treatmentRecordMessages.invalidTreatmentStatistics,
+          [
+            {
+              field: 'salonId',
+              rule: 'not_found',
+              message: 'Must name a salon',
+            },
+          ],
+        ),
       ),
     )
     expect(

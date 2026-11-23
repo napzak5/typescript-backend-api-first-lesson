@@ -5,6 +5,10 @@ import {
   type Omit,
   Result,
 } from '@beauty-salon-backend/utility'
+import {
+  customerMessages,
+  medicalChartMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import { type CustomerId, customerIdSchema } from './customer'
@@ -22,7 +26,7 @@ export const parseMedicalChartId = (
     parseWith(
       medicalChartIdParameterSchema,
       { id },
-      'Invalid medical chart ID',
+      medicalChartMessages.invalidMedicalChartId,
     ),
     (parameters) => parameters.id,
   )
@@ -37,7 +41,7 @@ export const parseChartCustomerId = (
     parseWith(
       chartCustomerParameterSchema,
       { customerId },
-      'Invalid customer ID',
+      customerMessages.invalidCustomerId,
     ),
     (parameters) => parameters.customerId,
   )

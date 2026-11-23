@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { availableSlotMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { AvailableSlotReadMapper } from '../../mappers/read/available-slot.mapper'
 import { AvailableSlotWriteMapper } from '../../mappers/write/available-slot.mapper'
 import type { Actor } from '../../models/auth'
@@ -16,7 +17,7 @@ import { notFound } from '../booking/_shared/plan'
 import { mayAskLedgerOf } from './_shared/authorization'
 import type { AvailableSlotUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid available slot check'
+const MESSAGE = availableSlotMessages.invalidAvailableSlotCheck
 
 export class CheckAvailableSlotUseCase {
   constructor(

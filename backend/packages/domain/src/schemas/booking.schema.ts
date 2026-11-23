@@ -1,4 +1,9 @@
 import { BookingStatusTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import {
+  bookingMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { addHours, isValid, parseISO } from 'date-fns'
 import { z } from 'zod'
 import {
@@ -54,7 +59,7 @@ export const minuteInUtc = momentOfRequest
   .refine((value) => {
     const moment = parseISO(value)
     return !isValid(moment) || moment.getTime() % MILLISECONDS_OF_A_MINUTE === 0
-  }, 'Must be on a whole minute')
+  }, asOneString(bookingMessages.wholeMinute))
   .transform((value) => parseISO(value).toISOString())
 
 /**
@@ -94,7 +99,9 @@ const bookingServiceListSchema = z
         context.issues.push({
           code: 'custom',
           path: [index, 'startTime'],
-          message: `Must be within ${HOURS_OF_A_VISIT} hours of the earliest service`,
+          message: asOneString(
+            bookingMessages.withinHoursOfEarliest(HOURS_OF_A_VISIT),
+          ),
           input: startTime,
         })
       }
@@ -152,7 +159,7 @@ export const bookingCompleteRequestSchema = z
       actualStartTime < actualEndTime,
     {
       path: ['actualEndTime'],
-      message: 'Must be after actualStartTime',
+      message: asOneString(bookingMessages.afterActualStartTime),
     },
   ) satisfies z.ZodType<ApiBookingCompleteRequest>
 
@@ -181,7 +188,7 @@ const daysAreInOrder = ({
 
 const DAYS_OUT_OF_ORDER = {
   path: ['bookingDateTo'],
-  message: 'Must not be earlier than bookingDateFrom',
+  message: asOneString(ruleMessages.notEarlierThan('bookingDateFrom')),
 }
 
 export const bookingSearchRequestSchema = bookingSearch.refine(

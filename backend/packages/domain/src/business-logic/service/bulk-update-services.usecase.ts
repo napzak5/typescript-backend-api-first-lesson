@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { serviceMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import { ServiceReadMapper } from '../../mappers/read/service.mapper'
 import { ServiceWriteMapper } from '../../mappers/write/service.mapper'
@@ -16,7 +17,7 @@ import {
   toRefusalError,
 } from './_shared/refusals'
 
-const MESSAGE = 'Invalid service bulk update'
+const MESSAGE = serviceMessages.invalidServiceBulkUpdate
 
 /** The property of the request that holds the changes. */
 const UPDATES = 'updates'

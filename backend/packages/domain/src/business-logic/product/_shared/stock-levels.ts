@@ -1,3 +1,6 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
+
 /**
  * The stock levels of a product: the least stock to keep, the stock at
  * which to order, and the most stock to keep. A level that is null is not
@@ -68,7 +71,7 @@ export const stockLevelsAfter = (
 })
 
 /** A level that is out of order, under the name of the level. */
-export type StockLevelIssue = { field: StockLevel; message: string }
+export type StockLevelIssue = { field: StockLevel; message: LocalizedText }
 
 /**
  * The levels a request is told about for the orders it breaks. Of an order
@@ -82,6 +85,6 @@ export const stockLevelIssues = (
 ): StockLevelIssue[] =>
   broken.map(([lower, upper]) =>
     named(upper)
-      ? { field: upper, message: `Must not be less than ${lower}` }
-      : { field: lower, message: `Must not be more than ${upper}` },
+      ? { field: upper, message: ruleMessages.notLessThan(lower) }
+      : { field: lower, message: ruleMessages.notMoreThan(upper) },
   )

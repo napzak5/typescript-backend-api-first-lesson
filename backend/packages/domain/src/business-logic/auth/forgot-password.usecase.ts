@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authPasswordForgotRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, parseWith } from '../../shared'
@@ -25,7 +26,7 @@ export class ForgotPasswordUseCase {
     const request = parseWith(
       authPasswordForgotRequestSchema,
       input,
-      'Invalid password reset request',
+      authMessages.invalidPasswordResetRequest,
     )
     if (request.type === 'error') {
       return request

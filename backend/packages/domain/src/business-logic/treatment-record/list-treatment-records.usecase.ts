@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { TreatmentRecordReadMapper } from '../../mappers/read/treatment-record.mapper'
 import { TreatmentRecordWriteMapper } from '../../mappers/write/treatment-record.mapper'
@@ -11,7 +12,7 @@ import { isWithin } from '../booking/_shared/authorization'
 import { treatmentRecordReachOf } from './_shared/authorization'
 import type { TreatmentRecordUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid treatment record search'
+const MESSAGE = treatmentRecordMessages.invalidTreatmentRecordSearch
 
 export class ListTreatmentRecordsUseCase {
   constructor(

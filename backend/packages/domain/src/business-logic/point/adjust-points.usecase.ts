@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { pointMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { PointWriteMapper } from '../../mappers/write/point.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiPointTransactionResponse } from '../../models/point'
@@ -8,7 +9,7 @@ import { pointAdjustReachOf } from './_shared/authorization'
 import type { PointUseCaseDependencies } from './_shared/dependencies'
 import { recordMovement } from './_shared/record'
 
-const MESSAGE = 'Invalid point adjustment'
+const MESSAGE = pointMessages.invalidPointAdjustment
 
 export class AdjustPointsUseCase {
   constructor(private readonly dependencies: PointUseCaseDependencies) {}

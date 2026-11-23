@@ -1,5 +1,6 @@
 import type { ApiShareLinkSearchRequest } from '@beauty-salon-backend/domain'
 import type { operations } from '@beauty-salon-backend/generated'
+import { shareLinkMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import type { JsonBody } from '../../../shared/operation-types'
 import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
@@ -38,5 +39,5 @@ export const decodeShareLinkSearchQuery = queryDecoder(
   z.looseObject({
     limit: numberParameter.exactOptional(),
   }) satisfies z.ZodType<Pick<ApiShareLinkSearchRequest, 'limit'>>,
-  'Invalid share link search',
+  shareLinkMessages.invalidShareLinkSearch,
 )

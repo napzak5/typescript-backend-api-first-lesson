@@ -2,13 +2,19 @@ import { match } from 'ts-pattern'
 import type { BookingServiceId, DbBooking } from '../../../models/booking'
 import type { BookingCreationRefusal } from '../../../repositories/booking.repository'
 import { MAX_INTEGER } from '../../../schemas/rules'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, type Told } from '../../../shared'
 
 /** A refusal that says something about the request or about what it meets. */
 type AnsweredRefusal = Exclude<
   BookingCreationRefusal,
   { type: 'bookingNumberTaken' }
 >
+
+/** The day of a visit cannot be told in a time zone the runtime does not know. */
+export const timeZoneUnknown = (): DomainError =>
+  DomainErrors.conflict(
+    'The time zone of the salon is not one that is known, so the day of the visit cannot be told; correct the time zone of the salon first',
+  )
 
 /**
  * Why a booking was not created, as the error a client gets. A booking
@@ -17,17 +23,13 @@ type AnsweredRefusal = Exclude<
  */
 export const toRefusalError = (
   refusal: AnsweredRefusal,
-  message: string,
+  message: Told,
 ): DomainError =>
   match(refusal)
     .with({ type: 'invalid' }, ({ issues }) =>
       DomainErrors.validation(message, issues),
     )
-    .with({ type: 'timeZoneUnknown' }, () =>
-      DomainErrors.conflict(
-        'The time zone of the salon is not one that is known, so the day of the visit cannot be told; correct the time zone of the salon first',
-      ),
-    )
+    .with({ type: 'timeZoneUnknown' }, timeZoneUnknown)
     .with({ type: 'staffOccupied' }, ({ staffIds }) =>
       DomainErrors.conflict(
         `Other bookings occupy ${staffIds.length === 1 ? 'staff member' : 'staff members'} ${staffIds.join(', ')} at a time of this booking`,

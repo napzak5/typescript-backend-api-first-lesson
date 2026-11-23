@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { paymentMethodMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -374,9 +375,10 @@ describe('ListPaymentMethodsUseCase', () => {
   it('passes on a query that could not be decoded to an actor who may read', async () => {
     const dependencies = paymentMethodDependencies()
     const undecodable = Result.error(
-      DomainErrors.validation('Invalid payment method search', [
-        { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
-      ]),
+      DomainErrors.validation(
+        paymentMethodMessages.invalidPaymentMethodSearch,
+        [{ field: 'limit', rule: 'invalid_type', message: 'Must be a number' }],
+      ),
     )
 
     const result = await new ListPaymentMethodsUseCase(dependencies).execute(
@@ -404,7 +406,7 @@ describe('ListPaymentMethodsUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid payment method search' },
+        error: { message: paymentMethodMessages.invalidPaymentMethodSearch },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
@@ -441,7 +443,7 @@ describe('ListPaymentMethodsUseCase', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: 'Invalid payment method search',
+        message: paymentMethodMessages.invalidPaymentMethodSearch,
         issues: [
           {
             field: 'cursor',
@@ -619,7 +621,7 @@ describe('CreatePaymentMethodUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid payment method' },
+        error: { message: paymentMethodMessages.invalidPaymentMethod },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
@@ -776,7 +778,7 @@ describe('GetPaymentMethodUseCase', () => {
 
       expect(rulesOf(result)).toEqual(['id:invalid_format'])
       expect(result).toMatchObject({
-        error: { message: 'Invalid payment method ID' },
+        error: { message: paymentMethodMessages.invalidPaymentMethodId },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
@@ -960,7 +962,7 @@ describe('UpdatePaymentMethodUseCase', () => {
 
       expect(rulesOf(result)).toEqual(expected)
       expect(result).toMatchObject({
-        error: { message: 'Invalid payment method update' },
+        error: { message: paymentMethodMessages.invalidPaymentMethodUpdate },
       })
       expect(repositoryCalls(dependencies)).toEqual([])
     },
@@ -1020,7 +1022,7 @@ describe('UpdatePaymentMethodUseCase', () => {
       expect(messagesOf(result)).toEqual(expected)
       expect(rulesOf(result)).toEqual([`${Object.keys(expected)[0]}:custom`])
       expect(result).toMatchObject({
-        error: { message: 'Invalid payment method update' },
+        error: { message: paymentMethodMessages.invalidPaymentMethodUpdate },
       })
     },
   )

@@ -1,3 +1,4 @@
+import { customerPreferencesMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   AVOIDED_STAFF_ID,
@@ -335,7 +336,7 @@ describe('customerPreferencesUpdateRequestSchema', () => {
             {
               field: 'preferredTimeSlots.1',
               rule: 'custom',
-              message: 'Must not overlap an earlier time slot',
+              message: customerPreferencesMessages.noOverlappingSlot,
             },
           ],
         },

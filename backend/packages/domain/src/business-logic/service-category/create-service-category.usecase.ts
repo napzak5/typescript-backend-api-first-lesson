@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { serviceCategoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { ServiceCategoryReadMapper } from '../../mappers/read/service-category.mapper'
 import { ServiceCategoryWriteMapper } from '../../mappers/write/service-category.mapper'
@@ -38,7 +39,7 @@ export class CreateServiceCategoryUseCase {
     const request = parseWith(
       serviceCategoryCreateRequestSchema,
       input,
-      'Invalid service category',
+      serviceCategoryMessages.invalidServiceCategory,
     )
     if (request.type === 'error') {
       return request

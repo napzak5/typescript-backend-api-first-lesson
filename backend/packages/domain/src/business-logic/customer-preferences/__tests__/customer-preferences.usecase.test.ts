@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerPreferencesMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -34,6 +35,8 @@ import {
 } from '..'
 
 const MESSAGE = 'Invalid customer preferences update'
+const INVALID_UPDATE =
+  customerPreferencesMessages.invalidCustomerPreferencesUpdate
 
 const databaseDown = Result.error(
   DomainErrors.database('Connection lost', null),
@@ -457,7 +460,7 @@ describe('UpdateCustomerPreferencesUseCase', () => {
 
     expect(
       await update(dependencies, { avoidStaffIds: [PREFERRED_STAFF_ID] }),
-    ).toEqual(Result.error(DomainErrors.validation(MESSAGE, issues)))
+    ).toEqual(Result.error(DomainErrors.validation(INVALID_UPDATE, issues)))
   })
 
   it.each<[string, Record<string, unknown>, string[], string[]]>([
@@ -520,7 +523,7 @@ describe('UpdateCustomerPreferencesUseCase', () => {
       await update(dependencies, { preferredStaffId: UNNAMED_STAFF_ID }),
     ).toEqual(
       Result.error(
-        DomainErrors.validation(MESSAGE, [
+        DomainErrors.validation(INVALID_UPDATE, [
           {
             field: 'preferredStaffId',
             rule: 'not_found',

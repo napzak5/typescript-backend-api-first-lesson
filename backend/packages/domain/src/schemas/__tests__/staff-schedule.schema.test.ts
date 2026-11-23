@@ -6,7 +6,7 @@ import {
   weeklyEntry,
 } from '../../__tests__/fixtures/staff-schedule-fixtures'
 import type { ApiStaffSchedule } from '../../models/staff-schedule'
-import { parseWith } from '../../shared'
+import { parseWith, toldIn } from '../../shared'
 import {
   staffScheduleSearchRequestSchema,
   staffScheduleUpdateRequestSchema,
@@ -28,7 +28,9 @@ const rulesBrokenBy = (input: unknown): string[] => {
 const messagesFor = (input: unknown): string[] => {
   const result = update(input)
   return result.type === 'error' && result.error.type === 'validation'
-    ? result.error.issues.map(({ field, message }) => `${field}: ${message}`)
+    ? result.error.issues.map(
+        ({ field, message }) => `${field}: ${toldIn(message, 'en')}`,
+      )
     : []
 }
 

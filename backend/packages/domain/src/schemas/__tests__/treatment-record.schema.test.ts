@@ -1,3 +1,5 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import type { z } from 'zod'
 import { COLOR_ID, CUT_ID } from '../../__tests__/fixtures/booking-fixtures'
@@ -396,4 +398,33 @@ describe('treatmentStatisticsGetRequestSchema', () => {
   ])('refuses %s', (_case, query, broken) => {
     expect(brokenBy(treatmentStatisticsGetRequestSchema, query)).toEqual(broken)
   })
+})
+
+describe('the period of a search and of the statistics', () => {
+  it.each<[string, z.ZodType, Record<string, unknown>]>([
+    ['a search', treatmentRecordSearchRequestSchema, {}],
+    [
+      'the statistics',
+      treatmentStatisticsGetRequestSchema,
+      { salonId: SALON_ID },
+    ],
+  ])(
+    'should say in every language that the end of %s is earlier than startDate',
+    (_case, schema, rest) => {
+      // Arrange
+      const request = {
+        ...rest,
+        startDate: '2026-11-02T00:00:00Z',
+        endDate: '2026-11-01T23:59:59Z',
+      }
+
+      // Act
+      const issues = schema.safeParse(request).error?.issues ?? []
+
+      // Assert
+      expect(issues.map(({ message }) => message)).toEqual([
+        asOneString(ruleMessages.notEarlierThan('startDate')),
+      ])
+    },
+  )
 })

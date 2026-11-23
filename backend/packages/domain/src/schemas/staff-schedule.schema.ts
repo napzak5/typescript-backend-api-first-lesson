@@ -1,4 +1,9 @@
 import { DayOfWeekTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString, type LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  ruleMessages,
+  staffScheduleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import type {
   ApiStaffSchedule,
@@ -49,11 +54,15 @@ const staffScheduleSchema = z
     } = context.value
     // An entry that breaks a rule is still compared with the others: a
     // request learns of all it has to correct at once.
-    const report = (property: string, input: unknown, message: string) => {
+    const report = (
+      property: string,
+      input: unknown,
+      written: LocalizedText,
+    ) => {
       context.issues.push({
         code: 'custom',
         path: [property],
-        message,
+        message: asOneString(written),
         input,
         continue: true,
       })
@@ -62,21 +71,21 @@ const staffScheduleSchema = z
     // A weekly entry names a day of the week, the other kind a date.
     if (isRecurring) {
       if (dayOfWeek === null) {
-        report('dayOfWeek', dayOfWeek, 'Required for a weekly entry')
-      }
-      if (date !== null) {
-        report('date', date, 'Must be null for a weekly entry')
-      }
-    } else {
-      if (date === null) {
-        report('date', date, 'Required for an entry of a single day')
-      }
-      if (dayOfWeek !== null) {
         report(
           'dayOfWeek',
           dayOfWeek,
-          'Must be null for an entry of a single day',
+          staffScheduleMessages.requiredForWeeklyEntry,
         )
+      }
+      if (date !== null) {
+        report('date', date, staffScheduleMessages.nullForWeeklyEntry)
+      }
+    } else {
+      if (date === null) {
+        report('date', date, staffScheduleMessages.requiredForSingleDay)
+      }
+      if (dayOfWeek !== null) {
+        report('dayOfWeek', dayOfWeek, staffScheduleMessages.nullForSingleDay)
       }
     }
 
@@ -85,30 +94,34 @@ const staffScheduleSchema = z
       const times = { startTime, endTime, breakStartTime, breakEndTime }
       for (const [property, time] of Object.entries(times)) {
         if (time !== null) {
-          report(property, time, 'Must be null for a day off')
+          report(property, time, staffScheduleMessages.nullForDayOff)
         }
       }
       return
     }
 
     if (startTime === null) {
-      report('startTime', startTime, 'Required for a working day')
+      report(
+        'startTime',
+        startTime,
+        staffScheduleMessages.requiredForWorkingDay,
+      )
     }
     if (endTime === null) {
-      report('endTime', endTime, 'Required for a working day')
+      report('endTime', endTime, staffScheduleMessages.requiredForWorkingDay)
     }
     if (breakStartTime !== null && breakEndTime === null) {
       report(
         'breakEndTime',
         breakEndTime,
-        'Required when breakStartTime is given',
+        staffScheduleMessages.requiredWhenGiven('breakStartTime'),
       )
     }
     if (breakStartTime === null && breakEndTime !== null) {
       report(
         'breakStartTime',
         breakStartTime,
-        'Required when breakEndTime is given',
+        staffScheduleMessages.requiredWhenGiven('breakEndTime'),
       )
     }
 
@@ -118,18 +131,30 @@ const staffScheduleSchema = z
     const breakEnd = comparable(breakEndTime)
 
     if (start !== null && end !== null && end <= start) {
-      report('endTime', endTime, 'Must be later than startTime')
+      report('endTime', endTime, ruleMessages.laterThan('startTime'))
     }
     // A break lies inside the working hours: one at their start or at
     // their end would be a shorter working day.
     if (start !== null && breakStart !== null && breakStart <= start) {
-      report('breakStartTime', breakStartTime, 'Must be later than startTime')
+      report(
+        'breakStartTime',
+        breakStartTime,
+        ruleMessages.laterThan('startTime'),
+      )
     }
     if (breakStart !== null && breakEnd !== null && breakEnd <= breakStart) {
-      report('breakEndTime', breakEndTime, 'Must be later than breakStartTime')
+      report(
+        'breakEndTime',
+        breakEndTime,
+        ruleMessages.laterThan('breakStartTime'),
+      )
     }
     if (breakEnd !== null && end !== null && end <= breakEnd) {
-      report('breakEndTime', breakEndTime, 'Must be earlier than endTime')
+      report(
+        'breakEndTime',
+        breakEndTime,
+        staffScheduleMessages.earlierThan('endTime'),
+      )
     }
   }) satisfies z.ZodType<ApiStaffSchedule>
 
@@ -150,7 +175,7 @@ const noRepeatedDays = (
         context.issues.push({
           code: 'custom',
           path: [index, 'dayOfWeek'],
-          message: 'Must not repeat the day of the week of an earlier entry',
+          message: asOneString(staffScheduleMessages.noRepeatedDayOfWeek),
           input: entry.dayOfWeek,
         })
       }
@@ -161,7 +186,7 @@ const noRepeatedDays = (
         context.issues.push({
           code: 'custom',
           path: [index, 'date'],
-          message: 'Must not repeat the date of an earlier entry',
+          message: asOneString(staffScheduleMessages.noRepeatedDate),
           input: entry.date,
         })
       }

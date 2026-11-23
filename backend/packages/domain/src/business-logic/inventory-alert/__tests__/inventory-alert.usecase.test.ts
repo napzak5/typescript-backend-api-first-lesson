@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryAlertMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -326,13 +327,16 @@ describe('ListInventoryAlertsUseCase', () => {
       ),
     ).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid inventory alert search', [
-          {
-            field: 'cursor',
-            rule: 'not_found',
-            message: 'Must name a product or a stock row of the salon',
-          },
-        ]),
+        DomainErrors.validation(
+          inventoryAlertMessages.invalidInventoryAlertSearch,
+          [
+            {
+              field: 'cursor',
+              rule: 'not_found',
+              message: 'Must name a product or a stock row of the salon',
+            },
+          ],
+        ),
       ),
     )
   })
@@ -356,9 +360,16 @@ describe('ListInventoryAlertsUseCase', () => {
   it('passes on a query the caller could not decode, and refuses one that breaks a rule', async () => {
     const dependencies = inventoryAlertDependencies()
     const undecoded = Result.error(
-      DomainErrors.validation('Invalid inventory alert search', [
-        { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
-      ]),
+      DomainErrors.validation(
+        inventoryAlertMessages.invalidInventoryAlertSearch,
+        [
+          {
+            field: 'limit',
+            rule: 'invalid_format',
+            message: 'Must be a number',
+          },
+        ],
+      ),
     )
 
     expect(await list(dependencies, actors.admin, undecoded)).toEqual(undecoded)

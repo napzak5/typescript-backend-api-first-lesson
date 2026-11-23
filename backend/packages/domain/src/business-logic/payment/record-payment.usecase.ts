@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PaymentReadMapper } from '../../mappers/read/payment.mapper'
 import { PaymentWriteMapper } from '../../mappers/write/payment.mapper'
@@ -11,7 +12,7 @@ import { saleReachOf } from '../sale/_shared/authorization'
 import type { PaymentUseCaseDependencies } from './_shared/dependencies'
 import { toPaymentRefusalError } from './_shared/refusals'
 
-const MESSAGE = 'Invalid payment'
+const MESSAGE = paymentMessages.invalidPayment
 
 export class RecordPaymentUseCase {
   constructor(private readonly dependencies: PaymentUseCaseDependencies) {}

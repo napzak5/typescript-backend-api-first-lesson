@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { InventoryReportReadMapper } from '../../mappers/read/inventory-report.mapper'
 import { InventoryReportWriteMapper } from '../../mappers/write/inventory-report.mapper'
@@ -12,7 +13,7 @@ import { inventoryKeeperReachOf, performerOf } from './_shared/authorization'
 import type { InventoryUseCaseDependencies } from './_shared/dependencies'
 import { salonNotFound } from './_shared/refusals'
 
-const MESSAGE = 'Invalid stock count'
+const MESSAGE = inventoryMessages.invalidStockCount
 
 export class PerformStockCountUseCase {
   constructor(private readonly dependencies: InventoryUseCaseDependencies) {}

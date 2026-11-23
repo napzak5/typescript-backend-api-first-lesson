@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authPasswordResetVerifyRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, parseWith } from '../../shared'
@@ -16,7 +17,7 @@ export class VerifyResetTokenUseCase {
     const request = parseWith(
       authPasswordResetVerifyRequestSchema,
       input,
-      'Invalid password reset token',
+      authMessages.invalidPasswordResetToken,
     )
     if (request.type === 'error') {
       return request
@@ -35,7 +36,7 @@ export class VerifyResetTokenUseCase {
     }
 
     return found.data === null || !mayResetPassword(found.data)
-      ? Result.error(mailedTokenRefused('Invalid password reset token'))
+      ? Result.error(mailedTokenRefused(authMessages.invalidPasswordResetToken))
       : Result.success(null)
   }
 }

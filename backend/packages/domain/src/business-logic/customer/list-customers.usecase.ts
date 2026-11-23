@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
 import { CustomerWriteMapper } from '../../mappers/write/customer.mapper'
 import type { Actor } from '../../models/auth'
@@ -9,7 +10,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayHandleCustomers } from './_shared/authorization'
 import type { CustomerUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid customer search'
+const MESSAGE = customerMessages.invalidCustomerSearch
 
 export class ListCustomersUseCase {
   constructor(private readonly dependencies: CustomerUseCaseDependencies) {}

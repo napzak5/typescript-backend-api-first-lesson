@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { BOOKING_ID } from '../../../__tests__/fixtures/booking-fixtures'
@@ -229,7 +230,7 @@ describe('ListReviewsUseCase', () => {
 
     expect(listed).toEqual({
       type: 'error',
-      error: DomainErrors.validation('Invalid review search', [
+      error: DomainErrors.validation(reviewMessages.invalidReviewSearch, [
         {
           field: 'cursor',
           rule: 'not_found',
@@ -438,7 +439,7 @@ describe('CreateReviewUseCase', () => {
       ),
     ).toEqual({
       type: 'error',
-      error: DomainErrors.validation('Invalid review', issues),
+      error: DomainErrors.validation(reviewMessages.invalidReview, issues),
     })
   })
 
@@ -590,7 +591,10 @@ describe('UpdateReviewUseCase', () => {
       }),
     ).toEqual({
       type: 'error',
-      error: DomainErrors.validation('Invalid review update', issues),
+      error: DomainErrors.validation(
+        reviewMessages.invalidReviewUpdate,
+        issues,
+      ),
     })
   })
 

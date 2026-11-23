@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { purchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { PurchaseOrderWriteMapper } from '../../mappers/write/purchase-order.mapper'
 import type { Actor } from '../../models/auth'
 import {
@@ -11,7 +12,7 @@ import { purchaseOrderApproverReachOf } from './_shared/authorization'
 import { resultOfChange } from './_shared/change'
 import type { PurchaseOrderUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid purchase order cancellation'
+const MESSAGE = purchaseOrderMessages.invalidPurchaseOrderCancellation
 
 export class CancelPurchaseOrderUseCase {
   constructor(

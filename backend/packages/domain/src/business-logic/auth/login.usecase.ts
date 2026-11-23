@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SessionReadMapper } from '../../mappers/read/session.mapper'
 import { SessionWriteMapper } from '../../mappers/write/session.mapper'
 import type { ApiAuthLoginResponse, ClientInfo } from '../../models/auth'
@@ -55,7 +56,11 @@ export class LoginUseCase {
     input: unknown,
     client: ClientInfo,
   ): Promise<Result<ApiAuthLoginResponse, DomainError>> {
-    const request = parseWith(authLoginRequestSchema, input, 'Invalid login')
+    const request = parseWith(
+      authLoginRequestSchema,
+      input,
+      authMessages.invalidLogin,
+    )
     if (request.type === 'error') {
       return request
     }

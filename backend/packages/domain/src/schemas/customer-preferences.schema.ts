@@ -1,3 +1,5 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { customerPreferencesMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import type {
   ApiCustomerPreferencesUpdateRequest,
@@ -64,7 +66,7 @@ const noOverlappingTimeSlots = (
       context.issues.push({
         code: 'custom',
         path: [index],
-        message: 'Must not overlap an earlier time slot',
+        message: asOneString(customerPreferencesMessages.noOverlappingSlot),
         input: slot,
       })
     }

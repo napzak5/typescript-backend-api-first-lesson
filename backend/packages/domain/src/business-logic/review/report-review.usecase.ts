@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { reviewReportMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { ReviewReportReadMapper } from '../../mappers/read/review-report.mapper'
 import { ReviewReportWriteMapper } from '../../mappers/write/review-report.mapper'
@@ -11,7 +12,7 @@ import { reviewReporterOf } from './_shared/authorization'
 import type { ReviewUseCaseDependencies } from './_shared/dependencies'
 import { toUnreportedReviewError } from './_shared/refusals'
 
-const MESSAGE = 'Invalid review report'
+const MESSAGE = reviewReportMessages.invalidReviewReport
 
 export class ReportReviewUseCase {
   constructor(private readonly dependencies: ReviewUseCaseDependencies) {}

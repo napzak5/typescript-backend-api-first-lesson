@@ -5,6 +5,7 @@ import {
   type Omit,
   Result,
 } from '@beauty-salon-backend/utility'
+import { serviceMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 
@@ -16,7 +17,11 @@ const serviceIdParameterSchema = z.object({ id: serviceIdSchema })
 
 export const parseServiceId = (id: unknown): Result<ServiceId, DomainError> =>
   Result.map(
-    parseWith(serviceIdParameterSchema, { id }, 'Invalid service ID'),
+    parseWith(
+      serviceIdParameterSchema,
+      { id },
+      serviceMessages.invalidServiceId,
+    ),
     (parameters) => parameters.id,
   )
 

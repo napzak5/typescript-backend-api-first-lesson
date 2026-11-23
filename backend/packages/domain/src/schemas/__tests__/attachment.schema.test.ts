@@ -1,3 +1,5 @@
+import { asOneString, type LocalizedText } from '@beauty-salon-shared/i18n'
+import { attachmentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { ATTACHMENT_ID } from '../../__tests__/fixtures/attachment-fixtures'
 import { SALON_ID } from '../../__tests__/fixtures/fixtures'
@@ -122,6 +124,35 @@ describe('attachmentUploadUrlRequestSchema', () => {
       'contentType:invalid_value',
     ])
   })
+
+  it.each<[string, Record<string, unknown>, LocalizedText]>([
+    [
+      'a name with a path',
+      { filename: 'a/b.png' },
+      attachmentMessages.filenameWithoutPath,
+    ],
+    [
+      'a name that ends as an image of another kind does',
+      { filename: 'a.jpg' },
+      attachmentMessages.filenameOfType('image/png'),
+    ],
+    [
+      'a document that is named as an image',
+      { contentType: 'application/pdf', filename: 'a.png' },
+      attachmentMessages.filenameOfType('application/pdf'),
+    ],
+  ])(
+    'should say in every language what is wrong with %s',
+    (_case, overrides, written) => {
+      // Act
+      const result = parsed(overrides)
+
+      // Assert
+      expect(result.error?.issues.map(({ message }) => message)).toEqual([
+        asOneString(written),
+      ])
+    },
+  )
 })
 
 describe('attachmentSearchRequestSchema', () => {

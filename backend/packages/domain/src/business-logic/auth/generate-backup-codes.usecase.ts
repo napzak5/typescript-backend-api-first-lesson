@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserReadMapper } from '../../mappers/read/user.mapper'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type {
@@ -13,7 +14,7 @@ import { checkSecondFactor } from './_shared/second-factor'
 import { sessionGone } from './_shared/session-gone'
 import { hashBackupCodes } from './_shared/two-factor-setup'
 
-const MESSAGE = 'Invalid request for new backup codes'
+const MESSAGE = authMessages.invalidRequestForNewBackupCodes
 
 const notEnabled = Result.error(
   DomainErrors.conflict('Two-factor authentication is not enabled'),

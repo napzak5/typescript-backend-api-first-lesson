@@ -1,4 +1,5 @@
 import type { ApiPaymentMethodSearchRequest } from '@beauty-salon-backend/domain'
+import { paymentMethodMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   booleanParameter,
@@ -14,5 +15,5 @@ export const decodePaymentMethodSearchQuery = queryDecoder(
   }) satisfies z.ZodType<
     Pick<ApiPaymentMethodSearchRequest, 'limit' | 'isActive'>
   >,
-  'Invalid payment method search',
+  paymentMethodMessages.invalidPaymentMethodSearch,
 )

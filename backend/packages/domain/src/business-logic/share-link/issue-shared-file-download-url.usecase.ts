@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { shareLinkMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { addMinutes, min, parseISO } from 'date-fns'
 import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
 import { ShareLinkWriteMapper } from '../../mappers/write/share-link.mapper'
@@ -34,7 +35,7 @@ export class IssueSharedFileDownloadUrlUseCase {
     const request = parseWith(
       sharedFileDownloadUrlRequestSchema,
       input,
-      'Invalid shared file download',
+      shareLinkMessages.invalidSharedFileDownload,
     )
     if (request.type === 'error') {
       return request

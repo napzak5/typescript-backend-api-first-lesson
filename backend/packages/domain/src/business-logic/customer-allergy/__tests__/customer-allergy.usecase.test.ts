@@ -1,4 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
+import {
+  customerAllergyMessages,
+  customerMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -125,7 +129,10 @@ describe('AddCustomerAllergyUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid customer ID' },
+      error: {
+        type: 'validation',
+        message: customerMessages.invalidCustomerId,
+      },
     })
     expect(rulesOf(result)).toEqual(['customerId:invalid_format'])
     expect(untouched(dependencies)).toBe(true)
@@ -160,13 +167,16 @@ describe('AddCustomerAllergyUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid customer allergy', [
-          {
-            field: 'confirmedDate',
-            rule: 'too_big',
-            message: 'Must not be in the future',
-          },
-        ]),
+        DomainErrors.validation(
+          customerAllergyMessages.invalidCustomerAllergy,
+          [
+            {
+              field: 'confirmedDate',
+              rule: 'too_big',
+              message: 'Must not be in the future',
+            },
+          ],
+        ),
       ),
     )
     expect(untouched(dependencies)).toBe(true)
@@ -276,7 +286,10 @@ describe('UpdateCustomerAllergyUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid customer allergy ID' },
+      error: {
+        type: 'validation',
+        message: customerAllergyMessages.invalidCustomerAllergyId,
+      },
     })
     expect(rulesOf(result)).toEqual([
       'customerId:invalid_format',
@@ -543,7 +556,10 @@ describe('ListCustomerAllergiesUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid customer ID' },
+      error: {
+        type: 'validation',
+        message: customerMessages.invalidCustomerId,
+      },
     })
     expect(rulesOf(result)).toEqual(['customerId:invalid_format'])
     expect(untouched(dependencies)).toBe(true)
@@ -551,9 +567,16 @@ describe('ListCustomerAllergiesUseCase', () => {
 
   it('answers a query that could not be read as it was told', async () => {
     const unreadable = Result.error(
-      DomainErrors.validation('Invalid customer allergy search', [
-        { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
-      ]),
+      DomainErrors.validation(
+        customerAllergyMessages.invalidCustomerAllergySearch,
+        [
+          {
+            field: 'limit',
+            rule: 'invalid_format',
+            message: 'Must be a number',
+          },
+        ],
+      ),
     )
     const dependencies = customerAllergyDependencies()
 
@@ -596,13 +619,16 @@ describe('ListCustomerAllergiesUseCase', () => {
       ),
     ).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid customer allergy search', [
-          {
-            field: 'cursor',
-            rule: 'not_found',
-            message: 'Must name an allergy of the customer',
-          },
-        ]),
+        DomainErrors.validation(
+          customerAllergyMessages.invalidCustomerAllergySearch,
+          [
+            {
+              field: 'cursor',
+              rule: 'not_found',
+              message: 'Must name an allergy of the customer',
+            },
+          ],
+        ),
       ),
     )
   })

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffScheduleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { StaffScheduleReadMapper } from '../../mappers/read/staff-schedule.mapper'
 import { StaffScheduleWriteMapper } from '../../mappers/write/staff-schedule.mapper'
 import type { Actor } from '../../models/auth'
@@ -49,7 +50,7 @@ export class ListStaffSchedulesUseCase {
     const request = parseWith(
       staffScheduleSearchRequestSchema,
       query,
-      'Invalid staff schedule search',
+      staffScheduleMessages.invalidStaffScheduleSearch,
     )
     if (request.type === 'error') {
       return request

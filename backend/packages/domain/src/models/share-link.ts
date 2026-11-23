@@ -1,6 +1,7 @@
 import type { shareLinks } from '@beauty-salon-backend/database'
 import type { components, operations } from '@beauty-salon-backend/generated'
 import { type DeepRequired, Result } from '@beauty-salon-backend/utility'
+import { shareLinkMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 
@@ -19,7 +20,7 @@ export const parseShareLinkId = (
     parseWith(
       shareLinkIdParameterSchema,
       { shareLinkId },
-      'Invalid share link ID',
+      shareLinkMessages.invalidShareLinkId,
     ),
     (parameters) => parameters.shareLinkId,
   )

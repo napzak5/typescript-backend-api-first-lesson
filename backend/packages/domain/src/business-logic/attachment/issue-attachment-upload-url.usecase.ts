@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { attachmentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { parseISO } from 'date-fns'
 import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
 import { AttachmentWriteMapper } from '../../mappers/write/attachment.mapper'
@@ -10,7 +11,7 @@ import { attachmentReachOf, reachesFilesOf } from './_shared/authorization'
 import type { AttachmentUseCaseDependencies } from './_shared/dependencies'
 import { storageKeyOf, UPLOAD_URL_MINUTES } from './_shared/file-rules'
 
-const MESSAGE = 'Invalid attachment'
+const MESSAGE = attachmentMessages.invalidAttachment
 
 export class IssueAttachmentUploadUrlUseCase {
   constructor(private readonly dependencies: AttachmentUseCaseDependencies) {}

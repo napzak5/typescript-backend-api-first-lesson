@@ -7,6 +7,8 @@ import {
   ScalpConditionTypeSchema,
   ServiceCategoryTypeSchema,
 } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { parseISO } from 'date-fns'
 import { z } from 'zod'
 import {
@@ -150,7 +152,7 @@ const registeredInOrder = ({
 
 const REGISTERED_IN_ORDER = {
   path: ['registeredTo'],
-  message: 'Must not be earlier than registeredFrom',
+  message: asOneString(ruleMessages.notEarlierThan('registeredFrom')),
 }
 
 export const customerSearchRequestSchema = z

@@ -13,6 +13,7 @@ import {
   type Omit,
   Result,
 } from '@beauty-salon-backend/utility'
+import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import type { ProductId } from './product'
@@ -33,7 +34,7 @@ export const parseTreatmentRecordId = (
     parseWith(
       treatmentRecordIdParameterSchema,
       { id },
-      'Invalid treatment record ID',
+      treatmentRecordMessages.invalidTreatmentRecordId,
     ),
     (parameters) => parameters.id,
   )
@@ -54,7 +55,7 @@ export const parseTreatmentPhotoIds = (
   parseWith(
     treatmentPhotoParametersSchema,
     { id, photoId },
-    'Invalid treatment photo ID',
+    treatmentRecordMessages.invalidTreatmentPhotoId,
   )
 
 // API types, generated from TypeSpec

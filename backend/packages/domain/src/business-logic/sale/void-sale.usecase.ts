@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
 import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
@@ -34,7 +35,11 @@ export class VoidSaleUseCase {
     if (saleId.type === 'error') {
       return saleId
     }
-    const request = parseWith(saleVoidRequestSchema, input, 'Invalid sale void')
+    const request = parseWith(
+      saleVoidRequestSchema,
+      input,
+      saleMessages.invalidSaleVoid,
+    )
     if (request.type === 'error') {
       return request
     }

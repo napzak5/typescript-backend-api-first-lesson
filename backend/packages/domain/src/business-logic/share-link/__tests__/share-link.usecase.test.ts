@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { shareLinkMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   ATTACHMENT_ID,
@@ -685,7 +686,7 @@ describe('ListShareLinksUseCase', () => {
 
   it('looks at who asks, then at the ID, then at the query, then for the attachment', async () => {
     const undecoded = Result.error(
-      DomainErrors.validation('Invalid share link search', [
+      DomainErrors.validation(shareLinkMessages.invalidShareLinkSearch, [
         { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
       ]),
     )

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { BookingWriteMapper } from '../../mappers/write/booking.mapper'
 import type { Actor } from '../../models/auth'
 import type { ApiBookingResponse } from '../../models/booking'
@@ -26,7 +27,7 @@ export class CompleteBookingUseCase {
       const request = parseWith(
         bookingCompleteRequestSchema,
         input,
-        'Invalid booking completion',
+        bookingMessages.invalidBookingCompletion,
       )
       if (request.type === 'error') {
         return request

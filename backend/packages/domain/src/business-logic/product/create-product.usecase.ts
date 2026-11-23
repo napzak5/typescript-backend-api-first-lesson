@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { productMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ProductReadMapper } from '../../mappers/read/product.mapper'
 import { ProductWriteMapper } from '../../mappers/write/product.mapper'
 import type { Actor } from '../../models/auth'
@@ -35,7 +36,7 @@ export class CreateProductUseCase {
     const request = parseWith(
       productCreateRequestSchema,
       input,
-      'Invalid product',
+      productMessages.invalidProduct,
     )
     if (request.type === 'error') {
       return request

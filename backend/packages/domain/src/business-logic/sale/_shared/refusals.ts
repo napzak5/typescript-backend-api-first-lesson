@@ -1,5 +1,5 @@
 import { match } from 'ts-pattern'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, type Told } from '../../../shared'
 import type { SaleChangeRefusal, SaleVoidRefusal } from './change'
 import type { SalePlan } from './plan'
 import type { ReceiptRefusal } from './receipt'
@@ -14,7 +14,7 @@ type AnsweredRefusal = Exclude<SalePlan, { type: 'planned' }>
  */
 export const toRefusalError = (
   refusal: AnsweredRefusal,
-  message: string,
+  message: Told,
 ): DomainError =>
   match(refusal)
     .with({ type: 'invalid' }, ({ issues }) =>

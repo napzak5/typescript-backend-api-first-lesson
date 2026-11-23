@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { TreatmentRecordReadMapper } from '../../mappers/read/treatment-record.mapper'
 import { TreatmentRecordWriteMapper } from '../../mappers/write/treatment-record.mapper'
 import type { Actor } from '../../models/auth'
@@ -10,7 +11,7 @@ import { notFound } from '../booking/_shared/plan'
 import { treatmentRecordReachOf } from './_shared/authorization'
 import type { TreatmentRecordUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid treatment statistics'
+const MESSAGE = treatmentRecordMessages.invalidTreatmentStatistics
 
 export class GetTreatmentStatisticsUseCase {
   constructor(

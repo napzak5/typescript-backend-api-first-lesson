@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerVersionMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerVersionReadMapper } from '../../mappers/read/customer-version.mapper'
 import type { Actor } from '../../models/auth'
@@ -34,7 +35,7 @@ export class GetCustomerVersionUseCase {
     const number = parseWith(
       customerVersionNumberSchema,
       { version },
-      'Invalid customer version',
+      customerVersionMessages.invalidCustomerVersion,
     )
     if (number.type === 'error') {
       return number

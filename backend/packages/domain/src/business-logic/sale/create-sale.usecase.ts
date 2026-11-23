@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
 import { SaleWriteMapper } from '../../mappers/write/sale.mapper'
@@ -12,7 +13,7 @@ import { saleReachOf } from './_shared/authorization'
 import type { SaleUseCaseDependencies } from './_shared/dependencies'
 import { toRefusalError } from './_shared/refusals'
 
-const MESSAGE = 'Invalid sale'
+const MESSAGE = saleMessages.invalidSale
 
 export class CreateSaleUseCase {
   constructor(private readonly dependencies: SaleUseCaseDependencies) {}

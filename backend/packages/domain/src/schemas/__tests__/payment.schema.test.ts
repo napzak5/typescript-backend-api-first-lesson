@@ -1,3 +1,4 @@
+import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { brokenRules } from '../../__tests__/fixtures/fixtures'
 import {
@@ -402,7 +403,7 @@ describe('parsePaymentId', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid payment ID' },
+      error: { type: 'validation', message: paymentMessages.invalidPaymentId },
     })
     expect(result.type === 'error' ? brokenRules(result.error) : []).toEqual([
       expect.stringMatching(/^id:invalid_/),

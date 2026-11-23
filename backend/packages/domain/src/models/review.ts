@@ -1,6 +1,7 @@
 import type { reviews } from '@beauty-salon-backend/database'
 import type { components, operations } from '@beauty-salon-backend/generated'
 import { type DeepRequired, Result } from '@beauty-salon-backend/utility'
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import type { BookingId } from './booking'
@@ -16,7 +17,7 @@ const reviewIdParameterSchema = z.object({ id: reviewIdSchema })
 
 export const parseReviewId = (id: unknown): Result<ReviewId, DomainError> =>
   Result.map(
-    parseWith(reviewIdParameterSchema, { id }, 'Invalid review ID'),
+    parseWith(reviewIdParameterSchema, { id }, reviewMessages.invalidReviewId),
     (parameters) => parameters.id,
   )
 

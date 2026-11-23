@@ -1,3 +1,5 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import type {
   ApiPaymentRefundRequest,
@@ -24,7 +26,7 @@ export const saleProcessRequestSchema = z.strictObject({
   amount: amountOfMoney,
   cardLastFour: z
     .string()
-    .regex(/^[0-9]{4}$/, 'Must be four digits')
+    .regex(/^[0-9]{4}$/, asOneString(paymentMessages.fourDigits))
     .nullable(),
   cardBrand: nonBlankText.max(50).nullable(),
 }) satisfies z.ZodType<ApiSaleProcessRequest>

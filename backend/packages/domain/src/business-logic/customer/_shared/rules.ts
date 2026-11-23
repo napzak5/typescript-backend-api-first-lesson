@@ -3,6 +3,7 @@ import type { CustomerId } from '../../../models/customer'
 import {
   type DomainError,
   DomainErrors,
+  type Told,
   type ValidationIssue,
 } from '../../../shared'
 
@@ -65,5 +66,5 @@ export const referrerMissing: ValidationIssue = {
   message: 'Must name a customer',
 }
 
-export const referrerNotFound = (message: string): DomainError =>
+export const referrerNotFound = (message: Told): DomainError =>
   DomainErrors.validation(message, [referrerMissing])

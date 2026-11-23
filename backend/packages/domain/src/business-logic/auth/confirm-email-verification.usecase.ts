@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authEmailVerificationConfirmRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, parseWith } from '../../shared'
@@ -17,7 +18,7 @@ export class ConfirmEmailVerificationUseCase {
     const request = parseWith(
       authEmailVerificationConfirmRequestSchema,
       input,
-      'Invalid email verification',
+      authMessages.invalidEmailVerification,
     )
     if (request.type === 'error') {
       return request
@@ -36,7 +37,7 @@ export class ConfirmEmailVerificationUseCase {
     }
 
     return confirmed.data === null
-      ? Result.error(mailedTokenRefused('Invalid email verification'))
+      ? Result.error(mailedTokenRefused(authMessages.invalidEmailVerification))
       : Result.success(null)
   }
 }

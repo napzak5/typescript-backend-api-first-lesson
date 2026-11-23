@@ -1,4 +1,9 @@
 import { SalesTrendPeriodTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import {
+  ruleMessages,
+  salesReportMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { daysIn } from '../business-logic/sales-report/_shared/calendar'
 import type {
@@ -46,14 +51,16 @@ export const periodInOrder = (
     context.issues.push({
       code: 'custom',
       path: ['endDate'],
-      message: 'Must not be earlier than startDate',
+      message: asOneString(ruleMessages.notEarlierThan('startDate')),
       input: endDate,
     })
   } else if (daysIn(startDate, endDate) > MAX_REPORT_DAYS) {
     context.issues.push({
       code: 'custom',
       path: ['endDate'],
-      message: `Must be within ${MAX_REPORT_DAYS} days of startDate, both included`,
+      message: asOneString(
+        salesReportMessages.withinDaysOfStartDate(MAX_REPORT_DAYS),
+      ),
       input: endDate,
     })
   }

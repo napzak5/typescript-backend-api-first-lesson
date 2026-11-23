@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type { Actor } from '../../models/auth'
 import { authPasswordChangeRequestSchema } from '../../schemas/auth.schema'
@@ -9,7 +10,7 @@ import { blocklistIssue } from './_shared/password-blocklist'
 import { checkPassword } from './_shared/password-check'
 import { sessionGone } from './_shared/session-gone'
 
-const MESSAGE = 'Invalid password change'
+const MESSAGE = authMessages.invalidPasswordChange
 
 export class ChangePasswordUseCase {
   constructor(private readonly dependencies: AuthUseCaseDependencies) {}

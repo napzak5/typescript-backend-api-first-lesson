@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerAllergyMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerAllergyReadMapper } from '../../mappers/read/customer-allergy.mapper'
 import { CustomerAllergyWriteMapper } from '../../mappers/write/customer-allergy.mapper'
@@ -13,7 +14,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayHandleCustomers } from '../customer/_shared/authorization'
 import type { CustomerAllergyUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid customer allergy search'
+const MESSAGE = customerAllergyMessages.invalidCustomerAllergySearch
 
 export class ListCustomerAllergiesUseCase {
   constructor(

@@ -1,4 +1,5 @@
 import type { ApiServiceCategorySearchRequest } from '@beauty-salon-backend/domain'
+import { serviceCategoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   booleanParameter,
@@ -14,5 +15,5 @@ export const decodeServiceCategorySearchQuery = queryDecoder(
   }) satisfies z.ZodType<
     Pick<ApiServiceCategorySearchRequest, 'limit' | 'isActive'>
   >,
-  'Invalid service category search',
+  serviceCategoryMessages.invalidServiceCategorySearch,
 )

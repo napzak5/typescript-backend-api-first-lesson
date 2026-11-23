@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import type { Actor } from '../../models/auth'
 import { authTwoFactorVerifyRequestSchema } from '../../schemas/auth.schema'
@@ -8,7 +9,7 @@ import { twoFactorEnabledMail } from './_shared/mails'
 import { checkAppCode } from './_shared/second-factor'
 import { sessionGone } from './_shared/session-gone'
 
-const MESSAGE = 'Invalid two-factor authentication code'
+const MESSAGE = authMessages.invalidTwoFactorAuthenticationCode
 
 const nothingPending = Result.error(
   DomainErrors.conflict('No setup of two-factor authentication is under way'),

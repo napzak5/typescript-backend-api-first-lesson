@@ -839,7 +839,7 @@ describe('saleSearchRequestSchema', () => {
           {
             field: 'endDate',
             rule: 'custom',
-            message: 'Must not be earlier than startDate',
+            message: ruleMessages.notEarlierThan('startDate'),
           },
         ],
       },

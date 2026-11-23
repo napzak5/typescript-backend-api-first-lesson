@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -368,7 +369,7 @@ describe('CreateCustomerUseCase', () => {
       type: 'error',
       error: {
         type: 'validation',
-        message: expect.any(String),
+        message: customerMessages.invalidCustomer,
         issues: [
           {
             field: 'referredBy',
@@ -502,7 +503,7 @@ describe('ListCustomersUseCase', () => {
 
   /** A query that could not be decoded, as the HTTP layer reports it. */
   const undecodable = Result.error(
-    DomainErrors.validation('Invalid customer search', [
+    DomainErrors.validation(customerMessages.invalidCustomerSearch, [
       { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
     ]),
   )
@@ -1271,7 +1272,7 @@ describe('who may keep the customer ledger', () => {
       'a query that could not be decoded',
       {
         query: Result.error(
-          DomainErrors.validation('Invalid customer search', [
+          DomainErrors.validation(customerMessages.invalidCustomerSearch, [
             {
               field: 'limit',
               rule: 'invalid_format',

@@ -4,7 +4,7 @@ import type {
   SalesFigures,
   SalesPeriod,
 } from '../../../repositories/sales-report.repository'
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, type Told } from '../../../shared'
 import { isWithin } from '../../booking/_shared/authorization'
 import { notFound } from '../../booking/_shared/plan'
 import type { SalesReportUseCaseDependencies } from './dependencies'
@@ -18,7 +18,7 @@ export const figuresOf = async (
   { salesReportRepository }: SalesReportUseCaseDependencies,
   reach: LedgerReach,
   period: SalesPeriod,
-  message: string,
+  message: Told,
 ): Promise<Result<SalesFigures, DomainError>> => {
   if (!isWithin(reach, period.salonId)) {
     return Result.error(DomainErrors.forbidden())

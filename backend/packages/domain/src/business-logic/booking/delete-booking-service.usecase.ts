@@ -13,7 +13,7 @@ import {
   amountsTooBig,
   bookingServiceNotFound,
   servicesAreSettled,
-  toRefusalError,
+  timeZoneUnknown,
 } from './_shared/refusals'
 
 export class DeleteBookingServiceUseCase {
@@ -78,9 +78,7 @@ export class DeleteBookingServiceUseCase {
           ),
         ),
       )
-      .with({ type: 'timeZoneUnknown' }, (refusal) =>
-        Result.error(toRefusalError(refusal, 'Invalid booking service')),
-      )
+      .with({ type: 'timeZoneUnknown' }, () => Result.error(timeZoneUnknown()))
       .with({ type: 'amountsTooBig' }, () => Result.error(amountsTooBig()))
       .exhaustive()
   }

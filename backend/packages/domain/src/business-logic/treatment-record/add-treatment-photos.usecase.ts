@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { TreatmentRecordReadMapper } from '../../mappers/read/treatment-record.mapper'
 import { TreatmentRecordWriteMapper } from '../../mappers/write/treatment-record.mapper'
@@ -14,7 +15,7 @@ import { treatmentRecordReachOf } from './_shared/authorization'
 import type { TreatmentRecordUseCaseDependencies } from './_shared/dependencies'
 import { MAX_PHOTOS_OF_RECORD } from './_shared/photos'
 
-const MESSAGE = 'Invalid treatment photos'
+const MESSAGE = treatmentRecordMessages.invalidTreatmentPhotos
 
 /** The photos an addition wrote, and the record they were added to. */
 type AddedTreatmentPhotos = {

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -204,7 +205,10 @@ describe('PerformStockCountUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid stock count' },
+      error: {
+        type: 'validation',
+        message: inventoryMessages.invalidStockCount,
+      },
     })
     expect(rulesOf(result)).toEqual([
       'items.0.inventoryId:not_found',
@@ -354,7 +358,10 @@ describe('GetInventoryValueReportUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid inventory value report' },
+      error: {
+        type: 'validation',
+        message: inventoryMessages.invalidInventoryValueReport,
+      },
     })
     expect(rulesOf(result)).toEqual(['salonId:not_found'])
     expect(dependencies.inventoryRepository.valueReport).not.toHaveBeenCalled()

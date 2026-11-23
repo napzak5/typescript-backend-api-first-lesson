@@ -1,3 +1,5 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { customerVersionMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   type ApiCustomerVersionPathParameters,
@@ -18,7 +20,7 @@ const LAST_VERSION = 2_147_483_647
 export const customerVersionNumberSchema = z.strictObject({
   version: z
     .string()
-    .regex(/^\d+$/, 'Must be a whole number')
+    .regex(/^\d+$/, asOneString(customerVersionMessages.wholeNumber))
     .transform(Number)
     .pipe(z.number().int().min(1).max(LAST_VERSION)),
 }) satisfies z.ZodType<Pick<ApiCustomerVersionPathParameters, 'version'>>

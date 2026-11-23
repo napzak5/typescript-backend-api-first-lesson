@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserWriteMapper } from '../../mappers/write/user.mapper'
 import { authRegisterRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -29,7 +30,7 @@ export class RegisterUseCase {
     const request = parseWith(
       authRegisterRequestSchema,
       input,
-      'Invalid registration',
+      authMessages.invalidRegistration,
     )
     if (request.type === 'error') {
       return request
@@ -41,7 +42,7 @@ export class RegisterUseCase {
     const blocked = blocklistIssue('password', password, email)
     if (blocked !== null) {
       return Result.error(
-        DomainErrors.validation('Invalid registration', [blocked]),
+        DomainErrors.validation(authMessages.invalidRegistration, [blocked]),
       )
     }
 

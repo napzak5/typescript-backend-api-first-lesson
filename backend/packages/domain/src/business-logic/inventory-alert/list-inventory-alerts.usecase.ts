@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryAlertMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { InventoryAlertReadMapper } from '../../mappers/read/inventory-alert.mapper'
 import { InventoryAlertWriteMapper } from '../../mappers/write/inventory-alert.mapper'
@@ -23,7 +24,7 @@ import {
 import type { InventoryAlertUseCaseDependencies } from './_shared/dependencies'
 import { unknownTimeZone } from './_shared/refusals'
 
-const MESSAGE = 'Invalid inventory alert search'
+const MESSAGE = inventoryAlertMessages.invalidInventoryAlertSearch
 
 /** The facts of the first page, which begins nowhere in particular. */
 type FirstFacts = {

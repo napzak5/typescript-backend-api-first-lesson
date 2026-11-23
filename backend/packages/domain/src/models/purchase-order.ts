@@ -8,6 +8,7 @@ import {
   type Omit,
   Result,
 } from '@beauty-salon-backend/utility'
+import { purchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import type { InventoryId } from './inventory'
@@ -26,7 +27,7 @@ export const parsePurchaseOrderId = (
     parseWith(
       purchaseOrderIdParameterSchema,
       { id },
-      'Invalid purchase order ID',
+      purchaseOrderMessages.invalidPurchaseOrderId,
     ),
     (parameters) => parameters.id,
   )

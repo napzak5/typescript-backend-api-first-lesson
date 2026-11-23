@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -86,7 +87,7 @@ const query = (value: Record<string, unknown> = {}) => Result.success(value)
 
 /** A query the API could not decode. */
 const undecodable = Result.error(
-  DomainErrors.validation('Invalid inventory search', [
+  DomainErrors.validation(inventoryMessages.invalidInventorySearch, [
     { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
   ]),
 )
@@ -209,7 +210,10 @@ describe('ListInventoryUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid inventory search' },
+      error: {
+        type: 'validation',
+        message: inventoryMessages.invalidInventorySearch,
+      },
     })
     expect(rulesOf(result)).toEqual(['cursor:not_found'])
     expect(messagesOf(result)).toEqual({
@@ -446,7 +450,10 @@ describe('GetInventoryUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid inventory ID' },
+      error: {
+        type: 'validation',
+        message: inventoryMessages.invalidInventoryId,
+      },
     })
     expect(rulesOf(result)).toEqual(['id:invalid_format'])
     expect(untouched(dependencies)).toBe(true)
@@ -531,7 +538,7 @@ describe('UpdateInventoryUseCase', () => {
 
       expect(result).toMatchObject({
         type: 'error',
-        error: { message: 'Invalid stock row' },
+        error: { message: inventoryMessages.invalidStockRow },
       })
       expect(rulesOf(result)).toEqual(rules)
       expect(untouched(dependencies)).toBe(true)
@@ -751,7 +758,10 @@ describe('ListLowStockInventoryUseCase', () => {
 
     expect(refused).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid low-stock search' },
+      error: {
+        type: 'validation',
+        message: inventoryMessages.invalidLowStockSearch,
+      },
     })
     expect(rulesOf(refused)).toEqual(['cursor:not_found'])
     expect(messagesOf(refused)).toEqual({
@@ -896,7 +906,10 @@ describe('ListExpiringInventoryUseCase', () => {
 
     expect(refused).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid expiring search' },
+      error: {
+        type: 'validation',
+        message: inventoryMessages.invalidExpiringSearch,
+      },
     })
     expect(rulesOf(refused)).toEqual(['cursor:not_found'])
     expect(messagesOf(refused)).toEqual({

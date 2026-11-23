@@ -1,4 +1,6 @@
 import { ServiceCategoryTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { serviceCategoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   type ApiServiceCategoryCreateRequest,
@@ -25,7 +27,7 @@ export const serviceCategoryCreateRequestSchema = z.strictObject({
   iconUrl: z.httpUrl().max(500).nullable(),
   color: z
     .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a colour in #RRGGBB format')
+    .regex(/^#[0-9A-Fa-f]{6}$/, asOneString(serviceCategoryMessages.colour))
     .nullable(),
   isActive: z.boolean(),
 }) satisfies z.ZodType<ApiServiceCategoryCreateRequest>

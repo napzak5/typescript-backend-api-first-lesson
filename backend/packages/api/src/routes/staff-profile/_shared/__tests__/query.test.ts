@@ -1,3 +1,4 @@
+import { staffProfileMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { decodeStaffProfileSearchQuery } from '../query'
 
@@ -94,7 +95,7 @@ describe('decodeStaffProfileSearchQuery', () => {
         type: 'error',
         error: {
           type: 'validation',
-          message: 'Invalid staff profile search',
+          message: staffProfileMessages.invalidStaffProfileSearch,
           issues: [{ field, rule }],
         },
       })

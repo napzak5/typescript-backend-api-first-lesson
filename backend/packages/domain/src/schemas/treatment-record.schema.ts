@@ -1,3 +1,5 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { bookingIdSchema } from '../models/booking'
 import { customerIdSchema } from '../models/customer'
@@ -136,7 +138,10 @@ export const treatmentRecordSearchRequestSchema = z
   .refine(
     ({ startDate, endDate }) =>
       startDate === undefined || endDate === undefined || startDate <= endDate,
-    { path: ['endDate'], message: 'Must not be earlier than startDate' },
+    {
+      path: ['endDate'],
+      message: asOneString(ruleMessages.notEarlierThan('startDate')),
+    },
   ) satisfies z.ZodType<ApiTreatmentRecordSearchRequest>
 
 /** The period of the statistics is that of the filter of the list. */
@@ -149,7 +154,10 @@ export const treatmentStatisticsGetRequestSchema = z
   .refine(
     ({ startDate, endDate }) =>
       startDate === undefined || endDate === undefined || startDate <= endDate,
-    { path: ['endDate'], message: 'Must not be earlier than startDate' },
+    {
+      path: ['endDate'],
+      message: asOneString(ruleMessages.notEarlierThan('startDate')),
+    },
   ) satisfies z.ZodType<ApiTreatmentStatisticsGetRequest>
 
 /** The queries that were checked: the IDs they name are IDs of what they name. */

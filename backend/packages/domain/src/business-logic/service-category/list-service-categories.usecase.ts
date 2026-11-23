@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { serviceCategoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ServiceCategoryReadMapper } from '../../mappers/read/service-category.mapper'
 import { ServiceCategoryWriteMapper } from '../../mappers/write/service-category.mapper'
 import type { ApiPage } from '../../models/page'
@@ -9,7 +10,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { requireSalon } from '../_shared/existing-salon'
 import type { ServiceCategoryUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid service category search'
+const MESSAGE = serviceCategoryMessages.invalidServiceCategorySearch
 
 export class ListServiceCategoriesUseCase {
   constructor(

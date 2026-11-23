@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerVersionMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -195,13 +196,16 @@ describe('GetCustomerHistoryUseCase', () => {
 
     it('passes on a query the caller could not decode', async () => {
       const undecoded = Result.error(
-        DomainErrors.validation('Invalid customer history search', [
-          {
-            field: 'limit',
-            rule: 'invalid_format',
-            message: 'Must be a number',
-          },
-        ]),
+        DomainErrors.validation(
+          customerVersionMessages.invalidCustomerHistorySearch,
+          [
+            {
+              field: 'limit',
+              rule: 'invalid_format',
+              message: 'Must be a number',
+            },
+          ],
+        ),
       )
 
       const result = await history(dependenciesWith(), undecoded)
@@ -551,6 +555,24 @@ describe('GetCustomerVersionUseCase', () => {
 
     expect(rulesOf(result)).toEqual(rules)
     expect(dependencies.customerVersionRepository.find).not.toHaveBeenCalled()
+  })
+
+  it('should say that the number of a version is a whole number', async () => {
+    // Arrange
+    const dependencies = dependenciesWith()
+
+    // Act
+    const result = await get(dependencies, 'first')
+
+    // Assert
+    expect(result).toMatchObject({
+      type: 'error',
+      error: {
+        issues: [
+          { field: 'version', message: customerVersionMessages.wholeNumber },
+        ],
+      },
+    })
   })
 
   it('refuses an ID that is not one before the number', async () => {

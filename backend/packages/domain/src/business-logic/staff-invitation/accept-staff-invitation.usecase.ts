@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffInvitationMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { StaffInvitationWriteMapper } from '../../mappers/write/staff-invitation.mapper'
 import { authStaffInvitationAcceptRequestSchema } from '../../schemas/auth.schema'
@@ -27,7 +28,7 @@ export class AcceptStaffInvitationUseCase {
     const request = parseWith(
       authStaffInvitationAcceptRequestSchema,
       input,
-      'Invalid staff invitation',
+      staffInvitationMessages.invalidStaffInvitation,
     )
     if (request.type === 'error') {
       return request
@@ -56,7 +57,10 @@ export class AcceptStaffInvitationUseCase {
     const blocked = blocklistIssue('password', password, email)
     if (blocked !== null) {
       return Result.error(
-        DomainErrors.validation('Invalid staff invitation', [blocked]),
+        DomainErrors.validation(
+          staffInvitationMessages.invalidStaffInvitation,
+          [blocked],
+        ),
       )
     }
 

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { salesReportMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SalesReportReadMapper } from '../../mappers/read/sales-report.mapper'
 import { SalesReportWriteMapper } from '../../mappers/write/sales-report.mapper'
 import type { Actor } from '../../models/auth'
@@ -9,7 +10,7 @@ import { salesReportReachOf } from './_shared/authorization'
 import type { SalesReportUseCaseDependencies } from './_shared/dependencies'
 import { figuresOf } from './_shared/figures'
 
-const MESSAGE = 'Invalid sales trends'
+const MESSAGE = salesReportMessages.invalidSalesTrends
 
 export class GetSalesTrendsUseCase {
   constructor(private readonly dependencies: SalesReportUseCaseDependencies) {}

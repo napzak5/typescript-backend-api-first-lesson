@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { staffScheduleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -392,7 +393,7 @@ describe('ListStaffSchedulesUseCase', () => {
 
         expect(rulesOf(result)).toEqual(expected)
         expect(result).toMatchObject({
-          error: { message: 'Invalid staff schedule search' },
+          error: { message: staffScheduleMessages.invalidStaffScheduleSearch },
         })
         expect(repositoryCalls(dependencies)).toEqual([])
       },
@@ -675,7 +676,7 @@ describe('UpdateStaffSchedulesUseCase', () => {
 
         expect(rulesOf(result)).toEqual(expected)
         expect(result).toMatchObject({
-          error: { message: 'Invalid staff schedule update' },
+          error: { message: staffScheduleMessages.invalidStaffScheduleUpdate },
         })
         expect(repositoryCalls(dependencies)).toEqual([])
       },

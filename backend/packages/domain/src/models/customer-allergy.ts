@@ -5,6 +5,10 @@ import {
   type Omit,
   Result,
 } from '@beauty-salon-backend/utility'
+import {
+  customerAllergyMessages,
+  customerMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import { type CustomerId, customerIdSchema } from './customer'
@@ -25,7 +29,7 @@ export const parseAllergyCustomerId = (
     parseWith(
       allergyCustomerParameterSchema,
       { customerId },
-      'Invalid customer ID',
+      customerMessages.invalidCustomerId,
     ),
     (parameters) => parameters.customerId,
   )
@@ -46,7 +50,7 @@ export const parseCustomerAllergyIds = (
   parseWith(
     customerAllergyParametersSchema,
     { customerId, allergyId },
-    'Invalid customer allergy ID',
+    customerAllergyMessages.invalidCustomerAllergyId,
   )
 
 // API types, generated from TypeSpec

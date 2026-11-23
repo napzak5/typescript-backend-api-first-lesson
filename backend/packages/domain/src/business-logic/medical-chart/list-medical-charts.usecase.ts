@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { medicalChartMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { MedicalChartReadMapper } from '../../mappers/read/medical-chart.mapper'
 import { MedicalChartWriteMapper } from '../../mappers/write/medical-chart.mapper'
@@ -10,7 +11,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayHandleCustomers } from '../customer/_shared/authorization'
 import type { MedicalChartUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid medical chart search'
+const MESSAGE = medicalChartMessages.invalidMedicalChartSearch
 
 export class ListMedicalChartsUseCase {
   constructor(private readonly dependencies: MedicalChartUseCaseDependencies) {}

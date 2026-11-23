@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import {
@@ -911,5 +912,24 @@ describe('customerSearchRequestSchema', () => {
     ],
   ])('rejects %s', (_case, input, expected) => {
     expect(rulesBrokenBy(customerSearchRequestSchema, input)).toEqual(expected)
+  })
+
+  it('should say that an end before the start is earlier than registeredFrom', () => {
+    // Arrange
+    const search = {
+      registeredFrom: '2026-11-30T00:00:00Z',
+      registeredTo: '2026-11-01T00:00:00Z',
+    }
+
+    // Act
+    const result = parseWith(customerSearchRequestSchema, search, 'Invalid')
+
+    // Assert
+    expect(result).toMatchObject({
+      type: 'error',
+      error: {
+        issues: [{ message: ruleMessages.notEarlierThan('registeredFrom') }],
+      },
+    })
   })
 })

@@ -1,4 +1,5 @@
 import type { ApiAvailableSlotSearchRequest } from '@beauty-salon-backend/domain'
+import { availableSlotMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { numberParameter, queryDecoder } from '../../../shared/query-parameters'
 
@@ -10,5 +11,5 @@ export const decodeAvailableSlotSearchQuery = queryDecoder(
   }) satisfies z.ZodType<
     Pick<ApiAvailableSlotSearchRequest, 'limit' | 'duration'>
   >,
-  'Invalid available slot search',
+  availableSlotMessages.invalidAvailableSlotSearch,
 )

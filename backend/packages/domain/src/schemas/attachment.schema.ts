@@ -1,4 +1,6 @@
 import { AttachmentContentTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { attachmentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   hasExtensionOf,
@@ -33,7 +35,7 @@ const namesNoPath = (context: z.core.ParsePayload<string>): void => {
     context.issues.push({
       code: 'custom',
       path: [],
-      message: 'Must not contain a control character, / or \\',
+      message: asOneString(attachmentMessages.filenameWithoutPath),
       input: context.value,
     })
   }
@@ -62,7 +64,7 @@ const namedAsItsKind = (
   context.issues.push({
     code: 'custom',
     path: ['filename'],
-    message: `Must end as a file of the type ${contentType} does`,
+    message: asOneString(attachmentMessages.filenameOfType(contentType)),
     input: filename,
   })
 }

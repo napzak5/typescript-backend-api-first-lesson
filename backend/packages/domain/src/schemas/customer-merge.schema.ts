@@ -1,4 +1,6 @@
 import { CustomerMergeConflictResolutionTypeSchema } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import {
   type ApiCustomerMergeRequest,
@@ -21,7 +23,7 @@ const differentCustomers = (
     context.issues.push({
       code: 'custom',
       path: ['secondaryCustomerId'],
-      message: 'Must be another customer than primaryCustomerId',
+      message: asOneString(customerMessages.anotherThanPrimary),
       input: secondaryCustomerId,
     })
   }

@@ -1,4 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
+import {
+  customerMessages,
+  medicalChartMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -137,7 +141,7 @@ describe('CreateMedicalChartUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid medical chart', [
+        DomainErrors.validation(medicalChartMessages.invalidMedicalChart, [
           {
             field: 'previousTreatments.1.date',
             rule: 'too_big',
@@ -152,7 +156,7 @@ describe('CreateMedicalChartUseCase', () => {
   it('refuses a customer who is not there as one the request names wrongly', async () => {
     expect(await create(creating({ type: 'customerNotFound' }))).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid medical chart', [
+        DomainErrors.validation(medicalChartMessages.invalidMedicalChart, [
           {
             field: 'customerId',
             rule: 'not_found',
@@ -235,7 +239,10 @@ describe('GetMedicalChartUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid customer ID' },
+      error: {
+        type: 'validation',
+        message: customerMessages.invalidCustomerId,
+      },
     })
     expect(rulesOf(result)).toEqual(['customerId:invalid_format'])
     expect(untouched(dependencies)).toBe(true)
@@ -459,7 +466,7 @@ describe('ListMedicalChartsUseCase', () => {
 
   it('answers a query that could not be read as it was told', async () => {
     const unreadable = Result.error(
-      DomainErrors.validation('Invalid medical chart search', [
+      DomainErrors.validation(medicalChartMessages.invalidMedicalChartSearch, [
         { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
       ]),
     )
@@ -496,13 +503,16 @@ describe('ListMedicalChartsUseCase', () => {
       ),
     ).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid medical chart search', [
-          {
-            field: 'cursor',
-            rule: 'not_found',
-            message: 'Must name a medical chart of the list',
-          },
-        ]),
+        DomainErrors.validation(
+          medicalChartMessages.invalidMedicalChartSearch,
+          [
+            {
+              field: 'cursor',
+              rule: 'not_found',
+              message: 'Must name a medical chart of the list',
+            },
+          ],
+        ),
       ),
     )
   })

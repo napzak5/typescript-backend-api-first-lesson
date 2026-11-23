@@ -1,5 +1,6 @@
 import type { OrderStatusType } from '@beauty-salon-backend/generated'
 import { Result } from '@beauty-salon-backend/utility'
+import { purchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -312,18 +313,21 @@ describe('ReceivePurchaseOrderUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid purchase order receipt', [
-          {
-            field: 'items.0.inventoryId',
-            rule: 'not_found',
-            message: 'Must name a stock row of an item of the order',
-          },
-          {
-            field: 'items.2.quantity',
-            rule: 'too_big',
-            message: 'Must be at most 2.5, the quantity the item orders',
-          },
-        ]),
+        DomainErrors.validation(
+          purchaseOrderMessages.invalidPurchaseOrderReceipt,
+          [
+            {
+              field: 'items.0.inventoryId',
+              rule: 'not_found',
+              message: 'Must name a stock row of an item of the order',
+            },
+            {
+              field: 'items.2.quantity',
+              rule: 'too_big',
+              message: 'Must be at most 2.5, the quantity the item orders',
+            },
+          ],
+        ),
       ),
     )
   })
@@ -446,9 +450,16 @@ describe('ListReorderSuggestionsUseCase', () => {
   it('passes on a query the caller could not decode, and refuses one that breaks a rule', async () => {
     const dependencies = purchaseOrderDependencies()
     const undecoded = Result.error(
-      DomainErrors.validation('Invalid reorder suggestion search', [
-        { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
-      ]),
+      DomainErrors.validation(
+        purchaseOrderMessages.invalidReorderSuggestionSearch,
+        [
+          {
+            field: 'limit',
+            rule: 'invalid_format',
+            message: 'Must be a number',
+          },
+        ],
+      ),
     )
 
     expect(await list(dependencies, actors.admin, undecoded)).toEqual(undecoded)
@@ -486,13 +497,16 @@ describe('ListReorderSuggestionsUseCase', () => {
   it('refuses a cursor that names no product of the salon', async () => {
     expect(await list(listing({ type: 'cursorNotFound' }))).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid reorder suggestion search', [
-          {
-            field: 'cursor',
-            rule: 'not_found',
-            message: 'Must name a product of the salon',
-          },
-        ]),
+        DomainErrors.validation(
+          purchaseOrderMessages.invalidReorderSuggestionSearch,
+          [
+            {
+              field: 'cursor',
+              rule: 'not_found',
+              message: 'Must name a product of the salon',
+            },
+          ],
+        ),
       ),
     )
   })

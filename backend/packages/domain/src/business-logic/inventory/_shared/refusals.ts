@@ -1,11 +1,11 @@
-import { type DomainError, DomainErrors } from '../../../shared'
+import { type DomainError, DomainErrors, type Told } from '../../../shared'
 
 /**
  * The salon a query or a request names in its properties is not there.
  * It is an error of the request, as any of its properties that names
  * nothing is: the route itself is there.
  */
-export const salonNotFound = (message: string): DomainError =>
+export const salonNotFound = (message: Told): DomainError =>
   DomainErrors.validation(message, [
     { field: 'salonId', rule: 'not_found', message: 'Must name a salon' },
   ])
@@ -15,7 +15,7 @@ export const salonNotFound = (message: string): DomainError =>
  * so the list cannot tell where the page begins. It is an error of the
  * request.
  */
-export const cursorNotFound = (message: string): DomainError =>
+export const cursorNotFound = (message: Told): DomainError =>
   DomainErrors.validation(message, [
     {
       field: 'cursor',

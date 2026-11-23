@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -138,7 +139,10 @@ describe('CreateTreatmentRecordUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid treatment record' },
+      error: {
+        type: 'validation',
+        message: treatmentRecordMessages.invalidTreatmentRecord,
+      },
     })
     expect(rulesOf(result)).toEqual([
       'services:too_small',
@@ -152,13 +156,16 @@ describe('CreateTreatmentRecordUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid treatment record', [
-          {
-            field: 'bookingId',
-            rule: 'not_found',
-            message: 'Must name a booking of a salon',
-          },
-        ]),
+        DomainErrors.validation(
+          treatmentRecordMessages.invalidTreatmentRecord,
+          [
+            {
+              field: 'bookingId',
+              rule: 'not_found',
+              message: 'Must name a booking of a salon',
+            },
+          ],
+        ),
       ),
     )
   })
@@ -173,7 +180,12 @@ describe('CreateTreatmentRecordUseCase', () => {
     ]
 
     expect(await create(creating({ type: 'refused', issues }))).toEqual(
-      Result.error(DomainErrors.validation('Invalid treatment record', issues)),
+      Result.error(
+        DomainErrors.validation(
+          treatmentRecordMessages.invalidTreatmentRecord,
+          issues,
+        ),
+      ),
     )
   })
 
@@ -258,7 +270,10 @@ describe('GetTreatmentRecordUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid treatment record ID' },
+      error: {
+        type: 'validation',
+        message: treatmentRecordMessages.invalidTreatmentRecordId,
+      },
     })
     expect(rulesOf(result)).toEqual(['id:invalid_format'])
     expect(untouched(dependencies)).toBe(true)
@@ -466,13 +481,16 @@ describe('ListTreatmentRecordsUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid treatment record search', [
-          {
-            field: 'cursor',
-            rule: 'not_found',
-            message: 'Must name a treatment record of the list',
-          },
-        ]),
+        DomainErrors.validation(
+          treatmentRecordMessages.invalidTreatmentRecordSearch,
+          [
+            {
+              field: 'cursor',
+              rule: 'not_found',
+              message: 'Must name a treatment record of the list',
+            },
+          ],
+        ),
       ),
     )
   })
@@ -600,7 +618,12 @@ describe('UpdateTreatmentRecordUseCase', () => {
     ]
 
     expect(await update(changing({ type: 'refused', issues }))).toEqual(
-      Result.error(DomainErrors.validation('Invalid treatment record', issues)),
+      Result.error(
+        DomainErrors.validation(
+          treatmentRecordMessages.invalidTreatmentRecord,
+          issues,
+        ),
+      ),
     )
   })
 

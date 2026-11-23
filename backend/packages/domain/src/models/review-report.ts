@@ -1,6 +1,7 @@
 import type { reviewReports } from '@beauty-salon-backend/database'
 import type { components, operations } from '@beauty-salon-backend/generated'
 import { type DeepRequired, Result } from '@beauty-salon-backend/utility'
+import { reviewReportMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 
@@ -17,7 +18,7 @@ export const parseReviewReportId = (
     parseWith(
       reviewReportIdParameterSchema,
       { id },
-      'Invalid review report ID',
+      reviewReportMessages.invalidReviewReportId,
     ),
     (parameters) => parameters.id,
   )

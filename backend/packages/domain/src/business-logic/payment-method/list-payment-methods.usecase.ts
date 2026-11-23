@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { paymentMethodMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { PaymentMethodReadMapper } from '../../mappers/read/payment-method.mapper'
 import { PaymentMethodWriteMapper } from '../../mappers/write/payment-method.mapper'
 import type { Actor } from '../../models/auth'
@@ -11,7 +12,7 @@ import { requireSalon } from '../_shared/existing-salon'
 import { mayReadPaymentMethods } from './_shared/authorization'
 import type { PaymentMethodUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid payment method search'
+const MESSAGE = paymentMethodMessages.invalidPaymentMethodSearch
 
 export class ListPaymentMethodsUseCase {
   constructor(

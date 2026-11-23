@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerDeletionRequestMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerDeletionRequestReadMapper } from '../../mappers/read/customer-deletion-request.mapper'
 import { CustomerDeletionRequestWriteMapper } from '../../mappers/write/customer-deletion-request.mapper'
@@ -10,7 +11,7 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { mayDeleteCustomers } from '../customer/_shared/authorization'
 import type { CustomerDeletionRequestUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid customer deletion request'
+const MESSAGE = customerDeletionRequestMessages.invalidCustomerDeletionRequest
 
 export class RequestCustomerDeletionUseCase {
   constructor(

@@ -2,6 +2,8 @@ import {
   InventoryAlertSeverityTypeSchema,
   InventoryAlertTypeSchema,
 } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { inventoryAlertMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { subjectOf } from '../business-logic/inventory-alert/_shared/alerts'
 import { inventoryIdSchema } from '../models/inventory'
@@ -64,7 +66,7 @@ const stockRowOfTheAlert = (
     context.issues.push({
       code: 'custom',
       path: ['inventoryId'],
-      message: `Must be null for an alert of a product (${alert})`,
+      message: asOneString(inventoryAlertMessages.nullForProductAlert(alert)),
       input: inventoryId,
     })
   }
@@ -72,7 +74,9 @@ const stockRowOfTheAlert = (
     context.issues.push({
       code: 'custom',
       path: ['inventoryId'],
-      message: `Must name a stock row for an alert of a stock row (${alert})`,
+      message: asOneString(
+        inventoryAlertMessages.stockRowForStockRowAlert(alert),
+      ),
       input: inventoryId,
     })
   }

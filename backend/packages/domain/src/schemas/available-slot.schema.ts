@@ -1,3 +1,5 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { availableSlotMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { slotPositionOf } from '../business-logic/available-slot/_shared/page'
 import type {
@@ -24,7 +26,7 @@ export const availableSlotSearchRequestSchema = z.strictObject({
     .string()
     .refine(
       (cursor) => slotPositionOf(cursor) !== null,
-      'Must be the nextCursor of a page of available slots',
+      asOneString(availableSlotMessages.cursorOfAPage),
     )
     .exactOptional(),
   staffId: staffIdSchema.exactOptional(),

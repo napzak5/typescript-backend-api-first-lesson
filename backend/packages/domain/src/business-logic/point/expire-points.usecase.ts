@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { pointMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PointReadMapper } from '../../mappers/read/point.mapper'
 import { PointWriteMapper } from '../../mappers/write/point.mapper'
@@ -11,7 +12,7 @@ import { mayExpirePoints } from './_shared/authorization'
 import type { PointUseCaseDependencies } from './_shared/dependencies'
 import { earliestExpiryDateOf, issuesOfProcessBefore } from './_shared/plan'
 
-const MESSAGE = 'Invalid point expiry'
+const MESSAGE = pointMessages.invalidPointExpiry
 
 export class ExpirePointsUseCase {
   constructor(private readonly dependencies: PointUseCaseDependencies) {}

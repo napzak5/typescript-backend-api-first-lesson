@@ -25,7 +25,9 @@ tests of one of these kinds: a schema is not tested in the file of a use case.
 What the tests of more than one folder share (rows, requests, stand-ins for
 the repositories) is in `backend/packages/domain/src/__tests__/fixtures/`, one
 file per domain; beside it, `backend/packages/domain/src/__tests__/` holds only
-the test that reads the whole package (`use-case-flow.test.ts`).
+the tests of the whole package: the one that reads its sources
+(`use-case-flow.test.ts`) and the one that asks every use case
+(`use-case-headlines.test.ts`).
 
 The integration tests of the API drive every layer from an endpoint, so they
 are in the `__tests__` of the folder of its route:
@@ -68,6 +70,7 @@ What the repository does not have:
 | Rules that tie two properties of a request together, as the pure function that the use case and the repository both call: every rule kept and broken | Unit | `backend/packages/domain/src/business-logic/service/__tests__/service.rules.test.ts` |
 | Mappers: both directions, `null` kept as `null`, the changes of representation, and the columns that must not reach a response left out | Unit | `backend/packages/domain/src/mappers/__tests__/salon.mapper.test.ts`, `user.mapper.test.ts`, `service.mapper.test.ts` |
 | The flow of the use cases, read from their sources: a request that was checked goes to the write mapper of its domain and nowhere else, what the API answers with comes from a read mapper, the page of a list is made by the mappers, and a mapper file of one side has one of the same name on the other. The test reads every domain, and shows on sample sources what it reads as leaving the flow | Unit | `backend/packages/domain/src/__tests__/use-case-flow.test.ts` |
+| The headline of a validation error, which says which request was wrong: every use case that names one says it of what is no request, every function that reads IDs of what is no ID, every decoder of a query of a query it cannot decode. Each table is compared with the sources, and fails for a use case, a function or a decoder that it lacks | Unit | `backend/packages/domain/src/__tests__/use-case-headlines.test.ts`, `backend/packages/domain/src/models/__tests__/id-headlines.test.ts`, `backend/packages/api/src/routes/__tests__/query-headlines.test.ts` |
 | Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the interfaces the use case depends on stubbed | `backend/packages/domain/src/business-logic/salon/__tests__/salon.usecase.test.ts`, `backend/packages/domain/src/business-logic/auth/__tests__/auth.usecase.test.ts`, `backend/packages/domain/src/business-logic/service-category/__tests__/service-category.usecase.test.ts`, `backend/packages/domain/src/business-logic/service/__tests__/service.usecase.test.ts` |
 | Permission rules: every kind of actor, allowed or refused, and the repository left untouched by a refused one | Unit, through the use cases | `describe('who may change a salon', …)` in `backend/packages/domain/src/business-logic/salon/__tests__/salon.usecase.test.ts` |
 | Password hashing, the generation of tokens, and the secrets, one-time passwords and backup codes of two-factor authentication | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
@@ -264,6 +267,7 @@ A new domain follows the Salon tests file by file:
 - [ ] Schema tests (`schemas/__tests__/<domain>.schema.test.ts`): every rule of every request schema, accepted and rejected
 - [ ] Mapper tests (`mappers/__tests__/<domain>.mapper.test.ts`): write and read mappers, including `null`, every change of representation, the criteria of a list (a filter the request does not name, and one whose value is `false` or 0) and the page of a list
 - [ ] `use-case-flow.test.ts` passes: it reads the new domain as it reads every other, without being told of it
+- [ ] A row for every use case of the domain that names a headline in `use-case-headlines.test.ts`, for its function that reads IDs in `id-headlines.test.ts`, and for every decoder of a query in `query-headlines.test.ts` of the API package: each test fails until it has its rows
 - [ ] Use case tests (`business-logic/<domain>/__tests__/<domain>.usecase.test.ts`; the tests of pure rules beside them): success, each error passed on, no repository call on invalid input; for an operation that is not public, every kind of actor allowed or refused
 - [ ] `backend/packages/api/src/routes/<domain>/__tests__/<domain>.integration.test.ts` meeting the [requirements per endpoint](#requirements-per-endpoint)
 - [ ] `pnpm test` and `pnpm test:integration` pass

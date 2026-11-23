@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import { brokenRules, SALON_ID } from '../../../__tests__/fixtures/fixtures'
@@ -176,7 +177,10 @@ describe('AddTreatmentPhotosUseCase', () => {
     )
     expect(refused).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid treatment photos' },
+      error: {
+        type: 'validation',
+        message: treatmentRecordMessages.invalidTreatmentPhotos,
+      },
     })
     expect(rulesOf(refused)).toEqual(['photos.0.isPublic:custom'])
     expect(untouched(dependencies)).toBe(true)
@@ -288,7 +292,10 @@ describe('RemoveTreatmentPhotoUseCase', () => {
     const both = await remove(dependencies, actors.admin, 'TR-1', 'P-1')
     expect(both).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid treatment photo ID' },
+      error: {
+        type: 'validation',
+        message: treatmentRecordMessages.invalidTreatmentPhotoId,
+      },
     })
     expect(rulesOf(both)).toEqual([
       'id:invalid_format',

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { purchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -314,7 +315,10 @@ describe('GetPurchaseOrderUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid purchase order ID' },
+      error: {
+        type: 'validation',
+        message: purchaseOrderMessages.invalidPurchaseOrderId,
+      },
     })
     expect(rulesOf(result)).toEqual(['id:invalid_format'])
     expect(untouched(dependencies)).toBe(true)

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerStatisticsMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerStatisticsReadMapper } from '../../mappers/read/customer-statistics.mapper'
 import { CustomerStatisticsWriteMapper } from '../../mappers/write/customer-statistics.mapper'
@@ -12,7 +13,7 @@ import { notFound } from '../booking/_shared/plan'
 import { saleReachOf } from '../sale/_shared/authorization'
 import type { CustomerStatisticsUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid customer statistics'
+const MESSAGE = customerStatisticsMessages.invalidCustomerStatistics
 
 export class GetCustomerStatisticsUseCase {
   constructor(

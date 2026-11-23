@@ -2,6 +2,8 @@ import {
   ReviewReportReasonTypeSchema,
   ReviewReportStatusTypeSchema,
 } from '@beauty-salon-backend/generated'
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { reviewReportMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { z } from 'zod'
 import { reviewIdSchema } from '../models/review'
 import {
@@ -36,7 +38,7 @@ const otherNeedsDetails = (
     context.issues.push({
       code: 'custom',
       path: ['details'],
-      message: 'Must be given when reason is other',
+      message: asOneString(reviewReportMessages.detailsForOther),
       input: details,
     })
   }

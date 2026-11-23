@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import { CustomerBookingReadMapper } from '../../mappers/read/customer-booking.mapper'
 import { CustomerBookingWriteMapper } from '../../mappers/write/customer-booking.mapper'
@@ -11,7 +12,7 @@ import { ownBookingsOf } from './_shared/access'
 import type { CustomerBookingUseCaseDependencies } from './_shared/dependencies'
 import { toBookingRefusalError } from './_shared/refusals'
 
-const MESSAGE = 'Invalid booking'
+const MESSAGE = bookingMessages.invalidBooking
 
 export class CreateCustomerBookingUseCase {
   constructor(

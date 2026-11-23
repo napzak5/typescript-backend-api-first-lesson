@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { attachmentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   ATTACHMENT_ID,
@@ -196,7 +197,10 @@ describe('IssueAttachmentUploadUrlUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid attachment' },
+      error: {
+        type: 'validation',
+        message: attachmentMessages.invalidAttachment,
+      },
     })
     expect(rulesOf(result)).toEqual([
       'filename:custom',
@@ -216,7 +220,7 @@ describe('IssueAttachmentUploadUrlUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid attachment', [
+        DomainErrors.validation(attachmentMessages.invalidAttachment, [
           { field: 'salonId', rule: 'not_found', message: 'Must name a salon' },
         ]),
       ),
@@ -520,7 +524,10 @@ describe('CompleteAttachmentUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid attachment ID' },
+      error: {
+        type: 'validation',
+        message: attachmentMessages.invalidAttachmentId,
+      },
     })
     expect(rulesOf(result)).toEqual(['attachmentId:invalid_format'])
     expect(dependencies.attachmentRepository.findById).not.toHaveBeenCalled()
@@ -752,7 +759,7 @@ describe('ListAttachmentsUseCase', () => {
 
     expect(result).toEqual(
       Result.error(
-        DomainErrors.validation('Invalid attachment search', [
+        DomainErrors.validation(attachmentMessages.invalidAttachmentSearch, [
           {
             field: 'cursor',
             rule: 'not_found',
@@ -779,7 +786,10 @@ describe('ListAttachmentsUseCase', () => {
 
     expect(result).toMatchObject({
       type: 'error',
-      error: { type: 'validation', message: 'Invalid attachment search' },
+      error: {
+        type: 'validation',
+        message: attachmentMessages.invalidAttachmentSearch,
+      },
     })
     expect(rulesOf(result)).toEqual(rules)
     expect(dependencies.attachmentRepository.list).not.toHaveBeenCalled()
@@ -787,7 +797,7 @@ describe('ListAttachmentsUseCase', () => {
 
   it('passes on that the query could not be decoded, to who reaches attachments', async () => {
     const undecoded = Result.error(
-      DomainErrors.validation('Invalid attachment search', [
+      DomainErrors.validation(attachmentMessages.invalidAttachmentSearch, [
         { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
       ]),
     )
@@ -925,7 +935,7 @@ describe('IssueAttachmentDownloadUrlUseCase', () => {
 
   it('looks at who asks, then at the ID, then at the query, then for the attachment', async () => {
     const undecoded = Result.error(
-      DomainErrors.validation('Invalid attachment download', [
+      DomainErrors.validation(attachmentMessages.invalidAttachmentDownload, [
         {
           field: 'inline',
           rule: 'invalid_value',

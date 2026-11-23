@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SessionReadMapper } from '../../mappers/read/session.mapper'
 import { SessionWriteMapper } from '../../mappers/write/session.mapper'
 import type { Actor, ApiSessionResponse } from '../../models/auth'
@@ -7,7 +8,7 @@ import { sessionSearchRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
 
-const MESSAGE = 'Invalid session search'
+const MESSAGE = authMessages.invalidSessionSearch
 
 export class ListSessionsUseCase {
   constructor(private readonly dependencies: AuthUseCaseDependencies) {}

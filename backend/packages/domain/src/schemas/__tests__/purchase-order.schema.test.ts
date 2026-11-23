@@ -1,3 +1,4 @@
+import { textOfOneString } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import type { z } from 'zod'
 import { SALON_ID } from '../../__tests__/fixtures/fixtures'
@@ -24,7 +25,11 @@ const brokenBy = (schema: z.ZodType, value: unknown): string[] =>
 
 /** The messages of the rules a value breaks. */
 const messagesOf = (schema: z.ZodType, value: unknown): string[] =>
-  schema.safeParse(value).error?.issues.map(({ message }) => message) ?? []
+  schema
+    .safeParse(value)
+    .error?.issues.map(
+      ({ message }) => textOfOneString(message)?.en ?? message,
+    ) ?? []
 
 const MAX_INTEGER = 2_147_483_647
 
@@ -244,6 +249,9 @@ describe('purchaseOrderCreateRequestSchema', () => {
 
     expect(brokenBy(purchaseOrderCreateRequestSchema, request)).toEqual([
       'items.2.inventoryId:custom',
+    ])
+    expect(messagesOf(purchaseOrderCreateRequestSchema, request)).toEqual([
+      'Must not repeat a stock row ordered earlier in the order',
     ])
   })
 
@@ -485,6 +493,20 @@ describe('purchaseOrderSearchRequestSchema', () => {
   ])('refuses %s', (_case, query, expected) => {
     expect(brokenBy(purchaseOrderSearchRequestSchema, query)).toEqual(expected)
   })
+
+  it('should say that an end before the start is earlier than startDate', () => {
+    // Arrange
+    const search = {
+      startDate: '2026-11-02T00:00:00Z',
+      endDate: '2026-11-01T23:59:59.999Z',
+    }
+
+    // Act
+    const messages = messagesOf(purchaseOrderSearchRequestSchema, search)
+
+    // Assert
+    expect(messages).toEqual(['Must not be earlier than startDate'])
+  })
 })
 
 describe('purchaseOrderReceiveRequestSchema', () => {
@@ -586,12 +608,9 @@ describe('purchaseOrderReceiveRequestSchema', () => {
       'items.1.quantity:not_multiple_of',
       'items.2.inventoryId:custom',
     ])
-    expect(
-      purchaseOrderReceiveRequestSchema
-        .safeParse(value)
-        .error?.issues.map(({ message }) => message)
-        .at(-1),
-    ).toBe('Must not repeat a stock row received earlier in the receipt')
+    expect(messagesOf(purchaseOrderReceiveRequestSchema, value).at(-1)).toBe(
+      'Must not repeat a stock row received earlier in the receipt',
+    )
   })
 })
 

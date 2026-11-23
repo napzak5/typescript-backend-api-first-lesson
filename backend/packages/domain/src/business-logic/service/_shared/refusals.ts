@@ -3,6 +3,7 @@ import type { ServiceChangeRefusal } from '../../../repositories/service.reposit
 import {
   type DomainError,
   DomainErrors,
+  type Told,
   type ValidationIssue,
 } from '../../../shared'
 
@@ -19,7 +20,7 @@ export const packageContainsItself: ValidationIssue = {
  * service itself.
  */
 export const invalidService = (
-  message: string,
+  message: Told,
   issues: ValidationIssue[],
   within: string | null = null,
 ): DomainError =>
@@ -36,7 +37,7 @@ export const invalidService = (
 /** Why the stored services refuse a write, as the error a client gets. */
 export const toRefusalError = (
   refusal: ServiceChangeRefusal,
-  message: string,
+  message: Told,
   within: string | null = null,
 ): DomainError =>
   match(refusal)

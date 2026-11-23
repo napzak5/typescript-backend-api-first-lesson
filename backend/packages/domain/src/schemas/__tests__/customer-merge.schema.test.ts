@@ -1,3 +1,5 @@
+import { asOneString } from '@beauty-salon-shared/i18n'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID, USER_ID } from '../../__tests__/fixtures/auth-fixtures'
 import {
@@ -60,5 +62,18 @@ describe('customerMergeRequestSchema', () => {
     expect(
       parsed.error?.issues.map(({ path, code }) => `${path.join('.')}:${code}`),
     ).toEqual([rule])
+  })
+
+  it('should say that the secondary customer is another than the primary', () => {
+    // Arrange
+    const request = customerMergeRequest({ secondaryCustomerId: CUSTOMER_ID })
+
+    // Act
+    const parsed = customerMergeRequestSchema.safeParse(request)
+
+    // Assert
+    expect(parsed.error?.issues.map(({ message }) => message)).toEqual([
+      asOneString(customerMessages.anotherThanPrimary),
+    ])
   })
 })
