@@ -1,3 +1,4 @@
+import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { type DomainError, DomainErrors } from '../../../shared'
 import type { PaymentRefusal } from './plan'
@@ -6,19 +7,17 @@ import type { PaymentRefusal } from './plan'
 export const toPaymentRefusalError = (refusal: PaymentRefusal): DomainError =>
   match(refusal)
     .with({ type: 'void' }, () =>
-      DomainErrors.conflict('The sale is void; a void sale takes no payment'),
+      DomainErrors.conflict(paymentMessages.saleIsVoid),
     )
     .with({ type: 'refundMade' }, () =>
-      DomainErrors.conflict(
-        'A payment of the sale was refunded; a sale with a refund takes no further payment',
-      ),
+      DomainErrors.conflict(paymentMessages.saleHasRefund),
     )
     .with({ type: 'nothingLeft' }, () =>
-      DomainErrors.conflict('Nothing is left to pay of the sale'),
+      DomainErrors.conflict(paymentMessages.nothingLeftToPay),
     )
     .exhaustive()
 
 /** What a payment that cannot be refunded is told. */
 export const NOT_COMPLETED = DomainErrors.conflict(
-  'Only a payment that is completed is refunded; a payment is refunded once',
+  paymentMessages.onlyCompletedIsRefunded,
 )

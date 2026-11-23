@@ -1,4 +1,7 @@
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  reviewMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { ReviewId } from '../../../models/review'
 import { type DomainError, DomainErrors } from '../../../shared'
@@ -17,14 +20,10 @@ export const toReviewRefusalError = (
 ): DomainError =>
   match(refusal)
     .with({ type: 'bookingNotCompleted' }, () =>
-      DomainErrors.conflict(
-        'The booking is not completed; a booking is reviewed once the visit took place',
-      ),
+      DomainErrors.conflict(reviewMessages.bookingNotCompleted),
     )
     .with({ type: 'bookingReviewed' }, () =>
-      DomainErrors.conflict(
-        'The booking has a review already; a booking is reviewed once',
-      ),
+      DomainErrors.conflict(reviewMessages.bookingHasReview),
     )
     .exhaustive()
 

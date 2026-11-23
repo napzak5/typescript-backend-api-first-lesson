@@ -1,4 +1,7 @@
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  bookingMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { BookingServiceId, DbBooking } from '../../../models/booking'
 import type { BookingCreationRefusal } from '../../../repositories/booking.repository'
@@ -13,9 +16,7 @@ type AnsweredRefusal = Exclude<
 
 /** The day of a visit cannot be told in a time zone the runtime does not know. */
 export const timeZoneUnknown = (): DomainError =>
-  DomainErrors.conflict(
-    'The time zone of the salon is not one that is known, so the day of the visit cannot be told; correct the time zone of the salon first',
-  )
+  DomainErrors.conflict(bookingMessages.timeZoneUnknown)
 
 /**
  * Why a booking was not created, as the error a client gets. A booking
@@ -32,9 +33,7 @@ export const toRefusalError = (
     )
     .with({ type: 'timeZoneUnknown' }, timeZoneUnknown)
     .with({ type: 'staffOccupied' }, ({ staffIds }) =>
-      DomainErrors.conflict(
-        `Other bookings occupy ${staffIds.length === 1 ? 'staff member' : 'staff members'} ${staffIds.join(', ')} at a time of this booking`,
-      ),
+      DomainErrors.conflict(bookingMessages.staffOccupied(staffIds)),
     )
     .exhaustive()
 
@@ -46,9 +45,7 @@ export const cannotBeRescheduled = ({
   status: DbBooking['status']
   allowed: readonly DbBooking['status'][]
 }): DomainError =>
-  DomainErrors.conflict(
-    `A booking that is ${status} cannot be rescheduled; its status has to be ${allowed.join(' or ')}`,
-  )
+  DomainErrors.conflict(bookingMessages.cannotBeRescheduled(status, allowed))
 
 export const bookingServiceNotFound = (id: BookingServiceId): DomainError =>
   DomainErrors.notFound(entityMessages.bookingService, id)
@@ -61,12 +58,8 @@ export const servicesAreSettled = ({
   status: DbBooking['status']
   allowed: readonly DbBooking['status'][]
 }): DomainError =>
-  DomainErrors.conflict(
-    `The services of a booking that is ${status} cannot be changed; its status has to be ${allowed.join(' or ')}`,
-  )
+  DomainErrors.conflict(bookingMessages.servicesAreSettled(status, allowed))
 
 /** What the lines of a booking cost together is more than a booking holds. */
 export const amountsTooBig = (): DomainError =>
-  DomainErrors.conflict(
-    `The amounts of a booking must not exceed ${MAX_INTEGER}`,
-  )
+  DomainErrors.conflict(bookingMessages.amountsWithinLimit(MAX_INTEGER))

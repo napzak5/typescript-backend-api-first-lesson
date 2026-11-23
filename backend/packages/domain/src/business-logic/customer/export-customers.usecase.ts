@@ -61,7 +61,7 @@ export class ExportCustomersUseCase {
       .with({ type: 'tooMany' }, ({ matching }) =>
         Result.error(
           DomainErrors.conflict(
-            `${matching} customers match; a file holds ${MOST_EXPORTED} at most, so narrow the filters`,
+            customerMessages.tooManyToExport(matching, MOST_EXPORTED),
           ),
         ),
       )

@@ -43,8 +43,8 @@ export type ProblemContext = Pick<
 >
 
 /**
- * The language of what the domain writes of an error: the detail of an
- * error that names what was wrong with the request or with what it acts on.
+ * The language of a text that the domain writes in one language alone: the
+ * headline of a validation error that is no message of the language package.
  */
 const LANGUAGE_OF_THE_DOMAIN: Locale = 'en'
 
@@ -63,7 +63,6 @@ export const languageOf = (error: ApiError, asked: Locale): Locale =>
     .with({ type: 'validation' }, ({ message }) =>
       isToldInEveryLanguage(message) ? asked : LANGUAGE_OF_THE_DOMAIN,
     )
-    .with({ type: 'conflict' }, () => LANGUAGE_OF_THE_DOMAIN)
     .with(
       {
         type: P.union(
@@ -72,6 +71,7 @@ export const languageOf = (error: ApiError, asked: Locale): Locale =>
           'passwordRequired',
           'notFound',
           'alreadyExists',
+          'conflict',
           'database',
           'storage',
           'routeNotFound',
@@ -193,7 +193,7 @@ const toProblem = (error: ApiError, language: Locale): Problem => {
         type: 'urn:beauty-salon:problem:operation-not-allowed',
         title: said(problemMessages.conflict.title),
         status: 409,
-        detail: message,
+        detail: said(message),
         code: '3003',
         errors: null,
       }))

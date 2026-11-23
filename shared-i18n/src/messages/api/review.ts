@@ -50,4 +50,16 @@ export const reviewMessages = {
     en: 'Must name a staff member who took the booking',
     ja: '予約を担当したスタッフを指定してください',
   }),
+  bookingNotCompleted: text({
+    en: 'The booking is not completed; a booking is reviewed once the visit took place',
+    ja: 'この予約は、完了していません。レビューは、来店が済んでから書きます',
+  }),
+  bookingHasReview: text({
+    en: 'The booking has a review already; a booking is reviewed once',
+    ja: 'この予約には、すでにレビューがあります。レビューは、予約に 1 つです',
+  }),
+  alreadyReported: text({
+    en: 'The account has reported the review already; an account reports a review once',
+    ja: 'このアカウントは、このレビューを、すでに通報しています。1 つのアカウントが 1 つのレビューを通報するのは、1 回だけです',
+  }),
 }

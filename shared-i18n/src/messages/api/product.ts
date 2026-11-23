@@ -18,4 +18,8 @@ export const productMessages = {
     en: 'Invalid product update',
     ja: '商品の変更の内容が正しくありません',
   }),
+  hasStock: text({
+    en: 'The product cannot be deleted: it has stock; delete its stock first or set isActive to false',
+    ja: 'この商品は削除できません。在庫があります。先に在庫を削除するか、isActive を false にしてください',
+  }),
 }

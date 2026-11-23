@@ -34,7 +34,8 @@ export type AuthenticationFailure =
  * is for logs and is never sent to a client. `storage` is a call to the
  * object storage that failed; its `cause` is for logs as well. `forbidden`
  * means the actor is known and may not do this. `conflict` means the
- * request is fine and what it acts on is not in a state that allows it.
+ * request is fine and what it acts on is not in a state that allows it;
+ * its `message` says why, in every language.
  * `passwordRequired` means that what the request asks for is behind a
  * password of its own, which nobody signs in with, and the request brought
  * none that is accepted: none at all, a wrong one, or any while the
@@ -54,7 +55,7 @@ export type DomainError =
       field: string
       value: string
     }
-  | { type: 'conflict'; message: string }
+  | { type: 'conflict'; message: LocalizedText }
   | { type: 'database'; message: string; cause: unknown }
   | { type: 'storage'; message: string; cause: unknown }
 
@@ -87,7 +88,7 @@ export const DomainErrors = {
     return { type: 'alreadyExists', entity, field, value }
   },
 
-  conflict(message: string): DomainError {
+  conflict(message: LocalizedText): DomainError {
     return { type: 'conflict', message }
   },
 

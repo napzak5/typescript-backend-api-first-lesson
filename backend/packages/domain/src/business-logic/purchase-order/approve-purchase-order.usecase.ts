@@ -42,7 +42,7 @@ export class ApprovePurchaseOrderUseCase {
         orderId.data,
         actingStaffOf(actor),
       ),
-      'only a pending order is approved',
+      'approval',
     )
   }
 }

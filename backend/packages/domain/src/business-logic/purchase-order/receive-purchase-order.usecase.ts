@@ -76,13 +76,7 @@ export class ReceivePurchaseOrderUseCase {
           ),
         )
         .with({ type: 'closed' }, { type: 'notFromStatus' }, (refusal) =>
-          Result.error(
-            toStatusConflict(
-              orderId.data,
-              refusal,
-              'the goods of an ordered or shipped order are received',
-            ),
-          ),
+          Result.error(toStatusConflict(orderId.data, refusal, 'receipt')),
         )
         .with({ type: 'itemsRefused' }, ({ refusals }) =>
           Result.error(
@@ -109,7 +103,7 @@ export class ReceivePurchaseOrderUseCase {
         .with({ type: 'overLimit' }, ({ inventoryId }) =>
           Result.error(
             DomainErrors.conflict(
-              `The stock of row ${inventoryId} would go above 99999999.99`,
+              purchaseOrderMessages.stockAboveLimit(inventoryId),
             ),
           ),
         )

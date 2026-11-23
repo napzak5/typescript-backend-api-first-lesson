@@ -14,4 +14,8 @@ export const availableSlotMessages = {
     en: 'Must be the nextCursor of a page of available slots',
     ja: '空き枠のページの nextCursor にしてください',
   }),
+  timeZoneUnknown: text({
+    en: 'The time zone of the salon is not one that is known, so the times of its hours cannot be told; correct the time zone of the salon first',
+    ja: 'サロンのタイムゾーンが、知られているものではないので、営業時間の時刻がわかりません。先に、サロンのタイムゾーンを直してください',
+  }),
 }

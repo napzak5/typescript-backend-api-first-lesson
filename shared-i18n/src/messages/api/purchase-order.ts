@@ -1,5 +1,25 @@
 import { text } from '../../languages/localized-text'
 
+/** Which orders an operation takes, as the end of a refusal says it. */
+const TAKES = {
+  update: text({
+    en: 'an update moves a draft to pending, an approved order to ordered and an ordered one to shipped',
+    ja: '変更で進められるのは、draft から pending、approved から ordered、ordered から shipped です',
+  }),
+  approval: text({
+    en: 'only a pending order is approved',
+    ja: '承認できるのは、pending の発注だけです',
+  }),
+  cancellation: text({
+    en: 'an order is cancelled until it is delivered',
+    ja: '発注を取り消せるのは、納品されるまでです',
+  }),
+  receipt: text({
+    en: 'the goods of an ordered or shipped order are received',
+    ja: '納品を受けられるのは、ordered か shipped の発注です',
+  }),
+}
+
 /** What the API says of the purchase orders. */
 export const purchaseOrderMessages = {
   invalidPurchaseOrder: text({
@@ -59,5 +79,26 @@ export const purchaseOrderMessages = {
     text({
       en: `Must be at most ${ordered}, the quantity the item orders`,
       ja: `${ordered} 以下にしてください。明細が発注した数量です`,
+    }),
+  /** `id` is the order and `status` where it stands. */
+  closed: (id: string, status: string) =>
+    text({
+      en: `Purchase order ${id} is ${status}: a delivered or cancelled order does not change`,
+      ja: `発注 ${id} の状態は ${status} です。納品された発注と、取り消された発注は、変更できません`,
+    }),
+  /**
+   * `id` is the order, `status` where it stands and `operation` what was
+   * asked for: the sentence ends with which orders that operation takes.
+   */
+  notFromStatus: (id: string, status: string, operation: keyof typeof TAKES) =>
+    text({
+      en: `Purchase order ${id} is ${status}: ${TAKES[operation].en}`,
+      ja: `発注 ${id} の状態は ${status} です。${TAKES[operation].ja}`,
+    }),
+  /** `inventoryId` is the stock row. */
+  stockAboveLimit: (inventoryId: string) =>
+    text({
+      en: `The stock of row ${inventoryId} would go above 99999999.99`,
+      ja: `在庫の行 ${inventoryId} の在庫が、99999999.99 を超えます`,
     }),
 }

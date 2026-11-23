@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  reviewReportMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { ReviewReportReadMapper } from '../../mappers/read/review-report.mapper'
 import type { Actor } from '../../models/auth'
@@ -53,9 +56,7 @@ export class DismissReviewReportUseCase {
       )
       .with({ type: 'dismissedAlready' }, () =>
         Result.error(
-          DomainErrors.conflict(
-            'The report is dismissed already; a report is dismissed once',
-          ),
+          DomainErrors.conflict(reviewReportMessages.alreadyDismissed),
         ),
       )
       .exhaustive()

@@ -74,4 +74,36 @@ export const saleMessages = {
       en: `The amounts of a sale must not exceed ${limit}`,
       ja: `売上の金額は、${limit} を超えられません`,
     }),
+  timeZoneUnknown: text({
+    en: 'The time zone of the salon is not one that is known, so the day of the sale cannot be told; correct the time zone of the salon first',
+    ja: 'サロンのタイムゾーンが、知られているものではないので、売上の日がわかりません。先に、サロンのタイムゾーンを直してください',
+  }),
+  bookingBilled: text({
+    en: 'The booking has a sale that is not void; a booking is billed once',
+    ja: 'この予約には、取り消されていない売上があります。予約の会計は、1 回だけです',
+  }),
+  voidIsNotChanged: text({
+    en: 'The sale is void; a void sale is not changed',
+    ja: 'この売上は取り消されています。取り消された売上は、変更できません',
+  }),
+  linesWhilePending: text({
+    en: 'The lines of a sale are replaced only while its payment status is pending',
+    ja: '売上の明細を置き換えられるのは、支払いの状態が pending の間だけです',
+  }),
+  voidHasNoReceipt: text({
+    en: 'The sale is void; a void sale has no receipt',
+    ja: 'この売上は取り消されています。取り消された売上に、レシートはありません',
+  }),
+  notPaidInFull: text({
+    en: 'The sale is not paid in full; a receipt is made once what was received comes to its total',
+    ja: 'この売上は、全額が支払われていません。レシートは、受け取った額が合計に達してから作ります',
+  }),
+  alreadyVoid: text({
+    en: 'The sale is void already',
+    ja: 'この売上は、すでに取り消されています',
+  }),
+  paymentNotRefunded: text({
+    en: 'The sale has a payment that was not refunded; refund it before the sale is voided',
+    ja: 'この売上には、返金されていない支払いがあります。売上を取り消す前に、返金してください',
+  }),
 }

@@ -80,7 +80,7 @@ export class AcknowledgeInventoryAlertUseCase {
         .with({ type: 'alreadyAcknowledged' }, () =>
           Result.error(
             DomainErrors.conflict(
-              `Inventory alert ${key} is acknowledged already: an acknowledgement holds while what it was given for lasts`,
+              inventoryAlertMessages.alreadyAcknowledged(key),
             ),
           ),
         )

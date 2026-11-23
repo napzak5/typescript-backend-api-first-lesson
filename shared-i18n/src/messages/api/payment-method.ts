@@ -22,4 +22,8 @@ export const paymentMethodMessages = {
     en: 'Must name a payment method of the salon',
     ja: 'このサロンの支払い方法を指定してください',
   }),
+  referredToByPayment: text({
+    en: 'The payment method cannot be deleted: a payment refers to it; set isActive to false instead',
+    ja: 'この支払い方法は削除できません。支払いが参照しています。代わりに、isActive を false にしてください',
+  }),
 }

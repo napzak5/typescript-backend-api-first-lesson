@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  bookingMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 import { BookingReadMapper } from '../../../mappers/read/booking.mapper'
 import type { Actor } from '../../../models/auth'
@@ -12,16 +15,6 @@ import { bookingReachOf } from './authorization'
 import type { BookingUseCaseDependencies } from './dependencies'
 import type { BookingAction, StatusChangeRefusal } from './status'
 
-/** What an action makes of a booking, as a refusal says it. */
-const DONE: Record<BookingAction['type'], string> = {
-  confirm: 'confirmed',
-  cancel: 'cancelled',
-  cancelAsCustomer: 'cancelled',
-  start: 'started',
-  complete: 'completed',
-  noShow: 'noted as one the customer did not come to',
-}
-
 /** Why the status of a booking was not changed, as the error a client gets. */
 export const toStatusRefusalError = (
   refusal: StatusChangeRefusal,
@@ -29,23 +22,17 @@ export const toStatusRefusalError = (
   match(refusal)
     .with({ type: 'statusDoesNotAllow' }, ({ status, action, allowed }) =>
       DomainErrors.conflict(
-        `A booking that is ${status} cannot be ${DONE[action]}; its status has to be ${allowed.join(' or ')}`,
+        bookingMessages.statusDoesNotAllow(action, status, allowed),
       ),
     )
     .with({ type: 'notBegunYet' }, () =>
-      DomainErrors.conflict(
-        'The booking has not begun yet, so nobody failed to come to it; a booking that will not take place is cancelled',
-      ),
+      DomainErrors.conflict(bookingMessages.notBegunYet),
     )
     .with({ type: 'alreadyBegun' }, () =>
-      DomainErrors.conflict(
-        'The time of the booking has come, so the customer cannot cancel it any more; the salon notes what became of the visit',
-      ),
+      DomainErrors.conflict(bookingMessages.customerCancelsUntilTime),
     )
     .with({ type: 'actualTimesOutOfOrder' }, () =>
-      DomainErrors.conflict(
-        'The actual end has to be after the actual start, and one of the two is a time the booking already has; send both times',
-      ),
+      DomainErrors.conflict(bookingMessages.actualTimesOutOfOrder),
     )
     .exhaustive()
 

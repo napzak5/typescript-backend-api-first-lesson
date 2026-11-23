@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  authMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { UserReadMapper } from '../../mappers/read/user.mapper'
 import {
   type Actor,
@@ -57,7 +60,7 @@ export class ResetTwoFactorUseCase {
     }
     if (!disabled.data) {
       return Result.error(
-        DomainErrors.conflict('Two-factor authentication is not enabled'),
+        DomainErrors.conflict(authMessages.twoFactorNotEnabled),
       )
     }
     mailer.deliver(twoFactorResetMail(found.data.email))

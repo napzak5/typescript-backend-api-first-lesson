@@ -13,7 +13,7 @@ import { hashBackupCodes } from './_shared/two-factor-setup'
 const MESSAGE = authMessages.invalidTwoFactorAuthenticationSetup
 
 const alreadyEnabled = Result.error(
-  DomainErrors.conflict('Two-factor authentication is already enabled'),
+  DomainErrors.conflict(authMessages.twoFactorAlreadyEnabled),
 )
 
 export class EnableTwoFactorUseCase {

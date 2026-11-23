@@ -50,4 +50,20 @@ export const paymentMessages = {
       en: `Must not be more than the amount of the payment (${amount})`,
       ja: `支払いの金額（${amount}）より大きくはできません`,
     }),
+  saleIsVoid: text({
+    en: 'The sale is void; a void sale takes no payment',
+    ja: 'この売上は取り消されています。取り消された売上には、支払いを記録できません',
+  }),
+  saleHasRefund: text({
+    en: 'A payment of the sale was refunded; a sale with a refund takes no further payment',
+    ja: 'この売上の支払いが返金されています。返金のある売上には、もう支払いを記録できません',
+  }),
+  nothingLeftToPay: text({
+    en: 'Nothing is left to pay of the sale',
+    ja: 'この売上には、支払いの残りがありません',
+  }),
+  onlyCompletedIsRefunded: text({
+    en: 'Only a payment that is completed is refunded; a payment is refunded once',
+    ja: '返金できるのは、状態が completed の支払いだけです。支払いの返金は、1 回だけです',
+  }),
 }

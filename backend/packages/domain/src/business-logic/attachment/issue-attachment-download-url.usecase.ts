@@ -75,9 +75,7 @@ export class IssueAttachmentDownloadUrlUseCase {
       )
     }
     if (attachment.status !== 'uploaded') {
-      return Result.error(
-        DomainErrors.conflict('The attachment has not been uploaded'),
-      )
+      return Result.error(DomainErrors.conflict(attachmentMessages.notUploaded))
     }
 
     const expiresAt = addMinutes(clock(), DOWNLOAD_URL_MINUTES)

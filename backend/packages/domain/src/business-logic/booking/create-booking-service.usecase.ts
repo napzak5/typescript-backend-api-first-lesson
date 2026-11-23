@@ -82,13 +82,13 @@ export class CreateBookingServiceUseCase {
       )
       .with({ type: 'tooManyServices' }, ({ limit }) =>
         Result.error(
-          DomainErrors.conflict(`A booking has at most ${limit} services`),
+          DomainErrors.conflict(bookingMessages.atMostServices(limit)),
         ),
       )
       .with({ type: 'visitTooLong' }, ({ hours }) =>
         Result.error(
           DomainErrors.conflict(
-            `Every service of a booking begins within ${hours} hours of the earliest one`,
+            bookingMessages.servicesBeginWithinHours(hours),
           ),
         ),
       )

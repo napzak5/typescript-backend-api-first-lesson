@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  inventoryMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import { type InventoryId, parseInventoryId } from '../../models/inventory'
@@ -46,11 +49,7 @@ export class DeleteInventoryUseCase {
         ),
       )
       .with({ type: 'inStock' }, () =>
-        Result.error(
-          DomainErrors.conflict(
-            'The stock row cannot be deleted: it counts stock; bring it to zero with a stock movement first',
-          ),
-        ),
+        Result.error(DomainErrors.conflict(inventoryMessages.rowCountsStock)),
       )
       .exhaustive()
   }

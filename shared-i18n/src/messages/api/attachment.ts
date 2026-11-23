@@ -32,4 +32,24 @@ export const attachmentMessages = {
     en: 'Must name an attachment of the list',
     ja: 'この一覧の添付ファイルを指定してください',
   }),
+  noFileUploaded: text({
+    en: 'No file has been uploaded for the attachment',
+    ja: 'この添付ファイルのファイルは、まだアップロードされていません',
+  }),
+  notUploaded: text({
+    en: 'The attachment has not been uploaded',
+    ja: 'この添付ファイルは、アップロードが済んでいません',
+  }),
+  /** `size` is the size that was announced, in bytes. */
+  uploadedFileNotOfSize: (size: number) =>
+    text({
+      en: `The uploaded file is not of ${size} bytes`,
+      ja: `アップロードされたファイルは、${size} バイトではありません`,
+    }),
+  /** `contentType` is the media type that was announced. */
+  uploadedFileNotOfType: (contentType: string) =>
+    text({
+      en: `The uploaded file is not a file of the type ${contentType}`,
+      ja: `アップロードされたファイルは、種類が ${contentType} のファイルではありません`,
+    }),
 }

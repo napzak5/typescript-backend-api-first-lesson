@@ -85,7 +85,7 @@ export class AddTreatmentPhotosUseCase {
         ({ refusal }) =>
           Result.error(
             DomainErrors.conflict(
-              `The record holds a photo at ${refusal.photoUrl} already; a record holds one photo of an address`,
+              treatmentRecordMessages.photoExists(refusal.photoUrl),
             ),
           ),
       )
@@ -94,7 +94,10 @@ export class AddTreatmentPhotosUseCase {
         ({ refusal }) =>
           Result.error(
             DomainErrors.conflict(
-              `The record holds ${refusal.held} photos; a record holds at most ${MAX_PHOTOS_OF_RECORD}`,
+              treatmentRecordMessages.tooManyPhotos(
+                refusal.held,
+                MAX_PHOTOS_OF_RECORD,
+              ),
             ),
           ),
       )

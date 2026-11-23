@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  serviceMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import { parseSalonIdOfPath } from '../../models/salon'
@@ -57,11 +60,7 @@ export class DeleteServiceUseCase {
         ),
       )
       .with({ type: 'containedInPackage' }, () =>
-        Result.error(
-          DomainErrors.conflict(
-            'The service is part of a package and has to leave it first',
-          ),
-        ),
+        Result.error(DomainErrors.conflict(serviceMessages.partOfPackage)),
       )
       .with({ type: 'bookingsUnfinished' }, () =>
         Result.error(unfinishedBookingsReferTo('service')),

@@ -30,4 +30,10 @@ export const inventoryAlertMessages = {
     en: 'Must name a product or a stock row of the salon',
     ja: 'このサロンの商品か在庫の行を指定してください',
   }),
+  /** `key` is the key of the alert. */
+  alreadyAcknowledged: (key: string) =>
+    text({
+      en: `Inventory alert ${key} is acknowledged already: an acknowledgement holds while what it was given for lasts`,
+      ja: `在庫のアラート ${key} は、すでに確認されています。確認は、その理由が続く間、有効です`,
+    }),
 }

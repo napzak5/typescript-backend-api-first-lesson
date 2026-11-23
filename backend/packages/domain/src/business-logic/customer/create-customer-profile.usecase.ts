@@ -13,8 +13,6 @@ import { customerRuleIssues } from './_shared/rules'
 
 const MESSAGE = customerMessages.invalidCustomerProfile
 
-const ALREADY_HAS_PROFILE = 'This account already has a customer profile'
-
 export class CreateCustomerProfileUseCase {
   constructor(private readonly dependencies: CustomerUseCaseDependencies) {}
 
@@ -35,7 +33,7 @@ export class CreateCustomerProfileUseCase {
         Result.error(DomainErrors.forbidden()),
       )
       .with({ type: 'ownProfile' }, async () =>
-        Result.error(DomainErrors.conflict(ALREADY_HAS_PROFILE)),
+        Result.error(DomainErrors.conflict(customerMessages.alreadyHasProfile)),
       )
       .with({ type: 'withoutProfile' }, () => this.create(actor, input))
       .exhaustive()
@@ -79,20 +77,14 @@ export class CreateCustomerProfileUseCase {
         Result.error(DomainErrors.forbidden()),
       )
       .with({ type: 'alreadyHasProfile' }, () =>
-        Result.error(DomainErrors.conflict(ALREADY_HAS_PROFILE)),
+        Result.error(DomainErrors.conflict(customerMessages.alreadyHasProfile)),
       )
       .with({ type: 'emailNotVerified' }, () =>
-        Result.error(
-          DomainErrors.conflict(
-            'Confirm the email address of the account before creating a customer profile',
-          ),
-        ),
+        Result.error(DomainErrors.conflict(customerMessages.confirmEmailFirst)),
       )
       .with({ type: 'entryOfAnotherAccount' }, () =>
         Result.error(
-          DomainErrors.conflict(
-            'The customer with the email address of this account belongs to another account',
-          ),
+          DomainErrors.conflict(customerMessages.entryOfAnotherAccount),
         ),
       )
       .exhaustive()

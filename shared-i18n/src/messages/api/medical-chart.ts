@@ -18,4 +18,8 @@ export const medicalChartMessages = {
     en: 'Must name a medical chart of the list',
     ja: 'この一覧のカルテを指定してください',
   }),
+  customerHasChart: text({
+    en: 'The customer has a medical chart already; a customer has one',
+    ja: 'この顧客には、すでにカルテがあります。カルテは、顧客に 1 つです',
+  }),
 }

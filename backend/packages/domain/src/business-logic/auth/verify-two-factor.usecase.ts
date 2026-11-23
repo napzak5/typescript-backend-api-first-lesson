@@ -12,7 +12,7 @@ import { sessionGone } from './_shared/session-gone'
 const MESSAGE = authMessages.invalidTwoFactorAuthenticationCode
 
 const nothingPending = Result.error(
-  DomainErrors.conflict('No setup of two-factor authentication is under way'),
+  DomainErrors.conflict(authMessages.noTwoFactorSetupUnderWay),
 )
 
 export class VerifyTwoFactorUseCase {

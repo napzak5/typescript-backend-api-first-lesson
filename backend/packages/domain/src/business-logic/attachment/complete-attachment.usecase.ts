@@ -1,5 +1,9 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  attachmentMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
 import {
   type ApiAttachmentResponse,
@@ -21,12 +25,12 @@ import { beginsAs, SIGNATURE_LENGTH, storageKeyOf } from './_shared/file-rules'
 const refusalOf = (
   attachment: DbAttachment,
   stored: StoredFile,
-): string | null => {
+): LocalizedText | null => {
   if (stored.size !== attachment.size) {
-    return `The uploaded file is not of ${attachment.size} bytes`
+    return attachmentMessages.uploadedFileNotOfSize(attachment.size)
   }
   if (!beginsAs(attachment.contentType, stored.head)) {
-    return `The uploaded file is not a file of the type ${attachment.contentType}`
+    return attachmentMessages.uploadedFileNotOfType(attachment.contentType)
   }
 
   return null
@@ -83,7 +87,7 @@ export class CompleteAttachmentUseCase {
     }
     if (stored.data === null) {
       return Result.error(
-        DomainErrors.conflict('No file has been uploaded for the attachment'),
+        DomainErrors.conflict(attachmentMessages.noFileUploaded),
       )
     }
     const refusal = refusalOf(attachment, stored.data)
