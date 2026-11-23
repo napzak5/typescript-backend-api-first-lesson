@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as salonChoicesStories from './salon-choices.stories'
 
 const stories = composeStories(salonChoicesStories)
@@ -37,5 +38,29 @@ describe('SalonChoices', () => {
       '24 件（2 件を表示しています）',
     )
     expect(screen.getByRole('button', { name: 'さらに表示' })).toBeVisible()
+  })
+})
+
+describe('SalonChoices on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the table, its columns and the state of each salon in English, and count the salons', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Salons.run()
+
+    // Assert
+    expect(rowsOf('Salons')).toEqual([
+      ['Salon Hikari 表参道店', '東京都 渋谷区 神宮前 4-1-1', 'Accepting'],
+      ['Salon Hikari 銀座店', '東京都 中央区 銀座 5-2-1 銀座ビル 3F', 'Paused'],
+    ])
+    expect(
+      screen.getAllByRole('columnheader').map(({ textContent }) => textContent),
+    ).toEqual(['Salon', 'Address', 'Bookings'])
+    expect(screen.getByRole('status').textContent).toBe('2 items')
   })
 })

@@ -1,12 +1,12 @@
 import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { NoSalonNotice, useOwnSalon } from '@beauty-salon-frontend/session'
 import {
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -35,13 +35,14 @@ export const StartScreen = ({
   salonHref,
   choiceActions,
 }: StartScreenProps) => {
+  const say = useSay()
   const { salon, readAgain, readingAgain } = useOwnSalon()
 
   return match(salon)
     .with(undefined, () => (
       <>
         <PageHeader title={title} />
-        <LoadingIndicator label='サロンを確かめています' />
+        <LoadingIndicator label={say(salonScreenMessages.start.checking)} />
       </>
     ))
     .with({ type: 'platform' }, () => (
@@ -59,8 +60,8 @@ export const StartScreen = ({
       <>
         <PageHeader title={title} />
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('所属するサロン'), reason),
+          message={say(
+            unreadMessageOf(salonScreenMessages.names.ownSalon, reason),
           )}
           onRetry={readAgain}
           pending={readingAgain}

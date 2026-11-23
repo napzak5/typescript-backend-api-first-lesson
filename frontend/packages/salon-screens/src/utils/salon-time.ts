@@ -1,4 +1,4 @@
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
 
 /*
@@ -25,16 +25,16 @@ export const dayAfter = (day: string, days: number): string => {
 }
 
 /** A day as a heading names it: 「2026年11月20日（金）」. */
-export const dayNameOf = (day: string): string =>
-  inJapanese(formats.dayWithWeekdayOf(day))
+export const dayNameOf = (day: string): LocalizedText =>
+  formats.dayWithWeekdayOf(day)
 
 /** The time of day of a moment at a salon: 「10:30」. */
-export const timeOfDayAt = (moment: string, timezone: string): string =>
-  inJapanese(formats.timeOfDayAt(moment, timezone))
+export const timeOfDayAt = (moment: string, timezone: string): LocalizedText =>
+  formats.timeOfDayAt(moment, timezone)
 
 /** A moment at a salon, day and time: 「2026年11月20日（金） 10:30」. */
-export const momentNameAt = (moment: string, timezone: string): string =>
-  inJapanese(formats.momentWithWeekdayAt(moment, timezone))
+export const momentNameAt = (moment: string, timezone: string): LocalizedText =>
+  formats.momentWithWeekdayAt(moment, timezone)
 
 const LOCAL_MOMENT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/
 

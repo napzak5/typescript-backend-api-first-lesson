@@ -1,11 +1,12 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
-import { useState } from 'react'
+import { act, useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Period } from '../../utils/period'
 import {
   StatisticsPeriod,
@@ -151,5 +152,68 @@ describe('StatisticsPeriod', () => {
     // Assert
     expect(from()).toHaveValue('2026-01-01')
     expect(to()).toHaveValue('2026-03-31')
+  })
+})
+
+describe('StatisticsPeriod on a page in English', () => {
+  /** What an English screen says of the period */
+  const UP_TO_366_DAYS = 'Up to 366 days can be counted.'
+
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the period and its days in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.LastYear.run()
+
+    // Assert
+    expect(
+      screen.getByLabelText('Period to count (from)').closest('search'),
+    ).toHaveAttribute('aria-label', 'Period to count')
+    expect(screen.getByLabelText('Period to count (to)')).toHaveValue(
+      '2026-11-20',
+    )
+  })
+
+  it('should say in English what is wrong at the control', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run({
+      args: { ...stories.WithErrors.args, description: UP_TO_366_DAYS },
+    })
+
+    // Assert
+    expect(
+      screen.getByLabelText('Period to count (to)'),
+    ).toHaveAccessibleDescription(
+      `${UP_TO_366_DAYS} Make the period 366 days or shorter.`,
+    )
+  })
+
+  it('should say the errors anew when the page turns English, and leave the focus where it is', async () => {
+    // Arrange
+    await stories.WithErrors.run({
+      args: { ...stories.WithErrors.args, description: UP_TO_366_DAYS },
+    })
+    to().blur()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(
+      screen.getByLabelText('Period to count (to)'),
+    ).toHaveAccessibleDescription(
+      `${UP_TO_366_DAYS} Make the period 366 days or shorter.`,
+    )
+    expect(screen.getByLabelText('Period to count (to)')).not.toHaveFocus()
   })
 })

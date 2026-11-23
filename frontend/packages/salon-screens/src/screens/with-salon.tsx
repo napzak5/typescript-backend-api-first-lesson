@@ -2,16 +2,22 @@ import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  frameMessages,
+  salonScreenMessages,
+} from '@beauty-salon-shared/i18n/messages/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
 import { readSalon, salonKeyOf } from '../api/salons-api'
+
+const { names, otherSalon, withSalon: words } = salonScreenMessages
 
 export type WithSalonProps = {
   salonId: string
@@ -32,32 +38,29 @@ export type WithSalonProps = {
  * anew by the screen, and the focus it had would be lost.
  */
 export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
+  const say = useSay()
   const read = useQuery({
     queryKey: salonKeyOf(salonId),
     queryFn: () => readSalon(salonId),
   })
 
   return match(read.data)
-    .with(undefined, () => (
-      <LoadingIndicator label='サロンを読み込んでいます' />
-    ))
+    .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
     .with({ type: 'found' }, ({ salon }) => children(salon))
     .with({ type: 'notFound' }, () => (
       <>
         <PageHeader
-          title='サロンが見つかりません'
-          description='アドレスが正しいか、お確かめください。削除されたサロンは、表示できません。'
+          title={say(words.notFound)}
+          description={say(words.notFoundDescription)}
         />
-        <ButtonLink href='/'>トップへ戻る</ButtonLink>
+        <ButtonLink href='/'>{say(frameMessages.notFound.back)}</ButtonLink>
       </>
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <PageHeader title={title} />
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('サロン'), reason),
-          )}
+          message={say(unreadMessageOf(names.salon, reason))}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />
@@ -67,12 +70,12 @@ export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
 }
 
 export type OtherSalonNoticeProps = {
-  /** What is not theirs to see: 「売上」 */
-  what?: string
+  /** What is not theirs to see (「売上」), as it stands inside the sentence */
+  what?: LocalizedText
   /** Who may see it */
-  who?: string
+  who?: LocalizedText
   /** Where the start of the application leads a member: 「予約」 */
-  start?: string
+  start?: LocalizedText
 }
 
 /**
@@ -81,12 +84,16 @@ export type OtherSalonNoticeProps = {
  * leads to their own salon.
  */
 export const OtherSalonNotice = ({
-  what = '予約',
-  who = 'そのサロンのスタッフと、管理者',
-  start = '予約',
-}: OtherSalonNoticeProps) => (
-  <>
-    <p>{`このサロンの${what}は、見られません。${what}を見られるのは、${who}です。`}</p>
-    <ButtonLink href='/'>{`自分のサロンの${start}へ`}</ButtonLink>
-  </>
-)
+  what = names.bookings,
+  who = names.staffOfTheSalon,
+  start = names.bookings,
+}: OtherSalonNoticeProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <p>{say(otherSalon.notice(what, who))}</p>
+      <ButtonLink href='/'>{say(otherSalon.toOwnSalon(start))}</ButtonLink>
+    </>
+  )
+}

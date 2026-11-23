@@ -2,7 +2,9 @@ import {
   FilterForm,
   TextField,
   useFilterValues,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { salonScreenMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { LONGEST_KEYWORD } from '../../utils/keyword'
 
 export type KeywordSearchProps = {
@@ -30,6 +32,7 @@ export const KeywordSearch = ({
   clearHref,
   onSubmit,
 }: KeywordSearchProps) => {
+  const say = useSay()
   const searched = keyword ?? ''
   const [values, hold] = useFilterValues(searched, () => ({
     keyword: searched,
@@ -42,7 +45,7 @@ export const KeywordSearch = ({
       onSubmit={onSubmit}
     >
       <TextField
-        label='キーワード'
+        label={say(salonScreenMessages.keyword)}
         name='keyword'
         autoComplete='off'
         type='search'

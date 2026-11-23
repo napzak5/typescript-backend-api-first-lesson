@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { KeywordSearch, type KeywordSearchProps } from './keyword-search'
 import * as keywordSearchStories from './keyword-search.stories'
 
@@ -121,5 +122,24 @@ describe('KeywordSearch', () => {
 
     // Assert
     expect(keyword()).toHaveValue('表参道駅前')
+  })
+})
+
+describe('KeywordSearch on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its control in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithKeyword.run()
+
+    // Assert
+    expect(screen.getByRole('searchbox', { name: 'Keyword' })).toHaveValue(
+      '表参道',
+    )
   })
 })

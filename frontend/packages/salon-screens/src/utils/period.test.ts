@@ -1,4 +1,6 @@
 import { formOf } from '@beauty-salon-frontend/testing/forms'
+import type { FormErrors } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   daysErrorsOf,
@@ -13,6 +15,15 @@ import {
 } from './period'
 
 const TODAY = '2026-11-20'
+
+/** What is said of a day that is none */
+const DAY = { en: 'Enter a date.', ja: '日付を入力してください。' }
+
+/** What is said of an end before the start */
+const RANGE = {
+  en: 'Make the last day the same as the first day, or later.',
+  ja: '終わりの日は、始まりの日と同じか、その後にしてください。',
+}
 
 describe('monthUntil', () => {
   it.each<[string, Period]>([
@@ -83,24 +94,19 @@ describe('readPeriod', () => {
     })
   })
 
-  it.each<[string, string, string, Record<string, string>]>([
-    [
-      'days left empty',
-      '',
-      '',
-      { from: '日付を入力してください。', to: '日付を入力してください。' },
-    ],
-    [
-      'an end before the start',
-      '2026-11-20',
-      '2026-11-19',
-      { to: '終わりの日は、始まりの日と同じか、その後にしてください。' },
-    ],
+  it.each<[string, string, string, FormErrors<LocalizedText>]>([
+    ['days left empty', '', '', { from: DAY, to: DAY }],
+    ['an end before the start', '2026-11-20', '2026-11-19', { to: RANGE }],
     [
       'a period of 367 days',
       '2023-12-31',
       '2024-12-31',
-      { to: '期間は 366 日までにしてください。' },
+      {
+        to: {
+          en: 'Make the period 366 days or shorter.',
+          ja: '期間は 366 日までにしてください。',
+        },
+      },
     ],
   ])('should say what is wrong with %s', (_case, from, to, errors) => {
     // Act, Assert
@@ -112,23 +118,22 @@ describe('readPeriod', () => {
 })
 
 describe('daysErrorsOf', () => {
-  const DAY = '日付を入力してください。'
-  const RANGE = '終わりの日は、始まりの日と同じか、その後にしてください。'
-
-  it.each<[string, string, 'required' | 'optional', Record<string, string>]>([
-    ['2026-11-01', '2026-11-30', 'required', {}],
-    ['2026-11-30', '2026-11-30', 'required', {}],
-    ['', '', 'optional', {}],
-    ['2026-11-01', '', 'optional', {}],
-    ['', '2026-11-30', 'optional', {}],
-    ['', '', 'required', { from: DAY, to: DAY }],
-    ['2026-11-01', '', 'required', { to: DAY }],
-    ['11/1', '2026-11-30', 'optional', { from: DAY }],
-    ['2026-11-01', '2026-02-30', 'optional', { to: DAY }],
-    ['2026-11-30', '2026-11-01', 'required', { to: RANGE }],
-    ['2026-11-30', '2026-11-01', 'optional', { to: RANGE }],
-    ['11/30', '2026-11-01', 'optional', { from: DAY }],
-  ])('should find %j to %j (%s) to say %j', (from, to, ends, errors) => {
+  it.each<[string, string, 'required' | 'optional', FormErrors<LocalizedText>]>(
+    [
+      ['2026-11-01', '2026-11-30', 'required', {}],
+      ['2026-11-30', '2026-11-30', 'required', {}],
+      ['', '', 'optional', {}],
+      ['2026-11-01', '', 'optional', {}],
+      ['', '2026-11-30', 'optional', {}],
+      ['', '', 'required', { from: DAY, to: DAY }],
+      ['2026-11-01', '', 'required', { to: DAY }],
+      ['11/1', '2026-11-30', 'optional', { from: DAY }],
+      ['2026-11-01', '2026-02-30', 'optional', { to: DAY }],
+      ['2026-11-30', '2026-11-01', 'required', { to: RANGE }],
+      ['2026-11-30', '2026-11-01', 'optional', { to: RANGE }],
+      ['11/30', '2026-11-01', 'optional', { from: DAY }],
+    ],
+  )('should find %j to %j (%s) to say %j', (from, to, ends, errors) => {
     expect(daysErrorsOf(from, to, ends)).toEqual(errors)
   })
 })
@@ -146,9 +151,7 @@ describe('readDays', () => {
     // Act, Assert
     expect(readDays(formOf({ from: '2026-11-20', to: '2026-11-19' }))).toEqual({
       type: 'invalid',
-      errors: {
-        to: '終わりの日は、始まりの日と同じか、その後にしてください。',
-      },
+      errors: { to: RANGE },
     })
   })
 })
@@ -167,15 +170,22 @@ describe('periodQueryOf and periodNameOf', () => {
     )
   })
 
-  it.each<[string, Period, string]>([
+  it.each<[string, Period, LocalizedText]>([
     [
       'a period',
       { from: '2026-11-01', to: TODAY },
-      '2026年11月1日（日）〜2026年11月20日（金）',
+      {
+        en: 'Sun, November 1, 2026 – Fri, November 20, 2026',
+        ja: '2026年11月1日（日）〜2026年11月20日（金）',
+      },
     ],
-    ['a day', { from: TODAY, to: TODAY }, '2026年11月20日（金）'],
+    [
+      'a day',
+      { from: TODAY, to: TODAY },
+      { en: 'Fri, November 20, 2026', ja: '2026年11月20日（金）' },
+    ],
   ])('should name %s', (_case, period, name) => {
     // Act, Assert
-    expect(periodNameOf(period)).toBe(name)
+    expect(periodNameOf(period)).toEqual(name)
   })
 })
