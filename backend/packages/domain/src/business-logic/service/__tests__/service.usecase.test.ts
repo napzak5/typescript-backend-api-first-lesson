@@ -1,10 +1,16 @@
 import { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  ruleMessages,
+  serviceMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
   OTHER_SALON_ID,
   SALON_ID,
+  saidOfBrokenRules,
 } from '../../../__tests__/fixtures/fixtures'
 import {
   CATEGORY_ID,
@@ -191,7 +197,12 @@ const packageRequest = () => ({
  * Why the stored services refuse a change, and the rules a client is told
  * are broken, relative to the service.
  */
-const changeRefusals: [string, ServiceChangeRefusal, string[]][] = [
+const changeRefusals: [
+  string,
+  ServiceChangeRefusal,
+  string[],
+  LocalizedText[],
+][] = [
   [
     'a rule that ties properties together, which the service as it would be stored breaks',
     {
@@ -200,11 +211,12 @@ const changeRefusals: [string, ServiceChangeRefusal, string[]][] = [
         {
           field: 'discountPrice',
           rule: 'too_big',
-          message: 'Must not be greater than the price',
+          message: serviceMessages.notGreaterThanPrice,
         },
       ],
     },
     ['discountPrice:too_big'],
+    [serviceMessages.notGreaterThanPrice],
   ],
   [
     'several such rules',
@@ -214,16 +226,20 @@ const changeRefusals: [string, ServiceChangeRefusal, string[]][] = [
         {
           field: 'discountPrice',
           rule: 'too_big',
-          message: 'Must not be greater than the price',
+          message: serviceMessages.notGreaterThanPrice,
         },
         {
           field: 'packageServiceIds',
           rule: 'too_small',
-          message: 'A package must name at least 2 services',
+          message: serviceMessages.atLeastPackageMembers(2),
         },
       ],
     },
     ['discountPrice:too_big', 'packageServiceIds:too_small'],
+    [
+      serviceMessages.notGreaterThanPrice,
+      serviceMessages.atLeastPackageMembers(2),
+    ],
   ],
   [
     'members on a service that is not a package',
@@ -233,31 +249,36 @@ const changeRefusals: [string, ServiceChangeRefusal, string[]][] = [
         {
           field: 'packageServiceIds',
           rule: 'not_allowed',
-          message: 'Must be empty unless the service is a package',
+          message: serviceMessages.emptyUnlessPackage,
         },
       ],
     },
     ['packageServiceIds:not_allowed'],
+    [serviceMessages.emptyUnlessPackage],
   ],
   [
     'a category that is no category of the salon',
     { type: 'categoryNotFound' },
     ['categoryId:not_found'],
+    [ruleMessages.aCategoryOfSameSalon],
   ],
   [
     'a member that is no service of the salon, or a deleted one',
     { type: 'packageMemberNotFound' },
     ['packageServiceIds:not_found'],
+    [serviceMessages.servicesOfSameSalon],
   ],
   [
     'a member that is a package',
     { type: 'packageMemberIsPackage' },
     ['packageServiceIds:nested_package'],
+    [serviceMessages.noPackageAsMember],
   ],
   [
     'a service that a package contains becoming a package',
     { type: 'containedInPackage' },
     ['isPackage:contained_in_package'],
+    [serviceMessages.notPackageWhileContained],
   ],
 ]
 
@@ -544,25 +565,28 @@ describe('CreateServiceUseCase', () => {
     expect(repositoryCalls(dependencies)).toEqual(['salons.exists'])
   })
 
-  it.each<[string, ServiceCreation, string[]]>([
+  it.each<[string, ServiceCreation, string[], LocalizedText[]]>([
     [
       'a category that is no category of the salon',
       { type: 'categoryNotFound' },
       ['categoryId:not_found'],
+      [ruleMessages.aCategoryOfSameSalon],
     ],
     [
       'a member that is no service of the salon, or a deleted one',
       { type: 'packageMemberNotFound' },
       ['packageServiceIds:not_found'],
+      [serviceMessages.servicesOfSameSalon],
     ],
     [
       'a member that is a package',
       { type: 'packageMemberIsPackage' },
       ['packageServiceIds:nested_package'],
+      [serviceMessages.noPackageAsMember],
     ],
   ])(
     'refuses %s, as the repository finds it, as a broken rule',
-    async (_case, outcome, expected) => {
+    async (_case, outcome, expected, told) => {
       const dependencies = serviceDependencies(creating(outcome))
 
       const result = await create(dependencies, packageRequest())
@@ -572,6 +596,7 @@ describe('CreateServiceUseCase', () => {
         error: { type: 'validation' },
       })
       expect(rulesOf(result)).toEqual(expected)
+      expect(saidOfBrokenRules(result)).toEqual(told)
     },
   )
 
@@ -925,6 +950,7 @@ describe('ListServicesUseCase', () => {
       error: { type: 'validation' },
     })
     expect(rulesOf(result)).toEqual(['cursor:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([ruleMessages.aServiceOfSalon])
   })
 
   it.each(malformedIds)(
@@ -1265,6 +1291,9 @@ describe('UpdateServiceUseCase', () => {
       const result = await update(dependencies, input, id)
 
       expect(rulesOf(result)).toEqual(['packageServiceIds:circular'])
+      expect(saidOfBrokenRules(result)).toEqual([
+        serviceMessages.notServiceItself,
+      ])
       expect(repositoryCalls(dependencies)).toEqual([])
     },
   )
@@ -1306,7 +1335,7 @@ describe('UpdateServiceUseCase', () => {
 
   it.each(changeRefusals)(
     'refuses %s, as the repository finds it, as a broken rule of the service',
-    async (_case, refusal, expected) => {
+    async (_case, refusal, expected, told) => {
       const dependencies = serviceDependencies(updating(refusal))
 
       const result = await update(dependencies, { isPackage: true })
@@ -1316,6 +1345,7 @@ describe('UpdateServiceUseCase', () => {
         error: { type: 'validation' },
       })
       expect(rulesOf(result)).toEqual(expected)
+      expect(saidOfBrokenRules(result)).toEqual(told)
     },
   )
 
@@ -1572,7 +1602,7 @@ describe('BulkUpdateServicesUseCase', () => {
 
   it.each(changeRefusals)(
     'refuses %s, as the repository finds it for one of the services, as a broken rule of the changes',
-    async (_case, refusal, expected) => {
+    async (_case, refusal, expected, told) => {
       const dependencies = serviceDependencies(updatingMany(refusal))
 
       const result = await bulkUpdate(dependencies, {
@@ -1585,6 +1615,7 @@ describe('BulkUpdateServicesUseCase', () => {
         error: { type: 'validation' },
       })
       expect(rulesOf(result)).toEqual(expected.map((rule) => `updates.${rule}`))
+      expect(saidOfBrokenRules(result)).toEqual(told)
     },
   )
 

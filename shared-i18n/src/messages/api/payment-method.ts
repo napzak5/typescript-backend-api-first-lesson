@@ -18,4 +18,8 @@ export const paymentMethodMessages = {
     en: 'Invalid payment method update',
     ja: '支払い方法の変更の内容が正しくありません',
   }),
+  aPaymentMethodOfSalon: text({
+    en: 'Must name a payment method of the salon',
+    ja: 'このサロンの支払い方法を指定してください',
+  }),
 }

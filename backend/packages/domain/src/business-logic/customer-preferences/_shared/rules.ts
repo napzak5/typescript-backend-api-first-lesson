@@ -1,3 +1,4 @@
+import { customerPreferencesMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { DbCustomerPreferences } from '../../../models/customer-preferences'
 import type { ValidationIssue } from '../../../shared'
 
@@ -25,7 +26,7 @@ export const customerPreferencesRuleIssues = ({
         {
           field: 'preferredStaffId',
           rule: 'avoided',
-          message: 'Must not be a staff member the customer avoids',
+          message: customerPreferencesMessages.notAvoidedStaffMember,
         },
       ]
     : []

@@ -22,4 +22,18 @@ export const shareLinkMessages = {
     en: 'Invalid shared file request',
     ja: '共有されたファイルの指定が正しくありません',
   }),
+  laterThanNow: text({
+    en: 'Must be later than now',
+    ja: '現在より後にしてください',
+  }),
+  aShareLinkOfAttachment: text({
+    en: 'Must name a share link of the attachment',
+    ja: 'この添付ファイルの共有リンクを指定してください',
+  }),
+  /** `days` is how long a link works at most. */
+  withinDaysFromNow: (days: number) =>
+    text({
+      en: `Must be within ${days} days from now`,
+      ja: `現在から ${days} 日以内にしてください`,
+    }),
 }

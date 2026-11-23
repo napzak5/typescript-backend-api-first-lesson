@@ -26,4 +26,8 @@ export const inventoryAlertMessages = {
       en: `Must name a stock row for an alert of a stock row (${alert})`,
       ja: `在庫の行のアラート（${alert}）では、在庫の行を指定してください`,
     }),
+  aProductOrStockRowOfSalon: text({
+    en: 'Must name a product or a stock row of the salon',
+    ja: 'このサロンの商品か在庫の行を指定してください',
+  }),
 }

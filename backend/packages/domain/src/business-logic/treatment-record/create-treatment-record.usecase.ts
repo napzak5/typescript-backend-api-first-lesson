@@ -65,7 +65,7 @@ export class CreateTreatmentRecordUseCase {
       .with({ type: 'bookingNotFound' }, () =>
         Result.error(
           DomainErrors.validation(MESSAGE, [
-            notFound('bookingId', 'a booking of a salon'),
+            notFound('bookingId', treatmentRecordMessages.aBookingOfASalon),
           ]),
         ),
       )

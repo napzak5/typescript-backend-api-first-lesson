@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { COLOR_ID, CUT_ID } from '../../../__tests__/fixtures/booking-fixtures'
 import {
@@ -446,7 +447,7 @@ describe('planServiceAddition', () => {
           {
             field: 'serviceId',
             rule: 'not_found',
-            message: 'Must name a service of the salon',
+            message: ruleMessages.aServiceOfSalon,
           },
         ],
       })
@@ -461,7 +462,7 @@ describe('planServiceAddition', () => {
           {
             field: 'staffId',
             rule: 'not_found',
-            message: 'Must name a staff member of the salon',
+            message: ruleMessages.aStaffMemberOfSalon,
           },
         ],
       })

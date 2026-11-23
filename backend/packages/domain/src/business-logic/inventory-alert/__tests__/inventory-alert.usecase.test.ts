@@ -10,6 +10,7 @@ import {
   brokenRules,
   dbOpeningHours,
   dbSalon,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -333,7 +334,7 @@ describe('ListInventoryAlertsUseCase', () => {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name a product or a stock row of the salon',
+              message: inventoryAlertMessages.aProductOrStockRowOfSalon,
             },
           ],
         ),
@@ -366,7 +367,7 @@ describe('ListInventoryAlertsUseCase', () => {
           {
             field: 'limit',
             rule: 'invalid_format',
-            message: 'Must be a number',
+            message: MADE_UP_MESSAGE,
           },
         ],
       ),

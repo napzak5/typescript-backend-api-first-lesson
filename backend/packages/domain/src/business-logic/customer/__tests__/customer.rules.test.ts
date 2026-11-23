@@ -1,3 +1,7 @@
+import {
+  customerMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { REFERRER_ID } from '../../../__tests__/fixtures/customer-fixtures'
@@ -105,7 +109,7 @@ describe('customerRuleIssues', () => {
       {
         field: 'birthDate',
         rule: 'too_big',
-        message: 'Must not be in the future',
+        message: ruleMessages.notInFuture,
       },
     ])
   })
@@ -118,7 +122,11 @@ describe('referredByItself', () => {
     const issues = referredByItself(customerId, { referredBy: customerId })
 
     expect(issues).toEqual([
-      { field: 'referredBy', rule: 'circular', message: expect.any(String) },
+      {
+        field: 'referredBy',
+        rule: 'circular',
+        message: customerMessages.notCustomerItself,
+      },
     ])
   })
 

@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match, P } from 'ts-pattern'
 
 /**
@@ -11,16 +13,16 @@ import { match, P } from 'ts-pattern'
 export const lotNumberRefusal = (
   requiresLotTracking: boolean,
   lotNumber: string | null,
-): string | null =>
+): LocalizedText | null =>
   match({ requiresLotTracking, lotNumber })
-    .returnType<string | null>()
+    .returnType<LocalizedText | null>()
     .with(
       { requiresLotTracking: true, lotNumber: null },
-      () => 'Must name the lot: the product is kept by lots',
+      () => inventoryMessages.lotOfProductKeptByLots,
     )
     .with(
       { requiresLotTracking: false, lotNumber: P.string },
-      () => 'Must be null: the product is not kept by lots',
+      () => inventoryMessages.nullForProductNotKeptByLots,
     )
     .with(
       { requiresLotTracking: true, lotNumber: P.string },

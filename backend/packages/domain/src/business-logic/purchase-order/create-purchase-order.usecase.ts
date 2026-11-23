@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { purchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  purchaseOrderMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PurchaseOrderReadMapper } from '../../mappers/read/purchase-order.mapper'
 import { PurchaseOrderWriteMapper } from '../../mappers/write/purchase-order.mapper'
@@ -91,7 +94,7 @@ export class CreatePurchaseOrderUseCase {
                 indexes.map((index) =>
                   notFound(
                     `items.${index}.inventoryId`,
-                    'a stock row of the salon',
+                    ruleMessages.aStockRowOfSalon,
                   ),
                 ),
               ),

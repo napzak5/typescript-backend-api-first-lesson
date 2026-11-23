@@ -54,7 +54,7 @@ export class MergeCustomersUseCase {
             missing.map((field) => ({
               field,
               rule: 'not_found',
-              message: 'Must be a customer who is not deleted',
+              message: customerMessages.aCustomerNotDeleted,
             })),
           ),
         ),

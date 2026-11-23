@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  ruleMessages,
+  treatmentRecordMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { TreatmentRecordReadMapper } from '../../mappers/read/treatment-record.mapper'
 import { TreatmentRecordWriteMapper } from '../../mappers/write/treatment-record.mapper'
 import type { Actor } from '../../models/auth'
@@ -56,7 +59,9 @@ export class GetTreatmentStatisticsUseCase {
 
     return figures.data === null
       ? Result.error(
-          DomainErrors.validation(MESSAGE, [notFound('salonId', 'a salon')]),
+          DomainErrors.validation(MESSAGE, [
+            notFound('salonId', ruleMessages.aSalon),
+          ]),
         )
       : Result.success(TreatmentRecordReadMapper.toApiStatistics(figures.data))
   }

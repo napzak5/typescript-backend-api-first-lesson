@@ -10,4 +10,8 @@ export const customerPreferencesMessages = {
     en: 'Must not overlap an earlier time slot',
     ja: '前の時間帯と重ねられません',
   }),
+  notAvoidedStaffMember: text({
+    en: 'Must not be a staff member the customer avoids',
+    ja: '顧客が避けたいスタッフにはできません',
+  }),
 }

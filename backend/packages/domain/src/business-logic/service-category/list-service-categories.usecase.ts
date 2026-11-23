@@ -60,7 +60,7 @@ export class ListServiceCategoriesUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'The category this cursor names is not there any more',
+            message: serviceCategoryMessages.categoryOfCursorGone,
           },
         ]),
       )

@@ -1,5 +1,9 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { type Locale, textOfOneString } from '@beauty-salon-shared/i18n'
+import {
+  type Locale,
+  type LocalizedText,
+  textOfOneString,
+} from '@beauty-salon-shared/i18n'
 import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { z } from 'zod'
@@ -19,17 +23,18 @@ const toField = (path: readonly PropertyKey[]): string =>
   path.map(String).join('.')
 
 /**
- * What an issue says. The message of a rule that a schema wrote carries
- * every language in one string (`asOneString`). A message of Zod is in
- * English, and `japanese` is what Zod says of the same issue in Japanese.
- * A message that a schema wrote in English alone reads the same in both,
- * and stays a text in English alone.
+ * What an issue says, in every language. The message of a rule that a
+ * schema wrote carries every language in one string (`asOneString`). A
+ * message of Zod is in English, and `japanese` is what Zod says of the
+ * same issue in Japanese. A message that a schema wrote as a plain string
+ * reads the same in both checks, and is told as it is in every language:
+ * the schemas of the requests write none (`schema-messages.test.ts`).
  */
-const messageOf = (english: string, japanese: string | undefined): Told =>
-  textOfOneString(english) ??
-  (japanese === undefined || japanese === english
-    ? english
-    : { en: english, ja: japanese })
+const messageOf = (
+  english: string,
+  japanese: string | undefined,
+): LocalizedText =>
+  textOfOneString(english) ?? { en: english, ja: japanese ?? english }
 
 /**
  * An unknown key is reported once per key, under the key's own path, so that

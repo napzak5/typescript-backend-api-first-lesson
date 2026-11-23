@@ -69,7 +69,7 @@ export class ListShareLinksUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a share link of the attachment',
+            message: shareLinkMessages.aShareLinkOfAttachment,
           },
         ]),
       )

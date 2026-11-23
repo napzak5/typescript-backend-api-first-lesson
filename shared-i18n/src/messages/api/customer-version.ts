@@ -14,4 +14,8 @@ export const customerVersionMessages = {
     en: 'Must be a whole number',
     ja: '0 以上の整数にしてください',
   }),
+  aVersionOfCustomer: text({
+    en: 'Must name a version of the customer',
+    ja: 'この顧客の版を指定してください',
+  }),
 }

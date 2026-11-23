@@ -58,4 +58,12 @@ export const customerMessages = {
     en: 'Must be another customer than primaryCustomerId',
     ja: 'primaryCustomerId とは別の顧客にしてください',
   }),
+  aCustomerNotDeleted: text({
+    en: 'Must be a customer who is not deleted',
+    ja: '削除されていない顧客にしてください',
+  }),
+  notCustomerItself: text({
+    en: 'Must not be the customer itself',
+    ja: 'その顧客自身にはできません',
+  }),
 }

@@ -1,3 +1,7 @@
+import {
+  customerMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { addDays } from 'date-fns'
 import type { CustomerId } from '../../../models/customer'
 import {
@@ -37,7 +41,7 @@ export const customerRuleIssues = (
       {
         field: 'birthDate',
         rule: 'too_big',
-        message: 'Must not be in the future',
+        message: ruleMessages.notInFuture,
       },
     ]
   }
@@ -54,7 +58,7 @@ export const referredByItself = (
         {
           field: 'referredBy',
           rule: 'circular',
-          message: 'Must not be the customer itself',
+          message: customerMessages.notCustomerItself,
         },
       ]
     : []
@@ -63,7 +67,7 @@ export const referredByItself = (
 export const referrerMissing: ValidationIssue = {
   field: 'referredBy',
   rule: 'not_found',
-  message: 'Must name a customer',
+  message: ruleMessages.aCustomer,
 }
 
 export const referrerNotFound = (message: Told): DomainError =>

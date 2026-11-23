@@ -1,3 +1,4 @@
+import { serviceMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { DbNewService } from '../../../models/service'
 import type { ValidationIssue } from '../../../shared'
 
@@ -29,7 +30,7 @@ export const serviceRuleIssues = ({
         {
           field: 'discountPrice',
           rule: 'too_big',
-          message: 'Must not be greater than the price',
+          message: serviceMessages.notGreaterThanPrice,
         },
       ]
     : []),
@@ -38,7 +39,7 @@ export const serviceRuleIssues = ({
         {
           field: 'packageServiceIds',
           rule: 'too_small',
-          message: `A package must name at least ${MIN_PACKAGE_MEMBERS} services`,
+          message: serviceMessages.atLeastPackageMembers(MIN_PACKAGE_MEMBERS),
         },
       ]
     : []),
@@ -47,7 +48,7 @@ export const serviceRuleIssues = ({
         {
           field: 'packageServiceIds',
           rule: 'not_allowed',
-          message: 'Must be empty unless the service is a package',
+          message: serviceMessages.emptyUnlessPackage,
         },
       ]
     : []),

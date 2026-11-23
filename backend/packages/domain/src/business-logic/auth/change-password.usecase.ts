@@ -60,7 +60,7 @@ export class ChangePasswordUseCase {
           {
             field: 'currentPassword',
             rule: 'incorrect',
-            message: 'The current password could not be confirmed',
+            message: authMessages.currentPasswordNotConfirmed,
           },
         ]),
       )
@@ -71,7 +71,7 @@ export class ChangePasswordUseCase {
           {
             field: 'newPassword',
             rule: 'unchanged',
-            message: 'Must differ from the current password',
+            message: authMessages.differentFromCurrentPassword,
           },
         ]),
       )

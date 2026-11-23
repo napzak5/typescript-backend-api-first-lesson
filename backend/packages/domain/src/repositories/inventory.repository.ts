@@ -1,5 +1,6 @@
 import type { InventoryTransactionType } from '@beauty-salon-backend/generated'
 import type { Result } from '@beauty-salon-backend/utility'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import type { LedgerReach } from '../models/booking'
 import type {
   DbInventory,
@@ -149,14 +150,14 @@ export type InventoryCreation =
   /** The salon has no such product, or it was deleted. */
   | { type: 'productNotFound' }
   /** The lot number does not fit the product, for this reason. */
-  | { type: 'lotNumberRefused'; message: string }
+  | { type: 'lotNumberRefused'; message: LocalizedText }
 
 /** What became of a stock row that was to be changed. */
 export type InventoryUpdate =
   | { type: 'updated'; row: DbInventory }
   /** No such row within the reach, or it was deleted. */
   | { type: 'notFound' }
-  | { type: 'lotNumberRefused'; message: string }
+  | { type: 'lotNumberRefused'; message: LocalizedText }
 
 /** What became of a stock row that was to be deleted. */
 export type InventoryRemoval =

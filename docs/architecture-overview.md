@@ -2362,13 +2362,13 @@ A problem is told in the language the request asks for with
 English when the header is absent. The texts are messages of the shared
 package `@beauty-salon-shared/i18n` (`shared-i18n/`), each written in both
 languages, so that a missing translation does not compile. A validation
-error is told in the language asked for when its headline and what it says
-of every broken rule are written in it: a schema writes the messages of its
-rules in both languages, and `parseWith` has Zod say its own sentences in
-both. The errors of which the domain still writes a text in English alone
-(`notFound`, `alreadyExists`, `conflict`, and a validation error with a rule
-that a use case checks and a schema cannot) are told in English as a whole,
-whatever was asked for. `Content-Language` names the language of the answer. How a
+error is told in the language asked for: its headline is a message, a schema
+writes the messages of its rules in both languages, `parseWith` has Zod say
+its own sentences in both, and a use case says a rule that a schema cannot
+check with a message too. The errors of which the domain still writes a
+text in English alone (`notFound`, `alreadyExists`, `conflict`) are told in
+English as a whole, whatever was asked for. `Content-Language` names the
+language of the answer. How a
 language is chosen and where a message goes is in [i18n](./i18n.md).
 
 ## Configuration, Logging and Probes

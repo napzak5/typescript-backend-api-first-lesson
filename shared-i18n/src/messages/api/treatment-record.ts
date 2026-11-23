@@ -38,4 +38,34 @@ export const treatmentRecordMessages = {
     en: 'Must not repeat the sortOrder of an earlier photo',
     ja: '前の写真と同じ sortOrder は指定できません',
   }),
+  aTreatmentRecordOfList: text({
+    en: 'Must name a treatment record of the list',
+    ja: 'この一覧の施術記録を指定してください',
+  }),
+  aBookingOfASalon: text({
+    en: 'Must name a booking of a salon',
+    ja: '存在するサロンの予約を指定してください',
+  }),
+  aServiceOfSalonOfBooking: text({
+    en: 'Must name a service of the salon of the booking',
+    ja: '予約のサロンのサービスを指定してください',
+  }),
+  aProductOfSalonOfBooking: text({
+    en: 'Must name a product of the salon of the booking',
+    ja: '予約のサロンの商品を指定してください',
+  }),
+  theCustomerOfBooking: text({
+    en: 'Must name the customer of the booking',
+    ja: '予約の顧客を指定してください',
+  }),
+  aStaffMemberOfSalonOfBooking: text({
+    en: 'Must name a staff member of the salon of the booking',
+    ja: '予約のサロンのスタッフを指定してください',
+  }),
+  /** `bookingDate` is the day of the booking. */
+  notBeforeBookingDate: (bookingDate: string) =>
+    text({
+      en: `Must not be before the date of the booking, ${bookingDate}`,
+      ja: `予約の日（${bookingDate}）より前にはできません`,
+    }),
 }

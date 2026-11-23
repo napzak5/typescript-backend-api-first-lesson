@@ -59,7 +59,9 @@ export class ListCustomerBookingsUseCase {
     }
     if (listed.data === null) {
       return Result.error(
-        DomainErrors.validation(MESSAGE, [notFound('cursor', 'a booking')]),
+        DomainErrors.validation(MESSAGE, [
+          notFound('cursor', bookingMessages.aBooking),
+        ]),
       )
     }
 

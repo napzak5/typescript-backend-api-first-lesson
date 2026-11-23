@@ -80,7 +80,7 @@ export class GenerateBackupCodesUseCase {
           {
             field: 'code',
             rule: 'incorrect',
-            message: 'The code could not be confirmed',
+            message: authMessages.codeNotConfirmed,
           },
         ]),
       )

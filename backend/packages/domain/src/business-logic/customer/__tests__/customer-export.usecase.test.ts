@@ -18,7 +18,10 @@ import {
 } from '../../../__tests__/fixtures/customer-fixtures'
 import { dbCustomerPreferences } from '../../../__tests__/fixtures/customer-preferences-fixtures'
 import { dbCustomerVersion } from '../../../__tests__/fixtures/customer-version-fixtures'
-import { brokenRules } from '../../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_MESSAGE,
+} from '../../../__tests__/fixtures/fixtures'
 import { dbMedicalChart } from '../../../__tests__/fixtures/medical-chart-fixtures'
 import { dbPointTransaction } from '../../../__tests__/fixtures/point-fixtures'
 import { dbReview } from '../../../__tests__/fixtures/review-fixtures'
@@ -232,7 +235,7 @@ describe('ExportCustomersUseCase', () => {
     const dependencies = customerDependencies()
     const undecoded = Result.error(
       DomainErrors.validation(customerMessages.invalidCustomerExport, [
-        { field: 'tags', rule: 'invalid_type', message: 'Not a list' },
+        { field: 'tags', rule: 'invalid_type', message: MADE_UP_MESSAGE },
       ]),
     )
 

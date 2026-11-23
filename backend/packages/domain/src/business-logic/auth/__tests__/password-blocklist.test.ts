@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   authDependencies,
@@ -7,6 +8,7 @@ import {
 } from '../../../__tests__/fixtures/auth-fixtures'
 import { brokenRules } from '../../../__tests__/fixtures/fixtures'
 import { RegisterUseCase } from '..'
+import { commonChoiceIssue } from '../_shared/password-blocklist'
 
 /**
  * The passwords nobody may choose. The blocklist is part of the use cases
@@ -119,7 +121,7 @@ describe('the passwords that are refused as too easy to guess', () => {
           {
             field: 'password',
             rule: 'blocklisted',
-            message: expect.any(String),
+            message: authMessages.passwordGuessableWithEmail,
           },
         ],
       },
@@ -140,5 +142,33 @@ describe('the passwords that are refused as too easy to guess', () => {
     })
 
     expect(dataOf(result)).toBeNull()
+  })
+})
+
+describe('commonChoiceIssue', () => {
+  it('should refuse a password that anybody could guess under the field it is given, and say why', () => {
+    // Arrange
+    const password = 'correct horse battery staple'
+
+    // Act
+    const issue = commonChoiceIssue('password', password)
+
+    // Assert
+    expect(issue).toEqual({
+      field: 'password',
+      rule: 'blocklisted',
+      message: authMessages.passwordGuessable,
+    })
+  })
+
+  it('should find nothing wrong with a password that is no common choice', () => {
+    // Arrange
+    const password = 'violet tram under the bridge'
+
+    // Act
+    const issue = commonChoiceIssue('password', password)
+
+    // Assert
+    expect(issue).toBeNull()
   })
 })

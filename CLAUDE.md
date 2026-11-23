@@ -72,7 +72,8 @@ export type Result<T, E> =
   | { type: 'error'; error: E }
 
 // Domain error types (backend/packages/domain/src/shared/errors.ts)
-// Told: a text in every language, or, until every text of the domain is one, in English alone
+// Told: a text in every language, or, until every text of the domain is one, in English alone.
+// What an issue says (ValidationIssue.message) is in every language
 export type DomainError =
   | { type: 'validation'; message: Told; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
@@ -236,10 +237,12 @@ A text that is told in more than one language is a message of
 `shared-i18n/src/messages/<who says it>/` (`api/`, for what the API says),
 written in every language with `text({ en, ja })`: one that lacks a language
 does not compile. The headline of a validation error and the message of a
-rule of a schema are such messages, in the file of their domain
-(`messages/api/salon.ts`; `rules.ts` for the rules that domains share), and a
-schema gives one to Zod as one string (`asOneString`): a sentence written as
-a string in a schema fails a test. Read [docs/i18n.md](docs/i18n.md) before
+rule, of a schema or of a use case, are such messages, in the file of their
+domain (`messages/api/salon.ts`; `rules.ts` for the rules that domains
+share). A schema gives one to Zod as one string (`asOneString`): a sentence
+written as a string in a schema fails a test. A use case puts one into the
+issue as it is (`message: ruleMessages.aSalon`): a string there does not
+compile. Read [docs/i18n.md](docs/i18n.md) before
 adding one: it also says which texts are still written in English alone.
 
 ### Namespace Convention

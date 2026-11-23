@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { dbPointTransaction } from '../../../__tests__/fixtures/point-fixtures'
@@ -296,7 +297,7 @@ describe('issuesOfProcessBefore', () => {
       {
         field: 'processBefore',
         rule: 'too_big',
-        message: 'Must not be later than 2026-11-19',
+        message: ruleMessages.notLaterThan('2026-11-19'),
       },
     ])
   })

@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  bookingMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -21,7 +24,11 @@ import {
   databaseDown,
   customerBookingDependencies as dependenciesWith,
 } from '../../../__tests__/fixtures/customer-booking-fixtures'
-import { brokenRules, SALON_ID } from '../../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_MESSAGE,
+  SALON_ID,
+} from '../../../__tests__/fixtures/fixtures'
 import { STAFF_MEMBER_ID } from '../../../__tests__/fixtures/staff-fixtures'
 import type { Actor, ClientInfo } from '../../../models/auth'
 import type {
@@ -341,7 +348,7 @@ describe('ListCustomerBookingsUseCase', () => {
   it('answers with the error of a query the caller could not decode, once the account is known to have bookings', async () => {
     const undecodable = Result.error(
       DomainErrors.validation(bookingMessages.invalidBookingSearch, [
-        { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_format', message: MADE_UP_MESSAGE },
       ]),
     )
     const dependencies = dependenciesWith()
@@ -369,7 +376,7 @@ describe('ListCustomerBookingsUseCase', () => {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a booking',
+            message: bookingMessages.aBooking,
           },
         ]),
       ),
@@ -566,7 +573,7 @@ describe('CreateCustomerBookingUseCase', () => {
       {
         field: 'serviceId',
         rule: 'not_found',
-        message: 'Must name a service of the salon',
+        message: ruleMessages.aServiceOfSalon,
       },
     ]
     const { result } = book(wanting(), answering({ type: 'invalid', issues }))
@@ -1041,7 +1048,7 @@ describe('RescheduleCustomerBookingUseCase', () => {
           {
             field: 'staffId',
             rule: 'not_found',
-            message: 'Must name a staff member of the salon',
+            message: ruleMessages.aStaffMemberOfSalon,
           },
         ],
       }),

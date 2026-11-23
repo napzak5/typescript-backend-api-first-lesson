@@ -77,7 +77,7 @@ export class ListInventoryMovementsUseCase {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name a stock movement of the stock row',
+              message: inventoryMessages.aStockMovementOfStockRow,
             },
           ]),
         ),

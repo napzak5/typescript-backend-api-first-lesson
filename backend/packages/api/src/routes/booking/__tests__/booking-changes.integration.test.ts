@@ -20,6 +20,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { BookingRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { asc, eq } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -2763,7 +2764,7 @@ describe('Booking changes API', () => {
             {
               field: 'staffId',
               rule: 'not_found',
-              message: 'Must name a staff member of the salon',
+              message: ruleMessages.aStaffMemberOfSalon,
             },
           ],
         })

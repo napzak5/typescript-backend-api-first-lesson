@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { pointMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  pointMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PointReadMapper } from '../../mappers/read/point.mapper'
 import { PointWriteMapper } from '../../mappers/write/point.mapper'
@@ -60,7 +63,7 @@ export class ExpirePointsUseCase {
       .with({ type: 'customerNotFound' }, () =>
         Result.error(
           DomainErrors.validation(MESSAGE, [
-            notFound('customerId', 'a customer'),
+            notFound('customerId', ruleMessages.aCustomer),
           ]),
         ),
       )

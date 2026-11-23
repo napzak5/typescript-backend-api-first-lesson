@@ -26,4 +26,14 @@ export const pointMessages = {
     en: 'Invalid point use',
     ja: 'ポイントの利用の内容が正しくありません',
   }),
+  aPointTransactionOfCustomer: text({
+    en: 'Must name a point transaction of the customer',
+    ja: 'この顧客のポイント取引を指定してください',
+  }),
+  /** `referenceType` is the kind of what the points are for, as the request writes it. */
+  aReferenceOfCustomer: (referenceType: string) =>
+    text({
+      en: `Must name a ${referenceType} of the customer`,
+      ja: `この顧客の ${referenceType} を指定してください`,
+    }),
 }

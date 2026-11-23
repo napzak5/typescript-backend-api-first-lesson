@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { attachmentMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  attachmentMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { parseISO } from 'date-fns'
 import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
 import { AttachmentWriteMapper } from '../../mappers/write/attachment.mapper'
@@ -62,7 +65,7 @@ export class IssueAttachmentUploadUrlUseCase {
             {
               field: 'salonId',
               rule: 'not_found',
-              message: 'Must name a salon',
+              message: ruleMessages.aSalon,
             },
           ]),
         )

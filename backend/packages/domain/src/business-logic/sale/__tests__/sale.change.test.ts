@@ -1,3 +1,4 @@
+import { saleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -499,7 +500,7 @@ describe('planSaleChange', () => {
           {
             field: 'details',
             rule: 'too_big',
-            message: `The amounts of a sale must not exceed ${MAX_INTEGER}`,
+            message: saleMessages.amountsWithinLimit(MAX_INTEGER),
           },
         ],
       })

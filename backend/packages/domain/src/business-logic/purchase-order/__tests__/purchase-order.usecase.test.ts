@@ -1,11 +1,16 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { purchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  purchaseOrderMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
+  saidOfBrokenRules,
 } from '../../../__tests__/fixtures/fixtures'
 import {
   INVENTORY_ID,
@@ -223,7 +228,7 @@ describe('ListPurchaseOrdersUseCase', () => {
   it('passes on a query the caller could not decode, and refuses one that breaks a rule', async () => {
     const undecoded = Result.error(
       DomainErrors.validation('Invalid query', [
-        { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_type', message: MADE_UP_MESSAGE },
       ]),
     )
     const dependencies = purchaseOrderDependencies()
@@ -258,6 +263,9 @@ describe('ListPurchaseOrdersUseCase', () => {
     )
 
     expect(rulesOf(result)).toEqual(['cursor:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([
+      purchaseOrderMessages.aPurchaseOrderOfList,
+    ])
   })
 
   it('passes on what the database could not do', async () => {
@@ -453,9 +461,15 @@ describe('CreatePurchaseOrderUseCase', () => {
       ),
     })
 
-    expect(rulesOf(await create(dependencies))).toEqual([
+    const result = await create(dependencies)
+
+    expect(rulesOf(result)).toEqual([
       'items.0.inventoryId:not_found',
       'items.1.inventoryId:not_found',
+    ])
+    expect(saidOfBrokenRules(result)).toEqual([
+      ruleMessages.aStockRowOfSalon,
+      ruleMessages.aStockRowOfSalon,
     ])
   })
 

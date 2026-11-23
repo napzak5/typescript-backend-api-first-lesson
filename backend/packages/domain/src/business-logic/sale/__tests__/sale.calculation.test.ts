@@ -1,3 +1,8 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  ruleMessages,
+  saleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   BOOKING_ID,
@@ -39,6 +44,12 @@ const calculate = (
 const rulesOf = (calculation: SaleCalculation): string[] =>
   calculation.type === 'invalid'
     ? calculation.issues.map(({ field, rule }) => `${field}:${rule}`)
+    : []
+
+/** What a calculation that was refused is told of each broken rule; empty for one that was made. */
+const saidOf = (calculation: SaleCalculation): LocalizedText[] =>
+  calculation.type === 'invalid'
+    ? calculation.issues.map(({ message }) => message)
     : []
 
 /** The breakdown of a calculation that was made; null otherwise. */
@@ -219,6 +230,7 @@ describe('planCalculation', () => {
     )
 
     expect(rulesOf(calculation)).toEqual(['salonId:not_found'])
+    expect(saidOf(calculation)).toEqual([ruleMessages.aSalon])
   })
 
   it('reports a booking and services that are not of the salon together, each service in its place', () => {
@@ -232,6 +244,12 @@ describe('planCalculation', () => {
       'services.0:not_found',
       'services.2:not_found',
       'services.3:not_found',
+    ])
+    expect(saidOf(calculation)).toEqual([
+      saleMessages.aBookingOfSalon,
+      ruleMessages.aServiceOfSalon,
+      ruleMessages.aServiceOfSalon,
+      ruleMessages.aServiceOfSalon,
     ])
   })
 
@@ -266,7 +284,7 @@ describe('planCalculation', () => {
           {
             field: 'services',
             rule: 'too_small',
-            message: 'Must name a service when the booking has no service line',
+            message: saleMessages.aServiceWithoutServiceLine,
           },
         ],
       })
@@ -348,7 +366,7 @@ describe('planCalculation', () => {
         {
           field: 'services',
           rule: 'too_big',
-          message: `The amounts of a sale must not exceed ${MAX_INTEGER}`,
+          message: saleMessages.amountsWithinLimit(MAX_INTEGER),
         },
       ],
     })

@@ -1,4 +1,7 @@
-import { serviceCategoryMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  ruleMessages,
+  serviceCategoryMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { type DomainError, DomainErrors } from '../../../shared'
 
 const MESSAGE = serviceCategoryMessages.invalidServiceCategory
@@ -9,7 +12,7 @@ export const parentNotFound = (): DomainError =>
     {
       field: 'parentId',
       rule: 'not_found',
-      message: 'Must be a category of the same salon',
+      message: ruleMessages.aCategoryOfSameSalon,
     },
   ])
 
@@ -19,6 +22,6 @@ export const parentWithinSubtree = (): DomainError =>
     {
       field: 'parentId',
       rule: 'circular',
-      message: 'Must not be the category itself or one of its subcategories',
+      message: serviceCategoryMessages.notItselfOrSubcategory,
     },
   ])

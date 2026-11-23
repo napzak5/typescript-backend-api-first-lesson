@@ -1,3 +1,4 @@
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { ValidationIssue } from '../../../shared'
 
 /**
@@ -118,8 +119,7 @@ export const blocklistIssue = (
     ? {
         field,
         rule: 'blocklisted',
-        message:
-          'This password is too easy to guess: it repeats the email address, is a simple pattern or is a well-known password. Choose a different one',
+        message: authMessages.passwordGuessableWithEmail,
       }
     : null
 
@@ -136,7 +136,6 @@ export const commonChoiceIssue = (
     ? {
         field,
         rule: 'blocklisted',
-        message:
-          'This password is too easy to guess: it is a simple pattern or a well-known password. Choose a different one',
+        message: authMessages.passwordGuessable,
       }
     : null

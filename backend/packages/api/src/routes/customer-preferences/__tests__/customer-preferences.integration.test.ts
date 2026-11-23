@@ -9,6 +9,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { CustomerPreferencesRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
+import { customerPreferencesMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { asc, eq, sql } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -2340,7 +2341,7 @@ describe('Customer preferences API', () => {
             {
               field: 'preferredStaffId',
               rule: 'avoided',
-              message: 'Must not be a staff member the customer avoids',
+              message: customerPreferencesMessages.notAvoidedStaffMember,
             },
           ],
         }

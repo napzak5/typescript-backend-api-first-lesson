@@ -1,3 +1,4 @@
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { addMinutes, isAfter, parseISO, subSeconds } from 'date-fns'
 import type { DbUser } from '../../../models/auth'
 import { type DomainError, DomainErrors, type Told } from '../../../shared'
@@ -77,6 +78,6 @@ export const mailedTokenRefused = (message: Told): DomainError =>
     {
       field: 'token',
       rule: 'invalid_token',
-      message: 'The token is invalid or has expired',
+      message: authMessages.tokenInvalidOrExpired,
     },
   ])

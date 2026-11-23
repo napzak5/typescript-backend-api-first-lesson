@@ -88,13 +88,13 @@ export class ReceivePurchaseOrderUseCase {
                   .with({ type: 'notOrdered' }, ({ index }) =>
                     notFound(
                       `items.${index}.inventoryId`,
-                      'a stock row of an item of the order',
+                      purchaseOrderMessages.aStockRowOfItemOfOrder,
                     ),
                   )
                   .with({ type: 'moreThanOrdered' }, ({ index, ordered }) => ({
                     field: `items.${index}.quantity`,
                     rule: 'too_big',
-                    message: `Must be at most ${ordered}, the quantity the item orders`,
+                    message: purchaseOrderMessages.atMostOrdered(ordered),
                   }))
                   .exhaustive(),
               ),

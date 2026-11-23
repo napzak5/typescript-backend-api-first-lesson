@@ -72,7 +72,7 @@ export class ListPointTransactionsUseCase {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name a point transaction of the customer',
+              message: pointMessages.aPointTransactionOfCustomer,
             },
           ]),
         ),

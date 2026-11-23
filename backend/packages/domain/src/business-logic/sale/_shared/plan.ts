@@ -1,3 +1,7 @@
+import {
+  ruleMessages,
+  saleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { format, isValid, parseISO } from 'date-fns'
 import type { DbBooking } from '../../../models/booking'
 import type {
@@ -101,16 +105,16 @@ export const issuesOfLine = (
 ): ValidationIssue[] => [
   ...(line.staffId === null || references.staffIds.includes(line.staffId)
     ? []
-    : [notFound(`details.${index}.staffId`, 'a staff member of the salon')]),
+    : [notFound(`details.${index}.staffId`, ruleMessages.aStaffMemberOfSalon)]),
   ...(line.itemId !== null &&
   line.itemType === SERVICE_ITEM &&
   !references.serviceIds.includes(line.itemId)
-    ? [notFound(`details.${index}.itemId`, 'a service of the salon')]
+    ? [notFound(`details.${index}.itemId`, ruleMessages.aServiceOfSalon)]
     : []),
   ...(line.itemId !== null &&
   line.itemType === PRODUCT_ITEM &&
   !references.productIds.includes(line.itemId)
-    ? [notFound(`details.${index}.itemId`, 'a product of the salon')]
+    ? [notFound(`details.${index}.itemId`, ruleMessages.aProductOfSalon)]
     : []),
 ]
 
@@ -118,7 +122,7 @@ export const issuesOfLine = (
 export const TOO_MUCH: ValidationIssue = {
   field: 'details',
   rule: 'too_big',
-  message: `The amounts of a sale must not exceed ${MAX_INTEGER}`,
+  message: saleMessages.amountsWithinLimit(MAX_INTEGER),
 }
 
 /**
@@ -176,11 +180,11 @@ export const planSale = (
   const customerIssues =
     request.customerId === null || references.customerExists
       ? []
-      : [notFound('customerId', 'a customer')]
+      : [notFound('customerId', ruleMessages.aCustomer)]
   if (salon === null) {
     return {
       type: 'invalid',
-      issues: [notFound('salonId', 'a salon'), ...customerIssues],
+      issues: [notFound('salonId', ruleMessages.aSalon), ...customerIssues],
     }
   }
 
@@ -189,16 +193,11 @@ export const planSale = (
     ...(request.staffId === null ||
     references.staffIds.includes(request.staffId)
       ? []
-      : [notFound('staffId', 'a staff member of the salon')]),
+      : [notFound('staffId', ruleMessages.aStaffMemberOfSalon)]),
     ...(request.bookingId === null ||
     (booking !== null && booking.customerId === request.customerId)
       ? []
-      : [
-          notFound(
-            'bookingId',
-            'a booking of the salon that is of the customer of the sale',
-          ),
-        ]),
+      : [notFound('bookingId', saleMessages.aBookingOfCustomerOfSale)]),
     ...request.details.flatMap((line, index) =>
       issuesOfLine(line, index, references),
     ),

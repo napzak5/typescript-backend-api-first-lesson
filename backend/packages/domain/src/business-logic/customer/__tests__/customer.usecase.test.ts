@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -16,8 +19,10 @@ import {
 } from '../../../__tests__/fixtures/customer-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
+  saidOfBrokenRules,
 } from '../../../__tests__/fixtures/fixtures'
 import type { Actor } from '../../../models/auth'
 import type {
@@ -374,7 +379,7 @@ describe('CreateCustomerUseCase', () => {
           {
             field: 'referredBy',
             rule: 'not_found',
-            message: expect.any(String),
+            message: ruleMessages.aCustomer,
           },
         ],
       },
@@ -504,7 +509,7 @@ describe('ListCustomersUseCase', () => {
   /** A query that could not be decoded, as the HTTP layer reports it. */
   const undecodable = Result.error(
     DomainErrors.validation(customerMessages.invalidCustomerSearch, [
-      { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
+      { field: 'limit', rule: 'invalid_format', message: MADE_UP_MESSAGE },
     ]),
   )
 
@@ -701,6 +706,7 @@ describe('ListCustomersUseCase', () => {
       error: { type: 'validation' },
     })
     expect(rulesOf(result)).toEqual(['cursor:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([ruleMessages.aCustomer])
   })
 
   it.each([
@@ -1276,7 +1282,7 @@ describe('who may keep the customer ledger', () => {
             {
               field: 'limit',
               rule: 'invalid_format',
-              message: 'Must be a number',
+              message: MADE_UP_MESSAGE,
             },
           ]),
         ),

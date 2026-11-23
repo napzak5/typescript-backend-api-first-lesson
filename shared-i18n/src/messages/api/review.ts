@@ -30,4 +30,24 @@ export const reviewMessages = {
     en: 'Must not be greater than maxRating',
     ja: 'maxRating より大きくはできません',
   }),
+  nullWithoutStaffMember: text({
+    en: 'Must be null when the review names no staff member',
+    ja: 'レビューにスタッフがないときは、null にしてください',
+  }),
+  aBookingOfCustomer: text({
+    en: 'Must name a booking of the customer',
+    ja: 'この顧客の予約を指定してください',
+  }),
+  aListedReview: text({
+    en: 'Must name a review that is listed',
+    ja: '一覧にあるレビューを指定してください',
+  }),
+  theSalonOfBooking: text({
+    en: 'Must name the salon of the booking',
+    ja: '予約のサロンを指定してください',
+  }),
+  aStaffMemberWhoTookBooking: text({
+    en: 'Must name a staff member who took the booking',
+    ja: '予約を担当したスタッフを指定してください',
+  }),
 }

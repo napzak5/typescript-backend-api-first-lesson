@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { bookingMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  bookingMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -572,7 +575,7 @@ describe('RescheduleBookingUseCase', () => {
       {
         field: 'staffId',
         rule: 'not_found',
-        message: 'Must name a staff member of the salon',
+        message: ruleMessages.aStaffMemberOfSalon,
       },
     ]
     const dependencies = bookingDependencies(

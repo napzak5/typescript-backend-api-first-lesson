@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { attachmentMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  attachmentMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   ATTACHMENT_ID,
@@ -17,6 +20,7 @@ import {
 import { actors, USER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
@@ -221,7 +225,7 @@ describe('IssueAttachmentUploadUrlUseCase', () => {
     expect(result).toEqual(
       Result.error(
         DomainErrors.validation(attachmentMessages.invalidAttachment, [
-          { field: 'salonId', rule: 'not_found', message: 'Must name a salon' },
+          { field: 'salonId', rule: 'not_found', message: ruleMessages.aSalon },
         ]),
       ),
     )
@@ -763,7 +767,7 @@ describe('ListAttachmentsUseCase', () => {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name an attachment of the list',
+            message: attachmentMessages.anAttachmentOfList,
           },
         ]),
       ),
@@ -798,7 +802,7 @@ describe('ListAttachmentsUseCase', () => {
   it('passes on that the query could not be decoded, to who reaches attachments', async () => {
     const undecoded = Result.error(
       DomainErrors.validation(attachmentMessages.invalidAttachmentSearch, [
-        { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_format', message: MADE_UP_MESSAGE },
       ]),
     )
     const dependencies = attachmentDependencies()
@@ -939,7 +943,7 @@ describe('IssueAttachmentDownloadUrlUseCase', () => {
         {
           field: 'inline',
           rule: 'invalid_value',
-          message: 'Must be true or false',
+          message: MADE_UP_MESSAGE,
         },
       ]),
     )

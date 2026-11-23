@@ -20,8 +20,19 @@ describe('toProblemDetails', () => {
   it('presents a validation error as 400 with one entry per broken rule', () => {
     const problem = toProblemDetails(
       DomainErrors.validation('Invalid salon', [
-        { field: 'email', rule: 'invalid_format', message: 'Invalid email' },
-        { field: 'openingHours.0.date', rule: 'custom', message: 'Repeated' },
+        {
+          field: 'email',
+          rule: 'invalid_format',
+          message: {
+            en: 'Invalid email',
+            ja: 'メールアドレスが正しくありません',
+          },
+        },
+        {
+          field: 'openingHours.0.date',
+          rule: 'custom',
+          message: { en: 'Repeated', ja: '繰り返しています' },
+        },
       ]),
       context,
       'en',
@@ -682,44 +693,20 @@ const TOO_LONG: LocalizedText = {
   ja: '大きすぎる値: stringは255文字以下である必要があります',
 }
 
-/** A validation error whose every text is written in every language. */
+/** A validation error whose headline is written in every language, as what it says of each broken rule is. */
 const WRITTEN_IN_EVERY_LANGUAGE = DomainErrors.validation(HEADLINE, [
   { field: 'name', rule: 'invalid_format', message: BLANK },
   { field: 'city', rule: 'too_big', message: TOO_LONG },
 ])
 
-/** Validation errors of which a text is written in English alone. */
-const WRITTEN_PARTLY_IN_ENGLISH: [string, DomainError][] = [
-  [
-    'a headline in English alone',
-    DomainErrors.validation('Invalid salon', [
-      { field: 'name', rule: 'invalid_format', message: BLANK },
-      { field: 'city', rule: 'too_big', message: TOO_LONG },
-    ]),
-  ],
-  [
-    'one message in English alone',
-    DomainErrors.validation(HEADLINE, [
-      { field: 'name', rule: 'invalid_format', message: BLANK },
-      {
-        field: 'city',
-        rule: 'too_big',
-        message: 'Too big: expected string to have <=255 characters',
-      },
-    ]),
-  ],
-  [
-    'every text in English alone',
-    DomainErrors.validation('Invalid salon', [
-      { field: 'name', rule: 'invalid_format', message: 'Must not be blank' },
-      {
-        field: 'city',
-        rule: 'too_big',
-        message: 'Too big: expected string to have <=255 characters',
-      },
-    ]),
-  ],
-]
+/**
+ * A validation error whose headline is written in English alone. What it
+ * says of each broken rule is written in every language.
+ */
+const HEADLINE_IN_ENGLISH_ALONE = DomainErrors.validation('Invalid salon', [
+  { field: 'name', rule: 'invalid_format', message: BLANK },
+  { field: 'city', rule: 'too_big', message: TOO_LONG },
+])
 
 /** What such an error says, whoever asks. */
 const IN_ENGLISH = {
@@ -752,7 +739,7 @@ describe('a validation error in the language that is asked for', () => {
     expect(problem).toMatchObject(IN_ENGLISH)
   })
 
-  it('should be told in Japanese to who asks for Japanese, when every text is written in it', () => {
+  it('should be told in Japanese to who asks for Japanese, when its headline is written in it', () => {
     // Act
     const problem = toProblemDetails(WRITTEN_IN_EVERY_LANGUAGE, context, 'ja')
 
@@ -808,7 +795,7 @@ describe('a validation error in the language that is asked for', () => {
   )
 
   it.each(LANGUAGES)(
-    'should be told in the language asked for (%s) when every text is written in every language',
+    'should be told in the language asked for (%s) when its headline is written in every language',
     (asked) => {
       // Act
       const language = languageOf(WRITTEN_IN_EVERY_LANGUAGE, asked)
@@ -818,20 +805,16 @@ describe('a validation error in the language that is asked for', () => {
     },
   )
 
-  it.each(
-    WRITTEN_PARTLY_IN_ENGLISH.flatMap(([name, error]) =>
-      LANGUAGES.map((asked): [string, Locale, DomainError] => [
-        name,
-        asked,
-        error,
-      ]),
-    ),
-  )(
-    'should be told in English as a whole with %s, whatever is asked for (%s)',
-    (_case, asked, error) => {
+  it.each(LANGUAGES)(
+    'should be told in English as a whole when its headline is written in English alone, whatever is asked for (%s)',
+    (asked) => {
       // Act
-      const language = languageOf(error, asked)
-      const problem = toProblemDetails(error, context, asked)
+      const language = languageOf(HEADLINE_IN_ENGLISH_ALONE, asked)
+      const problem = toProblemDetails(
+        HEADLINE_IN_ENGLISH_ALONE,
+        context,
+        asked,
+      )
 
       // Assert
       expect(language).toBe('en')

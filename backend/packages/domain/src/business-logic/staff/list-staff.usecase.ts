@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { staffMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  ruleMessages,
+  staffMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { StaffReadMapper } from '../../mappers/read/staff.mapper'
 import { StaffWriteMapper } from '../../mappers/write/staff.mapper'
 import type { Actor } from '../../models/auth'
@@ -71,7 +74,7 @@ export class ListStaffUseCase {
           {
             field: 'cursor',
             rule: 'not_found',
-            message: 'Must name a staff member of the salon',
+            message: ruleMessages.aStaffMemberOfSalon,
           },
         ]),
       )

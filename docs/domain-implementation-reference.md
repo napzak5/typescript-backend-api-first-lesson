@@ -771,7 +771,7 @@ A new domain adds one such statement next to it, before `notFoundHandler`. The s
 | `backend/packages/domain/src/schemas/__tests__/salon.schema.test.ts` | unit | the request schemas: what they accept and the rules they reject |
 | `backend/packages/domain/src/mappers/__tests__/salon.mapper.test.ts` | unit | both mappers, including stored rows that do not fit |
 | `backend/packages/domain/src/business-logic/salon/__tests__/salon.usecase.test.ts` | unit | each use case against a stubbed repository, and who may change a salon |
-| `backend/packages/domain/src/__tests__/fixtures/fixtures.ts` | helper | a valid request, rows as the driver returns them, `salonRepositoryWith` (the stub of the repository), `brokenRules` |
+| `backend/packages/domain/src/__tests__/fixtures/fixtures.ts` | helper | a valid request, rows as the driver returns them, `salonRepositoryWith` (the stub of the repository), `brokenRules` and `saidOfBrokenRules` (the rules a validation error names, and what it says of each), `MADE_UP_MESSAGE` (the message of an issue that a test makes up) |
 | `backend/packages/domain/src/__tests__/fixtures/auth-fixtures.ts` | helper | `actors`: an admin, a member of a salon by role, a customer with and without a customer record, a user without a scope |
 | `backend/packages/api/src/routes/salon/_shared/__tests__/` | unit | link building and query decoding |
 | `backend/packages/api/src/routes/salon/__tests__/salon.integration.test.ts` | integration | every endpoint through HTTP against PostgreSQL, signed in as the user the scenario needs |
@@ -1436,7 +1436,7 @@ export type DomainError =
   | { type: 'storage'; message: string; cause: unknown }
 ```
 
-`Told` (`backend/packages/domain/src/shared/told.ts`) is a text of an error: one that is written in every language (`LocalizedText`), or, until every text the domain writes is one, a string in English alone. The headline of a validation error and the `message` of each of its issues are of this type.
+`Told` (`backend/packages/domain/src/shared/told.ts`) is a text of an error: one that is written in every language (`LocalizedText`), or, until every text the domain writes is one, a string in English alone. The headline of a validation error is of this type. The `message` of each of its issues is a `LocalizedText`: a string there does not compile.
 
 Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.passwordRequired`, `.notFound`, `.alreadyExists`, `.conflict`, `.database` and `.storage`. Where each kind comes from:
 

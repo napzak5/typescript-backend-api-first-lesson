@@ -1,5 +1,9 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { shareLinkMessages } from '@beauty-salon-shared/i18n/messages/api'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  authMessages,
+  shareLinkMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   ATTACHMENT_ID,
@@ -7,7 +11,12 @@ import {
   dbAttachment,
 } from '../../../__tests__/fixtures/attachment-fixtures'
 import { actors, NOW, USER_ID } from '../../../__tests__/fixtures/auth-fixtures'
-import { brokenRules, SALON_ID } from '../../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  MADE_UP_MESSAGE,
+  SALON_ID,
+  saidOfBrokenRules,
+} from '../../../__tests__/fixtures/fixtures'
 import {
   apiShareLink,
   dbShareLink,
@@ -239,19 +248,40 @@ describe('CreateShareLinkUseCase', () => {
     expect(result.type).toBe('success')
   })
 
-  it.each([
-    ['now', '2026-11-14T09:00:00.000Z', 'expiresAt:too_small'],
-    ['a millisecond ago', '2026-11-14T08:59:59.999Z', 'expiresAt:too_small'],
-    ['a year ago', '2025-11-14T09:00:00.000Z', 'expiresAt:too_small'],
+  it.each<[string, string, string, LocalizedText]>([
+    [
+      'now',
+      '2026-11-14T09:00:00.000Z',
+      'expiresAt:too_small',
+      shareLinkMessages.laterThanNow,
+    ],
+    [
+      'a millisecond ago',
+      '2026-11-14T08:59:59.999Z',
+      'expiresAt:too_small',
+      shareLinkMessages.laterThanNow,
+    ],
+    [
+      'a year ago',
+      '2025-11-14T09:00:00.000Z',
+      'expiresAt:too_small',
+      shareLinkMessages.laterThanNow,
+    ],
     [
       'a millisecond more than 30 days from now',
       '2026-12-14T09:00:00.001Z',
       'expiresAt:too_big',
+      shareLinkMessages.withinDaysFromNow(30),
     ],
-    ['a year from now', '2027-11-14T09:00:00.000Z', 'expiresAt:too_big'],
+    [
+      'a year from now',
+      '2027-11-14T09:00:00.000Z',
+      'expiresAt:too_big',
+      shareLinkMessages.withinDaysFromNow(30),
+    ],
   ])(
     'refuses an end %s, and writes nothing',
-    async (_case, expiresAt, rule) => {
+    async (_case, expiresAt, rule, told) => {
       const dependencies = shareLinkDependencies()
 
       const result = await create(
@@ -262,6 +292,7 @@ describe('CreateShareLinkUseCase', () => {
       )
 
       expect(rulesOf(result)).toEqual([rule])
+      expect(saidOfBrokenRules(result)).toEqual([told])
       expect(dependencies.shareLinkRepository.create).not.toHaveBeenCalled()
     },
   )
@@ -309,7 +340,7 @@ describe('CreateShareLinkUseCase', () => {
           {
             field: 'password',
             rule: 'blocklisted',
-            message: expect.stringContaining('too easy to guess'),
+            message: authMessages.passwordGuessable,
           },
         ],
       },
@@ -658,6 +689,9 @@ describe('ListShareLinksUseCase', () => {
     )
 
     expect(rulesOf(result)).toEqual(['cursor:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([
+      shareLinkMessages.aShareLinkOfAttachment,
+    ])
   })
 
   it.each<[string, unknown, string[]]>([
@@ -687,7 +721,7 @@ describe('ListShareLinksUseCase', () => {
   it('looks at who asks, then at the ID, then at the query, then for the attachment', async () => {
     const undecoded = Result.error(
       DomainErrors.validation(shareLinkMessages.invalidShareLinkSearch, [
-        { field: 'limit', rule: 'invalid_type', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_type', message: MADE_UP_MESSAGE },
       ]),
     )
     const dependencies = shareLinkDependencies({

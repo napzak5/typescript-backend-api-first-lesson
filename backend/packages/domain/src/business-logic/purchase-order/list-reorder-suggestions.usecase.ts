@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { purchaseOrderMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  purchaseOrderMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PurchaseOrderReadMapper } from '../../mappers/read/purchase-order.mapper'
 import { PurchaseOrderWriteMapper } from '../../mappers/write/purchase-order.mapper'
@@ -80,7 +83,7 @@ export class ListReorderSuggestionsUseCase {
               {
                 field: 'cursor',
                 rule: 'not_found',
-                message: 'Must name a product of the salon',
+                message: ruleMessages.aProductOfSalon,
               },
             ]),
           ),

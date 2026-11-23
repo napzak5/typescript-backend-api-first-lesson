@@ -1,3 +1,4 @@
+import { reviewMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { heldReview } from '../../../__tests__/fixtures/review-fixtures'
@@ -31,7 +32,7 @@ const STAFF_RATING_OF_NO_ONE = {
     {
       field: 'staffRating',
       rule: 'custom',
-      message: 'Must be null when the review names no staff member',
+      message: reviewMessages.nullWithoutStaffMember,
     },
   ],
 }

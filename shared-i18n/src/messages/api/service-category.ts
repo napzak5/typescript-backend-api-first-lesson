@@ -22,4 +22,12 @@ export const serviceCategoryMessages = {
     en: 'Must be a colour in #RRGGBB format',
     ja: '#RRGGBB の形式の色にしてください',
   }),
+  notItselfOrSubcategory: text({
+    en: 'Must not be the category itself or one of its subcategories',
+    ja: 'そのカテゴリー自身と、その下のカテゴリーにはできません',
+  }),
+  categoryOfCursorGone: text({
+    en: 'The category this cursor names is not there any more',
+    ja: 'このカーソルが指すカテゴリーは、もうありません',
+  }),
 }

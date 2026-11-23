@@ -1,3 +1,8 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  inventoryMessages,
+  treatmentRecordMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { COLOR_ID, CUT_ID } from '../../../__tests__/fixtures/booking-fixtures'
 import {
@@ -91,32 +96,32 @@ describe('treatmentIssues', () => {
       {
         field: 'services.1',
         rule: 'not_found',
-        message: 'Must name a service of the salon of the booking',
+        message: treatmentRecordMessages.aServiceOfSalonOfBooking,
       },
       {
         field: 'nextRecommendedDate',
         rule: 'too_small',
-        message: 'Must not be before the date of the booking, 2026-11-20',
+        message: treatmentRecordMessages.notBeforeBookingDate('2026-11-20'),
       },
       {
         field: 'nextRecommendedServices.0',
         rule: 'not_found',
-        message: 'Must name a service of the salon of the booking',
+        message: treatmentRecordMessages.aServiceOfSalonOfBooking,
       },
       {
         field: 'materials.0.lotNumber',
         rule: 'custom',
-        message: 'Must name the lot: the product is kept by lots',
+        message: inventoryMessages.lotOfProductKeptByLots,
       },
       {
         field: 'materials.1.productId',
         rule: 'not_found',
-        message: 'Must name a product of the salon of the booking',
+        message: treatmentRecordMessages.aProductOfSalonOfBooking,
       },
       {
         field: 'materials.2.lotNumber',
         rule: 'custom',
-        message: 'Must be null: the product is not kept by lots',
+        message: inventoryMessages.nullForProductNotKeptByLots,
       },
     ])
   })
@@ -166,18 +171,22 @@ describe('creationIssues', () => {
     ])
   })
 
-  it.each<[string, Partial<CreationFacts>, string]>([
+  it.each<[string, Partial<CreationFacts>, string, LocalizedText]>([
     [
       'a customer who is not the one of the booking',
       { customerOfBooking: false },
-      'customerId:not_found',
+      'customerId',
+      treatmentRecordMessages.theCustomerOfBooking,
     ],
     [
       'a staff member of another salon',
       { staffOfSalon: false },
-      'staffId:not_found',
+      'staffId',
+      treatmentRecordMessages.aStaffMemberOfSalonOfBooking,
     ],
-  ])('reports %s alone', (_case, overrides, expected) => {
-    expect(rulesOf(creationIssues(creation(overrides), {}))).toEqual([expected])
+  ])('reports %s alone', (_case, overrides, field, message) => {
+    expect(creationIssues(creation(overrides), {})).toEqual([
+      { field, rule: 'not_found', message },
+    ])
   })
 })

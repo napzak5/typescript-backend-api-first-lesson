@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  inventoryMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { InventoryReportReadMapper } from '../../mappers/read/inventory-report.mapper'
 import { InventoryReportWriteMapper } from '../../mappers/write/inventory-report.mapper'
@@ -77,7 +80,7 @@ export class PerformStockCountUseCase {
             indexes.map((index) =>
               notFound(
                 `items.${index}.inventoryId`,
-                'a stock row of the salon',
+                ruleMessages.aStockRowOfSalon,
               ),
             ),
           ),

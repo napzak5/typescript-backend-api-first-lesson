@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   APP_CODE,
@@ -23,7 +24,10 @@ import {
   userAccount,
   userRepositoryWith,
 } from '../../../__tests__/fixtures/auth-fixtures'
-import { brokenRules } from '../../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  saidOfBrokenRules,
+} from '../../../__tests__/fixtures/fixtures'
 import type { ClientInfo, DbUser } from '../../../models/auth'
 import type {
   IUserRepository,
@@ -865,6 +869,9 @@ describe('EnableTwoFactorUseCase', () => {
         error: { type: 'validation' },
       })
       expect(rulesOf(result)).toEqual(['password:incorrect'])
+      expect(saidOfBrokenRules(result)).toEqual([
+        authMessages.passwordNotConfirmed,
+      ])
       expectOneGuessCounted(dependencies)
       expectNothingStarted(dependencies)
     },
@@ -1137,6 +1144,7 @@ describe('VerifyTwoFactorUseCase', () => {
       error: { type: 'validation' },
     })
     expect(rulesOf(result)).toEqual(['code:incorrect'])
+    expect(saidOfBrokenRules(result)).toEqual([authMessages.codeNotConfirmed])
     expectOneGuessCounted(dependencies)
     expect(dependencies.userRepository.useTwoFactorStep).not.toHaveBeenCalled()
     expectNotEnabled(dependencies)
@@ -1392,6 +1400,9 @@ describe('DisableTwoFactorUseCase', () => {
         error: { type: 'validation' },
       })
       expect(rulesOf(result)).toEqual(['password:incorrect'])
+      expect(saidOfBrokenRules(result)).toEqual([
+        authMessages.passwordNotConfirmed,
+      ])
       expectOneGuessCounted(dependencies)
       expectNoCodeChecked(dependencies)
       expectNotDisabled(dependencies)
@@ -1445,6 +1456,7 @@ describe('DisableTwoFactorUseCase', () => {
         error: { type: 'validation' },
       })
       expect(rulesOf(result)).toEqual(['code:incorrect'])
+      expect(saidOfBrokenRules(result)).toEqual([authMessages.codeNotConfirmed])
       expectOneGuessCounted(dependencies)
       expectNotDisabled(dependencies)
       expect(mails).toEqual([])
@@ -1830,6 +1842,7 @@ describe('GenerateBackupCodesUseCase', () => {
         error: { type: 'validation' },
       })
       expect(rulesOf(result)).toEqual(['code:incorrect'])
+      expect(saidOfBrokenRules(result)).toEqual([authMessages.codeNotConfirmed])
       expectOneGuessCounted(dependencies)
       expectNothingReplaced(dependencies)
       expect(mails).toEqual([])

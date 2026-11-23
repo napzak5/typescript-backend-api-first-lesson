@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { treatmentRecordMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  ruleMessages,
+  treatmentRecordMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -150,7 +153,7 @@ describe('GetTreatmentStatisticsUseCase', () => {
             {
               field: 'salonId',
               rule: 'not_found',
-              message: 'Must name a salon',
+              message: ruleMessages.aSalon,
             },
           ],
         ),

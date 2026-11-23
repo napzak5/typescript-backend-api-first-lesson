@@ -1,3 +1,4 @@
+import { serviceMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { nthServiceId } from '../../../__tests__/fixtures/service-fixtures'
 import { serviceRuleIssues } from '..'
@@ -57,7 +58,11 @@ describe('serviceRuleIssues', () => {
     })
 
     expect(issues).toEqual([
-      { field: 'discountPrice', rule: 'too_big', message: expect.any(String) },
+      {
+        field: 'discountPrice',
+        rule: 'too_big',
+        message: serviceMessages.notGreaterThanPrice,
+      },
     ])
   })
 
@@ -71,13 +76,19 @@ describe('serviceRuleIssues', () => {
     ['no service', 0],
     ['one service', 1],
   ])('reports a package of %s as too small', (_case, count) => {
-    expect(
-      rulesBrokenBy({
-        ...plainService,
-        isPackage: true,
-        packageServiceIds: members(count),
-      }),
-    ).toEqual(['packageServiceIds:too_small'])
+    const issues = serviceRuleIssues({
+      ...plainService,
+      isPackage: true,
+      packageServiceIds: members(count),
+    })
+
+    expect(issues).toEqual([
+      {
+        field: 'packageServiceIds',
+        rule: 'too_small',
+        message: serviceMessages.atLeastPackageMembers(2),
+      },
+    ])
   })
 
   it.each([
@@ -86,13 +97,19 @@ describe('serviceRuleIssues', () => {
   ])(
     'reports %s of a service that is not a package as not allowed',
     (_case, count) => {
-      expect(
-        rulesBrokenBy({
-          ...plainService,
-          isPackage: false,
-          packageServiceIds: members(count),
-        }),
-      ).toEqual(['packageServiceIds:not_allowed'])
+      const issues = serviceRuleIssues({
+        ...plainService,
+        isPackage: false,
+        packageServiceIds: members(count),
+      })
+
+      expect(issues).toEqual([
+        {
+          field: 'packageServiceIds',
+          rule: 'not_allowed',
+          message: serviceMessages.emptyUnlessPackage,
+        },
+      ])
     },
   )
 

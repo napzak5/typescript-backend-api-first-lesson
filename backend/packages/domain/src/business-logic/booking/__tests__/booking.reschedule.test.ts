@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   OTHER_STAFF_MEMBER_ID,
@@ -422,7 +423,7 @@ describe('planReschedule', () => {
         {
           field: 'staffId',
           rule: 'not_found',
-          message: 'Must name a staff member of the salon',
+          message: ruleMessages.aStaffMemberOfSalon,
         },
       ],
     })

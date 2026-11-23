@@ -123,7 +123,7 @@ describe('parseWith', () => {
     expect(issues).toEqual([{ field: 'to', rule: 'custom', message: LATER }])
   })
 
-  it('should leave a message that a schema wrote in English alone as it is', () => {
+  it('should tell a message that a schema wrote as a plain string as it is, in every language', () => {
     // Arrange
     const schema = z.string().regex(/^\d+$/, 'Must be digits')
 
@@ -132,7 +132,11 @@ describe('parseWith', () => {
 
     // Assert
     expect(issues).toEqual([
-      { field: '', rule: 'invalid_format', message: 'Must be digits' },
+      {
+        field: '',
+        rule: 'invalid_format',
+        message: { en: 'Must be digits', ja: 'Must be digits' },
+      },
     ])
   })
 
@@ -172,7 +176,11 @@ describe('parseWith', () => {
           ja: '無効な入力: intが期待されましたが、数値が入力されました',
         },
       },
-      { field: 'to', rule: 'invalid_format', message: 'Must be a time' },
+      {
+        field: 'to',
+        rule: 'invalid_format',
+        message: { en: 'Must be a time', ja: 'Must be a time' },
+      },
     ])
   })
 

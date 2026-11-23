@@ -320,13 +320,12 @@ describe('RecordPaymentUseCase', () => {
       {
         field: 'paymentMethodId',
         rule: 'not_found',
-        message:
-          'Must name a payment method of the salon of the sale that is active',
+        message: paymentMessages.anActivePaymentMethodOfSalonOfSale,
       },
       {
         field: 'amount',
         rule: 'too_big',
-        message: 'Must not be more than what is left to pay (100)',
+        message: paymentMessages.notMoreThanLeftToPay(100),
       },
     ]
 
@@ -653,7 +652,7 @@ describe('RefundPaymentUseCase', () => {
       {
         field: 'refundAmount',
         rule: 'too_big',
-        message: 'Must not be more than the amount of the payment (5000)',
+        message: paymentMessages.notMoreThanAmountOfPayment(5000),
       },
     ]
 

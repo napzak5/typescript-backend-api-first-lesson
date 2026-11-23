@@ -76,7 +76,7 @@ export class GetCustomerHistoryUseCase {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name a version of the customer',
+              message: customerVersionMessages.aVersionOfCustomer,
             },
           ]),
         ),

@@ -13,8 +13,10 @@ import {
 } from '../../../__tests__/fixtures/customer-version-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
+  saidOfBrokenRules,
 } from '../../../__tests__/fixtures/fixtures'
 import type { Actor } from '../../../models/auth'
 import type {
@@ -202,7 +204,7 @@ describe('GetCustomerHistoryUseCase', () => {
             {
               field: 'limit',
               rule: 'invalid_format',
-              message: 'Must be a number',
+              message: MADE_UP_MESSAGE,
             },
           ],
         ),
@@ -293,6 +295,9 @@ describe('GetCustomerHistoryUseCase', () => {
       )
 
       expect(rulesOf(result)).toEqual(['cursor:not_found'])
+      expect(saidOfBrokenRules(result)).toEqual([
+        customerVersionMessages.aVersionOfCustomer,
+      ])
     })
 
     it('passes a failure of the database on', async () => {

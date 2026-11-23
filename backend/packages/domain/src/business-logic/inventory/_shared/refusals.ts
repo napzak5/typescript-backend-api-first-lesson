@@ -1,3 +1,7 @@
+import {
+  inventoryMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { type DomainError, DomainErrors, type Told } from '../../../shared'
 
 /**
@@ -7,7 +11,7 @@ import { type DomainError, DomainErrors, type Told } from '../../../shared'
  */
 export const salonNotFound = (message: Told): DomainError =>
   DomainErrors.validation(message, [
-    { field: 'salonId', rule: 'not_found', message: 'Must name a salon' },
+    { field: 'salonId', rule: 'not_found', message: ruleMessages.aSalon },
   ])
 
 /**
@@ -20,6 +24,6 @@ export const cursorNotFound = (message: Told): DomainError =>
     {
       field: 'cursor',
       rule: 'not_found',
-      message: 'Must name a stock row of the list',
+      message: inventoryMessages.aStockRowOfList,
     },
   ])

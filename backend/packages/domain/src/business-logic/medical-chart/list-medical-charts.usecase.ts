@@ -57,7 +57,7 @@ export class ListMedicalChartsUseCase {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name a medical chart of the list',
+              message: medicalChartMessages.aMedicalChartOfList,
             },
           ]),
         ),

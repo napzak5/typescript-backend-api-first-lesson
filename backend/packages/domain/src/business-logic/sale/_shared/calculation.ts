@@ -1,3 +1,7 @@
+import {
+  ruleMessages,
+  saleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import type { BookingId } from '../../../models/booking'
 import type { DbPaymentMethod } from '../../../models/payment-method'
 import type { RequestedCalculation } from '../../../models/sale'
@@ -79,14 +83,14 @@ export type SaleCalculation =
 const NOTHING_TO_CALCULATE: ValidationIssue = {
   field: 'services',
   rule: 'too_small',
-  message: 'Must name a service when the booking has no service line',
+  message: saleMessages.aServiceWithoutServiceLine,
 }
 
 /** What a request is told that comes to more than a sale holds. */
 const TOO_MUCH_TO_CALCULATE: ValidationIssue = {
   field: 'services',
   rule: 'too_big',
-  message: `The amounts of a sale must not exceed ${MAX_INTEGER}`,
+  message: saleMessages.amountsWithinLimit(MAX_INTEGER),
 }
 
 /**
@@ -128,7 +132,10 @@ export const planCalculation = (
 ): SaleCalculation => {
   const { salon, booking } = references
   if (salon === null) {
-    return { type: 'invalid', issues: [notFound('salonId', 'a salon')] }
+    return {
+      type: 'invalid',
+      issues: [notFound('salonId', ruleMessages.aSalon)],
+    }
   }
 
   const added = request.services.map(
@@ -137,10 +144,10 @@ export const planCalculation = (
   const issues = [
     ...(request.bookingId === null || booking !== null
       ? []
-      : [notFound('bookingId', 'a booking of the salon')]),
+      : [notFound('bookingId', saleMessages.aBookingOfSalon)]),
     ...added.flatMap((service, index) =>
       service === null
-        ? [notFound(`services.${index}`, 'a service of the salon')]
+        ? [notFound(`services.${index}`, ruleMessages.aServiceOfSalon)]
         : [],
     ),
   ]

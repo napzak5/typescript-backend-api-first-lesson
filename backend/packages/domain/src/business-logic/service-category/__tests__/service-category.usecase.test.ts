@@ -1,10 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
+import {
+  ruleMessages,
+  serviceCategoryMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
   OTHER_SALON_ID,
   SALON_ID,
+  saidOfBrokenRules,
 } from '../../../__tests__/fixtures/fixtures'
 import {
   CATEGORY_ID,
@@ -296,6 +301,9 @@ describe('CreateServiceCategoryUseCase', () => {
     })
 
     expect(rulesOf(result)).toEqual(['parentId:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([
+      ruleMessages.aCategoryOfSameSalon,
+    ])
   })
 
   it('passes on a database error of the repository', async () => {
@@ -573,6 +581,9 @@ describe('ListServiceCategoriesUseCase', () => {
     const result = await list(dependencies, { cursor: OTHER_CATEGORY_ID })
 
     expect(rulesOf(result)).toEqual(['cursor:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([
+      serviceCategoryMessages.categoryOfCursorGone,
+    ])
   })
 
   it.each(malformedIds)(
@@ -855,6 +866,9 @@ describe('UpdateServiceCategoryUseCase', () => {
     const result = await update(dependencies, { parentId: OTHER_CATEGORY_ID })
 
     expect(rulesOf(result)).toEqual(['parentId:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([
+      ruleMessages.aCategoryOfSameSalon,
+    ])
   })
 
   it('refuses a parent that the repository finds to be the category itself or one below it as a circular parentId', async () => {
@@ -865,6 +879,9 @@ describe('UpdateServiceCategoryUseCase', () => {
     const result = await update(dependencies, { parentId: CATEGORY_ID })
 
     expect(rulesOf(result)).toEqual(['parentId:circular'])
+    expect(saidOfBrokenRules(result)).toEqual([
+      serviceCategoryMessages.notItselfOrSubcategory,
+    ])
   })
 
   it('passes on a database error of the repository', async () => {

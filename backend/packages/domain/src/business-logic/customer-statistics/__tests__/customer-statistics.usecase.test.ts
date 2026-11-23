@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerStatisticsMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerStatisticsMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, dataOf } from '../../../__tests__/fixtures/auth-fixtures'
 import { customerStatisticsFigures } from '../../../__tests__/fixtures/customer-statistics-fixtures'
@@ -7,6 +10,7 @@ import {
   brokenRules,
   OTHER_SALON_ID,
   SALON_ID,
+  saidOfBrokenRules,
 } from '../../../__tests__/fixtures/fixtures'
 import type { Actor } from '../../../models/auth'
 import type {
@@ -268,6 +272,7 @@ describe('GetCustomerStatisticsUseCase', () => {
         },
       })
       expect(rulesOf(result)).toEqual(['salonId:not_found'])
+      expect(saidOfBrokenRules(result)).toEqual([ruleMessages.aSalon])
     })
 
     it('answers a customer that is not there as not found', async () => {

@@ -52,4 +52,18 @@ export const bookingMessages = {
     en: 'Must be after actualStartTime',
     ja: 'actualStartTime より後にしてください',
   }),
+  aBooking: text({
+    en: 'Must name a booking',
+    ja: '存在する予約を指定してください',
+  }),
+  atLeastOneService: text({
+    en: 'Must have at least one service',
+    ja: 'サービスを 1 つ以上指定してください',
+  }),
+  /** `limit` is the largest amount of a booking. */
+  amountsWithinLimit: (limit: number) =>
+    text({
+      en: `The amounts of a booking must not exceed ${limit}`,
+      ja: `予約の金額は、${limit} を超えられません`,
+    }),
 }

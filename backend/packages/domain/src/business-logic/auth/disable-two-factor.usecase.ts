@@ -65,7 +65,7 @@ export class DisableTwoFactorUseCase {
           {
             field: 'password',
             rule: 'incorrect',
-            message: 'The password could not be confirmed',
+            message: authMessages.passwordNotConfirmed,
           },
         ]),
       )
@@ -89,7 +89,7 @@ export class DisableTwoFactorUseCase {
           {
             field: 'code',
             rule: 'incorrect',
-            message: 'The code could not be confirmed',
+            message: authMessages.codeNotConfirmed,
           },
         ]),
       )

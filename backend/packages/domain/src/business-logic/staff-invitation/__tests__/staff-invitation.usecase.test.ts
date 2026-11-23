@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { staffInvitationMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  authMessages,
+  staffInvitationMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -74,7 +77,7 @@ const refused = {
       {
         field: 'token',
         rule: 'invalid_token',
-        message: 'The token is invalid or has expired',
+        message: authMessages.tokenInvalidOrExpired,
       },
     ],
   },

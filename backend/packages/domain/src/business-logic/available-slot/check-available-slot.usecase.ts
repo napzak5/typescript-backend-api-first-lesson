@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { availableSlotMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  availableSlotMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { AvailableSlotReadMapper } from '../../mappers/read/available-slot.mapper'
 import { AvailableSlotWriteMapper } from '../../mappers/write/available-slot.mapper'
 import type { Actor } from '../../models/auth'
@@ -70,10 +73,10 @@ export class CheckAvailableSlotUseCase {
       return Result.error(
         DomainErrors.validation(MESSAGE, [
           ...(staff === null
-            ? [notFound('staffId', 'a staff member of the salon')]
+            ? [notFound('staffId', ruleMessages.aStaffMemberOfSalon)]
             : []),
           ...(service === null
-            ? [notFound('serviceId', 'a service of the salon')]
+            ? [notFound('serviceId', ruleMessages.aServiceOfSalon)]
             : []),
         ]),
       )

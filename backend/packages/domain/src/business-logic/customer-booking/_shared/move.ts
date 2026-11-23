@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { differenceInMinutes } from 'date-fns'
 import type { UserId } from '../../../models/auth'
 import type {
@@ -152,7 +153,7 @@ export const planCustomerMove = (
   if (staff === null) {
     return {
       type: 'invalid',
-      issues: [notFound('staffId', 'a staff member of the salon')],
+      issues: [notFound('staffId', ruleMessages.aStaffMemberOfSalon)],
     }
   }
 

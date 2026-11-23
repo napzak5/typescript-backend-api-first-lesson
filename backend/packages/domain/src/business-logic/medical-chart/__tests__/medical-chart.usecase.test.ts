@@ -2,11 +2,13 @@ import { Result } from '@beauty-salon-backend/utility'
 import {
   customerMessages,
   medicalChartMessages,
+  ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, CUSTOMER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
+  MADE_UP_MESSAGE,
   OTHER_SALON_ID,
 } from '../../../__tests__/fixtures/fixtures'
 import {
@@ -145,7 +147,7 @@ describe('CreateMedicalChartUseCase', () => {
           {
             field: 'previousTreatments.1.date',
             rule: 'too_big',
-            message: 'Must not be in the future',
+            message: ruleMessages.notInFuture,
           },
         ]),
       ),
@@ -160,7 +162,7 @@ describe('CreateMedicalChartUseCase', () => {
           {
             field: 'customerId',
             rule: 'not_found',
-            message: 'Must name a customer',
+            message: ruleMessages.aCustomer,
           },
         ]),
       ),
@@ -467,7 +469,7 @@ describe('ListMedicalChartsUseCase', () => {
   it('answers a query that could not be read as it was told', async () => {
     const unreadable = Result.error(
       DomainErrors.validation(medicalChartMessages.invalidMedicalChartSearch, [
-        { field: 'limit', rule: 'invalid_format', message: 'Must be a number' },
+        { field: 'limit', rule: 'invalid_format', message: MADE_UP_MESSAGE },
       ]),
     )
     const dependencies = medicalChartDependencies()
@@ -509,7 +511,7 @@ describe('ListMedicalChartsUseCase', () => {
             {
               field: 'cursor',
               rule: 'not_found',
-              message: 'Must name a medical chart of the list',
+              message: medicalChartMessages.aMedicalChartOfList,
             },
           ],
         ),

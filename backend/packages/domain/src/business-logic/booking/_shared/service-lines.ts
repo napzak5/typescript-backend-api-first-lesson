@@ -1,3 +1,4 @@
+import { ruleMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { addHours, max, min, parseISO } from 'date-fns'
 import type {
   DbBooking,
@@ -139,10 +140,10 @@ export const planServiceAddition = (
       type: 'invalid',
       issues: [
         ...(service === null
-          ? [notFound('serviceId', 'a service of the salon')]
+          ? [notFound('serviceId', ruleMessages.aServiceOfSalon)]
           : []),
         ...(staffIsMissing
-          ? [notFound('staffId', 'a staff member of the salon')]
+          ? [notFound('staffId', ruleMessages.aStaffMemberOfSalon)]
           : []),
       ],
     }

@@ -1,3 +1,7 @@
+import {
+  bookingMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   actors,
@@ -326,6 +330,29 @@ describe('planBooking', () => {
         CUT_ID,
       ])
     })
+
+    it('should refuse a booking of no service, which the schema lets no request be', () => {
+      // Arrange
+      const request = {
+        ...bookingCreateRequestSchema.parse(bookingCreateRequest()),
+        services: [],
+      }
+
+      // Act
+      const result = planBooking(request, bookingReferences(), origin())
+
+      // Assert
+      expect(result).toEqual({
+        type: 'invalid',
+        issues: [
+          {
+            field: 'services',
+            rule: 'too_small',
+            message: bookingMessages.atLeastOneService,
+          },
+        ],
+      })
+    })
   })
 
   describe('the time of the booking', () => {
@@ -554,7 +581,7 @@ describe('planBooking', () => {
           {
             field: 'services',
             rule: 'too_big',
-            message: 'The amounts of a booking must not exceed 2147483647',
+            message: bookingMessages.amountsWithinLimit(2147483647),
           },
         ],
       })
@@ -681,22 +708,22 @@ describe('planBooking', () => {
           {
             field: 'customerId',
             rule: 'not_found',
-            message: 'Must name a customer',
+            message: ruleMessages.aCustomer,
           },
           {
             field: 'staffId',
             rule: 'not_found',
-            message: 'Must name a staff member of the salon',
+            message: ruleMessages.aStaffMemberOfSalon,
           },
           {
             field: 'services.0.serviceId',
             rule: 'not_found',
-            message: 'Must name a service of the salon',
+            message: ruleMessages.aServiceOfSalon,
           },
           {
             field: 'services.0.staffId',
             rule: 'not_found',
-            message: 'Must name a staff member of the salon',
+            message: ruleMessages.aStaffMemberOfSalon,
           },
         ],
       })
@@ -708,7 +735,7 @@ describe('planBooking', () => {
       ).toEqual({
         type: 'invalid',
         issues: [
-          { field: 'salonId', rule: 'not_found', message: 'Must name a salon' },
+          { field: 'salonId', rule: 'not_found', message: ruleMessages.aSalon },
         ],
       })
     })
