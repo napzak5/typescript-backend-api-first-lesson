@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   createContext,
   type ReactNode,
@@ -7,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useSay } from '../../hooks/language'
 import { classNames } from '../../utils/class-names'
 import { type Tone, toneClass } from '../../utils/tone'
 import { Button } from '../button/button'
@@ -14,8 +17,13 @@ import styles from './notifications.module.css'
 
 export type Notification = {
   tone: Tone
-  /** What happened, as a sentence: 「予約を確定しました。」 */
-  message: string
+  /**
+   * What happened, as a sentence: 「予約を確定しました。」. A message is said
+   * where the notification is shown, in the language the page has then. A
+   * string is shown as it is: that of a screen that is written in Japanese
+   * alone, until the last screen is written in every language
+   */
+  message: LocalizedText | string
 }
 
 type Notifications = {
@@ -79,6 +87,7 @@ export const useNotifications = (): Pick<Notifications, 'notify' | 'dismiss'> =>
  * that assistive technology announces what is put into it.
  */
 export const NotificationOutlet = () => {
+  const say = useSay()
   const { current, dismiss } = useContext(NotificationContext)
 
   return (
@@ -89,11 +98,17 @@ export const NotificationOutlet = () => {
       )}
     >
       <p role='status'>
-        {current !== null && <span key={current.id}>{current.message}</span>}
+        {current !== null && (
+          <span key={current.id}>
+            {typeof current.message === 'string'
+              ? current.message
+              : say(current.message)}
+          </span>
+        )}
       </p>
       {current !== null && (
         <Button size='small' onClick={dismiss}>
-          閉じる
+          {say(uiMessages.close)}
         </Button>
       )}
     </div>

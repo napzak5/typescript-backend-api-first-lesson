@@ -10,6 +10,7 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
   NONE,
   textOf,
 } from '@beauty-salon-frontend/ui'
@@ -260,7 +261,7 @@ export const downloadsNameOf = ({
 
 /** Whether a link has a password, in words. */
 export const passwordNameOf = (hasPassword: boolean): string =>
-  hasPassword ? 'あり' : NONE
+  hasPassword ? 'あり' : inJapanese(NONE)
 
 /** What the dialog of a revocation says after the API refused it. */
 export const afterRevoking = (

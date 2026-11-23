@@ -34,6 +34,8 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@beauty-salon-frontend/io": "workspace:*",
+    "@beauty-salon-shared/i18n": "workspace:*",
     "ts-pattern": "^5.9.2",
     "uqr": "^0.1.3"
   },

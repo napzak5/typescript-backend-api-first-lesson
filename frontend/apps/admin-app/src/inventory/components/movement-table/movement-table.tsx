@@ -5,7 +5,7 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import type { More } from '@beauty-salon-frontend/ui'
-import { countOf } from '@beauty-salon-frontend/ui'
+import { COUNTED, countOf, inJapanese } from '@beauty-salon-frontend/ui'
 import { priceNameOf } from '../../../products/utils/product-format'
 import {
   changeNameOf,
@@ -99,7 +99,7 @@ export const MovementTable = ({
     rows={movements}
     rowKey={({ id }) => id}
     emptyMessage='在庫の移動はありません'
-    count={countOf(total, movements.length, '件')}
+    count={inJapanese(countOf(total, movements.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

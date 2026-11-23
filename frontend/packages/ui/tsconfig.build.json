@@ -5,6 +5,7 @@
     "dist",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
-    "src/**/*.stories.tsx"
+    "src/**/*.stories.tsx",
+    "src/__stories__"
   ]
 }

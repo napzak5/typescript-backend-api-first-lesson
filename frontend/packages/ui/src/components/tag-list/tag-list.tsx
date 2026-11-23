@@ -1,3 +1,4 @@
+import { useSay } from '../../hooks/language'
 import { Badge } from '../badge/badge'
 import { NONE } from '../not-recorded/not-recorded'
 import styles from './tag-list.module.css'
@@ -15,9 +16,11 @@ export type TagListProps = {
  * the next line, and a word longer than the line breaks, so the list is as
  * wide as it is given and never wider.
  */
-export const TagList = ({ label, items }: TagListProps) =>
-  items.length === 0 ? (
-    NONE
+export const TagList = ({ label, items }: TagListProps) => {
+  const say = useSay()
+
+  return items.length === 0 ? (
+    say(NONE)
   ) : (
     <ul className={styles['tagList']} aria-label={label}>
       {Array.from(new Set(items), (item) => (
@@ -27,3 +30,4 @@ export const TagList = ({ label, items }: TagListProps) =>
       ))}
     </ul>
   )
+}

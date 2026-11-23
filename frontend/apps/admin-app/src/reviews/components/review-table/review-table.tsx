@@ -5,7 +5,9 @@ import type {
 import { PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
+  COUNTED,
   countOf,
+  inJapanese,
   Link,
   type More,
   NONE,
@@ -112,7 +114,7 @@ export const ReviewTable = ({
         header: '通報',
         cell: ({ reportCount }) =>
           reportCount === 0 ? (
-            NONE
+            inJapanese(NONE)
           ) : (
             <Badge tone='danger'>{`未処理 ${reportCount} 件`}</Badge>
           ),
@@ -121,7 +123,7 @@ export const ReviewTable = ({
     rows={reviews}
     rowKey={({ id }) => id}
     emptyMessage='レビューはありません'
-    count={countOf(total, reviews.length, '件')}
+    count={inJapanese(countOf(total, reviews.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

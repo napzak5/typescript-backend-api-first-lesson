@@ -1,4 +1,10 @@
-import { ButtonLink, Card, NONE, Table } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  Card,
+  inJapanese,
+  NONE,
+  Table,
+} from '@beauty-salon-frontend/ui'
 import { quantityNameOf } from '../../../inventory/utils/stock-format'
 import { orderDayNameOf } from '../../utils/order-format'
 import type { SuggestionGroup } from '../../utils/order-suggestions'
@@ -98,7 +104,7 @@ export const ReorderSuggestions = ({
               header: '最後の発注日',
               cell: ({ lastOrderDate }) =>
                 lastOrderDate === null
-                  ? NONE
+                  ? inJapanese(NONE)
                   : orderDayNameOf(lastOrderDate, timezone),
             },
           ]}

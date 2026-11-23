@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as tagListStories from './tag-list.stories'
 
 const stories = composeStories(tagListStories)
@@ -13,6 +14,10 @@ const wordsOf = (list: HTMLElement): (string | null)[] =>
 
 describe('TagList', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should be a list that is named after what its words say about', async () => {
     // Act
@@ -44,5 +49,17 @@ describe('TagList', () => {
       'Wi-Fi',
       'ドリンクサービス',
     ])
+  })
+
+  it('should say in English that there are none on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(screen.getByText('None')).toBeVisible()
+    expect(screen.queryByText('なし')).toBeNull()
   })
 })

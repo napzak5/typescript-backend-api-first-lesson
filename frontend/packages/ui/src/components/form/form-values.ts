@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { FormErrors } from './error-focus'
 
 /**
@@ -30,8 +32,12 @@ export const aboutTheAttempt = (message: string): FormSays => ({
   errors: {},
 })
 
-/** What is said when a form is sent with the values it opened with: nothing is sent */
-export const NO_CHANGE_MESSAGE = '変更された項目はありません。'
+/**
+ * What is said when a form is sent with the values it opened with: nothing
+ * is sent. A message, which the notification says in the language of the
+ * page
+ */
+export const NO_CHANGE_MESSAGE: LocalizedText = uiMessages.noChange
 
 /** The text of a control of a form; nothing for one that is not there or holds a file. */
 export const textOf = (values: FormData, name: string): string => {

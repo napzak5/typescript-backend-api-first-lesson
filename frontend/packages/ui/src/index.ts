@@ -134,6 +134,7 @@ export {
   type PageHeaderProps,
 } from './components/page-header/page-header'
 export {
+  COUNTED,
   countOf,
   PagedList,
   type PagedListFocus,
@@ -178,6 +179,8 @@ export {
   WrittenText,
   type WrittenTextProps,
 } from './components/written-text/written-text'
+export { useSay } from './hooks/language'
 export { useWideScreen } from './hooks/wide-screen'
 export { classNames } from './utils/class-names'
+export { inJapanese, writtenInJapanese } from './utils/japanese'
 export type { Tone } from './utils/tone'

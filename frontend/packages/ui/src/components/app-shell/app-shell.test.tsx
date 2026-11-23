@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   setWindowWidth,
@@ -5,7 +6,7 @@ import {
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { act, useLayoutEffect, useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Button } from '../button/button'
 import { PageHeader } from '../page-header/page-header'
 import * as appShellStories from './app-shell.stories'
@@ -80,6 +81,10 @@ const ScreensInCommit = ({ seen }: { seen: WhatTheDocumentSays }) => {
 
 describe('AppShell', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should name the application in the banner, with a link to its first screen beside the mark', async () => {
     // Act
@@ -455,5 +460,48 @@ describe('AppShell', () => {
       'tabindex',
       '-1',
     )
+  })
+
+  it('should name the navigation and the link that skips it in English on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NavigationInHeader.run()
+
+    // Assert
+    expect(screen.getByRole('navigation', { name: 'Main menu' })).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Skip to content' }),
+    ).toHaveAttribute('href', '#main')
+    expect(screen.queryByRole('link', { name: '本文へ移動' })).toBeNull()
+  })
+
+  it('should name the button of the menu in English on a narrow screen', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NarrowScreen.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('banner')).getByRole('button', {
+        name: 'Main menu',
+      }),
+    ).toHaveAttribute('aria-haspopup', 'dialog')
+  })
+
+  it('should name the menu, its navigation and the button that closes it in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.MenuOnNarrowScreen.run()
+
+    // Assert
+    const menu = within(screen.getByRole('dialog', { name: 'Main menu' }))
+    expect(menu.getByRole('navigation', { name: 'Main menu' })).toBeVisible()
+    expect(menu.getByRole('button', { name: 'Close' })).toBeVisible()
   })
 })

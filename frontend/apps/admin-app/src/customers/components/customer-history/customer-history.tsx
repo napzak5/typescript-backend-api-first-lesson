@@ -1,6 +1,13 @@
 import type { ModelsCustomerHistoryEntryResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { countOf, Link, type More, NONE } from '@beauty-salon-frontend/ui'
+import {
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+  NONE,
+} from '@beauty-salon-frontend/ui'
 import { operationNameOf } from '../../utils/customer-history'
 import { changedTermsOf } from '../customer-record/ledger-items'
 
@@ -33,7 +40,7 @@ const changedNameOf = ({
   }
   const terms = changedTermsOf(changes.map(({ field }) => field))
 
-  return terms.length === 0 ? NONE : terms.join('、')
+  return terms.length === 0 ? inJapanese(NONE) : terms.join('、')
 }
 
 /**
@@ -80,7 +87,7 @@ export const CustomerHistory = ({
     rows={entries}
     rowKey={({ id }) => id}
     emptyMessage='版はありません'
-    count={countOf(total, entries.length, '件')}
+    count={inJapanese(countOf(total, entries.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

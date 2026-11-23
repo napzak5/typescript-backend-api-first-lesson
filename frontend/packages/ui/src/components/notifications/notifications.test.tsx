@@ -1,13 +1,19 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
+import { act } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as notificationStories from './notifications.stories'
 
 const stories = composeStories(notificationStories)
 
 describe('Notifications', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should have an empty status region before anything is notified', async () => {
     // Act
@@ -115,5 +121,58 @@ describe('Notifications', () => {
     // Assert
     expect(screen.getByText('予約を確定しました。')).not.toBe(first)
     expect(first).not.toBeInTheDocument()
+  })
+
+  it('should name the button that closes it in English on a page in English, and show a message that is a text as it is', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Success.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: 'Close' })).toBeVisible()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      /^予約を確定しました。$/,
+    )
+  })
+
+  it('should say a message that is written in every language in Japanese on a page in Japanese', async () => {
+    // Act
+    await stories.NothingChanged.run()
+
+    // Assert
+    expect(screen.getByRole('status')).toHaveTextContent(
+      /^変更された項目はありません。$/,
+    )
+  })
+
+  it('should say a message that is written in every language in English on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NothingChanged.run()
+
+    // Assert
+    expect(screen.getByRole('status')).toHaveTextContent(
+      /^Nothing was changed\.$/,
+    )
+  })
+
+  it('should say the message it shows anew when another language is chosen', async () => {
+    // Arrange
+    await stories.NothingChanged.run()
+
+    // Act
+    act(() => {
+      languageStore.choose('en')
+    })
+
+    // Assert
+    expect(screen.getByRole('status')).toHaveTextContent(
+      /^Nothing was changed\.$/,
+    )
+    expect(screen.getByRole('button', { name: 'Close' })).toBeVisible()
   })
 })

@@ -4,8 +4,10 @@ import {
   Badge,
   ButtonLink,
   Card,
+  COUNTED,
   countOf,
   EmptyState,
+  inJapanese,
   Link,
   LoadingIndicator,
   type More,
@@ -148,7 +150,7 @@ export const ShareLinkList = ({
             rows={shareLinks}
             rowKey={({ id }) => id}
             emptyMessage='共有リンクはありません'
-            count={countOf(total, shareLinks.length, '件')}
+            count={inJapanese(countOf(total, shareLinks.length, COUNTED.items))}
             more={more}
             onMore={onMore}
           />

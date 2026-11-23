@@ -987,6 +987,9 @@ importers:
       '@beauty-salon-frontend/api-client':
         specifier: workspace:*
         version: link:../api-client
+      '@beauty-salon-frontend/io':
+        specifier: workspace:*
+        version: link:../io
       '@beauty-salon-frontend/session':
         specifier: workspace:*
         version: link:../session
@@ -997,9 +1000,6 @@ importers:
         specifier: ^5.108.0
         version: 5.108.0(@tanstack/react-query@5.108.0(@types/react@19.3.0)(react@19.3.1))(@types/react@19.3.0)(csstype@3.2.4)(react@19.3.1)
     devDependencies:
-      '@beauty-salon-frontend/io':
-        specifier: workspace:*
-        version: link:../io
       '@beauty-salon-frontend/testing':
         specifier: workspace:*
         version: link:../testing
@@ -1464,6 +1464,12 @@ importers:
 
   frontend/packages/ui:
     dependencies:
+      '@beauty-salon-frontend/io':
+        specifier: workspace:*
+        version: link:../io
+      '@beauty-salon-shared/i18n':
+        specifier: workspace:*
+        version: link:../../../shared-i18n
       ts-pattern:
         specifier: ^5.9.2
         version: 5.9.2

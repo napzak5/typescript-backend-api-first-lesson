@@ -3,7 +3,9 @@ import { dayNameOf, PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   Checkbox,
+  COUNTED,
   countOf,
+  inJapanese,
   Link,
   type More,
 } from '@beauty-salon-frontend/ui'
@@ -121,7 +123,7 @@ export const CustomerTable = ({
     rows={rows}
     rowKey={({ id }) => id}
     emptyMessage='お客様はいません'
-    count={countOf(total, rows.length, '人')}
+    count={inJapanese(countOf(total, rows.length, COUNTED.people))}
     more={more}
     onMore={onMore}
   />

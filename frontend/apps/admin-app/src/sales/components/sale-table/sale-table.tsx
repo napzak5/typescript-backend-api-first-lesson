@@ -4,7 +4,14 @@ import {
   momentNameAt,
   PagedTable,
 } from '@beauty-salon-frontend/salon-screens'
-import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+} from '@beauty-salon-frontend/ui'
 import {
   paymentStatusNameOf,
   paymentStatusToneOf,
@@ -77,7 +84,7 @@ export const SaleTable = ({
     rows={rows}
     rowKey={({ id }) => id}
     emptyMessage='売上はありません'
-    count={countOf(total, rows.length, '件')}
+    count={inJapanese(countOf(total, rows.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

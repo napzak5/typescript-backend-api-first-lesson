@@ -3,7 +3,13 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import {
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+} from '@beauty-salon-frontend/ui'
 import { UNLISTED_STAFF } from '../../../bookings/utils/booking-format'
 import {
   serviceNameOf,
@@ -116,7 +122,7 @@ export const TreatmentTable = ({
     rows={rows}
     rowKey={({ record }) => record.id}
     emptyMessage='施術記録はありません'
-    count={countOf(total, rows.length, '件')}
+    count={inJapanese(countOf(total, rows.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

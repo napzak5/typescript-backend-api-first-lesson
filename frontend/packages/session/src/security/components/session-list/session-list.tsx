@@ -4,8 +4,10 @@ import {
   Button,
   countOf,
   DescriptionList,
+  inJapanese,
   type More,
   PagedList,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   addressOf,
@@ -56,11 +58,13 @@ export const SessionList = ({
     items={sessions}
     itemKey={({ id }) => id}
     label='サインインしている端末'
-    count={countOf(
-      total,
-      sessions.length,
-      '台',
-      (count) => `${count} 台の端末でサインインしています`,
+    count={inJapanese(
+      countOf(
+        total,
+        sessions.length,
+        (count) => writtenInJapanese(`${count} 台`),
+        (count) => writtenInJapanese(`${count} 台の端末でサインインしています`),
+      ),
     )}
     focus='item'
     more={more}

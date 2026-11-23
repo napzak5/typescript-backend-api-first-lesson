@@ -2,11 +2,14 @@ import {
   Actions,
   Button,
   ButtonLink,
+  COUNTED,
   countOf,
+  inJapanese,
   Link,
   type More,
   Note,
   PagedList,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { ReviewContent } from '../../../salons/components/review-content/review-content'
 import type { OwnReview } from '../../api/reviews-api'
@@ -62,11 +65,10 @@ export const OwnReviewList = ({
     items={reviews}
     itemKey={({ review }) => review.id}
     label='自分のレビュー'
-    count={countOf(
-      total,
-      reviews.length,
-      '件',
-      (count) => `${count} 件のレビューがあります`,
+    count={inJapanese(
+      countOf(total, reviews.length, COUNTED.items, (count) =>
+        writtenInJapanese(`${count} 件のレビューがあります`),
+      ),
     )}
     more={more}
     onMore={onMore}

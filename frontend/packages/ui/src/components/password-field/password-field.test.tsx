@@ -1,13 +1,18 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as passwordFieldStories from './password-field.stories'
 
 const stories = composeStories(passwordFieldStories)
 
 describe('PasswordField', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should hide what is typed, and take it', async () => {
     // Arrange
@@ -126,5 +131,20 @@ describe('PasswordField', () => {
 
     // Assert
     expect(screen.getByLabelText('パスワード')).toBeDisabled()
+  })
+
+  it('should name the choice to show it in English on a page in English, after its label in small letters', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Default.run({
+      args: { ...stories.Default.args, label: 'New password' },
+    })
+
+    // Assert
+    expect(
+      screen.getByRole('checkbox', { name: 'Show new password' }),
+    ).not.toBeChecked()
   })
 })

@@ -1,6 +1,12 @@
 import type { ModelsAttachmentResponse } from '@beauty-salon-frontend/api-client'
 import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import {
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+} from '@beauty-salon-frontend/ui'
 import { contentTypeNameOf, sizeNameOf } from '../../utils/attachment-file'
 
 export type AttachmentTableProps = {
@@ -67,7 +73,7 @@ export const AttachmentTable = ({
     rows={attachments}
     rowKey={({ id }) => id}
     emptyMessage='ファイルはありません'
-    count={countOf(total, attachments.length, '件')}
+    count={inJapanese(countOf(total, attachments.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

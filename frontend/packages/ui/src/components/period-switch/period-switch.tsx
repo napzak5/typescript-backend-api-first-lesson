@@ -1,3 +1,5 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import { useSay } from '../../hooks/language'
 import { Actions } from '../actions/actions'
 import { ButtonLink } from '../button-link/button-link'
 
@@ -16,14 +18,6 @@ export type PeriodSwitchProps = {
   afterHref?: string | undefined
 }
 
-const WORDS: Record<
-  PeriodUnit,
-  { before: string; current: string; after: string }
-> = {
-  day: { before: '前の日', current: '今日', after: '次の日' },
-  week: { before: '前の週', current: '今週', after: '次の週' },
-}
-
 /**
  * The links from the period that is shown to the one before, to the one
  * that holds today and to the one after, in that order. A period that
@@ -37,22 +31,23 @@ export const PeriodSwitch = ({
   currentHref,
   afterHref,
 }: PeriodSwitchProps) => {
-  const words = WORDS[unit]
+  const say = useSay()
+  const words = uiMessages.periodSwitch[unit]
 
   return (
     <nav aria-label={label}>
       <Actions>
         {beforeHref !== undefined && (
           <ButtonLink href={beforeHref} size='small'>
-            {words.before}
+            {say(words.before)}
           </ButtonLink>
         )}
         <ButtonLink href={currentHref} size='small'>
-          {words.current}
+          {say(words.current)}
         </ButtonLink>
         {afterHref !== undefined && (
           <ButtonLink href={afterHref} size='small'>
-            {words.after}
+            {say(words.after)}
           </ButtonLink>
         )}
       </Actions>

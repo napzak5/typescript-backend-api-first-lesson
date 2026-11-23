@@ -1,5 +1,12 @@
 import { PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+} from '@beauty-salon-frontend/ui'
 import { customerNameOf } from '../../../customers/api/customers-api'
 import {
   GONE_CUSTOMER,
@@ -89,7 +96,7 @@ export const DayBookingTable = ({
     rows={rows}
     rowKey={({ booking }) => booking.id}
     emptyMessage='予約はありません'
-    count={countOf(total, rows.length, '件')}
+    count={inJapanese(countOf(total, rows.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

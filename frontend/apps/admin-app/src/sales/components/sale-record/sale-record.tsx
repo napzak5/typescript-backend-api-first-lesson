@@ -12,6 +12,7 @@ import {
   ButtonLink,
   Card,
   DescriptionList,
+  inJapanese,
   Link,
   NONE,
   Table,
@@ -98,7 +99,7 @@ export const SaleRecord = ({
               term: '予約',
               description:
                 bookingHref === undefined ? (
-                  NONE
+                  inJapanese(NONE)
                 ) : (
                   <Link href={bookingHref}>予約の内容</Link>
                 ),

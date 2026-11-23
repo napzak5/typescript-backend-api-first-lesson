@@ -1,4 +1,6 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { createContext, type ReactNode, useContext, useState } from 'react'
+import { useSay } from '../../hooks/language'
 import { useWideScreen } from '../../hooks/wide-screen'
 import { classNames } from '../../utils/class-names'
 import { Button } from '../button/button'
@@ -31,7 +33,7 @@ const MAIN_ID = 'main'
  * and of the button that opens the menu. Not 「メニュー」: that is the
  * menu of the services of a salon, a screen of its own
  */
-const MAIN_MENU = 'メインメニュー'
+const MAIN_MENU = uiMessages.appShell.mainMenu
 
 const InMenuContext = createContext(false)
 
@@ -83,6 +85,7 @@ type MenuProps = {
  * screen a link opened.
  */
 const Menu = ({ items, account }: MenuProps) => {
+  const say = useSay()
   const [open, setOpen] = useState(false)
   const close = (): void => setOpen(false)
 
@@ -91,7 +94,7 @@ const Menu = ({ items, account }: MenuProps) => {
       <button
         type='button'
         className={styles['menuButton']}
-        aria-label={MAIN_MENU}
+        aria-label={say(MAIN_MENU)}
         aria-haspopup='dialog'
         onClick={() => setOpen(true)}
       >
@@ -100,11 +103,15 @@ const Menu = ({ items, account }: MenuProps) => {
       <Dialog
         open={open}
         onClose={close}
-        title={MAIN_MENU}
+        title={say(MAIN_MENU)}
         kind='menu'
-        actions={<Button onClick={close}>閉じる</Button>}
+        actions={<Button onClick={close}>{say(uiMessages.close)}</Button>}
       >
-        <Navigation label={MAIN_MENU} items={items} orientation='vertical' />
+        <Navigation
+          label={say(MAIN_MENU)}
+          items={items}
+          orientation='vertical'
+        />
         {account !== undefined && (
           <div className={styles['menuAccount']}>
             <InMenuContext value>{account}</InMenuContext>
@@ -139,6 +146,7 @@ export const AppShell = ({
   account,
   children,
 }: AppShellProps) => {
+  const say = useSay()
   const wide = useWideScreen()
   const hasLinks = navigation.length > 0
 
@@ -149,7 +157,7 @@ export const AppShell = ({
         className={classNames(styles['skipLink'], visuallyHiddenClass)}
         href={`#${MAIN_ID}`}
       >
-        本文へ移動
+        {say(uiMessages.appShell.skipToContent)}
       </a>
       <header className={styles['header']}>
         <div className={styles['headerContent']}>
@@ -168,7 +176,7 @@ export const AppShell = ({
       </header>
       {wide && hasLinks && (
         <div className={styles['navigation']}>
-          <Navigation label={MAIN_MENU} items={navigation} />
+          <Navigation label={say(MAIN_MENU)} items={navigation} />
         </div>
       )}
       <main className={styles['main']} id={MAIN_ID}>

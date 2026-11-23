@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   setWindowWidth,
@@ -5,7 +6,7 @@ import {
 import { composeStories } from '@storybook/react-vite'
 import { act } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Button } from '../button/button'
 import { ButtonLink } from '../button-link/button-link'
 import * as pageHeaderStories from './page-header.stories'
@@ -17,6 +18,10 @@ const sheet = () => screen.getByRole('dialog', { name: 'ほかの操作' })
 
 describe('PageHeader', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should show its title as the one heading of level 1', async () => {
     // Act
@@ -169,5 +174,35 @@ describe('PageHeader', () => {
     // Assert
     expect(screen.getByRole('link', { name: '営業時間を直す' })).toBeVisible()
     expect(screen.queryByRole('button', { name: 'ほかの操作' })).toBeNull()
+  })
+
+  it('should name the button of the other actions in English on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.OtherActionsOnANarrowScreen.run()
+
+    // Assert
+    expect(
+      screen.getByRole('button', { name: 'More actions' }),
+    ).toHaveAttribute('aria-haspopup', 'dialog')
+    expect(screen.queryByRole('button', { name: 'ほかの操作' })).toBeNull()
+  })
+
+  it('should name the sheet of the other actions, and the button that closes it, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.OtherActionsInTheSheet.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('dialog', { name: 'More actions' })).getByRole(
+        'button',
+        { name: 'Close' },
+      ),
+    ).toBeVisible()
   })
 })

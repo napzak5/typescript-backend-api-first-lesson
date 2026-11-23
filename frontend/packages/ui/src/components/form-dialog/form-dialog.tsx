@@ -1,3 +1,4 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   type FormEvent,
   type ReactNode,
@@ -5,6 +6,7 @@ import {
   useLayoutEffect,
   useRef,
 } from 'react'
+import { useSay } from '../../hooks/language'
 import { Alert } from '../alert/alert'
 import { Button } from '../button/button'
 import { Dialog, type DialogProps } from '../dialog/dialog'
@@ -73,6 +75,7 @@ export const FormDialog = ({
   onSubmit,
   answer,
 }: FormDialogProps) => {
+  const say = useSay()
   const formId = useId()
   const form = useErrorFocus(errors)
   const answerRef = useRef<HTMLDivElement>(null)
@@ -104,12 +107,12 @@ export const FormDialog = ({
       actions={
         answered ? (
           <Button key='close' variant='primary' onClick={onClose}>
-            閉じる
+            {say(uiMessages.close)}
           </Button>
         ) : (
           <>
             <Button key='back' onClick={onClose}>
-              戻る
+              {say(uiMessages.back)}
             </Button>
             <Button
               key='send'

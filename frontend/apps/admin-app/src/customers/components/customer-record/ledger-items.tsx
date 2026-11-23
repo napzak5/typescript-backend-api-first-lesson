@@ -3,6 +3,7 @@ import { dayNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   type DescriptionListItem,
+  inJapanese,
   NONE,
   TagList,
   WrittenText,
@@ -172,7 +173,7 @@ const ITEMS: readonly LedgerItemOf[] = [
     fields: ['referredBy'],
     // The contract says what `null` is: the customer came without a referral
     describe: ({ referredBy }, referrer) =>
-      referredBy === null ? NONE : referrer,
+      referredBy === null ? inJapanese(NONE) : referrer,
   },
   {
     term: '送ってよい連絡',

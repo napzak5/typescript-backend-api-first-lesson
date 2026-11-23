@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as unreadNoticeStories from './unread-notice.stories'
 
 const stories = composeStories(unreadNoticeStories)
@@ -11,6 +12,10 @@ const retryButton = () =>
 
 describe('UnreadNotice', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should say why nothing was read, at once', async () => {
     // Act
@@ -43,5 +48,19 @@ describe('UnreadNotice', () => {
     // Assert
     expect(retryButton()).toHaveAttribute('aria-busy', 'true')
     expect(stories.Pending.args.onRetry).not.toHaveBeenCalled()
+  })
+
+  it('should offer to load again in English on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Unread.run()
+
+    // Assert
+    expect(screen.getByRole('button', { name: 'Load again' })).toBeVisible()
+    expect(
+      screen.queryByRole('button', { name: 'もう一度読み込む' }),
+    ).toBeNull()
   })
 })

@@ -1,6 +1,13 @@
 import type { ModelsPurchaseOrderResponse } from '@beauty-salon-frontend/api-client'
 import { amountOf, PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+} from '@beauty-salon-frontend/ui'
 import {
   deliveryDayNameOf,
   orderDayNameOf,
@@ -83,7 +90,7 @@ export const OrderTable = ({
     rows={orders}
     rowKey={({ id }) => id}
     emptyMessage='発注はありません'
-    count={countOf(total, orders.length, '件')}
+    count={inJapanese(countOf(total, orders.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

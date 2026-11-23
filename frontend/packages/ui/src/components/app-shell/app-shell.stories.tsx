@@ -1,6 +1,8 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { fn, userEvent } from 'storybook/test'
+import { saidOnThePage } from '../../__stories__/said'
 import { Button } from '../button/button'
 import { ButtonLink } from '../button-link/button-link'
 import { PageHeader } from '../page-header/page-header'
@@ -58,7 +60,11 @@ export const NarrowScreen: Story = {
 }
 
 const openTheMenu: NonNullable<Story['play']> = async ({ canvas }) => {
-  await userEvent.click(canvas.getByRole('button', { name: 'メインメニュー' }))
+  await userEvent.click(
+    canvas.getByRole('button', {
+      name: saidOnThePage(uiMessages.appShell.mainMenu),
+    }),
+  )
 }
 
 /** The menu, opened on a narrow screen: a sheet on the bottom edge. */

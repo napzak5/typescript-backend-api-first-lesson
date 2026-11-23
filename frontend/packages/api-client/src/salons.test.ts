@@ -243,7 +243,7 @@ describe('generated Salon client', () => {
       expect(sentRequest(fetchMock)).toEqual({
         url: 'http://localhost:3000/api/v1/salons?limit=20&keyword=Tokyo&features=wifi&features=parking',
         method: 'GET',
-        headers: {},
+        headers: { 'accept-language': 'ja' },
       })
     })
 
@@ -290,7 +290,10 @@ describe('generated Salon client', () => {
       expect(sentRequest(fetchMock)).toEqual({
         url: 'http://localhost:3000/api/v1/salons',
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'accept-language': 'ja',
+          'content-type': 'application/json',
+        },
         body: JSON.stringify(SALON_INPUT),
       })
     })
@@ -306,6 +309,7 @@ describe('generated Salon client', () => {
 
       // Assert
       expect(sentRequest(fetchMock).headers).toEqual({
+        'accept-language': 'ja',
         'content-type': 'application/json',
         'x-request-id': 'req-1',
       })
@@ -360,7 +364,7 @@ describe('generated Salon client', () => {
       expect(sentRequest(fetchMock)).toEqual({
         url: `http://localhost:3000/api/v1/salons/${SALON_ID}`,
         method: 'GET',
-        headers: {},
+        headers: { 'accept-language': 'ja' },
       })
     })
 
@@ -413,7 +417,10 @@ describe('generated Salon client', () => {
       expect(sentRequest(fetchMock)).toEqual({
         url: `http://localhost:3000/api/v1/salons/${SALON_ID}`,
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'accept-language': 'ja',
+          'content-type': 'application/json',
+        },
         body: '{"name":"Salon Shibuya","building":null}',
       })
     })
@@ -468,7 +475,7 @@ describe('generated Salon client', () => {
       expect(sentRequest(fetchMock)).toEqual({
         url: `http://localhost:3000/api/v1/salons/${SALON_ID}`,
         method: 'DELETE',
-        headers: {},
+        headers: { 'accept-language': 'ja' },
       })
     })
 

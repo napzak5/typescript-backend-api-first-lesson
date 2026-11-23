@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import {
   type FormEvent,
   type ReactNode,
@@ -5,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useSay } from '../../hooks/language'
 import { useWideScreen } from '../../hooks/wide-screen'
 import { Actions } from '../actions/actions'
 import { Button } from '../button/button'
@@ -49,10 +52,10 @@ export type FilterFormProps = {
 
 type FilterPurpose = 'search' | 'view' | 'count'
 
-const SUBMIT_LABEL: Record<FilterPurpose, string> = {
-  search: '探す',
-  view: '表示する',
-  count: '集計する',
+const SUBMIT_LABEL: Record<FilterPurpose, LocalizedText> = {
+  search: uiMessages.filterForm.search,
+  view: uiMessages.filterForm.view,
+  count: uiMessages.filterForm.count,
 }
 
 /**
@@ -79,6 +82,7 @@ export const FilterForm = ({
   clearHref,
   onSubmit,
 }: FilterFormProps) => {
+  const say = useSay()
   const wide = useWideScreen()
   const inSheet = !wide && conditions !== undefined
   const inSight = inSheet ? undefined : conditions
@@ -121,7 +125,7 @@ export const FilterForm = ({
 
   const submitButton = (
     <Button type='submit' variant='primary'>
-      {SUBMIT_LABEL[purpose]}
+      {say(SUBMIT_LABEL[purpose])}
     </Button>
   )
 
@@ -141,12 +145,12 @@ export const FilterForm = ({
           {(!inSheet || children !== undefined) && submitButton}
           {inSheet && (
             <Button aria-haspopup='dialog' onClick={() => setSheetOpen(true)}>
-              {conditionCount > 0 ? `条件（${conditionCount}）` : '条件'}
+              {say(uiMessages.filterForm.conditions(conditionCount))}
             </Button>
           )}
           {clearHref !== undefined && (
             <ButtonLink href={clearHref} variant='quiet'>
-              条件を外す
+              {say(uiMessages.filterForm.clear)}
             </ButtonLink>
           )}
         </Actions>
@@ -157,7 +161,9 @@ export const FilterForm = ({
             title={label}
             actions={
               <>
-                <Button onClick={() => setSheetOpen(false)}>閉じる</Button>
+                <Button onClick={() => setSheetOpen(false)}>
+                  {say(uiMessages.close)}
+                </Button>
                 {submitButton}
               </>
             }

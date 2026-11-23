@@ -1,6 +1,12 @@
 import type { ModelsStaffResponse } from '@beauty-salon-frontend/api-client'
 import { PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import {
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+} from '@beauty-salon-frontend/ui'
 import {
   activityNameOf,
   bookingsNameOf,
@@ -71,7 +77,7 @@ export const StaffTable = ({
     rows={rows}
     rowKey={({ id }) => id}
     emptyMessage='スタッフはいません'
-    count={countOf(total, rows.length, '人')}
+    count={inJapanese(countOf(total, rows.length, COUNTED.people))}
     more={more}
     onMore={onMore}
   />

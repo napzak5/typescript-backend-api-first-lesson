@@ -3,7 +3,14 @@ import type {
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
 import { PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+} from '@beauty-salon-frontend/ui'
 import {
   expiryNameOf,
   isExpired,
@@ -100,7 +107,7 @@ export const StockTable = ({
     rows={rows}
     rowKey={({ id }) => id}
     emptyMessage='在庫の行はありません'
-    count={countOf(total, rows.length, '行')}
+    count={inJapanese(countOf(total, rows.length, COUNTED.rows))}
     more={more}
     onMore={onMore}
   />

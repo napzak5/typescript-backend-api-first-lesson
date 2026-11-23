@@ -14,6 +14,7 @@ import { categoryNameOf } from '@beauty-salon-frontend/salon-screens'
 import {
   type BadgeTone,
   type ChoiceOption,
+  inJapanese,
   NONE,
 } from '@beauty-salon-frontend/ui'
 import { UNLISTED_STAFF } from '../../bookings/utils/booking-format'
@@ -152,7 +153,7 @@ export const categoriesNameOf = (
   categories: readonly ModelsServiceCategoryType[],
 ): string =>
   categories.length === 0
-    ? NONE
+    ? inJapanese(NONE)
     : SERVICE_CATEGORIES.filter((category) => categories.includes(category))
         .map((category) => categoryNameOf(category))
         .join('、')

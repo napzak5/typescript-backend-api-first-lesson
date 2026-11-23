@@ -1,6 +1,13 @@
 import type { ModelsProductResponse } from '@beauty-salon-frontend/api-client'
 import { PagedTable } from '@beauty-salon-frontend/salon-screens'
-import { Badge, countOf, Link, type More } from '@beauty-salon-frontend/ui'
+import {
+  Badge,
+  COUNTED,
+  countOf,
+  inJapanese,
+  Link,
+  type More,
+} from '@beauty-salon-frontend/ui'
 import {
   carriedNameOf,
   priceNameOf,
@@ -84,7 +91,7 @@ export const ProductTable = ({
     rows={rows}
     rowKey={({ id }) => id}
     emptyMessage='商品はありません'
-    count={countOf(total, rows.length, '件')}
+    count={inJapanese(countOf(total, rows.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

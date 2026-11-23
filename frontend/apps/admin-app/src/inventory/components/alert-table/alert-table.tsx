@@ -6,7 +6,9 @@ import { PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   Button,
+  COUNTED,
   countOf,
+  inJapanese,
   Link,
   type More,
   WrittenText,
@@ -155,7 +157,7 @@ export const AlertTable = ({
     rows={alerts}
     rowKey={keyOf}
     emptyMessage='在庫のアラートはありません'
-    count={countOf(total, alerts.length, '件')}
+    count={inJapanese(countOf(total, alerts.length, COUNTED.items))}
     more={more}
     onMore={onMore}
   />

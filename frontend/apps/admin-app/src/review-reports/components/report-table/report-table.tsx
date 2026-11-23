@@ -3,7 +3,9 @@ import { PagedTable } from '@beauty-salon-frontend/salon-screens'
 import {
   Badge,
   Button,
+  COUNTED,
   countOf,
+  inJapanese,
   Link,
   type More,
   type TableColumn,
@@ -133,7 +135,7 @@ export const ReportTable = ({
       rows={reports}
       rowKey={({ id }) => id}
       emptyMessage='通報はありません'
-      count={countOf(total, reports.length, '件')}
+      count={inJapanese(countOf(total, reports.length, COUNTED.items))}
       more={more}
       onMore={onMore}
     />

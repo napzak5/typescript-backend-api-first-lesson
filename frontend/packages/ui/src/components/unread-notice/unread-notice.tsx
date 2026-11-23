@@ -1,3 +1,5 @@
+import { uiMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import { useSay } from '../../hooks/language'
 import { Alert } from '../alert/alert'
 import { Button } from '../button/button'
 
@@ -19,11 +21,15 @@ export const UnreadNotice = ({
   message,
   onRetry,
   pending,
-}: UnreadNoticeProps) => (
-  <>
-    <Alert tone='danger'>{message}</Alert>
-    <Button onClick={onRetry} pending={pending}>
-      もう一度読み込む
-    </Button>
-  </>
-)
+}: UnreadNoticeProps) => {
+  const say = useSay()
+
+  return (
+    <>
+      <Alert tone='danger'>{message}</Alert>
+      <Button onClick={onRetry} pending={pending}>
+        {say(uiMessages.loadAgain)}
+      </Button>
+    </>
+  )
+}

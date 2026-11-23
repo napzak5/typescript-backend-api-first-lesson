@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as periodSwitchStories from './period-switch.stories'
 
 const stories = composeStories(periodSwitchStories)
@@ -13,6 +14,10 @@ const linksOf = (name: string): (string | null)[][] =>
 
 describe('PeriodSwitch', () => {
   itShouldBeAccessibleInEveryStory(stories)
+
+  afterEach(() => {
+    localStorage.clear()
+  })
 
   it('should lead to the day before, today and the day after, in that order', async () => {
     // Act
@@ -64,5 +69,35 @@ describe('PeriodSwitch', () => {
     expect(
       screen.getByRole('navigation', { name: 'ほかの日' }),
     ).not.toHaveTextContent('前の日')
+  })
+
+  it('should name the days in English on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Days.run()
+
+    // Assert
+    expect(linksOf('予約の日')).toEqual([
+      ['Previous day', '?date=2026-11-19'],
+      ['Today', '?date=2026-11-20'],
+      ['Next day', '?date=2026-11-21'],
+    ])
+  })
+
+  it('should name the weeks in English on a page in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Weeks.run()
+
+    // Assert
+    expect(linksOf('シフトの週')).toEqual([
+      ['Previous week', '?week=2026-11-09'],
+      ['This week', '?'],
+      ['Next week', '?week=2026-11-23'],
+    ])
   })
 })
