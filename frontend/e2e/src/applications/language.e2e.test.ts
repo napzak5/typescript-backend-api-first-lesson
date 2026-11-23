@@ -14,7 +14,10 @@ import { enterCredentials, heading } from '../support/sign-in'
  * The document says it, the frame of the application says its texts in it,
  * and every request asks the API for it, whatever the browser asks for
  * (the browser of these tests asks for the English of the United States).
- * The sign-in screen says its texts in it too; the other screens are
+ * The sign-in screen says its texts in it too, and so do the screens of
+ * the portal and of the dashboard, and those of the admin application
+ * that are done (the ledger of the customers, in part: the tests of a
+ * screen see them); the other screens of the admin application are
  * written in Japanese alone so far.
  */
 

@@ -55,9 +55,25 @@ const storedCustomers = async (api: TestApi) =>
     ),
   )
 
+/** The heading of the ledger, in the language of the page */
+const LEDGER: Record<Language, string> = {
+  ja: '顧客台帳',
+  en: 'Customer ledger',
+}
+
+/** The name of the box that chooses a customer in the ledger, in the language of the page */
+const CHOICE: Record<Language, (name: string) => string> = {
+  ja: (name) => `${name} 様を選ぶ`,
+  en: (name) => `Select ${name}`,
+}
+
 /** Chooses a customer in the ledger with the keyboard. */
-const chooseCustomer = async (page: Page, name: string): Promise<void> => {
-  const choice = page.getByRole('checkbox', { name: `${name} 様を選ぶ` })
+const chooseCustomer = async (
+  page: Page,
+  name: string,
+  language: Language = 'ja',
+): Promise<void> => {
+  const choice = page.getByRole('checkbox', { name: CHOICE[language](name) })
   await chooseWithTheKeyboard(choice)
   await expect(choice).toBeChecked()
 }
@@ -153,7 +169,9 @@ test.describe('writing customers at once, in a browser', () => {
 /**
  * The pages a screen reads a sentence of the API on: the API answers in
  * the language of the page, and the screen finds what it looks for in the
- * sentence of either. The screen itself is written in Japanese alone.
+ * sentence of either. The ledger says its texts in the language of the
+ * page; the screens of a file and of the customers written at once are
+ * written in Japanese alone yet.
  */
 const PAGES: { language: Language; open: (page: Page) => Promise<void> }[] = [
   // Japanese is the language of a page whose visitor chose none
@@ -236,8 +254,8 @@ for (const { language, open } of PAGES) {
       )
       await page.goto(`${ADMIN.origin}/salons/${salon}/customers`)
       await enterCredentials(page, OWNER, api.seedPassword, language)
-      await expect(heading(page, '顧客台帳')).toBeFocused()
-      await chooseCustomer(page, YUKI.name)
+      await expect(heading(page, LEDGER[language])).toBeFocused()
+      await chooseCustomer(page, YUKI.name, language)
       await page.getByRole('button', { name: '台帳から削除する' }).click()
       const removal = page.getByRole('dialog', {
         name: '1 人のお客様を台帳から削除しますか？',
@@ -262,7 +280,7 @@ for (const { language, open } of PAGES) {
         `${YUKI.name} 様には、終わっていない予約があります。`,
       )
       await expect(
-        page.getByRole('checkbox', { name: `${YUKI.name} 様を選ぶ` }),
+        page.getByRole('checkbox', { name: CHOICE[language](YUKI.name) }),
       ).toBeChecked()
     })
   })
