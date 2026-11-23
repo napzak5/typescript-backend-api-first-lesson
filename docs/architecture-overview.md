@@ -2469,10 +2469,14 @@ for the sales reports. Each has the security of the account that is signed in.
 configuration, assets, what the screens of a salon share in the admin and the
 dashboard, the form of what a customer wishes for, what the tests share), the
 API client that orval generates into `frontend/packages/api-client` with its
-fetch function, the tokens the browser keeps (`frontend/packages/io`) and the
+fetch function, the tokens and the language of the page that the browser keeps
+(`frontend/packages/io`) and the
 session of an application (`frontend/packages/session`). The fetch function
 reads the tokens of the session the browser keeps, sends the access token with every request and renews
-it when it has expired. The session package says who is signed in, has the
+it when it has expired. It says the language of the page in `Accept-Language`
+(the one the visitor chose, Japanese without a choice), so the API tells its
+errors in it; the shared components say their own texts in it, and the other
+texts of the screens are Japanese ([i18n](./i18n.md)). The session package says who is signed in, has the
 sign-in screen with its step for the code of two-factor authentication, and
 shows it in place of a screen that needs a session: every screen of the admin
 application (for `owner`, `manager`, `staff` and `admin`) and of the dashboard

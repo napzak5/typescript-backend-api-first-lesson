@@ -28,6 +28,7 @@ The styling and component rules are in the skill `frontend-ui`.
 | The functions of a screen that call the API, for the answers the real API cannot be made to give | The same | `frontend/apps/portal-app/src/account/api/account-api.test.ts` |
 | Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
 | A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/screens/sign-in.integration.test.tsx`, `frontend/packages/app-frame/src/screens/staff-application.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
+| That a package whose texts are messages writes none in Japanese in its source | One test of the package, which reads its sources (`itShouldWriteItsTextsAsMessages` of `@beauty-salon-frontend/testing/language`) | `frontend/packages/ui/src/texts.test.ts` |
 | A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/admin/sign-in.e2e.test.ts` |
 
 A test is beside the module it tests. In a shared package and in an area of
@@ -53,7 +54,11 @@ the names of the seed data (`@beauty-salon-frontend/testing/seed`), and the
 real API of the integration tests with what a test reads from its database
 and the sign-in on the screen (`@beauty-salon-frontend/testing/api`:
 `testApi`, `idOf`, `idsOf`, `countOf`, `dayFromToday`, `salonIdOf`,
-`signInAs`). The browser tests take from it what knows no test runner: the
+`signInAs`), what another tab wrote into `localStorage` and a browser that
+refuses access to it (`changeInAnotherTab`, `refuseStorage`), and the check
+that a package writes its texts as messages
+(`@beauty-salon-frontend/testing/language`:
+`itShouldWriteItsTextsAsMessages`). The browser tests take from it what knows no test runner: the
 names of the seed data, how to start the test server and the API of a test
 (`@beauty-salon-frontend/testing/api/test-server`), and the rules of the
 accessibility check (`@beauty-salon-frontend/testing/accessibility`).
@@ -63,7 +68,8 @@ Its `src` has a folder for what each tool is for, and the entry
 `stories/` (what the tests of stories declare, and what the catalogue gives
 every story), `accessibility/`, `screens/`, `fixtures/` (what a test makes
 up or names: the answers of the API, the values of a form, the bytes of a
-file, the seed data) and `api/` (the real API). A test of a tool is beside
+file, the seed data), `api/` (the real API), `storage/` (what the browser
+keeps) and `language/` (the check of the texts). A test of a tool is beside
 it. The names a test imports are those of `exports` in the `package.json`
 of the package, which says where each one is.
 
@@ -101,6 +107,13 @@ export const Primary: Story = {
   file beside the components
   (`frontend/apps/portal-app/src/salons/components/examples.ts`): typed as
   the generated models, and written as a salon in Japan would write them.
+- The toolbar of the catalogue chooses the language of the page
+  (`frontend/packages/ui/src/__stories__/language.tsx`). The texts of a
+  story stay as they are written; what the components say themselves
+  changes. A play function that presses what a component of `ui` says
+  itself finds it by the name it has in the language of the page
+  (`saidOnThePage(uiMessages.appShell.mainMenu)`, `src/__stories__/said.ts`
+  of `ui`), so the story runs in either language.
 
 ## The test of a component
 
@@ -156,6 +169,13 @@ describe('Button', () => {
 - No module is replaced: no `vi.mock` of a workspace package or of a
   component. A dependency a component needs is given to it as a prop or by
   the provider it really uses.
+- The page of a test has chosen no language, so it is Japanese. What a
+  component says itself, in a package whose texts are messages, is tested
+  in English as well: `languageStore.choose('en')` before `Story.run()`,
+  and `afterEach(() => { localStorage.clear() })` in that `describe`. That
+  a component says its texts anew when the language is chosen while it is
+  shown, in this tab or in another, is shown once for the hook
+  (`not-recorded.test.tsx`), not for every component.
 
 ### Form controls
 
@@ -273,8 +293,13 @@ they carried, their order and their number.
   of the contract. `frontend/packages/session/src/session.test.tsx` has an API
   of two users whose tokens a test can let expire or end.
 - The session is in `localStorage`. Write it with `sessionStore.write` and
-  clear `localStorage` after each test. Another tab is a change to
-  `localStorage` followed by a `StorageEvent` on `window`.
+  clear `localStorage` after each test. Another tab is
+  `changeInAnotherTab(key, value)` of `testing`: a change to `localStorage`
+  followed by a `StorageEvent` on `window`. A browser that refuses access
+  to its storage is `refuseStorage()`, until `vi.restoreAllMocks()`.
+- The language of the page is kept in `localStorage` too (`languageStore`
+  of `io`), and every request says it: the headers a test expects of a
+  request include `'accept-language': 'ja'`.
 - A hook is rendered with `renderHook`, inside a `QueryClientProvider` with a
   new `QueryClient` whose queries do not retry. When the test is about what
   must never be shown, keep every value the hook returned and assert on all
@@ -1323,6 +1348,13 @@ test.describe('the admin application', () => {
   `src/admin/treatment-photos.e2e.test.ts`): the API takes addresses of
   domain names only, so an address of the application under test will
   not do.
+- The browser of a test asks for `en-US`, and a page asks the API in its
+  own language, which is Japanese until one is chosen: the locale of the
+  browser (`test.use({ locale })`) changes nothing a page says or asks
+  for. A test of a page in English chooses it before the page is opened,
+  `await openInLanguage(page, 'en')` of `src/support/language.ts`;
+  `chooseLanguage(page, 'en')` chooses in a page that is open, as another
+  tab does (`src/applications/language.e2e.test.ts`).
 - The fixture `api` is what `testApi()` is in an integration test, one
   type (`TestApi`) that one function builds (`apiOf` of the client of the
   test server): `origin`, `seedPassword`, `query`, what a test reads from
