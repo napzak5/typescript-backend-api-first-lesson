@@ -19,6 +19,7 @@ import {
   Card,
   EmptyState,
   type FormSays,
+  inJapanese,
   Link,
   LoadingIndicator,
   moreOf,
@@ -26,6 +27,7 @@ import {
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   keepPreviousData,
@@ -110,7 +112,9 @@ const MenuSection = ({ salon }: OfSalonProps) => {
         })
         .with({ type: P.union('notFound', ...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('メニュー', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('メニュー'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -152,7 +156,12 @@ const StaffSection = ({ salon }: OfSalonProps) => {
               .with(undefined, { type: 'found' }, () => null)
               .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                 <UnreadNotice
-                  message={unreadMessageOf('スタッフの評価', reason)}
+                  message={inJapanese(
+                    unreadMessageOf(
+                      writtenInJapanese('スタッフの評価'),
+                      reason,
+                    ),
+                  )}
                   onRetry={() => void ratings.refetch()}
                   pending={ratings.isFetching}
                 />
@@ -170,7 +179,9 @@ const StaffSection = ({ salon }: OfSalonProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('スタッフ', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('スタッフ'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -330,7 +341,9 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         ))
         .with({ type: P.union('notFound', ...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('評価', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('評価'), reason),
+            )}
             onRetry={() => void summary.refetch()}
             pending={summary.isFetching}
           />
@@ -344,7 +357,9 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('レビュー', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('レビュー'), reason),
+            )}
             onRetry={() => void reviews.refetch()}
             pending={reviews.isFetching}
           />
@@ -471,7 +486,9 @@ export const SalonScreen = () => {
         <>
           <PageHeader title={TITLE} />
           <UnreadNotice
-            message={unreadMessageOf('サロン', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('サロン'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

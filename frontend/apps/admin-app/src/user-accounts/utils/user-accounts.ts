@@ -4,6 +4,7 @@ import type {
   ModelsUserRoleType,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { TwoFactorReset, Unlocking } from '../api/user-accounts-api'
 
@@ -181,7 +182,7 @@ export const afterUnlocking = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -214,7 +215,7 @@ export const afterTwoFactorReset = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

@@ -153,7 +153,7 @@ export const afterExpiry = (outcome: Expiry): RunSays<ExpiryResult> =>
     .with({ type: 'forbidden' }, () => REFUSED)
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -184,7 +184,7 @@ export const afterErasure = (
     .with({ type: 'forbidden' }, () => REFUSED)
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -212,7 +212,7 @@ export const afterPurge = (outcome: Purge): RunSays<number> =>
     .with({ type: 'forbidden' }, () => REFUSED)
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

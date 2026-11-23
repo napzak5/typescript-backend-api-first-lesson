@@ -15,6 +15,7 @@ import {
   type FormErrors,
   type FormRead,
   type FormSays,
+  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -147,13 +148,15 @@ export const afterRefusal = (outcome: FormRefusal, kind: CodeKind): FormSays =>
       })
 
       return said.length === 0
-        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
+        ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
         : { message: undefined, errors: Object.fromEntries(said) }
     })
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
+    )
     .exhaustive()
 
 /**

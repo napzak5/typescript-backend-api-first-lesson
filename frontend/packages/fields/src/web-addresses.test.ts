@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   LONGEST_WEB_ADDRESS,
@@ -16,25 +17,37 @@ const addressOf = (length: number, character = 'a'): string => {
   return `${start}${character.repeat(length - start.length)}`
 }
 
+/** What is said of an address of any length that is none */
+const NO_ADDRESS = {
+  en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com).',
+  ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
+}
+
 describe('the sentences of an address of the web', () => {
   it('should say all of the rule of an address that stands alone', () => {
-    expect(WEB_ADDRESS_ERROR).toBe(
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
-    )
-    expect(notWebAddress(LONGEST_WEB_ADDRESS)).toBe(WEB_ADDRESS_ERROR)
+    expect(WEB_ADDRESS_ERROR).toEqual({
+      en: 'Enter a URL that begins with http:// or https:// and has a domain name (such as example.com), up to 500 characters.',
+      ja: 'http:// か https:// で始まる、ドメイン名（example.com など）の URL を、500 文字以内で入力してください。',
+    })
+    expect(notWebAddress(LONGEST_WEB_ADDRESS)).toEqual(WEB_ADDRESS_ERROR)
   })
 
   it('should name no length where an address may be of any', () => {
-    expect(notWebAddress(null)).toBe(
-      'http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
-    )
+    expect(notWebAddress(null)).toEqual(NO_ADDRESS)
   })
 
   it('should say in a description what an address begins with and how long it may be', () => {
-    expect(WEB_ADDRESS_DESCRIPTION).toBe(
-      'http:// か https:// で始まる URL。500 文字まで。',
-    )
+    expect(WEB_ADDRESS_DESCRIPTION).toEqual({
+      en: 'A URL that begins with http:// or https://. Up to 500 characters.',
+      ja: 'http:// か https:// で始まる URL。500 文字まで。',
+    })
   })
+})
+
+/** What is said of a line of a list of addresses that stand alone */
+const lineToCheck = (line: number, why: LocalizedText): LocalizedText => ({
+  en: `Check line ${line}. ${why.en}`,
+  ja: `${line} 行目を確かめてください。${why.ja}`,
 })
 
 describe('webAddressError', () => {
@@ -71,7 +84,7 @@ describe('webAddressError', () => {
       addressOf(501, '𠮷'),
     ],
   ])('should say the rule of %s', (_case, address) => {
-    expect(webAddressError(address)).toBe(WEB_ADDRESS_ERROR)
+    expect(webAddressError(address)).toEqual(WEB_ADDRESS_ERROR)
   })
 })
 
@@ -99,7 +112,7 @@ describe('webAddressLinesError', () => {
         `https://images.example.com/a.jpg\n${address}`,
         LONGEST_WEB_ADDRESS,
       ),
-    ).toBe(`2 行目を確かめてください。${WEB_ADDRESS_ERROR}`)
+    ).toEqual(lineToCheck(2, WEB_ADDRESS_ERROR))
   })
 
   it('should take an address of 500 characters, counted as the API counts them', () => {
@@ -123,9 +136,7 @@ describe('webAddressLinesError', () => {
         'https://images.example.com/a.jpg\nno address',
         null,
       ),
-    ).toBe(
-      '2 行目を確かめてください。http:// か https:// で始まる、ドメイン名（example.com など）の URL を入力してください。',
-    )
+    ).toEqual(lineToCheck(2, NO_ADDRESS))
   })
 
   it('should count the lines as the control shows them, the empty ones too, and name the first that is wrong', () => {
@@ -134,7 +145,7 @@ describe('webAddressLinesError', () => {
         'https://images.example.com/a.jpg\n\n  \nno address\nnone either',
         LONGEST_WEB_ADDRESS,
       ),
-    ).toBe(`4 行目を確かめてください。${WEB_ADDRESS_ERROR}`)
+    ).toEqual(lineToCheck(4, WEB_ADDRESS_ERROR))
   })
 })
 

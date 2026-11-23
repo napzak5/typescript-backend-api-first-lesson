@@ -9,6 +9,8 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import {
@@ -66,17 +68,23 @@ export const afterProfileSave = (
         .filter((control) => INTRODUCTION_CONTROLS.includes(control))
 
       return {
-        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        message: inJapaneseIfAny(
+          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         errors: Object.fromEntries(
           said.map((control) => [
             control,
-            control === 'imageUrl' ? WEB_ADDRESS_ERROR : REFUSED_VALUE_MESSAGE,
+            inJapanese(
+              control === 'imageUrl'
+                ? WEB_ADDRESS_ERROR
+                : REFUSED_VALUE_MESSAGE,
+            ),
           ]),
         ),
       }
     })
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(

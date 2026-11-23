@@ -12,6 +12,7 @@ import {
   ButtonLink,
   EmptyState,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
@@ -19,6 +20,7 @@ import {
   UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
@@ -179,7 +181,9 @@ const OwnPreferencesToChange = () => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('好みの設定', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('好みの設定'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

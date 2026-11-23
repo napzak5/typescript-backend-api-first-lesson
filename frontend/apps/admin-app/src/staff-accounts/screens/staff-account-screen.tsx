@@ -19,11 +19,13 @@ import {
   Card,
   Dialog,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   type QueryClient,
@@ -591,7 +593,12 @@ const LoginPart = ({ salon, member }: LoginPartProps) => {
         .with({ type: 'forbidden' }, () => <StaffLedgerForbidden />)
         .with({ type: 'unread' }, ({ reads }) => (
           <UnreadNotice
-            message={unreadMessageOf('ログインアカウント', whyUnread(reads))}
+            message={inJapanese(
+              unreadMessageOf(
+                writtenInJapanese('ログインアカウント'),
+                whyUnread(reads),
+              ),
+            )}
             onRetry={() => {
               void account.refetch()
               void invitation.refetch()

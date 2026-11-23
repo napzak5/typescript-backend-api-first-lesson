@@ -16,6 +16,9 @@ describe('choiceOf', () => {
 
 describe('UNLISTED_MESSAGE', () => {
   it('should ask for one of the choices', () => {
-    expect(UNLISTED_MESSAGE).toBe('選択肢から選んでください。')
+    expect(UNLISTED_MESSAGE).toEqual({
+      en: 'Choose one of the options.',
+      ja: '選択肢から選んでください。',
+    })
   })
 })

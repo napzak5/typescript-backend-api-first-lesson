@@ -4,11 +4,13 @@ import {
   aboutTheAttempt,
   Form,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -264,7 +266,9 @@ const SharedFileOfToken = ({ token }: { token: string }) => {
           <>
             <PageHeader title={TITLE} />
             <UnreadNotice
-              message={unreadMessageOf('ファイルの情報', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('ファイルの情報'), reason),
+              )}
               onRetry={() => void check.refetch()}
               pending={check.isFetching}
             />

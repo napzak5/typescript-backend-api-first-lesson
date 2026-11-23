@@ -93,9 +93,11 @@ export const afterPassword = (
       errors: { password: PASSWORD_REFUSED_SAID },
     }))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
+    )
     .exhaustive()
 
 /** What is said when a request was not answered, or the file not fetched */
@@ -103,7 +105,9 @@ export const loadMessageOf = (
   reason: Unread | { type: 'notFetched' },
 ): string =>
   match(reason)
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
+    .with({ type: 'tooManyRequests' }, () =>
+      inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+    )
     .with(
       { type: 'failed' },
       () =>

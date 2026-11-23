@@ -20,8 +20,11 @@ import {
   errorAt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import * as z from 'zod'
@@ -38,7 +41,10 @@ import { FORBIDDEN_MESSAGE } from './service-form'
 /** The longest name of a category the API takes */
 export const LONGEST_NAME = 100
 
-const NAME_ERROR = neededWithin('カテゴリーの名前', LONGEST_NAME)
+const NAME_ERROR = neededWithin(
+  writtenInJapanese('カテゴリーの名前'),
+  LONGEST_NAME,
+)
 const KIND_ERROR = '種類を選んでください。'
 const ORDER_ERROR = '表示順は、0 以上の整数で入力してください。'
 const COLOR_ERROR =
@@ -81,13 +87,18 @@ const readWhole = (
   const color = optional('color')
   const errors = {
     ...Object.fromEntries(
-      errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
+      errorAt(
+        'name',
+        inJapaneseIfAny(neededError(name, LONGEST_NAME, NAME_ERROR)),
+      ),
     ),
     ...(kind === undefined ? { category: KIND_ERROR } : {}),
     ...(displayOrder === null || displayOrder === undefined
       ? { displayOrder: ORDER_ERROR }
       : {}),
-    ...Object.fromEntries(errorAt('iconUrl', webAddressError(iconUrl))),
+    ...Object.fromEntries(
+      errorAt('iconUrl', inJapaneseIfAny(webAddressError(iconUrl))),
+    ),
     ...(color === null || colorSchema.safeParse(color).success
       ? {}
       : { color: COLOR_ERROR }),
@@ -165,12 +176,12 @@ export const readCategoryChange = (
 /** What is said at a control the API refused a value of. */
 const refusalAt = (field: string, rule: string): string =>
   match(field)
-    .with('name', () => NAME_ERROR)
+    .with('name', () => inJapanese(NAME_ERROR))
     .with('displayOrder', () => ORDER_ERROR)
-    .with('iconUrl', () => WEB_ADDRESS_ERROR)
+    .with('iconUrl', () => inJapanese(WEB_ADDRESS_ERROR))
     .with('color', () => COLOR_ERROR)
     .with('parentId', () => (rule === 'circular' ? PARENT_BELOW : PARENT_GONE))
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 /** Whether a refusal is of the parent: the categories are read again, to choose from what there is now. */
 export const refusesParent = (
@@ -190,7 +201,9 @@ export const afterCategoryWrite = (
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        message: inJapaneseIfAny(
+          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
@@ -198,7 +211,7 @@ export const afterCategoryWrite = (
     })
     .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -228,7 +241,7 @@ export const afterCategoryRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

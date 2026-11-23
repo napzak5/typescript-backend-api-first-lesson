@@ -117,7 +117,7 @@ const whyRefused = (file: File): string | undefined => {
     return `ファイルが大きすぎます（${sizeNameOf(file.size)}）。10 MB までのファイルを選んでください。`
   }
   if (lengthOf(file.name) > MOST_FILENAME_LENGTH) {
-    return `ファイル名が長すぎます。${charactersOf(MOST_FILENAME_LENGTH)}までの名前にしてから、選んでください。`
+    return `ファイル名が長すぎます。${inJapanese(charactersOf(MOST_FILENAME_LENGTH))}までの名前にしてから、選んでください。`
   }
   if (hasRefusedCharacter(file.name)) {
     return 'ファイル名に、使えない文字が入っています。名前を変えてから、選んでください。'
@@ -186,7 +186,7 @@ export const afterUploading = (
       ),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -215,7 +215,9 @@ export const afterRemoving = (
 ): string =>
   match(outcome)
     .with({ type: 'forbidden' }, () => REMOVAL_NOTE)
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
+    .with({ type: 'tooManyRequests' }, () =>
+      inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+    )
     .with(
       { type: 'failed' },
       () =>

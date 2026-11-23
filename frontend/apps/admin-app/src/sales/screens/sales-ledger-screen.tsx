@@ -14,10 +14,12 @@ import {
 import {
   EmptyState,
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -118,7 +120,9 @@ const SalesLedger = ({ salon }: SalesLedgerProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('売上', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('売上'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

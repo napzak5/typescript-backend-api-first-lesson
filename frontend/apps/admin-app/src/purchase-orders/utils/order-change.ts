@@ -11,6 +11,8 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
@@ -92,8 +94,9 @@ export const afterOrderChange = (
       const atDay = others.length < values.length
 
       return {
-        message:
+        message: inJapaneseIfAny(
           atDay && others.length === 0 ? undefined : CHECK_THE_VALUES_MESSAGE,
+        ),
         errors: atDay ? { expectedDelivery: DAY_ERROR } : {},
       }
     })
@@ -101,7 +104,7 @@ export const afterOrderChange = (
       aboutTheAttempt('このアカウントでは、この発注を直せません。'),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(

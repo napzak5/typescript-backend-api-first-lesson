@@ -2,9 +2,11 @@ import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -53,7 +55,9 @@ export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
       <>
         <PageHeader title={title} />
         <UnreadNotice
-          message={unreadMessageOf('サロン', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('サロン'), reason),
+          )}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />

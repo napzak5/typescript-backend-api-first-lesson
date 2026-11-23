@@ -19,6 +19,8 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
@@ -140,7 +142,7 @@ const changeMessageAt = ({ field, rule }: RefusedValue): string =>
       () =>
         'このスタッフは、その間に削除されたため、選べません。選び直してください。',
     )
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 /**
  * What the form that changes a sale says after the API did not change it.
@@ -161,7 +163,9 @@ export const afterSaleChange = (
       )
 
       return {
-        message: atControls.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        message: inJapaneseIfAny(
+          atControls.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         errors: Object.fromEntries(
           atControls
             .toReversed()
@@ -178,7 +182,7 @@ export const afterSaleChange = (
       aboutTheAttempt('このアカウントでは、この売上を直せません。'),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -285,7 +289,7 @@ export const afterVoid = (outcome: VoidAttempt): VoidSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({

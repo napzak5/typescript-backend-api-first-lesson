@@ -6,6 +6,7 @@ import type {
 import {
   aboutTheAttempt,
   type FormRead,
+  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -179,7 +180,8 @@ export const afterRetagging = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE).message ?? '',
+      message:
+        aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)).message ?? '',
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -223,7 +225,8 @@ export const afterRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE).message ?? '',
+      message:
+        aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)).message ?? '',
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

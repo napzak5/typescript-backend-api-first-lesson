@@ -3,7 +3,12 @@ import type {
   ModelsOrderStatusType,
   ModelsPurchaseOrderCancelRequest,
 } from '@beauty-salon-frontend/api-client'
-import { type FormRead, textOf, textOrNull } from '@beauty-salon-frontend/ui'
+import {
+  type FormRead,
+  inJapanese,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { ChangeSays } from '../../bookings/utils/booking-actions'
 import type { OrderStep } from '../api/purchase-orders-api'
@@ -152,7 +157,7 @@ export const afterOrderStep = (
     .with({ type: 'notFound' }, { type: 'forbidden' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

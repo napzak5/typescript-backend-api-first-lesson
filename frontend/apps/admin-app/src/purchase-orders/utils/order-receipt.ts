@@ -13,6 +13,7 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
@@ -154,7 +155,9 @@ export const afterOrderReceipt = (
     .returnType<FormSays>()
     // The form sends what the API takes: a value it refused says nothing a
     // person could correct
-    .with({ type: 'invalid' }, () => aboutTheAttempt(CHECK_THE_VALUES_MESSAGE))
+    .with({ type: 'invalid' }, () =>
+      aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE)),
+    )
     .with({ type: 'rowsChanged' }, () =>
       aboutTheAttempt(
         '明細の在庫の行のどれかが、その間に削除されました。発注を読み直しました。届いた数量を確かめて、もう一度記録してください。',
@@ -169,7 +172,7 @@ export const afterOrderReceipt = (
       aboutTheAttempt('このアカウントでは、この発注の入荷を記録できません。'),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(

@@ -11,6 +11,7 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -26,7 +27,7 @@ export const readEmail = (values: FormData): FormRead<string> => {
 
   return error === undefined
     ? { type: 'valid', value: email }
-    : { type: 'invalid', errors: { email: error } }
+    : { type: 'invalid', errors: { email: inJapanese(error) } }
 }
 
 /** The password of the control `name`, as it was typed. */
@@ -63,7 +64,7 @@ export const readRegistration = (
 /** What to say at the control of a value that the API did not take. */
 const messageOf = ({ field, rule }: RefusedValue): string | undefined =>
   match(field)
-    .with('email', () => EMAIL_MALFORMED)
+    .with('email', () => inJapanese(EMAIL_MALFORMED))
     .with('password', 'newPassword', () => refusedPasswordMessage(rule))
     .otherwise(() => undefined)
 
@@ -84,7 +85,7 @@ export const afterRefusal = (refusal: Refusal): FormSays =>
       })
 
       return said.length === 0
-        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
+        ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
         : {
             message: undefined,
             // The first thing the API says about a value is the one to act on
@@ -98,7 +99,9 @@ export const afterRefusal = (refusal: Refusal): FormSays =>
         '試した回数が多すぎます。しばらくしてから、もう一度お試しください。',
       ),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
+    )
     .exhaustive()
 
 /**
@@ -111,6 +114,6 @@ export const messageAfter = (refusal: Refusal): string => {
   return (
     message ??
     Object.values(errors).find((error) => error !== undefined) ??
-    CHECK_THE_VALUES_MESSAGE
+    inJapanese(CHECK_THE_VALUES_MESSAGE)
   )
 }

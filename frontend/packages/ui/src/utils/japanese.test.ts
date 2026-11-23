@@ -1,6 +1,11 @@
 import { languageStore } from '@beauty-salon-frontend/io'
 import { afterEach, describe, expect, it } from 'vitest'
-import { inJapanese, writtenInJapanese } from './japanese'
+import {
+  errorsInJapanese,
+  inJapanese,
+  inJapaneseIfAny,
+  writtenInJapanese,
+} from './japanese'
 
 describe('inJapanese', () => {
   afterEach(() => {
@@ -16,6 +21,57 @@ describe('inJapanese', () => {
 
     // Assert
     expect(said).toBe('閉じる')
+  })
+})
+
+describe('inJapaneseIfAny', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say a message in Japanese, whatever the language of the page is', () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    const said = inJapaneseIfAny({ en: 'Required', ja: '必須' })
+
+    // Assert
+    expect(said).toBe('必須')
+  })
+
+  it('should say nothing where there is no message', () => {
+    // Act
+    const said = inJapaneseIfAny(undefined)
+
+    // Assert
+    expect(said).toBeUndefined()
+  })
+})
+
+describe('errorsInJapanese', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what is said at each control in Japanese, and nothing where nothing is said', () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    const said = errorsInJapanese({
+      city: {
+        en: 'Enter up to 3 characters.',
+        ja: '3 文字以内で入力してください。',
+      },
+      building: undefined,
+    })
+
+    // Assert
+    expect(said).toEqual({
+      city: '3 文字以内で入力してください。',
+      building: undefined,
+    })
   })
 })
 

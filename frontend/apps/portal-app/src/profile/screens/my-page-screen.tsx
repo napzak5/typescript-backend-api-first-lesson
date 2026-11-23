@@ -4,9 +4,11 @@ import {
   ButtonLink,
   Card,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
@@ -71,7 +73,9 @@ const OwnPage = () => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('お客様の情報', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('お客様の情報'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

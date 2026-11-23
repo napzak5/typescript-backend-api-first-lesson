@@ -7,12 +7,14 @@ import { useSession } from '@beauty-salon-frontend/session'
 import {
   Card,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -142,7 +144,9 @@ const ProfilePart = () => {
     .with({ type: 'unavailable' }, () => <p>{UNAVAILABLE_NOW}</p>)
     .with({ type: P.union(...UNREAD_TYPES) }, (unread) => (
       <UnreadNotice
-        message={unreadMessageOf('プロフィール', unread)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('プロフィール'), unread),
+        )}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />

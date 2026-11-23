@@ -14,6 +14,7 @@ import {
   FormPart,
   type FormProps,
   FormRow,
+  inJapanese,
   NO_ERRORS,
   Note,
   Select,
@@ -134,7 +135,7 @@ export const ServiceForm = ({
           name='name'
           autoComplete='off'
           required
-          description={`${upTo(LONGEST_NAME)}お客様のメニューに出ます。`}
+          description={`${inJapanese(upTo(LONGEST_NAME))}お客様のメニューに出ます。`}
           defaultValue={service?.name}
           error={errors['name']}
         />
@@ -153,7 +154,7 @@ export const ServiceForm = ({
           label='短い紹介'
           name='shortDescription'
           rows={2}
-          description={`${upTo(LONGEST_SHORT_DESCRIPTION)}メニューの一覧に出ます。`}
+          description={`${inJapanese(upTo(LONGEST_SHORT_DESCRIPTION))}メニューの一覧に出ます。`}
           defaultValue={service?.shortDescription ?? undefined}
           error={errors['shortDescription']}
         />
@@ -317,7 +318,7 @@ export const ServiceForm = ({
           name='imageUrl'
           type='url'
           autoComplete='off'
-          description={WEB_ADDRESS_DESCRIPTION}
+          description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
           defaultValue={service?.imageUrl ?? undefined}
           error={errors['imageUrl']}
         />

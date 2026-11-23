@@ -11,10 +11,12 @@ import type {
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
@@ -198,9 +200,11 @@ const ShareLinkPart = ({
           <>
             {header}
             <UnreadNotice
-              message={unreadMessageOf(
-                '共有リンク',
-                whyUnread([file.data, linkRead]),
+              message={inJapanese(
+                unreadMessageOf(
+                  writtenInJapanese('共有リンク'),
+                  whyUnread([file.data, linkRead]),
+                ),
               )}
               onRetry={() => {
                 void file.refetch()

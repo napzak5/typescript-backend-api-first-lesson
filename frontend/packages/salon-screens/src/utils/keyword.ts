@@ -1,4 +1,5 @@
 import { tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
+import { inJapaneseIfAny, writtenInJapanese } from '@beauty-salon-frontend/ui'
 
 /*
  * A keyword that is searched for: kept in the query of the address, so a
@@ -8,7 +9,10 @@ import { tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
 /** The longest keyword the API takes, of a salon and of a customer alike */
 export const LONGEST_KEYWORD = 100
 
-const KEYWORD_TOO_LONG = tooLongOf('キーワード', LONGEST_KEYWORD)
+const KEYWORD_TOO_LONG = tooLongOf(
+  writtenInJapanese('キーワード'),
+  LONGEST_KEYWORD,
+)
 
 /**
  * What is wrong with the keyword of a search with other conditions, which
@@ -16,7 +20,7 @@ const KEYWORD_TOO_LONG = tooLongOf('キーワード', LONGEST_KEYWORD)
  * keyword that was left empty is no keyword, and nothing is wrong with it.
  */
 export const keywordError = (keyword: string): string | undefined =>
-  tooLongError(keyword, LONGEST_KEYWORD, KEYWORD_TOO_LONG)
+  inJapaneseIfAny(tooLongError(keyword, LONGEST_KEYWORD, KEYWORD_TOO_LONG))
 
 const keywordFrom = (value: string | null): string | undefined => {
   const keyword = (value ?? '').trim()

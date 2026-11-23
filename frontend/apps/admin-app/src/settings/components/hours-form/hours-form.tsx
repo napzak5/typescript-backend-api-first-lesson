@@ -7,6 +7,7 @@ import {
   type FormErrors,
   FormPart,
   FormRow,
+  inJapanese,
   NO_ERRORS,
   Note,
   RadioGroup,
@@ -279,7 +280,7 @@ export const HoursForm = ({
                 label='祝日・休業日の名前'
                 name={nameOf('holidayName')}
                 autoComplete='off'
-                description={`${upTo(LONGEST_HOLIDAY_NAME)}「元日」「年末年始」「設備の点検」など。`}
+                description={`${inJapanese(upTo(LONGEST_HOLIDAY_NAME))}「元日」「年末年始」「設備の点検」など。`}
                 defaultValue={row.value.shown.holidayName}
                 error={dates.errors[nameOf('holidayName')]}
               />

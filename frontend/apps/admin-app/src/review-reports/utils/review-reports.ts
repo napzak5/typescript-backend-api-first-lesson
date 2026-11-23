@@ -8,7 +8,7 @@ import {
   dayNameOf,
   timeOfDayAt,
 } from '@beauty-salon-frontend/salon-screens'
-import { textOf } from '@beauty-salon-frontend/ui'
+import { inJapanese, textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { ReviewRemoval } from '../../reviews/api/reviews-api'
 import { REASONS } from '../../reviews/utils/review-actions'
@@ -119,7 +119,7 @@ export const afterDismissal = (outcome: Dismissal): HandlingSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -144,7 +144,7 @@ export const afterReviewRemoval = (outcome: ReviewRemoval): HandlingSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

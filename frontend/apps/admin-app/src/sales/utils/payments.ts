@@ -13,8 +13,11 @@ import { amountOf } from '@beauty-salon-frontend/salon-screens'
 import {
   errorAt,
   type FormRead,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
@@ -104,7 +107,10 @@ const LAST_FOUR_ERROR = 'カードの下 4 桁は、4 桁の数字で入力し�
 /** The longest brand of a card the API takes */
 const LONGEST_BRAND = 50
 
-const BRAND_ERROR = tooLongOf('カードのブランド', LONGEST_BRAND)
+const BRAND_ERROR = tooLongOf(
+  writtenInJapanese('カードのブランド'),
+  LONGEST_BRAND,
+)
 
 /**
  * What is wrong with an amount: none, more than is left to pay, or what
@@ -161,7 +167,10 @@ export const readPayment = (
       ? {}
       : { cardLastFour: LAST_FOUR_ERROR }),
     ...Object.fromEntries(
-      errorAt('cardBrand', tooLongError(brand, LONGEST_BRAND, BRAND_ERROR)),
+      errorAt(
+        'cardBrand',
+        inJapaneseIfAny(tooLongError(brand, LONGEST_BRAND, BRAND_ERROR)),
+      ),
     ),
   }
   if (
@@ -226,8 +235,8 @@ const messageAt = ({ field, rule }: RefusedValue): string =>
       () => '支払い方法が 1 回に受け付ける金額より少ない金額です。',
     )
     .with(['cardLastFour', P._], () => LAST_FOUR_ERROR)
-    .with(['cardBrand', P._], () => BRAND_ERROR)
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .with(['cardBrand', P._], () => inJapanese(BRAND_ERROR))
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 const CONTROLS: readonly string[] = [
   'paymentMethodId',
@@ -264,7 +273,7 @@ export const afterPayment = (outcome: PaymentAttempt): PaymentSays =>
     .with({ type: P.union('notFound', 'forbidden') }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({

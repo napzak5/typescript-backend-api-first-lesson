@@ -6,10 +6,12 @@ import {
 } from '@beauty-salon-frontend/answers'
 import {
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
@@ -67,7 +69,9 @@ export const SalonSearchScreen = () => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('サロン', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('サロン'), reason),
+            )}
             onRetry={() => void found.refetch()}
             pending={found.isFetching}
           />

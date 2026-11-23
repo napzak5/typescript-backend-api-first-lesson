@@ -11,7 +11,13 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
-import { ButtonLink, moreOf, useNotifications } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  inJapanese,
+  moreOf,
+  useNotifications,
+  writtenInJapanese,
+} from '@beauty-salon-frontend/ui'
 import {
   useInfiniteQuery,
   useMutation,
@@ -128,7 +134,9 @@ const AllergiesPart = ({ salon, customer }: AllergiesPartProps) => {
     .with(undefined, () => ({ type: 'reading' }))
     .with({ type: 'unread' }, ({ reason }) => ({
       type: 'unread',
-      message: unreadMessageOf('アレルギー', reason),
+      message: inJapanese(
+        unreadMessageOf(writtenInJapanese('アレルギー'), reason),
+      ),
       retrying: read.isFetching,
     }))
     .with({ type: 'listed' }, ({ items, total, rest }) => ({

@@ -22,6 +22,8 @@ import {
   type FormErrors,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   same,
   textOf,
   textOrNull,
@@ -173,7 +175,9 @@ const TOO_MANY_IMAGES = `画像は ${MAX_IMAGES} 個までです。行を減ら�
 /** What cannot be right of what the form was sent with, under the names of the controls. */
 const errorsOf = (entered: Entered): FormErrors => {
   const images =
-    webAddressLinesError(entered.imageUrls, LONGEST_WEB_ADDRESS) ??
+    inJapaneseIfAny(
+      webAddressLinesError(entered.imageUrls, LONGEST_WEB_ADDRESS),
+    ) ??
     (linesOf(entered.imageUrls).length > MAX_IMAGES
       ? TOO_MANY_IMAGES
       : undefined)
@@ -183,7 +187,7 @@ const errorsOf = (entered: Entered): FormErrors => {
       ? [[OVERALL_RATING, OVERALL_RATING_MISSING]]
       : []),
     ...(lengthOf(entered.title.trim()) > MAX_TITLE_LENGTH
-      ? [[TITLE, TITLE_TOO_LONG]]
+      ? [[TITLE, inJapanese(TITLE_TOO_LONG)]]
       : []),
     ...(images === undefined ? [] : [[IMAGES, images]]),
   ])
@@ -318,12 +322,12 @@ const messageOf = (control: string, rule: string): string =>
   match(control)
     .with(STAFF, () => STAFF_GONE)
     .with(TITLE, () =>
-      rule === 'too_big' ? TITLE_TOO_LONG : REFUSED_VALUE_MESSAGE,
+      inJapanese(rule === 'too_big' ? TITLE_TOO_LONG : REFUSED_VALUE_MESSAGE),
     )
     .with(IMAGES, () =>
-      rule === 'too_big' ? TOO_MANY_IMAGES : REFUSED_VALUE_MESSAGE,
+      rule === 'too_big' ? TOO_MANY_IMAGES : inJapanese(REFUSED_VALUE_MESSAGE),
     )
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 /**
  * What the form says about the values the API did not take: at the control
@@ -339,7 +343,7 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
   })
 
   return said.length === 0
-    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
+    ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
     : {
         message: undefined,
         // The first thing the API says about a value is the one to act on
@@ -378,9 +382,11 @@ export const afterReviewWriting = (
       namesTheVisit(values) ? VISIT_READ_AGAIN : afterRefusedValues(values),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
+    )
     .exhaustive()
 
 /**
@@ -394,7 +400,9 @@ export const afterReviewChange = (
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
+    )
     .exhaustive()

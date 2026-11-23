@@ -1,9 +1,11 @@
 import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import { NoSalonNotice, useOwnSalon } from '@beauty-salon-frontend/session'
 import {
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router'
@@ -57,7 +59,9 @@ export const StartScreen = ({
       <>
         <PageHeader title={title} />
         <UnreadNotice
-          message={unreadMessageOf('所属するサロン', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('所属するサロン'), reason),
+          )}
           onRetry={readAgain}
           pending={readingAgain}
         />

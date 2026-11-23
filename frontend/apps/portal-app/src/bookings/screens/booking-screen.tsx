@@ -13,6 +13,7 @@ import {
   DescriptionList,
   Form,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
@@ -21,6 +22,7 @@ import {
   UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -299,14 +301,18 @@ const BookingSteps = ({ salon, service }: OfServiceProps) => {
         ))
         .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
           <UnreadNotice
-            message={unreadMessageOf('スタッフ', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('スタッフ'), reason),
+            )}
             onRetry={() => void staff.refetch()}
             pending={staff.isFetching}
           />
         ))
         .with([P._, { type: P.union(...UNREAD_TYPES) }], ([, reason]) => (
           <UnreadNotice
-            message={unreadMessageOf('お客様の情報', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('お客様の情報'), reason),
+            )}
             onRetry={() => void profile.refetch()}
             pending={profile.isFetching}
           />
@@ -355,7 +361,9 @@ const BookingPage = () => {
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice
-          message={unreadMessageOf('サロン', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('サロン'), reason),
+          )}
           onRetry={() => void salon.refetch()}
           pending={salon.isFetching}
         />
@@ -365,7 +373,9 @@ const BookingPage = () => {
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice
-          message={unreadMessageOf('メニュー', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('メニュー'), reason),
+          )}
           onRetry={() => void service.refetch()}
           pending={service.isFetching}
         />

@@ -9,10 +9,12 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
@@ -90,7 +92,9 @@ const StaffList = ({ salon }: StaffListProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('スタッフ', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('スタッフ'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

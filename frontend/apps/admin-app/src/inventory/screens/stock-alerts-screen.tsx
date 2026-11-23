@@ -18,12 +18,14 @@ import {
   Alert,
   ButtonLink,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   useInfiniteQuery,
@@ -180,7 +182,9 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         .with({ type: 'forbidden' }, () => null)
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('アラートの件数', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('アラートの件数'), reason),
+            )}
             onRetry={() => void summary.refetch()}
             pending={summary.isFetching}
           />
@@ -205,7 +209,9 @@ const AlertsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('在庫のアラート', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('在庫のアラート'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

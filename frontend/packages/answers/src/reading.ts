@@ -1,4 +1,6 @@
 import type { ModelsProblemDetails } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { answerMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match, P } from 'ts-pattern'
 
 /*
@@ -197,35 +199,36 @@ export const toTheEnd = async <
 }
 
 /** What a screen says after too many requests: waiting mends it, the connection does not. */
-export const TOO_MANY_REQUESTS_MESSAGE =
-  'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
+export const TOO_MANY_REQUESTS_MESSAGE: LocalizedText =
+  answerMessages.tooManyRequests
 
 /** What a screen says when a request to write got no answer to act on. */
-export const NOT_SENT_MESSAGE =
-  '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
+export const NOT_SENT_MESSAGE: LocalizedText = answerMessages.notSent
 
 /**
  * What a form says when the API refused values it has no control for, or
  * did not say which: the attempt as a whole is to be looked at again.
  */
-export const CHECK_THE_VALUES_MESSAGE =
-  '入力した内容を確かめて、もう一度お試しください。'
+export const CHECK_THE_VALUES_MESSAGE: LocalizedText =
+  answerMessages.checkTheValues
 
 /** What is said at a control whose value the API refused by a rule the form does not tell of. */
-export const REFUSED_VALUE_MESSAGE =
-  'この値は受け付けられませんでした。入力を確かめてください。'
+export const REFUSED_VALUE_MESSAGE: LocalizedText = answerMessages.refusedValue
 
 /** What a screen says when a request that changes nothing a person typed got nowhere. */
-export const unsentMessageOf = (reason: Unsent): string =>
+export const unsentMessageOf = (reason: Unsent): LocalizedText =>
   reason.type === 'tooManyRequests'
     ? TOO_MANY_REQUESTS_MESSAGE
     : NOT_SENT_MESSAGE
 
-/** Why something could not be read, in words. */
+/**
+ * Why something could not be read, in words. `what` is what was not read,
+ * as a sentence names it (in English with its article: `the bookings`).
+ */
 export const unreadMessageOf = (
-  what: string,
+  what: LocalizedText,
   reason: Unread | NotFound,
-): string =>
+): LocalizedText =>
   reason.type === 'tooManyRequests'
     ? TOO_MANY_REQUESTS_MESSAGE
-    : `${what}を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。`
+    : answerMessages.unread(what)

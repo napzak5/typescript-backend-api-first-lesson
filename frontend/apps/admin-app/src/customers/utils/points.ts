@@ -445,7 +445,7 @@ export const afterRecording = (outcome: PointAttempt): PointSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      ...aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      ...aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

@@ -3,7 +3,12 @@ import type {
   ModelsStaffProfileUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { webAddressError } from '@beauty-salon-frontend/fields'
-import { type FormRead, textOf, textOrNull } from '@beauty-salon-frontend/ui'
+import {
+  type FormRead,
+  inJapanese,
+  textOf,
+  textOrNull,
+} from '@beauty-salon-frontend/ui'
 import { tagsIn } from '../../customers/utils/customer-ledger'
 import { numberOf } from '../../treatments/utils/treatment-form'
 
@@ -61,7 +66,7 @@ export const readIntroduction = (values: FormData): FormRead<Introduction> => {
         ...(yearsOfExperience === undefined
           ? { yearsOfExperience: YEARS_ERROR }
           : {}),
-        ...(urlError === undefined ? {} : { imageUrl: urlError }),
+        ...(urlError === undefined ? {} : { imageUrl: inJapanese(urlError) }),
       },
     }
   }

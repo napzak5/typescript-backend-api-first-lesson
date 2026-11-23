@@ -1,4 +1,5 @@
 import type { ModelsCustomerBasicPreferences } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   basicPreferencesIn,
@@ -15,10 +16,26 @@ import {
 
 const TODAY = '2026-11-22'
 
-const OUT_OF_RANGE =
-  '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。'
+const OUT_OF_RANGE = {
+  en: 'Enter a date of birth from January 1, 1900 to today.',
+  ja: '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。',
+}
 
-const REFUSED = 'この値は受け付けられませんでした。入力を確かめてください。'
+const REFUSED = {
+  en: 'This value was not accepted. Check what you entered.',
+  ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+}
+
+const UNLISTED = {
+  en: 'Choose one of the options.',
+  ja: '選択肢から選んでください。',
+}
+
+/** What is said of a text that is longer than so many characters */
+const tooLongFor = (most: number): LocalizedText => ({
+  en: `Enter up to ${most} characters.`,
+  ja: `${most} 文字以内で入力してください。`,
+})
 
 /** A form sent with the given kinds of service and the given note; none where it is not given */
 const formOf = (kinds: readonly string[], notes?: string): FormData => {
@@ -68,7 +85,7 @@ describe('CUSTOMER_LENGTHS', () => {
 })
 
 describe('birthDateError', () => {
-  it.each<[string, string | null, string | undefined]>([
+  it.each<[string, string | null, LocalizedText | undefined]>([
     ['a day of birth left empty', null, undefined],
     ['today', TODAY, undefined],
     ['the first day the API takes', '1900-01-01', undefined],
@@ -77,7 +94,7 @@ describe('birthDateError', () => {
     ['a day that does not exist', '2001-02-29', OUT_OF_RANGE],
     ['a text that is no day', '平成 13 年', OUT_OF_RANGE],
   ])('should tell what is wrong with %s', (_case, birthDate, said) => {
-    expect(birthDateError(birthDate, TODAY)).toBe(said)
+    expect(birthDateError(birthDate, TODAY)).toEqual(said)
   })
 })
 
@@ -171,34 +188,48 @@ describe('customerControlOf', () => {
 })
 
 describe('customerRefusalOf', () => {
-  it.each<[string, string, string | undefined]>([
-    ['lastName', 'too_big', '100 文字以内で入力してください。'],
-    ['lastName', 'too_small', '姓を入力してください。'],
-    ['firstName', 'too_big', '100 文字以内で入力してください。'],
-    ['firstName', 'too_small', '名を入力してください。'],
+  it.each<[string, string, LocalizedText | undefined]>([
+    ['lastName', 'too_big', tooLongFor(100)],
+    [
+      'lastName',
+      'too_small',
+      { en: 'Enter the last name.', ja: '姓を入力してください。' },
+    ],
+    ['firstName', 'too_big', tooLongFor(100)],
+    [
+      'firstName',
+      'too_small',
+      { en: 'Enter the first name.', ja: '名を入力してください。' },
+    ],
     [
       'phoneNumber',
       'invalid_format',
-      '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      {
+        en: 'Enter a phone number in digits and hyphens, with the area code (for example 03-1234-5678).',
+        ja: '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      },
     ],
     [
       'alternativePhone',
       'too_big',
-      '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      {
+        en: 'Enter a phone number in digits and hyphens, with the area code (for example 03-1234-5678).',
+        ja: '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。',
+      },
     ],
     ['birthDate', 'custom', OUT_OF_RANGE],
-    ['gender', 'invalid_value', '選択肢から選んでください。'],
-    [PREFERRED_SERVICES, 'invalid_value', '選択肢から選んでください。'],
+    ['gender', 'invalid_value', UNLISTED],
+    [PREFERRED_SERVICES, 'invalid_value', UNLISTED],
     [PREFERENCE_NOTES, 'too_big', REFUSED],
-    ['postalCode', 'too_big', '10 文字以内で入力してください。'],
-    ['building', 'too_big', '255 文字以内で入力してください。'],
+    ['postalCode', 'too_big', tooLongFor(10)],
+    ['building', 'too_big', tooLongFor(255)],
     ['occupation', 'invalid_type', REFUSED],
     ['email', 'invalid_format', undefined],
     ['allowEmail', 'invalid_type', undefined],
   ])(
     'should say at %s, for the rule %s, what was wrong',
     (control, rule, said) => {
-      expect(customerRefusalOf(control, rule)).toBe(said)
+      expect(customerRefusalOf(control, rule)).toEqual(said)
     },
   )
 })

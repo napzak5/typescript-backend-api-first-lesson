@@ -6,9 +6,11 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
@@ -56,7 +58,9 @@ const ProductPart = ({ salon, productId }: ProductPartProps) => {
       <>
         {header}
         <UnreadNotice
-          message={unreadMessageOf('商品', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('商品'), reason),
+          )}
           onRetry={() => void product.refetch()}
           pending={product.isFetching}
         />

@@ -12,11 +12,13 @@ import {
   ButtonLink,
   EmptyState,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -152,7 +154,9 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         ))
         .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
           <UnreadNotice
-            message={unreadMessageOf('在庫の行', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('在庫の行'), reason),
+            )}
             onRetry={() => void rows.refetch()}
             pending={rows.isFetching}
           />
@@ -165,7 +169,9 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           ],
           ([, reason]) => (
             <UnreadNotice
-              message={unreadMessageOf('商品', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('商品'), reason),
+              )}
               onRetry={() => void products.refetch()}
               pending={products.isFetching}
             />
@@ -188,7 +194,9 @@ const EntryPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             .with({ type: 'forbidden' }, () => <OtherSalonNotice what='発注' />)
             .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
               <UnreadNotice
-                message={unreadMessageOf('発注の提案', reason)}
+                message={inJapanese(
+                  unreadMessageOf(writtenInJapanese('発注の提案'), reason),
+                )}
                 onRetry={() => void suggestions.refetch()}
                 pending={suggestions.isFetching}
               />

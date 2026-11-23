@@ -278,10 +278,14 @@ describe('toTheEnd', () => {
 })
 
 describe('unreadMessageOf', () => {
+  /** What was not read, as a screen names it */
+  const MENU = { en: 'the menu', ja: 'メニュー' }
+
   it('should ask for patience when there were too many requests', () => {
-    expect(unreadMessageOf('メニュー', TOO_MANY_REQUESTS)).toBe(
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-    )
+    expect(unreadMessageOf(MENU, TOO_MANY_REQUESTS)).toEqual({
+      en: 'There are too many requests. Wait a while and try again.',
+      ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+    })
   })
 
   const NOT_READ: [string, Unread | NotFound][] = [
@@ -292,9 +296,10 @@ describe('unreadMessageOf', () => {
   it.each(NOT_READ)(
     'should name what could not be read after %s',
     (_, reason) => {
-      expect(unreadMessageOf('メニュー', reason)).toBe(
-        'メニューを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-      )
+      expect(unreadMessageOf(MENU, reason)).toEqual({
+        en: 'Could not load the menu. Check your connection and try again.',
+        ja: 'メニューを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+      })
     },
   )
 })
@@ -312,29 +317,33 @@ describe('isUnread', () => {
 
 describe('the sentences of values the API refused', () => {
   it('should ask to look at what was entered and to try again', () => {
-    expect(CHECK_THE_VALUES_MESSAGE).toBe(
-      '入力した内容を確かめて、もう一度お試しください。',
-    )
+    expect(CHECK_THE_VALUES_MESSAGE).toEqual({
+      en: 'Check what you entered and try again.',
+      ja: '入力した内容を確かめて、もう一度お試しください。',
+    })
   })
 
   it('should say at a control that its value was not taken', () => {
-    expect(REFUSED_VALUE_MESSAGE).toBe(
-      'この値は受け付けられませんでした。入力を確かめてください。',
-    )
+    expect(REFUSED_VALUE_MESSAGE).toEqual({
+      en: 'This value was not accepted. Check what you entered.',
+      ja: 'この値は受け付けられませんでした。入力を確かめてください。',
+    })
   })
 })
 
 describe('unsentMessageOf', () => {
   it('should ask for patience when there were too many requests', () => {
-    expect(unsentMessageOf(TOO_MANY_REQUESTS)).toBe(
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-    )
+    expect(unsentMessageOf(TOO_MANY_REQUESTS)).toEqual({
+      en: 'There are too many requests. Wait a while and try again.',
+      ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+    })
   })
 
   it('should say that nothing was sent, and to look at the connection', () => {
-    expect(unsentMessageOf(FAILED)).toBe(
-      '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
-    )
+    expect(unsentMessageOf(FAILED)).toEqual({
+      en: 'It could not be sent. Check your connection and try again.',
+      ja: '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+    })
   })
 })
 

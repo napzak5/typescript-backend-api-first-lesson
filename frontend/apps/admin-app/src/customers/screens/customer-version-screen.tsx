@@ -7,8 +7,10 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
@@ -62,7 +64,9 @@ const ComparedVersion = ({ salon, version, changer }: ComparedVersionProps) => {
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <>
         <UnreadNotice
-          message={unreadMessageOf('前の版', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('前の版'), reason),
+          )}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />
@@ -144,7 +148,9 @@ const VersionPart = ({
           .with({ type: 'forbidden' }, () => <p>{KEPT_BY_OTHERS}</p>)
           .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
             <UnreadNotice
-              message={unreadMessageOf('版', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('版'), reason),
+              )}
               onRetry={() => void read.refetch()}
               pending={read.isFetching}
             />

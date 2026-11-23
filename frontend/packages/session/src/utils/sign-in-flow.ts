@@ -1,6 +1,11 @@
 import { CHECK_THE_VALUES_MESSAGE } from '@beauty-salon-frontend/answers'
 import { EMAIL_MALFORMED, emailError } from '@beauty-salon-frontend/fields'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  type FormRead,
+  inJapanese,
+  inJapaneseIfAny,
+  textOf,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { SignInOutcome } from '../api/sign-in'
 import type { SignInFormErrors } from '../components/sign-in-form/sign-in-form'
@@ -43,7 +48,7 @@ const readCredentials = (
   const email = textOf(values, 'email').trim()
   const password = textOf(values, 'password')
   const errors: SignInFormErrors = {
-    email: emailError(email),
+    email: inJapaneseIfAny(emailError(email)),
     password: password === '' ? 'パスワードを入力してください。' : undefined,
   }
 
@@ -100,7 +105,7 @@ export const readAttempt = (
 
 /** What to say at a control whose value the API does not take. */
 const messageOfField: Record<keyof SignInFormErrors, string> = {
-  email: EMAIL_MALFORMED,
+  email: inJapanese(EMAIL_MALFORMED),
   password: 'パスワードを確かめて、入力し直してください。',
   twoFactorCode: '認証コードを確かめて、入力し直してください。',
 }
@@ -158,7 +163,9 @@ export const afterAttempt = (
       return ofFirstStep || errors.twoFactorCode === undefined
         ? {
             step: { type: 'credentials' },
-            message: ofFirstStep ? undefined : CHECK_THE_VALUES_MESSAGE,
+            message: inJapaneseIfAny(
+              ofFirstStep ? undefined : CHECK_THE_VALUES_MESSAGE,
+            ),
             errors,
           }
         : { step: state.step, message: undefined, errors }

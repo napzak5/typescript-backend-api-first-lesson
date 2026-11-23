@@ -8,6 +8,8 @@ import {
   ModelsCustomerGenderType,
   ModelsServiceCategoryType,
 } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { fieldMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { match } from 'ts-pattern'
 import { UNLISTED_MESSAGE } from './choices'
 import { isDay } from './days'
@@ -42,8 +44,7 @@ export const PREFERRED_SERVICES = 'preferences.preferredServices'
 /** The name of the control of what else a customer wants a salon to know: the property inside `preferences`. */
 export const PREFERENCE_NOTES = 'preferences.notes'
 
-const BIRTH_DATE_OUT_OF_RANGE =
-  '生年月日は、1900 年 1 月 1 日から今日までの日付を入力してください。'
+const BIRTH_DATE_OUT_OF_RANGE: LocalizedText = fieldMessages.birthDateOutOfRange
 
 /**
  * What is wrong with a day of birth, which may be left empty (`null`):
@@ -53,7 +54,7 @@ const BIRTH_DATE_OUT_OF_RANGE =
 export const birthDateError = (
   birthDate: string | null,
   today: string,
-): string | undefined =>
+): LocalizedText | undefined =>
   birthDate === null || (isDay(birthDate) && birthDate <= today)
     ? undefined
     : BIRTH_DATE_OUT_OF_RANGE
@@ -121,7 +122,7 @@ export const customerControlOf = (field: string): string =>
 export const customerRefusalOf = (
   control: string,
   rule: string,
-): string | undefined => {
+): LocalizedText | undefined => {
   const most = CUSTOMER_LENGTHS[control]
 
   return match(control)

@@ -21,9 +21,11 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   useInfiniteQuery,
@@ -172,7 +174,9 @@ const MovementHistory = ({
           ))
           .with({ type: 'unread' }, ({ reason }) => (
             <UnreadNotice
-              message={unreadMessageOf('在庫の移動', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('在庫の移動'), reason),
+              )}
               onRetry={() => void read.refetch()}
               pending={read.isFetching}
             />
@@ -245,7 +249,9 @@ const MovementsPart = ({ salon, inventoryId }: MovementsPartProps) => {
           ))
           .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
             <UnreadNotice
-              message={unreadMessageOf('スタッフ', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('スタッフ'), reason),
+              )}
               onRetry={() => void staff.refetch()}
               pending={staff.isFetching}
             />

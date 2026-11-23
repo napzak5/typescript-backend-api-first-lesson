@@ -3,10 +3,12 @@ import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   PeriodSwitch,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -94,7 +96,9 @@ const DayPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 ))
                 .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                   <UnreadNotice
-                    message={unreadMessageOf('売上', reason)}
+                    message={inJapanese(
+                      unreadMessageOf(writtenInJapanese('売上'), reason),
+                    )}
                     onRetry={() => void read.refetch()}
                     pending={read.isFetching}
                   />

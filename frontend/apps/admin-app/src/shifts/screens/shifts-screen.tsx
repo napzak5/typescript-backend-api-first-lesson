@@ -12,10 +12,12 @@ import {
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   PeriodSwitch,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router'
@@ -142,7 +144,9 @@ const Shifts = ({ salon }: ShiftsProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('シフト', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('シフト'), reason),
+            )}
             onRetry={readAgain}
             pending={retrying}
           />
@@ -172,7 +176,9 @@ const Shifts = ({ salon }: ShiftsProps) => {
               ))
               .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                 <UnreadNotice
-                  message={unreadMessageOf('シフト', reason)}
+                  message={inJapanese(
+                    unreadMessageOf(writtenInJapanese('シフト'), reason),
+                  )}
                   onRetry={readAgain}
                   pending={retrying}
                 />

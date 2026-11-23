@@ -24,9 +24,12 @@ import {
   errorAt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   same,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { tagsIn } from '../../customers/utils/customer-ledger'
@@ -83,8 +86,14 @@ const TREATMENT_MISSING = '施術を選んでください。'
 const DATE_MISSING = '施術日を入力してください。'
 const DATE_TOO_EARLY = '施術日は、1900年1月1日以降にしてください。'
 const DATE_TOO_LATE = '施術日は、今日までにしてください。'
-const SALON_NAME_TOO_LONG = tooLongOf('サロンの名前', LONGEST_SALON_NAME)
-const PRODUCT_NAME_TOO_LONG = eachTooLongOf('商材の名前', LONGEST_PRODUCT_NAME)
+const SALON_NAME_TOO_LONG = tooLongOf(
+  writtenInJapanese('サロンの名前'),
+  LONGEST_SALON_NAME,
+)
+const PRODUCT_NAME_TOO_LONG = eachTooLongOf(
+  writtenInJapanese('商材の名前'),
+  LONGEST_PRODUCT_NAME,
+)
 const TOO_MANY_PRODUCTS = `商材は、${MOST_PRODUCTS} 件までで入力してください。`
 const treatmentFrom = (value: string): ModelsTreatmentType | undefined =>
   TREATMENTS.find((treatment) => treatment === value)
@@ -138,7 +147,9 @@ const readRow = (index: number, filled: FilledRow, today: string): RowRead => {
     ...errorAt(rowControlOf(index, 'date'), dateErrorOf(date, today)),
     ...errorAt(
       rowControlOf(index, 'salonName'),
-      tooLongError(salonName, LONGEST_SALON_NAME, SALON_NAME_TOO_LONG),
+      inJapaneseIfAny(
+        tooLongError(salonName, LONGEST_SALON_NAME, SALON_NAME_TOO_LONG),
+      ),
     ),
   ]
   if (treatment === undefined || errors.length > 0) {
@@ -154,7 +165,7 @@ const readRow = (index: number, filled: FilledRow, today: string): RowRead => {
 /** What is wrong with a list of names of products, if anything. */
 const productsErrorOf = (names: readonly string[]): string | undefined => {
   if (names.some((name) => lengthOf(name) > LONGEST_PRODUCT_NAME)) {
-    return PRODUCT_NAME_TOO_LONG
+    return inJapanese(PRODUCT_NAME_TOO_LONG)
   }
 
   return names.length > MOST_PRODUCTS ? TOO_MANY_PRODUCTS : undefined
@@ -288,7 +299,7 @@ const saidOf = ({
               ? DATE_TOO_EARLY
               : DATE_MISSING,
         )
-        .with('salonName', () => SALON_NAME_TOO_LONG)
+        .with('salonName', () => inJapanese(SALON_NAME_TOO_LONG))
         .otherwise(() => TREATMENT_MISSING),
     ]
   }
@@ -297,7 +308,9 @@ const saidOf = ({
     // A name is too long under its place in the list, the list itself is too long under its name
     return [
       products[1],
-      products[2] === undefined ? TOO_MANY_PRODUCTS : PRODUCT_NAME_TOO_LONG,
+      products[2] === undefined
+        ? TOO_MANY_PRODUCTS
+        : inJapanese(PRODUCT_NAME_TOO_LONG),
     ]
   }
 
@@ -332,8 +345,9 @@ export const afterChartWrite = (
       })
 
       return {
-        message:
+        message: inJapaneseIfAny(
           said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
@@ -342,7 +356,7 @@ export const afterChartWrite = (
       aboutTheAttempt('このアカウントでは、カルテを書けません。'),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()

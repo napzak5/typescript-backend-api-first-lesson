@@ -13,10 +13,12 @@ import type {
 import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  inJapanese,
   Link,
   LoadingIndicator,
   moreOf,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
@@ -151,7 +153,9 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('残高', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('残高'), reason),
+            )}
             onRetry={() => void balance.refetch()}
             pending={balance.isFetching}
           />
@@ -171,7 +175,9 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('期限が近いポイント', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('期限が近いポイント'), reason),
+            )}
             onRetry={() => void expiring.refetch()}
             pending={expiring.isFetching}
           />
@@ -185,7 +191,9 @@ const PointsPart = ({ salon, customer }: PointsPartProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('ポイントの履歴', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('ポイントの履歴'), reason),
+            )}
             onRetry={() => void history.refetch()}
             pending={history.isFetching}
           />

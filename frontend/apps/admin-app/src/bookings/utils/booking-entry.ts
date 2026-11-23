@@ -15,6 +15,7 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
@@ -335,7 +336,7 @@ const messageAt = ({ field, rule }: RefusedValue): string =>
       ([refused]) => refused === 'depositAmount',
       () => DEPOSIT_ERROR,
     )
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 /** What is said about a value the API refused that the form has no control for. */
 const ATTEMPT_MESSAGES: Record<string, string> = {
@@ -360,7 +361,7 @@ export const afterRefusal = (
     return hasControl(field) || message === undefined ? [] : [message]
   })
   if (atControls.length === 0 && aboutAttempt.length === 0) {
-    return aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
+    return aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
   }
 
   return {
@@ -403,7 +404,7 @@ export const afterEntry = (
       aboutTheAttempt('このアカウントでは、このサロンの予約を入れられません。'),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -428,7 +429,7 @@ export const afterNotesChange = (
       aboutTheAttempt('このアカウントでは、この予約を変えられません。'),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -465,7 +466,7 @@ export const afterRemoval = (outcome: BookingRemoval): RemovalSays =>
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -485,7 +486,7 @@ export const checkedSaysOf = (checks: readonly LineCheck[]): string => {
   const unread = indicesOf('failed')
   const taken = indicesOf('taken')
   if (indicesOf('tooManyRequests').length > 0) {
-    return TOO_MANY_REQUESTS_MESSAGE
+    return inJapanese(TOO_MANY_REQUESTS_MESSAGE)
   }
   if (unread.length > 0) {
     return `${linesNamed(unread)} の担当の空きを確かめられませんでした。通信の状態を確かめて、もう一度お試しください。`

@@ -12,6 +12,7 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
@@ -177,7 +178,7 @@ export const afterRefund = (outcome: RefundAttempt): RefundSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      ...aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      ...aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

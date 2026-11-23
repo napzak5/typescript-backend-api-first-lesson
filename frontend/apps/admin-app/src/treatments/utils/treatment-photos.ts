@@ -22,8 +22,11 @@ import {
   errorAt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { PhotoRemoval, PhotosAdding } from '../api/treatments-api'
@@ -91,7 +94,7 @@ export const photoControlOf = (
 
 const TYPE_MISSING = '写真の区分を選んでください。'
 const URL_MISSING = '写真の URL を入力してください。'
-const ANGLE_TOO_LONG = tooLongOf('撮った向き', LONGEST_ANGLE)
+const ANGLE_TOO_LONG = tooLongOf(writtenInJapanese('撮った向き'), LONGEST_ANGLE)
 const NO_CONSENT =
   'お客様の同意がない写真は、サロンの外に見せられません。お客様の同意を確かめるか、このチェックを外してください。'
 const URL_HELD =
@@ -164,7 +167,7 @@ const photoErrorsOf = (
       filled.photoUrl === ''
         ? URL_MISSING
         : webAddressError(filled.photoUrl) !== undefined
-          ? WEB_ADDRESS_ERROR
+          ? inJapanese(WEB_ADDRESS_ERROR)
           : repeated !== -1
             ? repeatedUrlOf(repeated + 1)
             : held.some(({ photoUrl }) => photoUrl === filled.photoUrl)
@@ -173,11 +176,11 @@ const photoErrorsOf = (
     ),
     ...errorAt(
       photoControlOf(index, 'thumbnailUrl'),
-      webAddressError(textOrNull(filled.thumbnailUrl)),
+      inJapaneseIfAny(webAddressError(textOrNull(filled.thumbnailUrl))),
     ),
     ...errorAt(
       photoControlOf(index, 'angle'),
-      tooLongError(angle, LONGEST_ANGLE, ANGLE_TOO_LONG),
+      inJapaneseIfAny(tooLongError(angle, LONGEST_ANGLE, ANGLE_TOO_LONG)),
     ),
     ...errorAt(
       photoControlOf(index, 'isPublic'),
@@ -246,9 +249,9 @@ const photoSaidOf = (name: string): string =>
   match(name)
     .returnType<string>()
     .with('photoType', () => TYPE_MISSING)
-    .with('angle', () => ANGLE_TOO_LONG)
+    .with('angle', () => inJapanese(ANGLE_TOO_LONG))
     .with('isPublic', () => NO_CONSENT)
-    .otherwise(() => WEB_ADDRESS_ERROR)
+    .otherwise(() => inJapanese(WEB_ADDRESS_ERROR))
 
 /**
  * What the form says after the API refused the photos, or after nothing
@@ -276,8 +279,9 @@ export const afterPhotosAdded = (
       )
 
       return {
-        message:
+        message: inJapaneseIfAny(
           said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         errors: Object.fromEntries(said.toReversed()),
       }
     })
@@ -297,7 +301,7 @@ export const afterPhotosAdded = (
       aboutTheAttempt('このアカウントでは、施術写真を足せません。'),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -341,7 +345,7 @@ export const afterPhotoRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

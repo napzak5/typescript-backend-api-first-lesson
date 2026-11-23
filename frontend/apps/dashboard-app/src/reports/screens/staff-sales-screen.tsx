@@ -7,9 +7,11 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
@@ -69,7 +71,9 @@ const StaffPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 ))
                 .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                   <UnreadNotice
-                    message={unreadMessageOf(TITLE, reason)}
+                    message={inJapanese(
+                      unreadMessageOf(writtenInJapanese(TITLE), reason),
+                    )}
                     onRetry={() => void read.refetch()}
                     pending={read.isFetching}
                   />

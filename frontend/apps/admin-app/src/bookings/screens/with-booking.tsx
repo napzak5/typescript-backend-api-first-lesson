@@ -15,9 +15,11 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -101,7 +103,9 @@ export const WithBooking = ({ salon, title, children }: WithBookingProps) => {
         <>
           <PageHeader title={title} description={salon.name} />
           <UnreadNotice
-            message={unreadMessageOf('予約', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('予約'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -163,7 +167,9 @@ export const WithStaffAndServices = ({
       [P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
-          message={unreadMessageOf(label, whyUnread(reads))}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese(label), whyUnread(reads)),
+          )}
           onRetry={() => {
             void staff.refetch()
             void services.refetch()

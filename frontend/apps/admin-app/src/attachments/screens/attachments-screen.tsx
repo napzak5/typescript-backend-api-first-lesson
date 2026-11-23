@@ -13,12 +13,14 @@ import {
 import {
   EmptyState,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   useInfiniteQuery,
@@ -168,7 +170,9 @@ const AttachmentsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('ファイル', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('ファイル'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

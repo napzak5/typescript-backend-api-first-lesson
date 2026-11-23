@@ -14,9 +14,11 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { skipToken, useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -124,7 +126,9 @@ export const WithTreatment = ({
         <>
           {header}
           <UnreadNotice
-            message={unreadMessageOf('施術記録', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('施術記録'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -193,7 +197,12 @@ export const WithTreatment = ({
           <>
             {header}
             <UnreadNotice
-              message={unreadMessageOf('施術記録', whyUnread(reads))}
+              message={inJapanese(
+                unreadMessageOf(
+                  writtenInJapanese('施術記録'),
+                  whyUnread(reads),
+                ),
+              )}
               onRetry={() => {
                 void booking.refetch()
                 void customer.refetch()

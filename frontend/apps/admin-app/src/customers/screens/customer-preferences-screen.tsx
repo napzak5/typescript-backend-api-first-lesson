@@ -19,11 +19,13 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -171,7 +173,9 @@ const PreferencesToChange = ({ salon, customer }: PreferencesToChangeProps) => {
       ))
       .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
         <UnreadNotice
-          message={unreadMessageOf('好み設定', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('好み設定'), reason),
+          )}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />

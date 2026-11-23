@@ -14,6 +14,8 @@ import {
   errorAt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
@@ -186,7 +188,7 @@ const refusalAt = (field: string, rule: string): string =>
     .with('quantity', () => QUANTITY_ERROR)
     .with('unitCost', () => (rule === 'too_big' ? COST_ERROR : UNIT_COST_ERROR))
     .with('reason', () => REASON_ERROR)
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 /**
  * What the form says after the API did not take it. A movement that would
@@ -207,7 +209,9 @@ export const afterMovementRecord = (
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        message: inJapaneseIfAny(
+          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
@@ -219,7 +223,7 @@ export const afterMovementRecord = (
     }))
     .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(

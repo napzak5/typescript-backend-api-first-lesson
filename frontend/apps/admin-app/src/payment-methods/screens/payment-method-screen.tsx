@@ -6,9 +6,11 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
@@ -68,7 +70,9 @@ const PaymentMethodPart = ({
       <>
         {header}
         <UnreadNotice
-          message={unreadMessageOf('支払い方法', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('支払い方法'), reason),
+          )}
           onRetry={() => void method.refetch()}
           pending={method.isFetching}
         />

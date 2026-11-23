@@ -18,11 +18,13 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   Navigation,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
@@ -215,7 +217,9 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('在庫', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('在庫'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -272,7 +276,9 @@ const StockLedger = ({ salon }: StockLedgerProps) => {
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={unreadMessageOf('商品', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('商品'), reason),
+              )}
               onRetry={() => void products.refetch()}
               pending={products.isFetching}
             />

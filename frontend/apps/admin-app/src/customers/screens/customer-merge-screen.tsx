@@ -18,9 +18,11 @@ import {
   Alert,
   ButtonLink,
   Card,
+  inJapanese,
   LoadingIndicator,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type RefObject, useLayoutEffect, useRef, useState } from 'react'
@@ -144,7 +146,9 @@ const MergeWith = ({
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={unreadMessageOf('まとめる相手', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('まとめる相手'), reason),
+        )}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />

@@ -10,7 +10,11 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import { useSession } from '@beauty-salon-frontend/session'
-import { moreOf } from '@beauty-salon-frontend/ui'
+import {
+  inJapanese,
+  moreOf,
+  writtenInJapanese,
+} from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { match } from 'ts-pattern'
 import { shareLinkEntryHrefOf, shareLinkHrefOf } from '../../navigation'
@@ -60,7 +64,9 @@ const ListedShareLinks = ({ salon, attachment }: ShareLinksOfFileProps) => {
     .with(undefined, () => ({ type: 'reading' }))
     .with({ type: 'unread' }, ({ reason }) => ({
       type: 'unread',
-      message: unreadMessageOf('共有リンク', reason),
+      message: inJapanese(
+        unreadMessageOf(writtenInJapanese('共有リンク'), reason),
+      ),
     }))
     .with({ type: 'listed' }, ({ items, total, rest }) => ({
       type: 'listed',

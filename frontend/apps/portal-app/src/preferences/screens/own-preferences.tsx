@@ -6,8 +6,10 @@ import {
 import {
   ButtonLink,
   Card,
+  inJapanese,
   LoadingIndicator,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
@@ -52,7 +54,9 @@ export const OwnPreferences = () => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('好みの設定', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('好みの設定'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

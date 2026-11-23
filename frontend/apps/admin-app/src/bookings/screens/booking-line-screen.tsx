@@ -10,9 +10,11 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -159,7 +161,9 @@ const LineOfBooking = ({ salon, booking }: LineOfBookingProps) => {
     .with({ type: 'forbidden' }, () => <OtherSalonNotice />)
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={unreadMessageOf('施術明細', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('施術明細'), reason),
+        )}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />

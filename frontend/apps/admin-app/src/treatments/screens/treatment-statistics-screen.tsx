@@ -16,9 +16,11 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -97,7 +99,9 @@ const StatisticsPart = ({ salon, services }: StatisticsPartProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('施術の統計', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('施術の統計'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

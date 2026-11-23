@@ -12,10 +12,12 @@ import {
   Alert,
   Button,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -132,7 +134,9 @@ const ReportPart = ({ salon }: { salon: ModelsSalonResponse }) => {
             ))
             .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
               <UnreadNotice
-                message={unreadMessageOf('売上レポート', reason)}
+                message={inJapanese(
+                  unreadMessageOf(writtenInJapanese('売上レポート'), reason),
+                )}
                 onRetry={() => void read.refetch()}
                 pending={read.isFetching}
               />

@@ -9,9 +9,11 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
@@ -71,7 +73,9 @@ const HistoryPart = ({
           ))
           .with({ type: 'unread' }, ({ reason }) => (
             <UnreadNotice
-              message={unreadMessageOf('変更履歴', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('変更履歴'), reason),
+              )}
               onRetry={() => void read.refetch()}
               pending={read.isFetching}
             />

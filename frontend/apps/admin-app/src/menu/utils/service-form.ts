@@ -25,9 +25,12 @@ import {
   errorAt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   same,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { tagsIn } from '../../customers/utils/customer-ledger'
@@ -61,8 +64,14 @@ const LONGEST_DURATION = 1440
 export const FEWEST_PACKAGED = 2
 export const MOST_PACKAGED = 20
 
-const NAME_ERROR = neededWithin('サービスの名前', LONGEST_NAME)
-const SHORT_DESCRIPTION_ERROR = tooLongOf('短い紹介', LONGEST_SHORT_DESCRIPTION)
+const NAME_ERROR = neededWithin(
+  writtenInJapanese('サービスの名前'),
+  LONGEST_NAME,
+)
+const SHORT_DESCRIPTION_ERROR = tooLongOf(
+  writtenInJapanese('短い紹介'),
+  LONGEST_SHORT_DESCRIPTION,
+)
 const DURATION_ERROR = `所要時間は、1 から ${LONGEST_DURATION} までの整数（分）で入力してください。`
 const PRICE_ERROR = '料金は、0 以上の整数で入力してください。'
 const DISCOUNT_ERROR =
@@ -79,7 +88,10 @@ const IMAGES_ERROR = notWebAddress(null)
 const PACKAGED_COUNT_ERROR = `パッケージにするときは、構成サービスを ${FEWEST_PACKAGED} 件から ${MOST_PACKAGED} 件まで選んでください。`
 const PACKAGED_MISSING = 'サービスを選んでください。'
 const PACKAGED_TWICE = '同じサービスは、1 回だけ入れられます。'
-const OPTION_NAME_ERROR = neededWithin('オプションの名前', LONGEST_NAME)
+const OPTION_NAME_ERROR = neededWithin(
+  writtenInJapanese('オプションの名前'),
+  LONGEST_NAME,
+)
 const OPTION_TYPE_ERROR = 'オプションの種類を選んでください。'
 const OPTION_TIME_ERROR = '追加の時間は、0 以上の整数（分）で入力してください。'
 const OPTION_PRICE_ERROR = '追加の料金は、0 以上の整数で入力してください。'
@@ -166,7 +178,7 @@ const readOption = (values: FormData, index: number): OptionRead => {
   const errors = [
     ...errorAt(
       optionControlOf(index, 'name'),
-      neededError(name, LONGEST_NAME, OPTION_NAME_ERROR),
+      inJapaneseIfAny(neededError(name, LONGEST_NAME, OPTION_NAME_ERROR)),
     ),
     ...errorAt(
       optionControlOf(index, 'optionType'),
@@ -284,13 +296,18 @@ const readWhole = (values: FormData): FormRead<ModelsServiceCreateRequest> => {
   const packaged = isPackage ? packagedRowsIn(values, 0) : []
   const options = optionRowsIn(values, 0)
   const errors: Record<string, string> = Object.fromEntries([
-    ...errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
+    ...errorAt(
+      'name',
+      inJapaneseIfAny(neededError(name, LONGEST_NAME, NAME_ERROR)),
+    ),
     ...errorAt(
       'shortDescription',
-      tooLongError(
-        shortDescription,
-        LONGEST_SHORT_DESCRIPTION,
-        SHORT_DESCRIPTION_ERROR,
+      inJapaneseIfAny(
+        tooLongError(
+          shortDescription,
+          LONGEST_SHORT_DESCRIPTION,
+          SHORT_DESCRIPTION_ERROR,
+        ),
       ),
     ),
     ...errorAt('duration', duration === undefined ? DURATION_ERROR : undefined),
@@ -320,8 +337,8 @@ const readWhole = (values: FormData): FormRead<ModelsServiceCreateRequest> => {
       'maxBookingsPerDay',
       maxBookingsPerDay === undefined ? MOST_BOOKINGS_ERROR : undefined,
     ),
-    ...errorAt('imageUrl', webAddressError(imageUrl)),
-    ...errorAt('imageUrls', imagesError),
+    ...errorAt('imageUrl', inJapaneseIfAny(webAddressError(imageUrl))),
+    ...errorAt('imageUrls', inJapaneseIfAny(imagesError)),
     ...packagedErrorsOf(isPackage, packaged),
     ...options.flatMap((option) =>
       option.type === 'invalid' ? option.errors : [],
@@ -496,8 +513,8 @@ export const readServiceChange = (
 
 /** The controls the form has outside its rows, by the names of the request */
 const CONTROLS: Readonly<Record<string, string>> = {
-  name: NAME_ERROR,
-  shortDescription: SHORT_DESCRIPTION_ERROR,
+  name: inJapanese(NAME_ERROR),
+  shortDescription: inJapanese(SHORT_DESCRIPTION_ERROR),
   duration: DURATION_ERROR,
   price: PRICE_ERROR,
   discountPrice: DISCOUNT_ABOVE_PRICE,
@@ -506,13 +523,13 @@ const CONTROLS: Readonly<Record<string, string>> = {
   serviceStatus: STATUS_ERROR,
   availability: AVAILABILITY_ERROR,
   maxBookingsPerDay: MOST_BOOKINGS_ERROR,
-  imageUrl: WEB_ADDRESS_ERROR,
+  imageUrl: inJapanese(WEB_ADDRESS_ERROR),
   categoryId: CATEGORY_GONE,
   isPackage: CONTAINED,
 }
 
 const OPTION_ERRORS: Readonly<Record<string, string>> = {
-  name: OPTION_NAME_ERROR,
+  name: inJapanese(OPTION_NAME_ERROR),
   optionType: OPTION_TYPE_ERROR,
   additionalTime: OPTION_TIME_ERROR,
   additionalPrice: OPTION_PRICE_ERROR,
@@ -539,7 +556,7 @@ const saidOf = ({
     return [field, PACKAGED_TWICE]
   }
   if (field === 'imageUrls' || field.startsWith('imageUrls.')) {
-    return ['imageUrls', IMAGES_ERROR]
+    return ['imageUrls', inJapanese(IMAGES_ERROR)]
   }
   const option = OPTION_FIELD.exec(field)?.[1]
   if (option !== undefined) {
@@ -595,15 +612,16 @@ export const afterServiceWrite = (
       })
 
       return {
-        message:
+        message: inJapaneseIfAny(
           said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
     })
     .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()
@@ -633,7 +651,7 @@ export const afterServiceRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

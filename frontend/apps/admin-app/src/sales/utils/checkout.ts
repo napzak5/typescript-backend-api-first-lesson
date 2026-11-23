@@ -12,7 +12,7 @@ import type {
   ModelsSalesDetail,
   ModelsServiceResponse,
 } from '@beauty-salon-frontend/api-client'
-import { textOf, textOrNull } from '@beauty-salon-frontend/ui'
+import { inJapanese, textOf, textOrNull } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import { GONE_SERVICE } from '../../bookings/utils/booking-format'
 
@@ -322,7 +322,7 @@ export const afterCheckout = (outcome: CheckoutAttempt): CheckoutSays =>
           }
         : {
             type: 'again',
-            message: CHECK_THE_VALUES_MESSAGE,
+            message: inJapanese(CHECK_THE_VALUES_MESSAGE),
             errors: { staffId: refusalMessageOf(atStaff) },
           }
     })
@@ -340,7 +340,7 @@ export const afterCheckout = (outcome: CheckoutAttempt): CheckoutSays =>
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({

@@ -2,7 +2,12 @@ import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
 import type { ModelsCustomerDeletionRequestCreateRequest } from '@beauty-salon-frontend/api-client'
 import { lengthOf, tooLongOf } from '@beauty-salon-frontend/fields'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  type FormRead,
+  inJapanese,
+  textOf,
+  writtenInJapanese,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type {
   ErasureAsking,
@@ -21,7 +26,7 @@ const LONGEST_REASON = 1_000
 
 const BLANK_REASON = '依頼の理由を入力してください。'
 
-const LONG_REASON = tooLongOf('依頼の理由', LONGEST_REASON)
+const LONG_REASON = tooLongOf(writtenInJapanese('依頼の理由'), LONGEST_REASON)
 
 /**
  * The reason of a new request, from the form of the dialog: kept with the
@@ -35,7 +40,7 @@ export const readErasureAsk = (
     return { type: 'invalid', errors: { reason: BLANK_REASON } }
   }
   if (lengthOf(reason) > LONGEST_REASON) {
-    return { type: 'invalid', errors: { reason: LONG_REASON } }
+    return { type: 'invalid', errors: { reason: inJapanese(LONG_REASON) } }
   }
 
   return { type: 'valid', value: { reason } }
@@ -107,7 +112,10 @@ export const afterErasureAsk = (
             type: 'again',
             message: undefined,
             errors: {
-              reason: reason.rule === 'too_big' ? LONG_REASON : BLANK_REASON,
+              reason:
+                reason.rule === 'too_big'
+                  ? inJapanese(LONG_REASON)
+                  : BLANK_REASON,
             },
           }
     })
@@ -123,7 +131,7 @@ export const afterErasureAsk = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({
@@ -155,7 +163,7 @@ export const afterErasureCancel = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
       errors: {},
     }))
     .with({ type: 'failed' }, () => ({

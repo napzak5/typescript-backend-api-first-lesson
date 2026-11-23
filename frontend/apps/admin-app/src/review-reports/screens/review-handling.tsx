@@ -13,10 +13,12 @@ import type {
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   useInfiniteQuery,
@@ -155,7 +157,9 @@ export const ReportsOfReview = ({ salon, review }: HandlingProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('通報', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('通報'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

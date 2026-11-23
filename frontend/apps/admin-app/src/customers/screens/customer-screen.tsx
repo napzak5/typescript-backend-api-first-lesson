@@ -28,10 +28,12 @@ import {
   ButtonLink,
   Card,
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   type QueryClient,
@@ -189,7 +191,9 @@ const PreferencesPart = ({ salon, customer }: PartProps) => {
         .with({ type: 'notFound' }, () => <p>{GONE}</p>)
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('好み設定', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('好み設定'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -289,7 +293,9 @@ const UsePart = ({ salon, customer }: PartProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('利用の集計', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('利用の集計'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -526,7 +532,9 @@ const ErasurePart = ({
     }))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
       type: 'unread',
-      message: unreadMessageOf('消去の依頼', reason),
+      message: inJapanese(
+        unreadMessageOf(writtenInJapanese('消去の依頼'), reason),
+      ),
       retrying: read.isFetching,
     }))
     .exhaustive()

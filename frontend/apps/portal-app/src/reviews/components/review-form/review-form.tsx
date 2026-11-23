@@ -4,6 +4,7 @@ import {
   Form,
   FormPart,
   type FormProps,
+  inJapanese,
   Note,
   RadioGroup,
   Select,
@@ -157,7 +158,7 @@ export const ReviewForm = ({
           label='タイトル'
           name={TITLE}
           autoComplete='off'
-          description={`${charactersOf(MAX_TITLE_LENGTH)}以内で書いてください。空欄のままでも、かまいません。`}
+          description={`${inJapanese(charactersOf(MAX_TITLE_LENGTH))}以内で書いてください。空欄のままでも、かまいません。`}
           defaultValue={entered.title}
           error={errors[TITLE]}
         />

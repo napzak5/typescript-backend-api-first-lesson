@@ -14,8 +14,11 @@ import { isDay, tooLongError, tooLongOf } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import {
@@ -43,7 +46,7 @@ export const CLOSED = 'closed'
 export const LONGEST_HOLIDAY_NAME = 100
 
 const HOLIDAY_NAME_TOO_LONG = tooLongOf(
-  '祝日・休業日の名前',
+  writtenInJapanese('祝日・休業日の名前'),
   LONGEST_HOLIDAY_NAME,
 )
 
@@ -367,10 +370,12 @@ export const readHoursChange = (
         ...(opens ? timeEntriesOf(times, nameOf) : []),
         [
           nameOf('holidayName'),
-          tooLongError(
-            holidayName,
-            LONGEST_HOLIDAY_NAME,
-            HOLIDAY_NAME_TOO_LONG,
+          inJapaneseIfAny(
+            tooLongError(
+              holidayName,
+              LONGEST_HOLIDAY_NAME,
+              HOLIDAY_NAME_TOO_LONG,
+            ),
           ),
         ],
       ],
@@ -444,7 +449,7 @@ export const afterHoursChange = (
     .with({ type: 'changed' }, () => aboutTheAttempt(CHANGED_MEANWHILE))
     // The form sends no email address: a refusal of one is a refusal of the form
     .with({ type: P.union('invalid', 'emailTaken') }, () =>
-      aboutTheAttempt(CHECK_THE_VALUES_MESSAGE),
+      aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE)),
     )
     .with({ type: 'forbidden' }, () =>
       aboutTheAttempt(
@@ -452,7 +457,7 @@ export const afterHoursChange = (
       ),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
