@@ -6,6 +6,8 @@ import * as catalogues from './index'
 import {
   answerMessages,
   fieldMessages,
+  preferenceMessages,
+  salonScreenMessages,
   securityMessages,
   sessionMessages,
   uiMessages,
@@ -15,6 +17,16 @@ const FOUND = messagesOf(catalogues, '')
 
 const { counted, filterForm, pagedList, passwordField, rating } = uiMessages
 const { passwordRule, sessions } = securityMessages
+const { otherSalon, period } = salonScreenMessages
+const { details, timeSlots } = preferenceMessages
+
+/** A day as a heading of the screens of a salon names it */
+const FIRST_DAY = { en: 'Fri, November 21, 2025', ja: '2025年11月21日（金）' }
+const LAST_DAY = { en: 'Fri, November 20, 2026', ja: '2026年11月20日（金）' }
+
+/** What a screen shows of a salon, and who may see it */
+const INVENTORY = { en: 'inventory', ja: '在庫' }
+const OWNERS = { en: 'its owner and managers', ja: 'オーナーとマネージャー' }
 
 /** A moment as the screens of the security write it */
 const MOMENT = { en: 'November 20, 2026 at 09:05', ja: '2026年11月20日 9:05' }
@@ -205,13 +217,96 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
       ja: '2026年11月20日 9:05 にサインインした端末をサインアウトさせる',
     },
   ],
+  [
+    'salonScreenMessages.otherSalon.notice',
+    otherSalon.notice(INVENTORY, OWNERS),
+    {
+      en: 'You cannot see the inventory of this salon. Only its owner and managers can.',
+      ja: 'このサロンの在庫は、見られません。在庫を見られるのは、オーナーとマネージャーです。',
+    },
+  ],
+  [
+    'salonScreenMessages.otherSalon.toOwnSalon',
+    otherSalon.toOwnSalon(INVENTORY),
+    { en: 'Go to the inventory of your salon', ja: '自分のサロンの在庫へ' },
+  ],
+  [
+    'salonScreenMessages.period.tooLong',
+    period.tooLong(366),
+    {
+      en: 'Make the period 366 days or shorter.',
+      ja: '期間は 366 日までにしてください。',
+    },
+  ],
+  [
+    'salonScreenMessages.period.name',
+    period.name(FIRST_DAY, LAST_DAY),
+    {
+      en: 'Fri, November 21, 2025 – Fri, November 20, 2026',
+      ja: '2025年11月21日（金）〜2026年11月20日（金）',
+    },
+  ],
+  [
+    'preferenceMessages.form.communicationStyleDescription',
+    preferenceMessages.form.communicationStyleDescription(100),
+    {
+      en: 'How much you like to talk, and the like, in up to 100 characters.',
+      ja: '会話の多さなどを、100 文字以内で書いてください。',
+    },
+  ],
+  [
+    'preferenceMessages.timeSlots.start',
+    timeSlots.start(2),
+    { en: 'Start of time 2', ja: '時間帯 2 の開始' },
+  ],
+  [
+    'preferenceMessages.timeSlots.end',
+    timeSlots.end(2),
+    { en: 'End of time 2', ja: '時間帯 2 の終了' },
+  ],
+  [
+    'preferenceMessages.timeSlots.remove',
+    timeSlots.remove(2),
+    { en: 'Remove time 2', ja: '時間帯 2 を削除する' },
+  ],
+  [
+    'preferenceMessages.details.listed',
+    details.listed(['ベージュ', 'アッシュ']),
+    { en: 'ベージュ, アッシュ', ja: 'ベージュ、アッシュ' },
+  ],
+  [
+    'preferenceMessages.details.timeSlots',
+    details.timeSlots([
+      { startTime: '10:00', endTime: '12:00' },
+      { startTime: '14:00', endTime: '16:00' },
+    ]),
+    { en: '10:00–12:00, 14:00–16:00', ja: '10:00〜12:00、14:00〜16:00' },
+  ],
+  [
+    'preferenceMessages.staffOfSalon',
+    preferenceMessages.staffOfSalon('田中 美咲', 'Beauty Salon Tokyo'),
+    {
+      en: '田中 美咲 (Beauty Salon Tokyo)',
+      ja: '田中 美咲（Beauty Salon Tokyo）',
+    },
+  ],
 ]
 
 /** A name that stands inside a sentence of another catalogue: it begins as it stands there */
 const INSIDE_A_SENTENCE = /\.names\./
 
+/** The words that are the same in every language: a name of a tier, the name of a kind of file */
+const WRITTEN_ALIKE = [
+  'termMessages.membershipTier.vip',
+  'termMessages.contentType.application/pdf',
+]
+
+/** A message that is written as a sentence of each language */
+const isWrittenInEach = ([where]: [string, LocalizedText]): boolean =>
+  !INSIDE_A_SENTENCE.test(where) && !WRITTEN_ALIKE.includes(where)
+
 describe('the messages of the shared parts of the screens', () => {
-  it.each(FOUND.texts.filter(([where]) => !INSIDE_A_SENTENCE.test(where)))(
+  it.each(FOUND.texts.filter(isWrittenInEach))(
     'should be written in each language: %s',
     (_where, written) => {
       // Assert
@@ -230,6 +325,25 @@ describe('the messages of the shared parts of the screens', () => {
       expect(written.ja).toMatch(JAPANESE)
     },
   )
+
+  it.each(FOUND.texts.filter(([where]) => WRITTEN_ALIKE.includes(where)))(
+    'should be written alike in each language, in Latin letters: %s',
+    (_where, written) => {
+      // Assert
+      expect(written.ja).toBe(written.en)
+      expect(written.en).toMatch(/^[A-Z]+$/)
+    },
+  )
+
+  it('should find every word that is written alike in the catalogues', () => {
+    // Act
+    const found = FOUND.texts
+      .map(([where]) => where)
+      .filter((where) => WRITTEN_ALIKE.includes(where))
+
+    // Assert
+    expect(found.toSorted()).toEqual(WRITTEN_ALIKE.toSorted())
+  })
 
   it.each(MADE)(
     'should name the value it is made from: %s',
