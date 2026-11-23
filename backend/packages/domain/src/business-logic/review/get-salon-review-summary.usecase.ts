@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ReviewReadMapper } from '../../mappers/read/review.mapper'
 import type { ApiReviewSummaryResponse } from '../../models/review'
 import { parseSalonIdOfPath } from '../../models/salon'
@@ -27,7 +28,7 @@ export class GetSalonReviewSummaryUseCase {
       return tally
     }
     if (tally.data === null) {
-      return Result.error(DomainErrors.notFound('Salon', id.data))
+      return Result.error(DomainErrors.notFound(entityMessages.salon, id.data))
     }
 
     return ReviewReadMapper.toApiReviewSummary(tally.data)

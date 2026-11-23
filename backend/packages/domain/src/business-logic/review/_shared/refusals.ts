@@ -1,3 +1,4 @@
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { ReviewId } from '../../../models/review'
 import { type DomainError, DomainErrors } from '../../../shared'
@@ -38,7 +39,9 @@ export const toUnreachedReviewError = (
   id: ReviewId,
 ): DomainError =>
   match(unreached)
-    .with({ type: 'reviewNotFound' }, () => DomainErrors.notFound('Review', id))
+    .with({ type: 'reviewNotFound' }, () =>
+      DomainErrors.notFound(entityMessages.review, id),
+    )
     .with({ type: 'reviewerNotFound' }, { type: 'notTheAuthor' }, () =>
       DomainErrors.forbidden(),
     )
@@ -55,7 +58,9 @@ export const toUnmarkedReviewError = (
   id: ReviewId,
 ): DomainError =>
   match(unmarked)
-    .with({ type: 'reviewNotFound' }, () => DomainErrors.notFound('Review', id))
+    .with({ type: 'reviewNotFound' }, () =>
+      DomainErrors.notFound(entityMessages.review, id),
+    )
     .with({ type: 'reviewerNotFound' }, { type: 'ownReview' }, () =>
       DomainErrors.forbidden(),
     )
@@ -72,7 +77,9 @@ export const toUnreportedReviewError = (
   id: ReviewId,
 ): DomainError =>
   match(unreported)
-    .with({ type: 'reviewNotFound' }, () => DomainErrors.notFound('Review', id))
+    .with({ type: 'reviewNotFound' }, () =>
+      DomainErrors.notFound(entityMessages.review, id),
+    )
     .with(
       { type: 'reporterNotFound' },
       { type: 'ownReview' },
@@ -90,6 +97,8 @@ export const toUnrespondedReviewError = (
   id: ReviewId,
 ): DomainError =>
   match(unresponded)
-    .with({ type: 'reviewNotFound' }, () => DomainErrors.notFound('Review', id))
+    .with({ type: 'reviewNotFound' }, () =>
+      DomainErrors.notFound(entityMessages.review, id),
+    )
     .with({ type: 'otherSalon' }, () => DomainErrors.forbidden())
     .exhaustive()

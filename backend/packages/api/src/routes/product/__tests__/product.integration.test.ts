@@ -7,6 +7,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { ProductRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { asc, eq } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -2886,7 +2887,7 @@ describe('Products API', () => {
         type: 'error',
         error: {
           type: 'alreadyExists',
-          entity: 'Product',
+          entity: entityMessages.product,
           field: 'productCode',
           value: 'TRT-01',
         },

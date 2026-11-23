@@ -466,7 +466,7 @@ one by one, 401, 403, 429 and 500 through `PublicErrors`, `SessionErrors` or
   type: 'urn:beauty-salon:problem:already-exists',
   title: said(problemMessages.alreadyExists.title),
   status: 409,
-  detail: `${entity} with ${field} ${value} already exists`,
+  detail: said(problemMessages.alreadyExists.detail(entity, field, value)),
   code: '3002',
   errors: null,
 }))
@@ -498,10 +498,12 @@ message of the domain (`salonMessages.invalidSalon`), a schema writes the
 messages of its rules in both languages (`asOneString(ruleMessages.notBlank)`),
 `parseWith` has Zod say its own sentences in both, and a use case says a rule
 that a schema cannot check with a message too (`ruleMessages.aSalon`): what
-an issue says is a `LocalizedText`, and a string does not compile. An error
-of which the domain writes a text in English alone (`notFound`,
-`alreadyExists`, `conflict`) is told in English as a whole, title included,
-whatever was asked for:
+an issue says is a `LocalizedText`, and a string does not compile. A
+`notFound` and an `alreadyExists` error carry the name of what they are
+about as a message (`entityMessages.salon`), and the sentence is made here,
+in the language of the answer. An error of which the domain writes a text
+in English alone (`conflict`) is told in English as a whole, title
+included, whatever was asked for:
 no answer is in two languages. `sendProblem` names the language of the answer in
 `Content-Language` and adds `Accept-Language` to `Vary`. Nothing else of a
 problem depends on the language, and a successful response does not depend

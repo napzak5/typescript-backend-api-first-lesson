@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerVersionMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerVersionMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerVersionReadMapper } from '../../mappers/read/customer-version.mapper'
 import type { Actor } from '../../models/auth'
@@ -55,12 +58,12 @@ export class GetCustomerVersionUseCase {
         CustomerVersionReadMapper.toApiCustomerVersion(row),
       )
       .with({ type: 'customerNotFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', id.data)),
+        Result.error(DomainErrors.notFound(entityMessages.customer, id.data)),
       )
       .with({ type: 'versionNotFound' }, () =>
         Result.error(
           DomainErrors.notFound(
-            `Version ${number.data.version} of customer`,
+            entityMessages.versionOfCustomer(number.data.version),
             id.data,
           ),
         ),

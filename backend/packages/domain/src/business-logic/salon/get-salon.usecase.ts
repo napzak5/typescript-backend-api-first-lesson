@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SalonReadMapper } from '../../mappers/read/salon.mapper'
 import { type ApiSalonResponse, parseSalonId } from '../../models/salon'
 import { type DomainError, DomainErrors } from '../../shared'
@@ -18,7 +19,9 @@ export class GetSalonUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Salon', salonId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.salon, salonId.data),
+      )
     }
 
     return SalonReadMapper.toApiSalon(found.data.salon, found.data.openingHours)

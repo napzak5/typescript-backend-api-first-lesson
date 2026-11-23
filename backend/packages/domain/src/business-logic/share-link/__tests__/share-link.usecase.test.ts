@@ -2,6 +2,7 @@ import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   authMessages,
+  entityMessages,
   shareLinkMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -51,10 +52,10 @@ const rulesOf = (result: Result<unknown, DomainError>): string[] =>
 
 const forbidden = Result.error(DomainErrors.forbidden())
 const noAttachment = Result.error(
-  DomainErrors.notFound('Attachment', ATTACHMENT_ID),
+  DomainErrors.notFound(entityMessages.attachment, ATTACHMENT_ID),
 )
 const noShareLink = Result.error(
-  DomainErrors.notFound('Share link', SHARE_LINK_ID),
+  DomainErrors.notFound(entityMessages.shareLink, SHARE_LINK_ID),
 )
 const databaseDown = Result.error(
   DomainErrors.database('Connection lost', null),
@@ -941,7 +942,7 @@ describe('DeleteShareLinkUseCase', () => {
 
 /** The answer for a token that opens nothing. */
 const nothingShared = Result.error(
-  DomainErrors.notFound('Share link', 'of the token'),
+  DomainErrors.notFound(entityMessages.shareLinkOfToken, null),
 )
 const passwordRequired = Result.error(DomainErrors.passwordRequired())
 

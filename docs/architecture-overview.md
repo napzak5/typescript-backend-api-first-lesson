@@ -998,7 +998,7 @@ taken out of one) is in
 | `config` | `loadEnvFile`, `parseAppConfig` | `utility` |
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
 | `domain` | Models, schemas, mappers, use cases, repository and service interfaces, `DomainError` | `database` (types), `generated`, `utility`, and `@beauty-salon-shared/i18n` (the messages of a refused request) |
-| `infrastructure` | `connectDatabase`, `pingDatabase`, the repositories (one class per repository interface of the domain: `SalonRepository`, `BookingRepository` and so on), `Argon2PasswordHasher`, `RandomTokenIssuer`, `RandomBookingNumberIssuer`, `RandomSaleNumberIssuer`, `RandomPaymentNumberIssuer`, `TotpAuthenticator`, `SmtpMailer`, `S3FileStorage`, `createLogger` | `database`, `domain`, `utility` |
+| `infrastructure` | `connectDatabase`, `pingDatabase`, the repositories (one class per repository interface of the domain: `SalonRepository`, `BookingRepository` and so on), `Argon2PasswordHasher`, `RandomTokenIssuer`, `RandomBookingNumberIssuer`, `RandomSaleNumberIssuer`, `RandomPaymentNumberIssuer`, `TotpAuthenticator`, `SmtpMailer`, `S3FileStorage`, `createLogger` | `database`, `domain`, `utility`, and `@beauty-salon-shared/i18n` (the names of what a write found there already) |
 | `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`, and `@beauty-salon-shared/i18n` (the language of a request, the messages of the API); `database` in tests |
 | `server` (application) | Entry point and `startServer` | `api`, `config`, `domain`, `infrastructure`, `utility` |
 
@@ -2365,8 +2365,10 @@ languages, so that a missing translation does not compile. A validation
 error is told in the language asked for: its headline is a message, a schema
 writes the messages of its rules in both languages, `parseWith` has Zod say
 its own sentences in both, and a use case says a rule that a schema cannot
-check with a message too. The errors of which the domain still writes a
-text in English alone (`notFound`, `alreadyExists`, `conflict`) are told in
+check with a message too. A `notFound` and an `alreadyExists` error name
+what they are about with a message (`entityMessages`), and the API layer
+makes the sentence from it in the language asked for. The error of which
+the domain still writes a text in English alone (`conflict`) is told in
 English as a whole, whatever was asked for. `Content-Language` names the
 language of the answer. How a
 language is chosen and where a message goes is in [i18n](./i18n.md).

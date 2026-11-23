@@ -506,7 +506,11 @@ const toDomainError =
           cause: P.union(emailUniqueViolation, { cause: emailUniqueViolation }),
         },
         (violation) =>
-          DomainErrors.alreadyExists('Salon', 'email', violation.email),
+          DomainErrors.alreadyExists(
+            entityMessages.salon,
+            'email',
+            violation.email,
+          ),
       )
       .otherwise(() =>
         DomainErrors.database(message, describeDatabaseError(cause)),
@@ -658,7 +662,9 @@ export class UpdateSalonUseCase {
       return updated
     }
     if (updated.data === null) {
-      return Result.error(DomainErrors.notFound('Salon', salonId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.salon, salonId.data),
+      )
     }
 
     return SalonReadMapper.toApiSalon(
@@ -1429,14 +1435,19 @@ export type DomainError =
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
-  | { type: 'notFound'; entity: string; id: string }
-  | { type: 'alreadyExists'; entity: string; field: string; value: string }
+  | { type: 'notFound'; entity: LocalizedText; id: string | null }
+  | {
+      type: 'alreadyExists'
+      entity: LocalizedText
+      field: string
+      value: string
+    }
   | { type: 'conflict'; message: string }
   | { type: 'database'; message: string; cause: unknown }
   | { type: 'storage'; message: string; cause: unknown }
 ```
 
-`Told` (`backend/packages/domain/src/shared/told.ts`) is a text of an error: one that is written in every language (`LocalizedText`), or, until every text the domain writes is one, a string in English alone. The headline of a validation error is of this type. The `message` of each of its issues is a `LocalizedText`: a string there does not compile.
+`Told` (`backend/packages/domain/src/shared/told.ts`) is a text of an error: one that is written in every language (`LocalizedText`), or, until every text the domain writes is one, a string in English alone. The headline of a validation error is of this type. The `message` of each of its issues is a `LocalizedText`: a string there does not compile. So is the `entity` of `notFound` and of `alreadyExists`, the name of what the error is about (`entityMessages.salon`); the `id` of `notFound` is what the thing was looked for by, and null where that is not to be repeated (the token of a share link).
 
 Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.passwordRequired`, `.notFound`, `.alreadyExists`, `.conflict`, `.database` and `.storage`. Where each kind comes from:
 

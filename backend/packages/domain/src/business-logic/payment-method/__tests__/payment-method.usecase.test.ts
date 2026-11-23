@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { paymentMethodMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  paymentMethodMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -37,11 +40,15 @@ const databaseDown = Result.error(
 const forbidden = Result.error(DomainErrors.forbidden())
 const salonNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+  error: { type: 'notFound', entity: entityMessages.salon, id: SALON_ID },
 }
 const paymentMethodNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Payment method', id: PAYMENT_METHOD_ID },
+  error: {
+    type: 'notFound',
+    entity: entityMessages.paymentMethod,
+    id: PAYMENT_METHOD_ID,
+  },
 }
 const storedRowIsCorrupt = {
   type: 'error',

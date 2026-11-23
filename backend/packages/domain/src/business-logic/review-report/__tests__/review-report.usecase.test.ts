@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { reviewReportMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  reviewReportMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -281,7 +284,7 @@ describe('ReportReviewUseCase', () => {
     [
       'a review that is not there, or of a deleted salon, as not found',
       { type: 'reviewNotFound' },
-      DomainErrors.notFound('Review', REVIEW_ID),
+      DomainErrors.notFound(entityMessages.review, REVIEW_ID),
     ],
     [
       'an account whose customer was deleted as forbidden',
@@ -656,7 +659,10 @@ describe('DismissReviewReportUseCase', () => {
 
     expect(await dismiss(dependencies)).toEqual({
       type: 'error',
-      error: DomainErrors.notFound('ReviewReport', REVIEW_REPORT_ID),
+      error: DomainErrors.notFound(
+        entityMessages.reviewReport,
+        REVIEW_REPORT_ID,
+      ),
     })
   })
 

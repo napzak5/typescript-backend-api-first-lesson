@@ -1,10 +1,13 @@
-import { staffInvitationMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  staffInvitationMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import type { StaffId } from '../../../models/staff'
 import { type DomainError, DomainErrors } from '../../../shared'
 import { mailedTokenRefused } from '../../auth/_shared/mailed-token'
 
 export const invitationNotFound = (id: StaffId): DomainError =>
-  DomainErrors.notFound('Invitation of staff member', id)
+  DomainErrors.notFound(entityMessages.invitationOfStaffMember, id)
 
 export const alreadyHasAccount = (id: StaffId): DomainError =>
   DomainErrors.conflict(`Staff member ${id} already has an account`)
@@ -27,7 +30,7 @@ export const invitationRefused = (): DomainError =>
  * address: nobody else learns from it that the address has an account.
  */
 export const addressHasAccount = (email: string): DomainError =>
-  DomainErrors.alreadyExists('User', 'email', email)
+  DomainErrors.alreadyExists(entityMessages.user, 'email', email)
 
 /** Told to the account itself, which is signed in. */
 export const accountBelongsToStaff = (): DomainError =>

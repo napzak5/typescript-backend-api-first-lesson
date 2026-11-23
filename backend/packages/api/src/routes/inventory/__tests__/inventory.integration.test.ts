@@ -14,7 +14,10 @@ import {
 } from '@beauty-salon-backend/domain'
 import { InventoryRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
-import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  inventoryMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { asc, eq } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -2473,7 +2476,7 @@ describe('Inventory API', () => {
           type: 'error',
           error: {
             type: 'alreadyExists',
-            entity: 'Inventory',
+            entity: entityMessages.inventory,
             field: 'lotNumber',
             value: 'LOT-1',
           },
@@ -2482,7 +2485,7 @@ describe('Inventory API', () => {
           type: 'error',
           error: {
             type: 'alreadyExists',
-            entity: 'Inventory',
+            entity: entityMessages.inventory,
             field: 'lotNumber',
             value: 'null',
           },

@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   bookingMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -49,7 +50,7 @@ import {
 
 const forbidden = Result.error(DomainErrors.forbidden())
 const profileNotFound = Result.error(
-  DomainErrors.notFound('Customer profile of user', USER_ID),
+  DomainErrors.notFound(entityMessages.customerProfileOfUser, USER_ID),
 )
 const storedRowIsCorrupt = {
   type: 'error',
@@ -452,7 +453,7 @@ describe('GetCustomerBookingUseCase', () => {
     })
 
     expect(await result).toEqual(
-      Result.error(DomainErrors.notFound('Booking', BOOKING_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.booking, BOOKING_ID)),
     )
   })
 
@@ -813,7 +814,7 @@ describe('CancelCustomerBookingUseCase', () => {
     )
 
     expect(await result).toEqual(
-      Result.error(DomainErrors.notFound('Booking', BOOKING_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.booking, BOOKING_ID)),
     )
   })
 
@@ -992,7 +993,7 @@ describe('RescheduleCustomerBookingUseCase', () => {
     )
 
     expect(await result).toEqual(
-      Result.error(DomainErrors.notFound('Booking', BOOKING_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.booking, BOOKING_ID)),
     )
   })
 

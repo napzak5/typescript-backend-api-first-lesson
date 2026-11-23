@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  inventoryMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -479,7 +482,9 @@ describe('ListInventoryMovementsUseCase', () => {
     })
 
     expect(await list(dependencies, staff)).toEqual(
-      Result.error(DomainErrors.notFound('Inventory', INVENTORY_ID)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.inventory, INVENTORY_ID),
+      ),
     )
   })
 

@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { salonMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  salonMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { SalonReadMapper } from '../../mappers/read/salon.mapper'
 import { SalonWriteMapper } from '../../mappers/write/salon.mapper'
 import type { Actor } from '../../models/auth'
@@ -52,7 +55,9 @@ export class UpdateSalonUseCase {
       return updated
     }
     if (updated.data === null) {
-      return Result.error(DomainErrors.notFound('Salon', salonId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.salon, salonId.data),
+      )
     }
 
     return SalonReadMapper.toApiSalon(

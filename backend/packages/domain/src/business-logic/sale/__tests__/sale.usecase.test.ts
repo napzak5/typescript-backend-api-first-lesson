@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  entityMessages,
   ruleMessages,
   saleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -472,7 +473,7 @@ describe('GetSaleUseCase', () => {
 
   it('reports a sale the actor does not reach as one that does not exist', async () => {
     expect(await get(saleDependencies(finding(null)))).toEqual(
-      Result.error(DomainErrors.notFound('Sale', SALE_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.sale, SALE_ID)),
     )
   })
 
@@ -485,7 +486,9 @@ describe('GetSaleUseCase', () => {
       SALE_ID,
       everySalon,
     )
-    expect(result).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+    expect(result).toEqual(
+      Result.error(DomainErrors.notFound(entityMessages.sale, SALE_ID)),
+    )
   })
 
   it('reports a failure of the database', async () => {
@@ -994,7 +997,7 @@ describe('UpdateSaleUseCase', () => {
   it('reports a sale the actor does not reach as one that does not exist', async () => {
     expect(
       await update(saleDependencies(updating({ type: 'notFound' }))),
-    ).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+    ).toEqual(Result.error(DomainErrors.notFound(entityMessages.sale, SALE_ID)))
   })
 
   it('looks the sale up, and names the one that is not there, by the ID in lower case', async () => {
@@ -1011,7 +1014,9 @@ describe('UpdateSaleUseCase', () => {
       everySalon,
       note,
     )
-    expect(result).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+    expect(result).toEqual(
+      Result.error(DomainErrors.notFound(entityMessages.sale, SALE_ID)),
+    )
   })
 
   it('reports a void sale as a conflict', async () => {
@@ -1281,7 +1286,7 @@ describe('VoidSaleUseCase', () => {
   it('reports a sale the actor does not reach as one that does not exist', async () => {
     expect(
       await voidSale(saleDependencies(voiding({ type: 'notFound' }))),
-    ).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+    ).toEqual(Result.error(DomainErrors.notFound(entityMessages.sale, SALE_ID)))
   })
 
   it('looks the sale up, and names the one that is not there, by the ID in lower case', async () => {
@@ -1298,7 +1303,9 @@ describe('VoidSaleUseCase', () => {
       everySalon,
       reason,
     )
-    expect(result).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+    expect(result).toEqual(
+      Result.error(DomainErrors.notFound(entityMessages.sale, SALE_ID)),
+    )
   })
 
   it('reports a sale that is void already as a conflict', async () => {

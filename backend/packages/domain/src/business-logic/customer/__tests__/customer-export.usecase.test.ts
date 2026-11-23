@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -625,7 +628,7 @@ describe('ExportCustomerDataUseCase', () => {
     const result = await exportOf(holding(null))
 
     expect(result).toEqual(
-      Result.error(DomainErrors.notFound('Customer', CUSTOMER_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID)),
     )
   })
 

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { Actor } from '../../models/auth'
 import { parseShareLinkId } from '../../models/share-link'
 import { type DomainError, DomainErrors } from '../../shared'
@@ -33,6 +34,8 @@ export class DeleteShareLinkUseCase {
 
     return removed.data
       ? Result.success(null)
-      : Result.error(DomainErrors.notFound('Share link', shareLinkId.data))
+      : Result.error(
+          DomainErrors.notFound(entityMessages.shareLink, shareLinkId.data),
+        )
   }
 }

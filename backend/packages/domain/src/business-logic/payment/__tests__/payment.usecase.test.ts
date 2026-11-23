@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  paymentMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -279,7 +282,7 @@ describe('RecordPaymentUseCase', () => {
   it('reports a sale the actor does not reach as one that does not exist', async () => {
     expect(
       await record(paymentDependencies(recording({ type: 'notFound' }))),
-    ).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+    ).toEqual(Result.error(DomainErrors.notFound(entityMessages.sale, SALE_ID)))
   })
 
   it('names the sale that is not there by the ID in lower case', async () => {
@@ -289,7 +292,7 @@ describe('RecordPaymentUseCase', () => {
         actors.admin,
         SALE_ID.toUpperCase(),
       ),
-    ).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+    ).toEqual(Result.error(DomainErrors.notFound(entityMessages.sale, SALE_ID)))
   })
 
   it.each<[string, PaymentRecording, string]>([
@@ -612,7 +615,9 @@ describe('RefundPaymentUseCase', () => {
   it('reports a payment the actor does not reach as one that does not exist', async () => {
     expect(
       await refund(paymentDependencies(refunding({ type: 'notFound' }))),
-    ).toEqual(Result.error(DomainErrors.notFound('Payment', PAYMENT_ID)))
+    ).toEqual(
+      Result.error(DomainErrors.notFound(entityMessages.payment, PAYMENT_ID)),
+    )
   })
 
   it('looks the payment up, and names the one that is not there, by the ID in lower case', async () => {
@@ -630,7 +635,7 @@ describe('RefundPaymentUseCase', () => {
       paymentRefundRequest(),
     )
     expect(result).toEqual(
-      Result.error(DomainErrors.notFound('Payment', PAYMENT_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.payment, PAYMENT_ID)),
     )
   })
 

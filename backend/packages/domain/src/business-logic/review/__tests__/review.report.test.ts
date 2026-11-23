@@ -1,11 +1,16 @@
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { CUSTOMER_ID, USER_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { OTHER_SALON_ID, SALON_ID } from '../../../__tests__/fixtures/fixtures'
+import { REVIEW_ID } from '../../../__tests__/fixtures/review-fixtures'
 import { userIdSchema } from '../../../models/auth'
 import { customerIdSchema } from '../../../models/customer'
+import { reviewIdSchema } from '../../../models/review'
 import { salonIdSchema } from '../../../models/salon'
+import { DomainErrors } from '../../../shared'
 import { planReportDismissal } from '../../review-report'
 import { planReviewReport, type ReportedReview, type ReviewReporter } from '..'
+import { toUnreportedReviewError } from '../_shared/refusals'
 
 const OTHER_CUSTOMER_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0c05'
 
@@ -97,6 +102,37 @@ describe('planReviewReport', () => {
       ).toEqual({ type: 'reporterNotFound' })
     }
   })
+})
+
+describe('toUnreportedReviewError', () => {
+  it('should answer a review that is not there as a review that was not found, by its ID', () => {
+    // Arrange
+    const id = reviewIdSchema.parse(REVIEW_ID)
+
+    // Act
+    const error = toUnreportedReviewError({ type: 'reviewNotFound' }, id)
+
+    // Assert
+    expect(error).toEqual(DomainErrors.notFound(entityMessages.review, id))
+  })
+
+  it.each<['reporterNotFound' | 'ownReview' | 'otherSalon']>([
+    ['reporterNotFound'],
+    ['ownReview'],
+    ['otherSalon'],
+  ])(
+    'should refuse a report that is %s without saying whether the review is there',
+    (type) => {
+      // Arrange
+      const id = reviewIdSchema.parse(REVIEW_ID)
+
+      // Act
+      const error = toUnreportedReviewError({ type }, id)
+
+      // Assert
+      expect(error).toEqual(DomainErrors.forbidden())
+    },
+  )
 })
 
 describe('planReportDismissal', () => {

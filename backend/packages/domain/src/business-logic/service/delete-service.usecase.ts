@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import { parseSalonIdOfPath } from '../../models/salon'
@@ -51,7 +52,9 @@ export class DeleteServiceUseCase {
       .returnType<Result<ServiceId, DomainError>>()
       .with({ type: 'deleted' }, () => serviceId)
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Service', serviceId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.service, serviceId.data),
+        ),
       )
       .with({ type: 'containedInPackage' }, () =>
         Result.error(

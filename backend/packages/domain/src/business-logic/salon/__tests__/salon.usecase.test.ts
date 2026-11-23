@@ -1,6 +1,9 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
-import { salonMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  salonMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -84,7 +87,7 @@ describe('CreateSalonUseCase', () => {
 
   it('passes on the error when the email is already taken', async () => {
     const taken = DomainErrors.alreadyExists(
-      'Salon',
+      entityMessages.salon,
       'email',
       'aoyama@example.com',
     )
@@ -157,7 +160,7 @@ describe('GetSalonUseCase', () => {
 
     expect(result).toEqual({
       type: 'error',
-      error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+      error: { type: 'notFound', entity: entityMessages.salon, id: SALON_ID },
     })
   })
 
@@ -417,13 +420,13 @@ describe('UpdateSalonUseCase', () => {
 
     expect(result).toEqual({
       type: 'error',
-      error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+      error: { type: 'notFound', entity: entityMessages.salon, id: SALON_ID },
     })
   })
 
   it('passes on the error when the new email is already taken', async () => {
     const taken = DomainErrors.alreadyExists(
-      'Salon',
+      entityMessages.salon,
       'email',
       'other@example.com',
     )
@@ -480,7 +483,7 @@ describe('DeleteSalonUseCase', () => {
 
     expect(result).toEqual({
       type: 'error',
-      error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+      error: { type: 'notFound', entity: entityMessages.salon, id: SALON_ID },
     })
   })
 

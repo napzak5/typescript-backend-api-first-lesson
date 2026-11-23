@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { pointMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  pointMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { PointReadMapper } from '../../mappers/read/point.mapper'
 import { PointWriteMapper } from '../../mappers/write/point.mapper'
 import type { Actor } from '../../models/auth'
@@ -60,7 +63,9 @@ export class GetExpiringPointsUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Customer', id.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.customer, id.data),
+      )
     }
 
     return PointReadMapper.toApiExpiringPoints(

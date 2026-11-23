@@ -73,14 +73,14 @@ export type Result<T, E> =
 
 // Domain error types (backend/packages/domain/src/shared/errors.ts)
 // Told: a text in every language, or, until every text of the domain is one, in English alone.
-// What an issue says (ValidationIssue.message) is in every language
+// What an issue says (ValidationIssue.message) and what an error is about (entity) are in every language
 export type DomainError =
   | { type: 'validation'; message: Told; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
-  | { type: 'notFound'; entity: string; id: string }
-  | { type: 'alreadyExists'; entity: string; field: string; value: string }
+  | { type: 'notFound'; entity: LocalizedText; id: string | null }
+  | { type: 'alreadyExists'; entity: LocalizedText; field: string; value: string }
   | { type: 'conflict'; message: string }
   | { type: 'database'; message: string; cause: unknown }
   | { type: 'storage'; message: string; cause: unknown }
@@ -242,7 +242,10 @@ domain (`messages/api/salon.ts`; `rules.ts` for the rules that domains
 share). A schema gives one to Zod as one string (`asOneString`): a sentence
 written as a string in a schema fails a test. A use case puts one into the
 issue as it is (`message: ruleMessages.aSalon`): a string there does not
-compile. Read [docs/i18n.md](docs/i18n.md) before
+compile. What was not found, or is there already, is named with a message
+of `entities.ts` (`DomainErrors.notFound(entityMessages.salon, id)`), and
+the API layer makes the sentence in the language asked for: a name written
+as a string does not compile. Read [docs/i18n.md](docs/i18n.md) before
 adding one: it also says which texts are still written in English alone.
 
 ### Namespace Convention

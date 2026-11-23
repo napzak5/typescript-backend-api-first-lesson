@@ -1,4 +1,4 @@
-import { text } from '../../languages/localized-text'
+import { type LocalizedText, text } from '../../languages/localized-text'
 
 /**
  * What the API says of a problem whatever the request was: the title of
@@ -87,12 +87,36 @@ export const problemMessages = {
       en: 'Resource not found',
       ja: 'リソースが見つかりません',
     }),
+    /**
+     * `entity` is what was looked for, and `id` the ID it was looked for
+     * by; null when what it was looked for by is not to be repeated.
+     */
+    detail: (entity: LocalizedText, id: string | null) =>
+      id === null
+        ? text({
+            en: `${entity.en} was not found`,
+            ja: `${entity.ja}が見つかりません`,
+          })
+        : text({
+            en: `${entity.en} ${id} was not found`,
+            ja: `${entity.ja}が見つかりません（ID: ${id}）`,
+          }),
   },
   alreadyExists: {
     title: text({
       en: 'Resource already exists',
       ja: 'リソースがすでにあります',
     }),
+    /**
+     * `entity` is what there is already with this `value` of its `field`.
+     * The value stands between spaces in every language: a screen that
+     * tells which of the values it sent is taken looks for it there.
+     */
+    detail: (entity: LocalizedText, field: string, value: string) =>
+      text({
+        en: `${entity.en} with ${field} ${value} already exists`,
+        ja: `${field} が ${value} の${entity.ja}は、すでにあります`,
+      }),
   },
   conflict: {
     title: text({

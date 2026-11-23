@@ -16,6 +16,7 @@ import {
   type SalonWithOpeningHours,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import {
   and,
   arrayContains,
@@ -60,7 +61,11 @@ const toDomainError =
           cause: P.union(emailUniqueViolation, { cause: emailUniqueViolation }),
         },
         (violation) =>
-          DomainErrors.alreadyExists('Salon', 'email', violation.email),
+          DomainErrors.alreadyExists(
+            entityMessages.salon,
+            'email',
+            violation.email,
+          ),
       )
       .otherwise(() =>
         DomainErrors.database(message, describeDatabaseError(cause)),

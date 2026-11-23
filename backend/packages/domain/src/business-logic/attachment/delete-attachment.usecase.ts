@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { parseAttachmentId } from '../../models/attachment'
 import type { Actor } from '../../models/auth'
 import { type DomainError, DomainErrors } from '../../shared'
@@ -29,7 +30,7 @@ export class DeleteAttachmentUseCase {
       return attachmentId
     }
     const gone = Result.error(
-      DomainErrors.notFound('Attachment', attachmentId.data),
+      DomainErrors.notFound(entityMessages.attachment, attachmentId.data),
     )
 
     const { attachmentRepository, fileStorage } = this.dependencies

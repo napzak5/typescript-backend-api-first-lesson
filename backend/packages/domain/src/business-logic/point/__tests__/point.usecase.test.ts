@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  entityMessages,
   pointMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -157,7 +158,7 @@ describe('GetPointBalanceUseCase', () => {
     })
 
     expect(await get(dependencies)).toEqual(
-      Result.error(DomainErrors.notFound('Customer', CUSTOMER_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID)),
     )
   })
 
@@ -348,7 +349,7 @@ describe('ListPointTransactionsUseCase', () => {
     )
 
     expect(await list(dependencies)).toEqual(
-      Result.error(DomainErrors.notFound('Customer', CUSTOMER_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID)),
     )
   })
 
@@ -781,7 +782,7 @@ describe('GetExpiringPointsUseCase', () => {
     const dependencies = pointDependencies(finding(null))
 
     expect(await get(dependencies)).toEqual(
-      Result.error(DomainErrors.notFound('Customer', CUSTOMER_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID)),
     )
   })
 

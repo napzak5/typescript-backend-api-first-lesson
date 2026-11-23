@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerAllergyMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerAllergyMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerAllergyReadMapper } from '../../mappers/read/customer-allergy.mapper'
 import { CustomerAllergyWriteMapper } from '../../mappers/write/customer-allergy.mapper'
@@ -68,11 +71,16 @@ export class UpdateCustomerAllergyUseCase {
         CustomerAllergyReadMapper.toApiCustomerAllergy(allergy),
       )
       .with({ type: 'customerNotFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', ids.data.customerId)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.customer, ids.data.customerId),
+        ),
       )
       .with({ type: 'allergyNotFound' }, () =>
         Result.error(
-          DomainErrors.notFound('CustomerAllergy', ids.data.allergyId),
+          DomainErrors.notFound(
+            entityMessages.customerAllergy,
+            ids.data.allergyId,
+          ),
         ),
       )
       .with({ type: 'allergenExists' }, () =>

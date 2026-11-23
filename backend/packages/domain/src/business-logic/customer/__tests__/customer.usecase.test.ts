@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   customerMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -48,16 +49,24 @@ const databaseDown = Result.error(
 )
 const forbidden = Result.error(DomainErrors.forbidden())
 const customerNotFound = (id: string) =>
-  Result.error(DomainErrors.notFound('Customer', id))
+  Result.error(DomainErrors.notFound(entityMessages.customer, id))
 const storedRowIsCorrupt = {
   type: 'error',
   error: expect.objectContaining({ type: 'database' }),
 }
 const emailTaken = Result.error(
-  DomainErrors.alreadyExists('Customer', 'email', 'hanako.yamada@example.com'),
+  DomainErrors.alreadyExists(
+    entityMessages.customer,
+    'email',
+    'hanako.yamada@example.com',
+  ),
 )
 const referralCodeTaken = Result.error(
-  DomainErrors.alreadyExists('Customer', 'referralCode', 'HANAKO2026'),
+  DomainErrors.alreadyExists(
+    entityMessages.customer,
+    'referralCode',
+    'HANAKO2026',
+  ),
 )
 
 /** A row whose update time cannot be read: it cannot be turned into a response. */

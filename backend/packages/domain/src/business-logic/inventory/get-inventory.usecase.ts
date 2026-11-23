@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { InventoryReadMapper } from '../../mappers/read/inventory.mapper'
 import type { Actor } from '../../models/auth'
 import {
@@ -38,7 +39,9 @@ export class GetInventoryUseCase {
     }
 
     return found.data === null
-      ? Result.error(DomainErrors.notFound('Inventory', inventoryId.data))
+      ? Result.error(
+          DomainErrors.notFound(entityMessages.inventory, inventoryId.data),
+        )
       : InventoryReadMapper.toApiInventory(found.data)
   }
 }

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { StaffProfileReadMapper } from '../../mappers/read/staff-profile.mapper'
 import { parseStaffId } from '../../models/staff'
 import type { ApiStaffProfileResponse } from '../../models/staff-profile'
@@ -28,7 +29,9 @@ export class GetStaffProfileUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Staff member', staffId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.staffMember, staffId.data),
+      )
     }
 
     return Result.success(StaffProfileReadMapper.toApiStaffProfile(found.data))

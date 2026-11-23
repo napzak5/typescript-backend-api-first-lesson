@@ -2,6 +2,7 @@ import { Result } from '@beauty-salon-backend/utility'
 import {
   customerDeletionRequestMessages,
   customerMessages,
+  entityMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -326,7 +327,7 @@ describe('RequestCustomerDeletionUseCase', () => {
     })
 
     expect(await take(dependencies)).toEqual(
-      Result.error(DomainErrors.notFound('Customer', CUSTOMER_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID)),
     )
   })
 
@@ -441,12 +442,15 @@ describe('GetCustomerDeletionRequestUseCase', () => {
     [
       'a customer who is not there',
       'customerNotFound',
-      DomainErrors.notFound('Customer', CUSTOMER_ID),
+      DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID),
     ],
     [
       'a customer without a request',
       'noRequest',
-      DomainErrors.notFound('Deletion request of customer', CUSTOMER_ID),
+      DomainErrors.notFound(
+        entityMessages.deletionRequestOfCustomer,
+        CUSTOMER_ID,
+      ),
     ],
   ])('answers %s as not found', async (_, type, error) => {
     const dependencies = customerDeletionRequestDependencies({
@@ -513,13 +517,13 @@ describe('CancelCustomerDeletionRequestUseCase', () => {
     [
       'a customer who is not there',
       'customerNotFound',
-      DomainErrors.notFound('Customer', CUSTOMER_ID),
+      DomainErrors.notFound(entityMessages.customer, CUSTOMER_ID),
     ],
     [
       'a customer without a pending request',
       'noPendingRequest',
       DomainErrors.notFound(
-        'Pending deletion request of customer',
+        entityMessages.pendingDeletionRequestOfCustomer,
         CUSTOMER_ID,
       ),
     ],

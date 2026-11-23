@@ -1,5 +1,6 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  entityMessages,
   ruleMessages,
   staffMessages,
   staffProfileMessages,
@@ -357,7 +358,11 @@ describe('GetStaffProfileUseCase', () => {
 
     expect(await get(dependencies)).toEqual({
       type: 'error',
-      error: { type: 'notFound', entity: 'Staff member', id: STAFF_MEMBER_ID },
+      error: {
+        type: 'notFound',
+        entity: entityMessages.staffMember,
+        id: STAFF_MEMBER_ID,
+      },
     })
   })
 

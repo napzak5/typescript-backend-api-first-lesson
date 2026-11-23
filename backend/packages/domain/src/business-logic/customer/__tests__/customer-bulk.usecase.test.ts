@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  customerMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -38,7 +41,11 @@ const databaseDown = Result.error(
 )
 const forbidden = Result.error(DomainErrors.forbidden())
 const emailTaken = Result.error(
-  DomainErrors.alreadyExists('Customer', 'email', 'second@example.com'),
+  DomainErrors.alreadyExists(
+    entityMessages.customer,
+    'email',
+    'second@example.com',
+  ),
 )
 
 /** The broken rules of a failed result, as `field:rule`; empty for a success. */
@@ -157,7 +164,7 @@ describe('BatchGetCustomersUseCase', () => {
     )
 
     expect(result).toEqual(
-      Result.error(DomainErrors.notFound('Customer', THIRD_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.customer, THIRD_ID)),
     )
   })
 
@@ -599,7 +606,7 @@ describe('BulkUpdateCustomersUseCase', () => {
     })
 
     expect(result).toEqual(
-      Result.error(DomainErrors.notFound('Customer', THIRD_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.customer, THIRD_ID)),
     )
   })
 
@@ -710,7 +717,9 @@ describe('BulkDeleteCustomersUseCase', () => {
     ).execute(actors.admin, { ids: [CUSTOMER_ID, OTHER_CUSTOMER_ID, THIRD_ID] })
 
     expect(result).toEqual(
-      Result.error(DomainErrors.notFound('Customer', OTHER_CUSTOMER_ID)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.customer, OTHER_CUSTOMER_ID),
+      ),
     )
   })
 

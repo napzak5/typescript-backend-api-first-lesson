@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { inventoryAlertMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  inventoryAlertMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { InventoryAlertReadMapper } from '../../mappers/read/inventory-alert.mapper'
 import { InventoryAlertWriteMapper } from '../../mappers/write/inventory-alert.mapper'
@@ -70,7 +73,9 @@ export class AcknowledgeInventoryAlertUseCase {
           InventoryAlertReadMapper.toApiInventoryAlert(alert),
         )
         .with({ type: 'notFound' }, { type: 'notActive' }, () =>
-          Result.error(DomainErrors.notFound('InventoryAlert', key)),
+          Result.error(
+            DomainErrors.notFound(entityMessages.inventoryAlert, key),
+          ),
         )
         .with({ type: 'alreadyAcknowledged' }, () =>
           Result.error(

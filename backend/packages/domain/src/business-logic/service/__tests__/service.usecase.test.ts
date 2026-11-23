@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
+  entityMessages,
   ruleMessages,
   serviceMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -54,11 +55,11 @@ const databaseDown = Result.error(
 const forbidden = Result.error(DomainErrors.forbidden())
 const salonNotFound = {
   type: 'error',
-  error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+  error: { type: 'notFound', entity: entityMessages.salon, id: SALON_ID },
 }
 const serviceNotFound = (id: string) => ({
   type: 'error',
-  error: expect.objectContaining({ type: 'notFound', id }),
+  error: { type: 'notFound', entity: entityMessages.service, id },
 })
 const storedRowIsCorrupt = {
   type: 'error',

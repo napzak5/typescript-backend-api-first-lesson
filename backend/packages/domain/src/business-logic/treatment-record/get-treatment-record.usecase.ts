@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { TreatmentRecordReadMapper } from '../../mappers/read/treatment-record.mapper'
 import type { Actor } from '../../models/auth'
 import {
@@ -41,7 +42,9 @@ export class GetTreatmentRecordUseCase {
     }
 
     return found.data === null
-      ? Result.error(DomainErrors.notFound('TreatmentRecord', recordId.data))
+      ? Result.error(
+          DomainErrors.notFound(entityMessages.treatmentRecord, recordId.data),
+        )
       : TreatmentRecordReadMapper.toApiTreatmentRecord(found.data)
   }
 }

@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   bookingMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -530,7 +531,7 @@ describe('GetBookingUseCase', () => {
     })
 
     expect(await get(dependencies)).toEqual(
-      Result.error(DomainErrors.notFound('Booking', BOOKING_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.booking, BOOKING_ID)),
     )
   })
 
@@ -550,7 +551,7 @@ describe('GetBookingUseCase', () => {
       { type: 'everySalon' },
     )
     expect(result).toEqual(
-      Result.error(DomainErrors.notFound('Booking', BOOKING_ID)),
+      Result.error(DomainErrors.notFound(entityMessages.booking, BOOKING_ID)),
     )
   })
 

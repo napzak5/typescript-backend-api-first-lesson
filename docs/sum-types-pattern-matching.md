@@ -37,7 +37,7 @@
 どの型も同じ書き方に従っています。
 
 - 判別子は `type` プロパティで、値は camelCase の文字列リテラル
-- ケースごとのデータは `type` と同じ階層に置く（`{ type: 'notFound'; entity: string; id: string }`）
+- ケースごとのデータは `type` と同じ階層に置く（`{ type: 'notFound'; entity: LocalizedText; id: string | null }`）
 - 「ある場合とない場合」を optional なプロパティで表さず、ケースを分ける。更新時の営業日カレンダーは `openingHours?: ...` ではなく次の型です
 
 ```typescript
@@ -86,7 +86,9 @@ async execute(id: unknown): Promise<Result<ApiSalonResponse, DomainError>> {
     return found
   }
   if (found.data === null) {
-    return Result.error(DomainErrors.notFound('Salon', salonId.data))
+    return Result.error(
+      DomainErrors.notFound(entityMessages.salon, salonId.data),
+    )
   }
 
   return SalonReadMapper.toApiSalon(found.data.salon, found.data.openingHours)
@@ -160,8 +162,13 @@ export type DomainError =
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
-  | { type: 'notFound'; entity: string; id: string }
-  | { type: 'alreadyExists'; entity: string; field: string; value: string }
+  | { type: 'notFound'; entity: LocalizedText; id: string | null }
+  | {
+      type: 'alreadyExists'
+      entity: LocalizedText
+      field: string
+      value: string
+    }
   | { type: 'conflict'; message: string }
   | { type: 'database'; message: string; cause: unknown }
   | { type: 'storage'; message: string; cause: unknown }
@@ -169,7 +176,7 @@ export type DomainError =
 
 値は同じファイルの `DomainErrors.validation(...)`、`DomainErrors.notFound(...)` などで作ります。
 
-`Told`（`backend/packages/domain/src/shared/told.ts`）は、エラーの文の型です。すべての言語で書いた文（`LocalizedText`）か、英語だけの文字列です。ドメインが書く文をすべての言語で書き終えるまでの間だけ、文字列も受け付けます。検証のエラーの見出しが、この型です。決まりごとの `message` は、すべての言語で書いた文（`LocalizedText`）で、文字列はコンパイルできません（[多言語](./i18n.md)）。
+`Told`（`backend/packages/domain/src/shared/told.ts`）は、エラーの文の型です。すべての言語で書いた文（`LocalizedText`）か、英語だけの文字列です。ドメインが書く文をすべての言語で書き終えるまでの間だけ、文字列も受け付けます。検証のエラーの見出しが、この型です。決まりごとの `message` は、すべての言語で書いた文（`LocalizedText`）で、文字列はコンパイルできません。`notFound` と `alreadyExists` の `entity`（対象の名前）も同じです。`notFound` の `id` は、探すのに使った ID で、繰り返さないもの（共有リンクのトークン）で探したときは `null` です（[多言語](./i18n.md)）。
 
 | ケース | 作られる場所 | HTTP ステータス |
 |--------|--------------|-----------------|
@@ -252,7 +259,7 @@ const toProblem = (error: ApiError, language: Locale): Problem => {
       type: 'urn:beauty-salon:problem:not-found',
       title: said(problemMessages.notFound.title),
       status: 404,
-      detail: `${entity} ${id} was not found`,
+      detail: said(problemMessages.notFound.detail(entity, id)),
       code: '3001',
       errors: null,
     }))

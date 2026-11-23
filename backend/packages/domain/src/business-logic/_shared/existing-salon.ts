@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import type { SalonId } from '../../models/salon'
 import type { ISalonRepository } from '../../repositories/salon.repository'
 import { type DomainError, DomainErrors } from '../../shared'
@@ -19,5 +20,5 @@ export const requireSalon = async (
 
   return exists.data
     ? Result.success(null)
-    : Result.error(DomainErrors.notFound('Salon', salonId))
+    : Result.error(DomainErrors.notFound(entityMessages.salon, salonId))
 }

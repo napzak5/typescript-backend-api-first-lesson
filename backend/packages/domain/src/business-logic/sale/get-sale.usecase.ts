@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { SaleReadMapper } from '../../mappers/read/sale.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiSaleResponse, parseSaleId } from '../../models/sale'
@@ -38,7 +39,7 @@ export class GetSaleUseCase {
     }
 
     return found.data === null
-      ? Result.error(DomainErrors.notFound('Sale', saleId.data))
+      ? Result.error(DomainErrors.notFound(entityMessages.sale, saleId.data))
       : SaleReadMapper.toApiSale(found.data)
   }
 }

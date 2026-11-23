@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { paymentMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  paymentMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PaymentReadMapper } from '../../mappers/read/payment.mapper'
 import { PaymentWriteMapper } from '../../mappers/write/payment.mapper'
@@ -71,7 +74,9 @@ export class RecordPaymentUseCase {
           )
           .with({ type: 'transactionNumberTaken' }, () => null)
           .with({ type: 'notFound' }, () =>
-            Result.error(DomainErrors.notFound('Sale', saleId.data)),
+            Result.error(
+              DomainErrors.notFound(entityMessages.sale, saleId.data),
+            ),
           )
           .with({ type: 'invalid' }, ({ issues }) =>
             Result.error(DomainErrors.validation(MESSAGE, issues)),

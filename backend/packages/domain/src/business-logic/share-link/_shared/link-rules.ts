@@ -1,4 +1,7 @@
-import { shareLinkMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  shareLinkMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { addHours, isAfter, parseISO } from 'date-fns'
 import {
   type DomainError,
@@ -48,6 +51,6 @@ export const shareEndIssue = (
  * revoked, or its attachment is deleted. The token is not repeated.
  */
 export const noSharedFile: DomainError = DomainErrors.notFound(
-  'Share link',
-  'of the token',
+  entityMessages.shareLinkOfToken,
+  null,
 )

@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   bookingMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -40,7 +41,9 @@ const databaseDown = Result.error(
   DomainErrors.database('Connection lost', null),
 )
 const forbidden = Result.error(DomainErrors.forbidden())
-const notFound = Result.error(DomainErrors.notFound('Booking', BOOKING_ID))
+const notFound = Result.error(
+  DomainErrors.notFound(entityMessages.booking, BOOKING_ID),
+)
 const storedRowIsCorrupt = {
   type: 'error',
   error: expect.objectContaining({ type: 'database' }),

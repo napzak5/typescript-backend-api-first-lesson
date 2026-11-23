@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { PointReadMapper } from '../../mappers/read/point.mapper'
 import type { Actor } from '../../models/auth'
 import { parseCustomerId } from '../../models/customer'
@@ -34,7 +35,9 @@ export class GetPointBalanceUseCase {
       return balance
     }
     if (balance.data === null) {
-      return Result.error(DomainErrors.notFound('Customer', id.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.customer, id.data),
+      )
     }
 
     return Result.success(

@@ -1,6 +1,7 @@
 import type { OrderStatusType } from '@beauty-salon-backend/generated'
 import { Result } from '@beauty-salon-backend/utility'
 import {
+  entityMessages,
   purchaseOrderMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -279,7 +280,9 @@ describe('ReceivePurchaseOrderUseCase', () => {
 
   it('does not find an order that is not there, or not within the reach', async () => {
     expect(await receive(answering({ type: 'notFound' }))).toEqual(
-      Result.error(DomainErrors.notFound('PurchaseOrder', PURCHASE_ORDER_ID)),
+      Result.error(
+        DomainErrors.notFound(entityMessages.purchaseOrder, PURCHASE_ORDER_ID),
+      ),
     )
   })
 

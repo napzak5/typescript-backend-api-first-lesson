@@ -10,6 +10,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { CustomerRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -2652,7 +2653,7 @@ describe('Customer API', () => {
           type: 'error',
           error: {
             type: 'alreadyExists',
-            entity: 'Customer',
+            entity: entityMessages.customer,
             field: 'email',
             value: 'taken@example.com',
           },
@@ -2661,7 +2662,7 @@ describe('Customer API', () => {
           type: 'error',
           error: {
             type: 'alreadyExists',
-            entity: 'Customer',
+            entity: entityMessages.customer,
             field: 'referralCode',
             value: 'TAKEN',
           },

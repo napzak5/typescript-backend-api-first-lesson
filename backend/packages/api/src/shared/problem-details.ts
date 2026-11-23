@@ -63,16 +63,15 @@ export const languageOf = (error: ApiError, asked: Locale): Locale =>
     .with({ type: 'validation' }, ({ message }) =>
       isToldInEveryLanguage(message) ? asked : LANGUAGE_OF_THE_DOMAIN,
     )
-    .with(
-      { type: P.union('notFound', 'alreadyExists', 'conflict') },
-      () => LANGUAGE_OF_THE_DOMAIN,
-    )
+    .with({ type: 'conflict' }, () => LANGUAGE_OF_THE_DOMAIN)
     .with(
       {
         type: P.union(
           'unauthenticated',
           'forbidden',
           'passwordRequired',
+          'notFound',
+          'alreadyExists',
           'database',
           'storage',
           'routeNotFound',
@@ -176,7 +175,7 @@ const toProblem = (error: ApiError, language: Locale): Problem => {
         type: 'urn:beauty-salon:problem:not-found',
         title: said(problemMessages.notFound.title),
         status: 404,
-        detail: `${entity} ${id} was not found`,
+        detail: said(problemMessages.notFound.detail(entity, id)),
         code: '3001',
         errors: null,
       }))
@@ -184,7 +183,9 @@ const toProblem = (error: ApiError, language: Locale): Problem => {
         type: 'urn:beauty-salon:problem:already-exists',
         title: said(problemMessages.alreadyExists.title),
         status: 409,
-        detail: `${entity} with ${field} ${value} already exists`,
+        detail: said(
+          problemMessages.alreadyExists.detail(entity, field, value),
+        ),
         code: '3002',
         errors: null,
       }))

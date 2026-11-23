@@ -1,5 +1,6 @@
 import { type DomainError, DomainErrors } from '@beauty-salon-backend/domain'
 import type { Locale, LocalizedText } from '@beauty-salon-shared/i18n'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it } from 'vitest'
 import {
   type ApiError,
@@ -66,7 +67,10 @@ describe('toProblemDetails', () => {
 
   it('presents a missing entity as 404', () => {
     const problem = toProblemDetails(
-      DomainErrors.notFound('Salon', '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c'),
+      DomainErrors.notFound(
+        entityMessages.salon,
+        '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+      ),
       context,
       'en',
     )
@@ -82,7 +86,11 @@ describe('toProblemDetails', () => {
 
   it('presents a duplicate as 409 naming the property and the value', () => {
     const problem = toProblemDetails(
-      DomainErrors.alreadyExists('Salon', 'email', 'aoyama@example.com'),
+      DomainErrors.alreadyExists(
+        entityMessages.salon,
+        'email',
+        'aoyama@example.com',
+      ),
       context,
       'en',
     )
@@ -357,7 +365,11 @@ describe('toProblemDetails for an operation that the state does not allow', () =
       'en',
     )
     const duplicate = toProblemDetails(
-      DomainErrors.alreadyExists('Salon', 'email', 'aoyama@example.com'),
+      DomainErrors.alreadyExists(
+        entityMessages.salon,
+        'email',
+        'aoyama@example.com',
+      ),
       context,
       'en',
     )
@@ -460,6 +472,50 @@ const TOLD_BY_THE_API: [string, ApiError, Told, Told][] = [
     },
   ],
   [
+    'a missing entity',
+    DomainErrors.notFound(
+      entityMessages.salon,
+      '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c',
+    ),
+    {
+      title: 'Resource not found',
+      detail: 'Salon 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c was not found',
+    },
+    {
+      title: 'リソースが見つかりません',
+      detail:
+        'サロンが見つかりません（ID: 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c）',
+    },
+  ],
+  [
+    'a missing entity that is looked for by what is not repeated',
+    DomainErrors.notFound(entityMessages.shareLinkOfToken, null),
+    {
+      title: 'Resource not found',
+      detail: 'Share link of the token was not found',
+    },
+    {
+      title: 'リソースが見つかりません',
+      detail: 'このトークンの共有リンクが見つかりません',
+    },
+  ],
+  [
+    'a duplicate',
+    DomainErrors.alreadyExists(
+      entityMessages.salon,
+      'email',
+      'aoyama@example.com',
+    ),
+    {
+      title: 'Resource already exists',
+      detail: 'Salon with email aoyama@example.com already exists',
+    },
+    {
+      title: 'リソースがすでにあります',
+      detail: 'email が aoyama@example.com のサロンは、すでにあります',
+    },
+  ],
+  [
     'a database error',
     DomainErrors.database('Failed to create salon', null),
     { title: 'Internal server error', detail: null },
@@ -552,22 +608,6 @@ const TOLD_BY_THE_DOMAIN: [string, DomainError, Told][] = [
     'a validation error',
     DomainErrors.validation('Invalid salon', []),
     { title: 'Validation failed', detail: 'Invalid salon' },
-  ],
-  [
-    'a missing entity',
-    DomainErrors.notFound('Salon', '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c'),
-    {
-      title: 'Resource not found',
-      detail: 'Salon 0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1c was not found',
-    },
-  ],
-  [
-    'a duplicate',
-    DomainErrors.alreadyExists('Salon', 'email', 'aoyama@example.com'),
-    {
-      title: 'Resource already exists',
-      detail: 'Salon with email aoyama@example.com already exists',
-    },
   ],
   [
     'a conflict',
@@ -860,8 +900,11 @@ describe('toBearerChallenge', () => {
   it.each<[string, ApiError]>([
     ['a forbidden action', DomainErrors.forbidden()],
     ['a validation error', DomainErrors.validation('Invalid', [])],
-    ['a missing entity', DomainErrors.notFound('Salon', 'x')],
-    ['a duplicate', DomainErrors.alreadyExists('Salon', 'email', 'a@b.jp')],
+    ['a missing entity', DomainErrors.notFound(entityMessages.salon, 'x')],
+    [
+      'a duplicate',
+      DomainErrors.alreadyExists(entityMessages.salon, 'email', 'a@b.jp'),
+    ],
     ['a conflict', DomainErrors.conflict('Not allowed in this state')],
     ['a database error', DomainErrors.database('Failed', null)],
     ['an unknown route', { type: 'routeNotFound', method: 'GET', path: '/' }],

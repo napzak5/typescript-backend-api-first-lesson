@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { paymentMethodMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  paymentMethodMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PaymentMethodReadMapper } from '../../mappers/read/payment-method.mapper'
 import { PaymentMethodWriteMapper } from '../../mappers/write/payment-method.mapper'
@@ -95,7 +98,10 @@ export class UpdatePaymentMethodUseCase {
       )
       .with({ type: 'notFound' }, () =>
         Result.error(
-          DomainErrors.notFound('Payment method', paymentMethodId.data),
+          DomainErrors.notFound(
+            entityMessages.paymentMethod,
+            paymentMethodId.data,
+          ),
         ),
       )
       .with({ type: 'limitsOutOfOrder' }, () => {

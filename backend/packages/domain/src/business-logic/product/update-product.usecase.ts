@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { productMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  productMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { ProductReadMapper } from '../../mappers/read/product.mapper'
 import { ProductWriteMapper } from '../../mappers/write/product.mapper'
@@ -72,7 +75,9 @@ export class UpdateProductUseCase {
         ProductReadMapper.toApiProduct(product),
       )
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Product', productId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.product, productId.data),
+        ),
       )
       .with({ type: 'stockLevelsOutOfOrder' }, ({ broken }) =>
         Result.error(

@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  inventoryMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { InventoryTransactionReadMapper } from '../../mappers/read/inventory-transaction.mapper'
 import { InventoryTransactionWriteMapper } from '../../mappers/write/inventory-transaction.mapper'
@@ -69,7 +72,9 @@ export class ListInventoryMovementsUseCase {
         Result<ApiPage<ApiInventoryTransactionResponse>, DomainError>
       >()
       .with({ type: 'inventoryNotFound' }, () =>
-        Result.error(DomainErrors.notFound('Inventory', inventoryId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.inventory, inventoryId.data),
+        ),
       )
       .with({ type: 'cursorNotFound' }, () =>
         Result.error(

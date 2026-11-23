@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import {
   customerPreferencesMessages,
+  entityMessages,
   ruleMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
@@ -46,10 +47,10 @@ const databaseDown = Result.error(
 )
 const forbidden = Result.error(DomainErrors.forbidden())
 const customerNotFound = Result.error(
-  DomainErrors.notFound('Customer', OTHER_CUSTOMER_ID),
+  DomainErrors.notFound(entityMessages.customer, OTHER_CUSTOMER_ID),
 )
 const profileNotFound = Result.error(
-  DomainErrors.notFound('Customer profile of user', USER_ID),
+  DomainErrors.notFound(entityMessages.customerProfileOfUser, USER_ID),
 )
 const storedRowIsCorrupt = {
   type: 'error',

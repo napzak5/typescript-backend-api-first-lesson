@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { shareLinkMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  shareLinkMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { ShareLinkReadMapper } from '../../mappers/read/share-link.mapper'
 import { ShareLinkWriteMapper } from '../../mappers/write/share-link.mapper'
 import { parseAttachmentId } from '../../models/attachment'
@@ -56,7 +59,9 @@ export class ListShareLinksUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Attachment', id.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.attachment, id.data),
+      )
     }
 
     const listed = await shareLinkRepository.list(criteria)

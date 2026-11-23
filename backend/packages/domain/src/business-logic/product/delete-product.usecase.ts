@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import type { Actor } from '../../models/auth'
 import { type ProductId, parseProductId } from '../../models/product'
@@ -50,7 +51,9 @@ export class DeleteProductUseCase {
       .returnType<Result<ProductId, DomainError>>()
       .with({ type: 'deleted' }, () => productId)
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Product', productId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.product, productId.data),
+        ),
       )
       .with({ type: 'inStock' }, () =>
         Result.error(

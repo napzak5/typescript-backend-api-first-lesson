@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { CustomerReadMapper } from '../../mappers/read/customer.mapper'
 import type { Actor } from '../../models/auth'
@@ -47,7 +48,9 @@ export class RestoreCustomerUseCase {
         CustomerReadMapper.toApiCustomer(customer),
       )
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', customerId.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.customer, customerId.data),
+        ),
       )
       .with({ type: 'notDeleted' }, () =>
         Result.error(

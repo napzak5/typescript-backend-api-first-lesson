@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ServiceCategoryReadMapper } from '../../mappers/read/service-category.mapper'
 import { parseSalonIdOfPath } from '../../models/salon'
 import {
@@ -46,7 +47,7 @@ export class GetServiceCategoryUseCase {
     }
     if (found.data === null) {
       return Result.error(
-        DomainErrors.notFound('Service category', categoryId.data),
+        DomainErrors.notFound(entityMessages.serviceCategory, categoryId.data),
       )
     }
 

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { MedicalChartReadMapper } from '../../mappers/read/medical-chart.mapper'
 import type { Actor } from '../../models/auth'
@@ -42,10 +43,12 @@ export class GetMedicalChartUseCase {
         MedicalChartReadMapper.toApiMedicalChart(chart),
       )
       .with({ type: 'customerNotFound' }, () =>
-        Result.error(DomainErrors.notFound('Customer', id.data)),
+        Result.error(DomainErrors.notFound(entityMessages.customer, id.data)),
       )
       .with({ type: 'chartNotFound' }, () =>
-        Result.error(DomainErrors.notFound('MedicalChart', id.data)),
+        Result.error(
+          DomainErrors.notFound(entityMessages.medicalChart, id.data),
+        ),
       )
       .exhaustive()
   }

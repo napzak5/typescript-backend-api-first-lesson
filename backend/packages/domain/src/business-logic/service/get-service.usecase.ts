@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ServiceReadMapper } from '../../mappers/read/service.mapper'
 import { parseSalonIdOfPath } from '../../models/salon'
 import { type ApiServiceResponse, parseServiceId } from '../../models/service'
@@ -37,7 +38,9 @@ export class GetServiceUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Service', serviceId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.service, serviceId.data),
+      )
     }
 
     return ServiceReadMapper.toApiService(

@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { attachmentMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  attachmentMessages,
+  entityMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { addMinutes } from 'date-fns'
 import { AttachmentReadMapper } from '../../mappers/read/attachment.mapper'
 import { AttachmentWriteMapper } from '../../mappers/write/attachment.mapper'
@@ -68,7 +71,7 @@ export class IssueAttachmentDownloadUrlUseCase {
     const attachment = found.data
     if (attachment === null) {
       return Result.error(
-        DomainErrors.notFound('Attachment', attachmentId.data),
+        DomainErrors.notFound(entityMessages.attachment, attachmentId.data),
       )
     }
     if (attachment.status !== 'uploaded') {

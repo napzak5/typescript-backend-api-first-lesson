@@ -9,6 +9,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { StaffRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { and, asc, eq, isNull, sql } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
@@ -2830,7 +2831,7 @@ describe('Staff API', () => {
             type: 'error',
             error: {
               type: 'alreadyExists',
-              entity: 'Staff member',
+              entity: entityMessages.staffMember,
               field: 'email',
               value: 'taken@example.com',
             },
@@ -2839,7 +2840,7 @@ describe('Staff API', () => {
             type: 'error',
             error: {
               type: 'alreadyExists',
-              entity: 'Staff member',
+              entity: entityMessages.staffMember,
               field: 'staffCode',
               value: 'LIVE',
             },
@@ -2848,7 +2849,7 @@ describe('Staff API', () => {
             type: 'error',
             error: {
               type: 'alreadyExists',
-              entity: 'Staff member',
+              entity: entityMessages.staffMember,
               field: 'staffCode',
               value: 'GONE',
             },
@@ -3059,7 +3060,7 @@ describe('Staff API', () => {
             type: 'error',
             error: {
               type: 'alreadyExists',
-              entity: 'Staff member',
+              entity: entityMessages.staffMember,
               field: 'email',
               value: 'taken@example.com',
             },
@@ -3068,7 +3069,7 @@ describe('Staff API', () => {
             type: 'error',
             error: {
               type: 'alreadyExists',
-              entity: 'Staff member',
+              entity: entityMessages.staffMember,
               field: 'staffCode',
               value: 'TAKEN',
             },

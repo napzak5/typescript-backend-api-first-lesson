@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { ProductReadMapper } from '../../mappers/read/product.mapper'
 import type { Actor } from '../../models/auth'
 import { type ApiProductResponse, parseProductId } from '../../models/product'
@@ -43,7 +44,9 @@ export class GetProductUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('Product', productId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.product, productId.data),
+      )
     }
 
     return ProductReadMapper.toApiProduct(found.data)

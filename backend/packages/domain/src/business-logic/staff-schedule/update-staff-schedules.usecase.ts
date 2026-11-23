@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { staffScheduleMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  staffScheduleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { StaffScheduleReadMapper } from '../../mappers/read/staff-schedule.mapper'
 import { StaffScheduleWriteMapper } from '../../mappers/write/staff-schedule.mapper'
 import type { Actor } from '../../models/auth'
@@ -67,7 +70,9 @@ export class UpdateStaffSchedulesUseCase {
       return replaced
     }
     if (replaced.data === null) {
-      return Result.error(DomainErrors.notFound('Staff member', staffId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.staffMember, staffId.data),
+      )
     }
 
     return Result.success(

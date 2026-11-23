@@ -32,6 +32,7 @@ import {
   type UserId,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import {
   and,
   arrayContains,
@@ -94,7 +95,8 @@ const toDomainError =
           email: P.string,
           cause: P.union(emailTaken, { cause: emailTaken }),
         },
-        ({ email }) => DomainErrors.alreadyExists('Customer', 'email', email),
+        ({ email }) =>
+          DomainErrors.alreadyExists(entityMessages.customer, 'email', email),
       )
       .with(
         {
@@ -102,7 +104,11 @@ const toDomainError =
           cause: P.union(referralCodeTaken, { cause: referralCodeTaken }),
         },
         ({ referralCode }) =>
-          DomainErrors.alreadyExists('Customer', 'referralCode', referralCode),
+          DomainErrors.alreadyExists(
+            entityMessages.customer,
+            'referralCode',
+            referralCode,
+          ),
       )
       .otherwise(() =>
         DomainErrors.database(message, describeDatabaseError(cause)),

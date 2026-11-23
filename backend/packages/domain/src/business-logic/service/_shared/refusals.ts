@@ -1,4 +1,5 @@
 import {
+  entityMessages,
   ruleMessages,
   serviceMessages,
 } from '@beauty-salon-shared/i18n/messages/api'
@@ -46,7 +47,7 @@ export const toRefusalError = (
 ): DomainError =>
   match(refusal)
     .with({ type: 'notFound' }, ({ id }) =>
-      DomainErrors.notFound('Service', id),
+      DomainErrors.notFound(entityMessages.service, id),
     )
     .with({ type: 'invalid' }, ({ issues }) =>
       invalidService(message, issues, within),

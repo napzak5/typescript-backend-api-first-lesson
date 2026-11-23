@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { match } from 'ts-pattern'
 import { PurchaseOrderReadMapper } from '../../../mappers/read/purchase-order.mapper'
 import type {
@@ -26,7 +27,7 @@ export const resultOfChange = (
         PurchaseOrderReadMapper.toApiPurchaseOrder(order),
       )
       .with({ type: 'notFound' }, () =>
-        Result.error(DomainErrors.notFound('PurchaseOrder', id)),
+        Result.error(DomainErrors.notFound(entityMessages.purchaseOrder, id)),
       )
       .with({ type: 'closed' }, { type: 'notFromStatus' }, (refusal) =>
         Result.error(toStatusConflict(id, refusal, takes)),

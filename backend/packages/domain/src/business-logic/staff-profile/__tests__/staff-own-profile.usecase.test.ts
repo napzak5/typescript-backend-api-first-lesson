@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { staffProfileMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  entityMessages,
+  staffProfileMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import { brokenRules } from '../../../__tests__/fixtures/fixtures'
@@ -23,7 +26,9 @@ const databaseDown = Result.error(
   DomainErrors.database('Connection lost', null),
 )
 const forbidden = Result.error(DomainErrors.forbidden())
-const notFound = Result.error(DomainErrors.notFound('Staff member', STAFF_ID))
+const notFound = Result.error(
+  DomainErrors.notFound(entityMessages.staffMember, STAFF_ID),
+)
 
 /** The broken rules of a failed result, as `field:rule`; empty for a success. */
 const rulesOf = (result: Result<unknown, DomainError>): string[] =>

@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { entityMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { UserReadMapper } from '../../mappers/read/user.mapper'
 import {
   type Actor,
@@ -40,7 +41,9 @@ export class UnlockAccountUseCase {
       return found
     }
     if (found.data === null) {
-      return Result.error(DomainErrors.notFound('User', userId.data))
+      return Result.error(
+        DomainErrors.notFound(entityMessages.user, userId.data),
+      )
     }
 
     const unlocked = await userRepository.unlock(
