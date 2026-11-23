@@ -5,6 +5,7 @@ import {
   FieldRow,
   Form,
   type FormProps,
+  inJapanese,
   Select,
   TextArea,
   TextField,
@@ -54,7 +55,7 @@ export const CategoryForm = ({
         name='name'
         autoComplete='off'
         required
-        description={`${upTo(LONGEST_NAME)}お客様のメニューの見出しになります。`}
+        description={`${inJapanese(upTo(LONGEST_NAME))}お客様のメニューの見出しになります。`}
         defaultValue={category?.name}
         error={errors['name']}
       />
@@ -111,7 +112,7 @@ export const CategoryForm = ({
         name='iconUrl'
         type='url'
         autoComplete='off'
-        description={WEB_ADDRESS_DESCRIPTION}
+        description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
         defaultValue={category?.iconUrl ?? undefined}
         error={errors['iconUrl']}
       />

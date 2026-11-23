@@ -1,6 +1,6 @@
 import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { FileToSave } from '@beauty-salon-frontend/io'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import { inJapanese, writtenInJapanese } from '@beauty-salon-frontend/ui'
 import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 import type { DataExport, LedgerExport } from '../api/customer-export-api'
@@ -52,7 +52,9 @@ export const afterLedgerExport = (outcome: LedgerExport): ExportSays =>
     .with({ type: 'tooManyRequests' }, (reason) => ({
       type: 'said',
       tone: 'danger',
-      message: unreadMessageOf('顧客台帳', reason),
+      message: inJapanese(
+        unreadMessageOf(writtenInJapanese('顧客台帳'), reason),
+      ),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'said',
@@ -88,7 +90,9 @@ export const afterDataExport = (
     .with({ type: 'tooManyRequests' }, (reason) => ({
       type: 'said',
       tone: 'danger',
-      message: unreadMessageOf('お客様のデータ', reason),
+      message: inJapanese(
+        unreadMessageOf(writtenInJapanese('お客様のデータ'), reason),
+      ),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'said',

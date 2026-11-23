@@ -6,10 +6,12 @@ import type {
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -81,7 +83,12 @@ const useLinks = (
         }))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
           type: 'unread',
-          message: unreadMessageOf('ファイルを開くアドレス', reason),
+          message: inJapanese(
+            unreadMessageOf(
+              writtenInJapanese('ファイルを開くアドレス'),
+              reason,
+            ),
+          ),
         }))
         .with(P.union(undefined, { type: 'notFound' }), () => ({
           type: 'reading',
@@ -90,7 +97,9 @@ const useLinks = (
     )
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
       type: 'unread',
-      message: unreadMessageOf('ファイルを開くアドレス', reason),
+      message: inJapanese(
+        unreadMessageOf(writtenInJapanese('ファイルを開くアドレス'), reason),
+      ),
     }))
     .with(P.union(undefined, { type: 'notFound' }), () => ({ type: 'reading' }))
     .exhaustive()
@@ -226,7 +235,9 @@ const AttachmentPart = ({ salon, attachmentId }: AttachmentPartProps) => {
         <>
           <PageHeader title={TITLE} description={salon.name} />
           <UnreadNotice
-            message={unreadMessageOf('ファイル', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('ファイル'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

@@ -4,6 +4,7 @@ import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
@@ -11,6 +12,7 @@ import {
   UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
@@ -209,7 +211,9 @@ const OwnProfile = () => {
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice
-          message={unreadMessageOf('お客様の情報', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('お客様の情報'), reason),
+          )}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />

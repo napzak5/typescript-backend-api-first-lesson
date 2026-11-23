@@ -6,9 +6,11 @@ import {
 } from '@beauty-salon-frontend/answers'
 import {
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { match } from 'ts-pattern'
@@ -51,7 +53,9 @@ export const FoundCustomers = ({ keyword, choose }: FoundCustomersProps) => {
     .with(undefined, () => <LoadingIndicator label='お客様を探しています' />)
     .with({ type: 'unread' }, ({ reason }) => (
       <UnreadNotice
-        message={unreadMessageOf('お客様', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('お客様'), reason),
+        )}
         onRetry={() => void found.refetch()}
         pending={found.isFetching}
       />

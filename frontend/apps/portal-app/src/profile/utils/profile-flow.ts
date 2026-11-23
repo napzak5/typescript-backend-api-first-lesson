@@ -27,9 +27,12 @@ import {
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
+  errorsInJapanese,
   type FormErrors,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
@@ -52,9 +55,9 @@ export const readProfile = (
   const firstName = trimmedTextOf(values, 'firstName')
   const phoneNumber = trimmedTextOf(values, 'phoneNumber')
   const errors: FormErrors = {
-    lastName: lastNameError(lastName),
-    firstName: firstNameError(firstName),
-    phoneNumber: phoneError(phoneNumber),
+    lastName: inJapaneseIfAny(lastNameError(lastName)),
+    firstName: inJapaneseIfAny(firstNameError(firstName)),
+    phoneNumber: inJapaneseIfAny(phoneError(phoneNumber)),
   }
 
   return Object.values(errors).some((error) => error !== undefined)
@@ -102,13 +105,15 @@ export const readWholeProfile = (
   const birthDate = optional('birthDate')
   const gender = choiceOf(GENDERS, trimmedTextOf(values, 'gender'))
   const errors: FormErrors = {
-    lastName: lastNameError(lastName),
-    firstName: firstNameError(firstName),
-    phoneNumber: phoneError(phoneNumber),
-    alternativePhone: alternativePhoneError(alternativePhone),
-    birthDate: birthDateError(birthDate, today),
-    gender: gender === undefined ? UNLISTED_MESSAGE : undefined,
-    ...lengthErrors(CUSTOMER_LENGTHS, optional),
+    lastName: inJapaneseIfAny(lastNameError(lastName)),
+    firstName: inJapaneseIfAny(firstNameError(firstName)),
+    phoneNumber: inJapaneseIfAny(phoneError(phoneNumber)),
+    alternativePhone: inJapaneseIfAny(alternativePhoneError(alternativePhone)),
+    birthDate: inJapaneseIfAny(birthDateError(birthDate, today)),
+    gender: inJapaneseIfAny(
+      gender === undefined ? UNLISTED_MESSAGE : undefined,
+    ),
+    ...errorsInJapanese(lengthErrors(CUSTOMER_LENGTHS, optional)),
   }
 
   return Object.values(errors).some((error) => error !== undefined)
@@ -250,12 +255,14 @@ const afterRefusedValues = (
   })
 
   return said.length === 0
-    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
+    ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
     : {
         message: undefined,
         // The first thing the API says about a value is the one to act on
         errors: Object.fromEntries(
-          said.toReversed().map(({ control, message }) => [control, message]),
+          said
+            .toReversed()
+            .map(({ control, message }) => [control, inJapanese(message)]),
         ),
       }
 }
@@ -275,9 +282,11 @@ const afterCreation = (
       ),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
+    )
     .exhaustive()
 
 /**
@@ -307,7 +316,9 @@ export const afterProfileChange = (
       afterRefusedValues(values, () => true),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
+    )
     .exhaustive()

@@ -17,11 +17,13 @@ import {
   Alert,
   ButtonLink,
   type FormSays,
+  inJapanese,
   Link,
   LoadingIndicator,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -289,7 +291,12 @@ const BookingPart = ({ salon, booking }: BookingPartProps) => {
       [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
-          message={unreadMessageOf('お客様と商品', whyUnread(reads))}
+          message={inJapanese(
+            unreadMessageOf(
+              writtenInJapanese('お客様と商品'),
+              whyUnread(reads),
+            ),
+          )}
           onRetry={() => {
             void customer.refetch()
             void existing.refetch()

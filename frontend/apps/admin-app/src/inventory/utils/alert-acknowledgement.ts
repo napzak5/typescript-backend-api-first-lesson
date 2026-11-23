@@ -3,7 +3,7 @@ import type {
   ModelsInventoryAlertAcknowledgeRequest,
   ModelsInventoryAlertResponse,
 } from '@beauty-salon-frontend/api-client'
-import { textOf, textOrNull } from '@beauty-salon-frontend/ui'
+import { inJapanese, textOf, textOrNull } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { AlertAcknowledgement } from '../api/alerts-api'
 import { alertNameOf } from './alert-format'
@@ -65,7 +65,7 @@ export const afterAcknowledgement = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

@@ -7,11 +7,13 @@ import {
   ButtonLink,
   Card,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -231,7 +233,9 @@ export const TwoFactorSetupScreen = ({
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('アカウント', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('アカウント'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

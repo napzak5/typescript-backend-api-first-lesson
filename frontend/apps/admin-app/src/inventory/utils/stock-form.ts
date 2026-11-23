@@ -22,8 +22,11 @@ import {
   errorAt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { TreatmentRemovalSays } from '../../treatments/utils/treatment-format'
@@ -43,13 +46,16 @@ export const LONGEST_LOCATION = 100
 export const LONGEST_SHELF = 50
 
 const PRODUCT_ERROR = '商品を選んでください。'
-const LOT_ERROR = `${neededWithin('ロット番号', LONGEST_LOT)}この商品は、在庫をロット番号で分けます。`
+const LOT_ERROR = `${inJapanese(neededWithin(writtenInJapanese('ロット番号'), LONGEST_LOT))}この商品は、在庫をロット番号で分けます。`
 const LOT_NOT_KEPT =
   'この商品は、在庫をロット番号で分けません。ロット番号は、消すことだけができます。'
 const EXPIRY_ERROR =
   '使用期限は、1900年1月1日から2999年12月31日までの日付で入力してください。'
-const LOCATION_ERROR = tooLongOf('保管場所', LONGEST_LOCATION)
-const SHELF_ERROR = tooLongOf('棚', LONGEST_SHELF)
+const LOCATION_ERROR = tooLongOf(
+  writtenInJapanese('保管場所'),
+  LONGEST_LOCATION,
+)
+const SHELF_ERROR = tooLongOf(writtenInJapanese('棚'), LONGEST_SHELF)
 const LOT_TAKEN =
   'このロット番号の在庫の行は、この商品にすでにあります。同じロットの在庫は、その行で記録してください。'
 const ROW_TAKEN =
@@ -105,9 +111,14 @@ const readPlace = (
       ),
       ...errorAt(
         'location',
-        tooLongError(location, LONGEST_LOCATION, LOCATION_ERROR),
+        inJapaneseIfAny(
+          tooLongError(location, LONGEST_LOCATION, LOCATION_ERROR),
+        ),
       ),
-      ...errorAt('shelf', tooLongError(shelf, LONGEST_SHELF, SHELF_ERROR)),
+      ...errorAt(
+        'shelf',
+        inJapaneseIfAny(tooLongError(shelf, LONGEST_SHELF, SHELF_ERROR)),
+      ),
     ],
   }
 }
@@ -170,7 +181,7 @@ const readLot = (
     required && (lot === null || lengthOf(lot) > LONGEST_LOT)
       ? LOT_ERROR
       : lot !== null && lengthOf(lot) > LONGEST_LOT
-        ? LOT_TOO_LONG
+        ? inJapanese(LOT_TOO_LONG)
         : !required && lot !== null && lot !== textOrNull(row.lotNumber)
           ? LOT_NOT_KEPT
           : undefined
@@ -237,11 +248,11 @@ const refusalAt = (field: string, rule: string): string =>
         ? 'この商品は、削除されました。ほかの商品を選んでください。'
         : PRODUCT_ERROR,
     )
-    .with('lotNumber', () => LOT_TOO_LONG)
+    .with('lotNumber', () => inJapanese(LOT_TOO_LONG))
     .with('expiryDate', () => EXPIRY_ERROR)
-    .with('location', () => LOCATION_ERROR)
-    .with('shelf', () => SHELF_ERROR)
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .with('location', () => inJapanese(LOCATION_ERROR))
+    .with('shelf', () => inJapanese(SHELF_ERROR))
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 /**
  * What the form says after the API did not take it. A lot that another
@@ -267,7 +278,7 @@ export const afterStockWrite = (
       return {
         message:
           said.length === 0
-            ? CHECK_THE_VALUES_MESSAGE
+            ? inJapanese(CHECK_THE_VALUES_MESSAGE)
             : said.length > atControls.length
               ? LOT_MARK_CHANGED
               : undefined,
@@ -283,7 +294,7 @@ export const afterStockWrite = (
     )
     .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -317,7 +328,7 @@ export const afterStockRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

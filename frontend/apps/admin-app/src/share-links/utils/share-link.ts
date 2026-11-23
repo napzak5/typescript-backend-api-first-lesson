@@ -190,7 +190,7 @@ export const afterIssuing = (
       const errors = Object.fromEntries(values.flatMap(refusalAt))
 
       return Object.keys(errors).length === 0
-        ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
+        ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
         : { message: undefined, errors }
     })
     .with({ type: 'notUploaded' }, () => aboutTheAttempt(NOT_UPLOADED_NOTE))
@@ -199,7 +199,7 @@ export const afterIssuing = (
       errors: {},
     }))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -275,7 +275,9 @@ export const afterRevoking = (
       () =>
         `このアカウントでは、この共有リンクを取り消せません。${SHARING_NOTE}`,
     )
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
+    .with({ type: 'tooManyRequests' }, () =>
+      inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+    )
     .with(
       { type: 'failed' },
       () =>

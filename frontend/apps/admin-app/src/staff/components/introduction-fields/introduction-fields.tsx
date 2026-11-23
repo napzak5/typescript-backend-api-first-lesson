@@ -1,5 +1,10 @@
 import { WEB_ADDRESS_DESCRIPTION } from '@beauty-salon-frontend/fields'
-import { type FormErrors, TextArea, TextField } from '@beauty-salon-frontend/ui'
+import {
+  type FormErrors,
+  inJapanese,
+  TextArea,
+  TextField,
+} from '@beauty-salon-frontend/ui'
 import { tagsTextOf } from '../../../customers/utils/customer-ledger'
 import type { Introduced } from '../../utils/introduction'
 
@@ -63,7 +68,7 @@ export const IntroductionFields = ({
       name='imageUrl'
       type='url'
       autoComplete='off'
-      description={WEB_ADDRESS_DESCRIPTION}
+      description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
       defaultValue={shown?.imageUrl ?? undefined}
       error={errors['imageUrl']}
     />

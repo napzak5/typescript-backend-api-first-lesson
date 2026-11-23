@@ -8,7 +8,7 @@ import type {
   ModelsCustomerResponse,
   ModelsMedicalChartResponse,
 } from '@beauty-salon-frontend/api-client'
-import { same } from '@beauty-salon-frontend/ui'
+import { inJapanese, same } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { customerNameOf } from '../api/customers-api'
 import type { LedgerValues } from '../components/customer-record/ledger-items'
@@ -324,7 +324,7 @@ export const afterMerge = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

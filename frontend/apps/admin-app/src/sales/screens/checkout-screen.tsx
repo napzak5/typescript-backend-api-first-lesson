@@ -14,10 +14,12 @@ import {
   aboutTheAttempt,
   ButtonLink,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -113,7 +115,7 @@ const Checkout = ({ salon, booking, staff, services }: CheckoutProps) => {
     }))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => ({
       type: 'unread',
-      message: unreadMessageOf('金額', reason),
+      message: inJapanese(unreadMessageOf(writtenInJapanese('金額'), reason)),
     }))
     .exhaustive()
 
@@ -230,7 +232,7 @@ const CheckoutOfBooking = ({ salon, booking }: CheckoutOfBookingProps) => {
     .with(undefined, () => <LoadingIndicator label='会計を読み込んでいます' />)
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={unreadMessageOf('会計', reason)}
+        message={inJapanese(unreadMessageOf(writtenInJapanese('会計'), reason))}
         onRetry={() => void sales.refetch()}
         pending={sales.isFetching}
       />

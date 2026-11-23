@@ -10,10 +10,12 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery, useQueries } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router'
@@ -129,7 +131,9 @@ const ReportList = ({ salon }: { salon: ModelsSalonResponse }) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('通報', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('通報'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

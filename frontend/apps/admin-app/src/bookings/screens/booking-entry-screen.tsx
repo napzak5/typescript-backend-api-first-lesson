@@ -23,6 +23,7 @@ import {
   ButtonLink,
   EmptyState,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   NOTHING_TO_SAY,
@@ -30,6 +31,7 @@ import {
   UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   useInfiniteQuery,
@@ -112,7 +114,9 @@ const CustomerResults = ({
     .with(undefined, () => <LoadingIndicator label='お客様を探しています' />)
     .with({ type: 'unread' }, ({ reason }) => (
       <UnreadNotice
-        message={unreadMessageOf('お客様', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('お客様'), reason),
+        )}
         onRetry={() => void found.refetch()}
         pending={found.isFetching}
       />
@@ -361,7 +365,12 @@ const EntryStep = ({
       [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
       (reads) => (
         <UnreadNotice
-          message={unreadMessageOf('お客様とメニュー', whyUnread(reads))}
+          message={inJapanese(
+            unreadMessageOf(
+              writtenInJapanese('お客様とメニュー'),
+              whyUnread(reads),
+            ),
+          )}
           onRetry={() => {
             void customer.refetch()
             void staff.refetch()

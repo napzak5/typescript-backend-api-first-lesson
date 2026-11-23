@@ -13,9 +13,11 @@ import type {
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -255,7 +257,9 @@ export const WithSchedule = ({
       <>
         {header}
         <UnreadNotice
-          message={unreadMessageOf('勤務スケジュール', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('勤務スケジュール'), reason),
+          )}
           onRetry={() => {
             member.again()
             void schedule.refetch()

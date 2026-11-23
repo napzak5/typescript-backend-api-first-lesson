@@ -8,12 +8,14 @@ import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   moreOfRows,
   Navigation,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery, useQueries } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
@@ -110,7 +112,7 @@ const Bookings = ({ when }: BookingsProps) => {
     .with(undefined, () => <LoadingIndicator label='予約を読み込んでいます' />)
     .with({ type: 'unread' }, ({ reason }) => (
       <UnreadNotice
-        message={unreadMessageOf('予約', reason)}
+        message={inJapanese(unreadMessageOf(writtenInJapanese('予約'), reason))}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
@@ -130,7 +132,9 @@ const Bookings = ({ when }: BookingsProps) => {
       match([rows, rest])
         .with([[], { type: 'unread' }], ([, { reason }]) => (
           <UnreadNotice
-            message={unreadMessageOf('予約', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('予約'), reason),
+            )}
             onRetry={readNamesAgain}
             pending={readingNamesAgain}
           />

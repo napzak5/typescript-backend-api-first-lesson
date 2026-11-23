@@ -6,6 +6,7 @@ import {
   Form,
   type FormErrors,
   FormRow,
+  inJapanese,
   NO_ERRORS,
   Note,
   Select,
@@ -95,7 +96,7 @@ export const PhotoForm = ({
               label='撮った向き'
               name={photoControlOf(index, 'angle')}
               autoComplete='off'
-              description={`正面、側面、後ろなど。${upTo(LONGEST_ANGLE)}`}
+              description={`正面、側面、後ろなど。${inJapanese(upTo(LONGEST_ANGLE))}`}
               error={photos.errors[photoControlOf(index, 'angle')]}
             />
           </FieldRow>
@@ -105,7 +106,7 @@ export const PhotoForm = ({
             type='url'
             autoComplete='off'
             required
-            description={WEB_ADDRESS_DESCRIPTION}
+            description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
             error={photos.errors[photoControlOf(index, 'photoUrl')]}
           />
           <TextField

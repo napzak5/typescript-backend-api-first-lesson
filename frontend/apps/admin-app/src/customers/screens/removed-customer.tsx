@@ -5,9 +5,11 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -100,7 +102,9 @@ export const RemovedCustomer = ({
         <>
           {header}
           <UnreadNotice
-            message={unreadMessageOf('お客様', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('お客様'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

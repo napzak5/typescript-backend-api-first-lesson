@@ -21,8 +21,11 @@ import {
   errorAt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
@@ -47,14 +50,17 @@ export const LONGEST_UNIT = 20
 /** The longest name of a supplier */
 export const LONGEST_SUPPLIER = 255
 
-const CODE_ERROR = neededWithin('商品コード', LONGEST_CODE)
-const NAME_ERROR = neededWithin('商品名', LONGEST_NAME)
-const CATEGORY_ERROR = tooLongOf('カテゴリー', LONGEST_LABEL)
-const BRAND_ERROR = tooLongOf('ブランド', LONGEST_LABEL)
-const UNIT_ERROR = neededWithin('単位', LONGEST_UNIT)
-const SUPPLIER_ERROR = tooLongOf('仕入先', LONGEST_SUPPLIER)
-const SUPPLIER_CODE_ERROR = tooLongOf('仕入先の商品コード', LONGEST_LABEL)
-const BARCODE_ERROR = tooLongOf('バーコード', LONGEST_LABEL)
+const CODE_ERROR = neededWithin(writtenInJapanese('商品コード'), LONGEST_CODE)
+const NAME_ERROR = neededWithin(writtenInJapanese('商品名'), LONGEST_NAME)
+const CATEGORY_ERROR = tooLongOf(writtenInJapanese('カテゴリー'), LONGEST_LABEL)
+const BRAND_ERROR = tooLongOf(writtenInJapanese('ブランド'), LONGEST_LABEL)
+const UNIT_ERROR = neededWithin(writtenInJapanese('単位'), LONGEST_UNIT)
+const SUPPLIER_ERROR = tooLongOf(writtenInJapanese('仕入先'), LONGEST_SUPPLIER)
+const SUPPLIER_CODE_ERROR = tooLongOf(
+  writtenInJapanese('仕入先の商品コード'),
+  LONGEST_LABEL,
+)
+const BARCODE_ERROR = tooLongOf(writtenInJapanese('バーコード'), LONGEST_LABEL)
 const LEAD_TIME_ERROR = '納品までの日数は、0 以上の整数で入力してください。'
 const EXPIRY_ERROR = '使用期限までの月数は、1 以上の整数で入力してください。'
 
@@ -179,15 +185,24 @@ const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
   const errors = Object.fromEntries([
     ...errorAt(
       'productCode',
-      neededError(productCode, LONGEST_CODE, CODE_ERROR),
+      inJapaneseIfAny(neededError(productCode, LONGEST_CODE, CODE_ERROR)),
     ),
-    ...errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
+    ...errorAt(
+      'name',
+      inJapaneseIfAny(neededError(name, LONGEST_NAME, NAME_ERROR)),
+    ),
     ...errorAt(
       'category',
-      tooLongError(category, LONGEST_LABEL, CATEGORY_ERROR),
+      inJapaneseIfAny(tooLongError(category, LONGEST_LABEL, CATEGORY_ERROR)),
     ),
-    ...errorAt('brand', tooLongError(brand, LONGEST_LABEL, BRAND_ERROR)),
-    ...errorAt('unit', neededError(unit, LONGEST_UNIT, UNIT_ERROR)),
+    ...errorAt(
+      'brand',
+      inJapaneseIfAny(tooLongError(brand, LONGEST_LABEL, BRAND_ERROR)),
+    ),
+    ...errorAt(
+      'unit',
+      inJapaneseIfAny(neededError(unit, LONGEST_UNIT, UNIT_ERROR)),
+    ),
     ...errorAt(
       'purchasePrice',
       purchasePrice === undefined ? priceError('仕入価格') : undefined,
@@ -223,17 +238,22 @@ const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
       : orderErrors(minimumStock, reorderPoint, maximumStock)),
     ...errorAt(
       'supplier',
-      tooLongError(supplier, LONGEST_SUPPLIER, SUPPLIER_ERROR),
+      inJapaneseIfAny(tooLongError(supplier, LONGEST_SUPPLIER, SUPPLIER_ERROR)),
     ),
     ...errorAt(
       'supplierProductCode',
-      tooLongError(supplierProductCode, LONGEST_LABEL, SUPPLIER_CODE_ERROR),
+      inJapaneseIfAny(
+        tooLongError(supplierProductCode, LONGEST_LABEL, SUPPLIER_CODE_ERROR),
+      ),
     ),
     ...errorAt(
       'leadTimeDays',
       leadTimeDays === undefined ? LEAD_TIME_ERROR : undefined,
     ),
-    ...errorAt('barcode', tooLongError(barcode, LONGEST_LABEL, BARCODE_ERROR)),
+    ...errorAt(
+      'barcode',
+      inJapaneseIfAny(tooLongError(barcode, LONGEST_LABEL, BARCODE_ERROR)),
+    ),
     ...errorAt(
       'expiryMonths',
       expiryMonths === undefined || expiryMonths === 0
@@ -242,11 +262,13 @@ const readWhole = (values: FormData): FormRead<ModelsProductCreateRequest> => {
     ),
     ...errorAt(
       'imageUrl',
-      imageUrl === undefined ? WEB_ADDRESS_ERROR : undefined,
+      inJapaneseIfAny(imageUrl === undefined ? WEB_ADDRESS_ERROR : undefined),
     ),
     ...errorAt(
       'safetyDataSheet',
-      safetyDataSheet === undefined ? WEB_ADDRESS_ERROR : undefined,
+      inJapaneseIfAny(
+        safetyDataSheet === undefined ? WEB_ADDRESS_ERROR : undefined,
+      ),
     ),
   ])
   if (
@@ -417,11 +439,11 @@ export const readProductChange = (
 /** What is said at a control the API refused a value of. */
 const refusalAt = (field: string, rule: string): string =>
   match(field)
-    .with('productCode', () => CODE_ERROR)
-    .with('name', () => NAME_ERROR)
-    .with('category', () => CATEGORY_ERROR)
-    .with('brand', () => BRAND_ERROR)
-    .with('unit', () => UNIT_ERROR)
+    .with('productCode', () => inJapanese(CODE_ERROR))
+    .with('name', () => inJapanese(NAME_ERROR))
+    .with('category', () => inJapanese(CATEGORY_ERROR))
+    .with('brand', () => inJapanese(BRAND_ERROR))
+    .with('unit', () => inJapanese(UNIT_ERROR))
     .with('purchasePrice', () => priceError('仕入価格'))
     .with('retailPrice', () => priceError('定価'))
     .with('salonPrice', () => priceError('販売価格'))
@@ -441,13 +463,13 @@ const refusalAt = (field: string, rule: string): string =>
         ? '最大在庫数は、最低在庫数と発注点と同じか、それより大きい数にしてください。'
         : levelError('最大在庫数'),
     )
-    .with('supplier', () => SUPPLIER_ERROR)
-    .with('supplierProductCode', () => SUPPLIER_CODE_ERROR)
+    .with('supplier', () => inJapanese(SUPPLIER_ERROR))
+    .with('supplierProductCode', () => inJapanese(SUPPLIER_CODE_ERROR))
     .with('leadTimeDays', () => LEAD_TIME_ERROR)
-    .with('barcode', () => BARCODE_ERROR)
+    .with('barcode', () => inJapanese(BARCODE_ERROR))
     .with('expiryMonths', () => EXPIRY_ERROR)
-    .with('imageUrl', 'safetyDataSheet', () => WEB_ADDRESS_ERROR)
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .with('imageUrl', 'safetyDataSheet', () => inJapanese(WEB_ADDRESS_ERROR))
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 /** What the form says after the API did not take it. */
 export const afterProductWrite = (
@@ -462,7 +484,9 @@ export const afterProductWrite = (
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        message: inJapaneseIfAny(
+          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
@@ -474,7 +498,7 @@ export const afterProductWrite = (
     }))
     .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -508,7 +532,7 @@ export const afterProductRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

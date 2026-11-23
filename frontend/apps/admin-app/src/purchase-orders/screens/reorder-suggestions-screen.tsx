@@ -7,9 +7,11 @@ import {
 import {
   ButtonLink,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
@@ -52,7 +54,9 @@ const SuggestionsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('発注の提案', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('発注の提案'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

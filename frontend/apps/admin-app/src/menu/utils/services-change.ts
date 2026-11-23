@@ -12,6 +12,8 @@ import {
   aboutTheAttempt,
   type ChoiceOption,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -160,19 +162,21 @@ export const afterServicesChange = (
     .with({ type: 'invalid' }, (refused) =>
       refusesCategory(refused)
         ? {
-            message: refused.values.every(
-              ({ field }) => field === 'updates.categoryId',
-            )
-              ? undefined
-              : CHECK_THE_VALUES_MESSAGE,
+            message: inJapaneseIfAny(
+              refused.values.every(
+                ({ field }) => field === 'updates.categoryId',
+              )
+                ? undefined
+                : CHECK_THE_VALUES_MESSAGE,
+            ),
             errors: { categoryId: CATEGORY_GONE },
           }
-        : aboutTheAttempt(CHECK_THE_VALUES_MESSAGE),
+        : aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE)),
     )
     .with({ type: 'servicesGone' }, () => aboutTheAttempt(SERVICES_GONE))
     .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED))
     .exhaustive()

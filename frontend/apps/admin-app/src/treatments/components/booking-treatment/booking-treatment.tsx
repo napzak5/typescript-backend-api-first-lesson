@@ -5,8 +5,10 @@ import {
   ButtonLink,
   Card,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import type { TreatmentOfBookingRead } from '../../api/treatments-api'
@@ -53,7 +55,9 @@ export const BookingTreatment = ({
           ))
           .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
             <UnreadNotice
-              message={unreadMessageOf('施術記録', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('施術記録'), reason),
+              )}
               onRetry={onRetry}
               pending={retrying}
             />

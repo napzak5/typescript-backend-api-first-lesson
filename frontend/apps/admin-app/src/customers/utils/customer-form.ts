@@ -30,9 +30,11 @@ import {
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
+  errorsInJapanese,
   type FormRead,
   type FormSays,
   inJapanese,
+  inJapaneseIfAny,
   NONE,
   same,
   textOf,
@@ -121,25 +123,35 @@ const readWhole = (
   const hairThickness = choiceOf(HAIR_THICKNESSES, text('hairThickness'))
   const scalpCondition = choiceOf(SCALP_CONDITIONS, text('scalpCondition'))
   const found: Record<string, string | undefined> = {
-    lastName: lastNameError(lastName),
-    firstName: firstNameError(firstName),
-    email: emailError(email),
-    phoneNumber: phoneError(phoneNumber),
-    alternativePhone: alternativePhoneError(alternativePhone),
-    birthDate: birthDateError(birthDate, today),
-    gender: gender === undefined ? UNLISTED_MESSAGE : undefined,
-    membershipTier:
+    lastName: inJapaneseIfAny(lastNameError(lastName)),
+    firstName: inJapaneseIfAny(firstNameError(firstName)),
+    email: inJapaneseIfAny(emailError(email)),
+    phoneNumber: inJapaneseIfAny(phoneError(phoneNumber)),
+    alternativePhone: inJapaneseIfAny(alternativePhoneError(alternativePhone)),
+    birthDate: inJapaneseIfAny(birthDateError(birthDate, today)),
+    gender: inJapaneseIfAny(
+      gender === undefined ? UNLISTED_MESSAGE : undefined,
+    ),
+    membershipTier: inJapaneseIfAny(
       membershipTier === undefined || membershipTier === null
         ? UNLISTED_MESSAGE
         : undefined,
-    customerStatus:
+    ),
+    customerStatus: inJapaneseIfAny(
       customerStatus === undefined || customerStatus === null
         ? UNLISTED_MESSAGE
         : undefined,
-    hairType: hairType === undefined ? UNLISTED_MESSAGE : undefined,
-    hairThickness: hairThickness === undefined ? UNLISTED_MESSAGE : undefined,
-    scalpCondition: scalpCondition === undefined ? UNLISTED_MESSAGE : undefined,
-    ...lengthErrors(LENGTHS, optional),
+    ),
+    hairType: inJapaneseIfAny(
+      hairType === undefined ? UNLISTED_MESSAGE : undefined,
+    ),
+    hairThickness: inJapaneseIfAny(
+      hairThickness === undefined ? UNLISTED_MESSAGE : undefined,
+    ),
+    scalpCondition: inJapaneseIfAny(
+      scalpCondition === undefined ? UNLISTED_MESSAGE : undefined,
+    ),
+    ...errorsInJapanese(lengthErrors(LENGTHS, optional)),
   }
   const errors = Object.fromEntries(
     Object.entries(found).flatMap(([name, error]): [string, string][] =>
@@ -383,7 +395,9 @@ const messageAt = (control: string, rule: string): string =>
         ? 'お客様ご自身は、紹介元に選べません。ほかのお客様を選んでください。'
         : '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
     )
-    .otherwise(() => customerRefusalOf(control, rule) ?? REFUSED_VALUE_MESSAGE)
+    .otherwise(() =>
+      inJapanese(customerRefusalOf(control, rule) ?? REFUSED_VALUE_MESSAGE),
+    )
 
 const DUPLICATES: Record<'email' | 'referralCode', string> = {
   email:
@@ -426,7 +440,9 @@ export const afterCustomerWrite = (
         .filter(({ control }) => CONTROLS.includes(control))
 
       return {
-        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        message: inJapaneseIfAny(
+          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(
           said
@@ -441,7 +457,7 @@ export const afterCustomerWrite = (
     }))
     .with({ type: 'forbidden' }, () => CANNOT_HANDLE_CUSTOMERS)
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()

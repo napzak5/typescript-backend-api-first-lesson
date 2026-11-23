@@ -14,6 +14,7 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { ProfileRead } from '../../profile/api/profile-api'
@@ -114,7 +115,10 @@ export const readReport = (
     return { type: 'invalid', errors: { [REASON]: REASON_MISSING } }
   }
   if (lengthOf(details) > MAX_DETAILS_LENGTH) {
-    return { type: 'invalid', errors: { [DETAILS]: DETAILS_TOO_LONG } }
+    return {
+      type: 'invalid',
+      errors: { [DETAILS]: inJapanese(DETAILS_TOO_LONG) },
+    }
   }
   if (reason === 'other' && details === '') {
     return { type: 'invalid', errors: { [DETAILS]: DETAILS_MISSING } }
@@ -130,7 +134,7 @@ export const readReport = (
 const detailsMessageOf = (rule: string): string =>
   match(rule)
     .with('custom', () => DETAILS_MISSING)
-    .with('too_big', () => DETAILS_TOO_LONG)
+    .with('too_big', () => inJapanese(DETAILS_TOO_LONG))
     .otherwise(() => UNACCEPTABLE)
 
 /**
@@ -142,7 +146,7 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
   const details = values.find(({ field }) => field === DETAILS)
 
   return reason === undefined && details === undefined
-    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
+    ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
     : {
         message: undefined,
         errors: {
@@ -169,7 +173,9 @@ export const afterReport = (
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
+    )
     .exhaustive()

@@ -1,4 +1,5 @@
 import { TOO_MANY_REQUESTS_MESSAGE } from '@beauty-salon-frontend/answers'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { SalonRemoval } from '../api/settings-api'
 
@@ -54,7 +55,7 @@ export const afterSalonRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

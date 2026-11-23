@@ -23,6 +23,7 @@ import {
   type FormErrors,
   type FormRead,
   type FormSays,
+  inJapanese,
   same,
   textOf,
   textOrNull,
@@ -275,10 +276,10 @@ const errorsOf = (entered: Entered): FormErrors => {
 
       return error === undefined ? [] : [error]
     }),
-    ...(images === undefined ? [] : [[INSPIRATION_IMAGES, images]]),
+    ...(images === undefined ? [] : [[INSPIRATION_IMAGES, inJapanese(images)]]),
     ...(lengthOf(entered.communicationStyle.trim()) >
     MAX_COMMUNICATION_STYLE_LENGTH
-      ? [[COMMUNICATION_STYLE, COMMUNICATION_STYLE_TOO_LONG]]
+      ? [[COMMUNICATION_STYLE, inJapanese(COMMUNICATION_STYLE_TOO_LONG)]]
       : []),
   ])
 }
@@ -384,9 +385,13 @@ const messageOf = (control: string, rule: string): string =>
     )
     .with(AVOIDED_STAFF, () => AVOIDED_STAFF_GONE)
     .with(COMMUNICATION_STYLE, () =>
-      rule === 'too_big' ? COMMUNICATION_STYLE_TOO_LONG : REFUSED_VALUE_MESSAGE,
+      inJapanese(
+        rule === 'too_big'
+          ? COMMUNICATION_STYLE_TOO_LONG
+          : REFUSED_VALUE_MESSAGE,
+      ),
     )
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 /**
  * What the form says about the values the API did not take: at the
@@ -408,7 +413,7 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
   )
 
   return said.length === 0 && !ofTimeSlots
-    ? aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
+    ? aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
     : {
         message: ofTimeSlots ? TIME_SLOTS_REFUSED : undefined,
         // The first thing the API says about a value is the one to act on
@@ -433,7 +438,9 @@ export const afterPreferencesChange = (outcome: PreferencesRefusal): FormSays =>
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => afterRefusedValues(values))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
-    .with({ type: 'failed' }, () => aboutTheAttempt(NOT_SENT_MESSAGE))
+    .with({ type: 'failed' }, () =>
+      aboutTheAttempt(inJapanese(NOT_SENT_MESSAGE)),
+    )
     .exhaustive()

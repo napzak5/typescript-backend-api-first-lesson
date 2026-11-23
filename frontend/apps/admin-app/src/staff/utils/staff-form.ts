@@ -25,8 +25,11 @@ import {
 } from '@beauty-salon-frontend/fields'
 import {
   aboutTheAttempt,
+  errorsInJapanese,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
@@ -128,18 +131,18 @@ const readWhole = (values: FormData): FormRead<Whole> => {
   )
   const bufferTimeAfter = wholeNumberIn(text('bufferTimeAfter'), 0, MOST_BUFFER)
   const found: Record<string, string | undefined> = {
-    lastName: lastNameError(lastName),
-    firstName: firstNameError(firstName),
+    lastName: inJapaneseIfAny(lastNameError(lastName)),
+    firstName: inJapaneseIfAny(firstNameError(firstName)),
     displayName: match(displayName.length)
       .with(0, () => '表示名を入力してください。')
       .when(
         (length) => length > LONGEST_DISPLAY_NAME,
-        () => tooLong(LONGEST_DISPLAY_NAME),
+        () => inJapanese(tooLong(LONGEST_DISPLAY_NAME)),
       )
       .otherwise(() => undefined),
-    email: emailError(email),
-    phoneNumber: phoneError(phoneNumber),
-    alternativePhone: alternativePhoneError(alternativePhone),
+    email: inJapaneseIfAny(emailError(email)),
+    phoneNumber: inJapaneseIfAny(phoneError(phoneNumber)),
+    alternativePhone: inJapaneseIfAny(alternativePhoneError(alternativePhone)),
     level: level === undefined ? 'レベルを選んでください。' : undefined,
     hireDate:
       hireDate === null || isDay(hireDate) ? undefined : HIRE_DATE_OUT_OF_RANGE,
@@ -149,7 +152,7 @@ const readWhole = (values: FormData): FormRead<Whole> => {
       maxConcurrentBookings === undefined ? CONCURRENT_ERROR : undefined,
     bufferTimeBefore: bufferTimeBefore === undefined ? BUFFER_ERROR : undefined,
     bufferTimeAfter: bufferTimeAfter === undefined ? BUFFER_ERROR : undefined,
-    ...lengthErrors(LONGEST, optional),
+    ...errorsInJapanese(lengthErrors(LONGEST, optional)),
   }
   const errors = {
     ...Object.fromEntries(
@@ -352,8 +355,8 @@ const CONTROLS: readonly string[] = [
 const messageAt = (control: string): string =>
   match(control)
     .with('hireDate', () => HIRE_DATE_OUT_OF_RANGE)
-    .with('imageUrl', () => WEB_ADDRESS_ERROR)
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .with('imageUrl', () => inJapanese(WEB_ADDRESS_ERROR))
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 const DUPLICATES: Record<'email' | 'staffCode', string> = {
   email:
@@ -393,7 +396,9 @@ export const afterStaffWrite = (
         .filter((control) => CONTROLS.includes(control))
 
       return {
-        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        message: inJapaneseIfAny(
+          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         errors: Object.fromEntries(
           said.map((control) => [control, messageAt(control)]),
         ),
@@ -409,7 +414,7 @@ export const afterStaffWrite = (
     }))
     .with({ type: 'forbidden' }, () => CANNOT_KEEP_STAFF)
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()

@@ -1,7 +1,7 @@
 import { unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { FileToSave } from '@beauty-salon-frontend/io'
 import { type Period, periodNameOf } from '@beauty-salon-frontend/salon-screens'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import { inJapanese, writtenInJapanese } from '@beauty-salon-frontend/ui'
 import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
 import type { SalesReportExport } from '../api/sales-report-api'
@@ -63,7 +63,7 @@ export const afterReportExport = (
     }))
     .with({ type: 'tooManyRequests' }, (reason) => ({
       type: 'refused',
-      message: unreadMessageOf('売上', reason),
+      message: inJapanese(unreadMessageOf(writtenInJapanese('売上'), reason)),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'refused',

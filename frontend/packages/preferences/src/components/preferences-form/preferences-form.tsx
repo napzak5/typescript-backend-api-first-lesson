@@ -5,6 +5,7 @@ import {
   Form,
   FormPart,
   type FormProps,
+  inJapanese,
   Note,
   Select,
   TextArea,
@@ -139,7 +140,7 @@ export const PreferencesForm = ({
           label='接客の好み'
           name={COMMUNICATION_STYLE}
           autoComplete='off'
-          description={`会話の多さなどを、${charactersOf(MAX_COMMUNICATION_STYLE_LENGTH)}以内で書いてください。`}
+          description={`会話の多さなどを、${inJapanese(charactersOf(MAX_COMMUNICATION_STYLE_LENGTH))}以内で書いてください。`}
           defaultValue={entered.communicationStyle}
           error={errors[COMMUNICATION_STYLE]}
         />

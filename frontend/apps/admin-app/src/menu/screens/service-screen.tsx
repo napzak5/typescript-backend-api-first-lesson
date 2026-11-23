@@ -3,9 +3,11 @@ import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
@@ -76,7 +78,9 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
       <>
         {header}
         <UnreadNotice
-          message={unreadMessageOf('サービス', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('サービス'), reason),
+          )}
           onRetry={retry}
           pending={retrying}
         />
@@ -88,7 +92,9 @@ const ServicePart = ({ salon, serviceId }: ServicePartProps) => {
         <>
           {header}
           <UnreadNotice
-            message={unreadMessageOf('メニュー', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('メニュー'), reason),
+            )}
             onRetry={retry}
             pending={retrying}
           />

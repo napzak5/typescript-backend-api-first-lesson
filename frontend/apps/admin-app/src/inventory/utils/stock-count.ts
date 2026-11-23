@@ -12,6 +12,8 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
@@ -154,7 +156,9 @@ export const afterStockCount = (
       })
 
       return {
-        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        message: inJapaneseIfAny(
+          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         errors: Object.fromEntries(said),
       }
     })
@@ -174,7 +178,7 @@ export const afterStockCount = (
       ),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(

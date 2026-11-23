@@ -14,10 +14,12 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -68,7 +70,9 @@ const SummaryPart = ({ salonId }: { salonId: string }) => {
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={unreadMessageOf('評価のまとめ', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('評価のまとめ'), reason),
+        )}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
@@ -134,7 +138,9 @@ const ReviewList = ({ salon, staff }: ReviewListProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('レビュー', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('レビュー'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

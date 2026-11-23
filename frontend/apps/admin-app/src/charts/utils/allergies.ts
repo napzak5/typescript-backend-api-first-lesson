@@ -22,8 +22,11 @@ import {
   type ChoiceOption,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { mayKeepCustomers } from '../../customers/utils/customer-history'
@@ -100,7 +103,10 @@ const LONGEST_ALLERGEN = 255
 
 const TYPE_MISSING = '種類を選んでください。'
 const ALLERGEN_MISSING = 'アレルゲンを入力してください。'
-const ALLERGEN_TOO_LONG = tooLongOf('アレルゲン', LONGEST_ALLERGEN)
+const ALLERGEN_TOO_LONG = tooLongOf(
+  writtenInJapanese('アレルゲン'),
+  LONGEST_ALLERGEN,
+)
 const SEVERITY_MISSING = '重篤度を選んでください。'
 const DATE_NOT_A_DAY = '確かめた日を、日付で入力してください。'
 const DATE_TOO_EARLY = '確かめた日は、1900年1月1日以降にしてください。'
@@ -138,7 +144,9 @@ const allergenErrorOf = (allergen: string): string | undefined => {
     return ALLERGEN_MISSING
   }
 
-  return lengthOf(allergen) > LONGEST_ALLERGEN ? ALLERGEN_TOO_LONG : undefined
+  return lengthOf(allergen) > LONGEST_ALLERGEN
+    ? inJapanese(ALLERGEN_TOO_LONG)
+    : undefined
 }
 
 /**
@@ -236,7 +244,7 @@ const saidOf = ({ field, rule }: RefusedValue): [string, string] | undefined =>
     .with('allergyType', () => [field, TYPE_MISSING])
     .with('allergenName', () => [
       field,
-      rule === 'too_big' ? ALLERGEN_TOO_LONG : ALLERGEN_MISSING,
+      rule === 'too_big' ? inJapanese(ALLERGEN_TOO_LONG) : ALLERGEN_MISSING,
     ])
     .with('severityType', () => [field, SEVERITY_MISSING])
     .with('confirmedDate', () => [
@@ -277,8 +285,9 @@ export const afterAllergyWrite = (
       })
 
       return {
-        message:
+        message: inJapaneseIfAny(
           said.length < values.length ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
@@ -291,7 +300,7 @@ export const afterAllergyWrite = (
       aboutTheAttempt('このアカウントでは、アレルギーを記録できません。'),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()
@@ -346,7 +355,7 @@ export const afterAllergyRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

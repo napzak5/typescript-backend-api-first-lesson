@@ -16,10 +16,12 @@ import {
   ButtonLink,
   Card,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -278,7 +280,9 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
       [P._, { type: P.union(...UNREAD_TYPES) }],
       (reads) => (
         <UnreadNotice
-          message={unreadMessageOf('売上の内容', whyUnread(reads))}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('売上の内容'), whyUnread(reads)),
+          )}
           onRetry={() => {
             void customer.refetch()
             void staff.refetch()

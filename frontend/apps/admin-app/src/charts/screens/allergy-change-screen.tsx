@@ -9,11 +9,13 @@ import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useState } from 'react'
@@ -84,7 +86,9 @@ const WithAllergy = ({
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={unreadMessageOf('アレルギー', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('アレルギー'), reason),
+        )}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />

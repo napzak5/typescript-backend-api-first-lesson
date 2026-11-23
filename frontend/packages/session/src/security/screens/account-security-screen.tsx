@@ -8,12 +8,14 @@ import type { ModelsSessionResponse } from '@beauty-salon-frontend/api-client'
 import {
   Card,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   type InfiniteData,
@@ -251,7 +253,9 @@ const Account = ({ passwordHref, twoFactorHref, timeZone }: AccountProps) => {
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={unreadMessageOf('アカウント', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('アカウント'), reason),
+        )}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
@@ -334,7 +338,7 @@ const Sessions = ({ timeZone }: PartProps) => {
           }),
         )
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) =>
-          setUnsent(unsentMessageOf(reason)),
+          setUnsent(inJapanese(unsentMessageOf(reason))),
         )
         .exhaustive(),
   })
@@ -359,7 +363,12 @@ const Sessions = ({ timeZone }: PartProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('サインインしている端末', reason)}
+            message={inJapanese(
+              unreadMessageOf(
+                writtenInJapanese('サインインしている端末'),
+                reason,
+              ),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

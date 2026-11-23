@@ -7,10 +7,12 @@ import {
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -84,7 +86,9 @@ export const SalonChoiceScreen = ({
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('サロン', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('サロン'), reason),
+            )}
             onRetry={() => void found.refetch()}
             pending={found.isFetching}
           />

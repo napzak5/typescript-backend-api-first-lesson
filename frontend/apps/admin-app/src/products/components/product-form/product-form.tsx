@@ -11,6 +11,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  inJapanese,
   NO_ERRORS,
   TextArea,
   TextField,
@@ -65,7 +66,7 @@ export const ProductForm = ({
           name='productCode'
           autoComplete='off'
           required
-          description={`${upTo(LONGEST_CODE)}このサロンの、削除していないほかの商品と同じコードは使えません。取り扱いをやめた商品のコードも使えません。`}
+          description={`${inJapanese(upTo(LONGEST_CODE))}このサロンの、削除していないほかの商品と同じコードは使えません。取り扱いをやめた商品のコードも使えません。`}
           defaultValue={product?.productCode}
           error={errors['productCode']}
         />
@@ -74,7 +75,7 @@ export const ProductForm = ({
           name='unit'
           autoComplete='off'
           required
-          description={`本、個、ml など。${upTo(LONGEST_UNIT)}在庫の数を数える単位です。`}
+          description={`本、個、ml など。${inJapanese(upTo(LONGEST_UNIT))}在庫の数を数える単位です。`}
           defaultValue={product?.unit}
           error={errors['unit']}
         />
@@ -84,7 +85,7 @@ export const ProductForm = ({
         name='name'
         autoComplete='off'
         required
-        description={upTo(LONGEST_NAME)}
+        description={inJapanese(upTo(LONGEST_NAME))}
         defaultValue={product?.name}
         error={errors['name']}
       />
@@ -99,7 +100,7 @@ export const ProductForm = ({
           label='カテゴリー'
           name='category'
           autoComplete='off'
-          description={`${upTo(LONGEST_LABEL)}商品台帳で、カテゴリーで探せます。在庫の評価額をカテゴリーごとに集計します。`}
+          description={`${inJapanese(upTo(LONGEST_LABEL))}商品台帳で、カテゴリーで探せます。在庫の評価額をカテゴリーごとに集計します。`}
           defaultValue={textOrNothing(product?.category)}
           error={errors['category']}
         />
@@ -107,7 +108,7 @@ export const ProductForm = ({
           label='ブランド'
           name='brand'
           autoComplete='off'
-          description={upTo(LONGEST_LABEL)}
+          description={inJapanese(upTo(LONGEST_LABEL))}
           defaultValue={textOrNothing(product?.brand)}
           error={errors['brand']}
         />
@@ -207,7 +208,7 @@ export const ProductForm = ({
           label='仕入先'
           name='supplier'
           autoComplete='off'
-          description={upTo(LONGEST_SUPPLIER)}
+          description={inJapanese(upTo(LONGEST_SUPPLIER))}
           defaultValue={textOrNothing(product?.supplier)}
           error={errors['supplier']}
         />
@@ -215,7 +216,7 @@ export const ProductForm = ({
           label='仕入先の商品コード'
           name='supplierProductCode'
           autoComplete='off'
-          description={`${upTo(LONGEST_LABEL)}発注するときに使います。`}
+          description={`${inJapanese(upTo(LONGEST_LABEL))}発注するときに使います。`}
           defaultValue={textOrNothing(product?.supplierProductCode)}
           error={errors['supplierProductCode']}
         />
@@ -238,7 +239,7 @@ export const ProductForm = ({
           name='barcode'
           inputMode='numeric'
           autoComplete='off'
-          description={`${upTo(LONGEST_LABEL)}商品台帳で、バーコードで探せます。`}
+          description={`${inJapanese(upTo(LONGEST_LABEL))}商品台帳で、バーコードで探せます。`}
           defaultValue={textOrNothing(product?.barcode)}
           error={errors['barcode']}
         />
@@ -272,7 +273,7 @@ export const ProductForm = ({
         type='url'
         inputMode='url'
         autoComplete='off'
-        description={WEB_ADDRESS_DESCRIPTION}
+        description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
         defaultValue={textOrNothing(product?.imageUrl)}
         error={errors['imageUrl']}
       />
@@ -282,7 +283,7 @@ export const ProductForm = ({
         type='url'
         inputMode='url'
         autoComplete='off'
-        description={`メーカーの安全データシート（SDS）の URL。${upTo(LONGEST_WEB_ADDRESS)}`}
+        description={`メーカーの安全データシート（SDS）の URL。${inJapanese(upTo(LONGEST_WEB_ADDRESS))}`}
         defaultValue={textOrNothing(product?.safetyDataSheet)}
         error={errors['safetyDataSheet']}
       />

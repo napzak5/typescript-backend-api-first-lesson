@@ -10,9 +10,11 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -97,7 +99,9 @@ export const WithSale = ({ salon, title, fresh, children }: WithSaleProps) => {
         <>
           <PageHeader title={title} description={salon.name} />
           <UnreadNotice
-            message={unreadMessageOf('売上', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('売上'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />
@@ -136,7 +140,9 @@ export const WithPaymentMethods = ({
     .with({ type: 'forbidden' }, () => <OtherSalonNotice what='売上' />)
     .with({ type: P.union(...UNREAD_TYPES, 'notFound') }, (reason) => (
       <UnreadNotice
-        message={unreadMessageOf('支払い方法', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('支払い方法'), reason),
+        )}
         onRetry={() => void methods.refetch()}
         pending={methods.isFetching}
       />

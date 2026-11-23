@@ -3,6 +3,7 @@ import type {
   ModelsCustomerResponse,
   ModelsCustomerVersionOperationType,
 } from '@beauty-salon-frontend/api-client'
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import type {
   CustomerRemoval,
@@ -98,7 +99,7 @@ export const afterRemoval = (outcome: CustomerRemoval): RemovalSays =>
     .with({ type: 'notFound' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -138,7 +139,7 @@ export const afterRestoration = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'refused',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'refused',

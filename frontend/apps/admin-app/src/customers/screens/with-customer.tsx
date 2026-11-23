@@ -5,9 +5,11 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -130,7 +132,9 @@ export const WithCustomer = ({
       <>
         <PageHeader title={title} description={salon.name} />
         <UnreadNotice
-          message={unreadMessageOf('お客様', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('お客様'), reason),
+          )}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />

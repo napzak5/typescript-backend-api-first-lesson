@@ -7,6 +7,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  inJapanese,
   NO_ERRORS,
   Note,
   Select,
@@ -66,7 +67,7 @@ export const SalonForm = ({
           name='name'
           autoComplete='organization'
           required
-          description={`${upTo(LONGEST_NAME)}お客様がサロンを探すときに出ます。`}
+          description={`${inJapanese(upTo(LONGEST_NAME))}お客様がサロンを探すときに出ます。`}
           defaultValue={salon.name}
           error={errors['name']}
         />
@@ -74,7 +75,7 @@ export const SalonForm = ({
           label='カナ'
           name='nameKana'
           autoComplete='off'
-          description={upTo(LONGEST_NAME)}
+          description={inJapanese(upTo(LONGEST_NAME))}
           defaultValue={textOrEmpty(salon.nameKana)}
           error={errors['nameKana']}
         />
@@ -99,7 +100,7 @@ export const SalonForm = ({
             label='郵便番号'
             name='postalCode'
             autoComplete='postal-code'
-            description={upTo(LONGEST_POSTAL_CODE)}
+            description={inJapanese(upTo(LONGEST_POSTAL_CODE))}
             defaultValue={textOrEmpty(salon.postalCode)}
             error={errors['postalCode']}
           />
@@ -195,7 +196,7 @@ export const SalonForm = ({
           name='websiteUrl'
           type='url'
           autoComplete='url'
-          description={WEB_ADDRESS_DESCRIPTION}
+          description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
           defaultValue={textOrEmpty(salon.websiteUrl)}
           error={errors['websiteUrl']}
         />
@@ -206,7 +207,7 @@ export const SalonForm = ({
           name='logoUrl'
           type='url'
           autoComplete='off'
-          description={WEB_ADDRESS_DESCRIPTION}
+          description={inJapanese(WEB_ADDRESS_DESCRIPTION)}
           defaultValue={textOrEmpty(salon.logoUrl)}
           error={errors['logoUrl']}
         />

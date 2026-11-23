@@ -6,9 +6,11 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { OtherSalonNotice } from '@beauty-salon-frontend/salon-screens'
 import {
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
@@ -85,7 +87,9 @@ export const WithStockRow = ({
         <>
           {header}
           <UnreadNotice
-            message={unreadMessageOf('在庫の行', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('在庫の行'), reason),
+            )}
             onRetry={() => void row.refetch()}
             pending={row.isFetching}
           />
@@ -102,7 +106,9 @@ export const WithStockRow = ({
           <>
             {header}
             <UnreadNotice
-              message={unreadMessageOf('商品', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('商品'), reason),
+              )}
               onRetry={() => void products.refetch()}
               pending={products.isFetching}
             />

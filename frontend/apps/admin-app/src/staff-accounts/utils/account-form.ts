@@ -9,6 +9,7 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -129,7 +130,7 @@ export const afterInvitation = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      says: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      says: aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -178,7 +179,7 @@ export const afterRoleChange = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      says: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      says: aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',
@@ -197,7 +198,7 @@ export type AfterDialog =
 
 const tooManyRequests = (): AfterDialog => ({
   type: 'again',
-  message: TOO_MANY_REQUESTS_MESSAGE,
+  message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
 })
 
 /** What the screen does with what the API answered to the revocation of the invitation of a member. */

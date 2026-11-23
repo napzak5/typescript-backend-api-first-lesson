@@ -9,6 +9,7 @@ import {
   type FormErrors,
   FormPart,
   type FormProps,
+  inJapanese,
   NO_ERRORS,
   Select,
   TextArea,
@@ -39,7 +40,7 @@ export type StockFormProps = Pick<
   errors?: FormErrors | undefined
 }
 
-const LOT_KEPT = `${upTo(LONGEST_LOT)}この商品のほかの在庫の行と同じロット番号は使えません。`
+const LOT_KEPT = `${inJapanese(upTo(LONGEST_LOT))}この商品のほかの在庫の行と同じロット番号は使えません。`
 const LOT_TO_CLEAR =
   'この商品は、在庫をロット番号で分けません。ロット番号は、消すことだけができます。'
 
@@ -123,7 +124,7 @@ export const StockForm = ({
             label='保管場所'
             name='location'
             autoComplete='off'
-            description={upTo(LONGEST_LOCATION)}
+            description={inJapanese(upTo(LONGEST_LOCATION))}
             defaultValue={row?.location ?? undefined}
             error={errors['location']}
           />
@@ -131,7 +132,7 @@ export const StockForm = ({
             label='棚'
             name='shelf'
             autoComplete='off'
-            description={upTo(LONGEST_SHELF)}
+            description={inJapanese(upTo(LONGEST_SHELF))}
             defaultValue={row?.shelf ?? undefined}
             error={errors['shelf']}
           />

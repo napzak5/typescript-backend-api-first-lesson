@@ -6,12 +6,14 @@ import {
   Button,
   EmptyState,
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   NO_ERRORS,
   RadioGroup,
   Select,
   TextField,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   type ChangeEvent,
@@ -203,7 +205,9 @@ export const BookingForm = ({
         ))
         .with({ type: 'unread' }, ({ reason, retrying }) => (
           <UnreadNotice
-            message={unreadMessageOf('空いている時刻', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('空いている時刻'), reason),
+            )}
             onRetry={onRetry}
             pending={retrying}
           />

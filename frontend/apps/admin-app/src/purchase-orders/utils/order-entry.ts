@@ -15,8 +15,10 @@ import {
   type FormRead,
   type FormSays,
   inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
@@ -41,7 +43,10 @@ const MOST_YEN = 2_147_483_647
 const LONGEST_SUPPLIER = 255
 
 const SUPPLIER_MISSING = '仕入先を入力してください。'
-const SUPPLIER_TOO_LONG = tooLongOf('仕入先', LONGEST_SUPPLIER)
+const SUPPLIER_TOO_LONG = tooLongOf(
+  writtenInJapanese('仕入先'),
+  LONGEST_SUPPLIER,
+)
 const QUANTITY_ERROR =
   '数量は、0 より大きく 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。'
 const PRICE_ERROR = '単価は、0 以上の円の整数で入力してください。'
@@ -159,7 +164,7 @@ type Supplier =
  * supplier by the same rule.
  */
 export const supplierError = (name: string | null): string | undefined =>
-  tooLongError(name, LONGEST_SUPPLIER, SUPPLIER_TOO_LONG)
+  inJapaneseIfAny(tooLongError(name, LONGEST_SUPPLIER, SUPPLIER_TOO_LONG))
 
 const supplierOf = (text: string): Supplier => {
   const name = textOrNull(text)
@@ -263,7 +268,7 @@ export const readOrderEntry = (
 
 /** The errors of the fields of the order itself, by the name of the field and of its control */
 const FIELD_ERRORS: Record<string, string> = {
-  supplier: SUPPLIER_TOO_LONG,
+  supplier: inJapanese(SUPPLIER_TOO_LONG),
   taxAmount: TAX_ERROR,
   shippingCost: SHIPPING_ERROR,
   expectedDelivery: DAY_ERROR,
@@ -307,7 +312,7 @@ export const afterOrderEntry = (
       const message = values.some(({ field }) => field === 'items')
         ? TOO_MUCH
         : said.length < values.length
-          ? CHECK_THE_VALUES_MESSAGE
+          ? inJapanese(CHECK_THE_VALUES_MESSAGE)
           : undefined
 
       return { message, errors: Object.fromEntries(said) }
@@ -321,7 +326,7 @@ export const afterOrderEntry = (
       aboutTheAttempt('このアカウントでは、このサロンの発注を作れません。'),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(

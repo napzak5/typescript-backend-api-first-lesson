@@ -19,12 +19,14 @@ import {
   ButtonLink,
   Dialog,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -233,7 +235,9 @@ const ChangePart = ({ salon, paymentMethodId }: ChangePartProps) => {
       <>
         {header}
         <UnreadNotice
-          message={unreadMessageOf('支払い方法', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('支払い方法'), reason),
+          )}
           onRetry={() => void method.refetch()}
           pending={method.isFetching}
         />

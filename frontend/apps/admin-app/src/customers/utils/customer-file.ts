@@ -15,7 +15,7 @@ import {
   PREFERRED_SERVICES,
   SERVICE_CATEGORIES,
 } from '@beauty-salon-frontend/fields'
-import { aboutTheAttempt } from '@beauty-salon-frontend/ui'
+import { aboutTheAttempt, inJapanese } from '@beauty-salon-frontend/ui'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
 import { CANNOT_HANDLE_CUSTOMERS, readCustomerEntry } from './customer-form'
@@ -755,7 +755,7 @@ export const afterRegistration = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE).message,
+      message: aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)).message,
       problems: [],
     }))
     .with({ type: 'failed' }, () => ({

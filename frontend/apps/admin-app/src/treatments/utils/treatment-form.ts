@@ -22,9 +22,12 @@ import {
   errorAt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   same,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { tagsIn } from '../../customers/utils/customer-ledger'
@@ -59,7 +62,10 @@ const MOST_QUANTITY = 99_999_999.99
 const STAFF_MISSING = '担当を選んでください。'
 const SERVICES_MISSING = '提供したサービスを選んでください。'
 const TOO_MANY_SERVICES = `提供したサービスは、${MOST_IN_A_LIST} 件までにしてください。`
-const TECHNIQUE_TOO_LONG = eachTooLongOf('技法の名前', LONGEST_TECHNIQUE)
+const TECHNIQUE_TOO_LONG = eachTooLongOf(
+  writtenInJapanese('技法の名前'),
+  LONGEST_TECHNIQUE,
+)
 const TOO_MANY_TECHNIQUES = `技法は、${MOST_IN_A_LIST} 件までで入力してください。`
 const TIME_ERROR = `施術時間は、0 から ${LONGEST_TREATMENT} までの分の整数で入力してください。`
 const DATE_ERROR = '次に勧める日を、日付で入力してください。'
@@ -71,10 +77,13 @@ const PRODUCT_GONE =
 const QUANTITY_ERROR =
   '量は、0 より大きい数で、小数第 2 位まで入力してください。'
 const UNIT_MISSING = '単位を入力してください。'
-const UNIT_TOO_LONG = tooLongOf('単位', LONGEST_UNIT)
+const UNIT_TOO_LONG = tooLongOf(writtenInJapanese('単位'), LONGEST_UNIT)
 const LOT_MISSING =
   'この商品は、ロットで管理しています。ロット番号を入力してください。'
-const LOT_TOO_LONG = tooLongOf('ロット番号', LONGEST_LOT_NUMBER)
+const LOT_TOO_LONG = tooLongOf(
+  writtenInJapanese('ロット番号'),
+  LONGEST_LOT_NUMBER,
+)
 const LOT_NOT_TAKEN =
   'この商品は、ロットで管理していません。ロット番号を消してください。'
 const LOT_CHANGED =
@@ -146,7 +155,7 @@ const lotErrorOf = (
   lotNumber: string | null,
 ): string | undefined => {
   if (lotNumber !== null && lengthOf(lotNumber) > LONGEST_LOT_NUMBER) {
-    return LOT_TOO_LONG
+    return inJapanese(LOT_TOO_LONG)
   }
   if (product === undefined) {
     return undefined
@@ -190,9 +199,9 @@ const readMaterial = (
       materialControlOf(index, 'unit'),
       unit === ''
         ? UNIT_MISSING
-        : lengthOf(unit) > LONGEST_UNIT
-          ? UNIT_TOO_LONG
-          : undefined,
+        : inJapaneseIfAny(
+            lengthOf(unit) > LONGEST_UNIT ? UNIT_TOO_LONG : undefined,
+          ),
     ),
     ...errorAt(
       materialControlOf(index, 'lotNumber'),
@@ -229,7 +238,7 @@ const techniquesErrorOf = (
   techniques: readonly string[],
 ): string | undefined => {
   if (techniques.some((name) => lengthOf(name) > LONGEST_TECHNIQUE)) {
-    return TECHNIQUE_TOO_LONG
+    return inJapanese(TECHNIQUE_TOO_LONG)
   }
 
   return techniques.length > MOST_IN_A_LIST ? TOO_MANY_TECHNIQUES : undefined
@@ -509,8 +518,12 @@ const materialSaidOf = (name: string, rule: string): string =>
       rule === 'not_found' ? PRODUCT_GONE : PRODUCT_MISSING,
     )
     .with('quantity', () => QUANTITY_ERROR)
-    .with('unit', () => (rule === 'too_big' ? UNIT_TOO_LONG : UNIT_MISSING))
-    .otherwise(() => (rule === 'too_big' ? LOT_TOO_LONG : LOT_CHANGED))
+    .with('unit', () =>
+      rule === 'too_big' ? inJapanese(UNIT_TOO_LONG) : UNIT_MISSING,
+    )
+    .otherwise(() =>
+      rule === 'too_big' ? inJapanese(LOT_TOO_LONG) : LOT_CHANGED,
+    )
 
 /** What the API says is wrong with a list, in the words of the form. */
 const listSaidOf = (
@@ -521,7 +534,7 @@ const listSaidOf = (
   match(name)
     .returnType<string>()
     .with('techniques', () =>
-      item === undefined ? TOO_MANY_TECHNIQUES : TECHNIQUE_TOO_LONG,
+      item === undefined ? TOO_MANY_TECHNIQUES : inJapanese(TECHNIQUE_TOO_LONG),
     )
     .with('nextRecommendedServices', () =>
       item === undefined ? TOO_MANY_NEXT_SERVICES : SERVICE_GONE,
@@ -596,9 +609,11 @@ export const afterTreatmentWrite = (
         // The customer of a record is that of its booking, and no control
         message: values.some(({ field }) => field === 'customerId')
           ? CUSTOMER_GONE
-          : said.length < values.length
-            ? CHECK_THE_VALUES_MESSAGE
-            : undefined,
+          : inJapaneseIfAny(
+              said.length < values.length
+                ? CHECK_THE_VALUES_MESSAGE
+                : undefined,
+            ),
         // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(said.toReversed()),
       }
@@ -607,7 +622,7 @@ export const afterTreatmentWrite = (
       aboutTheAttempt('このアカウントでは、施術記録を書けません。'),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () => aboutTheAttempt(FAILED_WRITES[write]))
     .exhaustive()

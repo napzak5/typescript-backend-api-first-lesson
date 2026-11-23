@@ -4,9 +4,11 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useId } from 'react'
@@ -84,7 +86,9 @@ const MenuPart = ({ salon }: MenuPartProps) => {
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={unreadMessageOf('メニュー', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('メニュー'), reason),
+              )}
               onRetry={() => {
                 void categories.refetch()
                 void services.refetch()

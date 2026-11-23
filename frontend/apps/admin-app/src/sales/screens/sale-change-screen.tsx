@@ -13,11 +13,13 @@ import { WithSalon } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -158,7 +160,9 @@ const WithStaff = ({ salon, sale }: Omit<SaleChangeProps, 'staff'>) => {
     ))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={unreadMessageOf('スタッフ', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('スタッフ'), reason),
+        )}
         onRetry={() => void staff.refetch()}
         pending={staff.isFetching}
       />

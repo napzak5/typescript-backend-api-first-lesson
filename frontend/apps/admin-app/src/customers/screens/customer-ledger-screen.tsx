@@ -14,12 +14,14 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   useInfiniteQuery,
@@ -263,7 +265,9 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={unreadMessageOf('顧客台帳', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('顧客台帳'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

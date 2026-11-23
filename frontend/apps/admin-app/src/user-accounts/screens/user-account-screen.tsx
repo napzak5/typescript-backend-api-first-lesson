@@ -6,10 +6,12 @@ import {
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -236,7 +238,9 @@ const AccountPage = ({ userId }: AccountPageProps) => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('アカウント', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('アカウント'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

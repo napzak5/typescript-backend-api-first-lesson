@@ -25,9 +25,11 @@ import {
   errorAt,
   type FormSays,
   inJapanese,
+  inJapaneseIfAny,
   same,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import * as formats from '@beauty-salon-shared/i18n/formats'
 import { match } from 'ts-pattern'
@@ -52,13 +54,22 @@ const LONGEST_CITY = 100
 const LONGEST_ADDRESS = 255
 const LONGEST_TAX_RATE = 100
 
-const NAME_ERROR = neededWithin('サロンの名前', LONGEST_NAME)
-const KANA_ERROR = tooLongOf('カナ', LONGEST_NAME)
-const POSTAL_CODE_ERROR = tooLongOf('郵便番号', LONGEST_POSTAL_CODE)
-const PREFECTURE_ERROR = neededWithin('都道府県', LONGEST_PREFECTURE)
-const CITY_ERROR = neededWithin('市区町村', LONGEST_CITY)
-const ADDRESS_ERROR = neededWithin('町名・番地', LONGEST_ADDRESS)
-const BUILDING_ERROR = tooLongOf('建物', LONGEST_ADDRESS)
+const NAME_ERROR = neededWithin(writtenInJapanese('サロンの名前'), LONGEST_NAME)
+const KANA_ERROR = tooLongOf(writtenInJapanese('カナ'), LONGEST_NAME)
+const POSTAL_CODE_ERROR = tooLongOf(
+  writtenInJapanese('郵便番号'),
+  LONGEST_POSTAL_CODE,
+)
+const PREFECTURE_ERROR = neededWithin(
+  writtenInJapanese('都道府県'),
+  LONGEST_PREFECTURE,
+)
+const CITY_ERROR = neededWithin(writtenInJapanese('市区町村'), LONGEST_CITY)
+const ADDRESS_ERROR = neededWithin(
+  writtenInJapanese('町名・番地'),
+  LONGEST_ADDRESS,
+)
+const BUILDING_ERROR = tooLongOf(writtenInJapanese('建物'), LONGEST_ADDRESS)
 const LATITUDE_ERROR =
   '緯度は、-90 から 90 までの数（小数は 8 桁まで）で入力してください。'
 const LONGITUDE_ERROR =
@@ -186,34 +197,56 @@ const readWhole = (values: FormData): Whole => {
   const photos = textOf(values, 'imageUrls')
   const taxRate = numberOf(textOf(values, 'taxRate'), 2)
   const errors: Record<string, string> = Object.fromEntries([
-    ...errorAt('name', neededError(name, LONGEST_NAME, NAME_ERROR)),
-    ...errorAt('nameKana', tooLongError(nameKana, LONGEST_NAME, KANA_ERROR)),
+    ...errorAt(
+      'name',
+      inJapaneseIfAny(neededError(name, LONGEST_NAME, NAME_ERROR)),
+    ),
+    ...errorAt(
+      'nameKana',
+      inJapaneseIfAny(tooLongError(nameKana, LONGEST_NAME, KANA_ERROR)),
+    ),
     ...errorAt(
       'postalCode',
-      tooLongError(postalCode, LONGEST_POSTAL_CODE, POSTAL_CODE_ERROR),
+      inJapaneseIfAny(
+        tooLongError(postalCode, LONGEST_POSTAL_CODE, POSTAL_CODE_ERROR),
+      ),
     ),
     ...errorAt(
       'prefecture',
-      neededError(prefecture, LONGEST_PREFECTURE, PREFECTURE_ERROR),
+      inJapaneseIfAny(
+        neededError(prefecture, LONGEST_PREFECTURE, PREFECTURE_ERROR),
+      ),
     ),
-    ...errorAt('city', neededError(city, LONGEST_CITY, CITY_ERROR)),
-    ...errorAt('address', neededError(address, LONGEST_ADDRESS, ADDRESS_ERROR)),
+    ...errorAt(
+      'city',
+      inJapaneseIfAny(neededError(city, LONGEST_CITY, CITY_ERROR)),
+    ),
+    ...errorAt(
+      'address',
+      inJapaneseIfAny(neededError(address, LONGEST_ADDRESS, ADDRESS_ERROR)),
+    ),
     ...errorAt(
       'building',
-      tooLongError(building, LONGEST_ADDRESS, BUILDING_ERROR),
+      inJapaneseIfAny(tooLongError(building, LONGEST_ADDRESS, BUILDING_ERROR)),
     ),
     ...errorAt('latitude', latitude === undefined ? LATITUDE_ERROR : undefined),
     ...errorAt(
       'longitude',
       longitude === undefined ? LONGITUDE_ERROR : undefined,
     ),
-    ...errorAt('phoneNumber', phoneError(phoneNumber)),
-    ...errorAt('alternativePhone', alternativePhoneError(alternativePhone)),
-    ...errorAt('email', emailError(email)),
-    ...errorAt('websiteUrl', webAddressError(websiteUrl)),
-    ...errorAt('logoUrl', webAddressError(logoUrl)),
+    ...errorAt('phoneNumber', inJapaneseIfAny(phoneError(phoneNumber))),
+    ...errorAt(
+      'alternativePhone',
+      inJapaneseIfAny(alternativePhoneError(alternativePhone)),
+    ),
+    ...errorAt('email', inJapaneseIfAny(emailError(email))),
+    ...errorAt('websiteUrl', inJapaneseIfAny(webAddressError(websiteUrl))),
+    ...errorAt('logoUrl', inJapaneseIfAny(webAddressError(logoUrl))),
     // The API takes a photo at an address of any length
-    ...errorAt('imageUrls', webAddressLinesError(photos, null)),
+    ...errorAt(
+      'imageUrls',
+      inJapaneseIfAny(webAddressLinesError(photos, null)),
+    ),
     ...errorAt(
       'taxRate',
       taxRate === undefined || taxRate === null || taxRate > LONGEST_TAX_RATE
@@ -415,11 +448,11 @@ const saysAfter =
         errors: { email: EMAIL_TAKEN },
       }))
       .with({ type: 'invalid' }, () =>
-        aboutTheAttempt(CHECK_THE_VALUES_MESSAGE),
+        aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE)),
       )
       .with({ type: 'forbidden' }, () => aboutTheAttempt(forbidden))
       .with({ type: 'tooManyRequests' }, () =>
-        aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+        aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
       )
       .with({ type: 'failed' }, () => aboutTheAttempt(failed))
       .exhaustive()

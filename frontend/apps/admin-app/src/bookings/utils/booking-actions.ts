@@ -7,7 +7,7 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { isDay } from '@beauty-salon-frontend/fields'
 import { momentOf } from '@beauty-salon-frontend/salon-screens'
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import { type FormRead, inJapanese, textOf } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import type { StatusChange } from '../api/bookings-api'
 
@@ -154,7 +154,7 @@ export const afterChange = (
     .with({ type: 'notFound' }, { type: 'forbidden' }, () => ({ type: 'gone' }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

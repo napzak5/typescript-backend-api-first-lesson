@@ -5,7 +5,13 @@ import {
   tooLongOf,
 } from '@beauty-salon-frontend/fields'
 import { keywordError, keywordIn } from '@beauty-salon-frontend/salon-screens'
-import { errorAt, type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  errorAt,
+  type FormRead,
+  inJapaneseIfAny,
+  textOf,
+  writtenInJapanese,
+} from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 
 /*
@@ -43,11 +49,11 @@ const purposeFrom = (value: string): Purpose | undefined =>
 /** The longest category and barcode the API takes */
 const LONGEST_NAME = 100
 
-const BARCODE_ERROR = tooLongOf('バーコード', LONGEST_NAME)
+const BARCODE_ERROR = tooLongOf(writtenInJapanese('バーコード'), LONGEST_NAME)
 
 /** What is wrong with a barcode that is looked for: none when nothing is. */
 const barcodeError = (barcode: string): string | undefined =>
-  tooLongError(barcode, LONGEST_NAME, BARCODE_ERROR)
+  inJapaneseIfAny(tooLongError(barcode, LONGEST_NAME, BARCODE_ERROR))
 
 /** A barcode the API takes: not empty, and not too long. */
 const barcodeFrom = (value: string | null): string | undefined => {

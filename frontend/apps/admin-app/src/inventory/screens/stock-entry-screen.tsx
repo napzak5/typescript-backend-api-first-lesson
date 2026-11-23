@@ -9,11 +9,13 @@ import {
   ButtonLink,
   EmptyState,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -170,7 +172,9 @@ const EntryPart = ({ salon }: EntryPartProps) => {
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={unreadMessageOf('商品', reason)}
+              message={inJapanese(
+                unreadMessageOf(writtenInJapanese('商品'), reason),
+              )}
               onRetry={() => void products.refetch()}
               pending={products.isFetching}
             />

@@ -21,12 +21,14 @@ import {
 import {
   ButtonLink,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   moreOfRows,
   PageHeader,
   PeriodSwitch,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router'
@@ -180,9 +182,11 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
           [P._, P._, { type: P.union(...UNREAD_TYPES, 'notFound') }],
           ([, ofStaff, ofServices]) => (
             <UnreadNotice
-              message={unreadMessageOf(
-                'スタッフとメニュー',
-                whyUnread([ofStaff, ofServices]),
+              message={inJapanese(
+                unreadMessageOf(
+                  writtenInJapanese('スタッフとメニュー'),
+                  whyUnread([ofStaff, ofServices]),
+                ),
               )}
               onRetry={() => {
                 void staff.refetch()
@@ -219,7 +223,9 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
                 ))
                 .with({ type: 'unread' }, ({ reason }) => (
                   <UnreadNotice
-                    message={unreadMessageOf('予約', reason)}
+                    message={inJapanese(
+                      unreadMessageOf(writtenInJapanese('予約'), reason),
+                    )}
                     onRetry={() => void read.refetch()}
                     pending={read.isFetching}
                   />
@@ -243,7 +249,12 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
                   return match([rows, rest])
                     .with([[], { type: 'unread' }], ([, { reason }]) => (
                       <UnreadNotice
-                        message={unreadMessageOf('予約のお客様', reason)}
+                        message={inJapanese(
+                          unreadMessageOf(
+                            writtenInJapanese('予約のお客様'),
+                            reason,
+                          ),
+                        )}
                         onRetry={readCustomersAgain}
                         pending={readingCustomersAgain}
                       />

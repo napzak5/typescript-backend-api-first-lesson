@@ -1,6 +1,11 @@
 import { UNREAD_TYPES, unreadMessageOf } from '@beauty-salon-frontend/answers'
 import type { ModelsMedicalChartResponse } from '@beauty-salon-frontend/api-client'
-import { LoadingIndicator, UnreadNotice } from '@beauty-salon-frontend/ui'
+import {
+  inJapanese,
+  LoadingIndicator,
+  UnreadNotice,
+  writtenInJapanese,
+} from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
@@ -38,7 +43,9 @@ export const WithChart = ({ customerId, fresh, children }: WithChartProps) => {
     .with({ type: 'read' }, ({ chart }) => children(chart))
     .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
       <UnreadNotice
-        message={unreadMessageOf('カルテ', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('カルテ'), reason),
+        )}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />

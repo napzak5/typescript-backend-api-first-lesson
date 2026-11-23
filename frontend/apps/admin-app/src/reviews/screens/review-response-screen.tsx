@@ -8,12 +8,14 @@ import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -154,7 +156,9 @@ const ResponsePart = ({ salon, reviewId }: ResponsePartProps) => {
       <>
         {header}
         <UnreadNotice
-          message={unreadMessageOf('レビュー', reason)}
+          message={inJapanese(
+            unreadMessageOf(writtenInJapanese('レビュー'), reason),
+          )}
           onRetry={() => void read.refetch()}
           pending={read.isFetching}
         />

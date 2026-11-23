@@ -6,6 +6,7 @@ import {
   FieldRow,
   Form,
   type FormProps,
+  inJapanese,
   Select,
   TextArea,
   TextField,
@@ -66,7 +67,7 @@ export const PaymentMethodForm = ({
       name='displayName'
       autoComplete='off'
       required
-      description={`${upTo(LONGEST_NAME)}売上の画面とレシートに出る名前です。`}
+      description={`${inJapanese(upTo(LONGEST_NAME))}売上の画面とレシートに出る名前です。`}
       defaultValue={method?.displayName}
       error={errors['displayName']}
     />
@@ -110,7 +111,7 @@ export const PaymentMethodForm = ({
         label='決済代行会社'
         name='processorName'
         autoComplete='off'
-        description={`${upTo(LONGEST_NAME)}決済代行会社を介さないときは空にします。`}
+        description={`${inJapanese(upTo(LONGEST_NAME))}決済代行会社を介さないときは空にします。`}
         defaultValue={method?.processorName ?? undefined}
         error={errors['processorName']}
       />

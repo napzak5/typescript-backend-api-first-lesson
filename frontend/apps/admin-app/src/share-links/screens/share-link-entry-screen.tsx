@@ -10,10 +10,12 @@ import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   type FormSays,
+  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
@@ -206,7 +208,9 @@ const EntryPart = ({ salon, attachmentId }: EntryPartProps) => {
         <>
           {header}
           <UnreadNotice
-            message={unreadMessageOf('ファイル', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('ファイル'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

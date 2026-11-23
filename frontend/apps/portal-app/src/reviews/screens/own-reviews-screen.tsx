@@ -10,12 +10,14 @@ import { RequireSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   EmptyState,
+  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import {
   useInfiniteQuery,
@@ -119,7 +121,7 @@ const Reviews = ({ customerId }: ReviewsProps) => {
         notify({ tone: 'success', message: 'レビューを削除しました。' })
         return
       }
-      setUnsent(unsentMessageOf(outcome))
+      setUnsent(inJapanese(unsentMessageOf(outcome)))
     },
   })
 
@@ -136,7 +138,9 @@ const Reviews = ({ customerId }: ReviewsProps) => {
     ))
     .with({ type: 'unread' }, ({ reason }) => (
       <UnreadNotice
-        message={unreadMessageOf('レビュー', reason)}
+        message={inJapanese(
+          unreadMessageOf(writtenInJapanese('レビュー'), reason),
+        )}
         onRetry={() => void read.refetch()}
         pending={read.isFetching}
       />
@@ -196,7 +200,9 @@ const OwnReviews = () => {
         .with({ type: 'none' }, () => NO_PROFILE)
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('レビュー', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('レビュー'), reason),
+            )}
             onRetry={() => void profile.refetch()}
             pending={profile.isFetching}
           />

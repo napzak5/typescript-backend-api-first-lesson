@@ -8,6 +8,7 @@ import {
   DescriptionList,
   EmptyState,
   type FormSays,
+  inJapanese,
   Link,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
@@ -16,6 +17,7 @@ import {
   UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useState } from 'react'
@@ -204,7 +206,9 @@ const ReviewToChange = () => {
         ))
         .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('レビュー', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('レビュー'), reason),
+            )}
             onRetry={() => void read.refetch()}
             pending={read.isFetching}
           />

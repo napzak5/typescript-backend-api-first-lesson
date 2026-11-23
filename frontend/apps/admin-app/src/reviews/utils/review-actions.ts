@@ -12,6 +12,7 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
   textOf,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
@@ -117,7 +118,10 @@ export const readReport = (
     return { type: 'invalid', errors: { [REASON]: REASON_MISSING } }
   }
   if (lengthOf(details) > MAX_DETAILS_LENGTH) {
-    return { type: 'invalid', errors: { [DETAILS]: DETAILS_TOO_LONG } }
+    return {
+      type: 'invalid',
+      errors: { [DETAILS]: inJapanese(DETAILS_TOO_LONG) },
+    }
   }
   if (reason === 'other' && details === '') {
     return { type: 'invalid', errors: { [DETAILS]: DETAILS_MISSING } }
@@ -132,7 +136,7 @@ export const readReport = (
 const afterRefusedResponse = (values: readonly RefusedValue[]): FormSays =>
   values.some(({ field }) => field === RESPONSE)
     ? { message: undefined, errors: { [RESPONSE]: RESPONSE_MISSING } }
-    : aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
+    : aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
 
 /**
  * What is said after the API did not take an answer, or its withdrawal. A
@@ -150,7 +154,7 @@ export const afterResponding = (
       ),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -178,7 +182,9 @@ export const afterWithdrawing = (
       () =>
         'このアカウントでは、この返信を取り下げられません。取り下げられるのは、サロンのオーナーとマネージャーと、管理者です。',
     )
-    .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS_MESSAGE)
+    .with({ type: 'tooManyRequests' }, () =>
+      inJapanese(TOO_MANY_REQUESTS_MESSAGE),
+    )
     .with(
       { type: 'failed' },
       () =>
@@ -201,12 +207,12 @@ const afterRefusedReport = (values: readonly RefusedValue[]): FormSays => {
             : {
                 [DETAILS]:
                   details.rule === 'too_big'
-                    ? DETAILS_TOO_LONG
+                    ? inJapanese(DETAILS_TOO_LONG)
                     : DETAILS_MISSING,
               }),
         },
       }
-    : aboutTheAttempt(CHECK_THE_VALUES_MESSAGE)
+    : aboutTheAttempt(inJapanese(CHECK_THE_VALUES_MESSAGE))
 }
 
 /** What the dialog says when the account reported the review before */
@@ -233,7 +239,7 @@ export const afterReporting = (
       ),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(

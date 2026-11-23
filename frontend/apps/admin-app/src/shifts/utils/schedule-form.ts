@@ -13,6 +13,8 @@ import {
   aboutTheAttempt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
@@ -416,9 +418,11 @@ export const afterScheduleSave = (
       })
 
       return {
-        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        message: inJapaneseIfAny(
+          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         errors: Object.fromEntries(
-          said.map((control) => [control, REFUSED_VALUE_MESSAGE]),
+          said.map((control) => [control, inJapanese(REFUSED_VALUE_MESSAGE)]),
         ),
       }
     })
@@ -429,7 +433,7 @@ export const afterScheduleSave = (
       ),
     )
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(

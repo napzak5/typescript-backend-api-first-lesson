@@ -20,8 +20,11 @@ import {
   errorAt,
   type FormRead,
   type FormSays,
+  inJapanese,
+  inJapaneseIfAny,
   textOf,
   textOrNull,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
@@ -43,8 +46,11 @@ export const LONGEST_NAME = 100
 const LONGEST_FEE = 100
 
 const KIND_ERROR = '種類を選んでください。'
-const NAME_ERROR = neededWithin('表示名', LONGEST_NAME)
-const PROCESSOR_ERROR = tooLongOf('決済代行会社の名前', LONGEST_NAME)
+const NAME_ERROR = neededWithin(writtenInJapanese('表示名'), LONGEST_NAME)
+const PROCESSOR_ERROR = tooLongOf(
+  writtenInJapanese('決済代行会社の名前'),
+  LONGEST_NAME,
+)
 const FEE_ERROR =
   '手数料率は、0 から 100 までの数（小数は 2 桁まで）で入力してください。'
 const MINIMUM_ERROR = '下限は、1 以上の円の整数で入力してください。'
@@ -94,11 +100,13 @@ const readWhole = (
     ...errorAt('method', method === undefined ? KIND_ERROR : undefined),
     ...errorAt(
       'displayName',
-      neededError(displayName, LONGEST_NAME, NAME_ERROR),
+      inJapaneseIfAny(neededError(displayName, LONGEST_NAME, NAME_ERROR)),
     ),
     ...errorAt(
       'processorName',
-      tooLongError(processorName, LONGEST_NAME, PROCESSOR_ERROR),
+      inJapaneseIfAny(
+        tooLongError(processorName, LONGEST_NAME, PROCESSOR_ERROR),
+      ),
     ),
     ...errorAt(
       'fee',
@@ -216,8 +224,8 @@ const FORBIDDEN_MESSAGE =
 const refusalAt = (field: string, rule: string): string =>
   match(field)
     .with('method', () => KIND_ERROR)
-    .with('displayName', () => NAME_ERROR)
-    .with('processorName', () => PROCESSOR_ERROR)
+    .with('displayName', () => inJapanese(NAME_ERROR))
+    .with('processorName', () => inJapanese(PROCESSOR_ERROR))
     .with('fee', () => FEE_ERROR)
     // A range the API compared with the amount it keeps: the other was changed meanwhile
     .with('minimumAmount', () =>
@@ -229,7 +237,7 @@ const refusalAt = (field: string, rule: string): string =>
       rule === 'custom' ? RANGE_ERROR : MAXIMUM_ERROR,
     )
     .with('sortOrder', () => ORDER_ERROR)
-    .otherwise(() => REFUSED_VALUE_MESSAGE)
+    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
 
 /** What the form says after the API did not take it. */
 export const afterPaymentMethodWrite = (
@@ -244,7 +252,9 @@ export const afterPaymentMethodWrite = (
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        message: inJapaneseIfAny(
+          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
+        ),
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
@@ -252,7 +262,7 @@ export const afterPaymentMethodWrite = (
     })
     .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
+      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
     )
     .with({ type: 'failed' }, () =>
       aboutTheAttempt(
@@ -286,7 +296,7 @@ export const afterPaymentMethodRemoval = (
     }))
     .with({ type: 'tooManyRequests' }, () => ({
       type: 'again',
-      message: TOO_MANY_REQUESTS_MESSAGE,
+      message: inJapanese(TOO_MANY_REQUESTS_MESSAGE),
     }))
     .with({ type: 'failed' }, () => ({
       type: 'again',

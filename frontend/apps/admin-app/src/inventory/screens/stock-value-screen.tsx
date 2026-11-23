@@ -6,9 +6,11 @@ import {
 } from '@beauty-salon-frontend/salon-screens'
 import {
   ButtonLink,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
@@ -38,7 +40,9 @@ const ValuePart = ({ salon }: { salon: ModelsSalonResponse }) => {
         .with({ type: 'forbidden' }, () => <OtherSalonNotice what='在庫' />)
         .with({ type: 'tooManyRequests' }, { type: 'failed' }, (reason) => (
           <UnreadNotice
-            message={unreadMessageOf('在庫評価額', reason)}
+            message={inJapanese(
+              unreadMessageOf(writtenInJapanese('在庫評価額'), reason),
+            )}
             onRetry={() => void report.refetch()}
             pending={report.isFetching}
           />

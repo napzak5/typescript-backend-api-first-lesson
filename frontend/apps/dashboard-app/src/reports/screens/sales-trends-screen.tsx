@@ -11,10 +11,12 @@ import {
 import {
   EmptyState,
   type FormErrors,
+  inJapanese,
   LoadingIndicator,
   PageHeader,
   RadioGroup,
   UnreadNotice,
+  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -136,7 +138,9 @@ const TrendsPart = ({ salon }: { salon: ModelsSalonResponse }) => {
                 )
                 .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
                   <UnreadNotice
-                    message={unreadMessageOf(TITLE, reason)}
+                    message={inJapanese(
+                      unreadMessageOf(writtenInJapanese(TITLE), reason),
+                    )}
                     onRetry={() => void read.refetch()}
                     pending={read.isFetching}
                   />
