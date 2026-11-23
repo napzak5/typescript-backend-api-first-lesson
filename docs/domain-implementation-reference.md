@@ -1436,7 +1436,7 @@ export type DomainError =
   | { type: 'storage'; message: string; cause: unknown }
 ```
 
-`Told` (`backend/packages/domain/src/shared/told.ts`) is a text of an error: one that is written in every language (`LocalizedText`), or, until every text the domain writes is one, a string in English alone. The headline of a validation error and the `message` of each of its issues are of this type.
+`Told` (`backend/packages/domain/src/shared/told.ts`) is a text of an error: one that is written in every language (`LocalizedText`), or, until every text the domain writes is one, a string in English alone. The headline of a validation error is of this type. The `message` of each of its issues is a `LocalizedText`: a string there does not compile.
 
 Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.passwordRequired`, `.notFound`, `.alreadyExists`, `.conflict`, `.database` and `.storage`. Where each kind comes from:
 

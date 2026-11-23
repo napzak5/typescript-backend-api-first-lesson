@@ -493,15 +493,15 @@ The `title` and the `detail` are told in the language the request asks for
 the header is absent or names no language of the API). Their texts are
 `problemMessages` of `@beauty-salon-shared/i18n/messages/api`, each written in
 English and in Japanese, and `said` reads one in the language of the answer.
-A `validation` error is told in the language asked for when its headline and
-the message of every broken rule are written in every language: the headline
-is a message of the domain (`salonMessages.invalidSalon`), a schema writes the
+A `validation` error is told in the language asked for: its headline is a
+message of the domain (`salonMessages.invalidSalon`), a schema writes the
 messages of its rules in both languages (`asOneString(ruleMessages.notBlank)`),
-and `parseWith` has Zod say its own sentences in both. An error of which the
-domain writes a text in English alone (`notFound`, `alreadyExists`,
-`conflict`, and a `validation` error with a rule that a use case checks and
-a schema cannot) is told in English as a whole, title included, whatever was
-asked for:
+`parseWith` has Zod say its own sentences in both, and a use case says a rule
+that a schema cannot check with a message too (`ruleMessages.aSalon`): what
+an issue says is a `LocalizedText`, and a string does not compile. An error
+of which the domain writes a text in English alone (`notFound`,
+`alreadyExists`, `conflict`) is told in English as a whole, title included,
+whatever was asked for:
 no answer is in two languages. `sendProblem` names the language of the answer in
 `Content-Language` and adds `Accept-Language` to `Vary`. Nothing else of a
 problem depends on the language, and a successful response does not depend
