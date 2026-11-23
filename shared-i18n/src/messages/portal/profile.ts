@@ -1,7 +1,6 @@
-import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
 import { customerMessages as record } from '../ui/customers'
-import { countedIn, listed, postalCodeOf } from './written'
+import { listed, postalCodeOf } from '../written'
 
 const YOUR_DETAILS = text({ en: 'Your details', ja: 'お客様の情報' })
 
@@ -99,19 +98,9 @@ export const portalProfileMessages = {
     title: text({ en: 'Membership', ja: '会員の情報' }),
     tier: record.membershipTier,
     points: record.points,
-    /** A number of points: 「2,500 ポイント」 */
-    pointsOf: (points: number) =>
-      text({
-        en: countedIn(points, 'point', 'points'),
-        ja: `${numberOf(points).ja} ポイント`,
-      }),
+    pointsOf: record.pointsOf,
     visits: record.visits,
-    /** How often a customer came: 「12 回」 */
-    visitsOf: (count: number) =>
-      text({
-        en: countedIn(count, 'visit', 'visits'),
-        ja: `${numberOf(count).ja} 回`,
-      }),
+    visitsOf: record.visitsOf,
     firstVisit: text({ en: 'First visit', ja: '初めての来店' }),
     lastVisit: text({ en: 'Last visit', ja: '最後の来店' }),
     /** What stands where a day would, for a customer who has not come yet */

@@ -1,9 +1,9 @@
-import { numberOf } from '../../formats/numbers'
-import { type LocalizedText, text } from '../../languages/localized-text'
+import { numberOf } from '../formats/numbers'
+import { type LocalizedText, text } from '../languages/localized-text'
 
 /*
- * How the catalogues of the portal write what more than one of them
- * writes: a count, the parts of a line, a list and a postal code.
+ * How the catalogues write what more than one of them writes: a count, the
+ * parts of a line, a list, sentences one after the other and a postal code.
  */
 
 /** How many there are, as English names one and many: 「1 review」, 「2 reviews」 */
@@ -32,6 +32,10 @@ export const joined = (
 export const listed = (
   entries: readonly (string | LocalizedText)[],
 ): LocalizedText => joined(entries, { en: ', ', ja: '、' })
+
+/** Sentences said one after the other: English puts a space between them, Japanese none */
+export const followed = (...sentences: LocalizedText[]): LocalizedText =>
+  joined(sentences, { en: ' ', ja: '' })
 
 /** A postal code: 「〒150-0001」 */
 export const postalCodeOf = (code: string): LocalizedText =>

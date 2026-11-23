@@ -1,4 +1,6 @@
+import { numberOf } from '../../formats/numbers'
 import { text } from '../../languages/localized-text'
+import { countedIn } from '../written'
 
 /**
  * The names of what the record of a customer holds, which the ledger of a
@@ -43,7 +45,19 @@ export const customerMessages = {
   /** What stands for a referral code that is none yet */
   notIssued: text({ en: 'Not issued', ja: '未発行' }),
   visits: text({ en: 'Visits', ja: '来店回数' }),
+  /** How often a customer came: 「12 回」 */
+  visitsOf: (count: number) =>
+    text({
+      en: countedIn(count, 'visit', 'visits'),
+      ja: `${numberOf(count).ja} 回`,
+    }),
   points: text({ en: 'Points', ja: 'ポイント' }),
+  /** A number of points: 「2,500 ポイント」 */
+  pointsOf: (points: number) =>
+    text({
+      en: countedIn(points, 'point', 'points'),
+      ja: `${numberOf(points).ja} ポイント`,
+    }),
   /** The ways a salon may reach a customer */
   byEmail: text({ en: 'Messages by email', ja: 'メールでの連絡' }),
   bySms: text({ en: 'Messages by SMS', ja: 'SMS での連絡' }),

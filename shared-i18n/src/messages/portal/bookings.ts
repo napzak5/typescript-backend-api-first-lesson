@@ -1,6 +1,6 @@
 import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
-import { countedIn } from './written'
+import { countedIn } from '../written'
 
 /**
  * What the screens of a booking in the portal say: the booking of a

@@ -1,6 +1,6 @@
 import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
-import { countedIn, joined, postalCodeOf } from './written'
+import { countedIn, joined, postalCodeOf } from '../written'
 
 /** The mark between the parts of a line of short values: 「・」 */
 const BETWEEN_VALUES = { en: ' · ', ja: '・' }
