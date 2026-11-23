@@ -6,13 +6,13 @@ import {
 } from '@beauty-salon-frontend/answers'
 import {
   EmptyState,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
@@ -26,12 +26,15 @@ import {
   queryOf,
 } from '../utils/salon-search'
 
+const { search: words, names } = portalSalonMessages
+
 /**
  * Where a visitor looks for a salon. The conditions are in the query of the
  * address, so the same address shows the same search: after a reload, after
  * going back from a salon, and for whoever is sent the address.
  */
 export const SalonSearchScreen = () => {
+  const say = useSay()
   const [query, setQuery] = useSearchParams()
   const conditions = conditionsIn(query)
   const searched = queryOf(conditions).toString()
@@ -55,8 +58,8 @@ export const SalonSearchScreen = () => {
   return (
     <>
       <PageHeader
-        title='サロンを探す'
-        description='サロンを探して、営業時間、メニュー、スタッフ、レビューを見られます。'
+        title={say(words.title)}
+        description={say(words.description)}
       />
       <SalonSearchForm
         conditions={conditions}
@@ -65,13 +68,11 @@ export const SalonSearchScreen = () => {
       />
       {match(found.data === undefined ? undefined : listingOf(found.data.pages))
         .with(undefined, () => (
-          <LoadingIndicator label='サロンを探しています' />
+          <LoadingIndicator label={say(words.searching)} />
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('サロン'), reason),
-            )}
+            message={say(unreadMessageOf(names.salons, reason))}
             onRetry={() => void found.refetch()}
             pending={found.isFetching}
           />
@@ -79,11 +80,11 @@ export const SalonSearchScreen = () => {
         .with({ type: 'listed', items: [] }, () =>
           narrows(conditions) ? (
             <EmptyState
-              title='条件に合うサロンが見つかりませんでした'
-              description='条件を変えて、もう一度お探しください。'
+              title={say(words.noMatch)}
+              description={say(words.noMatchDescription)}
             />
           ) : (
-            <EmptyState title='掲載中のサロンはありません' />
+            <EmptyState title={say(words.noSalons)} />
           ),
         )
         .with({ type: 'listed' }, ({ items, total, rest }) => (

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { LocalizedText } from '../languages/localized-text'
-import { momentAt, momentWithWeekdayAt, timeOfDayAt } from './moments'
+import {
+  momentAt,
+  momentWithWeekdayAt,
+  timeOfDayAt,
+  timeRangeAt,
+} from './moments'
 
 describe('timeOfDayAt', () => {
   it.each<[string, string, LocalizedText]>([
@@ -14,6 +19,38 @@ describe('timeOfDayAt', () => {
     (moment, timeZone, expected) => {
       // Act
       const written = timeOfDayAt(moment, timeZone)
+
+      // Assert
+      expect(written).toEqual(expected)
+    },
+  )
+})
+
+describe('timeRangeAt', () => {
+  it.each<[string, string, string, LocalizedText]>([
+    [
+      '2026-11-20T01:30:00Z',
+      '2026-11-20T02:30:00Z',
+      'Asia/Tokyo',
+      { en: '10:30–11:30', ja: '10:30〜11:30' },
+    ],
+    [
+      '2026-11-20T14:30:00Z',
+      '2026-11-20T15:30:00Z',
+      'Asia/Tokyo',
+      { en: '23:30–00:30', ja: '23:30〜00:30' },
+    ],
+    [
+      '2026-07-01T16:00:00Z',
+      '2026-07-01T17:15:00Z',
+      'America/New_York',
+      { en: '12:00–13:15', ja: '12:00〜13:15' },
+    ],
+  ])(
+    'should write from %s until %s on the clock of %s, as each language joins two times',
+    (from, to, timeZone, expected) => {
+      // Act
+      const written = timeRangeAt(from, to, timeZone)
 
       // Assert
       expect(written).toEqual(expected)

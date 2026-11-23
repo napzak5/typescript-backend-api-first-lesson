@@ -13,7 +13,6 @@ import {
   DescriptionList,
   Form,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
@@ -21,9 +20,17 @@ import {
   TextField,
   UnreadNotice,
   useNotifications,
+  useSaidForm,
+  useSay,
   useScreenHeadingFocus,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import * as formats from '@beauty-salon-shared/i18n/formats'
+import {
+  portalBookingMessages,
+  portalProfileMessages,
+  portalSalonMessages,
+} from '@beauty-salon-shared/i18n/messages/portal'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
@@ -36,7 +43,7 @@ import {
 } from '../../profile/api/profile-api'
 import { afterProfile, readProfile } from '../../profile/utils/profile-flow'
 import { readSalon, readStaff } from '../../salons/api/salons-api'
-import { dateAt, durationOf } from '../../salons/utils/salon-format'
+import { dateAt } from '../../salons/utils/salon-format'
 import { SignInHelp } from '../../session/screens/sign-in-help'
 import { CUSTOMERS } from '../../session/utils/roles'
 import { book, readService, readSlots } from '../api/bookings-api'
@@ -56,7 +63,8 @@ import { afterBooking, readBooking } from '../utils/booking-flow'
 import { priceLineOf } from '../utils/booking-format'
 import { OWN_BOOKING_LISTS } from '../utils/own-bookings'
 
-const TITLE = '予約する'
+const { booking: words, names } = portalBookingMessages
+const { controls } = portalProfileMessages
 
 type OfServiceProps = {
   salon: ModelsSalonResponse
@@ -69,6 +77,7 @@ type OfServiceProps = {
  * salon needs to know of somebody who comes, and no more.
  */
 const ProfileStep = () => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
   const creation = useMutation({
@@ -93,46 +102,41 @@ const ProfileStep = () => {
   }
 
   return (
-    <Card title='お客様の情報'>
-      <p>
-        はじめてのご予約です。サロンがお客様をお迎えするために、お名前と電話番号を登録してください。
-      </p>
+    <Card title={say(portalBookingMessages.profile.title)}>
+      <p>{say(portalBookingMessages.profile.description)}</p>
       <Form
-        submitLabel='登録して、日時の選択へ進む'
+        submitLabel={say(portalBookingMessages.profile.submit)}
         message={says.message}
         errors={says.errors}
         pending={creation.isPending}
         onSubmit={submit}
       >
         <TextField
-          label='姓'
+          label={say(controls.lastName)}
           name='lastName'
           autoComplete='family-name'
           required
           error={says.errors['lastName']}
         />
         <TextField
-          label='名'
+          label={say(controls.firstName)}
           name='firstName'
           autoComplete='given-name'
           required
           error={says.errors['firstName']}
         />
         <TextField
-          label='電話番号'
+          label={say(controls.phoneNumber)}
           name='phoneNumber'
           type='tel'
           autoComplete='tel'
           required
-          description='ご予約について、サロンから連絡することがあります。'
+          description={say(controls.phoneNumberDescription)}
           error={says.errors['phoneNumber']}
         />
-        <Checkbox label='メールでの連絡を受け取る' name='allowEmail' />
-        <Checkbox label='SMS での連絡を受け取る' name='allowSms' />
-        <Checkbox
-          label='キャンペーンなどのお知らせを受け取る'
-          name='allowMarketing'
-        />
+        <Checkbox label={say(controls.allowEmail)} name='allowEmail' />
+        <Checkbox label={say(controls.allowSms)} name='allowSms' />
+        <Checkbox label={say(controls.allowMarketing)} name='allowMarketing' />
       </Form>
     </Card>
   )
@@ -152,8 +156,10 @@ const TimeStep = ({ salon, service, staff }: TimeStepProps) => {
   const [query, setQuery] = useSearchParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const say = useSay()
   const { notify } = useNotifications()
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
+  const said = useSaidForm(says.message, says.errors)
   const today = dateAt(new Date(), salon.timezone)
   const choice = choiceIn(query, today, staff)
   const slots = useQuery({
@@ -183,10 +189,7 @@ const TimeStep = ({ salon, service, staff }: TimeStepProps) => {
           booking: outcome.booking,
         })
         queryClient.removeQueries({ queryKey: OWN_BOOKING_LISTS })
-        notify({
-          tone: 'success',
-          message: '予約を受け付けました。',
-        })
+        notify({ tone: 'success', message: words.booked })
         void navigate(`/bookings/${outcome.booking.id}`)
         return
       }
@@ -221,7 +224,7 @@ const TimeStep = ({ salon, service, staff }: TimeStepProps) => {
   }
 
   return (
-    <Card title='日時'>
+    <Card title={say(words.time)}>
       <BookingForm
         staff={staff}
         choice={choice}
@@ -238,18 +241,18 @@ const TimeStep = ({ salon, service, staff }: TimeStepProps) => {
           }))
           .exhaustive()}
         onRetry={() => void slots.refetch()}
-        submitLabel='この内容で予約する'
+        submitLabel={say(words.submit)}
         message={says.message}
         errors={says.errors}
         pending={booking.isPending}
         onSubmit={submit}
       >
         <TextArea
-          label='ご要望'
+          label={say(words.request)}
           name='customerRequest'
           rows={4}
-          description='サロンに伝えておきたいことがあれば、ご記入ください。'
-          error={says.errors['customerRequest']}
+          description={say(words.requestDescription)}
+          error={said.errors['customerRequest']}
         />
       </BookingForm>
     </Card>
@@ -258,6 +261,7 @@ const TimeStep = ({ salon, service, staff }: TimeStepProps) => {
 
 /** What is booked, and below it the step the customer is at. */
 const BookingSteps = ({ salon, service }: OfServiceProps) => {
+  const say = useSay()
   const staff = useQuery({
     queryKey: ['salons', salon.id, 'staff'],
     queryFn: () => readStaff(salon.id),
@@ -282,37 +286,42 @@ const BookingSteps = ({ salon, service }: OfServiceProps) => {
 
   return (
     <>
-      <Card title='ご予約の内容'>
+      <Card title={say(words.summary)}>
         <DescriptionList
           items={[
-            { term: 'サロン', description: salon.name },
-            { term: 'メニュー', description: service.name },
-            { term: '所要時間', description: durationOf(service.duration) },
             {
-              term: '料金',
-              description: priceLineOf(service, salon.currency),
+              term: say(portalBookingMessages.summary.salon),
+              description: salon.name,
+            },
+            {
+              term: say(portalBookingMessages.summary.service),
+              description: service.name,
+            },
+            {
+              term: say(words.duration),
+              description: say(formats.durationOf(service.duration)),
+            },
+            {
+              term: say(portalBookingMessages.summary.price),
+              description: say(priceLineOf(service, salon.currency)),
             },
           ]}
         />
       </Card>
       {match([staff.data, profile.data])
         .with([undefined, P._], [P._, undefined], () => (
-          <LoadingIndicator label='予約に必要な情報を読み込んでいます' />
+          <LoadingIndicator label={say(words.loading)} />
         ))
         .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('スタッフ'), reason),
-            )}
+            message={say(unreadMessageOf(names.staff, reason))}
             onRetry={() => void staff.refetch()}
             pending={staff.isFetching}
           />
         ))
         .with([P._, { type: P.union(...UNREAD_TYPES) }], ([, reason]) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('お客様の情報'), reason),
-            )}
+            message={say(unreadMessageOf(names.profile, reason))}
             onRetry={() => void profile.refetch()}
             pending={profile.isFetching}
           />
@@ -331,6 +340,7 @@ const BookingSteps = ({ salon, service }: OfServiceProps) => {
 }
 
 const BookingPage = () => {
+  const say = useSay()
   const { salonId = '', serviceId = '' } = useParams()
   const salon = useQuery({
     queryKey: ['salons', salonId, 'salon'],
@@ -344,26 +354,26 @@ const BookingPage = () => {
   return match([salon.data, service.data])
     .with([undefined, P._], [P._, undefined], () => (
       <>
-        <PageHeader title={TITLE} />
-        <LoadingIndicator label='メニューを読み込んでいます' />
+        <PageHeader title={say(words.title)} />
+        <LoadingIndicator label={say(words.loadingService)} />
       </>
     ))
     .with([{ type: 'notFound' }, P._], [P._, { type: 'notFound' }], () => (
       <>
         <PageHeader
-          title='予約できるメニューが見つかりません'
-          description='アドレスが正しいか、お確かめください。掲載を終えたサロンか、メニューかもしれません。'
+          title={say(words.serviceNotFound)}
+          description={say(words.serviceNotFoundDescription)}
         />
-        <ButtonLink href='/'>サロンを探す</ButtonLink>
+        <ButtonLink href='/'>
+          {say(portalSalonMessages.search.title)}
+        </ButtonLink>
       </>
     ))
     .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
       <>
-        <PageHeader title={TITLE} />
+        <PageHeader title={say(words.title)} />
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('サロン'), reason),
-          )}
+          message={say(unreadMessageOf(names.salon, reason))}
           onRetry={() => void salon.refetch()}
           pending={salon.isFetching}
         />
@@ -371,11 +381,9 @@ const BookingPage = () => {
     ))
     .with([P._, { type: P.union(...UNREAD_TYPES) }], ([, reason]) => (
       <>
-        <PageHeader title={TITLE} />
+        <PageHeader title={say(words.title)} />
         <UnreadNotice
-          message={inJapanese(
-            unreadMessageOf(writtenInJapanese('メニュー'), reason),
-          )}
+          message={say(unreadMessageOf(names.menu, reason))}
           onRetry={() => void service.refetch()}
           pending={service.isFetching}
         />
@@ -384,10 +392,10 @@ const BookingPage = () => {
     .with([{ type: 'found' }, { type: 'found' }], ([foundSalon, found]) => (
       <>
         <PageHeader
-          title={TITLE}
+          title={say(words.title)}
           actions={
             <ButtonLink href={`/salons/${foundSalon.salon.id}`}>
-              サロンのページへ戻る
+              {say(words.backToSalon)}
             </ButtonLink>
           }
         />
@@ -395,8 +403,7 @@ const BookingPage = () => {
           <BookingSteps salon={foundSalon.salon} service={found.service} />
         ) : (
           <Alert tone='warning'>
-            「{found.service.name}
-            」は、この画面からは予約できません。ご予約は、サロンへお問い合わせください。
+            {say(words.notOnline(found.service.name))}
           </Alert>
         )}
       </>
@@ -408,12 +415,16 @@ const BookingPage = () => {
  * Where a customer books a service of a salon. Somebody who is not signed
  * in signs in here, at the address of what they chose, and goes on with it.
  */
-export const BookingScreen = () => (
-  <RequireSession
-    roles={CUSTOMERS}
-    signInNotice='予約するには、サインインしてください。'
-    signInHelp={<SignInHelp />}
-  >
-    <BookingPage />
-  </RequireSession>
-)
+export const BookingScreen = () => {
+  const say = useSay()
+
+  return (
+    <RequireSession
+      roles={CUSTOMERS}
+      signInNotice={say(words.signInNotice)}
+      signInHelp={<SignInHelp />}
+    >
+      <BookingPage />
+    </RequireSession>
+  )
+}

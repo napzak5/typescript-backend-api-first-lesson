@@ -2,12 +2,16 @@ import { PASSWORD_RULE } from '@beauty-salon-frontend/session'
 import {
   Form,
   type FormSays,
-  inJapanese,
   NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalAccountMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import { sessionMessages } from '@beauty-salon-shared/i18n/messages/ui'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -15,13 +19,18 @@ import { register } from '../api/account-api'
 import { afterRefusal, readRegistration } from '../utils/account-flow'
 import { VerificationSent } from './verification-sent'
 
+const { register: words } = portalAccountMessages
+const { signInForm } = sessionMessages
+
 /**
  * Where a visitor creates an account: an address and a password. The
  * account can be used once the address is confirmed, through the link of
  * the mail that the API sends.
  */
 export const RegisterScreen = () => {
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
+  const said = useSaidForm(says.message, says.errors)
   const [sentTo, setSentTo] = useState<string | null>(null)
   const registration = useMutation({
     mutationFn: register,
@@ -50,37 +59,38 @@ export const RegisterScreen = () => {
   return (
     <>
       <PageHeader
-        title='アカウントの登録'
-        description='メールアドレスとパスワードを登録すると、予約やその確認ができるようになります。'
+        title={say(words.title)}
+        description={say(words.description)}
       />
       <Form
-        submitLabel='登録する'
-        message={says.message}
+        submitLabel={say(words.submit)}
+        message={said.message}
         errors={says.errors}
         pending={registration.isPending}
         onSubmit={submit}
       >
         <TextField
-          label='メールアドレス'
+          label={say(signInForm.email)}
           name='email'
           type='email'
           autoComplete='username'
           required
-          description='確認のメールをお送りします。'
-          error={says.errors['email']}
+          description={say(words.emailDescription)}
+          error={said.errors['email']}
         />
         <PasswordField
-          label='パスワード'
+          label={say(signInForm.password)}
           name='password'
           autoComplete='new-password'
           required
-          description={inJapanese(PASSWORD_RULE)}
-          error={says.errors['password']}
+          description={say(PASSWORD_RULE)}
+          error={said.errors['password']}
         />
       </Form>
       <p>
-        すでにアカウントをお持ちの方は、
-        <Link to='/sign-in'>サインイン</Link>してください。
+        {say(words.haveAccountWithLink.before)}
+        <Link to='/sign-in'>{say(words.haveAccountWithLink.link)}</Link>
+        {say(words.haveAccountWithLink.after)}
       </p>
     </>
   )

@@ -34,6 +34,12 @@
       "types": "./dist/messages/ui/index.d.ts",
       "import": "./dist/messages/ui/index.js",
       "default": "./dist/messages/ui/index.js"
+    },
+    "./messages/portal": {
+      "@beauty-salon-frontend/source": "./src/messages/portal/index.ts",
+      "types": "./dist/messages/portal/index.d.ts",
+      "import": "./dist/messages/portal/index.js",
+      "default": "./dist/messages/portal/index.js"
     }
   },
   "scripts": {

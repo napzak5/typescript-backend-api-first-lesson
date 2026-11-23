@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as staffProfilesStories from './staff-profiles.stories'
 
 const stories = composeStories(staffProfilesStories)
@@ -140,5 +141,38 @@ describe('StaffProfiles', () => {
 
     // Assert
     expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1)
+  })
+})
+
+describe('StaffProfiles on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say what a member of the staff does in English, and name the lists by the person', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    const tanaka = personNamed('田中 ひろし')
+    expect(
+      within(tanaka).getByText('店長 · Senior · 12 years of experience'),
+    ).toBeVisible()
+    expect(wordsOf(tanaka, 'Specialties of 田中 ひろし')).toEqual([
+      'カット',
+      'パーマ',
+    ])
+    expect(wordsOf(tanaka, 'Certifications of 田中 ひろし')).toEqual([
+      '美容師免許',
+      '管理美容師',
+    ])
+    const ito = personNamed('伊藤 たけし')
+    expect(
+      within(ito).getByText('アシスタント · Junior · 1 year of experience'),
+    ).toBeVisible()
+    expect(within(ito).getByText('Takes no bookings')).toBeVisible()
   })
 })

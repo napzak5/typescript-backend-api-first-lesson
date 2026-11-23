@@ -8,9 +8,14 @@ import {
   LinkProvider,
   type NavigationItem,
   NotificationProvider,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
+
+/** A link of the header, named by a message: the frame says it in the language of the page */
+export type FrameLink = Omit<NavigationItem, 'label'> & { label: LocalizedText }
 
 /**
  * The links of the header of an application, for the role of who is signed
@@ -20,7 +25,7 @@ import { Link, useLocation } from 'react-router'
 export type NavigationOf = (
   role: ModelsUserResponse['role'] | undefined,
   pathname: string,
-) => readonly NavigationItem[]
+) => readonly FrameLink[]
 
 export type AppFrameProps = {
   /** The name of the application: that of `applications` of the brand package */
@@ -53,6 +58,7 @@ export const AppFrame = ({
   environment,
   children,
 }: AppFrameProps) => {
+  const say = useSay()
   const session = useSession()
   const { pathname } = useLocation()
 
@@ -65,7 +71,7 @@ export const AppFrame = ({
           navigation={navigationFor(
             session.type === 'signedIn' ? session.user.role : undefined,
             pathname,
-          )}
+          ).map((link) => ({ ...link, label: say(link.label) }))}
         >
           {children}
         </AppShell>

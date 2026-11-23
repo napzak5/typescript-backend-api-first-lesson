@@ -1,3 +1,4 @@
+import { inJapanese } from '@beauty-salon-frontend/ui'
 import { dayOf } from '../../salons/utils/salon-format'
 import type { OwnReview } from '../api/reviews-api'
 
@@ -23,7 +24,7 @@ export const subjectOf = (
   { review, salon }: Pick<OwnReview, 'review' | 'salon'>,
   timezoneOfReader: string,
 ): string =>
-  `${salon?.name ?? NO_SALON}（${dayOf(review.createdAt, timezoneOf({ salon }, timezoneOfReader))} 投稿）`
+  `${salon?.name ?? NO_SALON}（${inJapanese(dayOf(review.createdAt, timezoneOf({ salon }, timezoneOfReader)))} 投稿）`
 
 /**
  * Whom a review rates, in words: the name of the member of the staff, or

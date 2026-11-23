@@ -5,8 +5,9 @@ import type {
   ModelsStaffLevelType,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import * as formats from '@beauty-salon-shared/i18n/formats'
 import * as z from 'zod/mini'
-import { timeOfDayAt } from '../../salons/utils/salon-format'
 
 /**
  * What the address of the booking screen says besides the service: with
@@ -114,7 +115,7 @@ export type Time = {
   /** The moment, as the API writes it */
   startTime: string
   /** The time of day at the salon: 「10:00」 */
-  label: string
+  label: LocalizedText
   /** Who is free then, in the order of the API; at least one */
   staffIds: string[]
 }
@@ -132,7 +133,7 @@ export const timesOf = (
     Map.groupBy(slots, (slot) => slot.startTime),
     ([startTime, free]) => ({
       startTime,
-      label: timeOfDayAt(startTime, timezone),
+      label: formats.timeOfDayAt(startTime, timezone),
       staffIds: free.map((slot) => slot.staffId),
     }),
   ).toSorted((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime))

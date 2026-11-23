@@ -224,7 +224,8 @@ export function customInstance<T>(url: string, options: RequestInit): Promise<T>
 - `startApplication` は、`<html lang>` を、その言語に合わせ続ける（`frontend/packages/app-frame/src/utils/page-language.ts`）
 - `ui` の部品は、自分の文言（「閉じる」「必須」「さらに表示」など）を、その言語で言う（`useSay`）。文言は、`@beauty-salon-shared/i18n/messages/ui` のメッセージで、どれも、すべての言語で書いてある
 - 入力の決まり（`fields`）と、応答の読み方（`answers`）の文も、同じ所のメッセージ（`fieldMessages`、`answerMessages`）で、2 つのパッケージは、それを返す。セッションの画面（`session`）、アプリの枠（`app-frame`）、サロンの画面が共有する部分（`salon-screens`）、好み設定（`preferences`）の文言も、同じ所のメッセージ（`sessionMessages`、`securityMessages`、`frameMessages`、`salonScreenMessages`、`preferenceMessages`）で、フォームは、誤りと文をメッセージで持ち、表示する部品が `ui` の `useSaidForm` で言う。2 つ以上のアプリかパッケージが名前を言う列挙の値（予約の状態、性別、会員ランク、ロール、レベル、サービスと支払いの種類、ファイルの種類）も、業務の言葉のメッセージ（`termMessages`）で、アプリの名前の表は、それから作る。まだ日本語だけの画面は、`ui` の橋渡し（`inJapanese`、`inJapaneseIfAny`、`errorsInJapanese`、`writtenInJapanese`）で、日本語で言う
-- 言語を選ぶ部品は、まだ、どのアプリにも出していない。`ui`、`fields`、`answers`、`session`、`app-frame` のほかのパッケージと、アプリの文言は、まだ日本語だけで、パッケージごとに順に、メッセージにしていく
+- ポータルの、アカウント、サロン、予約、セッション、アカウントの安全の画面と、ヘッダーのリンクの文言は、ポータルのメッセージ（`@beauty-salon-shared/i18n/messages/portal` の `portalFrameMessages`、`portalAccountMessages`、`portalSalonMessages`、`portalBookingMessages`、`portalProfileMessages`）で、値の書き方とフォームの関数も、メッセージを返す。ヘッダーのリンクは、名前をメッセージで持ち（`app-frame` の `FrameLink`）、アプリの枠が言う
+- 言語を選ぶ部品は、まだ、どのアプリにも出していない。ポータルのほかの領域（マイページ、好み設定、レビュー、共有のリンク）と、管理画面とダッシュボードの文言は、まだ日本語だけで、アプリの領域ごとに順に、メッセージにしていく
 
 ## セッション
 

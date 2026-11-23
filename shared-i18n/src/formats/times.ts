@@ -1,0 +1,56 @@
+import type { Locale } from '../languages/locale'
+import type { LocalizedText } from '../languages/localized-text'
+import { numberFormatIn } from './formatters'
+import { inEachLanguage } from './in-each-language'
+
+/*
+ * A length of time (how long a service takes), and times of a day from
+ * when until when, as the API writes a time of a day: `10:00` or
+ * `10:00:00`.
+ */
+
+const unitIn = (
+  language: Locale,
+  value: number,
+  unit: 'hour' | 'minute',
+): string =>
+  numberFormatIn(language, {
+    style: 'unit',
+    unit,
+    unitDisplay: 'short',
+  }).format(value)
+
+/**
+ * How long something takes, in hours and minutes: 「1 時間 30 分」,
+ * "1 hr 30 min". Whole hours are written without minutes (「1 時間」),
+ * and less than an hour in minutes alone (「45 分」).
+ */
+export const durationOf = (minutes: number): LocalizedText =>
+  inEachLanguage((language) => {
+    const hours = Math.floor(minutes / 60)
+    const rest = minutes % 60
+
+    return [
+      ...(hours === 0 ? [] : [unitIn(language, hours, 'hour')]),
+      ...(rest === 0 && hours > 0 ? [] : [unitIn(language, rest, 'minute')]),
+    ].join(' ')
+  })
+
+/** A time of a day without its seconds: `10:00` of `10:00:00`. */
+const withoutSeconds = (time: string): string => time.slice(0, 5)
+
+/** From when until when, in a language: 「10:00〜11:00」, "10:00–11:00". */
+export const rangeIn = (language: Locale, from: string, to: string): string =>
+  language === 'ja' ? `${from}〜${to}` : `${from}–${to}`
+
+/** The slots of a day, as a sentence lists them: 「10:00〜12:00、14:00〜16:00」, "10:00–12:00, 14:00–16:00". */
+export const timeSlotsOf = (
+  slots: readonly { startTime: string; endTime: string }[],
+): LocalizedText =>
+  inEachLanguage((language) =>
+    slots
+      .map(({ startTime, endTime }) =>
+        rangeIn(language, withoutSeconds(startTime), withoutSeconds(endTime)),
+      )
+      .join(language === 'ja' ? '、' : ', '),
+  )

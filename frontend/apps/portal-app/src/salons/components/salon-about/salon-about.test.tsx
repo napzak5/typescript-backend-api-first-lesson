@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as salonAboutStories from './salon-about.stories'
 
 const stories = composeStories(salonAboutStories)
@@ -85,6 +86,9 @@ describe('SalonAbout', () => {
     expect(
       screen.getByRole('link', { name: '+81 90-5550-0103' }),
     ).toHaveAttribute('href', 'tel:+819055500103')
+    expect(
+      screen.getByRole('link', { name: '03-5550-0101' }).parentElement,
+    ).toHaveTextContent('03-5550-0101、+81 90-5550-0103')
   })
 
   it('should show as text, and not as a link, a website that is no address of the web', async () => {
@@ -96,5 +100,50 @@ describe('SalonAbout', () => {
     expect(
       screen.queryByRole('link', { name: 'javascript:alert(1)' }),
     ).toBeNull()
+  })
+})
+
+describe('SalonAbout on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name what it says of the salon in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(terms()).toEqual([
+      'Address',
+      'Phone number',
+      'Email address',
+      'Website',
+      'Features',
+      'Amenities and services',
+    ])
+    expect(wordsOf('Features')).toEqual([
+      '個室あり',
+      'キッズスペース',
+      '駐車場',
+    ])
+  })
+
+  it('should write the postal code as English does, and part the telephone numbers with a comma', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithSecondTelephone.run()
+
+    // Assert
+    expect(
+      screen.getByText(/^150-0001 東京都/, { selector: 'dd *, dd' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: '03-5550-0101' }).parentElement,
+    ).toHaveTextContent('03-5550-0101, +81 90-5550-0103')
   })
 })

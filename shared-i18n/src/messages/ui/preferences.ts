@@ -122,16 +122,6 @@ export const preferenceMessages = {
     /** The entries of a list, as a sentence lists them */
     listed: (entries: readonly string[]) =>
       text({ en: entries.join(', '), ja: entries.join('、') }),
-    /** The time slots, as they are read: 「10:00〜12:00、14:00〜16:00」 */
-    timeSlots: (slots: readonly { startTime: string; endTime: string }[]) =>
-      text({
-        en: slots
-          .map(({ startTime, endTime }) => `${startTime}–${endTime}`)
-          .join(', '),
-        ja: slots
-          .map(({ startTime, endTime }) => `${startTime}〜${endTime}`)
-          .join('、'),
-      }),
   },
   /** A member of the staff where staff of several salons stand together: 「田中 美咲（Beauty Salon Tokyo）」 */
   staffOfSalon: (displayName: string, salonName: string) =>

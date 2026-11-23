@@ -3,12 +3,18 @@ import {
   Button,
   PageHeader,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalAccountMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { sendVerificationAgain } from '../api/account-api'
 import { messageAfter } from '../utils/account-flow'
+
+const { verificationSent: words } = portalAccountMessages
+const { notArrivedWithLinks: notArrived } = words
 
 type VerificationSentProps = {
   /** The address that was typed. Whether it has an account is not known here */
@@ -22,18 +28,15 @@ type VerificationSentProps = {
  * does the screen.
  */
 export const VerificationSent = ({ email }: VerificationSentProps) => {
+  const say = useSay()
   const { notify } = useNotifications()
-  const [message, setMessage] = useState<string | undefined>(undefined)
+  const [message, setMessage] = useState<LocalizedText | undefined>(undefined)
   const sending = useMutation({
     mutationFn: sendVerificationAgain,
     onSuccess: (outcome) => {
       if (outcome.type === 'accepted') {
         setMessage(undefined)
-        notify({
-          tone: 'success',
-          message:
-            '確認メールの再送を受け付けました。届くまで、しばらくお待ちください。',
-        })
+        notify({ tone: 'success', message: words.sentAgain })
         return
       }
       setMessage(messageAfter(outcome))
@@ -42,23 +45,20 @@ export const VerificationSent = ({ email }: VerificationSentProps) => {
 
   return (
     <>
-      <PageHeader title='確認メールを送りました' />
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+      <PageHeader title={say(words.title)} />
+      {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
+      <p>{say(words.sentTo(email))}</p>
       <p>
-        {email}{' '}
-        に、確認メールを送りました。メールのリンクを開くと、登録が完了します。リンクは
-        24 時間有効です。
-      </p>
-      <p>
-        メールが届かないときは、迷惑メールのフォルダーをお確かめください。すでにアカウントのあるメールアドレスには、確認メールは届きません。その場合は、
-        <Link to='/sign-in'>サインイン</Link>するか、
-        <Link to='/forgot-password'>パスワードを再設定</Link>
-        してください。
+        {say(notArrived.before)}
+        <Link to='/sign-in'>{say(notArrived.signIn)}</Link>
+        {say(notArrived.between)}
+        <Link to='/forgot-password'>{say(notArrived.reset)}</Link>
+        {say(notArrived.after)}
       </p>
       <Button pending={sending.isPending} onClick={() => sending.mutate(email)}>
-        確認メールをもう一度送る
+        {say(words.sendAgain)}
       </Button>
-      <p>続けて送れるのは、1 分に 1 回までです。</p>
+      <p>{say(words.oncePerMinute)}</p>
     </>
   )
 }

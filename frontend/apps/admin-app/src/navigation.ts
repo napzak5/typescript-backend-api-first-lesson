@@ -1,8 +1,8 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
-import { isAtOrBelow } from '@beauty-salon-frontend/app-frame'
+import { type FrameLink, isAtOrBelow } from '@beauty-salon-frontend/app-frame'
 import { salonIdIn } from '@beauty-salon-frontend/salon-screens'
 import { worksAtSalon } from '@beauty-salon-frontend/session'
-import type { NavigationItem } from '@beauty-salon-frontend/ui'
+import { writtenInJapanese } from '@beauty-salon-frontend/ui'
 import { mayKeepStaffLedger } from './staff/utils/staff-format'
 
 /** The screen that adds a salon, for an administrator. */
@@ -497,29 +497,33 @@ export const OWN_PROFILE_PATH = '/account/profile'
 export const navigationFor = (
   role: ModelsUserResponse['role'] | undefined,
   pathname: string,
-): NavigationItem[] => {
+): FrameLink[] => {
   // The screen that adds a salon is below the same address as the screens
   // of a salon, and is of none
   const salonId = isAtOrBelow(pathname, SALON_ENTRY_PATH)
     ? undefined
     : salonIdIn(pathname)
-  const choice: NavigationItem[] =
+  const choice: FrameLink[] =
     role === 'admin'
       ? [
-          { href: '/', label: 'サロンを選ぶ', current: pathname === '/' },
+          {
+            href: '/',
+            label: writtenInJapanese('サロンを選ぶ'),
+            current: pathname === '/',
+          },
           {
             href: OPERATIONS_PATH,
-            label: '運用',
+            label: writtenInJapanese('運用'),
             current: pathname === OPERATIONS_PATH,
           },
         ]
       : []
   const member = worksAtSalon(role)
-  const profile: NavigationItem[] = member
+  const profile: FrameLink[] = member
     ? [
         {
           href: OWN_PROFILE_PATH,
-          label: 'プロフィール',
+          label: writtenInJapanese('プロフィール'),
           current: pathname === OWN_PROFILE_PATH,
         },
       ]
@@ -543,63 +547,71 @@ export const navigationFor = (
       ...choice,
       {
         href: bookings,
-        label: '予約',
+        label: writtenInJapanese('予約'),
         current: isAtOrBelow(pathname, bookings),
       },
-      { href: sales, label: '売上', current: isAtOrBelow(pathname, sales) },
+      {
+        href: sales,
+        label: writtenInJapanese('売上'),
+        current: isAtOrBelow(pathname, sales),
+      },
       {
         href: customers,
-        label: '顧客',
+        label: writtenInJapanese('顧客'),
         current: isAtOrBelow(pathname, customers),
       },
       {
         href: reviews,
-        label: 'レビュー',
+        label: writtenInJapanese('レビュー'),
         current: isAtOrBelow(pathname, reviews),
       },
       {
         href: attachments,
-        label: 'ファイル',
+        label: writtenInJapanese('ファイル'),
         current: isAtOrBelow(pathname, attachments),
       },
       {
         href: treatments,
-        label: '施術記録',
+        label: writtenInJapanese('施術記録'),
         current: isAtOrBelow(pathname, treatments),
       },
       {
         href: shifts,
-        label: 'シフト',
+        label: writtenInJapanese('シフト'),
         current: isAtOrBelow(pathname, shifts),
       },
-      { href: menu, label: 'メニュー', current: isAtOrBelow(pathname, menu) },
+      {
+        href: menu,
+        label: writtenInJapanese('メニュー'),
+        current: isAtOrBelow(pathname, menu),
+      },
       {
         href: products,
-        label: '商品',
+        label: writtenInJapanese('商品'),
         current: isAtOrBelow(pathname, products),
       },
       {
         href: inventory,
-        label: '在庫',
+        label: writtenInJapanese('在庫'),
         current: isAtOrBelow(pathname, inventory),
       },
       {
         href: purchaseOrders,
-        label: '発注',
+        label: writtenInJapanese('発注'),
         current: isAtOrBelow(pathname, purchaseOrders),
       },
       ...(role !== undefined && mayKeepStaffLedger(role)
         ? [
             {
               href: staff,
-              label: 'スタッフ',
+              label: writtenInJapanese('スタッフ'),
               current: isAtOrBelow(pathname, staff),
             },
           ]
         : []),
       {
         href: settings,
-        label: '設定',
+        label: writtenInJapanese('設定'),
         current: isAtOrBelow(pathname, settings),
       },
       ...profile,
@@ -607,6 +619,10 @@ export const navigationFor = (
   }
 
   return member
-    ? [...choice, { href: '/', label: '予約', current: false }, ...profile]
+    ? [
+        ...choice,
+        { href: '/', label: writtenInJapanese('予約'), current: false },
+        ...profile,
+      ]
     : choice
 }

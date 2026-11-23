@@ -323,10 +323,13 @@ chose none. `languageStore` of `io` keeps the choice (`localStorage`,
 keeps `<html lang>` at it; and a component says its texts in it. The whole
 is in `docs/i18n.md` (「画面の言語」).
 
-The texts become messages a package at a time. `ui`, `fields`,
-`answers`, `session`, `app-frame`, `salon-screens` and `preferences` are
-done, and so are `io` and `api-client`, which say nothing. The
-applications still write their texts in Japanese, in the source, and no
+The texts become messages a package at a time, and in an application an
+area at a time. `ui`, `fields`, `answers`, `session`, `app-frame`,
+`salon-screens` and `preferences` are done, and so are `io` and
+`api-client`, which say nothing. Of the portal, the areas `account`,
+`salons`, `bookings`, `session` and `security` and the links of its header
+(`navigation.ts`) are done; its other areas, the admin application and the
+dashboard still write their texts in Japanese, in the source, and no
 application shows a control that chooses the language yet.
 
 In a package that is done:
@@ -395,6 +398,44 @@ In a package that is done:
 - `src/texts.test.ts` of the package fails on a text that is written in
   Japanese in its source. A comment may be.
 
+In an area of an application that is done, the same rules hold, and:
+
+- Its texts are the messages of a file of the application in
+  `shared-i18n/src/messages/<application>/` (`portal/bookings.ts`:
+  `portalBookingMessages`), read from
+  `@beauty-salon-shared/i18n/messages/portal`; the frame of the portal
+  (the links of the header, the ways on under the sign-in form, the screens
+  of the security) is `portalFrameMessages`.
+- What it writes (`booking-format.ts`, `salon-format.ts`) and what its forms
+  read (`booking-flow.ts`, `account-flow.ts`) are messages, and so is what a
+  component of the area takes of a form: `BookingForm` takes its `message`
+  and its `errors` as messages and says them itself, so the focus it moves
+  on an attempt stays where it is when the language changes.
+- A sentence with a link in it is a message of its parts
+  (`signInWithLink`: `before`, `link` and `after`; `…WithLinks` names a
+  part for every link), which the component says one after the other, the
+  link as a link. Every language writes the parts so that they make one
+  sentence in that order.
+- The links of the header are named by messages: `navigationFor` returns
+  `FrameLink`s of `app-frame`, and `AppFrame` says their names. An
+  application that is still written in Japanese gives
+  `writtenInJapanese('…')`.
+- A name that a message of another catalogue puts into its sentence (what
+  was not read) is in `names` of the catalogue
+  (`portalBookingMessages.names.freeTimes`), and what parts a list of
+  values (`portalSalonMessages.about.betweenPhoneNumbers`) is a message too.
+- The application names its areas that are done in `src/texts.test.ts`
+  (`itShouldWriteItsTextsAsMessages(import.meta.dirname, ['account', …])`),
+  and the test fails on a name that has no source.
+- An area that is still written in Japanese says what it takes of an area
+  that is done with `inJapanese` (`inJapanese(whenLineOf(booking,
+  salon.timezone))` in the reviews), and so does an area that is done
+  that gives a name to a component of such an area, whose sentence around
+  the name is Japanese (`subject={inJapanese(postedOf(asked.review,
+  salon.timezone))}` of the dialog that reports a review); an area that is
+  done hands on the strings of one that is not as they are (the profile
+  form of the first booking).
+
 A value is written by the formats of `@beauty-salon-shared/i18n/formats`,
 which return it in every language, as a message: a number with its
 decimals (`numberOf`), a share (`percentOf`), an amount and the name of a
@@ -402,7 +443,9 @@ currency (`amountOf`, `shortAmountOf`, `currencyNameOf`), the size of a
 file (`bytesOf`, `fileSizeOf`), a day and a month of the calendar
 (`dayOf`, `dayWithWeekdayOf`, `fullDayOf`, `monthDayOf`, `shortDayOf`,
 `monthOf`) and a moment on the clock of a time zone (`timeOfDayAt`,
-`momentAt`, `momentWithWeekdayAt`). A message that puts a number into its
+`momentAt`, `momentWithWeekdayAt`), a range of moments and the times of
+a day the API writes (`timeRangeAt`, `timeSlotsOf`), and a length in
+minutes (`durationOf`). A message that puts a number into its
 words writes it with them too (the counts of `uiMessages`). A screen reads them as `formats`
 (`import * as formats from '@beauty-salon-shared/i18n/formats'`), so that
 they keep apart from its own functions, and builds no format of `Intl`
@@ -419,7 +462,7 @@ last screen is done. `inJapanese(message)` is the string such a screen
 shows: `count={inJapanese(countOf(total, rows.length, COUNTED.items))}`,
 `inJapanese(NONE)`, `aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE))`,
 the functions that write a value say a format with it
-(`inJapanese(formats.amountOf(amount, currency))`), and what `salon-screens`
+(`inJapanese(formats.dayOf(date))`), and what `salon-screens`
 writes is said the same way (`inJapanese(amountOf(sale.totalAmount,
 currency))`, `inJapanese(dayNameOf(day))`). The errors of the period
 (`readPeriod`, `readDays`) and of the preferences (`readPreferencesChange`,
@@ -434,9 +477,7 @@ screen wrote itself to what takes a message: a counter in words of its own
 is `(count) => writtenInJapanese(`${count} 台`)`, the name of a control is
 `tooLongOf(writtenInJapanese('仕入先'), 100)`, what was not read is
 `unreadMessageOf(writtenInJapanese('予約'), reason)`, and what the notice
-of another salon names is `what={writtenInJapanese('在庫')}`. The screens of the
-portal that show the rule of a password of `session` say it in Japanese
-too (`description={inJapanese(PASSWORD_RULE)}`). A message never goes
+of another salon names is `what={writtenInJapanese('在庫')}`. A message never goes
 into a template literal, a `+` or a `join`, where it is written
 `[object Object]`: a screen puts the string it said there
 (`` `${inJapanese(charactersOf(500))}以内で書いてください。` ``). The type

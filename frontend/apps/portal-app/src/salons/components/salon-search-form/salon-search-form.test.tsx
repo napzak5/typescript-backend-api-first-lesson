@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   setWindowWidth,
@@ -6,7 +7,7 @@ import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SalonConditions } from '../../utils/salon-search'
 import { SalonSearchForm, type SalonSearchFormProps } from './salon-search-form'
 import * as salonSearchFormStories from './salon-search-form.stories'
@@ -233,5 +234,43 @@ describe('SalonSearchForm', () => {
       'aria-haspopup',
       'dialog',
     )
+  })
+})
+
+describe('SalonSearchForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name its controls and the ratings it offers in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutConditions.run()
+
+    // Assert
+    expect(
+      screen.getByRole('searchbox', { name: 'Keyword' }).closest('search'),
+    ).toHaveAttribute('aria-label', 'Find a salon')
+    expect(
+      screen.getByRole('searchbox', { name: 'Keyword' }),
+    ).toHaveAccessibleDescription(
+      'A word in the name or the introduction of a salon',
+    )
+    expect(
+      screen.getByRole('textbox', { name: 'Prefecture' }),
+    ).toHaveAccessibleDescription(
+      'Written the same way as the salon registered it.',
+    )
+    expect(screen.getByRole('textbox', { name: 'City' })).toBeVisible()
+    expect(optionsOf('Rating')).toEqual([
+      'Any',
+      '3.0 or higher',
+      '3.5 or higher',
+      '4.0 or higher',
+      '4.5 or higher',
+    ])
+    expect(screen.getByRole('button', { name: 'Search' })).toBeVisible()
   })
 })

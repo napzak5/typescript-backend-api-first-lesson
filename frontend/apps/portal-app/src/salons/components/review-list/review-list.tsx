@@ -9,7 +9,10 @@ import {
   type More,
   PagedList,
   Select,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { portalSalonMessages } from '@beauty-salon-shared/i18n/messages/portal'
 import type { ChangeEvent } from 'react'
 import { postedOf } from '../../utils/salon-format'
 import { ReviewContent } from '../review-content/review-content'
@@ -55,10 +58,15 @@ export type ReviewListProps = {
   customer?: ReviewListCustomer | undefined
 }
 
-const ORDERS: readonly { value: ModelsReviewSortType; label: string }[] = [
-  { value: 'recent', label: '新しい順' },
-  { value: 'rating', label: '評価の高い順' },
-  { value: 'helpful', label: '参考になった順' },
+const { reviews: words } = portalSalonMessages
+
+const ORDERS: readonly {
+  value: ModelsReviewSortType
+  label: LocalizedText
+}[] = [
+  { value: 'recent', label: words.recent },
+  { value: 'rating', label: words.highestRated },
+  { value: 'helpful', label: words.mostHelpful },
 ]
 
 type ReviewActionsProps = {
@@ -74,6 +82,7 @@ type ReviewActionsProps = {
  * then says that it is pressed, and pressing it again asks for nothing.
  */
 const ReviewActions = ({ review, timezone, customer }: ReviewActionsProps) => {
+  const say = useSay()
   const posted = postedOf(review, timezone)
   const pressed = customer.helpful.has(review.id)
 
@@ -81,9 +90,9 @@ const ReviewActions = ({ review, timezone, customer }: ReviewActionsProps) => {
     <p>
       <Link
         href={customer.changeHref(review.id)}
-        aria-label={`${posted}のレビューを変更する`}
+        aria-label={say(words.changeOf(posted))}
       >
-        レビューを変更する
+        {say(words.change)}
       </Link>
     </p>
   ) : (
@@ -91,7 +100,7 @@ const ReviewActions = ({ review, timezone, customer }: ReviewActionsProps) => {
       <Button
         size='small'
         aria-pressed={pressed}
-        aria-label={`${posted}のレビューが参考になった`}
+        aria-label={say(words.helpfulOf(posted))}
         pending={customer.sending === review.id}
         onClick={() => {
           if (!pressed) {
@@ -100,15 +109,15 @@ const ReviewActions = ({ review, timezone, customer }: ReviewActionsProps) => {
         }}
       >
         {pressed && <span aria-hidden='true'>✓</span>}
-        参考になった
+        {say(words.helpful)}
       </Button>
       <Button
         size='small'
         variant='quiet'
-        aria-label={`${posted}のレビューを通報する`}
+        aria-label={say(words.reportOf(posted))}
         onClick={() => customer.onReport(review)}
       >
-        通報する
+        {say(words.report)}
       </Button>
     </Actions>
   )
@@ -130,6 +139,7 @@ export const ReviewList = ({
   onMore,
   customer,
 }: ReviewListProps) => {
+  const say = useSay()
   const choose = (event: ChangeEvent<HTMLSelectElement>): void => {
     const chosen = ORDERS.find((order) => order.value === event.target.value)
     if (chosen !== undefined) {
@@ -141,15 +151,18 @@ export const ReviewList = ({
     <div className={styles['reviews']}>
       <Select
         className={styles['order']}
-        label='並び順'
-        options={ORDERS}
+        label={say(words.sortBy)}
+        options={ORDERS.map(({ value, label }) => ({
+          value,
+          label: say(label),
+        }))}
         value={sortBy}
         onChange={choose}
       />
       <PagedList
         items={reviews}
         itemKey={({ id }) => id}
-        label='レビュー'
+        label={say(portalSalonMessages.salon.reviews)}
         focus='item'
         more={more}
         onMore={onMore}

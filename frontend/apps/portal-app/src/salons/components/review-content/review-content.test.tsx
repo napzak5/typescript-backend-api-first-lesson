@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { fullReview } from '../examples'
 import * as reviewContentStories from './review-content.stories'
 
@@ -103,5 +104,41 @@ describe('ReviewContent', () => {
 
     // Assert: the style that keeps them hangs on this class
     expect(screen.getByText(/写真を見せて相談しました。/)).toHaveClass('text')
+  })
+})
+
+describe('ReviewContent on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say in English what the reviewer gave and what the salon answered', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Complete.run()
+
+    // Assert
+    expect(screen.getByText('November 10, 2026')).toBeVisible()
+    expect(screen.getByText('Verified visit')).toBeVisible()
+    expect(said()).toContain(
+      'Service 5 · Staff 5 · Atmosphere 4 · Cleanliness 5 · Value 4',
+    )
+    expect(said()).toContain('12 people found this helpful')
+    expect(
+      screen.getByText('Response from the salon (November 12, 2026)'),
+    ).toBeVisible()
+  })
+
+  it('should name the pictures of a review in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithPictures.run()
+
+    // Assert
+    expect(screen.getByRole('list', { name: 'Pictures' })).toBeVisible()
   })
 })

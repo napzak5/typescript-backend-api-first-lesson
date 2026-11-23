@@ -1,7 +1,7 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
-import { isAtOrBelow } from '@beauty-salon-frontend/app-frame'
+import { type FrameLink, isAtOrBelow } from '@beauty-salon-frontend/app-frame'
 import { salonIdIn } from '@beauty-salon-frontend/salon-screens'
-import type { NavigationItem } from '@beauty-salon-frontend/ui'
+import { writtenInJapanese } from '@beauty-salon-frontend/ui'
 
 /** The sales report of a salon: where its screens begin. */
 export const reportsHrefOf = (salonId: string): string =>
@@ -34,11 +34,17 @@ export const categorySalesHrefOf = (salonId: string): string =>
 export const navigationFor = (
   role: ModelsUserResponse['role'] | undefined,
   pathname: string,
-): NavigationItem[] => {
+): FrameLink[] => {
   const salonId = salonIdIn(pathname)
-  const choice: NavigationItem[] =
+  const choice: FrameLink[] =
     role === 'admin'
-      ? [{ href: '/', label: 'サロンを選ぶ', current: pathname === '/' }]
+      ? [
+          {
+            href: '/',
+            label: writtenInJapanese('サロンを選ぶ'),
+            current: pathname === '/',
+          },
+        ]
       : []
   if (salonId !== undefined) {
     const reports = reportsHrefOf(salonId)
@@ -49,31 +55,35 @@ export const navigationFor = (
 
     return [
       ...choice,
-      { href: reports, label: '売上レポート', current: pathname === reports },
+      {
+        href: reports,
+        label: writtenInJapanese('売上レポート'),
+        current: pathname === reports,
+      },
       {
         href: trends,
-        label: '売上の推移',
+        label: writtenInJapanese('売上の推移'),
         current: isAtOrBelow(pathname, trends),
       },
       {
         href: daily,
-        label: '1 日の売上',
+        label: writtenInJapanese('1 日の売上'),
         current: isAtOrBelow(pathname, daily),
       },
       {
         href: staff,
-        label: 'スタッフ別の売上',
+        label: writtenInJapanese('スタッフ別の売上'),
         current: isAtOrBelow(pathname, staff),
       },
       {
         href: categories,
-        label: '区分別の売上',
+        label: writtenInJapanese('区分別の売上'),
         current: isAtOrBelow(pathname, categories),
       },
     ]
   }
 
   return role === 'owner' || role === 'manager'
-    ? [{ href: '/', label: '売上レポート', current: false }]
+    ? [{ href: '/', label: writtenInJapanese('売上レポート'), current: false }]
     : choice
 }

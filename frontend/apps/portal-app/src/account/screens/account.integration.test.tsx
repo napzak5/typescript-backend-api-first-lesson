@@ -1,4 +1,5 @@
 import { applications } from '@beauty-salon-frontend/brand'
+import { languageStore } from '@beauty-salon-frontend/io'
 import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { asked } from '@beauty-salon-frontend/testing/answers'
@@ -904,5 +905,103 @@ describe('the screens of an account, against the API', () => {
       ).toBeVisible()
       expect(await findAccessibilityViolations()).toEqual([])
     })
+  })
+})
+
+describe('the screens of an account on a page in English, against the API', () => {
+  const emailInEnglish = () =>
+    screen.getByRole('textbox', { name: 'Email address' })
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    vi.stubEnv('VITE_ADMIN_APP_URL', ADMIN_APP)
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should register an account in English, and say in English where the link is', async () => {
+    // Arrange
+    renderAt('/register')
+    const user = userEvent.setup()
+    expect(await heading('Create an account')).toBeVisible()
+    expect(document.title).toBe(`Create an account | ${TITLE}`)
+
+    // Act
+    await user.type(emailInEnglish(), VISITOR)
+    await user.type(screen.getByLabelText('Password'), `${PASSWORD}{Enter}`)
+
+    // Assert
+    expect(await heading('We sent you a confirmation mail')).toHaveFocus()
+    expect(
+      main().getByText(
+        `We sent a confirmation mail to ${VISITOR}. Open its link to finish the registration. The link works for 24 hours.`,
+      ),
+    ).toBeVisible()
+    expect(
+      main().getByRole('button', { name: 'Send the confirmation mail again' }),
+    ).toBeVisible()
+    expect(await findAccessibilityViolations()).toEqual([])
+  })
+
+  it('should say in English at each control what is missing, and what the API says of a password that is easy to guess', async () => {
+    // Arrange
+    renderAt('/register')
+    const user = userEvent.setup()
+
+    // Act
+    await user.click(await screen.findByRole('button', { name: 'Register' }))
+
+    // Assert
+    expect(emailInEnglish()).toHaveAccessibleDescription(
+      'We will send you a mail to confirm it. Enter an email address.',
+    )
+    expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(
+      'Enter 15 characters or more. A long sentence, or several words together, is safe. Enter a password.',
+    )
+
+    // Act
+    await user.type(emailInEnglish(), VISITOR)
+    await user.type(screen.getByLabelText('Password'), `${GUESSABLE}{Enter}`)
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'This password is easy to guess and cannot be used. Enter another password.',
+      ),
+    ).toBeVisible()
+    expect(screen.getByLabelText('Password')).toHaveFocus()
+    expect(await accountOf(VISITOR)).toEqual([])
+  })
+
+  it('should show in English whom an invitation is for, and until when it is valid', async () => {
+    // Arrange
+    await invite(STAFF_WITHOUT_ACCOUNT, await accessTokenOf(OWNER))
+    const [{ expiry }] = expirySchema.parse(
+      await testApi().query(
+        `select to_char("expiresAt" at time zone 'Asia/Tokyo', 'FMMonth FMDD, YYYY "at" HH24:MI') as expiry
+           from staff_invitations where email = $1`,
+        [STAFF_WITHOUT_ACCOUNT],
+      ),
+    )
+
+    // Act
+    await openMailedLink(STAFF_WITHOUT_ACCOUNT)
+
+    // Assert
+    await screen.findByLabelText('Password')
+    expect(main().getByText('Role').nextElementSibling?.textContent).toBe(
+      'Staff',
+    )
+    expect(
+      main().getByText('Invitation expires').nextElementSibling?.textContent,
+    ).toBe(expiry)
+    expect(
+      main().getByRole('button', { name: 'Create the account' }),
+    ).toBeVisible()
   })
 })

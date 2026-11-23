@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { renderApplicationAt } from '@beauty-salon-frontend/testing/screens'
 import {
@@ -9,7 +10,7 @@ import {
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { isAtOrBelow } from '../utils/addresses'
 import { AppFrame, type NavigationOf } from './app-frame'
 
@@ -21,10 +22,14 @@ const TITLE = 'Kushi Frame'
 const navigationFor: NavigationOf = (role, pathname) =>
   role === undefined
     ? [
-        { href: '/', label: 'サロンを探す', current: pathname === '/' },
+        {
+          href: '/',
+          label: { en: 'Find a salon', ja: 'サロンを探す' },
+          current: pathname === '/',
+        },
         {
           href: '/bookings',
-          label: '予約の一覧',
+          label: { en: 'Your bookings', ja: '予約の一覧' },
           current: isAtOrBelow(pathname, '/bookings'),
         },
       ]
@@ -126,6 +131,26 @@ describe('AppFrame', () => {
       expect(linksOfTheHeader()).toEqual(links)
     },
   )
+
+  describe('on a page in English', () => {
+    afterEach(() => {
+      localStorage.clear()
+    })
+
+    it('should name the links of the header in the language of the page', () => {
+      // Arrange
+      languageStore.choose('en')
+
+      // Act
+      renderAt('/')
+
+      // Assert
+      expect(linksOfTheHeader()).toEqual([
+        ['Find a salon', '/', 'page'],
+        ['Your bookings', '/bookings', null],
+      ])
+    })
+  })
 
   it('should move within the application when a link of a shared component is pressed, and give the header the links of the address it leads to', async () => {
     // Arrange

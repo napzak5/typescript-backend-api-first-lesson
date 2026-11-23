@@ -10,15 +10,21 @@ import {
   DescriptionList,
   Form,
   type FormSays,
-  inJapanese,
   NOTHING_TO_SAY,
   PageHeader,
   PasswordField,
   TextField,
+  useSaidForm,
+  useSay,
 } from '@beauty-salon-frontend/ui'
 import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
-import { termMessages } from '@beauty-salon-shared/i18n/messages/ui'
+import { portalAccountMessages } from '@beauty-salon-shared/i18n/messages/portal'
+import {
+  frameMessages,
+  sessionMessages,
+  termMessages,
+} from '@beauty-salon-shared/i18n/messages/ui'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
@@ -38,7 +44,8 @@ import {
 } from '../utils/account-flow'
 import { CheckingLink, LinkNotChecked, LinkUnusable } from './mailed-link'
 
-const TITLE = 'スタッフアカウントへの招待'
+const { invitation: words } = portalAccountMessages
+const { signInForm } = sessionMessages
 
 const ROLE: Record<ModelsSalonRoleType, LocalizedText> = termMessages.salonRole
 
@@ -52,14 +59,18 @@ type Ended = 'created' | 'joined' | 'linkRefused' | 'accountExists'
 
 type InvitationProps = { invitation: ModelsStaffInvitationResponse }
 
-/** What the invitation gives, and until when. */
-const termsOf = (invitation: ModelsStaffInvitationResponse) => [
-  { term: '役割', description: inJapanese(ROLE[invitation.role]) },
-  {
-    term: '招待の期限',
-    description: inJapanese(formats.momentAt(invitation.expiresAt, TIME_ZONE)),
-  },
-]
+/** What the invitation gives, and until when, in the language of the page. */
+const useTermsOf = (invitation: ModelsStaffInvitationResponse) => {
+  const say = useSay()
+
+  return [
+    { term: say(words.role), description: say(ROLE[invitation.role]) },
+    {
+      term: say(words.expiresAt),
+      description: say(formats.momentAt(invitation.expiresAt, TIME_ZONE)),
+    },
+  ]
+}
 
 type StepProps = InvitationProps & {
   token: string
@@ -68,7 +79,10 @@ type StepProps = InvitationProps & {
 
 /** The invited person has no account: a password makes one. */
 const CreateAccount = ({ token, invitation, onEnd }: StepProps) => {
-  const [says, setSays] = useState<FormSays>(NOTHING_TO_SAY)
+  const say = useSay()
+  const [says, setSays] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
+  const said = useSaidForm(says.message, says.errors)
+  const terms = useTermsOf(invitation)
   const acceptance = useMutation({
     mutationFn: (password: string) => acceptInvitation(token, password),
     onSuccess: (outcome) => {
@@ -96,14 +110,14 @@ const CreateAccount = ({ token, invitation, onEnd }: StepProps) => {
   return (
     <>
       <PageHeader
-        title={TITLE}
-        description='パスワードを決めると、店舗向けの画面にサインインするアカウントができます。'
+        title={say(words.title)}
+        description={say(words.createDescription)}
       />
       {/* Whom it is for is the first control of the form */}
-      <DescriptionList items={termsOf(invitation)} />
+      <DescriptionList items={terms} />
       <Form
-        submitLabel='アカウントを作る'
-        message={says.message}
+        submitLabel={say(words.create)}
+        message={said.message}
         errors={says.errors}
         pending={acceptance.isPending}
         onSubmit={submit}
@@ -111,7 +125,7 @@ const CreateAccount = ({ token, invitation, onEnd }: StepProps) => {
         {/* Not sent: it is here for a password manager, which stores the
             password under the address it finds beside it */}
         <TextField
-          label='メールアドレス'
+          label={say(signInForm.email)}
           name='email'
           type='email'
           autoComplete='username'
@@ -119,12 +133,12 @@ const CreateAccount = ({ token, invitation, onEnd }: StepProps) => {
           value={invitation.email}
         />
         <PasswordField
-          label='パスワード'
+          label={say(signInForm.password)}
           name='password'
           autoComplete='new-password'
           required
-          description={inJapanese(PASSWORD_RULE)}
-          error={says.errors['password']}
+          description={say(PASSWORD_RULE)}
+          error={said.errors['password']}
         />
       </Form>
     </>
@@ -133,7 +147,9 @@ const CreateAccount = ({ token, invitation, onEnd }: StepProps) => {
 
 /** The invited person has an account, and is signed in with one. */
 const JoinWithAccount = ({ token, invitation, onEnd }: StepProps) => {
-  const [message, setMessage] = useState<string | undefined>(undefined)
+  const say = useSay()
+  const [message, setMessage] = useState<LocalizedText | undefined>(undefined)
+  const terms = useTermsOf(invitation)
   const joining = useMutation({
     mutationFn: () => joinInvitation(token),
     onSuccess: (outcome) => {
@@ -141,9 +157,7 @@ const JoinWithAccount = ({ token, invitation, onEnd }: StepProps) => {
         .with({ type: 'accepted' }, () => onEnd('joined'))
         .with({ type: 'tokenRefused' }, () => onEnd('linkRefused'))
         .with({ type: 'notForThisAccount' }, () =>
-          setMessage(
-            `サインインしているアカウントでは、この招待を受けられません。${invitation.email} のスタッフのアカウントでサインインし直してください。`,
-          ),
+          setMessage(words.notForThisAccount(invitation.email)),
         )
         // The sign-in screen takes the place of this one
         .with({ type: 'signedOut' }, () => setMessage(undefined))
@@ -158,14 +172,14 @@ const JoinWithAccount = ({ token, invitation, onEnd }: StepProps) => {
   return (
     <>
       <PageHeader
-        title={TITLE}
-        description='サインインしているアカウントで、この招待を受けます。パスワードは、いまのものをそのまま使います。'
+        title={say(words.title)}
+        description={say(words.joinDescription)}
       />
-      {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+      {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       <DescriptionList
         items={[
-          { term: 'メールアドレス', description: invitation.email },
-          ...termsOf(invitation),
+          { term: say(signInForm.email), description: invitation.email },
+          ...terms,
         ]}
       />
       <Button
@@ -173,17 +187,21 @@ const JoinWithAccount = ({ token, invitation, onEnd }: StepProps) => {
         pending={joining.isPending}
         onClick={() => joining.mutate()}
       >
-        招待を受ける
+        {say(words.join)}
       </Button>
     </>
   )
 }
 
-const ToAdmin = () => (
-  <ButtonLink href={import.meta.env.VITE_ADMIN_APP_URL}>
-    店舗向けの画面を開く
-  </ButtonLink>
-)
+const ToAdmin = () => {
+  const say = useSay()
+
+  return (
+    <ButtonLink href={import.meta.env.VITE_ADMIN_APP_URL}>
+      {say(words.toAdmin)}
+    </ButtonLink>
+  )
+}
 
 const AcceptWithToken = ({ token }: { token: string }) => {
   // Asked once for this screen, and forgotten with it: the answer is about
@@ -194,14 +212,15 @@ const AcceptWithToken = ({ token }: { token: string }) => {
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: 0,
   })
+  const say = useSay()
   const [ended, setEnded] = useState<Ended | null>(null)
 
   if (ended === 'created') {
     return (
       <>
         <PageHeader
-          title='アカウントを作りました'
-          description='招待のメールアドレスと、いま決めたパスワードで、店舗向けの画面にサインインしてください。'
+          title={say(words.created)}
+          description={say(words.createdDescription)}
         />
         <ToAdmin />
       </>
@@ -211,8 +230,8 @@ const AcceptWithToken = ({ token }: { token: string }) => {
     return (
       <>
         <PageHeader
-          title='招待を受けました'
-          description='このアカウントで、店舗向けの画面を使えるようになりました。'
+          title={say(words.joined)}
+          description={say(words.joinedDescription)}
         />
         <ToAdmin />
       </>
@@ -226,7 +245,7 @@ const AcceptWithToken = ({ token }: { token: string }) => {
         ? ACCOUNT_EXISTS
         : check.data,
   )
-    .with(undefined, () => <CheckingLink title={TITLE} />)
+    .with(undefined, () => <CheckingLink title={words.title} />)
     .with({ type: 'open', next: 'accept' }, ({ invitation }) => (
       <CreateAccount token={token} invitation={invitation} onEnd={setEnded} />
     ))
@@ -234,11 +253,13 @@ const AcceptWithToken = ({ token }: { token: string }) => {
       // The API decides whose invitation it is: anybody is asked to sign in
       <RequireSession
         roles={EVERY_ROLE}
-        signInNotice={`この招待は、${invitation.email} のスタッフのアカウントで受けられます。そのアカウントでサインインしてください。`}
+        signInNotice={say(words.signInNotice(invitation.email))}
         signInHelp={
           // The link of the mail still works after a new password was set
           <p>
-            <Link to='/forgot-password'>パスワードを忘れた場合</Link>
+            <Link to='/forgot-password'>
+              {say(frameMessages.forgotPassword)}
+            </Link>
           </p>
         }
       >
@@ -250,16 +271,16 @@ const AcceptWithToken = ({ token }: { token: string }) => {
       </RequireSession>
     ))
     .with({ type: 'accountExists' }, () => (
-      <LinkUnusable description='招待されたメールアドレスには、すでにアカウントがあり、この招待は使えません。招待を送ったサロンに、お問い合わせください。' />
+      <LinkUnusable description={words.accountExists} />
     ))
     .with({ type: 'tokenRefused' }, () => (
-      <LinkUnusable description='招待の期限（7 日）が過ぎたか、すでに使われたか、取り消されています。招待を送ったサロンに、もう一度招待するよう、お伝えください。' />
+      <LinkUnusable description={words.expired} />
     ))
     .with(
       { type: P.union('invalid', 'tooManyAttempts', 'failed') },
       (refusal) => (
         <LinkNotChecked
-          title={TITLE}
+          title={words.title}
           refusal={refusal}
           onRetry={() => void check.refetch()}
         />
@@ -277,7 +298,7 @@ export const AcceptStaffInvitationScreen = () => {
   const token = useMailedToken()
 
   return token === null ? (
-    <LinkUnusable description='このページは、招待のメールのリンクから開いてください。' />
+    <LinkUnusable description={words.noLink} />
   ) : (
     <AcceptWithToken key={token} token={token} />
   )

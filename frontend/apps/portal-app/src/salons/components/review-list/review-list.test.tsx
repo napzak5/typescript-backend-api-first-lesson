@@ -1,9 +1,10 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { useLayoutEffect, useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fullReview } from '../examples'
 import { ReviewList, type ReviewListProps } from './review-list'
 import * as reviewListStories from './review-list.stories'
@@ -412,5 +413,62 @@ describe('ReviewList', () => {
 
     // Assert
     expect(document.body).toHaveFocus()
+  })
+})
+
+describe('ReviewList on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the orders of the reviews in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Complete.run()
+
+    // Assert
+    expect(optionsOf('Sort by')).toEqual([
+      'Newest first',
+      'Highest rated first',
+      'Most helpful first',
+    ])
+    expect(screen.getByRole('list', { name: 'Reviews' })).toBeVisible()
+  })
+
+  it('should name the buttons of a review in English, by its title and the day it was posted', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.ForACustomer.run()
+
+    // Assert
+    expect(
+      screen.getByRole('button', {
+        name: 'Helpful: the review “思ったとおりの色になりました” (posted November 10, 2026)',
+      }),
+    ).toHaveTextContent('Helpful')
+    expect(
+      screen.getByRole('button', {
+        name: 'Report the review posted October 28, 2026',
+      }),
+    ).toHaveTextContent('Report')
+  })
+
+  it('should name the link that changes the customer’s own review in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithOwnReview.run()
+
+    // Assert
+    expect(
+      screen.getByRole('link', {
+        name: 'Change the review posted October 28, 2026',
+      }),
+    ).toHaveTextContent('Change the review')
   })
 })

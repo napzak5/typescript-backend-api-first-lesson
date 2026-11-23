@@ -166,6 +166,33 @@ export const sourcesBelow = (directory: string): SourceFile[] =>
       content: fs.readFileSync(path.join(directory, relative), 'utf8'),
     }))
 
+/** The part of `directory` a source is in: the folder or the file right below it */
+const partOf = (source: SourceFile): string =>
+  source.path.split(path.sep)[0] ?? source.path
+
+/**
+ * The sources below `directory` that are in the parts it names: folders and
+ * files right below it, as the areas of an application are.
+ */
+export const sourcesIn = (
+  directory: string,
+  parts: readonly string[],
+): SourceFile[] =>
+  sourcesBelow(directory).filter((source) => parts.includes(partOf(source)))
+
+/**
+ * The parts named that have no source below `directory`: a name written
+ * wrong, or that of a part that went, where the test would read nothing.
+ */
+export const partsWithoutSources = (
+  directory: string,
+  parts: readonly string[],
+): string[] => {
+  const found = new Set(sourcesBelow(directory).map(partOf))
+
+  return parts.filter((part) => !found.has(part))
+}
+
 /**
  * Declares the test that the sources below `directory` write no text in
  * Japanese: every text they show is a message, written in every language.
@@ -176,13 +203,28 @@ export const sourcesBelow = (directory: string): SourceFile[] =>
  *   itShouldWriteItsTextsAsMessages(import.meta.dirname)
  * })
  * ```
+ *
+ * An application becomes messages an area at a time, and names the parts of
+ * its `src` that are done (`['account', 'navigation.ts']`), until all are.
+ * A part it names that has no source fails the test, which would otherwise
+ * read nothing there.
  */
-export const itShouldWriteItsTextsAsMessages = (directory: string): void => {
+export const itShouldWriteItsTextsAsMessages = (
+  directory: string,
+  parts?: readonly string[],
+): void => {
   it('should write no text in Japanese in its sources: a text is a message, written in every language', () => {
     // Act
-    const lines = linesWrittenInJapanese(sourcesBelow(directory))
+    const sources =
+      parts === undefined
+        ? sourcesBelow(directory)
+        : sourcesIn(directory, parts)
+    const lines = linesWrittenInJapanese(sources)
 
     // Assert
     expect(lines).toEqual([])
+    expect(
+      parts === undefined ? [] : partsWithoutSources(directory, parts),
+    ).toEqual([])
   })
 }

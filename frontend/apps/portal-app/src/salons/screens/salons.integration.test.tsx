@@ -1,4 +1,5 @@
 import { applications } from '@beauty-salon-frontend/brand'
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf, testApi } from '@beauty-salon-frontend/testing/api'
 import { address, heading } from '@beauty-salon-frontend/testing/screens'
@@ -1099,5 +1100,130 @@ describe('the screens of the salons, against the API', () => {
       // Assert
       expect(violations).toEqual([])
     })
+  })
+})
+
+describe('the screens of the salons on a page in English, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    localStorage.clear()
+  })
+
+  it('should search for the salons in English, and count what it found', async () => {
+    // Act
+    renderAt('/')
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Find a salon' }),
+    ).toBeVisible()
+    expect(document.title).toBe(`Find a salon | ${TITLE}`)
+    const region = await screen.findByRole('region', { name: 'Results' })
+    expect(namesIn(region).toSorted()).toEqual([TOKYO, OSAKA])
+    expect(countIn(region)).toHaveTextContent('2 salons found')
+    expect(screen.getByRole('searchbox', { name: 'Keyword' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Search' })).toBeVisible()
+  })
+
+  it('should show every part of the page of a salon in English', async () => {
+    // Act
+    renderAt(await salonPathOf(TOKYO))
+
+    // Assert
+    const about = within(await part('About the salon'))
+    expect(about.getAllByRole('term').map((term) => term.textContent)).toEqual([
+      'Address',
+      'Phone number',
+      'Email address',
+      'Website',
+      'Features',
+    ])
+    expect(
+      about.getByText('150-0002 Tokyo Shibuya-ku 1-2-3 Shibuya'),
+    ).toBeVisible()
+    expect(
+      daysUnder(await part('Hours'), 'Hours by day of the week').map(
+        ([day]) => day,
+      ),
+    ).toEqual([
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ])
+    const staff = await part('Staff')
+    await within(staff).findByRole('heading', {
+      level: 3,
+      name: 'Hiroshi Tanaka',
+    })
+    expect(
+      within(staff).getByText(
+        'Senior Stylist · Senior · 10 years of experience',
+      ),
+    ).toBeVisible()
+    expect(
+      within(staff).getByRole('list', {
+        name: 'Specialties of Hiroshi Tanaka',
+      }),
+    ).toBeVisible()
+    expect(within(staff).getAllByText('Takes no bookings')).toHaveLength(2)
+    const reviews = await part('Reviews')
+    expect(
+      await within(reviews).findByRole('img', {
+        name: '4.0 out of 5 (3 ratings)',
+      }),
+    ).toBeVisible()
+    expect(
+      within(within(reviews).getByRole('list', { name: 'Reviews by rating' }))
+        .getAllByRole('listitem')
+        .map((rating) => rating.textContent),
+    ).toEqual([
+      '5 stars1 review',
+      '4 stars1 review',
+      '3 stars1 review',
+      '2 stars0 reviews',
+      '1 star0 reviews',
+    ])
+    expect(
+      await within(reviews).findByRole('combobox', { name: 'Sort by' }),
+    ).toHaveValue('recent')
+    expect(within(reviews).getAllByText('Verified visit')).toHaveLength(3)
+    expect(
+      within(reviews).getByRole('link', { name: 'Sign in' }).parentElement,
+    ).toHaveTextContent(
+      'Sign in to say that a review was helpful, or to report one that is a problem.',
+    )
+  })
+
+  it('should say in English that a part of the page could not be read', async () => {
+    // Arrange
+    const path = await salonPathOf(TOKYO)
+    await takeAway('reviews')
+
+    // Act
+    renderAt(path)
+
+    // Assert
+    const reviews = await part('Reviews')
+    await waitFor(() => {
+      expect(within(reviews).getAllByRole('alert')).toHaveLength(2)
+    })
+    await giveBack('reviews')
+    expect(
+      within(reviews)
+        .getAllByRole('alert')
+        .map((alert) => alert.textContent),
+    ).toEqual([
+      'Could not load the ratings. Check your connection and try again.',
+      'Could not load the reviews. Check your connection and try again.',
+    ])
   })
 })

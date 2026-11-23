@@ -1,12 +1,17 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { navigationFor } from './navigation'
 
 const BOOKING_ID = 'e7092b3c-68fd-4a13-9b35-d7f902245846'
 const SALON_ID = '0b7f5c1e-3a52-4d8e-9c41-6f2e8d1a7b90'
 
+const SEARCH = { en: 'Find a salon', ja: 'サロンを探す' }
+const BOOKINGS = { en: 'Your bookings', ja: '予約の一覧' }
+const MY_PAGE = { en: 'My page', ja: 'マイページ' }
+
 /** The labels of the links that are the current ones. */
-const currentAt = (pathname: string): string[] =>
+const currentAt = (pathname: string): LocalizedText[] =>
   navigationFor('customer', pathname).flatMap(({ label, current }) =>
     current === true ? [label] : [],
   )
@@ -16,9 +21,9 @@ describe('navigationFor', () => {
     expect(
       navigationFor('customer', '/').map(({ href, label }) => [href, label]),
     ).toEqual([
-      ['/', 'サロンを探す'],
-      ['/bookings', '予約の一覧'],
-      ['/mypage', 'マイページ'],
+      ['/', SEARCH],
+      ['/bookings', BOOKINGS],
+      ['/mypage', MY_PAGE],
     ])
   })
 
@@ -34,23 +39,23 @@ describe('navigationFor', () => {
     },
   )
 
-  it.each([
-    ['the search', '/', ['サロンを探す']],
-    ['the page of a salon', `/salons/${SALON_ID}`, ['サロンを探す']],
+  it.each<[string, string, LocalizedText[]]>([
+    ['the search', '/', [SEARCH]],
+    ['the page of a salon', `/salons/${SALON_ID}`, [SEARCH]],
     [
       'the screen that books',
       `/salons/${SALON_ID}/services/${BOOKING_ID}/booking`,
-      ['サロンを探す'],
+      [SEARCH],
     ],
-    ['the bookings', '/bookings', ['予約の一覧']],
-    ['the page of a booking', `/bookings/${BOOKING_ID}`, ['予約の一覧']],
+    ['the bookings', '/bookings', [BOOKINGS]],
+    ['the page of a booking', `/bookings/${BOOKING_ID}`, [BOOKINGS]],
     [
       'the screen that moves a booking',
       `/bookings/${BOOKING_ID}/reschedule`,
-      ['予約の一覧'],
+      [BOOKINGS],
     ],
-    ['the page of the customer', '/mypage', ['マイページ']],
-    ['the form of the profile', '/mypage/profile', ['マイページ']],
+    ['the page of the customer', '/mypage', [MY_PAGE]],
+    ['the form of the profile', '/mypage/profile', [MY_PAGE]],
     ['the sign-in screen', '/sign-in', []],
     ['a screen that is not there', '/bookings-of-others', []],
     [

@@ -103,7 +103,8 @@ const Writing = ({ visit, onRefused }: WritingProps) => {
             },
             {
               term: '来店日時',
-              description: whenLineOf(booking, salon.timezone),
+              // The reviews are said in Japanese until their texts are messages
+              description: inJapanese(whenLineOf(booking, salon.timezone)),
             },
           ]}
         />
