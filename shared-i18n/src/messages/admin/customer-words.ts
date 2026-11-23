@@ -1,12 +1,11 @@
-import { numberOf } from '../../formats/numbers'
 import { type LocalizedText, text } from '../../languages/localized-text'
-import { countedIn } from '../written'
+import { countOf } from '../written'
 
 /*
  * What the catalogues of the ledger of the customers share: who may do
  * what the staff may not, what a search of the ledger looks in, how a
- * customer is named in a sentence, and how a count is written beside what
- * it counts. Each part of the ledger is a file of its own, and
+ * customer is named in a sentence, and how many customers there are. Each
+ * part of the ledger is a file of its own, and
  * `adminCustomerMessages` (`customers.ts`) collects them under one name.
  */
 
@@ -31,18 +30,6 @@ export const KEYWORD_DESCRIPTION = text({
 /** How the staff name a customer in a sentence: 「山田 花子 様」; English names them alone */
 export const honored = (name: string): LocalizedText =>
   text({ en: name, ja: `${name} 様` })
-
-/** A count beside the term that names what it counts, which Japanese counts with one word: 「3 回」, "3 visits" */
-export const countOf = (
-  count: number,
-  one: string,
-  many: string,
-  counter: string,
-): LocalizedText =>
-  text({
-    en: countedIn(count, one, many),
-    ja: `${numberOf(count).ja} ${counter}`,
-  })
 
 /** How many customers: 「3 人」, "3 customers" */
 export const customersOf = (count: number): LocalizedText =>
