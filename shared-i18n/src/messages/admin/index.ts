@@ -1,4 +1,7 @@
+export { adminBookingMessages } from './bookings'
 export { adminCustomerMessages } from './customers'
 export { adminFrameMessages } from './frame'
 export { adminInventoryMessages } from './inventory'
+export { adminMenuMessages } from './menu'
+export { adminSaleMessages } from './sales'
 export { adminStaffMessages } from './staff'
