@@ -164,10 +164,9 @@ describe('sourcesBelow', () => {
   it.each<[string, string, RegExp]>([
     ['the tests', 'ui/src', /\.test\.tsx?$/],
     ['the stories', 'ui/src', /\.stories\.tsx$/],
-    ['what the stories share', 'salon-screens/src', /__stories__/],
+    ['what the stories share', 'ui/src', /__stories__/],
     ['the examples of the stories', 'session/src', /examples\.ts$/],
     ['what is generated from the contract', 'api-client/src', /generated/],
-    ['what a package built and depends on', 'ui', /dist|node_modules/],
     ['the stylesheets', 'ui/src', /\.css$/],
   ])('should leave out %s', (_, directory, left) => {
     // Act

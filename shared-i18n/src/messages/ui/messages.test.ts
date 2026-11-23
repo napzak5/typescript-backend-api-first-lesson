@@ -113,6 +113,14 @@ describe('the messages of the shared components', () => {
     expect(made).toEqual({ en: 'Filters', ja: '条件' })
   })
 
+  it('should name the number of the other conditions from the first one that narrows the list', () => {
+    // Act
+    const made = filterForm.conditions(1)
+
+    // Assert
+    expect(made).toEqual({ en: 'Filters (1)', ja: '条件（1）' })
+  })
+
   it('should put the label of a password inside the English sentence, beginning with a small letter', () => {
     // Act
     const made = passwordField.show('New password')

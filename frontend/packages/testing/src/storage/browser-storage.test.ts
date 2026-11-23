@@ -80,7 +80,10 @@ describe('refuseStorage', () => {
 
     // Assert
     expect(() => localStorage.getItem('language')).toThrow(
-      'Access is denied for this document.',
+      expect.objectContaining({
+        name: 'SecurityError',
+        message: 'Access is denied for this document.',
+      }),
     )
   })
 
