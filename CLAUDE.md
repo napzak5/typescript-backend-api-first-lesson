@@ -72,11 +72,11 @@ export type Result<T, E> =
   | { type: 'error'; error: E }
 
 // Domain error types (backend/packages/domain/src/shared/errors.ts)
-// Told: a text in every language, or, until every text of the domain is one, in English alone.
-// What an issue says (ValidationIssue.message), what an error is about (entity) and why the state
-// does not allow an operation (the message of a conflict) are in every language
+// What an error tells a client is in every language (LocalizedText), and a string does not compile:
+// the headline of a validation error (message), what an issue says (ValidationIssue.message), what
+// an error is about (entity) and why the state does not allow an operation (the message of a conflict)
 export type DomainError =
-  | { type: 'validation'; message: Told; issues: ValidationIssue[] }
+  | { type: 'validation'; message: LocalizedText; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
@@ -251,7 +251,8 @@ operation is a message of the file of its domain
 (`DomainErrors.conflict(saleMessages.alreadyVoid)`), told as it is: a value
 in it (a status, an ID) stands in every language as it is, and a string
 does not compile. Read [docs/i18n.md](docs/i18n.md) before
-adding one: it also says which texts are still written in English alone.
+adding one: it also says what is told in one language alone (the screens,
+the mails, the log).
 
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`
@@ -496,7 +497,8 @@ export const SalonWriteMapper = {
   fromSearchRequest(request: SalonSearchRequest): SalonListCriteria
 }
 // backend/packages/domain/src/mappers/read/salon.mapper.ts
-// numeric → number, timestamptz → ISO 8601, jsonb → checked against the API model
+// numeric → number, timestamptz → ISO 8601, jsonb → checked against the API model, with `parseStored`:
+// a stored value that does not match is a `database` error that names the row for the log, never a validation error
 export const SalonReadMapper = {
   toApiSalon(salon: DbSalon, openingHours: DbOpeningHours[]): Result<ApiSalonResponse, DomainError>
   // `data` and the pagination `meta`: toApiPage in mappers/read/page.ts
@@ -571,7 +573,7 @@ export const startServer = (config: AppConfig, logger: Logger, shutdownGraceMs?:
 - **Validation** happens once, in the use case, with the Zod schema of the request. The headline of a refusal (`salonMessages.invalidSalon`) and the message of a rule (`asOneString(ruleMessages.notBlank)`) are messages of the language package, and `parseWith` lets Zod say its own sentences in every language (see [docs/i18n.md](docs/i18n.md)). Cross-field rules use `.check()`; a rule that ties two properties of which a partial update may name only one cannot be checked on the request and is a pure function of the domain instead (the services, below)
 - **Mappers** stand on both sides of every domain: `mappers/write/` (API request → what the repository takes: a row, the changes of one, the criteria of a list) and `mappers/read/` (rows → API response, the page of a list too). A use case gives a request it has checked (`request.data`) to its write mapper and to nothing else, and what it answers with comes from a read mapper, also where nothing is converted: there the mapper is where the compiler checks that the request and the row agree. `use-case-flow.test.ts` of the domain package reads the sources of every domain and fails when a use case leaves this flow
 - **Authentication** is the wrapper `authenticated`: it turns `Authorization: Bearer <access token>` into an `Actor` (`backend/packages/domain/src/models/auth.ts`) or answers 401. **Authorization** is decided in the use case, first, from the actor; the rules are pure functions in `business-logic/<domain>/_shared/authorization.ts`, and a refusal is `DomainErrors.forbidden()` (403). In TypeSpec a public operation has `@useAuth(NoAuth)` and `PublicErrors`, one that any signed-in user may call has `SessionErrors`, and one with a permission check has `CommonErrors`. See [docs/authentication.md](docs/authentication.md)
-- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. `sendProblem` tells a problem in the language of `Accept-Language` (English without it) and names it in `Content-Language`; a validation error whose headline the domain writes in English alone (no request has one) is in English as a whole (see [docs/i18n.md](docs/i18n.md)). What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response of the API is problem details (a system probe that fails answers 503 with its own body)
+- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. `sendProblem` tells a problem in the language of `Accept-Language` (English without it) and names it in `Content-Language`: every text of an error is written in every language, so an answer is in one language as a whole (see [docs/i18n.md](docs/i18n.md)). What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response of the API is problem details (a system probe that fails answers 503 with its own body)
 - **Logging** is structured (pino): `req.log` inside a request, the injected `Logger` elsewhere, never `console`. `sendProblem` logs a `database` error with its cause; headers, bodies and bound SQL values are never logged
 - **Request ID**: `req.id` (the caller's `X-Request-Id` or a new UUID) is on every log line of the request, in the response header and in `meta.correlationId` / `correlationId`
 - **Configuration** is read once, by `parseAppConfig`, and passed down as values; application code does not read `process.env`. A new variable is added to the schema, to every `.env.*` file and to the README table

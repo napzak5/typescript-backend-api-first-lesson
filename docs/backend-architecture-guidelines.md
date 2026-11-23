@@ -93,7 +93,7 @@
 
 ドメインをまたいで使うものは次の場所にあります。
 
-- `backend/packages/domain/src/shared`: `DomainError`、`DomainErrors`、`parseWith`
+- `backend/packages/domain/src/shared`: `DomainError`、`DomainErrors`、`parseWith`（リクエストを検証する）、`parseStored`（保存されている値を読む）
 - `backend/packages/domain/src/models/auth.ts`: 操作者を表す `Actor` と `ActorScope`
 - `backend/packages/domain/src/schemas/rules.ts`: 複数のドメインのリクエストスキーマが共通で使うルール（`nonBlankText`、`lowerCaseEmail`、`phoneNumber`、`MAX_INTEGER`、`noRepeatedEntries`、`atLeastOneProperty`）
 - `backend/packages/domain/src/models/salon.ts` の `parseSalonIdOfPath` と `backend/packages/domain/src/business-logic/_shared/existing-salon.ts` の `requireSalon`: サロンの下にあるルートのユースケースが、パスのサロン ID を検証し、サロンが存在することを確かめるのに使う
@@ -191,7 +191,7 @@ export const atLeastOneProperty = (
 export const parseWith = <T>(
   schema: z.ZodType<T>,
   input: unknown,
-  message: string,
+  message: LocalizedText, // 見出し。領域のファイルのメッセージ（salonMessages.invalidSalon）
 ): Result<T, DomainError>
 ```
 
@@ -252,31 +252,26 @@ const toApiSalon = (
 ): Result<ApiSalonResponse, DomainError> => {
   const { deletedAt, ...columns } = salon
 
-  return Result.mapError(
-    Result.map(
-      parseWith(convertedColumnsSchema, salon, 'Invalid stored salon'),
-      (converted) => ({
-        ...columns,
-        ...converted,
-        openingHours: openingHours.map(toApiOpeningHours),
-      }),
-    ),
-    (error) => storedDoesNotMatch(salon.id, error),
+  return Result.map(
+    parseStored(convertedColumnsSchema, salon, storedSalon(salon.id)),
+    (converted) => ({
+      ...columns,
+      ...converted,
+      openingHours: openingHours.map(toApiOpeningHours),
+    }),
   )
 }
 
-// リクエストは正しい。壊れているのは保存されている行のほう
-const storedDoesNotMatch = (id: string, cause: unknown): DomainError =>
-  DomainErrors.database(
-    `Stored salon ${id} does not match the API model`,
-    cause,
-  )
+// 保存されているサロンが合わないときに、ログに書く文
+const storedSalon = (id: string): string =>
+  `Stored salon ${id} does not match the API model`
 ```
 
 - API のプロパティ名は DB の列名と同じなので、大半の項目はスプレッドでそのまま渡ります。マッパーで名前を付け替えません。
 - 変換するのは表現だけです。`numeric` 列はドライバーが文字列で読み書きするので number と相互に変換し、`timestamptz` は ISO 8601 に直し、`jsonb` は API モデルのスキーマで検査します。
 - `null` を空文字や既定値に置き換えません。
 - Read マッパーは `Result` を返します。保存されているデータが API モデルに合わない場合は、クライアントの誤りではないので `validation` ではなく `database` エラーにします。
+- 保存されている値は、`parseWith` ではなく、`parseStored`（`backend/packages/domain/src/shared/validation.ts`）で読みます。合わないときは、`parseStored` が `database` エラーを返すので、マッパーがエラーを包み直すことはありません。3 つ目の引数は、ログに書く英語の文で、どの行の話かを言います。原因には、合わなかったプロパティと決まりが入り、保存されている値は入りません。
 - 変換する列が 1 つもない Read マッパーは、失敗することがないので、`Result` ではなく値を返します。スタッフのプロフィール（`backend/packages/domain/src/mappers/read/staff-profile.mapper.ts`）がその例で、レスポンスのプロパティを 1 つずつ名指しするだけです。
 - Update では、リクエストに存在するプロパティだけを変更にします（`fromUpdateRequest`）。プロパティがなければその列に触れず、`null` なら列を NULL にします。
 - Write マッパーは、どのドメインにもあります。ユースケースは、検証を通ったリクエスト（`request.data`）を Write マッパーに渡し、ほかの所では使いません。Write マッパーが返すのは、リポジトリが受け取るもの（新しい行、変更、一覧の条件）です。値を写すだけのときも、Write マッパーを通します。サービスカテゴリーには表現を変える列がなく、リクエストも 1 つのテーブルの行だけなので、`ServiceCategoryWriteMapper`（`backend/packages/domain/src/mappers/write/service-category.mapper.ts`）は、リクエストをそのまま行として返します。リクエストの型と行の型が合っていることを、コンパイラがここで検査します。顧客の `CustomerWriteMapper`（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）も同じです。サービスにも表現を変える列はありませんが、リクエストがサービスの行とオプション（`service_options`）の行を含むので、`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）がその 2 つを分けます。スタッフには表現を変える列が 1 つあります。`numeric` 列の `commissionRate` で、`StaffWriteMapper`（`backend/packages/domain/src/mappers/write/staff.mapper.ts`）が number を文字列に変えます。ほかの項目はそのまま渡します。

@@ -102,26 +102,18 @@ async execute(id: unknown): Promise<Result<ApiSalonResponse, DomainError>> {
 成功値やエラーを変換するだけなら、分岐を書かずに `Result.map` / `Result.mapError` を使います。
 
 ```typescript
-// backend/packages/domain/src/mappers/read/salon.mapper.ts（toApiSalon の戻り値と、そのエラー）
-return Result.mapError(
-  Result.map(
-    parseWith(convertedColumnsSchema, salon, 'Invalid stored salon'),
-    (converted) => ({
-      ...columns,
-      ...converted,
-      openingHours: openingHours.map(toApiOpeningHours),
-    }),
-  ),
-  (error) => storedDoesNotMatch(salon.id, error),
+// backend/packages/domain/src/mappers/read/salon.mapper.ts（toApiSalon の戻り値）
+return Result.map(
+  parseStored(convertedColumnsSchema, salon, storedSalon(salon.id)),
+  (converted) => ({
+    ...columns,
+    ...converted,
+    openingHours: openingHours.map(toApiOpeningHours),
+  }),
 )
-
-// リクエストは正しく、保存されている行のほうが API モデルに合っていない
-const storedDoesNotMatch = (id: string, cause: unknown): DomainError =>
-  DomainErrors.database(
-    `Stored salon ${id} does not match the API model`,
-    cause,
-  )
 ```
+
+`parseStored`（`backend/packages/domain/src/shared/validation.ts`）は、保存されている値を読みます。値が API モデルに合わないのは、リクエストの誤りではないので、`validation` ではなく `database` エラーを返します。3 つ目の引数は、ログに書く文です（`Stored salon <id> does not match the API model`）。エラーを変換する `Result.mapError` の例は、次の `attempt` です。
 
 ### Promise の失敗を値にする
 
@@ -158,7 +150,7 @@ export type AuthenticationFailure =
   | 'twoFactorRequired'
 
 export type DomainError =
-  | { type: 'validation'; message: Told; issues: ValidationIssue[] }
+  | { type: 'validation'; message: LocalizedText; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
   | { type: 'passwordRequired' }
@@ -176,7 +168,7 @@ export type DomainError =
 
 値は同じファイルの `DomainErrors.validation(...)`、`DomainErrors.notFound(...)` などで作ります。
 
-`Told`（`backend/packages/domain/src/shared/told.ts`）は、エラーの文の型です。すべての言語で書いた文（`LocalizedText`）か、英語だけの文字列です。ドメインが書く文をすべての言語で書き終えるまでの間だけ、文字列も受け付けます。検証のエラーの見出しが、この型です。決まりごとの `message` は、すべての言語で書いた文（`LocalizedText`）で、文字列はコンパイルできません。`notFound` と `alreadyExists` の `entity`（対象の名前）と、`conflict` の `message`（できない理由の文）も同じです。`notFound` の `id` は、探すのに使った ID で、繰り返さないもの（共有リンクのトークン）で探したときは `null` です（[多言語](./i18n.md)）。
+エラーがクライアントに言う文は、すべての言語で書いた文（`LocalizedText`）で、文字列はコンパイルできません。検証のエラーの見出し（`message`）、決まりごとの `message`、`notFound` と `alreadyExists` の `entity`（対象の名前）、`conflict` の `message`（できない理由の文）です。`database` と `storage` の `message` は、ログに書く英語の文で、応答には出ません。`notFound` の `id` は、探すのに使った ID で、繰り返さないもの（共有リンクのトークン）で探したときは `null` です（[多言語](./i18n.md)）。
 
 | ケース | 作られる場所 | HTTP ステータス |
 |--------|--------------|-----------------|
@@ -187,7 +179,7 @@ export type DomainError =
 | `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき、またはリポジトリの結果が `notFound` のケースだったとき（`ServiceCategoryUpdate`、`ServiceUpdate`、`ServiceBulkUpdate`、`ServiceDeletion`、`CustomerUpdate`）。サロンの下にあるルートでは、パスのサロンが存在しないときも作る（`backend/packages/domain/src/business-logic/_shared/existing-salon.ts` の `requireSalon`） | 404 |
 | `alreadyExists` | リポジトリ。書き込みが一意性に違反したとき。サロンのメールアドレス、顧客のメールアドレス（削除されていない顧客の間で一意）、顧客の紹介コード（削除済みを含むすべての顧客の間で一意）、スタッフのメールアドレス（同じサロンの削除されていないスタッフの間で一意）、スタッフコード（同じサロンの、削除済みを含むすべてのスタッフの間で一意）。どれに違反したかは、違反した制約の名前で見分ける | 409 |
 | `conflict` | 2 要素認証のユースケースと、管理者の操作のユースケース。リクエストは正しいが、対象の状態がその操作を許さないとき（すでに有効なのに設定を開始する、ロックされていないアカウントのロックを解除する、など）。サービスの削除のユースケースも、パッケージに含まれているサービスについて作る。顧客、スタッフ、サービス、サロンの削除のユースケースは、終わっていない予約が参照しているときにも作る（`backend/packages/domain/src/business-logic/_shared/unfinished-bookings.ts`）。スタッフの更新と削除のユースケースは、操作者が自分のアカウントの属するスタッフ情報を無効化または削除しようとしたときに作る（`backend/packages/domain/src/business-logic/staff/_shared/refusals.ts`）。権限がないのではなく、その操作が成り立たないので、`forbidden` ではない | 409 |
-| `database` | リポジトリ（想定外のクエリ失敗）、読み取りマッパー（保存値が API モデルに合わない） | 500 |
+| `database` | リポジトリ（想定外のクエリ失敗）、読み取りマッパーの `parseStored`（保存値が API モデルに合わない） | 500 |
 | `storage` | 添付ファイルの保存先（`S3FileStorage`）。オブジェクトストレージの呼び出しが失敗したとき、拒否されたとき | 500 |
 
 `database` と `storage` の `cause` はログに書くためのもので、レスポンスには含めません。HTTP ステータスへの対応は次節の `toProblem` が決めています。
@@ -371,7 +363,7 @@ if (error.type === 'database' || error.type === 'storage') {
 `DomainError` または `HttpError` にケースを足す手順です。
 
 1. 型にケースを足す（`DomainError` なら `DomainErrors` にファクトリも足す）
-2. `toProblem` と `languageOf`（そのエラーを言う言語）の `.exhaustive()` がコンパイルエラーになるので、ステータス・`code`・`detail` と、`detail` をだれが書くか（ドメインか、API の層か）を決めて、両方に分岐を足す。`title` と、API の層が決める `detail` は、`shared-i18n/src/messages/api/problems.ts` に、英語と日本語で書く。api パッケージは domain パッケージの型をビルド成果物から読むため、ビルドしてから `pnpm typecheck` を実行する（理由は [TypeScript設定ガイド](./typescript-configuration.md)）
+2. `toProblem` の `.exhaustive()` がコンパイルエラーになるので、ステータス・`code`・`detail` と、`detail` をだれが書くか（ドメインか、API の層か）を決めて、分岐を足す。`title` と、API の層が決める `detail` は、`shared-i18n/src/messages/api/problems.ts` に、英語と日本語で書く。api パッケージは domain パッケージの型をビルド成果物から読むため、ビルドしてから `pnpm typecheck` を実行する（理由は [TypeScript設定ガイド](./typescript-configuration.md)）
 3. `backend/packages/api/src/shared/__tests__/problem-details.test.ts` に、そのケースのテストを足す
 
 `.otherwise()` で終えている `match`（`toHttpError` など）は、ケースを足してもコンパイラが教えてくれません。`HttpError` にケースを足したときは、それを作る場所も自分で足します。
