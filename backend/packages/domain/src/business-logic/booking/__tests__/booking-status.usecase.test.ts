@@ -276,6 +276,23 @@ describe.each(ACTIONS)('the use case of %s', (_name, take, request, action) => {
     )
   })
 
+  it('should report a visit that has begun as a conflict that says until when a customer cancels', async () => {
+    // Arrange
+    const dependencies = bookingDependencies(
+      answering({ type: 'alreadyBegun' }),
+    )
+
+    // Act
+    const result = await take(dependencies, staff, BOOKING_ID, request)
+
+    // Assert
+    expect(result).toEqual(
+      Result.error(
+        DomainErrors.conflict(bookingMessages.customerCancelsUntilTime),
+      ),
+    )
+  })
+
   it('reports a failure of the database', async () => {
     const dependencies = bookingDependencies({
       changeStatus: vi.fn(async () => databaseDown),
