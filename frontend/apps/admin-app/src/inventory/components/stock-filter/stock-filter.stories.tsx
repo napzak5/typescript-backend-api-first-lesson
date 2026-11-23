@@ -4,6 +4,7 @@ import {
   colour,
   PRODUCTS_OF_THE_SALON,
 } from '../../../products/components/examples'
+import { LOT_TOO_LONG } from '../../utils/lot-number'
 import { StockFilter } from './stock-filter'
 
 const meta: Meta<typeof StockFilter> = {
@@ -34,7 +35,7 @@ export const Narrowed: Story = {
 /** A lot that is too long */
 export const WithErrors: Story = {
   args: {
-    errors: { lotNumber: 'ロット番号は、100 文字以内で入力してください。' },
+    errors: { lotNumber: LOT_TOO_LONG },
   },
 }
 

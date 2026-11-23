@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
@@ -513,4 +514,127 @@ describe('the screens of the count and the value of the stock', () => {
     // Assert
     expect(violations).toEqual([])
   })
+})
+
+describe('the screens of the count and the value of the stock on a page in English', () => {
+  /** Waits for the form of a count in English: its heading, then its rows. */
+  const theCountInEnglish = async (): Promise<void> => {
+    await heading('Stock count')
+    await screen.findByRole('textbox', { name: new RegExp(`^${COLOUR}`) })
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should let the manager count some rows, and say the rows that differed, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const lot = (await drawnOf(TOKYO))[1]?.lotNumber ?? ''
+    await openAs(stockCountHrefOf(await salonIdOf(TOKYO)), MANAGER, 'en')
+    await theCountInEnglish()
+    expect(counted(COLOUR)).toHaveAccessibleDescription(
+      /^On the books: 20 tube, stored at Storage Room A/,
+    )
+    await user.type(counted(COLOUR), '18')
+    await user.type(counted(SHAMPOO), '20')
+    await user.type(
+      screen.getByRole('textbox', { name: 'Reason' }),
+      'Month-end count',
+    )
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Record' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'Recorded the count of 2 rows. Rows that differed from the books: 1.',
+      ),
+    ).toBeVisible()
+    expect(rowsOf('Rows that differed from the books')).toEqual([
+      [`${COLOUR} (lot ${lot})`, '20 tube', '18 tube', '−2 tube'],
+    ])
+    expect(
+      screen.getByRole('button', { name: 'Count more stock' }),
+    ).toBeVisible()
+  })
+
+  it('should say in English that stock was reserved meanwhile, and read the rows anew', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    await openAs(stockCountHrefOf(await salonIdOf(TOKYO)), MANAGER, 'en')
+    await theCountInEnglish()
+    await user.type(counted(SHAMPOO), '3')
+    await reservedMeanwhile(await rowIdOf(TOKYO, 'SHMP001'), 5)
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Record' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'On some rows the count is below what is reserved: stock was reserved meanwhile. The stock rows were loaded again. Check the counts and record them again.',
+      ),
+    ).toBeVisible()
+    await waitFor(() =>
+      expect(counted(SHAMPOO)).toHaveAccessibleDescription(
+        /^On the books: 20 bottle \(5 bottle reserved\), /,
+      ),
+    )
+  })
+
+  it('should show the value of the stock by categories in English', async () => {
+    // Act
+    await openAs(stockValueHrefOf(await salonIdOf(TOKYO)), OWNER, 'en')
+
+    // Assert
+    await heading('Inventory value')
+    await screen.findByRole('table', { name: 'Inventory value by category' })
+    expect(
+      screen.getByText(
+        'The inventory is worth ¥150,000 in all (6 items). It is the stock times the purchase price of each product; a product without a purchase price counts for nothing.',
+      ),
+    ).toBeVisible()
+    expect(rowsOf('Inventory value by category')).toEqual([
+      ['Hair Care', '2 items', '¥60,000'],
+      ['Hair Color', '3 items', '¥50,000'],
+      ['Hair Treatment', '1 item', '¥40,000'],
+    ])
+  })
+
+  it.each<[string, (salonId: string) => string, string, string]>([
+    [
+      'the count',
+      stockCountHrefOf,
+      'Stock count',
+      'This account cannot record stock counts. Only the owners and managers of the salon, and administrators, can record them.',
+    ],
+    [
+      'the value',
+      stockValueHrefOf,
+      'Inventory value',
+      'This account cannot see the inventory value. Only the owners and managers of the salon, and administrators, can see it.',
+    ],
+  ])(
+    'should say to the stylist in English who may see %s',
+    async (_, hrefOf, title, message) => {
+      // Act
+      await openAs(hrefOf(await salonIdOf(TOKYO)), STYLIST, 'en')
+
+      // Assert
+      await heading(title)
+      expect(await screen.findByText(message)).toBeVisible()
+      expect(
+        screen.getByRole('link', { name: 'Back to the inventory' }),
+      ).toBeVisible()
+    },
+  )
 })

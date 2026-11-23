@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import { expiredColour, shampooRow } from '../examples'
 import * as resultStories from './count-result.stories'
@@ -69,5 +70,65 @@ describe('CountResult', () => {
 
     // Assert
     expect(rowsOf(table())[0]?.[0]).toBe('削除した商品（ロット LOT-2025-112）')
+  })
+})
+
+describe('CountResult on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should list the rows that differed in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Differed.run()
+
+    // Assert
+    const differed = screen.getByRole('table', {
+      name: 'Rows that differed from the books',
+    })
+    expect(
+      within(differed)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual(['Stock row', 'On the books', 'Counted', 'Difference'])
+    expect(rowsOf(differed)).toEqual([
+      [
+        'ヘアカラー ナチュラルブラウン (lot LOT-2025-112)',
+        '2.5 本',
+        '2 本',
+        '−0.5 本',
+      ],
+      ['プロフェッショナル シャンプー 500ml', '8 本', '9 本', '+1 本'],
+    ])
+  })
+
+  it('should say in English that no row differed, and name a removed product', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NoneDiffered.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'Every row counted matched the books. The stock does not change.',
+      ),
+    ).toBeVisible()
+
+    // Act
+    await stories.OfARemovedProduct.run()
+
+    // Assert
+    expect(
+      rowsOf(
+        screen.getByRole('table', {
+          name: 'Rows that differed from the books',
+        }),
+      )[0]?.[0],
+    ).toBe('Removed product (lot LOT-2025-112)')
   })
 })

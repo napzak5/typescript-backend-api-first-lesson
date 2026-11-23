@@ -12,13 +12,14 @@ import type {
 import {
   aboutTheAttempt,
   errorAt,
+  type FormErrors,
   type FormRead,
   type FormSays,
-  inJapanese,
-  inJapaneseIfAny,
   textOf,
   textOrNull,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { match } from 'ts-pattern'
 import { yenOf } from '../../bookings/utils/booking-entry'
 import { levelOf } from '../../products/utils/product-form'
@@ -39,20 +40,8 @@ const MOST_STOCK = 9_999_999_999
 /** The largest amount a movement holds, in yen */
 const MOST_COST = 2_147_483_647
 
-const TYPE_ERROR = '区分を選んでください。'
-const WAY_ERROR = '在庫が増えるか、減るかを選んでください。'
-const QUANTITY_ERROR =
-  '数量は、0.01 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。'
-const ABOVE_MOST =
-  '記録すると、在庫数が 99,999,999.99 を超えます。数量を確かめてください。'
-const UNIT_COST_ERROR = '単価は、0 以上の円の整数で入力してください。'
-const COST_ERROR =
-  '金額（単価 × 数量）が 2,147,483,647 円を超えます。単価と数量を確かめてください。'
-const REASON_ERROR = '在庫の調整と廃棄では、理由を入力してください。'
-const BELOW_RESERVED =
-  '記録すると、在庫数が、引き当てた数を下回ります。その間に在庫数が変わりました。読み直した在庫数を確かめて、もう一度お試しください。'
-const FORBIDDEN_MESSAGE =
-  'このアカウントでは、この在庫の移動を記録できません。在庫の調整、廃棄、サロン間の移動を記録できるのは、サロンのオーナーとマネージャーと、管理者です。'
+const { movements } = adminInventoryMessages
+const { errors: words } = movements
 
 /** The controls of the form, under the names of the properties of the request */
 const CONTROLS: readonly string[] = [
@@ -85,19 +74,19 @@ const rangeError = (
   way: 'in' | 'out' | undefined,
   row: Pick<ModelsInventoryResponse, 'currentStock' | 'reservedStock'>,
   product: Pick<ModelsProductResponse, 'unit'> | undefined,
-): string | undefined => {
+): LocalizedText | undefined => {
   const available =
     hundredthsOf(row.currentStock) - hundredthsOf(row.reservedStock)
 
   return match(way)
     .with('out', () =>
       hundredthsOf(quantity) > available
-        ? `減らせるのは、使える数の ${quantityNameOf(Math.max(available, 0) / 100, product)} までです。`
+        ? words.atMost(quantityNameOf(Math.max(available, 0) / 100, product))
         : undefined,
     )
     .with('in', () =>
       hundredthsOf(row.currentStock) + hundredthsOf(quantity) > MOST_STOCK
-        ? ABOVE_MOST
+        ? words.aboveMost
         : undefined,
     )
     .with(undefined, () => undefined)
@@ -115,7 +104,7 @@ export const readMovement = (
   row: Pick<ModelsInventoryResponse, 'id' | 'currentStock' | 'reservedStock'>,
   product: Pick<ModelsProductResponse, 'unit'> | undefined,
   offered: readonly ModelsInventoryTransactionType[],
-): FormRead<ModelsInventoryMovementRequest> => {
+): FormRead<ModelsInventoryMovementRequest, FormErrors<LocalizedText>> => {
   const type = movementTypeIn(textOf(values, 'transactionType'))
   const offeredType =
     type !== undefined && offered.includes(type) ? type : undefined
@@ -128,32 +117,34 @@ export const readMovement = (
   const errors = Object.fromEntries([
     ...errorAt(
       'transactionType',
-      offeredType === undefined ? TYPE_ERROR : undefined,
+      offeredType === undefined ? words.kind : undefined,
     ),
     ...errorAt(
       'direction',
-      offeredType !== undefined && way === undefined ? WAY_ERROR : undefined,
+      offeredType !== undefined && way === undefined
+        ? words.direction
+        : undefined,
     ),
     ...errorAt(
       'quantity',
       counted === undefined
-        ? QUANTITY_ERROR
+        ? words.quantity
         : rangeError(counted, way, row, product),
     ),
     ...errorAt(
       'unitCost',
       unitCost === undefined
-        ? UNIT_COST_ERROR
+        ? words.unitCost
         : unitCost !== null &&
             counted !== undefined &&
             Math.round(unitCost * counted) > MOST_COST
-          ? COST_ERROR
+          ? words.cost
           : undefined,
     ),
     ...errorAt(
       'reason',
       offeredType !== undefined && needsReason(offeredType) && reason === null
-        ? REASON_ERROR
+        ? words.reason
         : undefined,
     ),
   ])
@@ -182,13 +173,13 @@ export const readMovement = (
 }
 
 /** What is said at a control the API refused a value of. */
-const refusalAt = (field: string, rule: string): string =>
+const refusalAt = (field: string, rule: string): LocalizedText =>
   match(field)
-    .with('transactionType', () => TYPE_ERROR)
-    .with('quantity', () => QUANTITY_ERROR)
-    .with('unitCost', () => (rule === 'too_big' ? COST_ERROR : UNIT_COST_ERROR))
-    .with('reason', () => REASON_ERROR)
-    .otherwise(() => inJapanese(REFUSED_VALUE_MESSAGE))
+    .with('transactionType', () => words.kind)
+    .with('quantity', () => words.quantity)
+    .with('unitCost', () => (rule === 'too_big' ? words.cost : words.unitCost))
+    .with('reason', () => words.reason)
+    .otherwise(() => REFUSED_VALUE_MESSAGE)
 
 /**
  * What the form says after the API did not take it. A movement that would
@@ -202,16 +193,14 @@ export const afterMovementRecord = (
     | { type: 'tooManyRequests' }
     | { type: 'failed' },
   sentQuantity: number,
-): FormSays =>
+): FormSays<LocalizedText> =>
   match(outcome)
-    .returnType<FormSays>()
+    .returnType<FormSays<LocalizedText>>()
     .with({ type: 'invalid' }, ({ values }) => {
       const said = values.filter(({ field }) => CONTROLS.includes(field))
 
       return {
-        message: inJapaneseIfAny(
-          said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
-        ),
+        message: said.length === 0 ? CHECK_THE_VALUES_MESSAGE : undefined,
         errors: Object.fromEntries(
           said.map(({ field, rule }) => [field, refusalAt(field, rule)]),
         ),
@@ -219,15 +208,13 @@ export const afterMovementRecord = (
     })
     .with({ type: 'outOfRange' }, () => ({
       message: undefined,
-      errors: { quantity: sentQuantity < 0 ? BELOW_RESERVED : ABOVE_MOST },
+      errors: {
+        quantity: sentQuantity < 0 ? words.belowReserved : words.aboveMost,
+      },
     }))
-    .with({ type: 'forbidden' }, () => aboutTheAttempt(FORBIDDEN_MESSAGE))
+    .with({ type: 'forbidden' }, () => aboutTheAttempt(movements.forbidden))
     .with({ type: 'tooManyRequests' }, () =>
-      aboutTheAttempt(inJapanese(TOO_MANY_REQUESTS_MESSAGE)),
+      aboutTheAttempt(TOO_MANY_REQUESTS_MESSAGE),
     )
-    .with({ type: 'failed' }, () =>
-      aboutTheAttempt(
-        '在庫の移動を記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
-      ),
-    )
+    .with({ type: 'failed' }, () => aboutTheAttempt(movements.failed))
     .exhaustive()

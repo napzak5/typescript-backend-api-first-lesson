@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { describe, expect, it } from 'vitest'
 import { salon } from '../../bookings/components/examples'
 import { PRODUCTS_OF_THE_SALON } from '../../products/components/examples'
@@ -32,8 +33,10 @@ const countForm = (counted: Record<string, string>, reason = ''): FormData => {
 const read = (values: FormData) =>
   readStockCount(values, salon.id, STOCK_OF_THE_SALON, PRODUCTS_OF_THE_SALON)
 
-const COUNT_ERROR =
-  '数えた数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。'
+const COUNT_ERROR = {
+  en: 'Enter the count as a number from 0 to 99,999,999.99 (up to 2 decimal places).',
+  ja: '数えた数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
+}
 
 describe('countedControlOf', () => {
   it('should name the control of a row by its ID', () => {
@@ -104,8 +107,10 @@ describe('readStockCount', () => {
     expect(count).toEqual({
       type: 'invalid',
       errors: {
-        [countedControlOf(expiredColour.id)]:
-          '数えた行がありません。数えた行に、数えた数を入力してください。',
+        [countedControlOf(expiredColour.id)]: {
+          en: 'No row was counted. Enter the count on the rows you counted.',
+          ja: '数えた行がありません。数えた行に、数えた数を入力してください。',
+        },
       },
     })
   })
@@ -139,8 +144,10 @@ describe('readStockCount', () => {
       type: 'invalid',
       errors: {
         [countedControlOf(expiredColour.id)]: COUNT_ERROR,
-        [countedControlOf(shampooRow.id)]:
-          '引き当てた数の 2 本 を下回ります。引き当てた在庫も、数えた数に入れてください。',
+        [countedControlOf(shampooRow.id)]: {
+          en: 'This is below the 2 本 reserved. Count the reserved stock as well.',
+          ja: '引き当てた数の 2 本 を下回ります。引き当てた在庫も、数えた数に入れてください。',
+        },
       },
     })
   })
@@ -163,8 +170,10 @@ describe('readStockCount', () => {
     expect(count).toEqual({
       type: 'invalid',
       errors: {
-        [countedControlOf('row-500')]:
-          '一度に記録できるのは 500 行までです。残りの行は、記録したあとに、もう一度棚卸しをして記録してください。',
+        [countedControlOf('row-500')]: {
+          en: 'Up to 500 rows can be recorded at once. Record these, then count the remaining rows again.',
+          ja: '一度に記録できるのは 500 行までです。残りの行は、記録したあとに、もう一度棚卸しをして記録してください。',
+        },
       },
     })
   })
@@ -227,36 +236,54 @@ describe('afterStockCount', () => {
 
     // Assert
     expect(said).toEqual({
-      message: '入力した内容を確かめて、もう一度お試しください。',
+      message: {
+        en: 'Check what you entered and try again.',
+        ja: '入力した内容を確かめて、もう一度お試しください。',
+      },
       errors: {},
     })
   })
 
-  it.each<[string, Refusal, string]>([
+  it.each<[string, Refusal, LocalizedText]>([
     [
       'rows removed meanwhile',
       { type: 'rowsChanged' },
-      '数えた在庫の行のどれかが、その間に削除されました。在庫の行を読み直しました。数えた数を確かめて、もう一度記録してください。',
+      {
+        en: 'One of the counted stock rows was removed meanwhile. The stock rows were loaded again. Check the counts and record them again.',
+        ja: '数えた在庫の行のどれかが、その間に削除されました。在庫の行を読み直しました。数えた数を確かめて、もう一度記録してください。',
+      },
     ],
     [
       'stock reserved meanwhile',
       { type: 'belowReserved' },
-      '数えた数が、引き当てた数を下回る行があります。その間に在庫が引き当てられました。在庫の行を読み直しました。数えた数を確かめて、もう一度記録してください。',
+      {
+        en: 'On some rows the count is below what is reserved: stock was reserved meanwhile. The stock rows were loaded again. Check the counts and record them again.',
+        ja: '数えた数が、引き当てた数を下回る行があります。その間に在庫が引き当てられました。在庫の行を読み直しました。数えた数を確かめて、もう一度記録してください。',
+      },
     ],
     [
       'a refusal of the account',
       { type: 'forbidden' },
-      'このアカウントでは、棚卸しを記録できません。棚卸しを記録できるのは、サロンのオーナーとマネージャーと、管理者です。',
+      {
+        en: 'This account cannot record stock counts. Only the owners and managers of the salon, and administrators, can record them.',
+        ja: 'このアカウントでは、棚卸しを記録できません。棚卸しを記録できるのは、サロンのオーナーとマネージャーと、管理者です。',
+      },
     ],
     [
       'too many requests',
       { type: 'tooManyRequests' },
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      {
+        en: 'There are too many requests. Wait a while and try again.',
+        ja: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      },
     ],
     [
       'no answer',
       { type: 'failed' },
-      '棚卸しを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      {
+        en: 'The stock count could not be recorded. Check your connection and try again.',
+        ja: '棚卸しを記録できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      },
     ],
   ])('should say above the form after %s', (_, refusal, message) => {
     // Act

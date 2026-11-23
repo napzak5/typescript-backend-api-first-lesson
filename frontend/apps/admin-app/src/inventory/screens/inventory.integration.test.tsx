@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import {
   dayFromToday,
@@ -316,9 +317,9 @@ describe('the stock screens', () => {
       rowsOf('期限切れ間近').map(([code, , , expiry]) => [code, expiry]),
     ).toEqual([
       ['TREAT001', EXPIRED],
-      ['COLOR001', expiryNameOf(today)],
-      ['COND001', expiryNameOf(inFive)],
-      ['SHMP001', expiryNameOf(await dayFromToday(20))],
+      ['COLOR001', expiryNameOf(today).ja],
+      ['COND001', expiryNameOf(inFive).ja],
+      ['SHMP001', expiryNameOf(await dayFromToday(20)).ja],
     ])
     expect(firstSight()[0]).toBe(`${inventoryHrefOf(salonId)}?view=expiring`)
     expect(screen.getByRole('combobox', { name: '使用期限' })).toHaveValue('30')
@@ -907,4 +908,171 @@ describe('the stock screens', () => {
       expect(await findAccessibilityViolations(container)).toEqual([])
     },
   )
+})
+
+describe('the stock screens on a page in English', () => {
+  /** Waits for the stock in English: its heading, then its table. */
+  const theStockInEnglish = async (): Promise<void> => {
+    await heading('Inventory')
+    await screen.findByRole('table', { name: 'Inventory' })
+  }
+
+  /** Waits for a row in English: its heading, then its record. */
+  const theRowInEnglish = async (): Promise<void> => {
+    await heading('Stock row')
+    await screen.findByRole('region', { name: 'Stock' })
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should lead the stylist from the stock to a row, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const salonId = await salonIdOf(TOKYO)
+    const drawn = await drawnOf(TOKYO)
+    await openAs(inventoryHrefOf(salonId), STYLIST, 'en')
+    await theStockInEnglish()
+
+    // Assert
+    expect(rowsOf('Inventory')).toEqual(
+      SEEDED_PRODUCTS.map(([code, name, unit], index) => [
+        code,
+        name,
+        drawn[index]?.lotNumber ?? '',
+        'December 31, 2025 Expired',
+        `Storage Room A (shelf ${drawn[index]?.shelf ?? ''})`,
+        `20 ${unit}`,
+      ]),
+    )
+    expect(screen.getByText('6 rows')).toBeVisible()
+    expect(
+      within(screen.getByRole('navigation', { name: 'Views of the inventory' }))
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['All', 'Low stock', 'Expiring soon'])
+
+    // Act
+    await user.click(
+      screen.getByRole('link', { name: 'Hair Color - Natural Brown' }),
+    )
+
+    // Assert
+    await theRowInEnglish()
+    expect(terms('Stock row')).toEqual([
+      ['Product', 'Hair Color - Natural Brown (COLOR001)'],
+      ['Lot number', drawn[1]?.lotNumber ?? ''],
+      ['Expiry date', 'December 31, 2025 Expired'],
+      ['Storage location', 'Storage Room A'],
+      ['Shelf', drawn[1]?.shelf ?? ''],
+      ['Notes', 'Not recorded'],
+    ])
+    expect(terms('Stock')).toEqual([
+      ['In stock', '20 tube'],
+      ['Reserved', '0 tube'],
+      ['Available', '20 tube'],
+      ['Last counted', 'Not counted yet'],
+    ])
+  })
+
+  it('should add a lot after saying at the lot that another row has it, then remove the row, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const salonId = await salonIdOf(TOKYO)
+    await openAs(stockEntryHrefOf(salonId), MANAGER, 'en')
+    await heading('Add a stock row')
+    const chosen = await screen.findByRole('combobox', { name: /^Product/ })
+    await user.selectOptions(chosen, 'Hair Color - Natural Brown (COLOR001)')
+    const lotOfTheRow = screen.getByRole('textbox', { name: /^Lot number/ })
+    await user.type(lotOfTheRow, await colourLot())
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    const taken =
+      'This product already has a stock row with this lot number. Record the stock of that lot on that row.'
+    expect(await screen.findByText(taken)).toBeInTheDocument()
+    expect(lotOfTheRow).toHaveAccessibleDescription(
+      expect.stringContaining(taken),
+    )
+
+    // Act
+    await user.clear(lotOfTheRow)
+    await user.type(lotOfTheRow, 'LOT-2026-050')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    // Assert
+    await theRowInEnglish()
+    expect(
+      await screen.findByText(
+        'Added the stock row “Hair Color - Natural Brown (lot LOT-2026-050)”.',
+      ),
+    ).toBeInTheDocument()
+
+    // Act
+    await user.click(screen.getByRole('link', { name: 'Edit the stock row' }))
+    await heading('Edit the stock row')
+    await user.click(await screen.findByRole('button', { name: 'Remove' }))
+    const dialog = screen.getByRole('dialog', {
+      name: 'Remove the stock row “Hair Color - Natural Brown (lot LOT-2026-050)”?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      'Only a row with a stock of 0 can be removed. The records of the movements of the row stay. A removed row cannot be brought back.',
+    )
+    await user.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'Removed the stock row “Hair Color - Natural Brown (lot LOT-2026-050)”.',
+      ),
+    ).toBeInTheDocument()
+    await theStockInEnglish()
+    expect(screen.getByText('6 rows')).toBeVisible()
+  })
+
+  it('should tell the manager of another salon in English that its stock is not theirs to see', async () => {
+    // Act
+    await openAs(inventoryHrefOf(await salonIdOf(OSAKA)), MANAGER, 'en')
+
+    // Assert
+    expect(
+      await screen.findByText(/^You cannot see the inventory of this salon\./),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('should say in English that a row removed meanwhile is not found', async () => {
+    // Arrange
+    const salonId = await salonIdOf(TOKYO)
+    const removed = await anotherRow({
+      salon: TOKYO,
+      productCode: 'COLOR001',
+      lotNumber: 'LOT-2026-001',
+    })
+    await rowRemovedMeanwhile(removed)
+
+    // Act
+    await openAs(stockRowHrefOf(salonId, removed), STYLIST, 'en')
+
+    // Assert
+    await heading('Stock row not found')
+    expect(
+      screen.getByText(
+        'Check that the address is right. A removed stock row cannot be shown.',
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('link', { name: 'Back to the inventory' }),
+    ).toHaveAttribute('href', inventoryHrefOf(salonId))
+  })
 })

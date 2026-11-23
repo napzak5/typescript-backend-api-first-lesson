@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as movementTableStories from './movement-table.stories'
 
 const stories = composeStories(movementTableStories)
@@ -106,5 +107,94 @@ describe('MovementTable', () => {
     expect(screen.getByRole('status').textContent).toBe(
       '32 件（5 件を表示しています）',
     )
+  })
+})
+
+describe('MovementTable on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should list the movements, and name its columns, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Movements.run()
+
+    // Assert
+    const movements = screen.getByRole('table', { name: 'Stock movements' })
+    expect(
+      within(movements)
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).toEqual([
+      'Date and time',
+      'Kind',
+      'Change',
+      'Stock after',
+      'Amount',
+      'Reason',
+      'Recorded by',
+    ])
+    expect(rowsOf(movements)).toEqual([
+      [
+        'Thu, November 19, 2026 at 18:00',
+        'Disposal',
+        '−1.5 本',
+        '12 本',
+        'Not recorded',
+        'キャップが割れていた',
+        '佐藤 健',
+      ],
+      [
+        'Thu, November 12, 2026 at 12:15',
+        'Retail sale',
+        '−1 本',
+        '13.5 本',
+        'Not recorded',
+        'Not recorded',
+        'Staff member not listed',
+      ],
+      [
+        'Tue, November 10, 2026 at 14:30',
+        'Used in a treatment',
+        '−15.5 本',
+        '14.5 本',
+        'Not recorded',
+        'Not recorded',
+        '田中 美咲',
+      ],
+      [
+        'Thu, October 15, 2026 at 10:00',
+        'Purchase',
+        '+10 本',
+        '30 本',
+        '¥12,000',
+        'Receipt of a purchase order',
+        '佐藤 健',
+      ],
+      [
+        'Thu, October 1, 2026 at 09:00',
+        'Adjustment',
+        '+20 本',
+        '20 本',
+        'Not recorded',
+        '在庫移動の記録を始めた時点の在庫数',
+        'Not recorded',
+      ],
+    ])
+    expect(screen.getByRole('status').textContent).toBe('5 items')
+  })
+
+  it('should say how many are shown in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithMore.run()
+
+    // Assert
+    expect(screen.getByRole('status').textContent).toBe('32 items (showing 5)')
   })
 })

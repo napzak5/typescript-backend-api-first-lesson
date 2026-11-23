@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { dayAfter, dayAt } from '@beauty-salon-frontend/salon-screens'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
@@ -299,7 +300,7 @@ describe('the screen of the alerts of the stock', () => {
     ]
     const expiring = [
       '注意期限切れ間近',
-      `${await rowNameOf('Intensive Hair Mask 250ml')}使用期限 ${expiryNameOf(soon)}`,
+      `${await rowNameOf('Intensive Hair Mask 250ml')}使用期限 ${expiryNameOf(soon).ja}`,
       '20 jar',
       '未確認確認済みにする',
     ]
@@ -597,5 +598,151 @@ describe('the screen of the alerts of the stock', () => {
 
     // Assert
     expect(violations).toEqual([])
+  })
+})
+
+describe('the screen of the alerts of the stock on a page in English', () => {
+  const ALERTS_IN_ENGLISH = 'Inventory alerts'
+
+  /** Waits for the alerts in English: the heading, how many there are, then the table. */
+  const theAlertsInEnglish = async (
+    caption = ALERTS_IN_ENGLISH,
+  ): Promise<void> => {
+    await heading(ALERTS_IN_ENGLISH)
+    await screen.findByText(/^Alerts raised now/)
+    await screen.findByRole('table', { name: caption })
+  }
+
+  /** The name of the row of a product of the salon in Tokyo, in English */
+  const rowInEnglishOf = async (product: string): Promise<string> => {
+    const place = SEEDED.findIndex(([name]) => name === product)
+    const lot = (await drawnOf(TOKYO))[place]?.lotNumber ?? ''
+
+    return `${product} (lot ${lot})`
+  }
+
+  /** A moment on the clock of the salon, as the screens say it in English */
+  const MOMENT_IN_ENGLISH = String.raw`[A-Z][a-z]{2}, [A-Z][a-z]+ \d{1,2}, \d{4} at \d{2}:\d{2}`
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should show the alerts, and let the stylist see to one with notes, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const drawn = await drawnOf(TOKYO)
+    const colour = await rowInEnglishOf(COLOUR)
+    const stylist = await displayNameOf(STYLIST)
+    await openAs(stockAlertsHrefOf(await salonIdOf(TOKYO)), STYLIST, 'en')
+    await theAlertsInEnglish()
+    expect(
+      screen.getByText('Alerts raised now: 6, of which 6 not acknowledged.'),
+    ).toBeVisible()
+    expect(severities()).toEqual([
+      ['Critical', '6 alerts'],
+      ['Warning', '0 alerts'],
+      ['Info', '0 alerts'],
+    ])
+    expect(rowsOf(ALERTS_IN_ENGLISH)).toEqual(
+      SEEDED.map(([product, unit], index) => [
+        'CriticalExpired',
+        `${product} (lot ${drawn[index]?.lotNumber ?? ''})Expiry: December 31, 2025`,
+        `20 ${unit}`,
+        'Not acknowledgedAcknowledge',
+      ]),
+    )
+    expect(statuses()).toContain('6 items')
+    await user.click(
+      screen.getByRole('button', {
+        name: `Acknowledge the alert “Expired” for ${colour}`,
+      }),
+    )
+    const dialog = screen.getByRole('dialog', {
+      name: `Acknowledge the alert “Expired” for ${colour}?`,
+    })
+    await user.type(
+      within(dialog).getByRole('textbox', { name: 'Notes' }),
+      'To be disposed of.',
+    )
+
+    // Act
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Acknowledge' }),
+    )
+
+    // Assert
+    expect(
+      await screen.findByText(
+        `Acknowledged the alert “Expired” for ${colour}.`,
+      ),
+    ).toBeVisible()
+    expect(
+      screen.getByText('Alerts raised now: 6, of which 5 not acknowledged.'),
+    ).toBeVisible()
+    expect(rowsOf(ALERTS_IN_ENGLISH)[1]?.[3]).toMatch(
+      new RegExp(`^${MOMENT_IN_ENGLISH} \\(${stylist}\\)To be disposed of\\.$`),
+    )
+
+    // Act
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Acknowledgement' }),
+      'Not acknowledged',
+    )
+    await user.click(screen.getByRole('button', { name: 'Show' }))
+
+    // Assert
+    await theAlertsInEnglish('Inventory alerts matching the filters')
+    expect(rowsOf('Inventory alerts matching the filters')).toHaveLength(5)
+  })
+
+  it('should say in English that an alert is no longer there when its stock was used up meanwhile', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const colour = await rowInEnglishOf(COLOUR)
+    await openAs(stockAlertsHrefOf(await salonIdOf(TOKYO)), STYLIST, 'en')
+    await theAlertsInEnglish()
+    await user.click(
+      screen.getByRole('button', {
+        name: `Acknowledge the alert “Expired” for ${colour}`,
+      }),
+    )
+    await usedUpMeanwhile(await rowIdOf(TOKYO, 'COLOR001'))
+
+    // Act
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Acknowledge',
+      }),
+    )
+
+    // Assert
+    expect(
+      await screen.findByText(
+        `The alert “Expired” for ${colour} is no longer raised. Meanwhile the stock moved or the product changed. The alerts were loaded again.`,
+      ),
+    ).toBeVisible()
+    expect(rowsOf(ALERTS_IN_ENGLISH)[1]).toEqual([
+      'CriticalLow stock',
+      `${COLOUR} (COLOR001)`,
+      '0 tubeMinimum stock: 10 tube',
+      'Not acknowledgedAcknowledge',
+    ])
+  })
+
+  it('should say in English that a salon without stock has no alerts', async () => {
+    // Act
+    await openAs(stockAlertsHrefOf(await salonIdOf(OSAKA)), OPERATOR, 'en')
+
+    // Assert
+    expect(await screen.findByText('No inventory alerts')).toBeVisible()
+    expect(await screen.findByText('No alerts are raised now.')).toBeVisible()
   })
 })

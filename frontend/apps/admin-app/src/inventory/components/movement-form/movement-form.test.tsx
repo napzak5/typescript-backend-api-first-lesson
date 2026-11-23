@@ -1,10 +1,11 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
 } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as formStories from './movement-form.stories'
 
 const stories = composeStories(formStories)
@@ -181,6 +182,105 @@ describe('MovementForm', () => {
     // Assert
     expect(screen.getByRole('alert')).toHaveTextContent(
       'このアカウントでは、この在庫の移動を記録できません。',
+    )
+  })
+})
+
+describe('MovementForm on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer the kinds, and say the stock of the row, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.ForAKeeper.run()
+
+    // Assert
+    const offered = screen.getByRole('radiogroup', { name: 'Kind' })
+    expect(
+      within(offered)
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual([
+      'Purchase',
+      'Used in a treatment',
+      'Retail sale',
+      'Return',
+      'Adjustment',
+      'Disposal',
+      'Transfer between salons',
+    ])
+    expect(
+      screen.getByRole('group', { name: 'Stock movements' }),
+    ).toHaveAccessibleDescription(
+      'ヘアカラー ナチュラルブラウン (lot LOT-2026-041). In stock now: 12 本, of which 12 本 available.',
+    )
+    expect(text(/^Quantity/)).toHaveAccessibleDescription(
+      'Counted in 本. Up to 2 decimal places.',
+    )
+    expect(text('Unit cost (yen)')).toHaveAccessibleDescription(
+      'Optional. The amount is the unit cost × the quantity, rounded to whole yen.',
+    )
+    expect(text('Reason')).toHaveAccessibleDescription('Optional.')
+  })
+
+  it('should ask which way and why for an adjustment in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+    await stories.ForAKeeper.run()
+
+    // Act
+    await userEvent.click(screen.getByRole('radio', { name: 'Adjustment' }))
+
+    // Assert
+    const direction = screen.getByRole('radiogroup', { name: 'Direction' })
+    expect(direction).toHaveAccessibleDescription(
+      'Sets the stock on the books to the actual count.',
+    )
+    expect(
+      within(direction)
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual(['Stock goes up', 'Stock goes down'])
+    expect(text(/^Reason/)).toHaveAccessibleDescription(
+      'Write why the stock changes, for the next person who counts it.',
+    )
+  })
+
+  it('should say who records the other kinds, what is wrong and why the account was refused, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.ForAStylist.run()
+
+    // Assert
+    expect(
+      screen.getByRole('radiogroup', { name: 'Kind' }),
+    ).toHaveAccessibleDescription(
+      'Adjustments, disposals and transfers between salons are recorded by owners and managers.',
+    )
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByRole('radiogroup', { name: 'Kind' }),
+    ).toHaveAccessibleDescription('Choose the kind.')
+    expect(text(/^Quantity/)).toHaveAccessibleDescription(
+      'Counted in 本. Up to 2 decimal places. Enter the quantity as a number from 0.01 to 99,999,999.99 (up to 2 decimal places).',
+    )
+
+    // Act
+    await stories.Refused.run()
+
+    // Assert
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'This account cannot record this stock movement.',
     )
   })
 })

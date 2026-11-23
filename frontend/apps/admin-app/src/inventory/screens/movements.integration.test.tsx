@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { salonIdOf } from '@beauty-salon-frontend/testing/api'
 import {
@@ -465,4 +466,176 @@ describe('the screens of the movements of the stock', () => {
       expect(violations).toEqual([])
     },
   )
+})
+
+describe('the screens of the movements of the stock on a page in English', () => {
+  /** Waits for the form of a movement in English: its heading, then its kinds. */
+  const theEntryInEnglish = async (): Promise<void> => {
+    await heading('Record a stock movement')
+    await screen.findByRole('radiogroup', { name: /^Kind/ })
+  }
+
+  /** Waits for the history in English: its heading, then its table. */
+  const theHistoryInEnglish = async (
+    caption = 'Stock movements',
+  ): Promise<void> => {
+    await heading('Stock movements')
+    await screen.findByRole('table', { name: caption })
+  }
+
+  const quantityInEnglish = (): HTMLElement =>
+    screen.getByRole('textbox', { name: /^Quantity/ })
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_MODE', 'production')
+    languageStore.choose('en')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
+    localStorage.clear()
+  })
+
+  it('should let the stylist record a use from the row, and show it first in the history, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const salonId = await salonIdOf(TOKYO)
+    const rowId = await rowIdOf(TOKYO, 'COLOR001')
+    const lot = (await drawnOf(TOKYO))[1]?.lotNumber ?? ''
+    const stylist = await displayNameOf(STYLIST)
+    await openAs(stockRowHrefOf(salonId, rowId), STYLIST, 'en')
+    await heading('Stock row')
+    await user.click(
+      await screen.findByRole('link', { name: 'Record a stock movement' }),
+    )
+    await theEntryInEnglish()
+    expect(
+      screen.getByText(
+        `Hair Color - Natural Brown (lot ${lot}). In stock now: 20 tube, of which 20 tube available.`,
+      ),
+    ).toBeVisible()
+    await user.click(screen.getByRole('radio', { name: 'Used in a treatment' }))
+    await user.type(quantityInEnglish(), '2.5')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Record' }))
+
+    // Assert
+    expect(
+      await screen.findByText(
+        'Recorded: Used in a treatment. The stock is now 17.5 tube.',
+      ),
+    ).toBeInTheDocument()
+    await theHistoryInEnglish()
+    expect(rowsOf('Stock movements').map((row) => row.slice(1))).toEqual([
+      [
+        'Used in a treatment',
+        '−2.5 tube',
+        '17.5 tube',
+        'Not recorded',
+        'Not recorded',
+        stylist,
+      ],
+      [
+        'Adjustment',
+        '+20 tube',
+        '20 tube',
+        'Not recorded',
+        '在庫移動の記録を始めた時点の在庫数',
+        'Not recorded',
+      ],
+    ])
+    expect(
+      screen.getByText(
+        `Hair Color - Natural Brown (lot ${lot}). In stock: 17.5 tube.`,
+      ),
+    ).toBeVisible()
+  })
+
+  it('should say in English before sending that no more than what is not reserved may be taken out', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const rowId = await rowIdOf(TOKYO, 'COLOR001')
+    await reservedMeanwhile(rowId, 15)
+    await openAs(
+      movementEntryHrefOf(await salonIdOf(TOKYO), rowId),
+      MANAGER,
+      'en',
+    )
+    await theEntryInEnglish()
+    await user.click(screen.getByRole('radio', { name: 'Disposal' }))
+    await user.type(quantityInEnglish(), '6')
+    await user.type(
+      screen.getByRole('textbox', { name: /^Reason/ }),
+      'Dropped and broken',
+    )
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Record' }))
+
+    // Assert
+    expect(quantityInEnglish()).toHaveAccessibleDescription(
+      'Counted in tube. Up to 2 decimal places. At most 5 tube is available to take out.',
+    )
+    expect(await storedMovementsOf(rowId)).toHaveLength(1)
+  })
+
+  it('should narrow the history to a kind and days, and say when none meet them, in English', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const salonId = await salonIdOf(TOKYO)
+    const rowId = await rowIdOf(TOKYO, 'COLOR001')
+    await recordedEarlier(rowId, [
+      {
+        transactionType: 'purchase',
+        quantity: 10,
+        createdAt: '2025-10-05T01:00:00.000Z',
+        referenceType: 'purchase_order',
+      },
+      {
+        transactionType: 'use',
+        quantity: -3,
+        createdAt: '2025-10-20T02:00:00.000Z',
+      },
+    ])
+    await openAs(stockMovementsHrefOf(salonId, rowId), STYLIST, 'en')
+    await theHistoryInEnglish()
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Kind' }),
+      'Purchase',
+    )
+    await user.type(screen.getByLabelText('Recorded on (from)'), '2025-10-01')
+    await user.type(screen.getByLabelText('Recorded on (to)'), '2025-10-31')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Show' }))
+
+    // Assert
+    await theHistoryInEnglish('Stock movements matching the filters')
+    expect(rowsOf('Stock movements matching the filters')).toEqual([
+      [
+        'Sun, October 5, 2025 at 10:00',
+        'Purchase',
+        '+10 tube',
+        '30 tube',
+        'Not recorded',
+        'Receipt of a purchase order',
+        'Not recorded',
+      ],
+    ])
+
+    // Act
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Kind' }),
+      'Disposal',
+    )
+    await user.click(screen.getByRole('button', { name: 'Show' }))
+
+    // Assert
+    expect(
+      await screen.findByText('No stock movements match these filters'),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Clear filters' })).toBeVisible()
+  })
 })

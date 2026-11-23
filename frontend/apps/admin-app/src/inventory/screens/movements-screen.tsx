@@ -21,12 +21,13 @@ import {
   ButtonLink,
   EmptyState,
   type FormErrors,
-  inJapanese,
   LoadingIndicator,
   moreOf,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   useInfiniteQuery,
   useQuery,
@@ -61,7 +62,8 @@ import {
 } from '../utils/stock-format'
 import { WithStockRow } from './with-stock-row'
 
-const TITLE = '在庫の移動'
+const { movements, names, titles } = adminInventoryMessages
+const { history } = movements
 
 /** The way to record a movement of a row, in the header and when it has none */
 const RecordMovement = ({
@@ -70,11 +72,15 @@ const RecordMovement = ({
 }: {
   salon: ModelsSalonResponse
   row: ModelsInventoryResponse
-}) => (
-  <ButtonLink href={movementEntryHrefOf(salon.id, row.id)} variant='primary'>
-    在庫の移動を記録する
-  </ButtonLink>
-)
+}) => {
+  const say = useSay()
+
+  return (
+    <ButtonLink href={movementEntryHrefOf(salon.id, row.id)} variant='primary'>
+      {say(history.record)}
+    </ButtonLink>
+  )
+}
 
 type MovementHistoryProps = {
   salon: ModelsSalonResponse
@@ -95,9 +101,12 @@ const MovementHistory = ({
   product,
   staff,
 }: MovementHistoryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const [query, setQuery] = useSearchParams()
-  const [errors, setErrors] = useState<FormErrors | undefined>(undefined)
+  const [errors, setErrors] = useState<FormErrors<LocalizedText> | undefined>(
+    undefined,
+  )
   const conditions = movementConditionsIn(query)
   const asked = movementQueryOf(conditions).toString()
   const narrowed = isNarrowedHistory(conditions)
@@ -140,15 +149,20 @@ const MovementHistory = ({
 
   return match(pages[0])
     .with({ type: 'notFound' }, () => (
-      <LoadingIndicator label='在庫の移動を読み込んでいます' />
+      <LoadingIndicator label={say(history.loading)} />
     ))
     .with({ type: 'forbidden' }, () => (
-      <OtherSalonNotice what={writtenInJapanese('在庫')} />
+      <OtherSalonNotice what={names.inventoryOfTheSalon} />
     ))
     .otherwise(() => (
       <>
         <p>
-          {`${stockRowNameOf(row, product)}。在庫数は ${quantityNameOf(row.currentStock, product)} です。`}
+          {say(
+            history.about(
+              stockRowNameOf(row, product),
+              quantityNameOf(row.currentStock, product),
+            ),
+          )}
         </p>
         <MovementFilter
           conditions={conditions}
@@ -172,13 +186,11 @@ const MovementHistory = ({
               ),
         )
           .with(undefined, () => (
-            <LoadingIndicator label='在庫の移動を読み込んでいます' />
+            <LoadingIndicator label={say(history.loading)} />
           ))
           .with({ type: 'unread' }, ({ reason }) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('在庫の移動'), reason),
-              )}
+              message={say(unreadMessageOf(names.movements, reason))}
               onRetry={() => void read.refetch()}
               pending={read.isFetching}
             />
@@ -186,13 +198,13 @@ const MovementHistory = ({
           .with({ type: 'listed', items: [] }, () =>
             narrowed ? (
               <EmptyState
-                title='条件に合う在庫の移動はありません'
-                description='条件を変えて、見直してください。'
+                title={say(history.noneMatch)}
+                description={say(history.noneMatchDescription)}
               />
             ) : (
               <EmptyState
-                title='在庫の移動はありません'
-                description='仕入れ、販売、施術での使用などを記録すると、ここに出ます。'
+                title={say(history.empty)}
+                description={say(history.emptyDescription)}
                 actions={<RecordMovement salon={salon} row={row} />}
               />
             ),
@@ -201,7 +213,7 @@ const MovementHistory = ({
             <MovementTable
               // Other conditions are another list
               key={asked}
-              caption={narrowed ? '条件に合う在庫の移動' : TITLE}
+              caption={narrowed ? history.narrowedCaption : history.caption}
               movements={items}
               product={product}
               staff={staff}
@@ -219,7 +231,7 @@ const MovementHistory = ({
           ))
           .exhaustive()}
         <ButtonLink href={stockRowHrefOf(salon.id, row.id)}>
-          在庫の行へ
+          {say(history.toRow)}
         </ButtonLink>
       </>
     ))
@@ -232,6 +244,7 @@ type MovementsPartProps = {
 
 /** The row, the products that name it, and the staff who record its movements: all of them before the movements. */
 const MovementsPart = ({ salon, inventoryId }: MovementsPartProps) => {
+  const say = useSay()
   const staff = useQuery({
     queryKey: staffProfilesKeyOf(salon.id),
     queryFn: () => readStaffProfiles(salon.id),
@@ -241,19 +254,17 @@ const MovementsPart = ({ salon, inventoryId }: MovementsPartProps) => {
     <WithStockRow
       salon={salon}
       inventoryId={inventoryId}
-      title={TITLE}
+      title={titles.movements}
       actions={(row) => <RecordMovement salon={salon} row={row} />}
     >
       {(row, products) =>
         match(staff.data)
           .with(undefined, () => (
-            <LoadingIndicator label='在庫の移動を読み込んでいます' />
+            <LoadingIndicator label={say(history.loading)} />
           ))
           .with({ type: P.union(...UNREAD_TYPES) }, (reason) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('スタッフ'), reason),
-              )}
+              message={say(unreadMessageOf(names.staff, reason))}
               onRetry={() => void staff.refetch()}
               pending={staff.isFetching}
             />
@@ -274,10 +285,11 @@ const MovementsPart = ({ salon, inventoryId }: MovementsPartProps) => {
 
 /** The movements of a stock row of the salon of the address, for everybody who works there and an administrator. */
 export const MovementsScreen = () => {
+  const say = useSay()
   const { salonId = '', inventoryId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.movements)}>
       {(salon) => (
         <MovementsPart
           key={inventoryId}

@@ -11,7 +11,10 @@ import {
   type FormSays,
   NOTHING_TO_SAY,
   useNotifications,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -26,7 +29,7 @@ import { productOf, quantityNameOf } from '../utils/stock-format'
 import { useKeepsStock } from './keeps-stock'
 import { WithStockRow } from './with-stock-row'
 
-const TITLE = '在庫の移動を記録する'
+const { movements, titles } = adminInventoryMessages
 
 type MovementEntryProps = {
   salon: ModelsSalonResponse
@@ -41,11 +44,12 @@ type MovementEntryProps = {
  * reserved of it, the row is read anew, and the form says its stock.
  */
 const MovementEntry = ({ salon, row, product }: MovementEntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const keeps = useKeepsStock()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const offered = recordedKindsOf(keeps)
   const rowKey = stockRowKeyOf(row.id)
 
@@ -60,7 +64,10 @@ const MovementEntry = ({ salon, row, product }: MovementEntryProps) => {
           queryClient.removeQueries({ queryKey: stockKeyOf(salon.id) })
           notify({
             tone: 'success',
-            message: `${movementTypeNameOf(movement.transactionType)}を記録しました。在庫数は ${quantityNameOf(movement.balanceAfter, product)} になりました。`,
+            message: movements.recorded(
+              movementTypeNameOf(movement.transactionType),
+              quantityNameOf(movement.balanceAfter, product),
+            ),
           })
           void navigate(stockMovementsHrefOf(salon.id, row.id))
         })
@@ -97,14 +104,14 @@ const MovementEntry = ({ salon, row, product }: MovementEntryProps) => {
       row={row}
       product={product}
       offered={offered}
-      submitLabel='記録する'
+      submitLabel={say(movements.form.record)}
       message={said.message}
       errors={said.errors}
       pending={entry.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={stockRowHrefOf(salon.id, row.id)} variant='quiet'>
-          やめる
+          {say(movements.form.cancel)}
         </ButtonLink>
       }
     />
@@ -118,7 +125,11 @@ type EntryPartProps = {
 
 /** The row, read whenever the screen opens: the movement starts from the stock it has now. */
 const EntryPart = ({ salon, inventoryId }: EntryPartProps) => (
-  <WithStockRow salon={salon} inventoryId={inventoryId} title={TITLE}>
+  <WithStockRow
+    salon={salon}
+    inventoryId={inventoryId}
+    title={titles.movementEntry}
+  >
     {(row, products) => (
       <MovementEntry
         salon={salon}
@@ -131,10 +142,11 @@ const EntryPart = ({ salon, inventoryId }: EntryPartProps) => (
 
 /** The form of a movement of a stock row of the salon of the address, for everybody who works there and an administrator. */
 export const MovementEntryScreen = () => {
+  const say = useSay()
   const { salonId = '', inventoryId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.movementEntry)}>
       {(salon) => (
         <EntryPart key={inventoryId} salon={salon} inventoryId={inventoryId} />
       )}

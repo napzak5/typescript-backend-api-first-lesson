@@ -20,15 +20,16 @@ import {
   ButtonLink,
   Dialog,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NO_CHANGE_MESSAGE,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -53,7 +54,7 @@ import {
 import { productOf, stockRowNameOf } from '../utils/stock-format'
 import { StockForbidden, StockRowNotFound, useKeepsStock } from './keeps-stock'
 
-const TITLE = '在庫の行を直す'
+const { form, names, removal: words, titles } = adminInventoryMessages
 
 type StockChangeProps = {
   salon: ModelsSalonResponse
@@ -71,13 +72,14 @@ type StockChangeProps = {
  * after a dialog; one that still counts stock stays.
  */
 const StockChange = ({ salon, row, products }: StockChangeProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [removing, setRemoving] = useState(false)
   /** What went wrong with a removal that can be made again: said in the dialog */
-  const [message, setMessage] = useState<string>()
+  const [message, setMessage] = useState<LocalizedText>()
   const key = stockRowKeyOf(row.id)
   const page = stockRowHrefOf(salon.id, row.id)
   const product = productOf(products, row.productId)
@@ -104,7 +106,9 @@ const StockChange = ({ salon, row, products }: StockChangeProps) => {
           forgetList()
           notify({
             tone: 'success',
-            message: `在庫の行「${stockRowNameOf(changed, product)}」を直しました。`,
+            message: adminInventoryMessages.changed(
+              stockRowNameOf(changed, product),
+            ),
           })
           void navigate(page)
         })
@@ -174,7 +178,7 @@ const StockChange = ({ salon, row, products }: StockChangeProps) => {
       <StockForm
         row={row}
         products={products}
-        submitLabel='変更を保存する'
+        submitLabel={say(form.save)}
         message={said.message}
         errors={said.errors}
         pending={change.isPending}
@@ -182,10 +186,10 @@ const StockChange = ({ salon, row, products }: StockChangeProps) => {
         actions={
           <>
             <ButtonLink href={page} variant='quiet'>
-              やめる
+              {say(form.cancel)}
             </ButtonLink>
             <Button variant='danger' onClick={() => setRemoving(true)}>
-              削除
+              {say(form.remove)}
             </Button>
           </>
         }
@@ -193,11 +197,11 @@ const StockChange = ({ salon, row, products }: StockChangeProps) => {
       <Dialog
         open={removing}
         onClose={close}
-        title={`在庫の行「${name}」を削除しますか？`}
-        description='在庫数が 0 の行だけを削除できます。この行の在庫の移動の記録は残ります。削除した行は、元に戻せません。'
+        title={say(words.confirm(name))}
+        description={say(words.description)}
         actions={
           <>
-            <Button onClick={close}>戻る</Button>
+            <Button onClick={close}>{say(words.back)}</Button>
             <Button
               variant='danger'
               pending={removal.isPending}
@@ -206,12 +210,12 @@ const StockChange = ({ salon, row, products }: StockChangeProps) => {
                 removal.mutate()
               }}
             >
-              削除する
+              {say(words.confirmRemoval)}
             </Button>
           </>
         }
       >
-        {message !== undefined && <Alert tone='danger'>{message}</Alert>}
+        {message !== undefined && <Alert tone='danger'>{say(message)}</Alert>}
       </Dialog>
     </>
   )
@@ -227,6 +231,7 @@ type ChangePartProps = { salon: ModelsSalonResponse; inventoryId: string }
  * compares what is sent with what it was opened with.
  */
 const ChangePart = ({ salon, inventoryId }: ChangePartProps) => {
+  const say = useSay()
   const row = useQuery({
     queryKey: stockRowKeyOf(inventoryId),
     queryFn: () => readStockRow(inventoryId),
@@ -241,11 +246,13 @@ const ChangePart = ({ salon, inventoryId }: ChangePartProps) => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   })
-  const header = <PageHeader title={TITLE} description={salon.name} />
+  const header = (
+    <PageHeader title={say(titles.change)} description={salon.name} />
+  )
   const loading = (
     <>
       {header}
-      <LoadingIndicator label='在庫の行を読み込んでいます' />
+      <LoadingIndicator label={say(adminInventoryMessages.words.loadingRow)} />
     </>
   )
 
@@ -264,16 +271,14 @@ const ChangePart = ({ salon, inventoryId }: ChangePartProps) => {
       .with([{ type: 'forbidden' }, P._], () => (
         <>
           {header}
-          <OtherSalonNotice what={writtenInJapanese('在庫')} />
+          <OtherSalonNotice what={names.inventoryOfTheSalon} />
         </>
       ))
       .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
         <>
           {header}
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('在庫の行'), reason),
-            )}
+            message={say(unreadMessageOf(names.row, reason))}
             onRetry={() => void row.refetch()}
             pending={row.isFetching}
           />
@@ -290,9 +295,7 @@ const ChangePart = ({ salon, inventoryId }: ChangePartProps) => {
           <>
             {header}
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('商品'), reason),
-              )}
+              message={say(unreadMessageOf(names.products, reason))}
               onRetry={() => void products.refetch()}
               pending={products.isFetching}
             />
@@ -311,11 +314,12 @@ const ChangePart = ({ salon, inventoryId }: ChangePartProps) => {
 
 /** Changes a stock row of the salon of the address, and removes it, for the owner, a manager and an administrator. */
 export const StockChangeScreen = () => {
+  const say = useSay()
   const { salonId = '', inventoryId = '' } = useParams()
   const keeps = useKeepsStock()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.change)}>
       {(salon) =>
         keeps ? (
           <ChangePart
@@ -324,7 +328,7 @@ export const StockChangeScreen = () => {
             inventoryId={inventoryId}
           />
         ) : (
-          <StockForbidden salon={salon} title={TITLE} />
+          <StockForbidden salon={salon} title={titles.change} />
         )
       }
     </WithSalon>

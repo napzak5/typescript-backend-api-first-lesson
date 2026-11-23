@@ -1,3 +1,4 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import {
   itShouldBeAccessibleInEveryStory,
   itShouldBeSentByTheEnterKey,
@@ -6,7 +7,7 @@ import {
 import { optionsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as filterStories from './movement-filter.stories'
 
 const stories = composeStories(filterStories)
@@ -114,6 +115,54 @@ describe('MovementFilter', () => {
     expect(screen.getByRole('button', { name: '条件（3）' })).toHaveAttribute(
       'aria-haspopup',
       'dialog',
+    )
+  })
+})
+
+describe('MovementFilter on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should offer every kind and the days, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.Everything.run()
+
+    // Assert
+    const chosen = screen.getByRole('combobox', { name: 'Kind' })
+    expect(chosen.closest('search')).toHaveAttribute(
+      'aria-label',
+      'Narrow the stock movements',
+    )
+    expect(optionsOf(chosen)).toEqual([
+      'All',
+      'Purchase',
+      'Used in a treatment',
+      'Retail sale',
+      'Return',
+      'Adjustment',
+      'Disposal',
+      'Transfer between salons',
+    ])
+    expect(screen.getByLabelText('Recorded on (from)')).toHaveValue('')
+    expect(screen.getByRole('button', { name: 'Show' })).toBeVisible()
+  })
+
+  it('should say in English what is wrong at the day', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithErrors.run()
+
+    // Assert
+    expect(
+      screen.getByLabelText('Recorded on (to)'),
+    ).toHaveAccessibleDescription(
+      'Make the last day the same as the first day, or later.',
     )
   })
 })

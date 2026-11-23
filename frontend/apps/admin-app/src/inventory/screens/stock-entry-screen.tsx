@@ -9,14 +9,15 @@ import {
   ButtonLink,
   EmptyState,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
@@ -42,7 +43,7 @@ import {
 import { productOf, stockRowNameOf } from '../utils/stock-format'
 import { StockForbidden, useKeepsStock } from './keeps-stock'
 
-const TITLE = '在庫の行を足す'
+const { entry: words, form, names, titles } = adminInventoryMessages
 
 type StockEntryProps = {
   salon: ModelsSalonResponse
@@ -57,10 +58,11 @@ type StockEntryProps = {
  * products are read anew, and the form follows them.
  */
 const StockEntry = ({ salon, carried }: StockEntryProps) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { notify } = useNotifications()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const entry = useMutation({
     mutationFn: (request: ModelsInventoryCreateRequest) => addStockRow(request),
     onSuccess: (outcome, request) =>
@@ -71,7 +73,9 @@ const StockEntry = ({ salon, carried }: StockEntryProps) => {
           queryClient.removeQueries({ queryKey: stockKeyOf(salon.id) })
           notify({
             tone: 'success',
-            message: `在庫の行「${stockRowNameOf(row, productOf(carried, row.productId))}」を足しました。`,
+            message: adminInventoryMessages.added(
+              stockRowNameOf(row, productOf(carried, row.productId)),
+            ),
           })
           void navigate(stockRowHrefOf(salon.id, row.id))
         })
@@ -112,14 +116,14 @@ const StockEntry = ({ salon, carried }: StockEntryProps) => {
     <StockForm
       row={null}
       products={carried}
-      submitLabel='足す'
+      submitLabel={say(form.add)}
       message={said.message}
       errors={said.errors}
       pending={entry.isPending}
       onSubmit={submit}
       actions={
         <ButtonLink href={inventoryHrefOf(salon.id)} variant='quiet'>
-          やめる
+          {say(form.cancel)}
         </ButtonLink>
       }
     />
@@ -134,6 +138,7 @@ type EntryPartProps = { salon: ModelsSalonResponse }
  * led to add one first.
  */
 const EntryPart = ({ salon }: EntryPartProps) => {
+  const say = useSay()
   const products = useQuery({
     queryKey: productsKeyOf(salon.id),
     queryFn: () => readProducts(salon.id),
@@ -142,24 +147,22 @@ const EntryPart = ({ salon }: EntryPartProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.entry)} description={salon.name} />
       {match(products.data)
-        .with(undefined, () => (
-          <LoadingIndicator label='商品を読み込んでいます' />
-        ))
+        .with(undefined, () => <LoadingIndicator label={say(words.loading)} />)
         .with({ type: 'found' }, ({ items }) => {
           const carried = items.filter(({ isActive }) => isActive)
 
           return carried.length === 0 ? (
             <EmptyState
-              title='取り扱い中の商品はありません'
-              description='在庫の行は、取り扱い中の商品に足します。先に、商品台帳に商品を足してください。'
+              title={say(words.noProducts)}
+              description={say(words.noProductsDescription)}
               actions={
                 <ButtonLink
                   href={productEntryHrefOf(salon.id)}
                   variant='primary'
                 >
-                  商品を足す
+                  {say(words.addProduct)}
                 </ButtonLink>
               }
             />
@@ -172,9 +175,7 @@ const EntryPart = ({ salon }: EntryPartProps) => {
           { type: P.union('notFound', 'tooManyRequests', 'failed') },
           (reason) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('商品'), reason),
-              )}
+              message={say(unreadMessageOf(names.products, reason))}
               onRetry={() => void products.refetch()}
               pending={products.isFetching}
             />
@@ -187,16 +188,17 @@ const EntryPart = ({ salon }: EntryPartProps) => {
 
 /** Adds a stock row to the salon of the address, for the owner, a manager and an administrator. */
 export const StockEntryScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
   const keeps = useKeepsStock()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.entry)}>
       {(salon) =>
         keeps ? (
           <EntryPart key={salon.id} salon={salon} />
         ) : (
-          <StockForbidden salon={salon} title={TITLE} />
+          <StockForbidden salon={salon} title={titles.entry} />
         )
       }
     </WithSalon>

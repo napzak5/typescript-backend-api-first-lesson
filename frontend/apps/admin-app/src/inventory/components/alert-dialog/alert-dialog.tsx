@@ -3,13 +3,19 @@ import {
   DescriptionList,
   FormDialog,
   TextArea,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
-  alertNameOf,
+  alertKindNameOf,
+  alertSubjectNameOf,
   severityNameOf,
   thresholdTermOf,
 } from '../../utils/alert-format'
 import { expiryNameOf, quantityNameOf } from '../../utils/stock-format'
+
+const { dialog: words } = adminInventoryMessages.alerts
 
 export type AlertDialogProps = {
   /** The alert the dialog sees to; `undefined` while the dialog is closed */
@@ -20,7 +26,7 @@ export type AlertDialogProps = {
    */
   onClose: () => void
   /** What went wrong with an attempt that can be made again: said in the dialog */
-  message?: string | undefined
+  message?: LocalizedText | undefined
   /** The acknowledgement is on its way */
   pending?: boolean | undefined
   /** The form was sent: `notes` */
@@ -39,43 +45,55 @@ export const AlertDialog = ({
   pending = false,
   onSubmit,
 }: AlertDialogProps) => {
+  const say = useSay()
+
   return (
     <FormDialog
       open={alert !== undefined}
       onClose={onClose}
       title={
-        alert === undefined ? '' : `${alertNameOf(alert)}を確認済みにしますか？`
+        alert === undefined
+          ? ''
+          : say(
+              words.title(
+                alertKindNameOf(alert.alert),
+                alertSubjectNameOf(alert),
+              ),
+            )
       }
-      description='アラートを見て手を打ったことを、ほかのスタッフに伝えます。在庫が動くか、商品の最低在庫数や最大在庫数が変わって、アラートの状態が変わると、もう一度未確認になります。'
-      submitLabel='確認済みにする'
-      message={message}
+      description={say(words.description)}
+      submitLabel={say(words.submit)}
+      message={message === undefined ? undefined : say(message)}
       pending={pending}
       onSubmit={onSubmit}
     >
       {alert !== undefined && (
         <DescriptionList
           items={[
-            { term: '重要度', description: severityNameOf(alert.severity) },
             {
-              term: '在庫数',
-              description: quantityNameOf(alert.currentStock, alert),
+              term: say(words.severity),
+              description: say(severityNameOf(alert.severity)),
+            },
+            {
+              term: say(words.inStock),
+              description: say(quantityNameOf(alert.currentStock, alert)),
             },
             alert.threshold === null
               ? {
-                  term: '使用期限',
-                  description: expiryNameOf(alert.expiryDate),
+                  term: say(words.expiry),
+                  description: say(expiryNameOf(alert.expiryDate)),
                 }
               : {
-                  term: thresholdTermOf(alert.alert),
-                  description: quantityNameOf(alert.threshold, alert),
+                  term: say(thresholdTermOf(alert.alert)),
+                  description: say(quantityNameOf(alert.threshold, alert)),
                 },
           ]}
         />
       )}
       <TextArea
-        label='メモ'
+        label={say(words.notes)}
         name='notes'
-        description='任意。何をしたか、これから何をするかを書きます（発注した、廃棄する、など）。'
+        description={say(words.notesDescription)}
       />
     </FormDialog>
   )

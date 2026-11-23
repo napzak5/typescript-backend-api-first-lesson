@@ -4,9 +4,12 @@ import type {
   ModelsProductResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import type { ChoiceOption } from '@beauty-salon-frontend/ui'
-import { match } from 'ts-pattern'
-import { UNLISTED_STAFF } from '../../bookings/utils/booking-format'
+import type { NamedChoice } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import {
+  adminInventoryMessages,
+  adminStaffMessages,
+} from '@beauty-salon-shared/i18n/messages/admin'
 import { quantityNameOf } from './stock-format'
 
 /*
@@ -17,8 +20,9 @@ import { quantityNameOf } from './stock-format'
 /** Which way a kind of movement moves the stock: in, out, or either, as the movement says */
 export type MovementWay = 'in' | 'out' | 'either'
 
+const { movements } = adminInventoryMessages
+
 type MovementKind = {
-  name: string
   way: MovementWay
   /** The kind changes the stock without anything seen moving, or takes it off the books: it says why */
   needsReason: boolean
@@ -27,38 +31,13 @@ type MovementKind = {
 }
 
 const KINDS: Record<ModelsInventoryTransactionType, MovementKind> = {
-  purchase: {
-    name: '仕入れ',
-    way: 'in',
-    needsReason: false,
-    forKeepers: false,
-  },
-  use: {
-    name: '施術で使用',
-    way: 'out',
-    needsReason: false,
-    forKeepers: false,
-  },
-  sale: { name: '店頭販売', way: 'out', needsReason: false, forKeepers: false },
-  return: {
-    name: '返品',
-    way: 'either',
-    needsReason: false,
-    forKeepers: false,
-  },
-  adjustment: {
-    name: '在庫の調整',
-    way: 'either',
-    needsReason: true,
-    forKeepers: true,
-  },
-  disposal: { name: '廃棄', way: 'out', needsReason: true, forKeepers: true },
-  transfer: {
-    name: 'サロン間の移動',
-    way: 'either',
-    needsReason: false,
-    forKeepers: true,
-  },
+  purchase: { way: 'in', needsReason: false, forKeepers: false },
+  use: { way: 'out', needsReason: false, forKeepers: false },
+  sale: { way: 'out', needsReason: false, forKeepers: false },
+  return: { way: 'either', needsReason: false, forKeepers: false },
+  adjustment: { way: 'either', needsReason: true, forKeepers: true },
+  disposal: { way: 'out', needsReason: true, forKeepers: true },
+  transfer: { way: 'either', needsReason: false, forKeepers: true },
 }
 
 /** Every kind, in the order the form offers them: what is recorded every day first */
@@ -75,7 +54,7 @@ const ORDER: readonly ModelsInventoryTransactionType[] = [
 /** A kind of movement, by name: 「仕入れ」. */
 export const movementTypeNameOf = (
   type: ModelsInventoryTransactionType,
-): string => KINDS[type].name
+): LocalizedText => movements.kinds[type]
 
 /** Which way a kind moves the stock. */
 export const wayOf = (type: ModelsInventoryTransactionType): MovementWay =>
@@ -92,8 +71,8 @@ export const recordedKindsOf = (
   ORDER.filter((type) => keeps || !KINDS[type].forKeepers)
 
 /** Every kind, to narrow the history to one */
-export const MOVEMENT_TYPE_OPTIONS: readonly ChoiceOption[] = ORDER.map(
-  (type) => ({ value: type, label: KINDS[type].name }),
+export const MOVEMENT_TYPE_CHOICES: readonly NamedChoice[] = ORDER.map(
+  (type) => ({ value: type, label: movements.kinds[type] }),
 )
 
 /** Whether a text is the name of a kind, as an address or a form holds it. */
@@ -106,10 +85,10 @@ export const movementTypeIn = (
 export const changeNameOf = (
   quantity: number,
   product: Pick<ModelsProductResponse, 'unit'> | undefined,
-): string =>
+): LocalizedText =>
   quantity < 0
-    ? `−${quantityNameOf(-quantity, product)}`
-    : `+${quantityNameOf(quantity, product)}`
+    ? movements.decrease(quantityNameOf(-quantity, product))
+    : movements.increase(quantityNameOf(quantity, product))
 
 /**
  * Why a movement was made: what it says, or that it was the receipt of a
@@ -118,13 +97,11 @@ export const changeNameOf = (
 export const movementReasonOf = ({
   reason,
   referenceType,
-}: Pick<ModelsInventoryTransactionResponse, 'reason' | 'referenceType'>):
-  | string
-  | null =>
-  reason ??
-  match(referenceType)
-    .with('purchase_order', () => '発注の入荷')
-    .otherwise(() => null)
+}: Pick<
+  ModelsInventoryTransactionResponse,
+  'reason' | 'referenceType'
+>): LocalizedText | null =>
+  movements.reasonOf(reason, referenceType === 'purchase_order')
 
 /**
  * The member who recorded something, by the name the salon shows; a member
@@ -133,5 +110,10 @@ export const movementReasonOf = ({
 export const performerNameOf = (
   performedBy: string,
   staff: readonly Pick<ModelsStaffProfileResponse, 'id' | 'displayName'>[],
-): string =>
-  staff.find(({ id }) => id === performedBy)?.displayName ?? UNLISTED_STAFF
+): LocalizedText => {
+  const member = staff.find(({ id }) => id === performedBy)
+
+  return member === undefined
+    ? adminStaffMessages.unlisted
+    : adminStaffMessages.named(member.displayName)
+}

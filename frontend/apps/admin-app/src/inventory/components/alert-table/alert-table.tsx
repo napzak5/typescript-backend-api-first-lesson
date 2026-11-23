@@ -8,15 +8,16 @@ import {
   Button,
   COUNTED,
   countOf,
-  inJapanese,
   Link,
   type More,
+  useSay,
   WrittenText,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   acknowledgementNameOf,
   alertKindNameOf,
-  alertNameOf,
   alertSubjectNameOf,
   severityNameOf,
   severityToneOf,
@@ -25,9 +26,11 @@ import {
 import { expiryNameOf, quantityNameOf } from '../../utils/stock-format'
 import styles from './alert-table.module.css'
 
+const { list, table } = adminInventoryMessages.alerts
+
 export type AlertTableProps = {
   /** What the table lists: 「在庫のアラート」 or 「条件に合う在庫のアラート」 */
-  caption: string
+  caption: LocalizedText
   /** The alerts that were read so far, in the order of the codes of their products; at least one */
   alerts: readonly ModelsInventoryAlertResponse[]
   /** The members of the staff of the salon, who saw to the alerts; `undefined` while they are read */
@@ -73,92 +76,108 @@ export const AlertTable = ({
   more,
   onMore,
   onAcknowledge,
-}: AlertTableProps) => (
-  <PagedTable
-    caption={caption}
-    rowHeader='subject'
-    columns={[
-      {
-        key: 'alert',
-        header: 'アラート',
-        cell: ({ alert, severity }) => (
-          <span className={styles['kind']}>
-            <Badge tone={severityToneOf(severity)}>
-              {severityNameOf(severity)}
-            </Badge>
-            <span>{alertKindNameOf(alert)}</span>
-          </span>
-        ),
-      },
-      {
-        key: 'subject',
-        header: '対象',
-        wrap: 'words',
-        cell: (alert) => (
-          <span className={styles['subject']}>
-            {alert.inventoryId === null ? (
-              <span>{alertSubjectNameOf(alert)}</span>
-            ) : (
-              <>
-                <Link href={rowHref(alert.inventoryId)}>
-                  {alertSubjectNameOf(alert)}
-                </Link>
-                <span className={styles['detail']}>
-                  {`使用期限 ${expiryNameOf(alert.expiryDate)}`}
-                </span>
-              </>
-            )}
-          </span>
-        ),
-      },
-      {
-        key: 'currentStock',
-        header: '在庫数',
-        align: 'end',
-        cell: (alert) => (
-          <span className={styles['stock']}>
-            <span>{quantityNameOf(alert.currentStock, alert)}</span>
-            {alert.threshold !== null && (
-              <span className={styles['detail']}>
-                {`${thresholdTermOf(alert.alert)} ${quantityNameOf(alert.threshold, alert)}`}
-              </span>
-            )}
-          </span>
-        ),
-      },
-      {
-        key: 'acknowledgement',
-        header: '確認',
-        wrap: 'words',
-        cell: (alert) => (
-          <div className={styles['acknowledgement']}>
-            <span>
-              {acknowledgementNameOf(alert.acknowledgement, timezone, staff)}
+}: AlertTableProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={say(caption)}
+      rowHeader='subject'
+      columns={[
+        {
+          key: 'alert',
+          header: say(table.alert),
+          cell: ({ alert, severity }) => (
+            <span className={styles['kind']}>
+              <Badge tone={severityToneOf(severity)}>
+                {say(severityNameOf(severity))}
+              </Badge>
+              <span>{say(alertKindNameOf(alert))}</span>
             </span>
-            {alert.acknowledgement === null ? (
-              <Button
-                size='small'
-                aria-label={`${alertNameOf(alert)}を確認済みにする`}
-                onClick={() => onAcknowledge(alert)}
-              >
-                確認済みにする
-              </Button>
-            ) : (
-              alert.acknowledgement.notes !== null && (
-                <WrittenText className={styles['notes']}>
-                  {alert.acknowledgement.notes}
-                </WrittenText>
-              )
-            )}
-          </div>
-        ),
-      },
-    ]}
-    rows={alerts}
-    rowKey={keyOf}
-    emptyMessage='在庫のアラートはありません'
-    count={inJapanese(countOf(total, alerts.length, COUNTED.items))}
-    more={more}
-    onMore={onMore}
-  />
-)
+          ),
+        },
+        {
+          key: 'subject',
+          header: say(table.subject),
+          wrap: 'words',
+          cell: (alert) => (
+            <span className={styles['subject']}>
+              {alert.inventoryId === null ? (
+                <span>{say(alertSubjectNameOf(alert))}</span>
+              ) : (
+                <>
+                  <Link href={rowHref(alert.inventoryId)}>
+                    {say(alertSubjectNameOf(alert))}
+                  </Link>
+                  <span className={styles['detail']}>
+                    {say(table.expiryOf(expiryNameOf(alert.expiryDate)))}
+                  </span>
+                </>
+              )}
+            </span>
+          ),
+        },
+        {
+          key: 'currentStock',
+          header: say(table.inStock),
+          align: 'end',
+          cell: (alert) => (
+            <span className={styles['stock']}>
+              <span>{say(quantityNameOf(alert.currentStock, alert))}</span>
+              {alert.threshold !== null && (
+                <span className={styles['detail']}>
+                  {say(
+                    table.thresholdOf(
+                      thresholdTermOf(alert.alert),
+                      quantityNameOf(alert.threshold, alert),
+                    ),
+                  )}
+                </span>
+              )}
+            </span>
+          ),
+        },
+        {
+          key: 'acknowledgement',
+          header: say(table.acknowledgement),
+          wrap: 'words',
+          cell: (alert) => (
+            <div className={styles['acknowledgement']}>
+              <span>
+                {say(
+                  acknowledgementNameOf(alert.acknowledgement, timezone, staff),
+                )}
+              </span>
+              {alert.acknowledgement === null ? (
+                <Button
+                  size='small'
+                  aria-label={say(
+                    table.acknowledgeLabel(
+                      alertKindNameOf(alert.alert),
+                      alertSubjectNameOf(alert),
+                    ),
+                  )}
+                  onClick={() => onAcknowledge(alert)}
+                >
+                  {say(table.acknowledge)}
+                </Button>
+              ) : (
+                alert.acknowledgement.notes !== null && (
+                  <WrittenText className={styles['notes']}>
+                    {alert.acknowledgement.notes}
+                  </WrittenText>
+                )
+              )}
+            </div>
+          ),
+        },
+      ]}
+      rows={alerts}
+      rowKey={keyOf}
+      emptyMessage={say(list.empty)}
+      count={say(countOf(total, alerts.length, COUNTED.items))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

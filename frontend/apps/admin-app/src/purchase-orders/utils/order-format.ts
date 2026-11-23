@@ -85,7 +85,7 @@ export const itemQuantityNameOf = ({
   quantity,
   unit,
 }: Pick<ModelsPurchaseOrderItem, 'quantity' | 'unit'>): string =>
-  quantityNameOf(quantity, { unit })
+  inJapanese(quantityNameOf(quantity, { unit }))
 
 /**
  * When something was done to an order, on the clock of the salon, and who

@@ -791,6 +791,9 @@ const MADE: [string, LocalizedText, LocalizedText][] = [
   ],
 ]
 
+/** The catalogues whose messages that are made from a value are tested in a file of their own (`inventory.test.ts`) */
+const TESTED_APART = ['adminInventoryMessages']
+
 /** A name that stands inside a sentence: it begins as it stands there */
 const INSIDE_A_SENTENCE = /\.names\./
 
@@ -853,7 +856,11 @@ describe('the messages of the admin application', () => {
   it('should have a value in this test for every message that is made from one', () => {
     // Assert
     expect(MADE.map(([where]) => where).toSorted()).toEqual(
-      FOUND.made.toSorted(),
+      FOUND.made
+        .filter(
+          (where) => !TESTED_APART.some((name) => where.startsWith(`${name}.`)),
+        )
+        .toSorted(),
     )
   })
 

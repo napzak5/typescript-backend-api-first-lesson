@@ -1,7 +1,8 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as dialogStories from './alert-dialog.stories'
 
 const stories = composeStories(dialogStories)
@@ -121,5 +122,83 @@ describe('AlertDialog', () => {
 
     // Assert
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('AlertDialog on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should name the alert, and say what an acknowledgement does, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.OfAProduct.run()
+
+    // Assert
+    const seen = screen.getByRole('dialog', {
+      name: 'Acknowledge the alert “Low stock” for ニトリル手袋 M (SUP-GLOVE)?',
+    })
+    expect(seen).toHaveAccessibleDescription(
+      'Tells the other staff that you saw the alert and acted on it. When the stock moves or the minimum or maximum stock of the product changes, and the alert changes with it, the alert goes back to not acknowledged.',
+    )
+    expect(
+      within(seen)
+        .getAllByRole('term')
+        .map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent ?? null,
+        ]),
+    ).toEqual([
+      ['Severity', 'Critical'],
+      ['In stock', '0 箱'],
+      ['Minimum stock', '0 箱'],
+    ])
+    expect(
+      within(seen).getByRole('textbox', { name: 'Notes' }),
+    ).toHaveAccessibleDescription(
+      'Optional. What you did, or what you will do (ordered more, will dispose of it, and so on).',
+    )
+    expect(
+      within(seen).getByRole('button', { name: 'Acknowledge' }),
+    ).toBeVisible()
+  })
+
+  it('should say the expiry of an alert of a stock row, and what may be tried again, in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.OfAStockRow.run()
+
+    // Assert
+    expect(
+      within(
+        screen.getByRole('dialog', {
+          name: 'Acknowledge the alert “Expired” for ヘアカラー ナチュラルブラウン (lot LOT-2025-112)?',
+        }),
+      )
+        .getAllByRole('term')
+        .map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent ?? null,
+        ]),
+    ).toEqual([
+      ['Severity', 'Critical'],
+      ['In stock', '2.5 本'],
+      ['Expiry date', 'December 31, 2025'],
+    ])
+
+    // Act
+    await stories.Failed.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('dialog')).getByText(
+        'The alert could not be acknowledged. Check your connection and try again.',
+      ),
+    ).toBeVisible()
   })
 })

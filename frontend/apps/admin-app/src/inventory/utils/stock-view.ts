@@ -1,4 +1,9 @@
-import { type FormRead, textOf } from '@beauty-salon-frontend/ui'
+import {
+  type FormErrors,
+  type FormRead,
+  textOf,
+} from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import { z } from 'zod'
 import { lotLengthError } from './lot-number'
 
@@ -95,7 +100,9 @@ export const isNarrowed = (view: StockView): boolean =>
  * The conditions of the view of every row that were filled in: each may be
  * left empty. A lot is looked for without the spaces typed around it.
  */
-export const readStockConditions = (values: FormData): FormRead<StockView> => {
+export const readStockConditions = (
+  values: FormData,
+): FormRead<StockView, FormErrors<LocalizedText>> => {
   const lot = textOf(values, 'lotNumber').trim()
   const error = lotLengthError(lot)
   if (error !== undefined) {

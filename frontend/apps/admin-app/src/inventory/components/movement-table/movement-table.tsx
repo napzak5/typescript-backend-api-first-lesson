@@ -3,10 +3,14 @@ import type {
   ModelsProductResponse,
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
-import { momentNameAt, PagedTable } from '@beauty-salon-frontend/salon-screens'
-import type { More } from '@beauty-salon-frontend/ui'
-import { COUNTED, countOf, inJapanese } from '@beauty-salon-frontend/ui'
-import { priceNameOf } from '../../../products/utils/product-format'
+import {
+  amountOf,
+  momentNameAt,
+  PagedTable,
+} from '@beauty-salon-frontend/salon-screens'
+import { COUNTED, countOf, type More, useSay } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import {
   changeNameOf,
   movementReasonOf,
@@ -15,9 +19,11 @@ import {
 } from '../../utils/movement-format'
 import { quantityNameOf } from '../../utils/stock-format'
 
+const { history, table } = adminInventoryMessages.movements
+
 export type MovementTableProps = {
   /** What the table lists: 「在庫の移動」 or 「条件に合う在庫の移動」 */
-  caption: string
+  caption: LocalizedText
   /** The movements that were read so far, the latest first; at least one */
   movements: readonly ModelsInventoryTransactionResponse[]
   /** The product of the row, whose unit the quantities are in; `undefined` when it was removed */
@@ -50,57 +56,70 @@ export const MovementTable = ({
   total,
   more,
   onMore,
-}: MovementTableProps) => (
-  <PagedTable
-    caption={caption}
-    columns={[
-      {
-        key: 'createdAt',
-        header: '日時',
-        cell: ({ createdAt }) => inJapanese(momentNameAt(createdAt, timezone)),
-      },
-      {
-        key: 'transactionType',
-        header: '区分',
-        cell: ({ transactionType }) => movementTypeNameOf(transactionType),
-      },
-      {
-        key: 'quantity',
-        header: '増減',
-        align: 'end',
-        cell: ({ quantity }) => changeNameOf(quantity, product),
-      },
-      {
-        key: 'balanceAfter',
-        header: '移動後の在庫数',
-        align: 'end',
-        cell: ({ balanceAfter }) => quantityNameOf(balanceAfter, product),
-      },
-      {
-        key: 'totalCost',
-        header: '金額',
-        align: 'end',
-        cell: ({ totalCost }) => priceNameOf(totalCost, currency),
-      },
-      {
-        key: 'reason',
-        header: '理由',
-        cell: (movement) => movementReasonOf(movement),
-      },
-      {
-        key: 'performedBy',
-        header: '記録した人',
-        // Nobody is named for an administrator, nor for the movement that
-        // began the records of a row
-        cell: ({ performedBy }) =>
-          performedBy === null ? null : performerNameOf(performedBy, staff),
-      },
-    ]}
-    rows={movements}
-    rowKey={({ id }) => id}
-    emptyMessage='在庫の移動はありません'
-    count={inJapanese(countOf(total, movements.length, COUNTED.items))}
-    more={more}
-    onMore={onMore}
-  />
-)
+}: MovementTableProps) => {
+  const say = useSay()
+
+  return (
+    <PagedTable
+      caption={say(caption)}
+      columns={[
+        {
+          key: 'createdAt',
+          header: say(table.moment),
+          cell: ({ createdAt }) => say(momentNameAt(createdAt, timezone)),
+        },
+        {
+          key: 'transactionType',
+          header: say(table.kind),
+          cell: ({ transactionType }) =>
+            say(movementTypeNameOf(transactionType)),
+        },
+        {
+          key: 'quantity',
+          header: say(table.change),
+          align: 'end',
+          cell: ({ quantity }) => say(changeNameOf(quantity, product)),
+        },
+        {
+          key: 'balanceAfter',
+          header: say(table.balance),
+          align: 'end',
+          cell: ({ balanceAfter }) =>
+            say(quantityNameOf(balanceAfter, product)),
+        },
+        {
+          key: 'totalCost',
+          header: say(table.cost),
+          align: 'end',
+          cell: ({ totalCost }) =>
+            totalCost === null ? null : say(amountOf(totalCost, currency)),
+        },
+        {
+          key: 'reason',
+          header: say(table.reason),
+          cell: (movement) => {
+            const reason = movementReasonOf(movement)
+
+            return reason === null ? null : say(reason)
+          },
+        },
+        {
+          key: 'performedBy',
+          header: say(table.performer),
+          // Nobody is named for an administrator, nor for the movement that
+          // began the records of a row
+          cell: ({ performedBy }) =>
+            performedBy === null
+              ? null
+              : say(performerNameOf(performedBy, staff)),
+        },
+      ]}
+      rows={movements}
+      rowKey={({ id }) => id}
+      emptyMessage={say(history.empty)}
+      count={say(countOf(total, movements.length, COUNTED.items))}
+      more={more}
+      onMore={onMore}
+    />
+  )
+}

@@ -6,22 +6,18 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import type { BadgeTone, ChoiceOption } from '@beauty-salon-frontend/ui'
-import { inJapanese } from '@beauty-salon-frontend/ui'
+import type { BadgeTone, NamedChoice } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { performerNameOf } from './movement-format'
-import { stockRowNameOf } from './stock-format'
+import { productNameOf, stockRowNameOf } from './stock-format'
 
 /*
  * The kinds and the severities of the alerts of the stock, and how an
  * alert is named on the screens.
  */
 
-const KINDS: Record<ModelsInventoryAlertType, string> = {
-  low_stock: '在庫僅少',
-  overstock: '在庫過剰',
-  expiring: '期限切れ間近',
-  expired: '期限切れ',
-}
+const { alerts, words } = adminInventoryMessages
 
 /** Every kind, in the order the filter offers them: those of a product, then those of a stock row */
 const KIND_ORDER: readonly ModelsInventoryAlertType[] = [
@@ -32,12 +28,13 @@ const KIND_ORDER: readonly ModelsInventoryAlertType[] = [
 ]
 
 /** A kind of alert, by name: 「在庫僅少」. */
-export const alertKindNameOf = (alert: ModelsInventoryAlertType): string =>
-  KINDS[alert]
+export const alertKindNameOf = (
+  alert: ModelsInventoryAlertType,
+): LocalizedText => alerts.kinds[alert]
 
 /** Every kind, to narrow the alerts to one */
-export const ALERT_KIND_OPTIONS: readonly ChoiceOption[] = KIND_ORDER.map(
-  (alert) => ({ value: alert, label: KINDS[alert] }),
+export const ALERT_KIND_CHOICES: readonly NamedChoice[] = KIND_ORDER.map(
+  (alert) => ({ value: alert, label: alerts.kinds[alert] }),
 )
 
 /** Whether a text is the name of a kind, as an address or a form holds it. */
@@ -46,16 +43,11 @@ export const alertKindIn = (
 ): ModelsInventoryAlertType | undefined =>
   KIND_ORDER.find((alert) => alert === text)
 
-type Severity = {
-  name: string
-  /** The colour groups the severities; the word says which one */
-  tone: BadgeTone
-}
-
-const SEVERITIES: Record<ModelsInventoryAlertSeverityType, Severity> = {
-  critical: { name: '緊急', tone: 'danger' },
-  warning: { name: '注意', tone: 'warning' },
-  info: { name: '情報', tone: 'info' },
+/** The colour groups the severities; the word says which one */
+const TONES: Record<ModelsInventoryAlertSeverityType, BadgeTone> = {
+  critical: 'danger',
+  warning: 'warning',
+  info: 'info',
 }
 
 /** Every severity, the heaviest first */
@@ -68,16 +60,16 @@ const SEVERITY_ORDER: readonly ModelsInventoryAlertSeverityType[] = [
 /** A severity, by name: 「緊急」. */
 export const severityNameOf = (
   severity: ModelsInventoryAlertSeverityType,
-): string => SEVERITIES[severity].name
+): LocalizedText => alerts.severities[severity]
 
 /** The colour a severity is shown in. */
 export const severityToneOf = (
   severity: ModelsInventoryAlertSeverityType,
-): BadgeTone => SEVERITIES[severity].tone
+): BadgeTone => TONES[severity]
 
 /** Every severity, to narrow the alerts to one */
-export const SEVERITY_OPTIONS: readonly ChoiceOption[] = SEVERITY_ORDER.map(
-  (severity) => ({ value: severity, label: SEVERITIES[severity].name }),
+export const SEVERITY_CHOICES: readonly NamedChoice[] = SEVERITY_ORDER.map(
+  (severity) => ({ value: severity, label: alerts.severities[severity] }),
 )
 
 /** Whether a text is the name of a severity, as an address or a form holds it. */
@@ -96,24 +88,15 @@ export const alertSubjectNameOf = (
     ModelsInventoryAlertResponse,
     'inventoryId' | 'productName' | 'productCode' | 'lotNumber'
   >,
-): string =>
+): LocalizedText =>
   alert.inventoryId === null
-    ? `${alert.productName}（${alert.productCode}）`
+    ? productNameOf({ name: alert.productName, productCode: alert.productCode })
     : stockRowNameOf(alert, { name: alert.productName })
 
-/** The alert, as a dialog or a notification names it: 「Hair Color（COLOR001）の在庫僅少」. */
-export const alertNameOf = (
-  alert: Pick<
-    ModelsInventoryAlertResponse,
-    'alert' | 'inventoryId' | 'productName' | 'productCode' | 'lotNumber'
-  >,
-): string => `${alertSubjectNameOf(alert)}の${alertKindNameOf(alert.alert)}`
-
-/** What an alert of a product holds the stock of the product against: 「最低在庫数」 or 「最大在庫数」. */
-export const thresholdTermOf = (alert: ModelsInventoryAlertType): string =>
-  alert === 'overstock' ? '最大在庫数' : '最低在庫数'
-
-const UNACKNOWLEDGED = '未確認'
+/** What the stock of a product is held against: 「最低在庫数」 or 「最大在庫数」. */
+export const thresholdTermOf = (
+  alert: ModelsInventoryAlertType,
+): LocalizedText => (alert === 'overstock' ? alerts.maximum : alerts.minimum)
 
 /**
  * Who saw to an alert and when, on the clock of the salon:
@@ -130,15 +113,14 @@ export const acknowledgementNameOf = (
   staff:
     | readonly Pick<ModelsStaffProfileResponse, 'id' | 'displayName'>[]
     | undefined,
-): string => {
+): LocalizedText => {
   if (acknowledgement === null) {
-    return UNACKNOWLEDGED
+    return alerts.notAcknowledged
   }
   const { acknowledgedAt, acknowledgedBy } = acknowledgement
-  const who =
-    acknowledgedBy === null || staff === undefined
-      ? undefined
-      : performerNameOf(acknowledgedBy, staff)
+  const moment = momentNameAt(acknowledgedAt, timezone)
 
-  return `${inJapanese(momentNameAt(acknowledgedAt, timezone))}${who === undefined ? '' : `（${who}）`}`
+  return acknowledgedBy === null || staff === undefined
+    ? moment
+    : words.byWhom(moment, performerNameOf(acknowledgedBy, staff))
 }

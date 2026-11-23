@@ -2,19 +2,14 @@ import { type LocalizedText, text } from '../../languages/localized-text'
 import { uiMessages } from '../ui/components'
 import { customerMessages as record } from '../ui/customers'
 import { salonScreenMessages } from '../ui/salon-screens'
-import { followed, joined, listed, postalCodeOf } from '../written'
+import { countOf, followed, joined, listed, postalCodeOf } from '../written'
 import { customerBulkMessages } from './customer-bulk'
 import { customerErasureMessages } from './customer-erasure'
 import { customerExportMessages } from './customer-export'
 import { customerFileMessages } from './customer-file'
 import { customerMergeMessages } from './customer-merge'
 import { customerPointMessages } from './customer-points'
-import {
-  countOf,
-  honored,
-  KEPT_BY_OTHERS,
-  KEYWORD_DESCRIPTION,
-} from './customer-words'
+import { honored, KEPT_BY_OTHERS, KEYWORD_DESCRIPTION } from './customer-words'
 
 /*
  * What the screens of the ledger of the customers say in the admin

@@ -1,11 +1,15 @@
 import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { salon } from '../../../bookings/components/examples'
 import { PRODUCTS_OF_THE_SALON } from '../../../products/components/examples'
 import { countedControlOf } from '../../utils/stock-count'
+import { productOf, quantityNameOf } from '../../utils/stock-format'
 import { expiredColour, STOCK_OF_THE_SALON, shampooRow } from '../examples'
 import { CountForm } from './count-form'
+
+const { count } = adminInventoryMessages
 
 const meta: Meta<typeof CountForm> = {
   title: 'Admin/Inventory/CountForm',
@@ -34,10 +38,13 @@ export const Rows: Story = {}
 export const WithErrors: Story = {
   args: {
     errors: {
-      [countedControlOf(expiredColour.id)]:
-        '数えた数は、0 から 99,999,999.99 までの数（小数は 2 桁まで）で入力してください。',
-      [countedControlOf(shampooRow.id)]:
-        '引き当てた数の 2 本 を下回ります。引き当てた在庫も、数えた数に入れてください。',
+      [countedControlOf(expiredColour.id)]: count.errors.count,
+      [countedControlOf(shampooRow.id)]: count.errors.belowReserved(
+        quantityNameOf(
+          shampooRow.reservedStock,
+          productOf(PRODUCTS_OF_THE_SALON, shampooRow.productId),
+        ),
+      ),
     },
   },
 }
@@ -45,7 +52,6 @@ export const WithErrors: Story = {
 /** A row counted was removed meanwhile: the rows were read anew */
 export const RowsChanged: Story = {
   args: {
-    message:
-      '数えた在庫の行のどれかが、その間に削除されました。在庫の行を読み直しました。数えた数を確かめて、もう一度記録してください。',
+    message: count.rowsChanged,
   },
 }

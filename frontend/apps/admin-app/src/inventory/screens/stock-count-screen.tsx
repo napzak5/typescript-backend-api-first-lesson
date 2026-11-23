@@ -15,15 +15,16 @@ import {
   ButtonLink,
   EmptyState,
   type FormSays,
-  inJapanese,
   LoadingIndicator,
   NOTHING_TO_SAY,
   PageHeader,
   UnreadNotice,
   useNotifications,
+  useSay,
   useScreenHeadingFocus,
-  writtenInJapanese,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
@@ -46,7 +47,8 @@ import { CountResult } from '../components/count-result/count-result'
 import { afterStockCount, readStockCount } from '../utils/stock-count'
 import { StockForbidden, useKeepsStock } from './keeps-stock'
 
-const TITLE = '棚卸し'
+const { names, titles, words } = adminInventoryMessages
+const counting = adminInventoryMessages.count
 
 /** A count that was recorded, with the rows and the products it was entered on */
 type Counted = {
@@ -70,10 +72,11 @@ type Sent = {
  * changed meanwhile, they are read anew, and the counts entered stay.
  */
 const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
+  const say = useSay()
   const queryClient = useQueryClient()
   const { notify } = useNotifications()
   const focusHeading = useScreenHeadingFocus()
-  const [said, setSaid] = useState<FormSays>(NOTHING_TO_SAY)
+  const [said, setSaid] = useState<FormSays<LocalizedText>>(NOTHING_TO_SAY)
   const [counted, setCounted] = useState<Counted | undefined>(undefined)
   const shownBefore = useRef(counted)
   const rows = useQuery({
@@ -109,7 +112,10 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           }
           notify({
             tone: 'success',
-            message: `${sent.request.items.length} 行の棚卸しを記録しました。帳簿の在庫数と差のあった行は ${result.discrepancies.length} 行です。`,
+            message: counting.done(
+              sent.request.items.length,
+              result.discrepancies.length,
+            ),
           })
           setCounted({ result, rows: sent.rows, products: sent.products })
         })
@@ -148,16 +154,14 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
     counted === undefined ? (
       match([rows.data, products.data])
         .with([undefined, P._], [{ type: 'found' }, undefined], () => (
-          <LoadingIndicator label='在庫の行を読み込んでいます' />
+          <LoadingIndicator label={say(counting.loading)} />
         ))
         .with([{ type: 'forbidden' }, P._], () => (
-          <OtherSalonNotice what={writtenInJapanese('在庫')} />
+          <OtherSalonNotice what={names.inventoryOfTheSalon} />
         ))
         .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('在庫の行'), reason),
-            )}
+            message={say(unreadMessageOf(names.row, reason))}
             onRetry={() => void rows.refetch()}
             pending={rows.isFetching}
           />
@@ -170,9 +174,7 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           ],
           ([, reason]) => (
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('商品'), reason),
-              )}
+              message={say(unreadMessageOf(names.products, reason))}
               onRetry={() => void products.refetch()}
               pending={products.isFetching}
             />
@@ -180,11 +182,11 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         )
         .with([{ type: 'found', items: [] }, { type: 'found' }], () => (
           <EmptyState
-            title='数える在庫の行がありません'
-            description='在庫の行を足すと、ここで数えられます。'
+            title={say(counting.noRows)}
+            description={say(counting.noRowsDescription)}
             actions={
               <ButtonLink href={stockEntryHrefOf(salon.id)} variant='primary'>
-                在庫の行を足す
+                {say(words.addRow)}
               </ButtonLink>
             }
           />
@@ -193,14 +195,14 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
           <CountForm
             rows={read.items}
             products={named.items}
-            submitLabel='記録する'
+            submitLabel={say(counting.form.record)}
             message={said.message}
             errors={said.errors}
             pending={count.isPending}
             onSubmit={(values) => submit(values, read.items, named.items)}
             actions={
               <ButtonLink href={inventoryHrefOf(salon.id)} variant='quiet'>
-                やめる
+                {say(counting.form.cancel)}
               </ButtonLink>
             }
           />
@@ -216,10 +218,10 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
         />
         <p>
           <ButtonLink href={inventoryHrefOf(salon.id)} variant='primary'>
-            在庫へ
+            {say(words.toInventory)}
           </ButtonLink>{' '}
           <Button onClick={() => setCounted(undefined)}>
-            続けて棚卸しする
+            {say(counting.result.again)}
           </Button>
         </p>
       </>
@@ -227,7 +229,7 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader title={say(titles.count)} description={salon.name} />
       {shown}
     </>
   )
@@ -235,19 +237,20 @@ const CountPart = ({ salon }: { salon: ModelsSalonResponse }) => {
 
 /** The count of the stock of the salon of the address, for its owner, a manager and an administrator. */
 export const StockCountScreen = () => {
+  const say = useSay()
   const { salonId = '' } = useParams()
   const keeps = useKeepsStock()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.count)}>
       {(salon) =>
         keeps ? (
           <CountPart key={salon.id} salon={salon} />
         ) : (
           <StockForbidden
             salon={salon}
-            title={TITLE}
-            message='このアカウントでは、棚卸しを記録できません。棚卸しを記録できるのは、サロンのオーナーとマネージャーと、管理者です。'
+            title={titles.count}
+            message={counting.forbidden}
           />
         )
       }

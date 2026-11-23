@@ -3,13 +3,16 @@ import type {
   ModelsInventoryStockCountDiscrepancy,
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
-import { Link, Table } from '@beauty-salon-frontend/ui'
+import { Link, Table, useSay } from '@beauty-salon-frontend/ui'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { changeNameOf } from '../../utils/movement-format'
 import {
   productOf,
   quantityNameOf,
   stockRowNameOf,
 } from '../../utils/stock-format'
+
+const { result } = adminInventoryMessages.count
 
 export type CountResultProps = {
   /** The rows that differed from the books, in the order they were counted */
@@ -40,6 +43,7 @@ export const CountResult = ({
   products,
   rowHref,
 }: CountResultProps) => {
+  const say = useSay()
   const differed: Differed[] = discrepancies.map((discrepancy) => {
     const row = rows.find(({ id }) => id === discrepancy.inventoryId)
 
@@ -52,42 +56,46 @@ export const CountResult = ({
   })
 
   return differed.length === 0 ? (
-    <p>数えたどの行も、帳簿の在庫数と同じでした。在庫数は変わりません。</p>
+    <p>{say(result.same)}</p>
   ) : (
     <Table
-      caption='帳簿の在庫数と差のあった行'
+      caption={say(result.caption)}
       columns={[
         {
           key: 'row',
-          header: '在庫の行',
+          header: say(result.row),
           cell: ({ inventoryId, row, product }) => (
             <Link href={rowHref(inventoryId)}>
-              {row === undefined ? '在庫の行' : stockRowNameOf(row, product)}
+              {say(
+                row === undefined ? result.row : stockRowNameOf(row, product),
+              )}
             </Link>
           ),
         },
         {
           key: 'expected',
-          header: '帳簿の在庫数',
+          header: say(result.onTheBooks),
           align: 'end',
-          cell: ({ expected, product }) => quantityNameOf(expected, product),
+          cell: ({ expected, product }) =>
+            say(quantityNameOf(expected, product)),
         },
         {
           key: 'counted',
-          header: '数えた数',
+          header: say(result.counted),
           align: 'end',
-          cell: ({ counted, product }) => quantityNameOf(counted, product),
+          cell: ({ counted, product }) => say(quantityNameOf(counted, product)),
         },
         {
           key: 'difference',
-          header: '差',
+          header: say(result.difference),
           align: 'end',
-          cell: ({ difference, product }) => changeNameOf(difference, product),
+          cell: ({ difference, product }) =>
+            say(changeNameOf(difference, product)),
         },
       ]}
       rows={differed}
       rowKey={({ inventoryId }) => inventoryId}
-      emptyMessage='差のあった行はありません'
+      emptyMessage={say(result.empty)}
     />
   )
 }

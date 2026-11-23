@@ -1,6 +1,7 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import { dayAt, WithSalon } from '@beauty-salon-frontend/salon-screens'
-import { ButtonLink } from '@beauty-salon-frontend/ui'
+import { ButtonLink, useSay } from '@beauty-salon-frontend/ui'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router'
 import { match } from 'ts-pattern'
@@ -19,7 +20,7 @@ import { productOf } from '../utils/stock-format'
 import { useKeepsStock } from './keeps-stock'
 import { WithStockRow } from './with-stock-row'
 
-const TITLE = '在庫の行'
+const { record, titles, words } = adminInventoryMessages
 
 type StockRowPartProps = {
   salon: ModelsSalonResponse
@@ -33,6 +34,7 @@ type StockRowPartProps = {
  * named once the staff of the salon are read.
  */
 const StockRowPart = ({ salon, inventoryId }: StockRowPartProps) => {
+  const say = useSay()
   const keeps = useKeepsStock()
   const staff = useQuery({
     queryKey: staffProfilesKeyOf(salon.id),
@@ -43,21 +45,21 @@ const StockRowPart = ({ salon, inventoryId }: StockRowPartProps) => {
     <WithStockRow
       salon={salon}
       inventoryId={inventoryId}
-      title={TITLE}
+      title={titles.row}
       actions={(row) => (
         <>
           <ButtonLink
             href={movementEntryHrefOf(salon.id, row.id)}
             variant='primary'
           >
-            在庫の移動を記録する
+            {say(words.recordMovement)}
           </ButtonLink>
           <ButtonLink href={stockMovementsHrefOf(salon.id, row.id)}>
-            在庫の移動の履歴
+            {say(record.history)}
           </ButtonLink>
           {keeps && (
             <ButtonLink href={stockRowChangeHrefOf(salon.id, row.id)}>
-              在庫の行を直す
+              {say(record.change)}
             </ButtonLink>
           )}
         </>
@@ -74,7 +76,9 @@ const StockRowPart = ({ salon, inventoryId }: StockRowPartProps) => {
               .with({ type: 'found' }, ({ items }) => items)
               .otherwise(() => undefined)}
           />
-          <ButtonLink href={inventoryHrefOf(salon.id)}>在庫へ</ButtonLink>
+          <ButtonLink href={inventoryHrefOf(salon.id)}>
+            {say(words.toInventory)}
+          </ButtonLink>
         </>
       )}
     </WithStockRow>
@@ -83,10 +87,11 @@ const StockRowPart = ({ salon, inventoryId }: StockRowPartProps) => {
 
 /** A stock row of the salon of the address, for everybody who works there and an administrator. */
 export const StockRowScreen = () => {
+  const say = useSay()
   const { salonId = '', inventoryId = '' } = useParams()
 
   return (
-    <WithSalon salonId={salonId} title={TITLE}>
+    <WithSalon salonId={salonId} title={say(titles.row)}>
       {(salon) => (
         <StockRowPart
           key={inventoryId}

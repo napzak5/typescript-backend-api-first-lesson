@@ -69,7 +69,10 @@ describe('readMovementConditions', () => {
           ['to', ''],
         ]),
       ),
-    ).toEqual({ type: 'invalid', errors: { from: '日付を入力してください。' } })
+    ).toEqual({
+      type: 'invalid',
+      errors: { from: { en: 'Enter a date.', ja: '日付を入力してください。' } },
+    })
     expect(
       readMovementConditions(
         formOfEntries([
@@ -81,7 +84,10 @@ describe('readMovementConditions', () => {
     ).toEqual({
       type: 'invalid',
       errors: {
-        to: '終わりの日は、始まりの日と同じか、その後にしてください。',
+        to: {
+          en: 'Make the last day the same as the first day, or later.',
+          ja: '終わりの日は、始まりの日と同じか、その後にしてください。',
+        },
       },
     })
   })

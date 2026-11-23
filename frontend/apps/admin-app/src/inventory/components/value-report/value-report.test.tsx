@@ -1,8 +1,9 @@
+import { languageStore } from '@beauty-salon-frontend/io'
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { rowsOf } from '@beauty-salon-frontend/testing/screens'
 import { composeStories } from '@storybook/react-vite'
 import { screen } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import * as reportStories from './value-report.stories'
 
 const stories = composeStories(reportStories)
@@ -45,5 +46,42 @@ describe('ValueReport', () => {
     // Assert
     expect(screen.getByText('在庫のある商品はありません')).toBeVisible()
     expect(screen.queryByRole('table')).toBeNull()
+  })
+})
+
+describe('ValueReport on a page in English', () => {
+  afterEach(() => {
+    localStorage.clear()
+  })
+
+  it('should say the total and the categories in English', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.WithoutACategory.run()
+
+    // Assert
+    expect(
+      screen.getByText(
+        'The inventory is worth ¥23,600 in all (3 items). It is the stock times the purchase price of each product; a product without a purchase price counts for nothing.',
+      ),
+    ).toBeVisible()
+    expect(rowsOf('Inventory value by category')).toEqual([
+      ['ヘアケア', '1 item', '¥12,000'],
+      ['ヘアカラー', '1 item', '¥11,600'],
+      ['No category', '1 item', '¥0'],
+    ])
+  })
+
+  it('should say in English that there is no stock', async () => {
+    // Arrange
+    languageStore.choose('en')
+
+    // Act
+    await stories.NoStock.run()
+
+    // Assert
+    expect(screen.getByText('No products are in stock')).toBeVisible()
   })
 })

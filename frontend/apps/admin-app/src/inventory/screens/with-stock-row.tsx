@@ -6,12 +6,13 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import { OtherSalonNotice } from '@beauty-salon-frontend/salon-screens'
 import {
-  inJapanese,
   LoadingIndicator,
   PageHeader,
   UnreadNotice,
-  writtenInJapanese,
+  useSay,
 } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { match, P } from 'ts-pattern'
@@ -19,11 +20,13 @@ import { productsKeyOf, readProducts } from '../../products/api/products-api'
 import { readStockRow, stockRowKeyOf } from '../api/inventory-api'
 import { StockRowNotFound } from './keeps-stock'
 
+const { names, words } = adminInventoryMessages
+
 type WithStockRowProps = {
   salon: ModelsSalonResponse
   inventoryId: string
   /** The title of the screen */
-  title: string
+  title: LocalizedText
   /** What the header offers to do with the row, once the row and the products are read */
   actions?: ((row: ModelsInventoryResponse) => ReactNode) | undefined
   /** The screen of the row, below its heading, with the products of the salon that name it */
@@ -49,6 +52,7 @@ export const WithStockRow = ({
   actions,
   children,
 }: WithStockRowProps) => {
+  const say = useSay()
   const row = useQuery({
     queryKey: stockRowKeyOf(inventoryId),
     queryFn: () => readStockRow(inventoryId),
@@ -59,12 +63,12 @@ export const WithStockRow = ({
     queryFn: () => readProducts(salon.id),
     staleTime: 0,
   })
-  const header = <PageHeader title={title} description={salon.name} />
+  const header = <PageHeader title={say(title)} description={salon.name} />
 
   const loading = (
     <>
       {header}
-      <LoadingIndicator label='在庫の行を読み込んでいます' />
+      <LoadingIndicator label={say(words.loadingRow)} />
     </>
   )
 
@@ -80,16 +84,14 @@ export const WithStockRow = ({
       .with([{ type: 'forbidden' }, P._], () => (
         <>
           {header}
-          <OtherSalonNotice what={writtenInJapanese('在庫')} />
+          <OtherSalonNotice what={names.inventoryOfTheSalon} />
         </>
       ))
       .with([{ type: P.union(...UNREAD_TYPES) }, P._], ([reason]) => (
         <>
           {header}
           <UnreadNotice
-            message={inJapanese(
-              unreadMessageOf(writtenInJapanese('在庫の行'), reason),
-            )}
+            message={say(unreadMessageOf(names.row, reason))}
             onRetry={() => void row.refetch()}
             pending={row.isFetching}
           />
@@ -106,9 +108,7 @@ export const WithStockRow = ({
           <>
             {header}
             <UnreadNotice
-              message={inJapanese(
-                unreadMessageOf(writtenInJapanese('商品'), reason),
-              )}
+              message={say(unreadMessageOf(names.products, reason))}
               onRetry={() => void products.refetch()}
               pending={products.isFetching}
             />
@@ -118,7 +118,7 @@ export const WithStockRow = ({
       .with([{ type: 'found' }, { type: 'found' }], ([found, named]) => (
         <>
           <PageHeader
-            title={title}
+            title={say(title)}
             description={salon.name}
             actions={actions?.(found.row)}
           />

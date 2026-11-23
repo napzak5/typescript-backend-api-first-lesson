@@ -416,8 +416,9 @@ In an area of an application that is done, the same rules hold, and:
   of the security, the way back to the page of the customer and the button
   that saves a change) is `portalFrameMessages`. The admin application has
   `admin/`: its frame (`adminFrameMessages`), the ledger of the customers
-  (`adminCustomerMessages`) and the words a screen names a member of the
-  staff with (`adminStaffMessages`). How the catalogues write a count, a
+  (`adminCustomerMessages`), the inventory (`adminInventoryMessages`, its
+  movements, its count and its alerts in files of their own) and the words
+  a screen names a member of the staff with (`adminStaffMessages`). How the catalogues write a count, a
   list, sentences one after the other and a postal code is in
   `messages/written.ts`, which every catalogue shares.
 - What it writes (`booking-format.ts`, `salon-format.ts`,
@@ -452,12 +453,17 @@ In an area of an application that is done, the same rules hold, and:
   and of the dashboard); what the tests share (`__tests__`) is not read.
   An area that is done in parts names the folders and files inside it
   that are done (`'customers/components/customer-form'`), until the whole
-  area is and its name takes their place (`'customers'` of the admin
-  application).
+  area is and its name takes their place (`'customers'` and
+  `'inventory'` of the admin application).
 - An area that is still written in Japanese says what it takes of an area
-  that is done with `inJapanese`, and an area that is done hands on the
-  strings of one that is not as they are. The portal and the dashboard
-  have neither any more.
+  that is done with `inJapanese` (the purchase orders say
+  `quantityNameOf` and `stockRowNameOf` of the inventory so), and an area
+  that is done hands on the strings of one that is not as they are. A type
+  of an area that is not done takes the type of its texts as a parameter
+  where one that is done uses it (`TreatmentRemovalSays<Text = string>` of
+  the treatments, which the removal of a stock row uses as
+  `TreatmentRemovalSays<LocalizedText>`). The portal and the dashboard
+  have none of these any more.
 - An area that is done in two parts splits a file of both, so that the
   file of the part that is done holds none of the texts of the other (the
   export and the erasure requests of the page of a customer are
@@ -505,7 +511,7 @@ screen wrote itself to what takes a message: a counter in words of its own
 is `(count) => writtenInJapanese(`${count} 台`)`, the name of a control is
 `tooLongOf(writtenInJapanese('仕入先'), 100)`, what was not read is
 `unreadMessageOf(writtenInJapanese('予約'), reason)`, and what the notice
-of another salon names is `what={writtenInJapanese('在庫')}`. A message never goes
+of another salon names is `what={writtenInJapanese('商品')}`. A message never goes
 into a template literal, a `+` or a `join`, where it is written
 `[object Object]`: a screen puts the string it said there
 (`` `${inJapanese(charactersOf(500))}以内で書いてください。` ``). The type

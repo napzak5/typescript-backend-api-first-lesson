@@ -10,6 +10,18 @@ import { type LocalizedText, text } from '../languages/localized-text'
 export const countedIn = (count: number, one: string, many: string): string =>
   `${numberOf(count).en} ${count === 1 ? one : many}`
 
+/** A count beside the term that names what it counts, which Japanese counts with one word: 「3 回」, "3 visits" */
+export const countOf = (
+  count: number,
+  one: string,
+  many: string,
+  counter: string,
+): LocalizedText =>
+  text({
+    en: countedIn(count, one, many),
+    ja: `${numberOf(count).ja} ${counter}`,
+  })
+
 /**
  * The parts of a sentence that are joined with `join`, each as its
  * language writes it: what a salon or a customer wrote stands as it is in

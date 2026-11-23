@@ -3,12 +3,10 @@ import type {
   ModelsProductResponse,
 } from '@beauty-salon-frontend/api-client'
 import { momentNameAt } from '@beauty-salon-frontend/salon-screens'
-import {
-  type ChoiceOption,
-  inJapanese,
-  type NavigationItem,
-} from '@beauty-salon-frontend/ui'
+import type { NamedChoice, NavigationItem } from '@beauty-salon-frontend/ui'
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import * as formats from '@beauty-salon-shared/i18n/formats'
+import { adminInventoryMessages } from '@beauty-salon-shared/i18n/messages/admin'
 import { quantityOf } from '../../products/utils/quantity'
 import { EXPIRY_WINDOWS, type StockView, stockQueryOf } from './stock-view'
 
@@ -18,8 +16,16 @@ import { EXPIRY_WINDOWS, type StockView, stockQueryOf } from './stock-view'
  * salon, read beside it.
  */
 
-/** What is said for a product that is not among those read: it was removed */
-export const REMOVED_PRODUCT = '削除した商品'
+const {
+  filter,
+  inUnit,
+  productNamed,
+  record,
+  removedProduct,
+  rowNamed,
+  stock,
+  words,
+} = adminInventoryMessages
 
 /** The product a row is of, among those of the salon; none for one that was removed. */
 export const productOf = (
@@ -28,25 +34,32 @@ export const productOf = (
 ): ModelsProductResponse | undefined =>
   products.find(({ id }) => id === productId)
 
+/** A product by its name and its code, or as removed: 「Hair Color（COLOR001）」. */
+export const productNameOf = (
+  product: Pick<ModelsProductResponse, 'name' | 'productCode'> | undefined,
+): LocalizedText =>
+  product === undefined
+    ? removedProduct
+    : productNamed(product.name, product.productCode)
+
 /** A row as a notification or a dialog names it: 「Hair Color - Natural Brown（ロット LOT-1）」. */
 export const stockRowNameOf = (
   row: Pick<ModelsInventoryResponse, 'lotNumber'>,
   product: Pick<ModelsProductResponse, 'name'> | undefined,
-): string =>
-  `${product?.name ?? REMOVED_PRODUCT}${row.lotNumber === null ? '' : `（ロット ${row.lotNumber}）`}`
+): LocalizedText => rowNamed(product?.name ?? null, row.lotNumber)
 
 /** A quantity of stock in the unit of its product: 「12.5 bottle」. */
 export const quantityNameOf = (
   quantity: number,
   product: Pick<ModelsProductResponse, 'unit'> | undefined,
-): string =>
+): LocalizedText =>
   product === undefined
-    ? inJapanese(quantityOf(quantity))
-    : `${inJapanese(quantityOf(quantity))} ${product.unit}`
+    ? quantityOf(quantity)
+    : inUnit(quantityOf(quantity), product.unit)
 
 /** An expiry: 「2025年12月31日」, or that there is none. A day of the calendar: its weekday says nothing of it. */
-export const expiryNameOf = (expiryDate: string | null): string =>
-  expiryDate === null ? '期限なし' : inJapanese(formats.dayOf(expiryDate))
+export const expiryNameOf = (expiryDate: string | null): LocalizedText =>
+  expiryDate === null ? words.noExpiry : formats.dayOf(expiryDate)
 
 /** Whether a row expired before today, the day at the salon. */
 export const isExpired = (expiryDate: string | null, today: string): boolean =>
@@ -56,24 +69,22 @@ export const isExpired = (expiryDate: string | null, today: string): boolean =>
 export const placeNameOf = ({
   location,
   shelf,
-}: Pick<ModelsInventoryResponse, 'location' | 'shelf'>): string | null =>
-  location === null
-    ? shelf === null
-      ? null
-      : `棚 ${shelf}`
-    : shelf === null
-      ? location
-      : `${location}（棚 ${shelf}）`
+}: Pick<ModelsInventoryResponse, 'location' | 'shelf'>): LocalizedText | null =>
+  adminInventoryMessages.placeOf(location, shelf)
 
 /** When a row was last counted, at the salon, and by whom when it is known. */
 export const countedNameOf = (
   lastCountedAt: string | null,
   timezone: string,
-  counter: string | undefined,
-): string =>
-  lastCountedAt === null
-    ? '棚卸ししていません'
-    : `${inJapanese(momentNameAt(lastCountedAt, timezone))}${counter === undefined ? '' : `（${counter}）`}`
+  counter: LocalizedText | undefined,
+): LocalizedText => {
+  if (lastCountedAt === null) {
+    return record.notCounted
+  }
+  const moment = momentNameAt(lastCountedAt, timezone)
+
+  return counter === undefined ? moment : words.byWhom(moment, counter)
+}
 
 /**
  * The products a row may be of, in the order they were read (that of their
@@ -81,32 +92,34 @@ export const countedNameOf = (
  * them is still counted. One that is chosen and not among them is named as
  * removed.
  */
-export const productOptionsOf = (
+export const productChoicesOf = (
   products: readonly ModelsProductResponse[],
   chosen: string | undefined,
-): ChoiceOption[] => [
-  ...products.map(({ id, name, productCode, isActive }) => ({
-    value: id,
-    label: `${name}（${productCode}）${isActive ? '' : '・取り扱いをやめた'}`,
+): NamedChoice[] => [
+  ...products.map((product) => ({
+    value: product.id,
+    label: product.isActive
+      ? productNameOf(product)
+      : filter.notCarried(productNameOf(product)),
   })),
   ...(chosen === undefined || products.some(({ id }) => id === chosen)
     ? []
-    : [{ value: chosen, label: REMOVED_PRODUCT }]),
+    : [{ value: chosen, label: removedProduct }]),
 ]
 
 /** The windows of the rows that expire soon, to choose from */
-export const EXPIRY_OPTIONS: readonly ChoiceOption[] = EXPIRY_WINDOWS.map(
+export const EXPIRY_CHOICES: readonly NamedChoice[] = EXPIRY_WINDOWS.map(
   (days) => ({
     value: String(days),
-    label: days === 0 ? '今日まで' : `${days} 日後まで`,
+    label: days === 0 ? filter.today : filter.within(days),
   }),
 )
 
+/** A link of the screen, named in every language */
+export type NamedLink = Omit<NavigationItem, 'label'> & { label: LocalizedText }
+
 /** The views of the stock, as links that keep the path of the screen; the one shown is the current one. */
-export const viewItemsOf = (
-  view: StockView,
-  path: string,
-): NavigationItem[] => {
+export const viewItemsOf = (view: StockView, path: string): NamedLink[] => {
   const hrefOf = (shown: StockView): string => {
     const query = stockQueryOf(shown).toString()
 
@@ -116,17 +129,17 @@ export const viewItemsOf = (
   return [
     {
       href: hrefOf({ type: 'all' }),
-      label: 'すべて',
+      label: stock.views.all,
       current: view.type === 'all',
     },
     {
       href: hrefOf({ type: 'lowStock' }),
-      label: '在庫僅少',
+      label: stock.views.lowStock,
       current: view.type === 'lowStock',
     },
     {
       href: hrefOf({ type: 'expiring', days: 30 }),
-      label: '期限切れ間近',
+      label: stock.views.expiring,
       current: view.type === 'expiring',
     },
   ]
