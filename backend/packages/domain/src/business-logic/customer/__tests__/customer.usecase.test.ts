@@ -22,6 +22,7 @@ import {
   MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
+  saidOfBrokenRules,
 } from '../../../__tests__/fixtures/fixtures'
 import type { Actor } from '../../../models/auth'
 import type {
@@ -705,6 +706,7 @@ describe('ListCustomersUseCase', () => {
       error: { type: 'validation' },
     })
     expect(rulesOf(result)).toEqual(['cursor:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([ruleMessages.aCustomer])
   })
 
   it.each([

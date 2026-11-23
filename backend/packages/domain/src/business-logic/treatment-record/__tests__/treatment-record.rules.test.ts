@@ -1,3 +1,4 @@
+import type { LocalizedText } from '@beauty-salon-shared/i18n'
 import {
   inventoryMessages,
   treatmentRecordMessages,
@@ -170,18 +171,22 @@ describe('creationIssues', () => {
     ])
   })
 
-  it.each<[string, Partial<CreationFacts>, string]>([
+  it.each<[string, Partial<CreationFacts>, string, LocalizedText]>([
     [
       'a customer who is not the one of the booking',
       { customerOfBooking: false },
-      'customerId:not_found',
+      'customerId',
+      treatmentRecordMessages.theCustomerOfBooking,
     ],
     [
       'a staff member of another salon',
       { staffOfSalon: false },
-      'staffId:not_found',
+      'staffId',
+      treatmentRecordMessages.aStaffMemberOfSalonOfBooking,
     ],
-  ])('reports %s alone', (_case, overrides, expected) => {
-    expect(rulesOf(creationIssues(creation(overrides), {}))).toEqual([expected])
+  ])('reports %s alone', (_case, overrides, field, message) => {
+    expect(creationIssues(creation(overrides), {})).toEqual([
+      { field, rule: 'not_found', message },
+    ])
   })
 })

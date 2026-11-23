@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  inventoryMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -8,6 +11,7 @@ import {
   MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
+  saidOfBrokenRules,
 } from '../../../__tests__/fixtures/fixtures'
 import {
   dbInventory,
@@ -356,6 +360,7 @@ describe('CreateInventoryUseCase', () => {
     const result = await create(dependencies)
 
     expect(rulesOf(result)).toEqual(['salonId:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([ruleMessages.aSalon])
     expect(dependencies.inventoryRepository.create).not.toHaveBeenCalled()
   })
 

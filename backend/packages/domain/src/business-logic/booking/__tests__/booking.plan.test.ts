@@ -330,6 +330,29 @@ describe('planBooking', () => {
         CUT_ID,
       ])
     })
+
+    it('should refuse a booking of no service, which the schema lets no request be', () => {
+      // Arrange
+      const request = {
+        ...bookingCreateRequestSchema.parse(bookingCreateRequest()),
+        services: [],
+      }
+
+      // Act
+      const result = planBooking(request, bookingReferences(), origin())
+
+      // Assert
+      expect(result).toEqual({
+        type: 'invalid',
+        issues: [
+          {
+            field: 'services',
+            rule: 'too_small',
+            message: bookingMessages.atLeastOneService,
+          },
+        ],
+      })
+    })
   })
 
   describe('the time of the booking', () => {

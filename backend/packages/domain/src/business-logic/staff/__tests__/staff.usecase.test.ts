@@ -1,5 +1,8 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { staffMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  ruleMessages,
+  staffMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
@@ -7,6 +10,7 @@ import {
   MADE_UP_MESSAGE,
   OTHER_SALON_ID,
   SALON_ID,
+  saidOfBrokenRules,
 } from '../../../__tests__/fixtures/fixtures'
 import {
   apiStaff,
@@ -346,6 +350,9 @@ describe('ListStaffUseCase', () => {
     const result = await list(dependencies, { cursor: STAFF_ID })
 
     expect(rulesOf(result)).toEqual(['cursor:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([
+      ruleMessages.aStaffMemberOfSalon,
+    ])
   })
 
   it('returns the error of a failed salon lookup', async () => {

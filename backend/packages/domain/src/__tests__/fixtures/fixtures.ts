@@ -156,3 +156,15 @@ export const brokenRules = (error: DomainError): string[] =>
   error.type === 'validation'
     ? error.issues.map(({ field, rule }) => `${field}:${rule}`)
     : []
+
+/**
+ * What a refused request is told of each rule it broke, in every language
+ * and in the order of the rules; empty for anything that is no validation
+ * error.
+ */
+export const saidOfBrokenRules = (
+  result: Result<unknown, DomainError>,
+): LocalizedText[] =>
+  result.type === 'error' && result.error.type === 'validation'
+    ? result.error.issues.map(({ message }) => message)
+    : []

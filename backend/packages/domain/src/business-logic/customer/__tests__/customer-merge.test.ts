@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { customerMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -18,7 +19,10 @@ import {
   OTHER_CUSTOMER_ID,
   REFERRER_ID,
 } from '../../../__tests__/fixtures/customer-fixtures'
-import { brokenRules } from '../../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  saidOfBrokenRules,
+} from '../../../__tests__/fixtures/fixtures'
 import {
   dbMedicalChart,
   OTHER_MEDICAL_CHART_ID,
@@ -655,6 +659,9 @@ describe('MergeCustomersUseCase', () => {
       ).execute(actors.admin, customerMergeRequest())
 
       expect(rulesOf(result)).toEqual(rules)
+      expect(saidOfBrokenRules(result)).toEqual(
+        rules.map(() => customerMessages.aCustomerNotDeleted),
+      )
     },
   )
 

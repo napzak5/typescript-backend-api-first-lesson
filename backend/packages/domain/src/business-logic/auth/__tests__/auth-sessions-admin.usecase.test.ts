@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   APP_CODE,
@@ -22,7 +23,10 @@ import {
   USER_ID,
   userRepositoryWith,
 } from '../../../__tests__/fixtures/auth-fixtures'
-import { brokenRules } from '../../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  saidOfBrokenRules,
+} from '../../../__tests__/fixtures/fixtures'
 import { type Actor, actorSchema, type DbUser } from '../../../models/auth'
 import type { ISessionRepository } from '../../../repositories/session.repository'
 import type { IUserRepository } from '../../../repositories/user.repository'
@@ -422,6 +426,9 @@ describe('ListSessionsUseCase', () => {
       error: { type: 'validation' },
     })
     expect(rulesOf(result)).toEqual(['cursor:not_found'])
+    expect(saidOfBrokenRules(result)).toEqual([
+      authMessages.sessionOfCursorGone,
+    ])
   })
 
   it.each([

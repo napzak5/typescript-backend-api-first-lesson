@@ -1,4 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
+import { authMessages } from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import {
   actors,
@@ -15,7 +16,10 @@ import {
   userAccount,
   userRepositoryWith,
 } from '../../../__tests__/fixtures/auth-fixtures'
-import { brokenRules } from '../../../__tests__/fixtures/fixtures'
+import {
+  brokenRules,
+  saidOfBrokenRules,
+} from '../../../__tests__/fixtures/fixtures'
 import type { DbUser } from '../../../models/auth'
 import type { IUserRepository } from '../../../repositories/user.repository'
 import type { Mail } from '../../../services/mailer'
@@ -725,6 +729,9 @@ describe('ChangePasswordUseCase', () => {
       error: { type: 'validation' },
     })
     expect(rulesOf(result)).toEqual(incorrect)
+    expect(saidOfBrokenRules(result)).toEqual([
+      authMessages.currentPasswordNotConfirmed,
+    ])
     expect(dependencies.userRepository.recordFailedLogin).toHaveBeenCalledWith(
       USER_ID,
       { threshold: 5, lockedUntil: secondsFromNow(15 * MINUTE) },
@@ -814,6 +821,9 @@ describe('ChangePasswordUseCase', () => {
       )
 
       expect(rulesOf(result)).toEqual(['newPassword:unchanged'])
+      expect(saidOfBrokenRules(result)).toEqual([
+        authMessages.differentFromCurrentPassword,
+      ])
       expect(dependencies.passwordHasher.hash).not.toHaveBeenCalled()
       expect(dependencies.userRepository.changePassword).not.toHaveBeenCalled()
       expect(mails).toEqual([])

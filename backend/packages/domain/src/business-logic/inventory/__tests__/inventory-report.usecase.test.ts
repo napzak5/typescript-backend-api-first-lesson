@@ -1,11 +1,15 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { inventoryMessages } from '@beauty-salon-shared/i18n/messages/api'
+import {
+  inventoryMessages,
+  ruleMessages,
+} from '@beauty-salon-shared/i18n/messages/api'
 import { describe, expect, it, vi } from 'vitest'
 import { actors, STAFF_ID } from '../../../__tests__/fixtures/auth-fixtures'
 import {
   brokenRules,
   OTHER_SALON_ID,
   SALON_ID,
+  saidOfBrokenRules,
 } from '../../../__tests__/fixtures/fixtures'
 import {
   dbInventoryTransaction,
@@ -213,6 +217,10 @@ describe('PerformStockCountUseCase', () => {
     expect(rulesOf(result)).toEqual([
       'items.0.inventoryId:not_found',
       'items.2.inventoryId:not_found',
+    ])
+    expect(saidOfBrokenRules(result)).toEqual([
+      ruleMessages.aStockRowOfSalon,
+      ruleMessages.aStockRowOfSalon,
     ])
   })
 
