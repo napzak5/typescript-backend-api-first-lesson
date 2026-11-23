@@ -28,7 +28,7 @@ The styling and component rules are in the skill `frontend-ui`.
 | The functions of a screen that call the API, for the answers the real API cannot be made to give | The same | `frontend/apps/portal-app/src/account/api/account-api.test.ts` |
 | Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
 | A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/screens/sign-in.integration.test.tsx`, `frontend/packages/app-frame/src/screens/staff-application.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
-| That a package whose texts are messages writes none in Japanese in its source | One test of the package, which reads its sources (`itShouldWriteItsTextsAsMessages` of `@beauty-salon-frontend/testing/language`); an application names the areas of its `src` that are done | `frontend/packages/ui/src/texts.test.ts`, `frontend/packages/preferences/src/texts.test.ts`, `frontend/apps/portal-app/src/texts.test.ts` |
+| That a package whose texts are messages writes none in Japanese in its source | One test of the package, which reads its sources (`itShouldWriteItsTextsAsMessages` of `@beauty-salon-frontend/testing/language`), but for the tests, what they share (`__tests__`), the stories and their examples; an application names the areas of its `src` that are done, until all are and it reads the whole (the portal) | `frontend/packages/ui/src/texts.test.ts`, `frontend/packages/preferences/src/texts.test.ts`, `frontend/apps/portal-app/src/texts.test.ts` |
 | A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/admin/sign-in.e2e.test.ts` |
 
 A test is beside the module it tests. In a shared package and in an area of
@@ -181,6 +181,9 @@ describe('Button', () => {
   (`control.blur()`), chooses English in
   `act(() => { languageStore.choose('en') })`, and asserts that the control
   says the English sentence and has no focus (`sign-in-form.test.tsx`).
+  A story whose play function sends a form by the Japanese name of its
+  button is drawn first, and English is chosen inside `act` after it
+  (`review-report.test.tsx`).
   A screen of such a package that has no test of its own (`WithSalon`,
   `SalonChoiceScreen` of `salon-screens`) is tested in English in the
   integration test of an application: it signs in on the Japanese page,
@@ -188,7 +191,8 @@ describe('Button', () => {
   (`frontend/apps/admin-app/src/App.integration.test.tsx`).
 - An area of an application whose texts are messages is tested the same
   way: its components in English beside the Japanese tests, the focus of
-  its form as the language changes (`booking-form.test.tsx`), and one
+  its form as the language changes (`booking-form.test.tsx`,
+  `profile-form.test.tsx`, `review-form.test.tsx`), and one
   `describe` of its integration tests on a page in English
   (`bookings.integration.test.tsx`). The customer of the portal signs in
   through the API (`signedInAs`), so English is chosen before the page is

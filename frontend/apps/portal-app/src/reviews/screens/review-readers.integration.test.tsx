@@ -18,7 +18,6 @@ import {
   TOKYO,
   VIP,
 } from '@beauty-salon-frontend/testing/seed'
-import { dayOf } from '@beauty-salon-shared/i18n/formats'
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -35,6 +34,7 @@ import {
 } from '../../bookings/__tests__/arrangements'
 import { OWN_PROFILE } from '../../profile/api/profile-api'
 import {
+  dayInEnglish,
   dismissesReportOf,
   findsHelpful,
   overall,
@@ -1201,7 +1201,7 @@ describe('reporting a review on a page in English, against the API', () => {
     await signedInAs(KENJI.email)
     const review = await untouchedBy(KENJI.email)
     renderAt(await salonPathOf(TOKYO))
-    const subject = `“${review.title}” (posted ${dayOf(review.postedOn).en})`
+    const subject = `“${review.title}” (posted ${dayInEnglish(review.postedOn)})`
     const user = userEvent.setup()
 
     // Act

@@ -15,7 +15,6 @@ import {
   OSAKA,
   VIP,
 } from '@beauty-salon-frontend/testing/seed'
-import { dayOf } from '@beauty-salon-shared/i18n/formats'
 import { focusManager, onlineManager } from '@tanstack/react-query'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -34,6 +33,7 @@ import {
   answers,
   button,
   changes,
+  dayInEnglish,
   detailsIn,
   insertReviews,
   overall,
@@ -915,7 +915,7 @@ describe('what a customer wrote on a page in English, against the API', () => {
     // Arrange
     await visitReviewed()
     const [review] = await storedReviewsOf()
-    const subject = `${OSAKA} (posted ${dayOf(review?.postedOn ?? '').en})`
+    const subject = `${OSAKA} (posted ${dayInEnglish(review?.postedOn ?? '')})`
     const user = userEvent.setup()
 
     // Act
@@ -971,7 +971,7 @@ describe('what a customer wrote on a page in English, against the API', () => {
       detailsIn(screen.getByRole('region', { name: 'The review to change' })),
     ).toEqual({
       Salon: OSAKA,
-      'Posted on': dayOf(review?.postedOn ?? '').en,
+      'Posted on': dayInEnglish(review?.postedOn ?? ''),
     })
     expect(
       screen.getByText(

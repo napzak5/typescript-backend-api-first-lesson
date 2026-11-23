@@ -407,6 +407,13 @@ const timeOfDay = (moment: string): string =>
     timeZone: 'Asia/Tokyo',
   }).format(new Date(moment))
 
+/** A day of the calendar (`2026-11-10`), as a page in English writes it: 「November 10, 2026」. */
+export const dayInEnglish = (date: string): string =>
+  new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'long',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T00:00:00Z`))
+
 /** When a visit was, as a screen says it. */
 export const whenOf = ({
   startTime,
